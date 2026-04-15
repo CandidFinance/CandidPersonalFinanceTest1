@@ -2077,18 +2077,88 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
       </span>
     </div>
 
-    {/* Compact summary (always visible) */}
-    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-      <div>
-        <div style={{ fontSize: "11px", color: MUT }}>Assets</div>
-        <div style={{ fontSize: "16px", fontWeight: 600 }}>{fmt(m.totalAssets)}</div>
-      </div>
-      <div>
-        <div style={{ fontSize: "11px", color: MUT }}>Liabilities</div>
-        <div style={{ fontSize: "16px", fontWeight: 600 }}>{fmt(m.totalLiabilities)}</div>
-      </div>
+    {/* Assets / Liabilities summary row + breakdown toggle */}
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "14px",
+    gap: "16px"
+  }}
+>
+  <div>
+    <div
+      style={{
+        fontSize: "10px",
+        fontWeight: 700,
+        color: "#2d6b4a",
+        letterSpacing: "0.07em",
+        textTransform: "uppercase",
+        marginBottom: "6px"
+      }}
+    >
+      Assets — {fmt(m.totalAssets)}
     </div>
 
+    <div
+      style={{
+        fontFamily: SERIF,
+        fontSize: "18px",
+        fontWeight: 700,
+        color: "#2d6b4a"
+      }}
+    >
+      {fmt(m.totalAssets)}
+    </div>
+  </div>
+
+  <div>
+    <div
+      style={{
+        fontSize: "10px",
+        fontWeight: 700,
+        color: "#c0392b",
+        letterSpacing: "0.07em",
+        textTransform: "uppercase",
+        marginBottom: "6px",
+        textAlign: "right"
+      }}
+    >
+      Liabilities — {fmt(m.totalLiabilities)}
+    </div>
+
+    <div
+      style={{
+        fontFamily: SERIF,
+        fontSize: "18px",
+        fontWeight: 700,
+        color: "#c0392b",
+        textAlign: "right"
+      }}
+    >
+      {fmt(m.totalLiabilities)}
+    </div>
+  </div>
+
+  <button
+    type="button"
+    onClick={() => setNetWorthExpanded(v => !v)}
+    style={{
+      background: "transparent",
+      border: "none",
+      fontSize: "12px",
+      fontWeight: 600,
+      color: G,
+      cursor: "pointer",
+      marginTop: "6px",
+      whiteSpace: "nowrap"
+    }}
+  >
+    {netWorthExpanded ? "Breakdown ↑" : "Breakdown ↓"}
+  </button>
+</div>
+        
     {/* Detailed breakdown (toggle) */}
     {netWorthExpanded && (
       <>
@@ -2512,15 +2582,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
     }
   }, [openSection]);
 
-  // Scroll to top of app section whenever the module changes
-  useEffect(() => {
-    const appEl = document.getElementById("candid-app");
-    if (appEl) {
-      appEl.scrollIntoView({ behavior: "instant", block: "start" });
-    } else {
-      window.scrollTo({ top:0, behavior:"instant" });
-    }
-  }, [moduleKey]);
+  // Scroll to top whenever the module changes
+useEffect(() => {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+}, [moduleKey]);
 
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   // Use extended functions for new modules, original for existing
