@@ -1,5 +1,5 @@
-import { useState } from "react"
-import ReactDOM from "react-dom/client"
+import { useState, useEffect } from "react"
+import ReactDOM, { createPortal } from "react-dom/client"
 import CandidApp from "./CandidApp.jsx"
 
 const G    = "#162f24"
@@ -273,17 +273,27 @@ function LandingPage({ onStart }) {
 
 // ── Feedback banner (shown after completing the app) ──────────────────────────
 function FeedbackModal({ onDismiss }) {
-  return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 1000,
-      background: "rgba(22,47,36,0.7)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "24px",
-    }} onClick={onDismiss}>
-      <div style={{
-        background: WHITE, borderRadius: "18px", maxWidth: "460px", width: "100%",
-        overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
-      }} onClick={e => e.stopPropagation()}>
+  // Render into document.body via portal — completely isolated from app tree
+  return createPortal(
+    <div
+      onClick={onDismiss}
+      style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+        zIndex: 9999,
+        background: "rgba(22,47,36,0.7)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "24px",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: WHITE, borderRadius: "18px",
+          maxWidth: "460px", width: "100%",
+          overflow: "hidden",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
+        }}
+      >
         <div style={{ background: GOLD, padding: "14px 24px", display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ fontSize: "20px" }}>💬</span>
           <div>
@@ -298,43 +308,56 @@ function FeedbackModal({ onDismiss }) {
           <p style={{ fontSize: "13px", color: MUT, lineHeight: 1.6, marginBottom: "24px" }}>
             Five quick questions. Completely anonymous unless you choose to leave your email.
           </p>
-          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{
-            display: "block", width: "100%", background: G, border: "none",
-            borderRadius: "10px", padding: "15px", textAlign: "center",
-            fontSize: "15px", fontWeight: 600, color: WHITE,
-            cursor: "pointer", fontFamily: SANS, textDecoration: "none",
-            marginBottom: "10px",
-          }}>Share my feedback →</a>
-          <button onClick={onDismiss} style={{
-            display: "block", width: "100%", background: "transparent",
-            border: "1.5px solid rgba(22,47,36,0.15)", borderRadius: "10px",
-            padding: "13px", fontSize: "14px", color: MUT,
-            cursor: "pointer", fontFamily: SANS,
-          }}>Not now — I'll use the tab on the right</button>
+          <a
+            href="https://tally.so/r/aQrNKE"
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: "block", width: "100%", background: G,
+              borderRadius: "10px", padding: "15px", textAlign: "center",
+              fontSize: "15px", fontWeight: 600, color: WHITE,
+              cursor: "pointer", fontFamily: SANS, textDecoration: "none",
+              marginBottom: "10px",
+            }}
+          >Share my feedback →</a>
+          <button
+            onClick={onDismiss}
+            style={{
+              display: "block", width: "100%", background: "transparent",
+              border: "1.5px solid rgba(22,47,36,0.15)", borderRadius: "10px",
+              padding: "13px", fontSize: "14px", color: MUT,
+              cursor: "pointer", fontFamily: SANS,
+            }}
+          >Remind me later — I'll use the tab</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
 function FeedbackTab({ onClick }) {
-  return (
-    <button onClick={onClick} style={{
-      position: "fixed", bottom: "120px", right: "0",
-      background: G, border: `2px solid ${GOLD}`,
-      borderRadius: "10px 0 0 10px", borderRight: "none",
-      padding: "12px 14px",
-      display: "flex", flexDirection: "column", alignItems: "center", gap: "6px",
-      cursor: "pointer", zIndex: 500,
-      boxShadow: "-3px 3px 12px rgba(0,0,0,0.2)",
-    }}>
+  return createPortal(
+    <button
+      onClick={onClick}
+      style={{
+        position: "fixed", bottom: "120px", right: "0",
+        background: G, border: `2px solid ${GOLD}`,
+        borderRadius: "10px 0 0 10px", borderRight: "none",
+        padding: "12px 14px",
+        display: "flex", flexDirection: "column", alignItems: "center", gap: "6px",
+        cursor: "pointer", zIndex: 5000,
+        boxShadow: "-3px 3px 12px rgba(0,0,0,0.2)",
+      }}
+    >
       <span style={{ fontSize: "16px" }}>💬</span>
       <span style={{
         fontSize: "9px", fontWeight: 700, color: GOLD,
         letterSpacing: "0.1em", textTransform: "uppercase",
         writingMode: "vertical-rl", transform: "rotate(180deg)",
       }}>Feedback</span>
-    </button>
+    </button>,
+    document.body
   )
 }
 
@@ -343,12 +366,18 @@ function Root() {
   const [showModal, setShowModal] = useState(false)
   const [showTab, setShowTab] = useState(false)
 
-  function handleStart() {
-    setLaunched(true)
-    setTimeout(() => {
+  // useEffect-based timer — cleans up if component unmounts
+  useEffect(() => {
+    if (!launched) return
+    const id = setTimeout(() => {
       setShowModal(true)
       setShowTab(true)
     }, 90 * 1000)
+    return () => clearTimeout(id)
+  }, [launched])
+
+  function handleStart() {
+    setLaunched(true)
     setTimeout(() => {
       document.getElementById("candid-app")?.scrollIntoView({ behavior: "smooth" })
     }, 100)
