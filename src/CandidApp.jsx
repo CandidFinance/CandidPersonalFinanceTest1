@@ -2043,22 +2043,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
       <span style={{ fontFamily: SERIF, fontSize: "17px", color: G, fontWeight: 600 }}>
         Net worth snapshot
       </span>
-
-      <button
-        type="button"
-        onClick={() => setNetWorthExpanded(v => !v)}
-        style={{
-          background: "transparent",
-          border: "none",
-          fontSize: "12px",
-          fontWeight: 600,
-          color: G,
-          cursor: "pointer"
-        }}
-      >
-        {netWorthExpanded ? "Hide breakdown ↑" : "View breakdown ↓"}
-      </button>
-    </div>
+          </div>
 
     {/* Net worth headline */}
     <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "16px" }}>
@@ -2103,19 +2088,6 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
 
     <div
       style={{
-        fontFamily: SERIF,
-        fontSize: "18px",
-        fontWeight: 700,
-        color: "#2d6b4a"
-      }}
-    >
-      {fmt(m.totalAssets)}
-    </div>
-  </div>
-
-  <div>
-    <div
-      style={{
         fontSize: "10px",
         fontWeight: 700,
         color: "#c0392b",
@@ -2127,19 +2099,6 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
     >
       Liabilities — {fmt(m.totalLiabilities)}
     </div>
-
-    <div
-      style={{
-        fontFamily: SERIF,
-        fontSize: "18px",
-        fontWeight: 700,
-        color: "#c0392b",
-        textAlign: "right"
-      }}
-    >
-      {fmt(m.totalLiabilities)}
-    </div>
-  </div>
 
   <button
     type="button"
@@ -2582,10 +2541,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
     }
   }, [openSection]);
 
-  // Scroll to top whenever the module changes
-useEffect(() => {
-  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-}, [moduleKey]);
 
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   // Use extended functions for new modules, original for existing
@@ -3637,6 +3592,9 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
     setScreen("landing"); setStep(0); setInsights(null); setD(INIT_DATA);
     setSelectedConcerns([]); setConcernIdx(0); setConcernAnswers({}); setConcernResults([]);
     setActiveModule(null); setCompletedModules([]);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+}
+
   }
 
   // ── Router ──
