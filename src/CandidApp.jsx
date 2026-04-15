@@ -2133,17 +2133,12 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
           })}
         </div>
 
-        {/* Show more — only renders if there are hidden modules */}
+        {/* Show more — grid appears first, button stays at bottom */}
         {hiddenCount > 0 && (
           <>
-            <button type="button" onClick={() => setShowAllModules(v=>!v)}
-              style={{width:"100%",padding:"12px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"10px",color:G,fontSize:"14px",fontWeight:500,cursor:"pointer",marginBottom:"10px",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
-              <span style={{transform:showAllModules?"rotate(90deg)":"none",transition:"transform 0.2s",display:"inline-block",fontSize:"16px"}}>›</span>
-              {showAllModules ? "Show fewer" : `Show ${hiddenCount} more module${hiddenCount!==1?"s":""}`}
-            </button>
             {showAllModules && (
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"10px"}}>
-                {hiddenUnreviewed.map((mm,i) => {
+                {hiddenUnreviewed.map((mm) => {
                   const col = SC[mm.status] || MUT;
                   return (
                     <div key={mm.key} onClick={() => onOpenModule(mm.key)}
@@ -2169,6 +2164,11 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
                 })}
               </div>
             )}
+            <button type="button" onClick={() => setShowAllModules(v=>!v)}
+              style={{width:"100%",padding:"12px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"10px",color:G,fontSize:"14px",fontWeight:500,cursor:"pointer",marginBottom:"10px",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
+              <span style={{transform:showAllModules?"rotate(90deg)":"none",transition:"transform 0.2s",display:"inline-block",fontSize:"16px"}}>›</span>
+              {showAllModules ? "Show fewer modules" : `Show ${hiddenCount} more module${hiddenCount!==1?"s":""}`}
+            </button>
           </>
         )}
 
