@@ -2390,7 +2390,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
   const [openTip,   setOpenTip]   = useState(null);
   const [expandAlt, setExpandAlt] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
-  const [bonusInput,setBonusInput]= useState(+d.bonusAmount||0);
+  const [bonusInput,setBonusInput]= useState(+d.bonusAmount||"");
   const [sacrificePct, setSacrificePct] = useState(100);
 
   useEffect(() => {
