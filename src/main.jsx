@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import ReactDOM, { createPortal } from "react-dom/client"
 import CandidApp from "./CandidApp.jsx"
 
@@ -273,62 +273,46 @@ function LandingPage({ onStart }) {
 
 // ── Feedback banner (shown after completing the app) ──────────────────────────
 function FeedbackModal({ onDismiss }) {
-  // Render into document.body via portal — completely isolated from app tree
   return createPortal(
-    <div
-      onClick={onDismiss}
-      style={{
-        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 9999,
-        background: "rgba(22,47,36,0.7)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px",
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: WHITE, borderRadius: "18px",
-          maxWidth: "460px", width: "100%",
-          overflow: "hidden",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
-        }}
-      >
+    <div onClick={onDismiss} style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      zIndex: 9999, background: "rgba(22,47,36,0.7)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "24px",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: WHITE, borderRadius: "18px",
+        maxWidth: "460px", width: "100%", overflow: "hidden",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
+      }}>
         <div style={{ background: GOLD, padding: "14px 24px", display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ fontSize: "20px" }}>💬</span>
           <div>
-            <div style={{ fontFamily: SERIF, fontSize: "16px", fontWeight: 700, color: G }}>Quick question</div>
-            <div style={{ fontSize: "11px", color: "rgba(22,47,36,0.65)", marginTop: "1px" }}>Takes 60 seconds — helps us improve Candid</div>
+            <div style={{ fontFamily: SERIF, fontSize: "16px", fontWeight: 700, color: G }}>How was your Candid report?</div>
+            <div style={{ fontSize: "11px", color: "rgba(22,47,36,0.65)", marginTop: "1px" }}>60 seconds — helps us build this right</div>
           </div>
+          <button onClick={onDismiss} style={{
+            marginLeft: "auto", background: "transparent", border: "none",
+            fontSize: "20px", color: "rgba(22,47,36,0.4)", cursor: "pointer", lineHeight: 1,
+          }}>×</button>
         </div>
         <div style={{ padding: "24px" }}>
-          <p style={{ fontSize: "15px", color: TEXT, lineHeight: 1.7, marginBottom: "6px" }}>
-            You've been exploring your Candid report. We'd love to know what you think.
+          <p style={{ fontSize: "14px", color: MUT, lineHeight: 1.65, marginBottom: "20px" }}>
+            Five quick questions — completely anonymous unless you choose to leave your email.
           </p>
-          <p style={{ fontSize: "13px", color: MUT, lineHeight: 1.6, marginBottom: "24px" }}>
-            Five quick questions. Completely anonymous unless you choose to leave your email.
-          </p>
-          <a
-            href="https://tally.so/r/aQrNKE"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: "block", width: "100%", background: G,
-              borderRadius: "10px", padding: "15px", textAlign: "center",
-              fontSize: "15px", fontWeight: 600, color: WHITE,
-              cursor: "pointer", fontFamily: SANS, textDecoration: "none",
-              marginBottom: "10px",
-            }}
-          >Share my feedback →</a>
-          <button
-            onClick={onDismiss}
-            style={{
-              display: "block", width: "100%", background: "transparent",
-              border: "1.5px solid rgba(22,47,36,0.15)", borderRadius: "10px",
-              padding: "13px", fontSize: "14px", color: MUT,
-              cursor: "pointer", fontFamily: SANS,
-            }}
-          >Remind me later — I'll use the tab</button>
+          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{
+            display: "block", width: "100%", background: G,
+            borderRadius: "10px", padding: "15px", textAlign: "center",
+            fontSize: "15px", fontWeight: 600, color: WHITE,
+            cursor: "pointer", fontFamily: SANS, textDecoration: "none",
+            marginBottom: "10px",
+          }}>Share my feedback →</a>
+          <button onClick={onDismiss} style={{
+            display: "block", width: "100%", background: "transparent",
+            border: "1.5px solid rgba(22,47,36,0.12)", borderRadius: "10px",
+            padding: "12px", fontSize: "13px", color: MUT,
+            cursor: "pointer", fontFamily: SANS,
+          }}>Close</button>
         </div>
       </div>
     </div>,
@@ -336,20 +320,17 @@ function FeedbackModal({ onDismiss }) {
   )
 }
 
-function FeedbackTab({ onClick }) {
+function FeedbackButton({ onClick }) {
   return createPortal(
-    <button
-      onClick={onClick}
-      style={{
-        position: "fixed", bottom: "120px", right: "0",
-        background: G, border: `2px solid ${GOLD}`,
-        borderRadius: "10px 0 0 10px", borderRight: "none",
-        padding: "12px 14px",
-        display: "flex", flexDirection: "column", alignItems: "center", gap: "6px",
-        cursor: "pointer", zIndex: 5000,
-        boxShadow: "-3px 3px 12px rgba(0,0,0,0.2)",
-      }}
-    >
+    <button onClick={onClick} style={{
+      position: "fixed", bottom: "100px", right: "0",
+      background: G, border: "2px solid " + GOLD,
+      borderRadius: "10px 0 0 10px", borderRight: "none",
+      padding: "14px 12px",
+      display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
+      cursor: "pointer", zIndex: 5000,
+      boxShadow: "-3px 3px 12px rgba(0,0,0,0.18)",
+    }}>
       <span style={{ fontSize: "16px" }}>💬</span>
       <span style={{
         fontSize: "9px", fontWeight: 700, color: GOLD,
@@ -364,17 +345,6 @@ function FeedbackTab({ onClick }) {
 function Root() {
   const [launched, setLaunched] = useState(false)
   const [showModal, setShowModal] = useState(false)
-  const [showTab, setShowTab] = useState(false)
-
-  // useEffect-based timer — cleans up if component unmounts
-  useEffect(() => {
-    if (!launched) return
-    const id = setTimeout(() => {
-      setShowModal(true)
-      setShowTab(true)
-    }, 90 * 1000)
-    return () => clearTimeout(id)
-  }, [launched])
 
   function handleStart() {
     setLaunched(true)
@@ -391,8 +361,8 @@ function Root() {
           <CandidApp />
         </div>
       )}
+      {launched && <FeedbackButton onClick={() => setShowModal(true)} />}
       {showModal && <FeedbackModal onDismiss={() => setShowModal(false)} />}
-      {showTab && !showModal && <FeedbackTab onClick={() => setShowModal(true)} />}
     </div>
   )
 }
