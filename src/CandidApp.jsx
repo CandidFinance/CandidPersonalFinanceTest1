@@ -169,7 +169,7 @@ function calcMetrics(d) {
         savingsRate = +d.savingsRate||3.5,
         annualYieldGap = surplusCash * (5.1 - savingsRate) / 100;
   // Net worth
-  const totalAssets = totalLiquid + (+d.isaUsedThisYear||0) + (+d.unwrappedValue||0) + potVal + (+d.estateValue > 300000 ? (+d.estateValue||0) * 0.5 : 0);
+  const totalAssets = totalLiquid + (+d.isaUsedThisYear||0) + (+d.unwrappedValue||0) + potVal;
   const totalLiabilities = loanBal + (+d.mortgageBalance||0) + (+d.personalLoanBalance||0);
   const netWorth = totalAssets - totalLiabilities;
   return {
@@ -1874,7 +1874,7 @@ function computeModuleStatuses(d, m) {
   return s;
 }
 
-function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules, showBondsAlert, onDismissBonds }) {
+function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules }) {
   const [showAllModules, setShowAllModules] = useState(false);
   if (!insights) return null;
 
@@ -1936,22 +1936,40 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
           </div>
         </div>
 
-        {/* Premium bonds payday notification */}
-        {showBondsAlert && (+d.premiumBonds||0) > 0 && (
-          <div className="fu1" style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"14px 18px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"14px"}}>
-            <span style={{fontSize:"24px",flexShrink:0}}>🏆</span>
-            <div style={{flex:1}}>
-              <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>It's Premium Bond payday!</div>
-              <div style={{fontSize:"13px",color:MUT,lineHeight:1.5}}>
-                NS&I results are out. Did you win? You hold {fmt(+d.premiumBonds)} — your expected monthly return is ~{fmt(Math.round(+d.premiumBonds * 0.044 / 12))} on average, but it's a prize draw. Not a great month? {fmt(Math.round(+d.premiumBonds * (0.051 - 0.044) / 12))} more per month is sitting in a Cash ISA at 5.1%.
+        {/* Premium bonds countdown */}
+        {(+d.premiumBonds||0) > 0 && (() => {
+          const now = new Date();
+          // First working day of next month
+          function firstWorkingDay(year, month) {
+            const d = new Date(year, month, 1);
+            const day = d.getDay(); // 0=Sun, 6=Sat
+            if (day === 0) d.setDate(2); // Sunday → Monday
+            if (day === 6) d.setDate(3); // Saturday → Monday
+            return d;
+          }
+          const thisMonthDraw = firstWorkingDay(now.getFullYear(), now.getMonth());
+          const nextMonthDraw = firstWorkingDay(now.getFullYear(), now.getMonth() + 1);
+          const isDrawDay = now.toDateString() === thisMonthDraw.toDateString();
+          const target = isDrawDay ? thisMonthDraw : nextMonthDraw;
+          const daysUntil = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+          return (
+            <div className="fu1" style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"14px 18px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"14px"}}>
+              <span style={{fontSize:"24px",flexShrink:0}}>🏆</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>
+                  {isDrawDay ? "It's Premium Bond draw day!" : `${daysUntil} day${daysUntil!==1?"s":""} until the next Premium Bond draw`}
+                </div>
+                <div style={{fontSize:"13px",color:MUT,lineHeight:1.5}}>
+                  {isDrawDay
+                    ? `NS&I results are out. Did you win? You hold ${fmt(+d.premiumBonds)} — your expected monthly return is ~${fmt(Math.round(+d.premiumBonds * 0.044 / 12))} on average.`
+                    : `Results are published on the first working day of each month. You hold ${fmt(+d.premiumBonds)} — expected ~${fmt(Math.round(+d.premiumBonds * 0.044 / 12))}/month. A good time to review your Candid score when they're out.`
+                  }
+                </div>
               </div>
+              <button type="button" onClick={() => onOpenModule("cash")} style={{background:G,border:"none",borderRadius:"6px",padding:"7px 12px",color:WHITE,fontSize:"12px",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Review savings →</button>
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:"6px",flexShrink:0}}>
-              <button type="button" onClick={() => onOpenModule("cash")} style={{background:G,border:"none",borderRadius:"6px",padding:"7px 12px",color:WHITE,fontSize:"12px",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>Review savings →</button>
-              <button type="button" onClick={onDismissBonds} style={{background:"transparent",border:"none",padding:"4px",color:MUT,fontSize:"11px",cursor:"pointer"}}>Dismiss</button>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Net worth summary */}
         {(assetItems.length > 0 || liabilityItems.length > 0) && (
@@ -1984,7 +2002,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
               </div>
             </div>
             <div style={{marginTop:"12px",paddingTop:"12px",borderTop:"1px solid rgba(22,47,36,0.08)",fontSize:"11px",color:MUT,lineHeight:1.5}}>
-              Note: property value estimated as 2× mortgage balance where applicable. Pension pot shown at current value, not projected. For a full picture, connect your accounts via Open Banking (coming soon).
+              Note: Pension pot shown at current value, not projected. Property is excluded — connect your accounts via Open Banking (coming soon) for a complete picture.
             </div>
           </div>
         )}
@@ -2331,9 +2349,14 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
     }
   }, [openSection]);
 
-  // Scroll to top whenever the module changes
+  // Scroll to top of app section whenever the module changes
   useEffect(() => {
-    window.scrollTo({ top:0, behavior:"instant" });
+    const appEl = document.getElementById("candid-app");
+    if (appEl) {
+      appEl.scrollIntoView({ behavior: "instant", block: "start" });
+    } else {
+      window.scrollTo({ top:0, behavior:"instant" });
+    }
   }, [moduleKey]);
 
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
@@ -3246,7 +3269,6 @@ export default function Candid() {
   const [completedModules, setCompletedModules] = useState([]);
   const [prevScreen,       setPrevScreen]       = useState("dashboard");
   const [activePersona,    setActivePersona]    = useState("harvey");
-  const [showBondsAlert,   setShowBondsAlert]   = useState(true);
 
   const set = (k, v) => setD(p => ({...p, [k]:v}));
   const m = calcMetrics(d);
@@ -3274,6 +3296,11 @@ export default function Candid() {
     setActiveSection(section || null);
     setPrevScreen(from || screen);
     setScreen("moduleDeepDive");
+    // Scroll to app container, not window top (avoids landing page scroll)
+    setTimeout(() => {
+      const appEl = document.getElementById("candid-app");
+      if (appEl) appEl.scrollIntoView({ behavior: "instant", block: "start" });
+    }, 0);
   }
   function markModuleComplete(key) {
     setCompletedModules(prev =>
@@ -3381,7 +3408,7 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
   function resetAll() {
     setScreen("landing"); setStep(0); setInsights(null); setD(INIT_DATA);
     setSelectedConcerns([]); setConcernIdx(0); setConcernAnswers({}); setConcernResults([]);
-    setActiveModule(null); setCompletedModules([]); setShowBondsAlert(true);
+    setActiveModule(null); setCompletedModules([]);
   }
 
   // ── Router ──
@@ -3412,7 +3439,6 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
 
   if (screen === "dashboard") return (
     <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
-      showBondsAlert={showBondsAlert} onDismissBonds={() => setShowBondsAlert(false)}
       onOpenModule={key => openModule(key, "dashboard")}
       onDigDeeper={() => { setConcernResults([]); setConcernIdx(0); setScreen("concernSelector"); }}/>
   );
