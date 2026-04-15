@@ -272,32 +272,53 @@ function LandingPage({ onStart }) {
 }
 
 // ── Feedback banner (shown after completing the app) ──────────────────────────
-function FeedbackBanner() {
-  const [dismissed, setDismissed] = useState(false)
-  if (dismissed) return null
+function FeedbackModal({ onDismiss }) {
   return (
     <div style={{
-      background: G, padding: "18px 24px",
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      gap: "16px", flexWrap: "wrap", position: "sticky", bottom: 0, zIndex: 200,
-      boxShadow: "0 -4px 24px rgba(0,0,0,0.15)"
-    }}>
-      <div>
-        <div style={{ fontSize: "14px", fontWeight: 600, color: WHITE, marginBottom: "2px" }}>How was your Candid report?</div>
-        <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>Your feedback shapes what we build next — takes 60 seconds.</div>
-      </div>
-      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-        <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{
-          background: GOLD, border: "none", borderRadius: "7px",
-          padding: "10px 20px", fontSize: "13px", fontWeight: 600,
-          color: G, cursor: "pointer", fontFamily: SANS, textDecoration: "none",
-          display: "inline-block"
-        }}>Share feedback →</a>
-        <button onClick={() => setDismissed(true)} style={{
-          background: "transparent", border: "1px solid rgba(255,255,255,0.2)",
-          borderRadius: "7px", padding: "10px 16px", fontSize: "13px",
-          color: "rgba(255,255,255,0.5)", cursor: "pointer", fontFamily: SANS
-        }}>Dismiss</button>
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(22,47,36,0.75)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "24px",
+      backdropFilter: "blur(3px)",
+    }} onClick={onDismiss}>
+      <div style={{
+        background: WHITE, borderRadius: "18px", maxWidth: "460px", width: "100%",
+        overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
+      }} onClick={e => e.stopPropagation()}>
+
+        {/* Gold top bar */}
+        <div style={{ background: GOLD, padding: "14px 24px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ fontSize: "20px" }}>💬</span>
+          <div>
+            <div style={{ fontFamily: SERIF, fontSize: "16px", fontWeight: 700, color: G }}>Quick question</div>
+            <div style={{ fontSize: "11px", color: "rgba(22,47,36,0.65)", marginTop: "1px" }}>Takes 60 seconds — helps us improve Candid</div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "24px" }}>
+          <p style={{ fontSize: "15px", color: TEXT, lineHeight: 1.7, marginBottom: "6px" }}>
+            You've been exploring your Candid report. We'd love to know what you think — we're still building this, and your feedback directly shapes what comes next.
+          </p>
+          <p style={{ fontSize: "13px", color: MUT, lineHeight: 1.6, marginBottom: "24px" }}>
+            Five quick questions. Completely anonymous unless you choose to leave your email.
+          </p>
+
+          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{
+            display: "block", width: "100%", background: G, border: "none",
+            borderRadius: "10px", padding: "15px", textAlign: "center",
+            fontSize: "15px", fontWeight: 600, color: WHITE,
+            cursor: "pointer", fontFamily: SANS, textDecoration: "none",
+            marginBottom: "10px",
+          }}>Share my feedback →</a>
+
+          <button onClick={onDismiss} style={{
+            display: "block", width: "100%", background: "transparent",
+            border: "1.5px solid rgba(22,47,36,0.15)", borderRadius: "10px",
+            padding: "13px", fontSize: "14px", color: MUT,
+            cursor: "pointer", fontFamily: SANS,
+          }}>Not now — maybe later</button>
+        </div>
       </div>
     </div>
   )
@@ -310,8 +331,8 @@ function Root() {
 
   function handleStart() {
     setLaunched(true)
-    // Show feedback banner after 3 minutes
-    setTimeout(() => setShowFeedback(true), 3 * 60 * 1000)
+    // Show feedback modal after 90 seconds
+    setTimeout(() => setShowFeedback(true), 90 * 1000)
     setTimeout(() => {
       document.getElementById("candid-app")?.scrollIntoView({ behavior: "smooth" })
     }, 100)
@@ -325,7 +346,7 @@ function Root() {
           <CandidApp />
         </div>
       )}
-      {showFeedback && <FeedbackBanner />}
+      {showFeedback && <FeedbackModal onDismiss={() => setShowFeedback(false)} />}
     </>
   )
 }
