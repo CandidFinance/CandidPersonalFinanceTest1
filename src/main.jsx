@@ -287,7 +287,7 @@ function FeedbackBanner() {
         <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>Your feedback shapes what we build next — takes 60 seconds.</div>
       </div>
       <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-        <a href="https://tally.so/r/CANDID" target="_blank" rel="noreferrer" style={{
+        <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{
           background: GOLD, border: "none", borderRadius: "7px",
           padding: "10px 20px", fontSize: "13px", fontWeight: 600,
           color: G, cursor: "pointer", fontFamily: SANS, textDecoration: "none",
