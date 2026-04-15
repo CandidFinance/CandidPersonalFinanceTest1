@@ -39,6 +39,11 @@ function fmt(n) {
   return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Math.abs(n||0));
 }
 
+// ── User contributing to pension ────────────────────────────────────────────────────────
+function isPensionContributing(d) {
+  return Number(d.myContribution) > 0;
+}
+
 // ── Equivalence engine ────────────────────────────────────────────────────────
 // Returns a witty real-world comparison for a £ saving
 function getEquivalence(amount) {
@@ -182,6 +187,12 @@ function calcMetrics(d) {
   };
 }
 
+// ── Premium Bond Context Aware Surfacing ──────────────────────────────────────────
+function isNearPremiumBondDraw() {
+  const day = new Date().getDate()
+  return day >= 29 || day <= 2
+}
+
 // ── Module product + insight config ──────────────────────────────────────────
 
 function getModuleInsights(key, d, m) {
@@ -244,6 +255,7 @@ function getModuleInsights(key, d, m) {
       const employerLeaving = m.missedMatch;
       const myPct = +d.myContribution||0, empPct = +d.employerMatch||0;
       const annualContrib = (myPct + empPct) / 100 * m.salary;
+      const contributing = Number(d.myContribution) > 0;
       const potVal = +d.potValue||0;
       const age = +d.age||30, retireAge = +d.retirementAge||65;
       const years = Math.max(1, retireAge - age);
@@ -258,7 +270,7 @@ function getModuleInsights(key, d, m) {
         if (pot >= targetPot) { earlyRetire = age + testYrs; break; }
       }
       const yearsSaved = retireAge - earlyRetire;
-      const onTrackEarly = yearsSaved > 0 && d.hasPension === "yes";
+      const onTrackEarly = yearsSaved > 0 && contributing;
       return [
         {
           label:"Employer match gap", value: employerLeaving > 0 ? fmt(employerLeaving)+"/yr" : "Fully captured ✓", flag: employerLeaving > 0,
@@ -1823,13 +1835,29 @@ function computeModuleStatuses(d, m) {
     impactLabel: isaImpact > 0 ? `${fmt(m.isaHeadroom)} ISA headroom` : null,
   };
 
-  // Pension — missed match + tax relief gap
-  const pensionImpact = Math.round(m.missedMatch + (d.hasPension !== "yes" ? m.salary * 0.05 * m.tr : 0));
-  s.pension = {
-    status: m.missedMatch > 0 || d.hasPension !== "yes" ? "critical" : "attention",
-    impact: pensionImpact,
-    impactLabel: m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr in missed employer match` : pensionImpact > 0 ? `${fmt(pensionImpact)}/yr in tax relief foregone` : null,
-  };
+// Pension — missed match + contribution check
+const contributing = isPensionContributing(d);
+
+const pensionImpact = Math.round(
+  m.missedMatch +
+  (!contributing ? m.salary * 0.05 * m.tr : 0)
+);
+
+s.pension = {
+  status: !contributing
+    ? "critical"                // no contribution = leaving free money
+    : m.missedMatch > 0
+      ? "critical"              // contributing but missing match
+      : "attention",
+
+  impact: pensionImpact > 0 ? pensionImpact : null,
+
+  impactLabel: m.missedMatch > 0
+    ? `${fmt(m.missedMatch)}/yr in missed employer match`
+    : !contributing && pensionImpact > 0
+      ? `${fmt(pensionImpact)}/yr in pension tax relief foregone`
+      : null,
+};
 
   // Student loan
   const slBalance = m.loanBal;
@@ -1885,7 +1913,8 @@ function computeModuleStatuses(d, m) {
 
 function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules }) {
   const [showAllModules, setShowAllModules] = useState(false);
-  if (!insights) return null;
+  const [netWorthExpanded, setNetWorthExpanded] = useState(false);
+      if (!insights) return null;
 
   // Net worth breakdown
   const netWorthPositive = m.netWorth >= 0;
@@ -1954,7 +1983,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
         </div>
 
         {/* Premium bonds countdown */}
-        {(+d.premiumBonds||0) > 0 && (() => {
+        {isNearPremiumBondDraw() && (+d.premiumBonds||0) > 0 && (() => {
           const now = new Date();
           // First working day of next month
           function firstWorkingDay(year, month) {
@@ -1989,115 +2018,195 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
         })()}
 
         {/* Net worth summary */}
-        {(assetItems.length > 0 || liabilityItems.length > 0) && (
-          <div className="fu1" style={{background:WHITE,borderRadius:"12px",padding:"20px 22px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"24px"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px",flexWrap:"wrap",gap:"8px"}}>
-              <span style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:600}}>Net worth snapshot</span>
-              <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
-                <span style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color:netWorthPositive?"#2d6b4a":"#c0392b"}}>{fmt(Math.abs(m.netWorth))}</span>
-                <span style={{fontSize:"12px",color:MUT}}>{netWorthPositive?"net positive":"net negative"}</span>
-              </div>
+{(assetItems.length > 0 || liabilityItems.length > 0) && (
+  <div
+    className="fu1"
+    style={{
+      background: WHITE,
+      borderRadius: "12px",
+      padding: "20px 22px",
+      border: "1px solid rgba(22,47,36,0.09)",
+      marginBottom: "24px"
+    }}
+  >
+    {/* Header + toggle */}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: "14px",
+        flexWrap: "wrap",
+        gap: "8px"
+      }}
+    >
+      <span style={{ fontFamily: SERIF, fontSize: "17px", color: G, fontWeight: 600 }}>
+        Net worth snapshot
+      </span>
+
+      <button
+        type="button"
+        onClick={() => setNetWorthExpanded(v => !v)}
+        style={{
+          background: "transparent",
+          border: "none",
+          fontSize: "12px",
+          fontWeight: 600,
+          color: G,
+          cursor: "pointer"
+        }}
+      >
+        {netWorthExpanded ? "Hide breakdown ↑" : "View breakdown ↓"}
+      </button>
+    </div>
+
+    {/* Net worth headline */}
+    <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "16px" }}>
+      <span
+        style={{
+          fontFamily: SERIF,
+          fontSize: "24px",
+          fontWeight: 700,
+          color: netWorthPositive ? "#2d6b4a" : "#c0392b"
+        }}
+      >
+        {fmt(Math.abs(m.netWorth))}
+      </span>
+      <span style={{ fontSize: "12px", color: MUT }}>
+        {netWorthPositive ? "net positive" : "net negative"}
+      </span>
+    </div>
+
+    {/* Compact summary (always visible) */}
+    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+      <div>
+        <div style={{ fontSize: "11px", color: MUT }}>Assets</div>
+        <div style={{ fontSize: "16px", fontWeight: 600 }}>{fmt(m.totalAssets)}</div>
+      </div>
+      <div>
+        <div style={{ fontSize: "11px", color: MUT }}>Liabilities</div>
+        <div style={{ fontSize: "16px", fontWeight: 600 }}>{fmt(m.totalLiabilities)}</div>
+      </div>
+    </div>
+
+    {/* Detailed breakdown (toggle) */}
+    {netWorthExpanded && (
+      <>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+          <div>
+            <div
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                color: "#2d6b4a",
+                letterSpacing: "0.07em",
+                textTransform: "uppercase",
+                marginBottom: "8px"
+              }}
+            >
+              Assets — {fmt(m.totalAssets)}
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px"}}>
-              <div>
-                <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"8px"}}>Assets — {fmt(m.totalAssets)}</div>
-                {assetItems.map((a,i) => (
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:a.bold?"6px 0 5px":"4px 0",
-                    borderBottom:`1px solid rgba(22,47,36,${a.bold?0.1:0.05})`,
-                    borderTop: a.bold?"1px solid rgba(22,47,36,0.08)":undefined,
-                    marginLeft: a.sub?"10px":undefined}}>
-                    <span style={{fontSize: a.bold?"13px":"12.5px",color:a.bold?G:MUT,display:"flex",alignItems:"center",gap:"6px",
-                      fontWeight:a.bold?700:400}}>
-                      {!a.sub && !a.bold && <span>{a.icon}</span>}
-                      {a.sub && <span style={{fontSize:"10px",color:"rgba(22,47,36,0.3)"}}>└</span>}
-                      {a.label}
-                    </span>
-                    <span style={{fontSize: a.bold?"13px":"12.5px",fontWeight:a.bold?700:600,color:a.bold?G:TEXT}}>{fmt(a.value)}</span>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"8px"}}>Liabilities — {fmt(m.totalLiabilities)}</div>
-                {liabilityItems.length > 0 ? liabilityItems.map((l,i) => (
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid rgba(22,47,36,0.05)"}}>
-                    <span style={{fontSize:"13px",color:MUT,display:"flex",alignItems:"center",gap:"6px"}}><span>{l.icon}</span>{l.label}</span>
-                    <span style={{fontSize:"13px",fontWeight:600,color:"#c0392b"}}>{fmt(l.value)}</span>
-                  </div>
-                )) : <div style={{fontSize:"13px",color:MUT,padding:"5px 0"}}>No liabilities recorded 🎉</div>}
-              </div>
-            </div>
-            <div style={{marginTop:"12px",paddingTop:"12px",borderTop:"1px solid rgba(22,47,36,0.08)",fontSize:"11px",color:MUT,lineHeight:1.5}}>
-              Note: Pension pot shown at current value, not projected. Property is excluded — connect your accounts via Open Banking (coming soon) for a complete picture.
-            </div>
-          </div>
-        )}
-        {(() => {
-          const urgOrder = { immediate:0, soon:1, "this tax year":2 };
-          const sortedPriorities = [...(insights.priorities||[])].sort((a,b) => {
-            const aDone = completedModules.includes(priorityModuleKey(a.title)) ? 1 : 0;
-            const bDone = completedModules.includes(priorityModuleKey(b.title)) ? 1 : 0;
-            if (aDone !== bDone) return aDone - bDone;
-            return (urgOrder[a.urgency]||3) - (urgOrder[b.urgency]||3);
-          });
-          const openCount = sortedPriorities.filter(p => !completedModules.includes(priorityModuleKey(p.title))).length;
-          return (
-            <>
-              <div className="fu1" style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
-                <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>
-                  {openCount > 0 ? `${openCount} area${openCount!==1?"s":""} need your attention` : "All priority actions reviewed ✓"}
-                </h3>
-                <span style={{fontSize:"12px",color:MUT}}>
-                  {completedModules.length} of {activeModules.length} reviewed
+
+            {assetItems.map((a, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: a.bold ? "6px 0 5px" : "4px 0",
+                  borderBottom: `1px solid rgba(22,47,36,${a.bold ? 0.1 : 0.05})`,
+                  borderTop: a.bold ? "1px solid rgba(22,47,36,0.08)" : undefined,
+                  marginLeft: a.sub ? "10px" : undefined
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: a.bold ? "13px" : "12.5px",
+                    color: a.bold ? G : MUT,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontWeight: a.bold ? 700 : 400
+                  }}
+                >
+                  {!a.sub && !a.bold && <span>{a.icon}</span>}
+                  {a.sub && <span style={{ fontSize: "10px", color: "rgba(22,47,36,0.3)" }}>└</span>}
+                  {a.label}
+                </span>
+                <span
+                  style={{
+                    fontSize: a.bold ? "13px" : "12.5px",
+                    fontWeight: a.bold ? 700 : 600,
+                    color: a.bold ? G : TEXT
+                  }}
+                >
+                  {fmt(a.value)}
                 </span>
               </div>
-              <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"32px"}}>
-                {sortedPriorities.map((p,i) => {
-                  const modKey = priorityModuleKey(p.title);
-                  const done = completedModules.includes(modKey);
-                  const urg = UG[p.urgency] || MUT;
-                  return (
-                    <div key={i} onClick={() => onOpenModule(modKey)}
-                      style={{background:done?"rgba(22,47,36,0.03)":WHITE,borderRadius:"12px",padding:"20px 22px",
-                        border:`1px solid ${done?"rgba(22,47,36,0.07)":"rgba(22,47,36,0.09)"}`,
-                        borderLeft:`4px solid ${done?"#2d6b4a":urg}`,
-                        cursor:"pointer",display:"flex",gap:"16px",alignItems:"flex-start",
-                        opacity:done?0.7:1,transition:"opacity 0.2s"}}>
-                      <div style={{flex:1}}>
-                        <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"5px"}}>
-                          {done
-                            ? <><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#2d6b4a" strokeWidth="2" strokeLinecap="round"/></svg>
-                                <span style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",textTransform:"uppercase",letterSpacing:"0.07em"}}>Reviewed</span></>
-                            : <span style={{fontSize:"10px",fontWeight:700,color:urg,textTransform:"uppercase",letterSpacing:"0.07em"}}>{p.urgency}</span>
-                          }
-                        </div>
-                        <h3 style={{fontFamily:SERIF,fontSize:"17px",color:done?MUT:G,lineHeight:1.3,marginBottom:"6px"}}>{p.title}</h3>
-                        {!done && <p style={{fontSize:"13px",color:MUT,lineHeight:1.55}}>{p.description}</p>}
-                      </div>
-                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"8px",flexShrink:0}}>
-                        {p.impact && !done && (
-                          <div style={{background:"rgba(196,150,58,0.12)",borderRadius:"8px",padding:"6px 10px",textAlign:"center"}}>
-                            <div style={{fontSize:"12px",fontWeight:700,color:GOLD,whiteSpace:"nowrap"}}>{p.impact}</div>
-                            <div style={{fontSize:"10px",color:MUT}}>per year</div>
-                          </div>
-                        )}
-                        {p.impact && !done && (() => {
-                          const numericImpact = parseFloat(String(p.impact).replace(/[£,+~k]/g,"")) * (String(p.impact).includes("k") ? 1000 : 1);
-                          const eq = getEquivalence(numericImpact);
-                          return eq ? (
-                            <div style={{background:"rgba(22,47,36,0.05)",borderRadius:"8px",padding:"5px 9px",textAlign:"right",maxWidth:"140px"}}>
-                              <div style={{fontSize:"10.5px",color:G,lineHeight:1.4}}>{eq}</div>
-                            </div>
-                          ) : null;
-                        })()}
-                        <span style={{fontSize:"12px",color:done?MUT:G,fontWeight:500}}>{done?"Revisit →":"Explore →"}</span>
-                      </div>
-                    </div>
-                  );
-                })}
+            ))}
+          </div>
+
+          <div>
+            <div
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                color: "#c0392b",
+                letterSpacing: "0.07em",
+                textTransform: "uppercase",
+                marginBottom: "8px"
+              }}
+            >
+              Liabilities — {fmt(m.totalLiabilities)}
+            </div>
+
+            {liabilityItems.length > 0 ? (
+              liabilityItems.map((l, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "5px 0",
+                    borderBottom: "1px solid rgba(22,47,36,0.05)"
+                  }}
+                >
+                  <span style={{ fontSize: "13px", color: MUT, display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span>{l.icon}</span>
+                    {l.label}
+                  </span>
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#c0392b" }}>
+                    {fmt(l.value)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div style={{ fontSize: "13px", color: MUT, padding: "5px 0" }}>
+                No liabilities recorded 🎉
               </div>
-            </>
-          );
-        })()}
+            )}
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: "12px",
+            paddingTop: "12px",
+            borderTop: "1px solid rgba(22,47,36,0.08)",
+            fontSize: "11px",
+            color: MUT,
+            lineHeight: 1.5
+          }}
+        >
+          Note: Pension pot shown at current value, not projected. Property is excluded — connect your accounts via
+          Open Banking (coming soon) for a complete picture.
+        </div>
+      </>
+    )}
+  </div>
+)}
 
         {/* Module breakdown — sorted, collapsible */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
