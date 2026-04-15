@@ -169,7 +169,8 @@ function calcMetrics(d) {
         savingsRate = +d.savingsRate||3.5,
         annualYieldGap = surplusCash * (5.1 - savingsRate) / 100;
   // Net worth
-  const totalAssets = totalLiquid + (+d.isaUsedThisYear||0) + (+d.unwrappedValue||0) + potVal;
+  const totalIsaValue = (+d.isaUsedThisYear||0) + (+d.isaPreviousBalance||0);
+  const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal;
   const totalLiabilities = loanBal + (+d.mortgageBalance||0) + (+d.personalLoanBalance||0);
   const netWorth = totalAssets - totalLiabilities;
   return {
@@ -1582,9 +1583,17 @@ function OnboardingStep({ step, d, set }) {
       </Field>
       {d.hasInvestments === "yes" && (
         <div>
-          <Field label="Paid into ISA this tax year (£)" hint="£20,000 annual limit."><input style={INP} type="number" value={d.isaUsedThisYear} onChange={e => set("isaUsedThisYear",e.target.value)} placeholder="e.g. 8,000"/></Field>
+          <Field label="Paid into ISA this tax year (£)" hint="£20,000 annual limit — resets every April 5th.">
+            <input style={INP} type="number" value={d.isaUsedThisYear} onChange={e => set("isaUsedThisYear",e.target.value)} placeholder="e.g. 8,000"/>
+          </Field>
+          <Field label="Total ISA value from previous years (£)" hint="Your ISA balance before this tax year's contributions.">
+            <input style={INP} type="number" value={d.isaPreviousBalance} onChange={e => set("isaPreviousBalance",e.target.value)} placeholder="e.g. 24,000"/>
+          </Field>
+          <Field label="ISA type">
+            <Toggle value={d.isaType} onChange={v => set("isaType",v)} options={[{value:"cash",label:"Cash ISA"},{value:"ss",label:"Stocks & Shares"},{value:"both",label:"Both"},{value:"none",label:"Neither yet"}]}/>
+          </Field>
           <Field label="Investments outside an ISA (£)"><input style={INP} type="number" value={d.unwrappedValue} onChange={e => set("unwrappedValue",e.target.value)} placeholder="e.g. 15,000"/></Field>
-          <Field label="Estimated unrealised gains (£)"><input style={INP} type="number" value={d.unrealisedGains} onChange={e => set("unrealisedGains",e.target.value)} placeholder="e.g. 4,500"/></Field>
+          <Field label="Estimated unrealised gains (£)" hint="Profit above what you paid for your unwrapped investments."><input style={INP} type="number" value={d.unrealisedGains} onChange={e => set("unrealisedGains",e.target.value)} placeholder="e.g. 4,500"/></Field>
         </div>
       )}
     </div>
@@ -1880,16 +1889,23 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
 
   // Net worth breakdown
   const netWorthPositive = m.netWorth >= 0;
+  const isaThisYear = +d.isaUsedThisYear||0;
+  const isaPrev     = +d.isaPreviousBalance||0;
+  const totalIsa    = isaThisYear + isaPrev;
   const assetItems = [
     { label:"Cash & savings", value: m.cash + m.bonds, icon:"💷" },
-    { label:"ISA holdings", value: +d.isaUsedThisYear||0, icon:"📈" },
+    ...(totalIsa > 0 ? [
+      { label:`ISA — this tax year${d.isaType ? ` (${d.isaType==="cash"?"Cash":d.isaType==="ss"?"S&S":d.isaType==="both"?"Cash + S&S":"—"})` : ""}`, value: isaThisYear, icon:"📈", sub:true },
+      ...(isaPrev > 0 ? [{ label:"ISA — previous years", value: isaPrev, icon:"📈", sub:true }] : []),
+      { label:"ISA total", value: totalIsa, icon:"📈", bold:true },
+    ] : []),
     { label:"Unwrapped investments", value: +d.unwrappedValue||0, icon:"📊" },
     { label:"Pension pot", value: +d.potValue||0, icon:"🏦" },
   ].filter(a => a.value > 0);
   const liabilityItems = [
-    { label:"Mortgage", value: +d.mortgageBalance||0, icon:"🏠" },
+    { label:"Mortgage", value: d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0, icon:"🏠" },
     { label:"Student loan", value: m.loanBal||0, icon:"🎓" },
-    { label:"Personal loan", value: +d.personalLoanBalance||0, icon:"💳" },
+    { label:"Personal loan", value: d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0, icon:"💳" },
   ].filter(l => l.value > 0);
 
   // Build merged module data: local computation provides status/impact, AI provides summary
@@ -1918,9 +1934,10 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
   const unreviewedModules = sortedModules.filter(mm => !completedModules.includes(mm.key));
   const reviewedModules   = sortedModules.filter(mm =>  completedModules.includes(mm.key));
 
-  const SHOW_DEFAULT = 4;
-  const visibleUnreviewed = showAllModules ? unreviewedModules : unreviewedModules.slice(0, SHOW_DEFAULT);
-  const hiddenCount = unreviewedModules.length - SHOW_DEFAULT;
+  const SHOW_DEFAULT = 3;
+  const visibleUnreviewed = unreviewedModules.slice(0, SHOW_DEFAULT);
+  const hiddenUnreviewed  = unreviewedModules.slice(SHOW_DEFAULT);
+  const hiddenCount = hiddenUnreviewed.length;
 
   return (
     <PageWrap>
@@ -1985,9 +2002,17 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
               <div>
                 <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"8px"}}>Assets — {fmt(m.totalAssets)}</div>
                 {assetItems.map((a,i) => (
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid rgba(22,47,36,0.05)"}}>
-                    <span style={{fontSize:"13px",color:MUT,display:"flex",alignItems:"center",gap:"6px"}}><span>{a.icon}</span>{a.label}</span>
-                    <span style={{fontSize:"13px",fontWeight:600,color:TEXT}}>{fmt(a.value)}</span>
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:a.bold?"6px 0 5px":"4px 0",
+                    borderBottom:`1px solid rgba(22,47,36,${a.bold?0.1:0.05})`,
+                    borderTop: a.bold?"1px solid rgba(22,47,36,0.08)":undefined,
+                    marginLeft: a.sub?"10px":undefined}}>
+                    <span style={{fontSize: a.bold?"13px":"12.5px",color:a.bold?G:MUT,display:"flex",alignItems:"center",gap:"6px",
+                      fontWeight:a.bold?700:400}}>
+                      {!a.sub && !a.bold && <span>{a.icon}</span>}
+                      {a.sub && <span style={{fontSize:"10px",color:"rgba(22,47,36,0.3)"}}>└</span>}
+                      {a.label}
+                    </span>
+                    <span style={{fontSize: a.bold?"13px":"12.5px",fontWeight:a.bold?700:600,color:a.bold?G:TEXT}}>{fmt(a.value)}</span>
                   </div>
                 ))}
               </div>
@@ -2080,13 +2105,13 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
           <span style={{fontSize:"12px",color:MUT}}>{completedModules.length} of {activeModules.length} reviewed</span>
         </div>
 
-        {/* Unreviewed modules — sorted by priority + £ impact */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"10px",marginBottom:"10px"}}>
+        {/* Unreviewed modules — top 3 always visible */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"10px"}}>
           {visibleUnreviewed.map((mm,i) => {
             const col = SC[mm.status] || MUT;
             return (
-              <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={i < 4 ? `fu${Math.min(i+1,7)}` : ""}
-                style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1px solid rgba(22,47,36,0.09)`,cursor:"pointer",position:"relative",borderTop:`3px solid ${col}`}}>
+              <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
+                style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1px solid rgba(22,47,36,0.09)`,cursor:"pointer",borderTop:`3px solid ${col}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
                   <span style={{fontSize:"16px"}}>{mm.icon}</span>
                   <span style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</span>
@@ -2108,14 +2133,43 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
           })}
         </div>
 
-        {/* Show more unreviewed */}
-        {unreviewedModules.length > SHOW_DEFAULT && (
-          <button type="button" onClick={() => setShowAllModules(v=>!v)} style={{width:"100%",padding:"12px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"10px",color:G,fontSize:"14px",fontWeight:500,cursor:"pointer",marginBottom:"16px",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",transition:"all 0.15s"}}>
-            <span style={{transform:showAllModules?"rotate(180deg)":"none",transition:"transform 0.2s",display:"inline-block"}}>›</span>
-            {showAllModules
-              ? "Show fewer"
-              : `Show ${hiddenCount} more — ${unreviewedModules.slice(SHOW_DEFAULT).map(mm=>mm.title).join(", ")}`}
-          </button>
+        {/* Show more — only renders if there are hidden modules */}
+        {hiddenCount > 0 && (
+          <>
+            <button type="button" onClick={() => setShowAllModules(v=>!v)}
+              style={{width:"100%",padding:"12px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"10px",color:G,fontSize:"14px",fontWeight:500,cursor:"pointer",marginBottom:"10px",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
+              <span style={{transform:showAllModules?"rotate(90deg)":"none",transition:"transform 0.2s",display:"inline-block",fontSize:"16px"}}>›</span>
+              {showAllModules ? "Show fewer" : `Show ${hiddenCount} more module${hiddenCount!==1?"s":""}`}
+            </button>
+            {showAllModules && (
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"10px"}}>
+                {hiddenUnreviewed.map((mm,i) => {
+                  const col = SC[mm.status] || MUT;
+                  return (
+                    <div key={mm.key} onClick={() => onOpenModule(mm.key)}
+                      style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1px solid rgba(22,47,36,0.09)`,cursor:"pointer",borderTop:`3px solid ${col}`}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+                        <span style={{fontSize:"16px"}}>{mm.icon}</span>
+                        <span style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</span>
+                      </div>
+                      <span style={{fontSize:"10px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginBottom:"8px"}}>{SL[mm.status]}</span>
+                      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginBottom:"6px"}}>{mm.summary}</p>
+                      {mm.impactLabel && (
+                        <div style={{fontSize:"11px",color:G,fontWeight:600,background:"rgba(22,47,36,0.05)",borderRadius:"5px",padding:"4px 8px",marginBottom:"4px"}}>{mm.impactLabel}</div>
+                      )}
+                      {mm.impact > 0 && (() => {
+                        const eq = getEquivalence(mm.impact);
+                        return eq ? (
+                          <div style={{fontSize:"10.5px",color:MUT,background:"rgba(196,150,58,0.07)",borderRadius:"5px",padding:"4px 8px",marginBottom:"8px",lineHeight:1.35}}>{eq}</div>
+                        ) : null;
+                      })()}
+                      <p style={{fontSize:"12px",color:G,fontWeight:500}}>View details →</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
         {/* Reviewed modules — dimmed, at bottom */}
@@ -3229,7 +3283,7 @@ function AllConcernsDone({ concernResults, hasFullScore, onBackToDashboard, onRe
 const HARVEY_DATA = {
   name:"Harvey", age:"29", salary:"85000", otherIncome:"",
   monthlyExpenses:"3000", cashSavings:"40000", savingsRate:"4.2", premiumBonds:"10000",
-  hasInvestments:"yes", isaUsedThisYear:"8000", unwrappedValue:"15000", unrealisedGains:"4500",
+  hasInvestments:"yes", isaUsedThisYear:"8000", isaPreviousBalance:"22000", isaType:"ss", unwrappedValue:"15000", unrealisedGains:"4500",
   hasPension:"yes", myContribution:"5", employerMatch:"5", potValue:"28000", retirementAge:"65",
   studentLoan:"plan2", loanBalance:"35000", hasMortgage:"no", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
   hasBonus:"yes", bonusAmount:"50000", salaryTrajectory:"high", savingsGoal:"goals", investHorizon:"10plus",
@@ -3243,7 +3297,7 @@ const HARVEY_DATA = {
 const SOPHIE_DATA = {
   name:"Sophie", age:"34", salary:"42000", otherIncome:"",
   monthlyExpenses:"2200", cashSavings:"55000", savingsRate:"3.8", premiumBonds:"0",
-  hasInvestments:"no", isaUsedThisYear:"0", unwrappedValue:"0", unrealisedGains:"0",
+  hasInvestments:"no", isaUsedThisYear:"0", isaPreviousBalance:"0", isaType:"none", unwrappedValue:"0", unrealisedGains:"0",
   hasPension:"no", myContribution:"", employerMatch:"5", potValue:"0", retirementAge:"65",
   studentLoan:"plan2", loanBalance:"28000", hasMortgage:"yes", mortgageBalance:"220000", mortgageRate:"5.2", monthlyMortgage:"1180",
   hasBonus:"no", bonusAmount:"", salaryTrajectory:"moderate", savingsGoal:"house", investHorizon:"5to10",
@@ -3327,7 +3381,7 @@ export default function Candid() {
 
 USER: Name: ${d.name||"User"}, Age: ${d.age||"?"}, Salary: £${d.salary||0}, Tax: ${m.taxBandLabel} rate (auto-calculated from £${m.adjustedNetIncome.toLocaleString()} adjusted net income)
 Cash: £${d.cashSavings||0} at ${d.savingsRate||4.5}%, Premium bonds: £${d.premiumBonds||0}, Monthly expenses: £${d.monthlyExpenses||0}
-Investments: ${d.hasInvestments==="yes" ? `£${d.isaUsedThisYear||0} in ISA, £${d.unwrappedValue||0} unwrapped, ~£${d.unrealisedGains||0} gains` : "None"}
+Investments: ${d.hasInvestments==="yes" ? `ISA this year £${d.isaUsedThisYear||0} (${d.isaType||"unspecified"}), ISA previous years £${d.isaPreviousBalance||0}, total ISA £${(+d.isaUsedThisYear||0)+(+d.isaPreviousBalance||0)}, unwrapped £${d.unwrappedValue||0}, ~£${d.unrealisedGains||0} gains` : "None"}
 Pension: ${d.hasPension==="yes" ? `${d.myContribution}%/${d.employerMatch}% employer, pot ~£${d.potValue}, retire ${d.retirementAge}` : "No pension"}
 Student loan: ${d.studentLoan==="none" ? "None" : `${d.studentLoan}, ~£${d.loanBalance||0}`}
 Mortgage: ${d.hasMortgage==="yes" ? `£${d.mortgageBalance} at ${d.mortgageRate}%, £${d.monthlyMortgage}/mo` : "None"}
@@ -3371,7 +3425,7 @@ Return exactly this structure:
     const prompt = `You are Candid, a UK personal finance guidance tool. Deep-dive: ${concern?.label}.
 USER: Name: ${d.name||"User"}, Age: ${d.age}, Salary: £${d.salary}, Tax: ${m.taxBandLabel} rate (adjusted net income £${m.adjustedNetIncome.toLocaleString()}), Bonus: ${d.hasBonus==="yes"?`~£${d.bonusAmount}/yr`:"None"}
 Cash: £${d.cashSavings||0} at ${d.savingsRate||4.2}%, Bonds: £${d.premiumBonds||0}, Expenses: £${d.monthlyExpenses||0}/mo
-Investments: ${d.hasInvestments==="yes"?`£${d.isaUsedThisYear||0} ISA, £${d.unwrappedValue||0} unwrapped`:"None"}
+Investments: ${d.hasInvestments==="yes"?`ISA this yr £${d.isaUsedThisYear||0} (${d.isaType||"unspecified"}), ISA prev £${d.isaPreviousBalance||0}, total £${(+d.isaUsedThisYear||0)+(+d.isaPreviousBalance||0)}, unwrapped £${d.unwrappedValue||0}`:"None"}
 Pension: ${d.hasPension==="yes"?`${d.myContribution}%/${d.employerMatch}% match, pot £${d.potValue}`:"No pension"}
 Student loan: ${d.studentLoan==="none"?"None":`${d.studentLoan}, ~£${d.loanBalance}`}, salary trajectory: ${d.salaryTrajectory||"unknown"}
 Mortgage: ${d.hasMortgage==="yes"?`£${d.mortgageBalance} at ${d.mortgageRate}%, fix: ${d.fixExpiry||"unknown"}`:"None"}
