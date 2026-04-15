@@ -11,6 +11,7 @@ const MUT  = "#6b6b6b"
 const SERIF= "'Playfair Display', serif"
 const SANS = "'DM Sans', sans-serif"
 
+// ── Stat chip ─────────────────────────────────────────────────────────────────
 function Stat({ n, label }) {
   return (
     <div style={{
@@ -23,6 +24,7 @@ function Stat({ n, label }) {
   )
 }
 
+// ── Module pill ───────────────────────────────────────────────────────────────
 function ModulePill({ icon, label }) {
   return (
     <div style={{
@@ -35,6 +37,7 @@ function ModulePill({ icon, label }) {
   )
 }
 
+// ── Landing page (kept intact) ────────────────────────────────────────────────
 function LandingPage({ onStart }) {
   return (
     <div style={{ fontFamily: SANS }}>
@@ -51,28 +54,45 @@ function LandingPage({ onStart }) {
         }}>Get my report →</button>
       </nav>
 
-      <div style={{ background: G, padding: "80px 24px 96px", textAlign: "center" }}>
-        <h1 style={{ fontFamily: SERIF, fontSize: "48px", color: WHITE }}>
-          The financial friend everyone deserves.
-        </h1>
-        <button onClick={onStart} style={{
-          background: GOLD, border: "none", borderRadius: "10px",
-          padding: "18px 40px", fontSize: "17px", fontWeight: 600,
-          color: G, cursor: "pointer", marginTop: "24px"
-        }}>Get my free Candid report →</button>
+      <div style={{
+        background: G, padding: "80px 24px 96px",
+        display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center"
+      }}>
+        <div style={{ maxWidth: "720px" }}>
+          <h1 style={{
+            fontFamily: SERIF, fontSize: "clamp(38px, 7vw, 68px)",
+            color: WHITE, fontWeight: 700, lineHeight: 1.08, marginBottom: "24px"
+          }}>
+            The financial friend everyone deserves.
+          </h1>
+
+          <button onClick={onStart} style={{
+            background: GOLD, border: "none", borderRadius: "10px",
+            padding: "18px 40px", fontSize: "17px", fontWeight: 600,
+            color: G, cursor: "pointer", fontFamily: SANS
+          }}>Get my free Candid report →</button>
+        </div>
       </div>
     </div>
   )
 }
 
+// ── Feedback modal (styled + tracked) ─────────────────────────────────────────
 function FeedbackModal({ onDismiss }) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+    window.analytics?.track?.("Feedback Modal Shown")
+    console.log("Feedback Modal Shown")
   }, [])
 
   if (!mounted) return null
+
+  function handleClick() {
+    window.analytics?.track?.("Feedback Clicked")
+    console.log("Feedback Clicked")
+  }
 
   return createPortal(
     <div onClick={onDismiss} style={{
@@ -84,17 +104,62 @@ function FeedbackModal({ onDismiss }) {
       <div onClick={e => e.stopPropagation()} style={{
         background: WHITE, borderRadius: "18px",
         maxWidth: "460px", width: "100%",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
+        overflow: "hidden"
       }}>
-        <div style={{ background: GOLD, padding: "14px 24px" }}>
-          <div style={{ fontFamily: SERIF, fontSize: "16px", fontWeight: 700, color: G }}>
+        <div style={{ background: GOLD, padding: "16px 24px" }}>
+          <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G }}>
             How was your Candid report?
           </div>
+          <div style={{ fontSize: "12px", color: "rgba(22,47,36,0.7)", marginTop: "4px" }}>
+            60 seconds — helps us build this right
+          </div>
         </div>
+
         <div style={{ padding: "24px" }}>
-          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer">
-            Share feedback →
+          <p style={{ fontSize: "14px", color: MUT, lineHeight: 1.6, marginBottom: "20px" }}>
+            Five quick questions — completely anonymous unless you choose to leave your email.
+          </p>
+
+          <a
+            href="https://tally.so/r/aQrNKE"
+            target="_blank"
+            rel="noreferrer"
+            onClick={handleClick}
+            style={{
+              display: "block",
+              width: "100%",
+              background: G,
+              borderRadius: "10px",
+              padding: "14px",
+              textAlign: "center",
+              fontSize: "15px",
+              fontWeight: 600,
+              color: WHITE,
+              textDecoration: "none",
+              fontFamily: SANS,
+              marginBottom: "12px"
+            }}
+          >
+            Help us improve (1 min) →
           </a>
-          <button onClick={onDismiss}>Close</button>
+
+          <button
+            onClick={onDismiss}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: `1.5px solid rgba(22,47,36,0.15)`,
+              borderRadius: "10px",
+              padding: "12px",
+              fontSize: "13px",
+              color: MUT,
+              fontFamily: SANS,
+              cursor: "pointer"
+            }}
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>,
@@ -102,6 +167,7 @@ function FeedbackModal({ onDismiss }) {
   )
 }
 
+// ── Feedback button (client-safe) ─────────────────────────────────────────────
 function FeedbackButton({ onClick }) {
   const [mounted, setMounted] = useState(false)
 
@@ -114,8 +180,11 @@ function FeedbackButton({ onClick }) {
   return createPortal(
     <button onClick={onClick} style={{
       position: "fixed", bottom: "100px", right: "0",
-      background: G, color: GOLD, padding: "10px",
-      zIndex: 5000
+      background: G, border: "2px solid " + GOLD,
+      borderRadius: "10px 0 0 10px", borderRight: "none",
+      padding: "14px 12px",
+      cursor: "pointer", zIndex: 5000,
+      color: GOLD, fontFamily: SANS
     }}>
       Feedback
     </button>,
@@ -134,11 +203,26 @@ function Root() {
     }, 100)
   }
 
+  function openModal() {
+    // Only show once per user
+    if (localStorage.getItem("candid_feedback_shown")) return
+    localStorage.setItem("candid_feedback_shown", "true")
+    setShowModal(true)
+  }
+
+  function handleCompletion() {
+    // Delay 3s after completion
+    setTimeout(() => {
+      openModal()
+    }, 3000)
+  }
+
+  // Timer fallback
   useEffect(() => {
     if (!launched) return
 
     const timer = setTimeout(() => {
-      setShowModal(true)
+      openModal()
     }, 90000)
 
     return () => clearTimeout(timer)
@@ -149,10 +233,10 @@ function Root() {
       <LandingPage onStart={handleStart} />
       {launched && (
         <div id="candid-app" style={{ minHeight: "100vh" }}>
-          <CandidApp />
+          <CandidApp onComplete={handleCompletion} />
         </div>
       )}
-      {launched && <FeedbackButton onClick={() => setShowModal(true)} />}
+      {launched && <FeedbackButton onClick={openModal} />}
       {showModal && <FeedbackModal onDismiss={() => setShowModal(false)} />}
     </div>
   )
