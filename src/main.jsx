@@ -276,17 +276,14 @@ function FeedbackModal({ onDismiss }) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 1000,
-      background: "rgba(22,47,36,0.75)",
+      background: "rgba(22,47,36,0.7)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: "24px",
-      backdropFilter: "blur(3px)",
     }} onClick={onDismiss}>
       <div style={{
         background: WHITE, borderRadius: "18px", maxWidth: "460px", width: "100%",
-        overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
+        overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
       }} onClick={e => e.stopPropagation()}>
-
-        {/* Gold top bar */}
         <div style={{ background: GOLD, padding: "14px 24px", display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ fontSize: "20px" }}>💬</span>
           <div>
@@ -294,16 +291,13 @@ function FeedbackModal({ onDismiss }) {
             <div style={{ fontSize: "11px", color: "rgba(22,47,36,0.65)", marginTop: "1px" }}>Takes 60 seconds — helps us improve Candid</div>
           </div>
         </div>
-
-        {/* Body */}
         <div style={{ padding: "24px" }}>
           <p style={{ fontSize: "15px", color: TEXT, lineHeight: 1.7, marginBottom: "6px" }}>
-            You've been exploring your Candid report. We'd love to know what you think — we're still building this, and your feedback directly shapes what comes next.
+            You've been exploring your Candid report. We'd love to know what you think.
           </p>
           <p style={{ fontSize: "13px", color: MUT, lineHeight: 1.6, marginBottom: "24px" }}>
             Five quick questions. Completely anonymous unless you choose to leave your email.
           </p>
-
           <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{
             display: "block", width: "100%", background: G, border: "none",
             borderRadius: "10px", padding: "15px", textAlign: "center",
@@ -311,43 +305,66 @@ function FeedbackModal({ onDismiss }) {
             cursor: "pointer", fontFamily: SANS, textDecoration: "none",
             marginBottom: "10px",
           }}>Share my feedback →</a>
-
           <button onClick={onDismiss} style={{
             display: "block", width: "100%", background: "transparent",
             border: "1.5px solid rgba(22,47,36,0.15)", borderRadius: "10px",
             padding: "13px", fontSize: "14px", color: MUT,
             cursor: "pointer", fontFamily: SANS,
-          }}>Not now — maybe later</button>
+          }}>Not now — I'll use the tab on the right</button>
         </div>
       </div>
     </div>
   )
 }
 
-// ── Root ──────────────────────────────────────────────────────────────────────
+function FeedbackTab({ onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      position: "fixed", bottom: "120px", right: "0",
+      background: G, border: `2px solid ${GOLD}`,
+      borderRadius: "10px 0 0 10px", borderRight: "none",
+      padding: "12px 14px",
+      display: "flex", flexDirection: "column", alignItems: "center", gap: "6px",
+      cursor: "pointer", zIndex: 500,
+      boxShadow: "-3px 3px 12px rgba(0,0,0,0.2)",
+    }}>
+      <span style={{ fontSize: "16px" }}>💬</span>
+      <span style={{
+        fontSize: "9px", fontWeight: 700, color: GOLD,
+        letterSpacing: "0.1em", textTransform: "uppercase",
+        writingMode: "vertical-rl", transform: "rotate(180deg)",
+      }}>Feedback</span>
+    </button>
+  )
+}
+
 function Root() {
   const [launched, setLaunched] = useState(false)
-  const [showFeedback, setShowFeedback] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [showTab, setShowTab] = useState(false)
 
   function handleStart() {
     setLaunched(true)
-    // Show feedback modal after 90 seconds
-    setTimeout(() => setShowFeedback(true), 90 * 1000)
+    setTimeout(() => {
+      setShowModal(true)
+      setShowTab(true)
+    }, 90 * 1000)
     setTimeout(() => {
       document.getElementById("candid-app")?.scrollIntoView({ behavior: "smooth" })
     }, 100)
   }
 
   return (
-    <>
+    <div>
       <LandingPage onStart={handleStart} />
       {launched && (
         <div id="candid-app" style={{ minHeight: "100vh" }}>
           <CandidApp />
         </div>
       )}
-      {showFeedback && <FeedbackModal onDismiss={() => setShowFeedback(false)} />}
-    </>
+      {showModal && <FeedbackModal onDismiss={() => setShowModal(false)} />}
+      {showTab && !showModal && <FeedbackTab onClick={() => setShowModal(true)} />}
+    </div>
   )
 }
 
