@@ -61,17 +61,19 @@ function FmtInput({ value, onChange, placeholder, fmtType, step, style }) {
   useEffect(() => {
     if (!focused.current) setDisplay(value ? fmtInput(value, fmtType) : "");
   }, [value]);
+  const showPrefix = fmtType === "gbp";
+  const showSuffix = fmtType === "pct";
   return (
     <div style={{position:"relative", ...style}}>
-      {fmtType === "gbp" && display !== "" && !focused.current && (
-        <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:TEXT,pointerEvents:"none",lineHeight:1}}>£</span>
+      {showPrefix && (
+        <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:display?"rgba(26,26,26,0.6)":"rgba(26,26,26,0.25)",pointerEvents:"none",lineHeight:1}}>£</span>
       )}
-      {fmtType === "pct" && display !== "" && !focused.current && (
-        <span style={{position:"absolute",right:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:TEXT,pointerEvents:"none",lineHeight:1}}>%</span>
+      {showSuffix && (
+        <span style={{position:"absolute",right:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:display?"rgba(26,26,26,0.6)":"rgba(26,26,26,0.25)",pointerEvents:"none",lineHeight:1}}>%</span>
       )}
       <input
-        style={{...INP, paddingLeft: fmtType==="gbp" && display !== "" && !focused.current ? "26px" : "14px",
-                        paddingRight: fmtType==="pct" && display !== "" && !focused.current ? "30px" : "14px"}}
+        style={{...INP, paddingLeft: showPrefix ? "26px" : "14px",
+                        paddingRight: showSuffix ? "30px" : "14px"}}
         value={display}
         placeholder={placeholder}
         step={step || (fmtType==="pct" ? "0.1" : "1")}
@@ -1603,7 +1605,7 @@ function OnboardingStep({ step, d, set }) {
       <Field label="First name"><input style={INP} value={d.name} onChange={e => set("name",e.target.value)} placeholder="e.g. Harvey"/></Field>
       <div style={g2}>
         <Field label="Age"><input style={INP} type="number" value={d.age} onChange={e => set("age",e.target.value)} placeholder="e.g. 29"/></Field>
-        <Field label="Gross annual salary (£)"><input style={INP} type="number" value={d.salary} onChange={e => set("salary",e.target.value)} placeholder="e.g. 65,000"/></Field>
+        <Field label="Gross annual salary (£)"><FmtInput fmtType="gbp" value={d.salary} onChange={v=>set("salary",v)} placeholder="e.g. 65,000"/></Field>
       </div>
       {/* Auto tax band display */}
       {+d.salary > 0 && (
@@ -1621,7 +1623,7 @@ function OnboardingStep({ step, d, set }) {
         </div>
       )}
       <Field label="Other income (£/yr)" hint="Rental income, freelance, dividends — leave blank if none">
-        <input style={INP} type="number" value={d.otherIncome||""} onChange={e => set("otherIncome",e.target.value)} placeholder="e.g. 8,000"/>
+        <FmtInput fmtType="gbp" value={d.otherIncome||""} onChange={v=>set("otherIncome",v)} placeholder="e.g. 8,000"/>
       </Field>
     </div>
   );
@@ -1709,6 +1711,22 @@ function OnboardingStep({ step, d, set }) {
             <Field label="Interest rate (%)"><FmtInput fmtType="pct" value={d.mortgageRate} onChange={v=>set("mortgageRate",v)} placeholder="e.g. 4.5"/></Field>
           </div>
           <Field label="Monthly payment (£)"><FmtInput fmtType="gbp" value={d.monthlyMortgage} onChange={v=>set("monthlyMortgage",v)} placeholder="e.g. 1,400"/></Field>
+          <Field label="Mortgage provider" hint="Helps us surface better deals when available.">
+            <select style={INP} value={d.mortgageProvider||""} onChange={e=>set("mortgageProvider",e.target.value)}>
+              <option value="">Select provider…</option>
+              <option value="barclays">Barclays</option>
+              <option value="hsbc">HSBC</option>
+              <option value="lloyds">Lloyds Bank</option>
+              <option value="halifax">Halifax</option>
+              <option value="natwest">NatWest</option>
+              <option value="santander">Santander</option>
+              <option value="nationwide">Nationwide</option>
+              <option value="yorkshire">Yorkshire Building Society</option>
+              <option value="virgin">Virgin Money</option>
+              <option value="tesco">Tesco Bank</option>
+              <option value="other">Other</option>
+            </select>
+          </Field>
         </div>
       )}
       <Field label="Do you have a personal loan?">
@@ -1724,6 +1742,22 @@ function OnboardingStep({ step, d, set }) {
             <Field label="Monthly payment (£)"><FmtInput fmtType="gbp" value={d.personalLoanMonthly} onChange={v=>set("personalLoanMonthly",v)} placeholder="e.g. 180"/></Field>
             <Field label="Months remaining"><input style={INP} type="number" value={d.personalLoanTermRemaining} onChange={e=>set("personalLoanTermRemaining",e.target.value)} placeholder="e.g. 36"/></Field>
           </div>
+          <Field label="Loan provider" hint="Helps us surface better refinancing deals when available.">
+            <select style={INP} value={d.personalLoanProvider||""} onChange={e=>set("personalLoanProvider",e.target.value)}>
+              <option value="">Select provider…</option>
+              <option value="barclays">Barclays</option>
+              <option value="hsbc">HSBC</option>
+              <option value="lloyds">Lloyds Bank</option>
+              <option value="natwest">NatWest</option>
+              <option value="santander">Santander</option>
+              <option value="tesco">Tesco Bank</option>
+              <option value="m&s">M&S Bank</option>
+              <option value="sainsburys">Sainsbury's Bank</option>
+              <option value="zopa">Zopa</option>
+              <option value="novuna">Novuna (formerly Hitachi)</option>
+              <option value="other">Other</option>
+            </select>
+          </Field>
         </div>
       )}
     </div>
@@ -3543,7 +3577,8 @@ const HARVEY_DATA = {
   studentLoan:"plan2", loanBalance:"35000", hasMortgage:"no", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
   hasBonus:"yes", bonusAmount:"50000", salaryTrajectory:"high", savingsGoal:"goals", investHorizon:"10plus",
   fixExpiry:"", inheritDirection:"passing", estateValue:"620000", hasWill:"no",
-  hasPersonalLoan:"yes", personalLoanBalance:"8000", personalLoanRate:"9.9", personalLoanMonthly:"180", personalLoanTermRemaining:"48",
+  hasPersonalLoan:"yes", personalLoanBalance:"8000", personalLoanRate:"9.9", personalLoanMonthly:"180", personalLoanTermRemaining:"48", personalLoanProvider:"",
+  mortgageProvider:"",
   hasKids:"no", numKids:"", kidsAges:"", hasJISA:"no", juniorISAValue:"",
   hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"yes",
 };
@@ -3557,7 +3592,8 @@ const SOPHIE_DATA = {
   studentLoan:"plan2", loanBalance:"28000", hasMortgage:"yes", mortgageBalance:"220000", mortgageRate:"5.2", monthlyMortgage:"1180",
   hasBonus:"no", bonusAmount:"", salaryTrajectory:"moderate", savingsGoal:"house", investHorizon:"5to10",
   fixExpiry:"under6m", inheritDirection:"", estateValue:"", hasWill:"no",
-  hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"",
+  hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanProvider:"",
+  mortgageProvider:"",
   hasKids:"yes", numKids:"1", kidsAges:"2", hasJISA:"no", juniorISAValue:"",
   hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"yes",
 };
@@ -3570,7 +3606,8 @@ const BLANK_DATA = {
   studentLoan:"none", loanBalance:"", hasMortgage:"no", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
   hasBonus:"no", bonusAmount:"", salaryTrajectory:"moderate", savingsGoal:"goals", investHorizon:"5to10",
   fixExpiry:"", inheritDirection:"", estateValue:"", hasWill:"no",
-  hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"",
+  hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanProvider:"",
+  mortgageProvider:"",
   hasKids:"no", numKids:"", kidsAges:"", hasJISA:"no", juniorISAValue:"",
   hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"no",
 };
