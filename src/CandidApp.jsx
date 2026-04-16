@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, createPortal } from "react";
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const FONTS = `
@@ -1911,7 +1911,67 @@ s.pension = {
   return s;
 }
 
-function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules }) {
+function FeedbackButton() {
+  const [open, setOpen] = useState(false);
+  const G2 = "#162f24", GOLD2 = "#c4963a", WHITE2 = "#ffffff", MUT2 = "#6b6b6b";
+  const SANS2 = "'DM Sans',sans-serif", SERIF2 = "'Playfair Display',serif";
+  return createPortal(
+    <>
+      {!open && (
+        <button onClick={() => setOpen(true)} style={{
+          position:"fixed", bottom:"100px", right:"0",
+          background:G2, border:`2px solid ${GOLD2}`,
+          borderRadius:"10px 0 0 10px", borderRight:"none",
+          padding:"14px 12px", display:"flex", flexDirection:"column",
+          alignItems:"center", gap:"8px", cursor:"pointer", zIndex:5000,
+          boxShadow:"-3px 3px 12px rgba(0,0,0,0.18)",
+        }}>
+          <span style={{fontSize:"16px"}}>💬</span>
+          <span style={{fontSize:"9px",fontWeight:700,color:GOLD2,letterSpacing:"0.1em",textTransform:"uppercase",writingMode:"vertical-rl",transform:"rotate(180deg)"}}>Feedback</span>
+        </button>
+      )}
+      {open && (
+        <div onClick={() => setOpen(false)} style={{
+          position:"fixed",top:0,left:0,right:0,bottom:0,
+          zIndex:9999, background:"rgba(22,47,36,0.7)",
+          display:"flex", alignItems:"center", justifyContent:"center", padding:"24px",
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background:WHITE2, borderRadius:"18px", maxWidth:"460px", width:"100%",
+            overflow:"hidden", boxShadow:"0 24px 64px rgba(0,0,0,0.25)",
+          }}>
+            <div style={{background:GOLD2,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
+              <span style={{fontSize:"20px"}}>💬</span>
+              <div>
+                <div style={{fontFamily:SERIF2,fontSize:"16px",fontWeight:700,color:G2}}>How was your Candid report?</div>
+                <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>60 seconds — helps us build this right</div>
+              </div>
+              <button onClick={() => setOpen(false)} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:"20px",color:"rgba(22,47,36,0.4)",cursor:"pointer",lineHeight:1}}>×</button>
+            </div>
+            <div style={{padding:"24px"}}>
+              <p style={{fontSize:"14px",color:MUT2,lineHeight:1.65,marginBottom:"20px"}}>
+                Five quick questions — completely anonymous unless you choose to leave your email.
+              </p>
+              <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{
+                display:"block",width:"100%",background:G2,borderRadius:"10px",padding:"15px",
+                textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE2,
+                cursor:"pointer",fontFamily:SANS2,textDecoration:"none",marginBottom:"10px",
+              }}>Share my feedback →</a>
+              <button onClick={() => setOpen(false)} style={{
+                display:"block",width:"100%",background:"transparent",
+                border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",
+                padding:"12px",fontSize:"13px",color:MUT2,cursor:"pointer",fontFamily:SANS2,
+              }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>,
+    document.body
+  );
+}
+
+function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules, onEditInputs }) {
   const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
       if (!insights) return null;
@@ -1970,7 +2030,8 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
 
   return (
     <PageWrap>
-      <NavBar right={<GhostBtn onClick={onReset}>Start over</GhostBtn>}/>
+      <FeedbackButton />
+      <NavBar right={<div style={{display:"flex",gap:"8px"}}><GhostBtn onClick={onEditInputs}>✏️ Edit inputs</GhostBtn><GhostBtn onClick={onReset}>Start over</GhostBtn></div>}/>
       <ContentWrap maxWidth="780px">
         {/* Score card */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
@@ -2063,56 +2124,17 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
     </div>
 
     {/* Assets / Liabilities summary row + breakdown toggle */}
-<div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "14px",
-    gap: "16px"
-  }}
->
-  <div>
-    <div
-      style={{
-        fontSize: "10px",
-        fontWeight: 700,
-        color: "#2d6b4a",
-        letterSpacing: "0.07em",
-        textTransform: "uppercase",
-        marginBottom: "6px"
-      }}
-    >
-      Assets — {fmt(m.totalAssets)}
-    </div>
-
-    <div
-      style={{
-        fontSize: "10px",
-        fontWeight: 700,
-        color: "#c0392b",
-        letterSpacing: "0.07em",
-        textTransform: "uppercase",
-        marginBottom: "6px",
-        textAlign: "right"
-      }}
-    >
-      Liabilities — {fmt(m.totalLiabilities)}
-    </div>
-
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px",gap:"16px"}}>
+  <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase"}}>
+    Assets — {fmt(m.totalAssets)}
+  </div>
+  <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase"}}>
+    Liabilities — {fmt(m.totalLiabilities)}
+  </div>
   <button
     type="button"
     onClick={() => setNetWorthExpanded(v => !v)}
-    style={{
-      background: "transparent",
-      border: "none",
-      fontSize: "12px",
-      fontWeight: 600,
-      color: G,
-      cursor: "pointer",
-      marginTop: "6px",
-      whiteSpace: "nowrap"
-    }}
+    style={{background:"transparent",border:"none",fontSize:"10px",fontWeight:700,color:G,cursor:"pointer",whiteSpace:"nowrap",letterSpacing:"0.07em",textTransform:"uppercase"}}
   >
     {netWorthExpanded ? "Breakdown ↑" : "Breakdown ↓"}
   </button>
@@ -2123,19 +2145,6 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
       <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
           <div>
-            <div
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                color: "#2d6b4a",
-                letterSpacing: "0.07em",
-                textTransform: "uppercase",
-                marginBottom: "8px"
-              }}
-            >
-              Assets — {fmt(m.totalAssets)}
-            </div>
-
             {assetItems.map((a, i) => (
               <div
                 key={i}
@@ -2177,19 +2186,6 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
           </div>
 
           <div>
-            <div
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                color: "#c0392b",
-                letterSpacing: "0.07em",
-                textTransform: "uppercase",
-                marginBottom: "8px"
-              }}
-            >
-              Liabilities — {fmt(m.totalLiabilities)}
-            </div>
-
             {liabilityItems.length > 0 ? (
               liabilityItems.map((l, i) => (
                 <div
@@ -2249,7 +2245,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
             const col = SC[mm.status] || MUT;
             return (
               <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
-                style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1px solid rgba(22,47,36,0.09)`,cursor:"pointer",borderTop:`3px solid ${col}`}}>
+                style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1px solid rgba(22,47,36,0.09)`,cursor:"pointer",borderTop:`3px solid ${col}`,display:"flex",flexDirection:"column"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
                   <span style={{fontSize:"16px"}}>{mm.icon}</span>
                   <span style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</span>
@@ -2265,7 +2261,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
                     <div style={{fontSize:"10.5px",color:MUT,background:"rgba(196,150,58,0.07)",borderRadius:"5px",padding:"4px 8px",marginBottom:"8px",lineHeight:1.35}}>{eq}</div>
                   ) : null;
                 })()}
-                <p style={{fontSize:"12px",color:G,fontWeight:500}}>View details →</p>
+                <p style={{fontSize:"12px",color:G,fontWeight:500,marginTop:"auto",paddingTop:"8px"}}>View details →</p>
               </div>
             );
           })}
@@ -2280,7 +2276,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
                   const col = SC[mm.status] || MUT;
                   return (
                     <div key={mm.key} onClick={() => onOpenModule(mm.key)}
-                      style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1px solid rgba(22,47,36,0.09)`,cursor:"pointer",borderTop:`3px solid ${col}`}}>
+                      style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1px solid rgba(22,47,36,0.09)`,cursor:"pointer",borderTop:`3px solid ${col}`,display:"flex",flexDirection:"column"}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
                         <span style={{fontSize:"16px"}}>{mm.icon}</span>
                         <span style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</span>
@@ -2296,7 +2292,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
                           <div style={{fontSize:"10.5px",color:MUT,background:"rgba(196,150,58,0.07)",borderRadius:"5px",padding:"4px 8px",marginBottom:"8px",lineHeight:1.35}}>{eq}</div>
                         ) : null;
                       })()}
-                      <p style={{fontSize:"12px",color:G,fontWeight:500}}>View details →</p>
+                      <p style={{fontSize:"12px",color:G,fontWeight:500,marginTop:"auto",paddingTop:"8px"}}>View details →</p>
                     </div>
                   );
                 })}
@@ -3604,14 +3600,15 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
 
   if (screen === "onboarding") return (
     <PageWrap>
-      <NavBar center={`Step ${step+1} of ${STEPS.length} — ${STEPS[step]}`}/>
+      <NavBar center={`Step ${step+1} of ${STEPS.length} — ${STEPS[step]}`}
+        right={insights ? <GhostBtn onClick={() => setScreen("dashboard")}>← Back to report</GhostBtn> : null}/>
       <ProgressBar pct={(step+1)/STEPS.length*100}/>
       <ContentWrap>
         <OnboardingStep step={step} d={d} set={set}/>
         <div style={{display:"flex",gap:"10px",marginTop:"40px"}}>
           <button onClick={() => step>0 ? setStep(s=>s-1) : setScreen("landing")} style={{flex:1,padding:"13px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.22)",borderRadius:"8px",fontSize:"15px",color:TEXT,fontWeight:500}}>← Back</button>
           <button onClick={() => step<STEPS.length-1 ? setStep(s=>s+1) : generateDashboard()} style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"8px",fontSize:"15px",fontWeight:600,color:WHITE}}>
-            {step===STEPS.length-1 ? "Generate my Candid report →" : "Continue →"}
+            {step===STEPS.length-1 ? (insights ? "Regenerate my report →" : "Generate my Candid report →") : "Continue →"}
           </button>
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:"6px",marginTop:"22px"}}>
@@ -3626,6 +3623,7 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
   if (screen === "dashboard") return (
     <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
       onOpenModule={key => openModule(key, "dashboard")}
+      onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
       onDigDeeper={() => { setConcernResults([]); setConcernIdx(0); setScreen("concernSelector"); }}/>
   );
 
