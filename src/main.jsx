@@ -284,7 +284,7 @@ function Root() {
 
   return (
     <div>
-      <LandingPage onStart={handleStart} />
+      {!launched && <LandingPage onStart={handleStart} />}
       {launched && (
         <div id="candid-app" style={{ minHeight: "100vh" }}>
           <CandidApp />
