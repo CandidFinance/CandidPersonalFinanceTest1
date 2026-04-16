@@ -57,23 +57,26 @@ function stripFmt(val) {
 // A formatted number input that shows £xx,xxx on blur and x.x for %
 function FmtInput({ value, onChange, placeholder, fmtType, step, style }) {
   const [display, setDisplay] = useState(value ? fmtInput(value, fmtType) : "");
-  useEffect(() => { setDisplay(value ? fmtInput(value, fmtType) : ""); }, [value]);
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!focused.current) setDisplay(value ? fmtInput(value, fmtType) : "");
+  }, [value]);
   return (
     <div style={{position:"relative", ...style}}>
-      {fmtType === "gbp" && display !== "" && (
+      {fmtType === "gbp" && display !== "" && !focused.current && (
         <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:TEXT,pointerEvents:"none",lineHeight:1}}>£</span>
       )}
-      {fmtType === "pct" && display !== "" && (
+      {fmtType === "pct" && display !== "" && !focused.current && (
         <span style={{position:"absolute",right:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:TEXT,pointerEvents:"none",lineHeight:1}}>%</span>
       )}
       <input
-        style={{...INP, paddingLeft: fmtType==="gbp" && display !== "" ? "26px" : "14px",
-                        paddingRight: fmtType==="pct" && display !== "" ? "30px" : "14px"}}
+        style={{...INP, paddingLeft: fmtType==="gbp" && display !== "" && !focused.current ? "26px" : "14px",
+                        paddingRight: fmtType==="pct" && display !== "" && !focused.current ? "30px" : "14px"}}
         value={display}
         placeholder={placeholder}
         step={step || (fmtType==="pct" ? "0.1" : "1")}
-        onFocus={() => setDisplay(stripFmt(display))}
-        onBlur={() => setDisplay(value ? fmtInput(value, fmtType) : "")}
+        onFocus={() => { focused.current = true; setDisplay(stripFmt(display)); }}
+        onBlur={() => { focused.current = false; setDisplay(value ? fmtInput(value, fmtType) : ""); }}
         onChange={e => {
           const raw = stripFmt(e.target.value);
           setDisplay(e.target.value);
@@ -224,7 +227,7 @@ function calcMetrics(d) {
   // Net worth
   const totalIsaValue = (+d.isaUsedThisYear||0) + (+d.isaPreviousBalance||0);
   const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal;
-  const totalLiabilities = loanBal + (+d.mortgageBalance||0) + (+d.personalLoanBalance||0);
+  const totalLiabilities = loanBal + (+d.mortgageBalance||0) + (d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0);
   const netWorth = totalAssets - totalLiabilities;
   return {
     salary, expenses, totalLiquid, runwayMonths, surplusCash, isaHeadroom,
@@ -1966,8 +1969,8 @@ s.pension = {
   const ipImpact = d.hasIncomeProtection !== "yes" ? Math.round(m.salary * 0.6) : 0;
   s.insurance = {
     status: missing >= 2 ? "critical" : missing === 1 ? "attention" : "ok",
-    impact: ipImpact,
-    impactLabel: ipImpact > 0 ? `${fmt(ipImpact)}/yr income at risk without IP cover` : `${missing} protection gap${missing !== 1 ? "s" : ""}`,
+    impact: 0, // income-at-risk is a warning not a recoverable £ figure — excluded from ranking
+    impactLabel: missing > 0 ? `${missing} protection gap${missing !== 1 ? "s" : ""} identified` : null,
   };
 
   return s;
@@ -2033,7 +2036,7 @@ function FeedbackButton() {
   );
 }
 
-function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules, onEditInputs, feedbackOpen, onDismissFeedback }) {
+function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules, onEditInputs }) {
   const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
       if (!insights) return null;
@@ -2066,12 +2069,15 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
   const allModules = MODULE_META.map(mm => {
     const local = localStatuses[mm.key] || { status:"na", impact:0 };
     const aiMod = insights.modules?.[mm.key];
-    // Pension: always trust local status — AI tends to hallucinate based on stale data
-    // Other modules: AI status wins if it has one, else fall back to local
-    const status = mm.key === "pension"
+    // Pension + personalLoan: always trust local status — AI stale data causes false positives
+    const status = (mm.key === "pension" || mm.key === "personalLoan")
       ? local.status
       : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
-    const summary = aiMod?.summary || (local.status !== "na" ? `Review your ${mm.title.toLowerCase()} situation.` : "N/A");
+    const rawSummary = aiMod?.summary || (local.status !== "na" ? `Review your ${mm.title.toLowerCase()} situation.` : "N/A");
+    // For pension: if local says contributing but AI says otherwise, use local-derived summary
+    const summary = (mm.key === "pension" && isPensionContributing(d) && rawSummary.toLowerCase().includes("no pension"))
+      ? `You're contributing ${d.myContribution}% with ${d.employerMatch}% employer match. Review your bonus sacrifice and projected pot.`
+      : rawSummary;
     // Always use local impact for sorting — AI doesn't provide numeric impact
     const impact = local.impact || 0;
     return { ...mm, status, summary, impact, impactLabel: local.impactLabel };
@@ -2443,27 +2449,31 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
           Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.
         </p>
       </ContentWrap>
-      {feedbackOpen && createPortal(
-        <div onClick={onDismissFeedback} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
-            <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
-              <span style={{fontSize:"20px"}}>💬</span>
-              <div>
-                <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>How was your Candid report?</div>
-                <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>60 seconds — helps us build this right</div>
-              </div>
-              <button onClick={onDismissFeedback} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:"20px",color:"rgba(22,47,36,0.4)",cursor:"pointer",lineHeight:1}}>×</button>
-            </div>
-            <div style={{padding:"24px"}}>
-              <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"20px"}}>Five quick questions — completely anonymous unless you choose to leave your email.</p>
-              <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
-              <button onClick={onDismissFeedback} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>Close — I'll use the tab</button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </PageWrap>
+  );
+}
+
+// ── Global feedback modal (rendered at router level, works across all screens) ──
+function FeedbackModal({ onDismiss }) {
+  return createPortal(
+    <div onClick={onDismiss} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
+        <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
+          <span style={{fontSize:"20px"}}>💬</span>
+          <div>
+            <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>How was your Candid report?</div>
+            <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>60 seconds — helps us build this right</div>
+          </div>
+          <button onClick={onDismiss} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:"20px",color:"rgba(22,47,36,0.4)",cursor:"pointer",lineHeight:1}}>×</button>
+        </div>
+        <div style={{padding:"24px"}}>
+          <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"20px"}}>Five quick questions — completely anonymous unless you choose to leave your email.</p>
+          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
+          <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>Close — I'll use the tab</button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -2733,6 +2743,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
 
   return (
     <PageWrap>
+      <FeedbackButton />
       <NavBar center={meta?.title} right={<GhostBtn onClick={goBack}>← Back</GhostBtn>}/>
       <ContentWrap maxWidth="680px">
 
@@ -3597,7 +3608,8 @@ export default function Candid() {
   }, [screen]); // only depends on screen — never resets once started
 
   useEffect(() => {
-    if (screen !== "dashboard" || feedbackFired.current || !insights) return;
+    if (feedbackFired.current || !insights) return;
+    // Works regardless of screen — user may be in a module when they complete the last one
     const localStatuses = computeModuleStatuses(d, m);
     const activeCount = Object.values(localStatuses).filter(s => s.status !== "na").length;
     if (activeCount > 0 && completedModules.length >= activeCount) {
@@ -3606,7 +3618,7 @@ export default function Candid() {
       }, 3000);
       return () => clearTimeout(t3);
     }
-  }, [completedModules]); // only depends on completedModules
+  }, [completedModules]);
 
   function switchPersona(persona) {
     const data = persona === "sophie" ? SOPHIE_DATA : HARVEY_DATA;
@@ -3776,11 +3788,13 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
   if (screen === "loading") return <LoadingScreen name={d.name} msgs={["Analysing your cash position...","Calculating pension tax relief...","Reviewing ISA headroom...","Modelling your student loan...","Building your Candid report..."]}/>;
 
   if (screen === "dashboard") return (
-    <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
-      onOpenModule={key => openModule(key, "dashboard")}
-      onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
-      feedbackOpen={feedbackOpen} onDismissFeedback={() => setFeedbackOpen(false)}
-      onDigDeeper={() => { setConcernResults([]); setConcernIdx(0); setScreen("concernSelector"); }}/>
+    <>
+      <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
+        onOpenModule={key => openModule(key, "dashboard")}
+        onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
+        onDigDeeper={() => { setConcernResults([]); setConcernIdx(0); setScreen("concernSelector"); }}/>
+      {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
+    </>
   );
 
   if (screen === "moduleDeepDive") {
@@ -3804,14 +3818,17 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
     // bottom of sortedMods, which would make slice return empty and lose the button.
     const nextMod = sortedMods.find(mm => mm.key !== activeModule && !completedModules.includes(mm.key)) || null;
     return (
-      <ModuleDeepDive moduleKey={activeModule} insights={insights} d={d} m={m}
-        openSection={activeSection}
-        goBack={() => setScreen("dashboard")}
-        goToDashboard={() => setScreen("dashboard")}
-        onComplete={() => markModuleComplete(activeModule)}
-        isComplete={completedModules.includes(activeModule)}
-        onOpenModule={(key, section) => openModule(key, "moduleDeepDive", section)}
-        nextModule={nextMod}/>
+      <>
+        <ModuleDeepDive moduleKey={activeModule} insights={insights} d={d} m={m}
+          openSection={activeSection}
+          goBack={() => setScreen("dashboard")}
+          goToDashboard={() => setScreen("dashboard")}
+          onComplete={() => markModuleComplete(activeModule)}
+          isComplete={completedModules.includes(activeModule)}
+          onOpenModule={(key, section) => openModule(key, "moduleDeepDive", section)}
+          nextModule={nextMod}/>
+        {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
+      </>
     );
   }
 
