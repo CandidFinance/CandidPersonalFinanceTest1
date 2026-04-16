@@ -1,4 +1,5 @@
-import { useState, useEffect, createPortal } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const FONTS = `
