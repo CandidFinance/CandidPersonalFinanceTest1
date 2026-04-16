@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import posthog from "posthog-js";
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const FONTS = `
@@ -2502,7 +2503,7 @@ function FeedbackModal({ onDismiss }) {
         </div>
         <div style={{padding:"24px"}}>
           <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"20px"}}>Five quick questions — completely anonymous unless you choose to leave your email.</p>
-          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
+          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" onClick={() => posthog.capture("feedback_submitted")} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
           <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>Close — I'll use the tab</button>
         </div>
       </div>
@@ -3637,21 +3638,19 @@ export default function Candid() {
   // One-shot feedback trigger: 90s after dashboard loads OR 3s after all modules reviewed
   useEffect(() => {
     if (screen !== "dashboard" || feedbackFired.current) return;
-    // 90 second timer
     const t90 = setTimeout(() => {
-      if (!feedbackFired.current) { feedbackFired.current = true; setFeedbackOpen(true); }
+      if (!feedbackFired.current) { feedbackFired.current = true; setFeedbackOpen(true); posthog.capture("feedback_modal_shown", { trigger: "timer" }); }
     }, 90 * 1000);
     return () => clearTimeout(t90);
-  }, [screen]); // only depends on screen — never resets once started
+  }, [screen]);
 
   useEffect(() => {
     if (feedbackFired.current || !insights) return;
-    // Works regardless of screen — user may be in a module when they complete the last one
     const localStatuses = computeModuleStatuses(d, m);
     const activeCount = Object.values(localStatuses).filter(s => s.status !== "na").length;
     if (activeCount > 0 && completedModules.length >= activeCount) {
       const t3 = setTimeout(() => {
-        if (!feedbackFired.current) { feedbackFired.current = true; setFeedbackOpen(true); }
+        if (!feedbackFired.current) { feedbackFired.current = true; setFeedbackOpen(true); posthog.capture("feedback_modal_shown", { trigger: "completion" }); }
       }, 3000);
       return () => clearTimeout(t3);
     }
@@ -3680,16 +3679,18 @@ export default function Candid() {
     setActiveSection(section || null);
     setPrevScreen(from || screen);
     setScreen("moduleDeepDive");
-    // Scroll to app container, not window top (avoids landing page scroll)
+    posthog.capture("module_opened", { module_key: key, from });
     setTimeout(() => {
       const appEl = document.getElementById("candid-app");
       if (appEl) appEl.scrollIntoView({ behavior: "instant", block: "start" });
     }, 0);
   }
   function markModuleComplete(key) {
-    setCompletedModules(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
+    setCompletedModules(prev => {
+      const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
+      if (!prev.includes(key)) posthog.capture("module_completed", { module_key: key, total_completed: next.length });
+      return next;
+    });
   }
 
   async function callClaude(prompt, maxTokens=1200) {
@@ -3742,8 +3743,8 @@ Return exactly this structure:
         insurance:{status:"attention",summary:"Income protection and life insurance not confirmed — worth reviewing."}
       }
     };
-    try { const result = await callClaude(prompt,1200); setInsights(result); }
-    catch(e) { setInsights(fallback); }
+    try { const result = await callClaude(prompt,1200); setInsights(result); posthog.capture("report_generated", { score: result.score, tax_band: m.taxBandLabel }); }
+    catch(e) { setInsights(fallback); posthog.capture("report_generated", { score: fallback.score, fallback: true }); }
     finally { setScreen("dashboard"); }
   }
 
@@ -3811,7 +3812,10 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
         <OnboardingStep step={step} d={d} set={set}/>
         <div style={{display:"flex",gap:"10px",marginTop:"40px"}}>
           <button onClick={() => step>0 ? setStep(s=>s-1) : setScreen("landing")} style={{flex:1,padding:"13px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.22)",borderRadius:"8px",fontSize:"15px",color:TEXT,fontWeight:500}}>← Back</button>
-          <button onClick={() => step<STEPS.length-1 ? setStep(s=>s+1) : generateDashboard()} style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"8px",fontSize:"15px",fontWeight:600,color:WHITE}}>
+          <button onClick={() => {
+            posthog.capture("onboarding_step_completed", { step: step + 1, step_name: STEPS[step] });
+            step<STEPS.length-1 ? setStep(s=>s+1) : generateDashboard();
+          }} style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"8px",fontSize:"15px",fontWeight:600,color:WHITE}}>
             {step===STEPS.length-1 ? (insights ? "Regenerate my report →" : "Generate my Candid report →") : "Continue →"}
           </button>
         </div>
