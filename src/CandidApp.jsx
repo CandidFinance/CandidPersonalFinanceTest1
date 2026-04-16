@@ -40,9 +40,56 @@ function fmt(n) {
   return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Math.abs(n||0));
 }
 
+// Formats a raw numeric value for display inside an input on blur
+// type: "gbp" → £12,345 | "pct" → 5.0% | else raw
+function fmtInput(val, type) {
+  const n = parseFloat(String(val).replace(/[£,%\s]/g,""));
+  if (isNaN(n) || val === "") return val;
+  if (type === "gbp") return new Intl.NumberFormat("en-GB",{minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
+  if (type === "pct") return n % 1 === 0 ? `${n}.0` : `${parseFloat(n.toFixed(1))}`;
+  return val;
+}
+// Strips formatting back to raw number string for onChange
+function stripFmt(val) {
+  return String(val).replace(/[£,%,\s]/g,"");
+}
+
+// A formatted number input that shows £xx,xxx on blur and x.x for %
+function FmtInput({ value, onChange, placeholder, fmtType, step, style }) {
+  const [display, setDisplay] = useState(value ? fmtInput(value, fmtType) : "");
+  useEffect(() => { setDisplay(value ? fmtInput(value, fmtType) : ""); }, [value]);
+  return (
+    <div style={{position:"relative", ...style}}>
+      {fmtType === "gbp" && display !== "" && (
+        <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:TEXT,pointerEvents:"none",lineHeight:1}}>£</span>
+      )}
+      {fmtType === "pct" && display !== "" && (
+        <span style={{position:"absolute",right:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:TEXT,pointerEvents:"none",lineHeight:1}}>%</span>
+      )}
+      <input
+        style={{...INP, paddingLeft: fmtType==="gbp" && display !== "" ? "26px" : "14px",
+                        paddingRight: fmtType==="pct" && display !== "" ? "30px" : "14px"}}
+        value={display}
+        placeholder={placeholder}
+        step={step || (fmtType==="pct" ? "0.1" : "1")}
+        onFocus={() => setDisplay(stripFmt(display))}
+        onBlur={() => setDisplay(value ? fmtInput(value, fmtType) : "")}
+        onChange={e => {
+          const raw = stripFmt(e.target.value);
+          setDisplay(e.target.value);
+          onChange(raw);
+        }}
+      />
+    </div>
+  );
+}
+
 // ── User contributing to pension ────────────────────────────────────────────────────────
 function isPensionContributing(d) {
-  return Number(d.myContribution) > 0;
+  if (d.hasPension !== "yes") return false;
+  // If they confirmed a pension exists but left % blank, treat as contributing
+  const pct = Number(d.myContribution);
+  return isNaN(pct) || d.myContribution === "" || pct > 0;
 }
 
 // ── Equivalence engine ────────────────────────────────────────────────────────
@@ -1579,12 +1626,12 @@ function OnboardingStep({ step, d, set }) {
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Cash & savings</h2>
       <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>How your liquid money is sitting right now.</p>
-      <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport"><input style={INP} type="number" value={d.monthlyExpenses} onChange={e => set("monthlyExpenses",e.target.value)} placeholder="e.g. 2,500"/></Field>
+      <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport"><FmtInput fmtType="gbp" value={d.monthlyExpenses} onChange={v=>set("monthlyExpenses",v)} placeholder="e.g. 2,500"/></Field>
       <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:"16px"}}>
-        <Field label="Total cash savings (£)"><input style={INP} type="number" value={d.cashSavings} onChange={e => set("cashSavings",e.target.value)} placeholder="e.g. 25,000"/></Field>
-        <Field label="Interest rate (%)"><input style={INP} type="number" step="0.1" value={d.savingsRate} onChange={e => set("savingsRate",e.target.value)} placeholder="4.5"/></Field>
+        <Field label="Total cash savings (£)"><FmtInput fmtType="gbp" value={d.cashSavings} onChange={v=>set("cashSavings",v)} placeholder="e.g. 25,000"/></Field>
+        <Field label="Interest rate (%)"><FmtInput fmtType="pct" value={d.savingsRate} onChange={v=>set("savingsRate",v)} placeholder="4.5"/></Field>
       </div>
-      <Field label="Premium bonds (£)" hint="Max £50,000. Enter 0 if none."><input style={INP} type="number" value={d.premiumBonds} onChange={e => set("premiumBonds",e.target.value)} placeholder="e.g. 10,000"/></Field>
+      <Field label="Premium bonds (£)" hint="Max £50,000. Enter 0 if none."><FmtInput fmtType="gbp" value={d.premiumBonds} onChange={v=>set("premiumBonds",v)} placeholder="e.g. 10,000"/></Field>
     </div>
   );
   if (step === 2) return (
@@ -1597,16 +1644,16 @@ function OnboardingStep({ step, d, set }) {
       {d.hasInvestments === "yes" && (
         <div>
           <Field label="Paid into ISA this tax year (£)" hint="£20,000 annual limit — resets every April 5th.">
-            <input style={INP} type="number" value={d.isaUsedThisYear} onChange={e => set("isaUsedThisYear",e.target.value)} placeholder="e.g. 8,000"/>
+            <FmtInput fmtType="gbp" value={d.isaUsedThisYear} onChange={v=>set("isaUsedThisYear",v)} placeholder="e.g. 8,000"/>
           </Field>
           <Field label="Total ISA value from previous years (£)" hint="Your ISA balance before this tax year's contributions.">
-            <input style={INP} type="number" value={d.isaPreviousBalance} onChange={e => set("isaPreviousBalance",e.target.value)} placeholder="e.g. 24,000"/>
+            <FmtInput fmtType="gbp" value={d.isaPreviousBalance} onChange={v=>set("isaPreviousBalance",v)} placeholder="e.g. 24,000"/>
           </Field>
           <Field label="ISA type">
             <Toggle value={d.isaType} onChange={v => set("isaType",v)} options={[{value:"cash",label:"Cash ISA"},{value:"ss",label:"Stocks & Shares"},{value:"both",label:"Both"},{value:"none",label:"Neither yet"}]}/>
           </Field>
-          <Field label="Investments outside an ISA (£)"><input style={INP} type="number" value={d.unwrappedValue} onChange={e => set("unwrappedValue",e.target.value)} placeholder="e.g. 15,000"/></Field>
-          <Field label="Estimated unrealised gains (£)" hint="Profit above what you paid for your unwrapped investments."><input style={INP} type="number" value={d.unrealisedGains} onChange={e => set("unrealisedGains",e.target.value)} placeholder="e.g. 4,500"/></Field>
+          <Field label="Investments outside an ISA (£)"><FmtInput fmtType="gbp" value={d.unwrappedValue} onChange={v=>set("unwrappedValue",v)} placeholder="e.g. 15,000"/></Field>
+          <Field label="Estimated unrealised gains (£)" hint="Profit above what you paid for your unwrapped investments."><FmtInput fmtType="gbp" value={d.unrealisedGains} onChange={v=>set("unrealisedGains",v)} placeholder="e.g. 4,500"/></Field>
         </div>
       )}
     </div>
@@ -1621,11 +1668,11 @@ function OnboardingStep({ step, d, set }) {
       {d.hasPension === "yes" ? (
         <div>
           <div style={g2}>
-            <Field label="Your contribution (%)"><input style={INP} type="number" value={d.myContribution} onChange={e => set("myContribution",e.target.value)} placeholder="e.g. 5"/></Field>
-            <Field label="Employer match (%)"><input style={INP} type="number" value={d.employerMatch} onChange={e => set("employerMatch",e.target.value)} placeholder="e.g. 5"/></Field>
+            <Field label="Your contribution (%)"><FmtInput fmtType="pct" value={d.myContribution} onChange={v=>set("myContribution",v)} placeholder="e.g. 5"/></Field>
+            <Field label="Employer match (%)"><FmtInput fmtType="pct" value={d.employerMatch} onChange={v=>set("employerMatch",v)} placeholder="e.g. 5"/></Field>
           </div>
           <div style={g2}>
-            <Field label="Pot value (£)"><input style={INP} type="number" value={d.potValue} onChange={e => set("potValue",e.target.value)} placeholder="e.g. 35,000"/></Field>
+            <Field label="Pot value (£)"><FmtInput fmtType="gbp" value={d.potValue} onChange={v=>set("potValue",v)} placeholder="e.g. 35,000"/></Field>
             <Field label="Target retirement age"><input style={INP} type="number" value={d.retirementAge} onChange={e => set("retirementAge",e.target.value)} placeholder="65"/></Field>
           </div>
         </div>
@@ -1639,7 +1686,7 @@ function OnboardingStep({ step, d, set }) {
   if (step === 4) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Debt</h2>
-      <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>Student loans and mortgages — both need their own strategy.</p>
+      <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>Student loans, mortgages, and personal loans — each needs its own strategy.</p>
       <Field label="Student loan">
         <select style={INP} value={d.studentLoan} onChange={e => set("studentLoan",e.target.value)}>
           <option value="none">No student loan</option>
@@ -1648,17 +1695,32 @@ function OnboardingStep({ step, d, set }) {
           <option value="plan5">Plan 5 — 2023 onwards</option>
         </select>
       </Field>
-      {d.studentLoan !== "none" && <Field label="Outstanding balance (£)"><input style={INP} type="number" value={d.loanBalance} onChange={e => set("loanBalance",e.target.value)} placeholder="e.g. 35,000"/></Field>}
+      {d.studentLoan !== "none" && <Field label="Outstanding balance (£)"><FmtInput fmtType="gbp" value={d.loanBalance} onChange={v=>set("loanBalance",v)} placeholder="e.g. 35,000"/></Field>}
       <Field label="Do you have a mortgage?">
         <Toggle value={d.hasMortgage} onChange={v => set("hasMortgage",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"Not yet"}]}/>
       </Field>
       {d.hasMortgage === "yes" && (
         <div>
           <div style={g2}>
-            <Field label="Outstanding balance (£)"><input style={INP} type="number" value={d.mortgageBalance} onChange={e => set("mortgageBalance",e.target.value)} placeholder="e.g. 280,000"/></Field>
-            <Field label="Interest rate (%)"><input style={INP} type="number" step="0.1" value={d.mortgageRate} onChange={e => set("mortgageRate",e.target.value)} placeholder="e.g. 4.5"/></Field>
+            <Field label="Outstanding balance (£)"><FmtInput fmtType="gbp" value={d.mortgageBalance} onChange={v=>set("mortgageBalance",v)} placeholder="e.g. 280,000"/></Field>
+            <Field label="Interest rate (%)"><FmtInput fmtType="pct" value={d.mortgageRate} onChange={v=>set("mortgageRate",v)} placeholder="e.g. 4.5"/></Field>
           </div>
-          <Field label="Monthly payment (£)"><input style={INP} type="number" value={d.monthlyMortgage} onChange={e => set("monthlyMortgage",e.target.value)} placeholder="e.g. 1,400"/></Field>
+          <Field label="Monthly payment (£)"><FmtInput fmtType="gbp" value={d.monthlyMortgage} onChange={v=>set("monthlyMortgage",v)} placeholder="e.g. 1,400"/></Field>
+        </div>
+      )}
+      <Field label="Do you have a personal loan?">
+        <Toggle value={d.hasPersonalLoan} onChange={v => set("hasPersonalLoan",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"}]}/>
+      </Field>
+      {d.hasPersonalLoan === "yes" && (
+        <div>
+          <div style={g2}>
+            <Field label="Outstanding balance (£)"><FmtInput fmtType="gbp" value={d.personalLoanBalance} onChange={v=>set("personalLoanBalance",v)} placeholder="e.g. 8,000"/></Field>
+            <Field label="Interest rate (%)"><FmtInput fmtType="pct" value={d.personalLoanRate} onChange={v=>set("personalLoanRate",v)} placeholder="e.g. 9.9"/></Field>
+          </div>
+          <div style={g2}>
+            <Field label="Monthly payment (£)"><FmtInput fmtType="gbp" value={d.personalLoanMonthly} onChange={v=>set("personalLoanMonthly",v)} placeholder="e.g. 180"/></Field>
+            <Field label="Months remaining"><input style={INP} type="number" value={d.personalLoanTermRemaining} onChange={e=>set("personalLoanTermRemaining",e.target.value)} placeholder="e.g. 36"/></Field>
+          </div>
         </div>
       )}
     </div>
@@ -1839,24 +1901,23 @@ function computeModuleStatuses(d, m) {
 // Pension — missed match + contribution check
 const contributing = isPensionContributing(d);
 
-const pensionImpact = Math.round(
-  m.missedMatch +
-  (!contributing ? m.salary * 0.05 * m.tr : 0)
-);
+const pensionImpact = !contributing
+  ? Math.round(m.salary * 0.05 * m.tr + m.missedMatch + 99999) // not contributing = highest priority
+  : Math.round(m.missedMatch + 0);
 
 s.pension = {
   status: !contributing
-    ? "critical"                // no contribution = leaving free money
+    ? "critical"
     : m.missedMatch > 0
-      ? "critical"              // contributing but missing match
+      ? "critical"
       : "attention",
 
-  impact: pensionImpact > 0 ? pensionImpact : null,
+  impact: pensionImpact,
 
   impactLabel: m.missedMatch > 0
     ? `${fmt(m.missedMatch)}/yr in missed employer match`
-    : !contributing && pensionImpact > 0
-      ? `${fmt(pensionImpact)}/yr in pension tax relief foregone`
+    : !contributing
+      ? `No pension — ${fmt(Math.round(m.salary * 0.05 * m.tr))}/yr tax relief foregone`
       : null,
 };
 
@@ -1972,7 +2033,7 @@ function FeedbackButton() {
   );
 }
 
-function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules, onEditInputs }) {
+function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules, onEditInputs, feedbackShown, onDismissFeedback }) {
   const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
       if (!insights) return null;
@@ -2234,6 +2295,33 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
   </div>
 )}
 
+        {/* Total opportunity banner */}
+        {(() => {
+          const totalOpp = activeModules.reduce((sum, mm) => {
+            const raw = mm.impact || 0;
+            // Exclude pension sentinel value (99999 + tax relief) used for sorting
+            const capped = Math.min(raw, 99998);
+            return sum + (capped > 0 ? capped : 0);
+          }, 0);
+          if (totalOpp < 500) return null;
+          const eq = getEquivalence(totalOpp);
+          return (
+            <div className="fu1" style={{background:G,borderRadius:"14px",padding:"20px 24px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"20px",flexWrap:"wrap"}}>
+              <div style={{flex:1,minWidth:"200px"}}>
+                <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"6px"}}>Your total opportunity</div>
+                <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
+                  <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:WHITE}}>{fmt(totalOpp)}</span>
+                  <span style={{fontSize:"14px",color:"rgba(255,255,255,0.55)"}}>you could be leaving on the table</span>
+                </div>
+                {eq && <div style={{fontSize:"12px",color:GOLD,marginTop:"6px"}}>{eq}</div>}
+              </div>
+              <div style={{fontSize:"12px",color:"rgba(255,255,255,0.4)",maxWidth:"220px",lineHeight:1.6}}>
+                Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Module breakdown — sorted, collapsible */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
@@ -2253,16 +2341,18 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
                 </div>
                 <span style={{fontSize:"10px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginBottom:"8px"}}>{SL[mm.status]}</span>
                 <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginBottom:"6px"}}>{mm.summary}</p>
-                {mm.impactLabel && (
-                  <div style={{fontSize:"11px",color:G,fontWeight:600,background:"rgba(22,47,36,0.05)",borderRadius:"5px",padding:"4px 8px",marginBottom:"4px"}}>{mm.impactLabel}</div>
-                )}
-                {mm.impact > 0 && (() => {
-                  const eq = getEquivalence(mm.impact);
-                  return eq ? (
-                    <div style={{fontSize:"10.5px",color:MUT,background:"rgba(196,150,58,0.07)",borderRadius:"5px",padding:"4px 8px",marginBottom:"8px",lineHeight:1.35}}>{eq}</div>
-                  ) : null;
-                })()}
-                <p style={{fontSize:"12px",color:G,fontWeight:500,marginTop:"auto",paddingTop:"8px"}}>View details →</p>
+                <div style={{marginTop:"auto",paddingTop:"8px"}}>
+                  {mm.impactLabel && (
+                    <div style={{fontSize:"11px",color:G,fontWeight:600,background:"rgba(22,47,36,0.05)",borderRadius:"5px",padding:"4px 8px",marginBottom:"4px"}}>{mm.impactLabel}</div>
+                  )}
+                  {mm.impact > 0 && (() => {
+                    const eq = getEquivalence(mm.impact);
+                    return eq ? (
+                      <div style={{fontSize:"10.5px",color:MUT,background:"rgba(196,150,58,0.07)",borderRadius:"5px",padding:"4px 8px",marginBottom:"8px",lineHeight:1.35}}>{eq}</div>
+                    ) : null;
+                  })()}
+                  <p style={{fontSize:"12px",color:G,fontWeight:500}}>View details →</p>
+                </div>
               </div>
             );
           })}
@@ -2284,16 +2374,18 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
                       </div>
                       <span style={{fontSize:"10px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginBottom:"8px"}}>{SL[mm.status]}</span>
                       <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginBottom:"6px"}}>{mm.summary}</p>
-                      {mm.impactLabel && (
-                        <div style={{fontSize:"11px",color:G,fontWeight:600,background:"rgba(22,47,36,0.05)",borderRadius:"5px",padding:"4px 8px",marginBottom:"4px"}}>{mm.impactLabel}</div>
-                      )}
-                      {mm.impact > 0 && (() => {
-                        const eq = getEquivalence(mm.impact);
-                        return eq ? (
-                          <div style={{fontSize:"10.5px",color:MUT,background:"rgba(196,150,58,0.07)",borderRadius:"5px",padding:"4px 8px",marginBottom:"8px",lineHeight:1.35}}>{eq}</div>
-                        ) : null;
-                      })()}
-                      <p style={{fontSize:"12px",color:G,fontWeight:500,marginTop:"auto",paddingTop:"8px"}}>View details →</p>
+                      <div style={{marginTop:"auto",paddingTop:"8px"}}>
+                        {mm.impactLabel && (
+                          <div style={{fontSize:"11px",color:G,fontWeight:600,background:"rgba(22,47,36,0.05)",borderRadius:"5px",padding:"4px 8px",marginBottom:"4px"}}>{mm.impactLabel}</div>
+                        )}
+                        {mm.impact > 0 && (() => {
+                          const eq = getEquivalence(mm.impact);
+                          return eq ? (
+                            <div style={{fontSize:"10.5px",color:MUT,background:"rgba(196,150,58,0.07)",borderRadius:"5px",padding:"4px 8px",marginBottom:"8px",lineHeight:1.35}}>{eq}</div>
+                          ) : null;
+                        })()}
+                        <p style={{fontSize:"12px",color:G,fontWeight:500}}>View details →</p>
+                      </div>
                     </div>
                   );
                 })}
@@ -2345,6 +2437,26 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
           Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.
         </p>
       </ContentWrap>
+      {feedbackShown && createPortal(
+        <div onClick={onDismissFeedback} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
+            <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
+              <span style={{fontSize:"20px"}}>💬</span>
+              <div>
+                <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>How was your Candid report?</div>
+                <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>60 seconds — helps us build this right</div>
+              </div>
+              <button onClick={onDismissFeedback} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:"20px",color:"rgba(22,47,36,0.4)",cursor:"pointer",lineHeight:1}}>×</button>
+            </div>
+            <div style={{padding:"24px"}}>
+              <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"20px"}}>Five quick questions — completely anonymous unless you choose to leave your email.</p>
+              <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
+              <button onClick={onDismissFeedback} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>Close — I'll use the tab</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </PageWrap>
   );
 }
@@ -3433,7 +3545,20 @@ const SOPHIE_DATA = {
   hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"yes",
 };
 
-const INIT_DATA = HARVEY_DATA;
+const BLANK_DATA = {
+  name:"", age:"", salary:"", otherIncome:"",
+  monthlyExpenses:"", cashSavings:"", savingsRate:"", premiumBonds:"",
+  hasInvestments:"no", isaUsedThisYear:"", isaPreviousBalance:"", isaType:"none", unwrappedValue:"", unrealisedGains:"",
+  hasPension:"no", myContribution:"", employerMatch:"", potValue:"", retirementAge:"65",
+  studentLoan:"none", loanBalance:"", hasMortgage:"no", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
+  hasBonus:"no", bonusAmount:"", salaryTrajectory:"moderate", savingsGoal:"goals", investHorizon:"5to10",
+  fixExpiry:"", inheritDirection:"", estateValue:"", hasWill:"no",
+  hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"",
+  hasKids:"no", numKids:"", kidsAges:"", hasJISA:"no", juniorISAValue:"",
+  hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"no",
+};
+
+const INIT_DATA = BLANK_DATA;
 
 export default function Candid() {
   const [screen,           setScreen]           = useState("landing");
@@ -3449,9 +3574,27 @@ export default function Candid() {
   const [completedModules, setCompletedModules] = useState([]);
   const [prevScreen,       setPrevScreen]       = useState("dashboard");
   const [activePersona,    setActivePersona]    = useState("harvey");
+  const [feedbackShown,    setFeedbackShown]    = useState(false);
 
   const set = (k, v) => setD(p => ({...p, [k]:v}));
   const m = calcMetrics(d);
+
+  // Feedback trigger: 90s after dashboard loads, OR 3s after all modules reviewed
+  useEffect(() => {
+    if (screen !== "dashboard" || feedbackShown) return;
+    const timer = setTimeout(() => setFeedbackShown(true), 90 * 1000);
+    return () => clearTimeout(timer);
+  }, [screen, feedbackShown]);
+
+  useEffect(() => {
+    if (feedbackShown || screen !== "dashboard" || !insights) return;
+    const localStatuses = computeModuleStatuses(d, m);
+    const activeCount = Object.values(localStatuses).filter(s => s.status !== "na").length;
+    if (activeCount > 0 && completedModules.length >= activeCount) {
+      const timer = setTimeout(() => setFeedbackShown(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [completedModules, screen, feedbackShown]);
 
   function switchPersona(persona) {
     const data = persona === "sophie" ? SOPHIE_DATA : HARVEY_DATA;
@@ -3588,7 +3731,7 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
   function resetAll() {
     setScreen("landing"); setStep(0); setInsights(null); setD(INIT_DATA);
     setSelectedConcerns([]); setConcernIdx(0); setConcernAnswers({}); setConcernResults([]);
-    setActiveModule(null); setCompletedModules([]);
+    setActiveModule(null); setCompletedModules([]); setFeedbackShown(false);
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
 
@@ -3623,6 +3766,7 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
     <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
       onOpenModule={key => openModule(key, "dashboard")}
       onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
+      feedbackShown={feedbackShown} onDismissFeedback={() => setFeedbackShown(false)}
       onDigDeeper={() => { setConcernResults([]); setConcernIdx(0); setScreen("concernSelector"); }}/>
   );
 
