@@ -1,6 +1,18 @@
 import { useState } from "react"
 import ReactDOM from "react-dom/client"
+import posthog from "posthog-js"
 import CandidApp from "./CandidApp.jsx"
+
+// ── Analytics — runs once at module load, production only ─────────────────────
+if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
+  posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+    api_host: "https://eu.i.posthog.com",
+    person_profiles: "identified_only",
+    capture_pageview: true,
+    capture_pageleave: true,
+    autocapture: false,
+  })
+}
 
 const G    = "#162f24"
 const GOLD = "#c4963a"
@@ -277,6 +289,7 @@ function Root() {
 
   function handleStart() {
     setLaunched(true)
+    posthog.capture("app_started")
     setTimeout(() => {
       document.getElementById("candid-app")?.scrollIntoView({ behavior: "smooth" })
     }, 100)
