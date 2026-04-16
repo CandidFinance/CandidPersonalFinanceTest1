@@ -2337,7 +2337,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
         {/* Module breakdown — sorted, collapsible */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
-          <span style={{fontSize:"12px",color:MUT}}>{completedModules.length} of {activeModules.length} reviewed</span>
+          <span style={{fontSize:"12px",color:MUT}}>{completedModules.filter(k => activeModules.some(mm => mm.key === k)).length} of {activeModules.length} reviewed</span>
         </div>
 
         {/* Unreviewed modules — top 3 always visible */}
@@ -3803,7 +3803,10 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
     const allMods = MODULE_META.map(mm => {
       const local = localStatuses[mm.key] || { status:"na", impact:0 };
       const aiMod = insights?.modules?.[mm.key];
-      const status = (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
+      // Use same logic as Dashboard — local always wins for pension/personalLoan
+      const status = (mm.key === "pension" || mm.key === "personalLoan")
+        ? local.status
+        : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
       return { ...mm, status, impact: local.impact||0 };
     }).filter(mm => mm.status !== "na");
     const sortedMods = [...allMods].sort((a,b) => {
