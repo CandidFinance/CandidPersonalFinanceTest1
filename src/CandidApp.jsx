@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -1900,10 +1900,10 @@ function computeModuleStatuses(d, m) {
 
 // Pension — missed match + contribution check
 const contributing = isPensionContributing(d);
-
+const bonusSacrificeOpportunity = (+d.bonusAmount||0) * m.tr;
 const pensionImpact = !contributing
-  ? Math.round(m.salary * 0.05 * m.tr + m.missedMatch + 99999) // not contributing = highest priority
-  : Math.round(m.missedMatch + 0);
+  ? Math.round(m.salary * 0.05 * m.tr + m.missedMatch + 99999) // not contributing = highest priority sentinel
+  : Math.round(m.missedMatch + bonusSacrificeOpportunity); // contributing but may have bonus or match gap
 
 s.pension = {
   status: !contributing
@@ -1911,14 +1911,14 @@ s.pension = {
     : m.missedMatch > 0
       ? "critical"
       : "attention",
-
   impact: pensionImpact,
-
   impactLabel: m.missedMatch > 0
     ? `${fmt(m.missedMatch)}/yr in missed employer match`
     : !contributing
       ? `No pension — ${fmt(Math.round(m.salary * 0.05 * m.tr))}/yr tax relief foregone`
-      : null,
+      : bonusSacrificeOpportunity > 0
+        ? `Up to ${fmt(Math.round(bonusSacrificeOpportunity))} bonus sacrifice saving`
+        : null,
 };
 
   // Student loan
@@ -2033,7 +2033,7 @@ function FeedbackButton() {
   );
 }
 
-function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules, onEditInputs, feedbackShown, onDismissFeedback }) {
+function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules, onEditInputs, feedbackOpen, onDismissFeedback }) {
   const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
       if (!insights) return null;
@@ -2066,10 +2066,15 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
   const allModules = MODULE_META.map(mm => {
     const local = localStatuses[mm.key] || { status:"na", impact:0 };
     const aiMod = insights.modules?.[mm.key];
-    // AI summary wins; local status wins when AI says na but local disagrees (new modules)
-    const status = (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
+    // Pension: always trust local status — AI tends to hallucinate based on stale data
+    // Other modules: AI status wins if it has one, else fall back to local
+    const status = mm.key === "pension"
+      ? local.status
+      : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
     const summary = aiMod?.summary || (local.status !== "na" ? `Review your ${mm.title.toLowerCase()} situation.` : "N/A");
-    return { ...mm, status, summary, impact: local.impact||0, impactLabel: local.impactLabel };
+    // Always use local impact for sorting — AI doesn't provide numeric impact
+    const impact = local.impact || 0;
+    return { ...mm, status, summary, impact, impactLabel: local.impactLabel };
   });
 
   const activeModules = allModules.filter(mm => mm.status !== "na");
@@ -2298,6 +2303,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
         {/* Total opportunity banner */}
         {(() => {
           const totalOpp = activeModules.reduce((sum, mm) => {
+            if (mm.key === "insurance") return sum; // income-at-risk figure inflates total misleadingly
             const raw = mm.impact || 0;
             // Exclude pension sentinel value (99999 + tax relief) used for sorting
             const capped = Math.min(raw, 99998);
@@ -2437,7 +2443,7 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
           Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.
         </p>
       </ContentWrap>
-      {feedbackShown && createPortal(
+      {feedbackOpen && createPortal(
         <div onClick={onDismissFeedback} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
           <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
             <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
@@ -3574,27 +3580,33 @@ export default function Candid() {
   const [completedModules, setCompletedModules] = useState([]);
   const [prevScreen,       setPrevScreen]       = useState("dashboard");
   const [activePersona,    setActivePersona]    = useState("harvey");
-  const [feedbackShown,    setFeedbackShown]    = useState(false);
+  const [feedbackOpen,    setFeedbackOpen]    = useState(false);
+  const feedbackFired = useRef(false); // never resets — prevents re-triggering after dismiss
 
   const set = (k, v) => setD(p => ({...p, [k]:v}));
   const m = calcMetrics(d);
 
-  // Feedback trigger: 90s after dashboard loads, OR 3s after all modules reviewed
+  // One-shot feedback trigger: 90s after dashboard loads OR 3s after all modules reviewed
   useEffect(() => {
-    if (screen !== "dashboard" || feedbackShown) return;
-    const timer = setTimeout(() => setFeedbackShown(true), 90 * 1000);
-    return () => clearTimeout(timer);
-  }, [screen, feedbackShown]);
+    if (screen !== "dashboard" || feedbackFired.current) return;
+    // 90 second timer
+    const t90 = setTimeout(() => {
+      if (!feedbackFired.current) { feedbackFired.current = true; setFeedbackOpen(true); }
+    }, 90 * 1000);
+    return () => clearTimeout(t90);
+  }, [screen]); // only depends on screen — never resets once started
 
   useEffect(() => {
-    if (feedbackShown || screen !== "dashboard" || !insights) return;
+    if (screen !== "dashboard" || feedbackFired.current || !insights) return;
     const localStatuses = computeModuleStatuses(d, m);
     const activeCount = Object.values(localStatuses).filter(s => s.status !== "na").length;
     if (activeCount > 0 && completedModules.length >= activeCount) {
-      const timer = setTimeout(() => setFeedbackShown(true), 3000);
-      return () => clearTimeout(timer);
+      const t3 = setTimeout(() => {
+        if (!feedbackFired.current) { feedbackFired.current = true; setFeedbackOpen(true); }
+      }, 3000);
+      return () => clearTimeout(t3);
     }
-  }, [completedModules, screen, feedbackShown]);
+  }, [completedModules]); // only depends on completedModules
 
   function switchPersona(persona) {
     const data = persona === "sophie" ? SOPHIE_DATA : HARVEY_DATA;
@@ -3731,7 +3743,8 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
   function resetAll() {
     setScreen("landing"); setStep(0); setInsights(null); setD(INIT_DATA);
     setSelectedConcerns([]); setConcernIdx(0); setConcernAnswers({}); setConcernResults([]);
-    setActiveModule(null); setCompletedModules([]); setFeedbackShown(false);
+    setActiveModule(null); setCompletedModules([]);
+    setFeedbackOpen(false); feedbackFired.current = false;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
 
@@ -3766,7 +3779,7 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
     <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
       onOpenModule={key => openModule(key, "dashboard")}
       onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
-      feedbackShown={feedbackShown} onDismissFeedback={() => setFeedbackShown(false)}
+      feedbackOpen={feedbackOpen} onDismissFeedback={() => setFeedbackOpen(false)}
       onDigDeeper={() => { setConcernResults([]); setConcernIdx(0); setScreen("concernSelector"); }}/>
   );
 
