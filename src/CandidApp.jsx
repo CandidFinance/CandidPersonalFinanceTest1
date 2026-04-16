@@ -3592,8 +3592,6 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
 
-  }
-
   // ── Router ──
   if (screen === "landing") return <Landing onFullJourney={() => setScreen("onboarding")} onConcernOnly={() => setScreen("concernSelector")} onStarterFlow={() => setScreen("starterFlow")} activePersona={activePersona} onSwitchPersona={switchPersona}/>;
 
