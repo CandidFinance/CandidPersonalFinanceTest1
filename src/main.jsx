@@ -1,6 +1,7 @@
 import { useState } from "react"
 import ReactDOM from "react-dom/client"
 import CandidApp from "./CandidApp.jsx"
+import posthog from 'posthog-js'
 
 const G    = "#162f24"
 const GOLD = "#c4963a"
