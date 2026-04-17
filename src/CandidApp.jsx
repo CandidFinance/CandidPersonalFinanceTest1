@@ -3730,17 +3730,17 @@ export default function Candid() {
   }
 
   async function callClaude(prompt, maxTokens=1200) {
-    const timeout = new Promise((_,reject) => setTimeout(() => reject(new Error("timeout")), 28000));
-    const call = fetch("https://api.anthropic.com/v1/messages", {
-      method:"POST",
-      headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
-    });
-    const res = await Promise.race([call, timeout]);
-    const json = await res.json();
-    const raw = (json.content?.[0]?.text||"").replace(/```json|```/g,"").trim();
-    return JSON.parse(raw);
-  }
+  const timeout = new Promise((_,reject) => setTimeout(() => reject(new Error("timeout")), 28000));
+  const call = fetch("/api/claude", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+  });
+  const res = await Promise.race([call, timeout]);
+  const json = await res.json();
+  const raw = (json.content?.[0]?.text||"").replace(/```json|```/g,"").trim();
+  return JSON.parse(raw);
+}
 
   async function generateDashboard() {
     setScreen("loading");
