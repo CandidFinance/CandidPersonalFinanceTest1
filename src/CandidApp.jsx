@@ -2,6 +2,27 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import posthog from "posthog-js";
 
+// ── Supabase client — module level, no package needed ─────────────────────────
+const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+async function supaInsert(table, row) {
+  if (!SUPA_URL || !SUPA_KEY) return null;
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPA_KEY,
+        "Authorization": `Bearer ${SUPA_KEY}`,
+        "Prefer": "return=representation",
+      },
+      body: JSON.stringify(row),
+    });
+    const data = await res.json();
+    return Array.isArray(data) && data[0]?.id ? data[0].id : null;
+  } catch(e) { return null; }
+}
+
 // ── Styles ────────────────────────────────────────────────────────────────────
 const FONTS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
@@ -2503,7 +2524,7 @@ function FeedbackModal({ onDismiss }) {
         </div>
         <div style={{padding:"24px"}}>
           <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"20px"}}>Five quick questions — completely anonymous unless you choose to leave your email.</p>
-          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" onClick={() => posthog.capture("feedback_submitted")} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
+          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" onClick={() => { posthog.capture("feedback_submitted"); supaUpdate({ feedback_submitted: true }); }} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
           <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>Close — I'll use the tab</button>
         </div>
       </div>
@@ -3630,7 +3651,19 @@ export default function Candid() {
   const [prevScreen,       setPrevScreen]       = useState("dashboard");
   const [activePersona,    setActivePersona]    = useState("harvey");
   const [feedbackOpen,    setFeedbackOpen]    = useState(false);
-  const feedbackFired = useRef(false); // never resets — prevents re-triggering after dismiss
+  const feedbackFired = useRef(false);
+  const supaRowId = useRef(null); // tracks the inserted row for later patches
+
+  async function supaUpdate(patch) {
+    if (!supaRowId.current || !SUPA_URL || !SUPA_KEY) return;
+    try {
+      await fetch(`${SUPA_URL}/rest/v1/test?id=eq.${supaRowId.current}`, {
+        method: "PATCH",
+        headers: { "Content-Type":"application/json", "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Prefer":"return=minimal" },
+        body: JSON.stringify(patch),
+      });
+    } catch(e) {}
+  }
 
   const set = (k, v) => setD(p => ({...p, [k]:v}));
   const m = calcMetrics(d);
@@ -3688,7 +3721,10 @@ export default function Candid() {
   function markModuleComplete(key) {
     setCompletedModules(prev => {
       const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
-      if (!prev.includes(key)) posthog.capture("module_completed", { module_key: key, total_completed: next.length });
+      if (!prev.includes(key)) {
+        posthog.capture("module_completed", { module_key: key, total_completed: next.length });
+        supaUpdate({ modules_completed: next.length });
+      }
       return next;
     });
   }
@@ -3743,7 +3779,61 @@ Return exactly this structure:
         insurance:{status:"attention",summary:"Income protection and life insurance not confirmed — worth reviewing."}
       }
     };
-    try { const result = await callClaude(prompt,1200); setInsights(result); posthog.capture("report_generated", { score: result.score, tax_band: m.taxBandLabel }); }
+    try {
+      const result = await callClaude(prompt,1200);
+      setInsights(result);
+      posthog.capture("report_generated", { score: result.score, tax_band: m.taxBandLabel });
+      // ── Supabase insert ──
+      const ls = computeModuleStatuses(d, m);
+      const criticals = Object.entries(ls).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
+      const totalOpp = Object.entries(ls).reduce((sum, [k,v]) => {
+        if (k === "insurance") return sum;
+        return sum + Math.min(v.impact||0, 99998);
+      }, 0);
+      const rowId = await supaInsert("test", {
+        session_id: posthog.get_distinct_id?.() || null,
+        age: +d.age||null,
+        salary: +d.salary||null,
+        other_income: +d.otherIncome||null,
+        tax_band: m.taxBandLabel,
+        salary_trajectory: d.salaryTrajectory||null,
+        monthly_expenses: +d.monthlyExpenses||null,
+        cash_savings: +d.cashSavings||null,
+        savings_rate: +d.savingsRate||null,
+        premium_bonds: +d.premiumBonds||null,
+        has_investments: d.hasInvestments === "yes",
+        isa_this_year: +d.isaUsedThisYear||null,
+        isa_previous: +d.isaPreviousBalance||null,
+        isa_type: d.isaType||null,
+        unwrapped_investments: +d.unwrappedValue||null,
+        has_pension: d.hasPension === "yes",
+        pension_my_pct: +d.myContribution||null,
+        pension_employer_pct: +d.employerMatch||null,
+        pension_pot: +d.potValue||null,
+        retirement_age: +d.retirementAge||null,
+        has_student_loan: d.studentLoan !== "none",
+        student_loan_plan: d.studentLoan !== "none" ? d.studentLoan : null,
+        student_loan_balance: +d.loanBalance||null,
+        has_mortgage: d.hasMortgage === "yes",
+        mortgage_balance: +d.mortgageBalance||null,
+        mortgage_rate: +d.mortgageRate||null,
+        mortgage_provider: d.mortgageProvider||null,
+        has_personal_loan: d.hasPersonalLoan === "yes",
+        personal_loan_balance: +d.personalLoanBalance||null,
+        personal_loan_rate: +d.personalLoanRate||null,
+        personal_loan_provider: d.personalLoanProvider||null,
+        has_bonus: d.hasBonus === "yes",
+        bonus_amount: +d.bonusAmount||null,
+        has_kids: d.hasKids === "yes",
+        num_kids: +d.numKids||null,
+        candid_score: result.score,
+        total_opportunity_gbp: Math.round(totalOpp / 100) * 100,
+        critical_modules: criticals,
+        modules_completed: 0,
+        feedback_submitted: false,
+      });
+      if (rowId) supaRowId.current = rowId;
+    }
     catch(e) { setInsights(fallback); posthog.capture("report_generated", { score: fallback.score, fallback: true }); }
     finally { setScreen("dashboard"); }
   }
@@ -3794,7 +3884,7 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
     setScreen("landing"); setStep(0); setInsights(null); setD(INIT_DATA);
     setSelectedConcerns([]); setConcernIdx(0); setConcernAnswers({}); setConcernResults([]);
     setActiveModule(null); setCompletedModules([]);
-    setFeedbackOpen(false); feedbackFired.current = false;
+    setFeedbackOpen(false); feedbackFired.current = false; supaRowId.current = null;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
 
