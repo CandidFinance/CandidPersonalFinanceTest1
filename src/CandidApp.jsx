@@ -3734,7 +3734,7 @@ export default function Candid() {
   const call = fetch("/api/claude", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
   });
   const res = await Promise.race([call, timeout]);
   const json = await res.json();
