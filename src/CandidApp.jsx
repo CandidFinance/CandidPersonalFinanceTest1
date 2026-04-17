@@ -1041,6 +1041,42 @@ function ProgressBar({ pct }) {
   );
 }
 
+function StepProgress({ step, steps }) {
+  return (
+    <div style={{background:WHITE,borderBottom:`1px solid ${CDARK}`,padding:"20px 24px",flexShrink:0}}>
+      <div style={{maxWidth:"580px",margin:"0 auto",display:"flex",alignItems:"center"}}>
+        {steps.map((label, i) => {
+          const done = i < step;
+          const current = i === step;
+          const size = current ? 34 : 28;
+          return (
+            <div key={i} style={{display:"flex",alignItems:"center",flex: i < steps.length - 1 ? 1 : 0}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",flexShrink:0}}>
+                <div style={{
+                  width:`${size}px`, height:`${size}px`, borderRadius:"50%",
+                  background: done ? G : current ? WHITE : "rgba(22,47,36,0.08)",
+                  border: current ? `2px solid ${GOLD}` : done ? "none" : "2px solid rgba(22,47,36,0.15)",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  transition:"all 0.3s ease",
+                }}>
+                  {done
+                    ? <span style={{color:WHITE,fontSize:"13px",fontWeight:700}}>✓</span>
+                    : <span style={{color: current ? G : MUT, fontSize:"12px", fontWeight:600}}>{i+1}</span>
+                  }
+                </div>
+                <span style={{fontSize:"10px",fontWeight:600,color:current?G:done?G:MUT,letterSpacing:"0.04em",whiteSpace:"nowrap",opacity:current?1:done?0.7:0.5}}>{label}</span>
+              </div>
+              {i < steps.length - 1 && (
+                <div style={{flex:1,height:"2px",background: i < step ? G : "rgba(22,47,36,0.12)",marginBottom:"18px",marginLeft:"6px",marginRight:"6px",transition:"background 0.4s ease"}}/>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function GhostBtn({ onClick, children }) {
   return (
     <button type="button" onClick={onClick} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.2)",borderRadius:"6px",padding:"6px 14px",color:"rgba(255,255,255,0.6)",fontSize:"12px"}}>
@@ -1067,22 +1103,13 @@ function ContentWrap({ children, maxWidth="580px" }) {
 }
 
 // ── Landing ────────────────────────────────────────────────────────────────────
-function Landing({ onFullJourney, onConcernOnly, onStarterFlow, activePersona, onSwitchPersona }) {
+function Landing({ onFullJourney, onConcernOnly, onStarterFlow }) {
   return (
     <div style={{minHeight:"100vh",background:G,fontFamily:SANS,display:"flex",flexDirection:"column"}}>
       <style>{FONTS}</style>
       <nav style={{padding:"22px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap"}}>
         <span style={{fontFamily:SERIF,color:GOLD,fontSize:"24px",fontWeight:700}}>Candid.</span>
         <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-          <div style={{display:"flex",background:"rgba(255,255,255,0.08)",borderRadius:"8px",padding:"3px",gap:"2px"}}>
-            <span style={{fontSize:"10px",color:"rgba(255,255,255,0.4)",padding:"5px 8px",letterSpacing:"0.06em",textTransform:"uppercase",alignSelf:"center"}}>Demo</span>
-            {[{id:"harvey",label:"Harvey",desc:"Higher rate, investments, bonus"},{id:"sophie",label:"Sophie",desc:"Basic rate, no pension, mortgage"}].map(p => (
-              <button key={p.id} type="button" onClick={() => onSwitchPersona(p.id)} title={p.desc}
-                style={{background:activePersona===p.id?GOLD:"transparent",border:"none",borderRadius:"5px",padding:"6px 14px",color:activePersona===p.id?G:WHITE,fontSize:"12px",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>
-                {p.label}
-              </button>
-            ))}
-          </div>
           <button type="button" onClick={onFullJourney} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.25)",borderRadius:"6px",padding:"8px 20px",color:WHITE,fontSize:"13px",fontWeight:500}}>Sign in</button>
         </div>
       </nav>
@@ -1617,6 +1644,29 @@ function StarterFlow({ onBack, onUpgrade }) {
 
 // ── Full onboarding ───────────────────────────────────────────────────────────
 const STEPS = ["About you","Cash & savings","Investments","Pension","Debt"];
+
+function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue }) {
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [step]);
+  return (
+    <PageWrap>
+      <NavBar center={`Step ${step+1} of ${steps.length} — ${steps[step]}`}
+        right={insights ? <GhostBtn onClick={onBackToDashboard}>← Back to report</GhostBtn> : null}/>
+      <StepProgress step={step} steps={steps}/>
+      <ContentWrap>
+        <OnboardingStep step={step} d={d} set={set}/>
+        <div style={{display:"flex",gap:"10px",marginTop:"40px"}}>
+          <button onClick={onBack} style={{flex:1,padding:"13px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.22)",borderRadius:"8px",fontSize:"15px",color:TEXT,fontWeight:500}}>← Back</button>
+          <button onClick={onContinue} style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"8px",fontSize:"15px",fontWeight:600,color:WHITE}}>
+            {step===steps.length-1 ? (insights ? "Regenerate my report →" : "Generate my Candid report →") : "Continue →"}
+          </button>
+        </div>
+        <p style={{marginTop:"18px",textAlign:"center",fontSize:"11px",color:MUT,lineHeight:1.6}}>
+          🔒 Your responses are anonymised and used only to improve Candid's accuracy. No personally identifiable information is stored.
+        </p>
+      </ContentWrap>
+    </PageWrap>
+  );
+}
 
 function OnboardingStep({ step, d, set }) {
   const g2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"};
@@ -3591,35 +3641,6 @@ function AllConcernsDone({ concernResults, hasFullScore, onBackToDashboard, onRe
 }
 
 // ── Main app ──────────────────────────────────────────────────────────────────
-const HARVEY_DATA = {
-  name:"Harvey", age:"29", salary:"85000", otherIncome:"",
-  monthlyExpenses:"3000", cashSavings:"40000", savingsRate:"4.2", premiumBonds:"10000",
-  hasInvestments:"yes", isaUsedThisYear:"8000", isaPreviousBalance:"22000", isaType:"ss", unwrappedValue:"15000", unrealisedGains:"4500",
-  hasPension:"yes", myContribution:"5", employerMatch:"5", potValue:"28000", retirementAge:"65",
-  studentLoan:"plan2", loanBalance:"35000", hasMortgage:"no", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
-  hasBonus:"yes", bonusAmount:"50000", salaryTrajectory:"high", savingsGoal:"goals", investHorizon:"10plus",
-  fixExpiry:"", inheritDirection:"passing", estateValue:"620000", hasWill:"no",
-  hasPersonalLoan:"yes", personalLoanBalance:"8000", personalLoanRate:"9.9", personalLoanMonthly:"180", personalLoanTermRemaining:"48", personalLoanProvider:"",
-  mortgageProvider:"",
-  hasKids:"no", numKids:"", kidsAges:"", hasJISA:"no", juniorISAValue:"",
-  hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"yes",
-};
-
-// Demo persona 2 — Sophie: 34, basic rate, no pension, high cash, mortgage expiring, Plan 2 loan, 1 child
-const SOPHIE_DATA = {
-  name:"Sophie", age:"34", salary:"42000", otherIncome:"",
-  monthlyExpenses:"2200", cashSavings:"55000", savingsRate:"3.8", premiumBonds:"0",
-  hasInvestments:"no", isaUsedThisYear:"0", isaPreviousBalance:"0", isaType:"none", unwrappedValue:"0", unrealisedGains:"0",
-  hasPension:"no", myContribution:"", employerMatch:"5", potValue:"0", retirementAge:"65",
-  studentLoan:"plan2", loanBalance:"28000", hasMortgage:"yes", mortgageBalance:"220000", mortgageRate:"5.2", monthlyMortgage:"1180",
-  hasBonus:"no", bonusAmount:"", salaryTrajectory:"moderate", savingsGoal:"house", investHorizon:"5to10",
-  fixExpiry:"under6m", inheritDirection:"", estateValue:"", hasWill:"no",
-  hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanProvider:"",
-  mortgageProvider:"",
-  hasKids:"yes", numKids:"1", kidsAges:"2", hasJISA:"no", juniorISAValue:"",
-  hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"yes",
-};
-
 const BLANK_DATA = {
   name:"", age:"", salary:"", otherIncome:"",
   monthlyExpenses:"", cashSavings:"", savingsRate:"", premiumBonds:"",
@@ -3649,7 +3670,6 @@ export default function Candid() {
   const [activeSection,    setActiveSection]    = useState(null);
   const [completedModules, setCompletedModules] = useState([]);
   const [prevScreen,       setPrevScreen]       = useState("dashboard");
-  const [activePersona,    setActivePersona]    = useState("harvey");
   const [feedbackOpen,    setFeedbackOpen]    = useState(false);
   const feedbackFired = useRef(false);
   const supaRowId = useRef(null); // tracks the inserted row for later patches
@@ -3688,17 +3708,6 @@ export default function Candid() {
       return () => clearTimeout(t3);
     }
   }, [completedModules]);
-
-  function switchPersona(persona) {
-    const data = persona === "sophie" ? SOPHIE_DATA : HARVEY_DATA;
-    setActivePersona(persona);
-    setD(data);
-    setInsights(null);
-    setCompletedModules([]);
-    setSelectedConcerns([]);
-    setConcernResults([]);
-    setScreen("landing");
-  }
 
   function toggleConcern(id) {
     setSelectedConcerns(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
@@ -3889,31 +3898,19 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
 }
 
   // ── Router ──
-  if (screen === "landing") return <Landing onFullJourney={() => setScreen("onboarding")} onConcernOnly={() => setScreen("concernSelector")} onStarterFlow={() => setScreen("starterFlow")} activePersona={activePersona} onSwitchPersona={switchPersona}/>;
+  if (screen === "landing") return <Landing onFullJourney={() => setScreen("onboarding")} onConcernOnly={() => setScreen("concernSelector")} onStarterFlow={() => setScreen("starterFlow")}/>;
 
   if (screen === "starterFlow") return <StarterFlow onBack={() => setScreen("landing")} onUpgrade={() => setScreen("onboarding")}/>;
 
   if (screen === "onboarding") return (
-    <PageWrap>
-      <NavBar center={`Step ${step+1} of ${STEPS.length} — ${STEPS[step]}`}
-        right={insights ? <GhostBtn onClick={() => setScreen("dashboard")}>← Back to report</GhostBtn> : null}/>
-      <ProgressBar pct={(step+1)/STEPS.length*100}/>
-      <ContentWrap>
-        <OnboardingStep step={step} d={d} set={set}/>
-        <div style={{display:"flex",gap:"10px",marginTop:"40px"}}>
-          <button onClick={() => step>0 ? setStep(s=>s-1) : setScreen("landing")} style={{flex:1,padding:"13px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.22)",borderRadius:"8px",fontSize:"15px",color:TEXT,fontWeight:500}}>← Back</button>
-          <button onClick={() => {
-            posthog.capture("onboarding_step_completed", { step: step + 1, step_name: STEPS[step] });
-            step<STEPS.length-1 ? setStep(s=>s+1) : generateDashboard();
-          }} style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"8px",fontSize:"15px",fontWeight:600,color:WHITE}}>
-            {step===STEPS.length-1 ? (insights ? "Regenerate my report →" : "Generate my Candid report →") : "Continue →"}
-          </button>
-        </div>
-        <div style={{display:"flex",justifyContent:"center",gap:"6px",marginTop:"22px"}}>
-          {STEPS.map((_,i) => <div key={i} style={{width:i===step?"26px":"8px",height:"8px",borderRadius:"4px",background:i===step?GOLD:i<step?G:"rgba(22,47,36,0.18)",transition:"all 0.3s ease"}}/>)}
-        </div>
-      </ContentWrap>
-    </PageWrap>
+    <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
+      onBack={() => step>0 ? setStep(s=>s-1) : setScreen("landing")}
+      onBackToDashboard={() => setScreen("dashboard")}
+      onContinue={() => {
+        posthog.capture("onboarding_step_completed", { step: step + 1, step_name: STEPS[step] });
+        step<STEPS.length-1 ? setStep(s=>s+1) : generateDashboard();
+      }}
+    />
   );
 
   if (screen === "loading") return <LoadingScreen name={d.name} msgs={["Analysing your cash position...","Calculating pension tax relief...","Reviewing ISA headroom...","Modelling your student loan...","Building your Candid report..."]}/>;
