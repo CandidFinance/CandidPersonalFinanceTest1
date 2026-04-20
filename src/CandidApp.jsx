@@ -214,15 +214,24 @@ function calcMetrics(d) {
         cash = +d.cashSavings||0, bonds = +d.premiumBonds||0,
         totalLiquid = cash + bonds,
         runwayMonths = expenses > 0 ? totalLiquid / expenses : 0,
-        surplusCash = Math.max(0, totalLiquid - expenses * 6),
+        bufferMonths = d.higherBuffer === "yes" ? 9 : 6,
+        surplusCash = Math.max(0, totalLiquid - expenses * bufferMonths),
         isaHeadroom = 20000 - (+d.isaUsedThisYear||0),
-        myPct = +d.myContribution||0, empPct = +d.employerMatch||0,
-        missedMatch = Math.max(0, empPct - myPct) * salary / 100,
-        potVal = +d.potValue||0, retireAge = +d.retirementAge||65,
+        myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0,
+        missedMatch = Math.max(0, empCapPct - myPct) * salary / 100,
+        potVal = (+d.potValue||0) + (+d.potValue2||0),
+        retireAge = +d.retirementAge||65,
         age = +d.age||30, years = Math.max(1, retireAge - age),
-        annualContrib = (myPct + empPct) / 100 * salary,
+        annualContrib = (myPct + empCapPct) / 100 * salary,
         projectedPot = potVal * Math.pow(1.06, years) +
           annualContrib * ((Math.pow(1.06, years) - 1) / 0.06);
+  // Weighted average cash savings rate across tiers
+  const tiers = Array.isArray(d.cashTiers) ? d.cashTiers : [];
+  const tiersTotal = tiers.reduce((s, t) => s + (+t.amount||0), 0);
+  const tiersWeightedRate = tiersTotal > 0
+    ? tiers.reduce((s, t) => s + (+t.amount||0) * (+t.rate||0), 0) / tiersTotal
+    : 0;
+  const effectiveSavingsRate = tiersTotal > 0 ? tiersWeightedRate : (+d.savingsRate||3.5);
   let annualRepayment = 0, willClear = false;
   const loanBal = +d.loanBalance||0;
   if (d.studentLoan === "plan2") {
@@ -235,10 +244,10 @@ function calcMetrics(d) {
     annualRepayment = Math.max(0, (salary - 24990) * 0.09);
     willClear = annualRepayment > 0 && loanBal / annualRepayment <= 25;
   }
-  // Derive tax band automatically from adjusted net income (salary + other income - pension sacrifice)
   const otherIncome = +d.otherIncome||0;
-  const pensionSacrifice = salary * (+d.myContribution||0) / 100; // salary sacrifice reduces ANI
-  const adjustedNetIncome = salary + otherIncome - pensionSacrifice;
+  const dividendIncome = +d.dividendIncome||0;
+  const pensionSacrifice = salary * myPct / 100;
+  const adjustedNetIncome = salary + otherIncome + dividendIncome - pensionSacrifice;
   const tr = adjustedNetIncome > 125140 ? 0.45
            : adjustedNetIncome > 50270  ? 0.40
            : 0.20;
@@ -246,8 +255,19 @@ function calcMetrics(d) {
   const gains = +d.unrealisedGains||0, crystallisable = Math.min(gains, 3000),
         cgtRate = tr !== 0.20 ? 0.20 : 0.10,
         cgtSaving = crystallisable * cgtRate,
-        savingsRate = +d.savingsRate||3.5,
+        savingsRate = effectiveSavingsRate,
         annualYieldGap = surplusCash * (5.1 - savingsRate) / 100;
+  // State pension estimate
+  const niYears = +d.niYears||0;
+  const statePensionWeekly = (niYears / 35) * 221.20;
+  const statePensionAnnual = statePensionWeekly * 52;
+  const niYearsToFull = Math.max(0, 35 - niYears);
+  // Mortgage fix expiry in days
+  let daysToFixExpiry = null;
+  if (d.hasMortgage === "yes" && d.fixExpiryMonth && d.fixExpiryYear) {
+    const expiryDate = new Date(+d.fixExpiryYear, +d.fixExpiryMonth - 1, 1);
+    daysToFixExpiry = Math.round((expiryDate - new Date()) / 86400000);
+  }
   // Net worth
   const totalIsaValue = (+d.isaUsedThisYear||0) + (+d.isaPreviousBalance||0);
   const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal;
@@ -258,7 +278,9 @@ function calcMetrics(d) {
     missedMatch, annualRepayment, willClear, crystallisable, cgtSaving,
     projectedPot, years, annualYieldGap, savingsRate, loanBal, tr,
     cash, bonds, totalAssets, totalLiabilities, netWorth,
-    taxBandLabel, adjustedNetIncome
+    taxBandLabel, adjustedNetIncome, bufferMonths,
+    statePensionWeekly, statePensionAnnual, niYearsToFull,
+    daysToFixExpiry, effectiveSavingsRate,
   };
 }
 
@@ -367,6 +389,10 @@ function getModuleInsights(key, d, m) {
           label:"Earliest viable retirement age", value: earlyRetire < retireAge ? `${earlyRetire} (${yearsSaved} yr${yearsSaved!==1?"s":""} early)` : `On track for ${retireAge}`, flag: earlyRetire < retireAge,
           tooltip:`Based on your projected pot vs a target of ${fmt(targetPot)} (25× your estimated annual spend of ${fmt(annualSpend)}), you could potentially retire at ${earlyRetire} — ${yearsSaved} year${yearsSaved!==1?"s":""} before your stated target of ${retireAge}. This assumes 6% growth, no salary change, and sustained contributions. Your current habits are working.`
         } : null,
+        +d.niYears > 0 ? {
+          label:"State pension estimate", value: `${fmt(m.statePensionWeekly)}/wk · ${fmt(m.statePensionAnnual)}/yr`, flag: m.niYearsToFull > 0,
+          tooltip:`Based on ${d.niYears} qualifying NI years. Full state pension (£221.20/wk) requires 35 years. You need ${m.niYearsToFull} more year${m.niYearsToFull!==1?"s":""} to reach the full amount. You can check (and fill gaps) via HMRC's Check Your State Pension service.`
+        } : null,
       ].filter(Boolean);
     }
     case "studentLoan": {
@@ -396,6 +422,10 @@ function getModuleInsights(key, d, m) {
         ? Math.round(annualRep * clearYr)
         : Math.round(annualRep * writeOffYr);
       return [
+        m.annualRepayment === 0 ? {
+          label:"Below repayment threshold", value:"No deductions", flag: true,
+          tooltip:`Your salary (${fmt(m.salary)}) is below the ${d.studentLoan.replace("plan","Plan ")} repayment threshold (${fmt(threshold)}/yr). No repayments are being deducted. Interest still accrues at ~${Math.round(slInterestRate*1000)/10}% p.a. (${fmt(annualInterest)}/yr). When your salary crosses the threshold, 9% of earnings above it will be deducted automatically via PAYE.`
+        } : null,
         {
           label:"Current balance", value: fmt(m.loanBal), flag: false,
           tooltip:`Your estimated outstanding balance on a ${d.studentLoan.replace("plan","Plan ")} loan. Interest accrues daily at ~${Math.round(slInterestRate*1000)/10}% p.a. — adding approximately ${fmt(Math.round(annualInterest/12))}/month to your balance before any repayments.`
@@ -420,7 +450,7 @@ function getModuleInsights(key, d, m) {
             ? `On current trajectory, your loan clears in ${clearYr} years (age ${(+d.age||30)+clearYr}). Total repaid: ~${fmt(totalRepaidProjected)}. Since you will clear the loan, overpaying today saves interest at ${Math.round(slInterestRate*1000)/10}% — compare this to your savings rate.`
             : `Your loan is written off after ${writeOffYr} years. Projected balance at write-off: ~${fmt(writeOffBal)}. Total repaid before write-off: ~${fmt(totalRepaidProjected)}. This means a significant portion of your original balance will be forgiven — overpaying reduces write-off, giving you less benefit per £ than saving or investing.`
         },
-      ];
+      ].filter(Boolean);
     }
     case "mortgage": {
       const rate = +d.mortgageRate||0;
@@ -829,173 +859,6 @@ function getCrossModuleLinks(key, d, m) {
   return links;
 }
 
-// ── Concern config (unchanged from v3) ────────────────────────────────────────
-const CONCERN_LIST = [
-  { id:"mortgage",     icon:"🏠", label:"Mortgage",        tagline:"Rate, overpayment & timing" },
-  { id:"studentLoan",  icon:"🎓", label:"Student loan",    tagline:"Write-off vs overpay strategy" },
-  { id:"pension",      icon:"🏦", label:"Pension",         tagline:"Contributions, sacrifice & projection" },
-  { id:"savings",      icon:"💷", label:"Savings",         tagline:"ISA, rates & emergency fund" },
-  { id:"investments",  icon:"📈", label:"Investments",     tagline:"Risk, wrappers & CGT" },
-  { id:"personalLoan", icon:"💳", label:"Personal loan",   tagline:"Rate, payoff & alternatives" },
-  { id:"kids",         icon:"👶", label:"Kids & family",   tagline:"JISAs, savings & protection" },
-  { id:"insurance",    icon:"🛡️", label:"Insurance",       tagline:"Life, income & property cover" },
-  { id:"inheritance",  icon:"📜", label:"Inheritance",     tagline:"IHT, gifting & estate planning" },
-  { id:"other",        icon:"💬", label:"Something else",  tagline:"Tell us what's on your mind" },
-];
-
-const CONCERN_QUESTIONS = {
-  mortgage:[
-    { id:"overpaying",    type:"toggle", label:"Are you currently making overpayments?", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}] },
-    { id:"mortgageConcern",type:"toggle",label:"What's your main worry?", options:[{value:"rate",label:"Rising rates"},{value:"payoff",label:"Paying it off faster"},{value:"afford",label:"Affordability"},{value:"move",label:"Planning to move"}] },
-  ],
-  studentLoan:[
-    { id:"everOverpaid",  type:"toggle", label:"Have you ever made voluntary overpayments?", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}] },
-    { id:"loanWorry",     type:"toggle", label:"What concerns you most?", options:[{value:"writeoff",label:"Will it get written off?"},{value:"overpay",label:"Should I overpay?"},{value:"impact",label:"Impact on mortgage"},{value:"understand",label:"I just don't understand it"}] },
-  ],
-  pension:[
-    { id:"sacrificeAware",type:"toggle", label:"Is your pension set up as salary sacrifice?", hint:"Salary sacrifice saves NI on top of tax relief", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"},{value:"unsure",label:"Not sure"}] },
-    { id:"pensionWorry",  type:"toggle", label:"What's your main pension concern?", options:[{value:"enough",label:"Am I saving enough?"},{value:"start",label:"I haven't started"},{value:"multipots",label:"I have multiple pots"},{value:"understand",label:"I don't understand it"}] },
-  ],
-  savings:[
-    { id:"cashIsaHeld",   type:"toggle", label:"Do you currently hold a Cash ISA?", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}] },
-    { id:"timeHorizon",   type:"toggle", label:"When might you need this money?", options:[{value:"under1",label:"Under 1 year"},{value:"1to3",label:"1–3 years"},{value:"3to5",label:"3–5 years"},{value:"5plus",label:"5+ years"}] },
-  ],
-  investments:[
-    { id:"riskAppetite",  type:"toggle", label:"How would you describe your risk appetite?", options:[{value:"cautious",label:"Cautious"},{value:"balanced",label:"Balanced"},{value:"growth",label:"Growth"},{value:"aggressive",label:"Aggressive"}] },
-    { id:"investWorry",   type:"toggle", label:"What's your main concern?", options:[{value:"start",label:"How to start"},{value:"tax",label:"Tax efficiency"},{value:"platform",label:"Choosing a platform"},{value:"strategy",label:"Strategy"}] },
-  ],
-  inheritance:[
-    { id:"ihtAware",      type:"toggle", label:"How familiar are you with inheritance tax?", options:[{value:"yes",label:"Know it well"},{value:"basic",label:"Vaguely aware"},{value:"no",label:"Not familiar"}] },
-    { id:"giftingDone",   type:"toggle", label:"Has any estate planning been done?", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"},{value:"unsure",label:"Not sure"}] },
-  ],
-  other:[
-    { id:"freeText", type:"textarea", label:"What's on your mind?", hint:"The more specific, the better the guidance." },
-  ],
-  personalLoan:[
-    { id:"loanPurpose", type:"toggle", label:"What was the loan for?", options:[{value:"car",label:"Car"},{value:"home",label:"Home improvements"},{value:"consolidation",label:"Debt consolidation"},{value:"other",label:"Other"}] },
-    { id:"loanWorry",   type:"toggle", label:"What concerns you most?", options:[{value:"rate",label:"My rate seems high"},{value:"payoff",label:"Paying it off faster"},{value:"afford",label:"Monthly affordability"},{value:"consolidate",label:"Consolidating debts"}] },
-  ],
-  kids:[
-    { id:"kidsWorry",   type:"toggle", label:"What's your main concern for your kids?", options:[{value:"savings",label:"Building their savings"},{value:"university",label:"University costs"},{value:"firsthome",label:"Their first home"},{value:"protection",label:"Protecting them if I die"}] },
-    { id:"currentlyInvesting", type:"toggle", label:"Are you currently investing for your children?", options:[{value:"yes",label:"Yes"},{value:"no",label:"Not yet"},{value:"savings",label:"Just a savings account"}] },
-  ],
-  insurance:[
-    { id:"hasPartner",  type:"toggle", label:"Do you have a partner or dependants?", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}] },
-    { id:"insureWorry", type:"toggle", label:"What keeps you up at night?", options:[{value:"death",label:"Protecting my family if I die"},{value:"illness",label:"If I couldn't work due to illness"},{value:"property",label:"Protecting my home & contents"},{value:"unsure",label:"I just don't know what I need"}] },
-  ],
-};
-
-const TRIAGE_GROUPS = {
-  core: { heading:"About you", fields:[
-    { id:"name",        label:"First name",              type:"text",   placeholder:"e.g. Harvey" },
-    { id:"age",         label:"Age",                     type:"number", placeholder:"e.g. 29" },
-    { id:"salary",      label:"Gross annual salary (£)", type:"number", placeholder:"e.g. 65,000" },
-    { id:"otherIncome", label:"Other income (£/yr)",     type:"number", placeholder:"e.g. 8,000", hint:"Rental, freelance, dividends — leave blank if none" },
-  ]},
-  studentLoan: { heading:"Student loan", concerns:["studentLoan"], fields:[
-    { id:"studentLoan",     label:"Loan plan type", type:"select", options:[
-      {value:"none",label:"No student loan"},{value:"plan1",label:"Plan 1 — before 2012"},
-      {value:"plan2",label:"Plan 2 — England/Wales 2012–2023"},{value:"plan5",label:"Plan 5 — 2023 onwards"},
-    ]},
-    { id:"loanBalance",     label:"Estimated outstanding balance (£)", type:"number", placeholder:"e.g. 35,000", hint:"Check your Student Finance account", showIf:{studentLoan:["plan1","plan2","plan5"]} },
-    { id:"hasBonus",        label:"Do you receive a bonus?",           type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}] },
-    { id:"bonusAmount",     label:"Approximate annual bonus (£)",      type:"number", placeholder:"e.g. 10,000", showIf:{hasBonus:"yes"} },
-    { id:"salaryTrajectory",label:"Salary trajectory in 10 years?",   type:"toggle", options:[{value:"flat",label:"Roughly same"},{value:"moderate",label:"Moderate growth"},{value:"high",label:"Significant growth"}] },
-  ]},
-  pension: { heading:"Pension", concerns:["pension"], fields:[
-    { id:"hasPension",    label:"Do you contribute to a pension?", type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}] },
-    { id:"myContribution",label:"Your contribution (% of salary)", type:"number", placeholder:"e.g. 5",      showIf:{hasPension:"yes"} },
-    { id:"employerMatch", label:"Employer match (% of salary)",    type:"number", placeholder:"e.g. 5",      showIf:{hasPension:"yes"} },
-    { id:"potValue",      label:"Estimated current pot value (£)", type:"number", placeholder:"e.g. 35,000", showIf:{hasPension:"yes"} },
-    { id:"retirementAge", label:"Target retirement age",           type:"number", placeholder:"65" },
-    { id:"hasBonus",      label:"Do you receive a bonus?",         type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}] },
-    { id:"bonusAmount",   label:"Approximate annual bonus (£)",    type:"number", placeholder:"e.g. 10,000",  showIf:{hasBonus:"yes"} },
-  ]},
-  savings: { heading:"Cash & savings", concerns:["savings"], fields:[
-    { id:"monthlyExpenses",label:"Monthly essential expenses (£)", type:"number", placeholder:"e.g. 2,500", hint:"Rent, bills, food, transport" },
-    { id:"cashSavings",    label:"Total cash savings (£)",         type:"number", placeholder:"e.g. 25,000" },
-    { id:"savingsRate",    label:"Current savings interest rate (%)", type:"number", placeholder:"e.g. 4.5", step:"0.1" },
-    { id:"premiumBonds",   label:"Premium bonds (£)",              type:"number", placeholder:"e.g. 10,000", hint:"Max £50,000." },
-    { id:"savingsGoal",    label:"What are these savings for?",    type:"toggle", options:[{value:"emergency",label:"Emergency fund"},{value:"house",label:"House deposit"},{value:"goals",label:"Future goals"},{value:"unsure",label:"Just saving"}] },
-  ]},
-  investments: { heading:"Investments", concerns:["investments"], fields:[
-    { id:"hasInvestments", label:"Do you have investments?",        type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}] },
-    { id:"isaUsedThisYear",label:"Paid into ISA this tax year (£)", type:"number", placeholder:"e.g. 8,000", hint:"£20,000 annual limit.", showIf:{hasInvestments:"yes"} },
-    { id:"unwrappedValue", label:"Investments outside an ISA (£)", type:"number", placeholder:"e.g. 15,000",  showIf:{hasInvestments:"yes"} },
-    { id:"unrealisedGains",label:"Estimated unrealised gains (£)", type:"number", placeholder:"e.g. 4,500",   showIf:{hasInvestments:"yes"} },
-    { id:"investHorizon",  label:"Investment time horizon",         type:"toggle", options:[{value:"under5",label:"Under 5 yrs"},{value:"5to10",label:"5–10 yrs"},{value:"10plus",label:"10+ yrs"}], showIf:{hasInvestments:"yes"} },
-  ]},
-  mortgage: { heading:"Mortgage", concerns:["mortgage"], fields:[
-    { id:"hasMortgage",    label:"Do you have a mortgage?",          type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"Not yet"}] },
-    { id:"mortgageBalance",label:"Outstanding balance (£)",          type:"number", placeholder:"e.g. 280,000", showIf:{hasMortgage:"yes"} },
-    { id:"mortgageRate",   label:"Current interest rate (%)",        type:"number", placeholder:"e.g. 4.5", step:"0.1", showIf:{hasMortgage:"yes"} },
-    { id:"monthlyMortgage",label:"Monthly mortgage payment (£)",     type:"number", placeholder:"e.g. 1,400", showIf:{hasMortgage:"yes"} },
-    { id:"fixExpiry",      label:"When does your fixed rate expire?", type:"select", showIf:{hasMortgage:"yes"}, options:[
-      {value:"",label:"Select…"},{value:"under6m",label:"Within 6 months"},{value:"6to12m",label:"6–12 months"},
-      {value:"1to2y",label:"1–2 years"},{value:"2yplus",label:"2+ years"},{value:"variable",label:"Already variable"},
-    ]},
-  ]},
-  inheritance: { heading:"Inheritance", concerns:["inheritance"], fields:[
-    { id:"inheritDirection",label:"Receiving or passing on wealth?", type:"toggle", options:[{value:"receiving",label:"Expecting to inherit"},{value:"passing",label:"Passing on"},{value:"both",label:"Both"}] },
-    { id:"estateValue",    label:"Approximate estate value (£)",     type:"number", placeholder:"e.g. 800,000", hint:"Rough figure is fine." },
-    { id:"hasWill",        label:"Is there a will in place?",        type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"},{value:"na",label:"Not applicable yet"}] },
-  ]},
-  personalLoan: { heading:"Personal loan", concerns:["personalLoan"], fields:[
-    { id:"hasPersonalLoan",   label:"Do you currently have a personal loan?", type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}] },
-    { id:"personalLoanBalance",label:"Outstanding balance (£)",    type:"number", placeholder:"e.g. 8,000",  showIf:{hasPersonalLoan:"yes"} },
-    { id:"personalLoanRate",   label:"Interest rate (% AER)",      type:"number", placeholder:"e.g. 9.9", step:"0.1", showIf:{hasPersonalLoan:"yes"} },
-    { id:"personalLoanMonthly",label:"Monthly payment (£)",        type:"number", placeholder:"e.g. 180",  showIf:{hasPersonalLoan:"yes"} },
-    { id:"personalLoanTermRemaining", label:"Months remaining",    type:"number", placeholder:"e.g. 36",   showIf:{hasPersonalLoan:"yes"} },
-  ]},
-  kids: { heading:"Kids & family", concerns:["kids"], fields:[
-    { id:"hasKids",    label:"Do you have children?",               type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"Not yet"}] },
-    { id:"numKids",    label:"How many children?",                  type:"number", placeholder:"e.g. 2", showIf:{hasKids:"yes"} },
-    { id:"kidsAges",   label:"Ages (comma separated)",              type:"text",   placeholder:"e.g. 3, 7", hint:"Helps us calculate JISA runway and university costs.", showIf:{hasKids:"yes"} },
-    { id:"hasJISA",    label:"Do any of them have a Junior ISA?",   type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"}], showIf:{hasKids:"yes"} },
-    { id:"juniorISAValue", label:"Total JISA value (£)",            type:"number", placeholder:"e.g. 5,000", showIf:{hasJISA:"yes"} },
-  ]},
-  insurance: { heading:"Insurance", concerns:["insurance"], fields:[
-    { id:"hasLifeInsurance",     label:"Do you have life insurance?",           type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"},{value:"unsure",label:"Unsure"}] },
-    { id:"hasIncomeProtection",  label:"Do you have income protection?",        type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"},{value:"unsure",label:"Unsure"}] },
-    { id:"hasCriticalIllness",   label:"Do you have critical illness cover?",   type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"},{value:"unsure",label:"Unsure"}] },
-    { id:"hasContentsInsurance", label:"Do you have contents / buildings cover?", type:"toggle", options:[{value:"yes",label:"Yes"},{value:"no",label:"No"},{value:"na",label:"Renting / N/A"}] },
-  ]},
-};
-
-const CONCERN_TO_GROUPS = {
-  studentLoan:["core","studentLoan"], pension:["core","pension"],
-  savings:["core","savings"], investments:["core","investments"],
-  mortgage:["core","mortgage"], inheritance:["core","inheritance"],
-  personalLoan:["core","personalLoan"], kids:["core","kids"],
-  insurance:["core","insurance"], other:["core"],
-};
-
-function getTriageGroupsForConcerns(selected) {
-  const needed = new Set(["core"]);
-  selected.forEach(c => (CONCERN_TO_GROUPS[c]||["core"]).forEach(g => needed.add(g)));
-  return Array.from(needed).map(k => ({ key:k, ...TRIAGE_GROUPS[k] }));
-}
-
-function fieldVisible(field, d) {
-  if (!field.showIf) return true;
-  return Object.entries(field.showIf).every(([k,v]) => Array.isArray(v) ? v.includes(d[k]) : d[k] === v);
-}
-
-function getConcernIntro(id, d, m) {
-  const name = d.name ? d.name.split(" ")[0] : "";
-  const g = name ? name+", " : "";
-  switch(id) {
-    case "mortgage":    return d.hasMortgage === "yes" ? `${g}you have a ${fmt(+d.mortgageBalance)} mortgage at ${d.mortgageRate}%.` : `${g}you don't have a mortgage yet.`;
-    case "studentLoan": return d.studentLoan && d.studentLoan !== "none" ? `${g}you have ~${fmt(m.loanBal)} on a ${d.studentLoan.replace("plan","Plan ")} loan. Mandatory repayment: ~${fmt(m.annualRepayment)}/yr.` : `${g}you don't have a student loan.`;
-    case "pension":     return d.hasPension === "yes" ? `${g}you're contributing ${d.myContribution}% with ${d.employerMatch}% employer match — ${fmt((+d.myContribution + +d.employerMatch)/100*(+d.salary||0))}/yr total.` : `${g}you're not currently contributing to a pension.`;
-    case "savings":     return `${g}you're holding ${fmt(m.totalLiquid)} in cash and bonds — ${m.runwayMonths.toFixed(1)} months runway.`;
-    case "investments": return d.hasInvestments === "yes" ? `${g}you have investments. You have ${fmt(m.isaHeadroom)} of ISA allowance remaining.` : `${g}you haven't started investing yet.`;
-    case "inheritance": return `${g}let's work out what inheritance tax planning looks like for your situation.`;
-    case "other":       return `${g}tell us what's on your mind in as much detail as you like.`;
-    default: return "";
-  }
-}
-
 // ── Shared UI ─────────────────────────────────────────────────────────────────
 function Field({ label:lb, hint, children }) {
   return (
@@ -1103,37 +966,24 @@ function ContentWrap({ children, maxWidth="580px" }) {
 }
 
 // ── Landing ────────────────────────────────────────────────────────────────────
-function Landing({ onFullJourney, onConcernOnly, onStarterFlow }) {
+function Landing({ onFullJourney }) {
   return (
     <div style={{minHeight:"100vh",background:G,fontFamily:SANS,display:"flex",flexDirection:"column"}}>
       <style>{FONTS}</style>
       <nav style={{padding:"22px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap"}}>
         <span style={{fontFamily:SERIF,color:GOLD,fontSize:"24px",fontWeight:700}}>Candid.</span>
-        <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-          <button type="button" onClick={onFullJourney} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.25)",borderRadius:"6px",padding:"8px 20px",color:WHITE,fontSize:"13px",fontWeight:500}}>Sign in</button>
-        </div>
       </nav>
       <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 40px 60px",maxWidth:"760px"}}>
         <div className="fu"  style={{fontSize:"11px",fontWeight:600,letterSpacing:"0.12em",textTransform:"uppercase",color:GOLD,marginBottom:"20px"}}>Personal finance, honestly</div>
         <h1  className="fu1" style={{fontFamily:SERIF,fontSize:"clamp(38px,6vw,66px)",color:WHITE,lineHeight:1.08,fontWeight:700,marginBottom:"24px"}}>Your finances<br/>deserve better.</h1>
-        <p   className="fu2" style={{fontSize:"17px",color:"rgba(255,255,255,0.65)",lineHeight:1.7,maxWidth:"520px",marginBottom:"40px"}}>Most people are quietly leaving thousands of pounds behind every year. Where do you want to start?</p>
-
-        {/* The fork */}
-        <div className="fu3" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px",maxWidth:"600px"}}>
-          <button type="button" onClick={onStarterFlow} style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.2)",borderRadius:"12px",padding:"22px 20px",textAlign:"left",cursor:"pointer",transition:"all 0.2s"}}>
-            <div style={{fontSize:"28px",marginBottom:"12px"}}>🌱</div>
-            <div style={{fontFamily:SERIF,fontSize:"18px",color:WHITE,fontWeight:600,marginBottom:"8px",lineHeight:1.2}}>I'm new to this</div>
-            <div style={{fontSize:"13px",color:"rgba(255,255,255,0.55)",lineHeight:1.6}}>Just starting out, or not sure where to begin. I want simple, clear steps.</div>
-          </button>
-          <button type="button" onClick={onFullJourney} style={{background:GOLD,border:"none",borderRadius:"12px",padding:"22px 20px",textAlign:"left",cursor:"pointer",transition:"all 0.2s"}}>
-            <div style={{fontSize:"28px",marginBottom:"12px"}}>📊</div>
-            <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:600,marginBottom:"8px",lineHeight:1.2}}>I know my way around</div>
-            <div style={{fontSize:"13px",color:"rgba(22,47,36,0.65)",lineHeight:1.6}}>I have savings, investments, or a pension and want to optimise.</div>
-          </button>
-        </div>
-        <div className="fu4" style={{marginTop:"16px",maxWidth:"600px"}}>
-          <button type="button" onClick={onConcernOnly} style={{width:"100%",background:"transparent",border:"1px solid rgba(255,255,255,0.12)",borderRadius:"10px",padding:"13px 20px",color:"rgba(255,255,255,0.55)",fontSize:"14px",cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span>I have a specific question in mind</span><span style={{opacity:0.5}}>→</span>
+        <p   className="fu2" style={{fontSize:"17px",color:"rgba(255,255,255,0.65)",lineHeight:1.7,maxWidth:"520px",marginBottom:"40px"}}>Most people are quietly leaving thousands of pounds behind every year. Get your personalised Candid score in 5 minutes.</p>
+        <div className="fu3" style={{maxWidth:"420px"}}>
+          <button type="button" onClick={onFullJourney} style={{width:"100%",background:GOLD,border:"none",borderRadius:"12px",padding:"20px 28px",textAlign:"left",cursor:"pointer",transition:"all 0.2s",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div>
+              <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700,marginBottom:"4px",lineHeight:1.2}}>Get my Candid score</div>
+              <div style={{fontSize:"13px",color:"rgba(22,47,36,0.65)",lineHeight:1.5}}>5 minutes · free · no sign-up needed</div>
+            </div>
+            <span style={{fontSize:"24px",color:G,opacity:0.7,marginLeft:"16px"}}>→</span>
           </button>
         </div>
       </div>
@@ -1141,502 +991,6 @@ function Landing({ onFullJourney, onConcernOnly, onStarterFlow }) {
         {["ISA optimisation","Pension gap","Student loan strategy","CGT crystallisation","Cash runway","Bonus sacrifice"].map(f => (
           <div key={f} style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:"100px",padding:"7px 14px",fontSize:"12px",color:"rgba(255,255,255,0.6)",fontWeight:500}}>{f}</div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Starter flow (new to this path) ───────────────────────────────────────────
-
-const STARTER_QUESTIONS = [
-  {
-    id: "situation",
-    q: "First — which of these sounds most like you?",
-    hint: "No wrong answers. Just pick the closest.",
-    options: [
-      { value:"paycheck", icon:"💸", label:"Living paycheck to paycheck", sub:"Not much left over at the end of the month" },
-      { value:"saving",   icon:"🏦", label:"Saving a little each month",  sub:"Something goes away, but not sure it's in the right place" },
-      { value:"decent",   icon:"📈", label:"Doing okay, want to do better", sub:"I have savings but feel like I'm missing something" },
-      { value:"sorted",   icon:"🎯", label:"Fairly sorted, but gaps exist",  sub:"Pension, ISA — I know the words, just not sure I'm maximising" },
-    ],
-  },
-  {
-    id: "biggestWorry",
-    q: "What worries you most about money?",
-    hint: "Pick one — the thing that keeps you up at night.",
-    options: [
-      { value:"emergency",  icon:"🚨", label:"Not having a safety net",          sub:"If something went wrong tomorrow, I'd struggle" },
-      { value:"retirement", icon:"👴", label:"Not saving enough for retirement",  sub:"I know I should be doing more but haven't started" },
-      { value:"debt",       icon:"💳", label:"Debt or loans",                     sub:"Student loan, credit card, or personal loan" },
-      { value:"growth",     icon:"🌱", label:"My money isn't growing",            sub:"It's just sitting in a bank doing nothing" },
-    ],
-  },
-  // Debt detail — only shown when biggestWorry === "debt"
-  {
-    id: "debtType",
-    showIf: a => a.biggestWorry === "debt",
-    q: "What type of debt is it?",
-    hint: "Pick the one that's causing the most stress.",
-    options: [
-      { value:"creditcard",   icon:"💳", label:"Credit card",       sub:"High interest, minimum payments" },
-      { value:"personal",     icon:"🏦", label:"Personal loan",     sub:"Fixed monthly repayments" },
-      { value:"car",          icon:"🚗", label:"Car finance",        sub:"PCP, HP, or personal loan for a vehicle" },
-      { value:"studentloan",  icon:"🎓", label:"Student loan",       sub:"Plan 1, 2, or 5" },
-      { value:"multiple",     icon:"📚", label:"Multiple debts",     sub:"A mix of the above" },
-    ],
-  },
-  {
-    id: "debtSize",
-    showIf: a => a.biggestWorry === "debt",
-    q: "Roughly how much do you owe in total?",
-    hint: "Ballpark is fine.",
-    options: [
-      { value:"under5k",   icon:"💷", label:"Under £5,000",     sub:"" },
-      { value:"5to15k",    icon:"💷", label:"£5,000 – £15,000", sub:"" },
-      { value:"15to30k",   icon:"💷", label:"£15,000 – £30,000",sub:"" },
-      { value:"over30k",   icon:"💷", label:"Over £30,000",      sub:"" },
-    ],
-  },
-  {
-    id: "debtRate",
-    showIf: a => a.biggestWorry === "debt",
-    q: "What interest rate are you paying — roughly?",
-    hint: "Check your statement or app. If you have multiple debts, use the highest rate.",
-    options: [
-      { value:"low",    icon:"🟢", label:"Under 5%",    sub:"e.g. student loan, some car finance" },
-      { value:"medium", icon:"🟡", label:"5% – 15%",   sub:"e.g. personal loan" },
-      { value:"high",   icon:"🔴", label:"15% – 30%",  sub:"e.g. credit card" },
-      { value:"unsure", icon:"🤷", label:"I'm not sure", sub:"I'd have to check" },
-    ],
-  },
-  {
-    id: "hasPension",
-    q: "Do you pay into a pension?",
-    hint: "Even a small amount counts.",
-    options: [
-      { value:"yes_employer", icon:"✅", label:"Yes — through my employer", sub:"It comes out of my pay automatically" },
-      { value:"yes_own",      icon:"✅", label:"Yes — I set one up myself",  sub:"I pay into it separately" },
-      { value:"no",           icon:"❌", label:"No — I don't have one",      sub:"I haven't got round to it" },
-      { value:"unsure",       icon:"🤷", label:"I'm not sure",               sub:"I might have one but don't really know" },
-    ],
-  },
-  {
-    id: "salary",
-    q: "Roughly, what do you earn per year?",
-    hint: "A ballpark is fine. This helps us prioritise the right things.",
-    options: [
-      { value:"under25", icon:"💷", label:"Under £25,000",     sub:"" },
-      { value:"25to40",  icon:"💷", label:"£25,000 – £40,000", sub:"" },
-      { value:"40to60",  icon:"💷", label:"£40,000 – £60,000", sub:"" },
-      { value:"over60",  icon:"💷", label:"Over £60,000",       sub:"" },
-    ],
-  },
-  // Risk question — only shown when growth/ISA path is likely
-  {
-    id: "riskProfile",
-    showIf: a => a.biggestWorry === "growth" || a.situation === "decent" || a.situation === "sorted",
-    q: "How do you feel about risk with your money?",
-    hint: "There's no wrong answer — it's about what lets you sleep at night.",
-    options: [
-      { value:"safe",     icon:"🔒", label:"I want it safe",            sub:"I'd rather earn less and know it's protected" },
-      { value:"balanced", icon:"⚖️", label:"A bit of both",             sub:"Some risk is okay if there's more upside" },
-      { value:"growth",   icon:"🚀", label:"I want maximum growth",     sub:"I'm happy with ups and downs if the long-term trend is up" },
-    ],
-  },
-];
-
-function buildStarterActions(answers) {
-  const { situation, biggestWorry, hasPension, salary, riskProfile, debtType, debtSize, debtRate } = answers;
-  const isHighEarner = salary === "over60" || salary === "40to60";
-  const noPension = hasPension === "no" || hasPension === "unsure";
-  const wantsGrowth = biggestWorry === "growth" || situation === "decent" || situation === "sorted";
-  const prefersGrowth = riskProfile === "growth" || riskProfile === "balanced";
-  const actions = [];
-
-  // Emergency fund
-  if (situation === "paycheck" || biggestWorry === "emergency") {
-    actions.push({
-      priority:"First", col:"#c0392b", icon:"🚨",
-      title:"Build your emergency fund",
-      why:"Before anything else, you need a financial cushion. Aim for 3 months of essential expenses in an easy-access savings account. This is the foundation everything else sits on — without it, any unexpected bill could push you into debt.",
-      how:"Open a free easy-access savings account. Set up a standing order for the day you get paid — even £50/month. Don't touch it.",
-      notYet:["Stocks and shares","Overpaying loans","ISAs — do this first"],
-      equivalenceAmount: 600,
-      eduNote:"💡 Did you know? Only 37% of UK adults could cover an unexpected £1,000 bill without borrowing. An emergency fund is the single most impactful thing most people can do.",
-      linksLabel:"Best easy-access savings accounts right now",
-      linksTooltip:"These are currently the highest-rate easy-access savings accounts available in the UK, based on their published AER. No lock-in periods.",
-      links:[
-        { label:"Marcus by Goldman Sachs — 4.75% AER", icon:"🏦", app:"Marcus" },
-        { label:"Chase UK — 4.1% AER, great app", icon:"📱", app:"Chase UK" },
-        { label:"Chip — auto-saves spare change for you", icon:"🤖", app:"Chip" },
-      ],
-    });
-  }
-
-  // Debt — with rich detail from debt questions
-  if (biggestWorry === "debt") {
-    const isStudentLoan = debtType === "studentloan";
-    const isHighRate = debtRate === "high" || debtRate === "medium";
-    const isLargeDebt = debtSize === "over30k" || debtSize === "15to30k";
-    const debtTypeName = debtType === "creditcard" ? "credit card debt"
-      : debtType === "personal" ? "a personal loan"
-      : debtType === "car" ? "car finance"
-      : debtType === "studentloan" ? "a student loan"
-      : debtType === "multiple" ? "multiple debts"
-      : "debt";
-
-    const debtWhy = isStudentLoan
-      ? "Student loans work differently to other debts — in most cases, you should NOT rush to pay them off. The debt is written off after 25–40 years, and repayments are automatically deducted from your salary once you earn above the threshold. Overpaying is usually money lost."
-      : isHighRate
-      ? `At your interest rate (${debtRate === "high" ? "15–30%" : "5–15%"}), this debt is almost certainly the highest-priority financial issue you have. Every £1 used to pay it off gives a guaranteed ${debtRate === "high" ? "15–30%" : "5–15%"} return — better than any investment available to you.`
-      : "At a low interest rate, your debt is less urgent — but a plan to clear it still frees up cash flow for investing.";
-
-    const debtHow = isStudentLoan
-      ? "Don't overpay your student loan. Check your plan type (Plan 1, 2, or 5) — repayments come out automatically via payroll. Focus spare cash on an emergency fund and ISA instead."
-      : debtType === "multiple"
-      ? "List all your debts with their interest rates. Pay the minimum on everything, then throw all spare cash at the highest-rate debt first. Clear it completely, then move to the next. This is called the avalanche method."
-      : `Contact your ${debtType === "creditcard" ? "card provider" : "lender"} to check if you can overpay without penalty. Even an extra £50/month can dramatically cut the interest you pay.`;
-
-    // Estimate interest saving from clearing/reducing debt
-    const debtSizeMap = { "under5k":3000, "5to15k":8000, "15to30k":20000, "over30k":35000 };
-    const debtRateMap = { "low":0.05, "medium":0.12, "high":0.22 };
-    const debtPrincipal = debtSizeMap[debtSize] || 5000;
-    const debtRatePct = debtRateMap[debtRate] || 0.10;
-    const debtEquiv = isStudentLoan ? 0 : Math.round(debtPrincipal * debtRatePct);
-
-    actions.push({
-      priority: actions.length === 0 ? "First" : "Second",
-      col:"#c0392b", icon:"💳",
-      title: isStudentLoan ? "Your student loan — don't panic" : `Clear your ${debtTypeName} — this is urgent`,
-      why: debtWhy,
-      how: debtHow,
-      notYet: isStudentLoan ? ["Overpaying — almost always a bad idea for student loans"] : ["Investing until expensive debt is cleared","New credit products"],
-      equivalenceAmount: debtEquiv,
-      eduNote: isStudentLoan
-        ? `💡 Student loan myth-busting: ${isLargeDebt ? "Large balances are common and not as scary as they look" : "Most people repay less than the full balance"}. Repayments are capped at 9% of income above the threshold — you'll never owe more per month than your salary dictates.`
-        : `💡 The maths: if you're paying ${debtRate === "high" ? "20%" : "10%"} interest, every £100 of debt cleared saves you £${debtRate === "high" ? "20" : "10"} per year — guaranteed, risk-free. No investment can match that certainty.`,
-      linksLabel: isStudentLoan ? "Check your student loan details" : "Options for clearing debt faster",
-      linksTooltip: isStudentLoan
-        ? "Official sources to check your student loan balance, plan type, and repayment threshold."
-        : "Options to reduce your interest rate or get free debt advice. We never recommend taking on new debt to clear old debt without proper advice.",
-      links: isStudentLoan ? [
-        { label:"Check your balance — Student Finance (gov.uk)", icon:"🎓", app:"Student Finance England" },
-        { label:"Understand your repayment plan — MoneySavingExpert", icon:"📖", app:"MoneySavingExpert student loan guide" },
-      ] : debtType === "creditcard" ? [
-        { label:"Compare 0% balance transfer cards", icon:"💳", app:"MoneySuperMarket" },
-        { label:"Check your credit score free", icon:"📊", app:"ClearScore" },
-        { label:"Free debt advice — StepChange charity", icon:"❤️", app:"StepChange" },
-      ] : [
-        { label:"Free debt advice — StepChange charity", icon:"❤️", app:"StepChange" },
-        { label:"Check if you qualify for a lower-rate loan", icon:"🔄", app:"ClearScore" },
-        { label:"Citizens Advice — free, impartial help", icon:"📋", app:"Citizens Advice" },
-      ],
-    });
-  }
-
-  // Pension
-  if (noPension) {
-    const pensionEquiv = isHighEarner ? 3000 : 1800;
-    actions.push({
-      priority: actions.length === 0 ? "First" : actions.length === 1 ? "Second" : "Third",
-      col:GOLD, icon:"🏦",
-      title:"Start a pension — this week",
-      why:`A pension is a savings account where the government adds at least 20% to everything you put in${isHighEarner ? " — and 40% if you're a higher-rate taxpayer" : ""}. If your employer matches contributions, that's free money on top. Every month without one costs you compound growth you can never get back.`,
-      how:"Ask your employer if they offer a workplace pension — most do, and most will match your contributions. If not, open a personal pension (SIPP) online in under 15 minutes.",
-      notYet:["Stocks and shares ISA (pension comes first for most people)"],
-      equivalenceAmount: pensionEquiv,
-      eduNote:"💡 A workplace pension is essentially a 100% instant return on your contributions — if your employer matches you, they double your money before any investment growth. If you have a pension through work and aren't enrolled, you're turning down free money every month.",
-      linksLabel:"Open a personal pension (SIPP)",
-      linksTooltip:"These are the most popular personal pension providers for people starting from scratch. All are FCA-regulated. Employer pensions are separate — ask your HR team.",
-      links:[
-        { label:"PensionBee — easiest to set up, great app", icon:"🐝", app:"PensionBee" },
-        { label:"Vanguard SIPP — lowest ongoing cost", icon:"📉", app:"Vanguard UK" },
-        { label:"Find lost old pensions (free, gov.uk)", icon:"🔍", app:"Pension Tracing Service" },
-      ],
-    });
-  }
-
-  // ISA / growth — risk fork
-  if (wantsGrowth) {
-    if (prefersGrowth) {
-      actions.push({
-        priority: actions.length === 0 ? "First" : actions.length === 1 ? "Second" : actions.length === 2 ? "Third" : "Fourth",
-        col:"#2d6b4a", icon:"🚀",
-        title:"Open a Stocks & Shares ISA",
-        why:"You said you're comfortable with some ups and downs in exchange for better returns. Historically, a globally diversified index fund has returned around 7% per year over the long term — compared to 4–5% in a cash savings account. The ISA wrapper means you never pay tax on the gains.",
-        how:"Open a Stocks & Shares ISA with one of the providers below. Choose a single global index fund (e.g. Vanguard FTSE All-World or Fidelity Index World). Set up a monthly payment and leave it alone — time does the work.",
-        notYet:["Individual company shares until you're comfortable","Crypto — that's a different conversation"],
-        equivalenceAmount: 1400,
-        eduNote:"💡 What's an index fund? Instead of picking individual companies, you buy a tiny slice of thousands of them at once. If one company fails, it barely moves the needle. If global markets grow — as they have over every 20-year period in modern history — your money grows with them.",
-        linksLabel:"Best Stocks & Shares ISA platforms for beginners",
-        linksTooltip:"Ranked by cost and ease of use for someone starting out. All are FCA-regulated and FSCS-protected up to £85,000. Investments can go down as well as up.",
-        links:[
-          { label:"Vanguard S&S ISA — 0.15%/yr, index fund specialist", icon:"📉", app:"Vanguard UK" },
-          { label:"Trading 212 — no commission, great for beginners", icon:"📈", app:"Trading 212" },
-          { label:"InvestEngine — zero platform fee on ETFs", icon:"🌐", app:"InvestEngine" },
-        ],
-      });
-    } else {
-      const isaEquiv = isHighEarner ? 2000 : 900;
-      actions.push({
-        priority: actions.length === 0 ? "First" : actions.length === 1 ? "Second" : actions.length === 2 ? "Third" : "Fourth",
-        col:"#2d6b4a", icon:"📈",
-        title:"Put your savings in a Cash ISA",
-        why:"You said you'd rather keep things safe — a Cash ISA is the right call. It works exactly like a normal savings account, except you never pay tax on the interest, ever. The government lets you put up to £20,000 in per year, and the allowance resets every April.",
-        how:"Open a Cash ISA with one of the providers below. Move your existing savings there. Takes 10 minutes. Your money is fully protected up to £85,000 by the FSCS (a government scheme).",
-        notYet: isHighEarner ? ["Stocks & Shares ISA — once you're comfortable, this could give better long-term returns"] : [],
-        equivalenceAmount: isaEquiv,
-        eduNote:"💡 What makes a Cash ISA different from a normal savings account? Just one thing: tax. Any interest you earn in a Cash ISA is completely tax-free, permanently. Outside an ISA, if your interest exceeds your Personal Savings Allowance (£500–£1,000/yr), you pay income tax on the rest.",
-        linksLabel:"Best Cash ISAs available right now (easy-access)",
-        linksTooltip:"These are currently the highest-rate easy-access Cash ISAs available in the UK, ranked by their published AER savings rate. All are FSCS-protected up to £85,000.",
-        links:[
-          { label:"Trading 212 Cash ISA — 5.08% AER", icon:"📈", app:"Trading 212" },
-          { label:"Plum Cash ISA — 4.92% AER", icon:"📱", app:"Plum" },
-          { label:"Chip Cash ISA — 4.84% AER", icon:"💰", app:"Chip" },
-        ],
-      });
-    }
-  }
-
-  // S&S for sorted users who already have pension
-  if ((situation === "sorted" || situation === "decent") && (hasPension === "yes_employer" || hasPension === "yes_own") && !prefersGrowth && !wantsGrowth) {
-    actions.push({
-      priority: actions.length === 0 ? "First" : actions.length === 1 ? "Second" : actions.length === 2 ? "Third" : "Fourth",
-      col:"#2d6b4a", icon:"🌱",
-      title:"Top up your ISA before April 5th",
-      why:"You have a pension sorted — the next step is making sure your savings are in an ISA wrapper so you're not paying unnecessary tax on interest or gains.",
-      how:"Check what you've already put into an ISA this tax year. You can put up to £20,000 in total. Any unused allowance expires on April 5th and cannot be rolled over.",
-      notYet:[],
-      equivalenceAmount: 1000,
-      eduNote:"💡 The ISA allowance is use-it-or-lose-it. Unlike pension allowances, unused ISA allowance cannot be carried forward to next year. If you miss it, it's gone permanently.",
-      linksLabel:"Open or top up an ISA",
-      linksTooltip:"A mix of Cash and Stocks & Shares ISA options. Both count toward the same £20,000 annual limit.",
-      links:[
-        { label:"Trading 212 Cash ISA — 5.08% AER", icon:"📈", app:"Trading 212" },
-        { label:"Vanguard S&S ISA — low cost investing", icon:"📉", app:"Vanguard UK" },
-      ],
-    });
-  }
-
-  if (actions.length === 0) {
-    actions.push({
-      priority:"First", col:GOLD, icon:"💷",
-      title:"Start with your savings rate",
-      why:"The single most important financial habit is paying yourself first. Every month, move money out of your current account the day you get paid — before you spend it.",
-      how:"Open a high-interest easy-access savings account and set up a standing order for the day after payday.",
-      notYet:[],
-      equivalenceAmount: 600,
-      eduNote:"💡 Paying yourself first means treating saving like a bill — non-negotiable, automatic. People who automate saving save 2–3× more than those who save whatever's 'left over' at the end of the month.",
-      linksLabel:"Best easy-access savings accounts right now",
-      linksTooltip:"Ranked by AER savings rate. All are FSCS-protected. No lock-in periods.",
-      links:[
-        { label:"Marcus easy-access — 4.75% AER", icon:"🏦", app:"Marcus by Goldman Sachs" },
-        { label:"Chase savings — 4.1% AER", icon:"🏦", app:"Chase UK" },
-      ],
-    });
-  }
-
-  return actions;
-}
-
-function StarterFlow({ onBack, onUpgrade }) {
-  const [answers, setAnswers] = useState({});
-  const [history, setHistory] = useState([]); // stack of question ids answered
-  const [done, setDone]       = useState(false);
-  const [openTip, setOpenTip] = useState(null);
-
-  // Compute current question: first STARTER_QUESTIONS entry whose showIf passes and hasn't been answered
-  const currentQ = STARTER_QUESTIONS.find(q => {
-    if (answers[q.id] !== undefined) return false; // already answered
-    if (q.showIf && !q.showIf(answers)) return false; // condition not met — skip
-    return true;
-  });
-
-  const answeredCount = history.length;
-  const totalVisible = STARTER_QUESTIONS.filter(q => !q.showIf || q.showIf(answers)).length;
-
-  function pick(qId, val) {
-    const next = { ...answers, [qId]: val };
-    setAnswers(next);
-    setHistory(h => [...h, qId]);
-    // Check if any more questions remain
-    const remaining = STARTER_QUESTIONS.find(q => {
-      if (next[q.id] !== undefined) return false;
-      if (q.showIf && !q.showIf(next)) return false;
-      return true;
-    });
-    if (!remaining) setDone(true);
-  }
-
-  function goBack() {
-    if (history.length === 0) { onBack(); return; }
-    const prev = history[history.length - 1];
-    setHistory(h => h.slice(0, -1));
-    setAnswers(a => { const n = {...a}; delete n[prev]; return n; });
-    setDone(false);
-  }
-
-  const actions = done ? buildStarterActions(answers) : [];
-
-  if (done) {
-    return (
-      <div style={{minHeight:"100vh",background:CREAM,fontFamily:SANS}}>
-        <style>{FONTS}</style>
-        <div style={{background:G,padding:"18px 32px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontFamily:SERIF,color:GOLD,fontSize:"22px",fontWeight:700}}>Candid.</span>
-          <button type="button" onClick={goBack} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.2)",borderRadius:"6px",padding:"6px 14px",color:"rgba(255,255,255,0.6)",fontSize:"12px",cursor:"pointer"}}>← Start over</button>
-        </div>
-        <div style={{maxWidth:"640px",margin:"0 auto",padding:"44px 24px 80px"}}>
-          <div className="fu" style={{marginBottom:"36px"}}>
-            <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"10px"}}>Your action plan</div>
-            <h1 style={{fontFamily:SERIF,fontSize:"clamp(28px,4vw,38px)",color:G,lineHeight:1.15,marginBottom:"12px"}}>
-              {actions.length === 1 ? "One thing to focus on right now." : `${actions.length} things, in this order.`}
-            </h1>
-            <p style={{fontSize:"15px",color:MUT,lineHeight:1.7}}>
-              Personal finance is mostly about doing a small number of things in the right order. Here's yours.
-            </p>
-          </div>
-
-          <div style={{display:"flex",flexDirection:"column",gap:"16px",marginBottom:"40px"}}>
-            {actions.map((a, i) => (
-              <div key={i} className={`fu${i+1}`} style={{background:WHITE,borderRadius:"14px",overflow:"hidden",border:"1px solid rgba(22,47,36,0.08)"}}>
-                {/* Coloured header */}
-                <div style={{background:a.col,padding:"12px 20px",display:"flex",alignItems:"center",gap:"10px"}}>
-                  <span style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",
-                    color:a.col==="rgba(22,47,36,1)"||a.col==="#2d6b4a"?"rgba(255,255,255,0.8)":a.col===GOLD?"rgba(22,47,36,0.85)":"rgba(255,255,255,0.8)"}}>{a.priority}</span>
-                  <span style={{fontSize:"18px"}}>{a.icon}</span>
-                  <span style={{fontFamily:SERIF,fontSize:"17px",fontWeight:600,color:a.col===GOLD?"#162e1f":WHITE,lineHeight:1.2}}>{a.title}</span>
-                </div>
-                <div style={{padding:"18px 20px"}}>
-                  {/* Why */}
-                  <div style={{marginBottom:"12px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"5px"}}>Why this matters</div>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7}}>{a.why}</p>
-                  </div>
-                  {/* How */}
-                  <div style={{marginBottom:"14px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"5px"}}>How to start</div>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7}}>{a.how}</p>
-                  </div>
-                  {/* Equivalence chip */}
-                  {a.equivalenceAmount > 0 && (() => {
-                    const eq = getEquivalence(a.equivalenceAmount);
-                    return eq ? (
-                      <div style={{display:"inline-flex",alignItems:"center",gap:"7px",background:"rgba(196,150,58,0.1)",border:"1px solid rgba(196,150,58,0.25)",borderRadius:"100px",padding:"5px 12px",marginBottom:"14px"}}>
-                        <span style={{fontSize:"11px",fontWeight:700,color:GOLD}}>💡 {fmt(a.equivalenceAmount)}/yr</span>
-                        <span style={{fontSize:"11px",color:MUT}}>—</span>
-                        <span style={{fontSize:"11px",color:TEXT}}>{eq}</span>
-                      </div>
-                    ) : null;
-                  })()}
-                  {/* Educational note — TikTok video placeholder */}
-                  {a.eduNote && (
-                    <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"14px",display:"flex",gap:"10px",alignItems:"flex-start"}}>
-                      <div style={{flex:1}}>
-                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,marginBottom:"8px"}}>{a.eduNote}</p>
-                        {/* Video placeholder */}
-                        <div style={{background:"rgba(22,47,36,0.06)",borderRadius:"8px",padding:"10px 12px",display:"flex",alignItems:"center",gap:"10px",cursor:"pointer"}}>
-                          <div style={{width:"36px",height:"36px",background:G,borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            <span style={{fontSize:"16px"}}>▶</span>
-                          </div>
-                          <div>
-                            <div style={{fontSize:"12px",fontWeight:600,color:G,marginBottom:"2px"}}>60-second explainer — coming soon</div>
-                            <div style={{fontSize:"11px",color:MUT}}>Short video breaking this down in plain English</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {/* Where to go — affiliate links with tooltip */}
-                  {a.links?.length > 0 && (
-                    <div style={{borderTop:"1px solid rgba(22,47,36,0.07)",paddingTop:"14px",marginTop:"2px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>{a.linksLabel || "Where to go"}</div>
-                        {a.linksTooltip && (
-                          <button type="button" onClick={() => setOpenTip(openTip===i?null:i)}
-                            style={{width:"17px",height:"17px",borderRadius:"50%",border:"1.5px solid rgba(22,47,36,0.25)",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:MUT,fontSize:"9px",fontWeight:700,flexShrink:0}}>?</button>
-                        )}
-                      </div>
-                      {openTip===i && a.linksTooltip && (
-                        <div style={{background:"rgba(22,47,36,0.05)",borderRadius:"8px",padding:"10px 12px",marginBottom:"10px",fontSize:"12px",color:TEXT,lineHeight:1.65}}>
-                          {a.linksTooltip}
-                        </div>
-                      )}
-                      {a.links.map((lnk,j) => (
-                        <StarterLink key={j} label={lnk.label} icon={lnk.icon} app={lnk.app}/>
-                      ))}
-                      <p style={{fontSize:"10px",color:MUT,marginTop:"6px",lineHeight:1.5,fontStyle:"italic"}}>
-                        Candid may earn a referral fee — this doesn't affect our ranking or recommendations.
-                      </p>
-                    </div>
-                  )}
-                  {/* Not yet */}
-                  {a.notYet?.length > 0 && (
-                    <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 12px",marginTop:"12px"}}>
-                      <div style={{fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"4px"}}>Not yet</div>
-                      <p style={{fontSize:"13px",color:MUT,lineHeight:1.6}}>{a.notYet.join(" · ")}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Upgrade nudge */}
-          <div style={{background:G,borderRadius:"14px",padding:"24px",marginBottom:"24px"}}>
-            <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"10px"}}>Want to go deeper?</div>
-            <h3 style={{fontFamily:SERIF,fontSize:"19px",color:WHITE,marginBottom:"8px",lineHeight:1.3}}>Once you've got the basics in place, there's a lot more to explore.</h3>
-            <p style={{fontSize:"14px",color:"rgba(255,255,255,0.6)",lineHeight:1.7,marginBottom:"18px"}}>
-              Candid's full report covers ISA allowances, pension tax relief, student loan strategy, CGT optimisation, salary sacrifice, and more — with specific £ figures for your situation.
-            </p>
-            <button type="button" onClick={onUpgrade} style={{background:GOLD,border:"none",borderRadius:"8px",padding:"13px 24px",color:G,fontSize:"15px",fontWeight:700,cursor:"pointer"}}>
-              Get my full Candid report →
-            </button>
-          </div>
-
-          <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.1)",paddingTop:"16px"}}>
-            Candid provides financial education and guidance only — not regulated financial advice. Always consider your personal circumstances and consult a qualified adviser for complex situations.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{minHeight:"100vh",background:CREAM,fontFamily:SANS}}>
-      <style>{FONTS}</style>
-      <div style={{background:G,padding:"18px 32px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontFamily:SERIF,color:GOLD,fontSize:"22px",fontWeight:700}}>Candid.</span>
-        <span style={{color:"rgba(255,255,255,0.45)",fontSize:"12px"}}>Question {answeredCount+1} of ~{totalVisible}</span>
-      </div>
-      <div style={{height:"3px",background:"rgba(255,255,255,0.1)"}}>
-        <div style={{height:"3px",background:GOLD,width:`${((answeredCount)/Math.max(totalVisible,1))*100}%`,transition:"width 0.4s ease"}}/>
-      </div>
-      <div style={{maxWidth:"580px",margin:"0 auto",padding:"48px 24px 80px"}}>
-        {currentQ && (
-          <div className="fu">
-            <h2 style={{fontFamily:SERIF,fontSize:"clamp(22px,3.5vw,30px)",color:G,lineHeight:1.2,marginBottom:"8px"}}>{currentQ.q}</h2>
-            {currentQ.hint && <p style={{fontSize:"14px",color:MUT,marginBottom:"32px",lineHeight:1.6}}>{currentQ.hint}</p>}
-            <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-              {currentQ.options.map((o,i) => (
-                <button key={o.value} type="button" onClick={() => pick(currentQ.id, o.value)} className={`fu${i+1}`}
-                  style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",textAlign:"left",cursor:"pointer",display:"flex",alignItems:"center",gap:"14px",transition:"all 0.15s"}}>
-                  <span style={{fontSize:"24px",flexShrink:0}}>{o.icon}</span>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:600,fontSize:"15px",color:TEXT,marginBottom:o.sub?"3px":"0"}}>{o.label}</div>
-                    {o.sub && <div style={{fontSize:"13px",color:MUT,lineHeight:1.4}}>{o.sub}</div>}
-                  </div>
-                  <span style={{fontSize:"16px",color:MUT,flexShrink:0}}>›</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {history.length > 0 && (
-          <button type="button" onClick={goBack} style={{marginTop:"20px",background:"transparent",border:"none",color:MUT,fontSize:"14px",cursor:"pointer",padding:"8px 0"}}>
-            ← Back
-          </button>
-        )}
       </div>
     </div>
   );
@@ -1668,6 +1022,21 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
   );
 }
 
+function Warn({ msg }) {
+  if (!msg) return null;
+  return <p style={{fontSize:"12px",color:"#c4963a",marginTop:"4px",lineHeight:1.5}}>⚠️ {msg}</p>;
+}
+
+function CompanyLogo({ domain, name, size=24 }) {
+  const [err, setErr] = React.useState(false);
+  if (!domain || err) return <span style={{fontSize:"11px",color:MUT,fontWeight:600}}>{name}</span>;
+  return (
+    <img src={`https://logo.clearbit.com/${domain}`} alt={name}
+      onError={() => setErr(true)}
+      style={{width:size,height:size,objectFit:"contain",borderRadius:"4px",verticalAlign:"middle"}}/>
+  );
+}
+
 function OnboardingStep({ step, d, set }) {
   const g2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"};
   if (step === 0) return (
@@ -1676,8 +1045,14 @@ function OnboardingStep({ step, d, set }) {
       <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>A few basics to calibrate your report.</p>
       <Field label="First name"><input style={INP} value={d.name} onChange={e => set("name",e.target.value)} placeholder="e.g. Harvey"/></Field>
       <div style={g2}>
-        <Field label="Age"><input style={INP} type="number" value={d.age} onChange={e => set("age",e.target.value)} placeholder="e.g. 29"/></Field>
-        <Field label="Gross annual salary (£)"><FmtInput fmtType="gbp" value={d.salary} onChange={v=>set("salary",v)} placeholder="e.g. 65,000"/></Field>
+        <Field label="Age">
+          <input style={INP} type="number" value={d.age} onChange={e => set("age",e.target.value)} placeholder="e.g. 29"/>
+          <Warn msg={+d.age > 0 && (+d.age < 16 || +d.age > 80) ? "Unusual age — double-check this." : null}/>
+        </Field>
+        <Field label="Gross annual salary (£)">
+          <FmtInput fmtType="gbp" value={d.salary} onChange={v=>set("salary",v)} placeholder="e.g. 65,000"/>
+          <Warn msg={+d.salary > 0 && (+d.salary < 12000 || +d.salary > 500000) ? "Unusual salary — this affects all calculations." : null}/>
+        </Field>
       </div>
       {/* Auto tax band display */}
       {+d.salary > 0 && (
@@ -1685,29 +1060,70 @@ function OnboardingStep({ step, d, set }) {
           <div>
             <div style={{fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"3px"}}>Tax band (calculated)</div>
             <div style={{fontSize:"15px",fontWeight:600,color:G}}>
-              {+d.salary + (+d.otherIncome||0) > 125140 ? "Additional rate (45%)" :
-               +d.salary + (+d.otherIncome||0) > 50270  ? "Higher rate (40%)" : "Basic rate (20%)"}
+              {+d.salary + (+d.otherIncome||0) + (+d.dividendIncome||0) > 125140 ? "Additional rate (45%)" :
+               +d.salary + (+d.otherIncome||0) + (+d.dividendIncome||0) > 50270  ? "Higher rate (40%)" : "Basic rate (20%)"}
             </div>
           </div>
           <div style={{fontSize:"12px",color:MUT,textAlign:"right",maxWidth:"180px",lineHeight:1.5}}>
-            Based on {+d.otherIncome > 0 ? `£${(+d.salary+(+d.otherIncome)).toLocaleString()} adjusted` : `£${(+d.salary).toLocaleString()} salary`}
+            Based on £{(+d.salary+(+d.otherIncome||0)+(+d.dividendIncome||0)).toLocaleString()} total income
           </div>
         </div>
       )}
-      <Field label="Other income (£/yr)" hint="Rental income, freelance, dividends — leave blank if none">
-        <FmtInput fmtType="gbp" value={d.otherIncome||""} onChange={v=>set("otherIncome",v)} placeholder="e.g. 8,000"/>
-      </Field>
+      <div style={g2}>
+        <Field label="Other income (£/yr)" hint="Rental, freelance — leave blank if none">
+          <FmtInput fmtType="gbp" value={d.otherIncome||""} onChange={v=>set("otherIncome",v)} placeholder="e.g. 8,000"/>
+        </Field>
+        <Field label="Dividend income (£/yr)" hint="From shares or funds — leave blank if none">
+          <FmtInput fmtType="gbp" value={d.dividendIncome||""} onChange={v=>set("dividendIncome",v)} placeholder="e.g. 2,000"/>
+        </Field>
+      </div>
+      <div style={g2}>
+        <Field label="Annual bonus (£)" hint="Leave blank if none">
+          <FmtInput fmtType="gbp" value={d.bonusAmount||""} onChange={v=>set("bonusAmount",v)} placeholder="e.g. 10,000"/>
+        </Field>
+        <Field label="Salary trajectory">
+          <Toggle value={d.salaryTrajectory} onChange={v=>set("salaryTrajectory",v)} options={[{value:"flat",label:"Stable"},{value:"moderate",label:"Growing"},{value:"high",label:"Fast"}]}/>
+        </Field>
+      </div>
     </div>
   );
   if (step === 1) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Cash & savings</h2>
       <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>How your liquid money is sitting right now.</p>
-      <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport"><FmtInput fmtType="gbp" value={d.monthlyExpenses} onChange={v=>set("monthlyExpenses",v)} placeholder="e.g. 2,500"/></Field>
-      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:"16px"}}>
-        <Field label="Total cash savings (£)"><FmtInput fmtType="gbp" value={d.cashSavings} onChange={v=>set("cashSavings",v)} placeholder="e.g. 25,000"/></Field>
-        <Field label="Interest rate (%)"><FmtInput fmtType="pct" value={d.savingsRate} onChange={v=>set("savingsRate",v)} placeholder="4.5"/></Field>
+      <div style={g2}>
+        <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport"><FmtInput fmtType="gbp" value={d.monthlyExpenses} onChange={v=>set("monthlyExpenses",v)} placeholder="e.g. 2,500"/></Field>
+        <Field label="Emergency fund target">
+          <Toggle value={d.higherBuffer||"no"} onChange={v=>set("higherBuffer",v)} options={[{value:"no",label:"6 months"},{value:"yes",label:"9 months"}]}/>
+          <p style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>9 months if self-employed or variable income</p>
+        </Field>
       </div>
+      <Field label="Cash savings accounts" hint="Add each account separately for an accurate blended rate">
+        {(d.cashTiers||[{amount:"",rate:""}]).map((tier,i) => (
+          <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 1fr auto",gap:"8px",marginBottom:"8px",alignItems:"flex-end"}}>
+            <div>
+              {i===0 && <label style={{fontSize:"12px",color:MUT,display:"block",marginBottom:"4px"}}>Amount (£)</label>}
+              <FmtInput fmtType="gbp" value={tier.amount} onChange={v=>{
+                const t=[...(d.cashTiers||[])]; t[i]={...t[i],amount:v}; set("cashTiers",t);
+              }} placeholder="e.g. 10,000"/>
+            </div>
+            <div>
+              {i===0 && <label style={{fontSize:"12px",color:MUT,display:"block",marginBottom:"4px"}}>Rate (%)</label>}
+              <FmtInput fmtType="pct" value={tier.rate} onChange={v=>{
+                const t=[...(d.cashTiers||[])]; t[i]={...t[i],rate:v}; set("cashTiers",t);
+              }} placeholder="4.5"/>
+            </div>
+            <button onClick={()=>{
+              const t=(d.cashTiers||[]).filter((_,j)=>j!==i);
+              set("cashTiers", t.length ? t : [{amount:"",rate:""}]);
+            }} style={{background:"transparent",border:"1px solid rgba(22,47,36,0.15)",borderRadius:"6px",padding:"0 10px",cursor:"pointer",color:MUT,fontSize:"16px",height:"42px",lineHeight:1}}>×</button>
+          </div>
+        ))}
+        <button onClick={()=>set("cashTiers",[...(d.cashTiers||[]),{amount:"",rate:""}])}
+          style={{background:"transparent",border:`1px dashed ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:600,cursor:"pointer",marginTop:"4px"}}>
+          + Add another account
+        </button>
+      </Field>
       <Field label="Premium bonds (£)" hint="Max £50,000. Enter 0 if none."><FmtInput fmtType="gbp" value={d.premiumBonds} onChange={v=>set("premiumBonds",v)} placeholder="e.g. 10,000"/></Field>
     </div>
   );
@@ -1723,9 +1139,30 @@ function OnboardingStep({ step, d, set }) {
           <Field label="Paid into ISA this tax year (£)" hint="£20,000 annual limit — resets every April 5th.">
             <FmtInput fmtType="gbp" value={d.isaUsedThisYear} onChange={v=>set("isaUsedThisYear",v)} placeholder="e.g. 8,000"/>
           </Field>
+          {+d.isaUsedThisYear > 0 && (
+            <div style={{background:"rgba(196,150,58,0.05)",border:"1px solid rgba(196,150,58,0.2)",borderRadius:"8px",padding:"12px 14px",marginBottom:"16px"}}>
+              <p style={{fontSize:"12px",color:MUT,margin:"0 0 10px",fontStyle:"italic"}}>Optional: break down this year's ISA contributions by type</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
+                <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearCash} onChange={v=>set("isaThisYearCash",v)} placeholder="0"/></Field>
+                <Field label="Stocks & Shares (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",v)} placeholder="0"/></Field>
+                <Field label="Lifetime ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",v)} placeholder="0"/></Field>
+              </div>
+            </div>
+          )}
           <Field label="Total ISA value from previous years (£)" hint="Your ISA balance before this tax year's contributions.">
             <FmtInput fmtType="gbp" value={d.isaPreviousBalance} onChange={v=>set("isaPreviousBalance",v)} placeholder="e.g. 24,000"/>
           </Field>
+          {+d.isaPreviousBalance > 0 && (
+            <div style={{background:"rgba(196,150,58,0.05)",border:"1px solid rgba(196,150,58,0.2)",borderRadius:"8px",padding:"12px 14px",marginBottom:"16px"}}>
+              <p style={{fontSize:"12px",color:MUT,margin:"0 0 10px",fontStyle:"italic"}}>Optional: break down previous ISA balance by type</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"10px"}}>
+                <Field label="Cash (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",v)} placeholder="0"/></Field>
+                <Field label="S&S (£)"><FmtInput fmtType="gbp" value={d.isaPrevSS} onChange={v=>set("isaPrevSS",v)} placeholder="0"/></Field>
+                <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevLISA} onChange={v=>set("isaPrevLISA",v)} placeholder="0"/></Field>
+                <Field label="Other (£)"><FmtInput fmtType="gbp" value={d.isaPrevOther} onChange={v=>set("isaPrevOther",v)} placeholder="0"/></Field>
+              </div>
+            </div>
+          )}
           <Field label="ISA type">
             <Toggle value={d.isaType} onChange={v => set("isaType",v)} options={[{value:"cash",label:"Cash ISA"},{value:"ss",label:"Stocks & Shares"},{value:"both",label:"Both"},{value:"none",label:"Neither yet"}]}/>
           </Field>
@@ -1746,11 +1183,15 @@ function OnboardingStep({ step, d, set }) {
         <div>
           <div style={g2}>
             <Field label="Your contribution (%)"><FmtInput fmtType="pct" value={d.myContribution} onChange={v=>set("myContribution",v)} placeholder="e.g. 5"/></Field>
-            <Field label="Employer match (%)"><FmtInput fmtType="pct" value={d.employerMatch} onChange={v=>set("employerMatch",v)} placeholder="e.g. 5"/></Field>
+            <Field label="Employer match cap (%)" hint="Max employer will contribute"><FmtInput fmtType="pct" value={d.employerMatch} onChange={v=>set("employerMatch",v)} placeholder="e.g. 5"/></Field>
           </div>
           <div style={g2}>
-            <Field label="Pot value (£)"><FmtInput fmtType="gbp" value={d.potValue} onChange={v=>set("potValue",v)} placeholder="e.g. 35,000"/></Field>
+            <Field label="Main pot value (£)"><FmtInput fmtType="gbp" value={d.potValue} onChange={v=>set("potValue",v)} placeholder="e.g. 35,000"/></Field>
+            <Field label="Other pots combined (£)" hint="Old employer pensions etc."><FmtInput fmtType="gbp" value={d.potValue2||""} onChange={v=>set("potValue2",v)} placeholder="e.g. 8,000"/></Field>
+          </div>
+          <div style={g2}>
             <Field label="Target retirement age"><input style={INP} type="number" value={d.retirementAge} onChange={e => set("retirementAge",e.target.value)} placeholder="65"/></Field>
+            <Field label="NI years completed" hint="Check via HMRC / Personal Tax Account"><input style={INP} type="number" value={d.niYears||""} onChange={e=>set("niYears",e.target.value)} placeholder="e.g. 12"/></Field>
           </div>
         </div>
       ) : (
@@ -1780,9 +1221,23 @@ function OnboardingStep({ step, d, set }) {
         <div>
           <div style={g2}>
             <Field label="Outstanding balance (£)"><FmtInput fmtType="gbp" value={d.mortgageBalance} onChange={v=>set("mortgageBalance",v)} placeholder="e.g. 280,000"/></Field>
-            <Field label="Interest rate (%)"><FmtInput fmtType="pct" value={d.mortgageRate} onChange={v=>set("mortgageRate",v)} placeholder="e.g. 4.5"/></Field>
+            <Field label="Interest rate (%)">
+              <FmtInput fmtType="pct" value={d.mortgageRate} onChange={v=>set("mortgageRate",v)} placeholder="e.g. 4.5"/>
+              <Warn msg={+d.mortgageRate > 0 && (+d.mortgageRate < 1 || +d.mortgageRate > 15) ? "Unusual mortgage rate — double-check." : null}/>
+            </Field>
           </div>
           <Field label="Monthly payment (£)"><FmtInput fmtType="gbp" value={d.monthlyMortgage} onChange={v=>set("monthlyMortgage",v)} placeholder="e.g. 1,400"/></Field>
+          <Field label="Fixed rate expiry" hint="When does your current deal end? Leave blank if variable.">
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+              <select style={INP} value={d.fixExpiryMonth||""} onChange={e=>set("fixExpiryMonth",e.target.value)}>
+                <option value="">Month…</option>
+                {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m,i)=>(
+                  <option key={i+1} value={String(i+1)}>{m}</option>
+                ))}
+              </select>
+              <input style={INP} type="number" value={d.fixExpiryYear||""} onChange={e=>set("fixExpiryYear",e.target.value)} placeholder="e.g. 2026" min="2024" max="2040"/>
+            </div>
+          </Field>
           <Field label="Mortgage provider" hint="Helps us surface better deals when available.">
             <select style={INP} value={d.mortgageProvider||""} onChange={e=>set("mortgageProvider",e.target.value)}>
               <option value="">Select provider…</option>
@@ -1837,81 +1292,6 @@ function OnboardingStep({ step, d, set }) {
   return null;
 }
 
-// ── Concern selector ──────────────────────────────────────────────────────────
-function ConcernSelector({ selected, onToggle, onContinue, onBack }) {
-  const count = selected.length;
-  return (
-    <PageWrap>
-      <NavBar right={<GhostBtn onClick={onBack}>← Back</GhostBtn>}/>
-      <ContentWrap maxWidth="680px">
-        <div className="fu">
-          <h1 style={{fontFamily:SERIF,fontSize:"clamp(26px,4vw,38px)",color:G,lineHeight:1.15,marginBottom:"10px"}}>What's on your mind?</h1>
-          <p style={{fontSize:"15px",color:MUT,lineHeight:1.7,marginBottom:"36px"}}>Select everything that's relevant. We'll collect the right data for each concern and work through them one by one.</p>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))",gap:"10px",marginBottom:"36px"}}>
-          {CONCERN_LIST.map((c,i) => {
-            const on = selected.includes(c.id);
-            return (
-              <div key={c.id} className={`fu${Math.min(i+1,7)}`} onClick={() => onToggle(c.id)} style={{background:on?G:WHITE,borderRadius:"12px",padding:"18px 16px",border:`1.5px solid ${on?G:"rgba(22,47,36,0.13)"}`,cursor:"pointer",transition:"all 0.15s",boxShadow:on?"0 2px 12px rgba(22,47,36,0.18)":"none"}}>
-                <div style={{fontSize:"22px",marginBottom:"10px"}}>{c.icon}</div>
-                <div style={{fontWeight:600,fontSize:"14px",color:on?WHITE:TEXT,marginBottom:"4px"}}>{c.label}</div>
-                <div style={{fontSize:"12px",color:on?"rgba(255,255,255,0.6)":MUT,lineHeight:1.4}}>{c.tagline}</div>
-                {on && (
-                  <div style={{marginTop:"10px",width:"18px",height:"18px",background:GOLD,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke={G} strokeWidth="1.8" strokeLinecap="round"/></svg>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <button onClick={onContinue} disabled={count===0} style={{width:"100%",padding:"16px",background:count>0?G:"rgba(22,47,36,0.2)",border:"none",borderRadius:"10px",color:count>0?WHITE:"rgba(255,255,255,0.4)",fontSize:"16px",fontWeight:600,cursor:count>0?"pointer":"not-allowed",transition:"all 0.2s"}}>
-          {count===0 ? "Select at least one concern" : count===1 ? "Collect my details →" : `Collect details for ${count} concerns →`}
-        </button>
-      </ContentWrap>
-    </PageWrap>
-  );
-}
-
-// ── Concern triage ────────────────────────────────────────────────────────────
-function ConcernTriage({ selectedConcerns, d, set, onContinue, onBack }) {
-  const groups = getTriageGroupsForConcerns(selectedConcerns);
-  const coreComplete = d.name && d.salary;
-  function renderField(field) {
-    if (!fieldVisible(field, d)) return null;
-    const key = field.id;
-    return (
-      <Field key={key} label={field.label} hint={field.hint}>
-        {field.type==="text"    && <input style={INP} value={d[key]||""} onChange={e=>set(key,e.target.value)} placeholder={field.placeholder||""}/>}
-        {field.type==="number"  && <input style={INP} type="number" step={field.step||"1"} value={d[key]||""} onChange={e=>set(key,e.target.value)} placeholder={field.placeholder||""}/>}
-        {field.type==="select"  && <select style={INP} value={d[key]||""} onChange={e=>set(key,e.target.value)}>{!d[key]&&<option value="">Select…</option>}{field.options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>}
-        {field.type==="toggle"  && <Toggle value={d[key]||""} onChange={v=>set(key,v)} options={field.options}/>}
-      </Field>
-    );
-  }
-  const concernLabels = selectedConcerns.map(id => CONCERN_LIST.find(c=>c.id===id)?.label).filter(Boolean);
-  return (
-    <PageWrap>
-      <NavBar center={`Setting up: ${concernLabels.join(", ")}`} right={<GhostBtn onClick={onBack}>← Back</GhostBtn>}/>
-      <ContentWrap>
-        <div className="fu" style={{marginBottom:"32px"}}>
-          <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>A few details first</h2>
-          <p style={{color:MUT,lineHeight:1.65,fontSize:"15px"}}>Only the fields relevant to your selected {selectedConcerns.length===1?"concern":"concerns"}. The more you fill in, the more specific the guidance.</p>
-        </div>
-        {groups.map((group,gi) => (
-          <div key={group.key} className={`fu${Math.min(gi+1,7)}`}>
-            {gi>0 && <div style={{margin:"8px 0 20px",paddingTop:"24px",borderTop:"1px solid rgba(22,47,36,0.1)"}}><span style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase"}}>{group.heading}</span></div>}
-            {group.fields.map(f => renderField(f))}
-          </div>
-        ))}
-        <button onClick={onContinue} disabled={!coreComplete} style={{marginTop:"16px",width:"100%",padding:"15px",background:coreComplete?G:"rgba(22,47,36,0.2)",border:"none",borderRadius:"10px",color:coreComplete?WHITE:"rgba(255,255,255,0.4)",fontSize:"16px",fontWeight:600,cursor:coreComplete?"pointer":"not-allowed",transition:"all 0.2s"}}>
-          {coreComplete ? "Start my concern deep-dive →" : "Enter your name and salary to continue"}
-        </button>
-      </ContentWrap>
-    </PageWrap>
-  );
-}
-
 // ── Loading ───────────────────────────────────────────────────────────────────
 function LoadingScreen({ name, msgs }) {
   const all = msgs || ["Analysing your position...","Running the numbers...","Building your report..."];
@@ -1932,8 +1312,8 @@ function LoadingScreen({ name, msgs }) {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function ScoreRing({ score }) {
   const r=50, circ=2*Math.PI*r, dash=(score/100)*circ;
-  const col = score>=75 ? "#2d6b4a" : score>=50 ? GOLD : "#c0392b";
-  const lb  = score>=75 ? "Good" : score>=50 ? "Developing" : "Needs work";
+  const col = score>=86 ? "#2d6b4a" : score>=66 ? "#2d6b4a" : score>=41 ? GOLD : "#c0392b";
+  const lb  = score>=86 ? "Optimised" : score>=66 ? "On track" : score>=41 ? "Room to improve" : "Needs attention";
   return (
     <div style={{position:"relative",width:"124px",height:"124px",flexShrink:0}}>
       <svg width="124" height="124" style={{transform:"rotate(-90deg)"}}>
@@ -2032,13 +1412,15 @@ s.pension = {
 
   // Student loan
   const slBalance = m.loanBal;
-  const slImpact = m.willClear ? Math.round(slBalance * 0.075 * 0.1) : 0; // only meaningful if clearing
+  const belowThreshold = d.studentLoan !== "none" && m.annualRepayment === 0;
+  const slImpact = m.willClear ? Math.round(slBalance * 0.075 * 0.1) : 0;
   s.studentLoan = {
-    status: d.studentLoan === "none" ? "na"
-          : m.annualRepayment === 0 ? "attention"
-          : "attention",
+    status: d.studentLoan === "none" ? "na" : "attention",
     impact: slImpact,
-    impactLabel: slBalance > 0 ? `${fmt(slBalance)} outstanding` : null,
+    impactLabel: belowThreshold
+      ? "Below repayment threshold — no deductions currently"
+      : slBalance > 0 ? `${fmt(slBalance)} outstanding` : null,
+    belowThreshold,
   };
 
   // Mortgage
@@ -2142,7 +1524,56 @@ function FeedbackButton() {
   );
 }
 
-function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, completedModules, onEditInputs }) {
+function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
+  const [activeId, setActiveId] = useState(null);
+  const active = scenarios.find(s => s.id === activeId);
+  return (
+    <div style={{marginBottom:"24px"}}>
+      <h3 style={{fontFamily:SERIF,fontSize:"18px",color:G,marginBottom:"12px"}}>What if you made one change?</h3>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"10px"}}>
+        {scenarios.map(sc => (
+          <div key={sc.id}
+            onClick={() => setActiveId(activeId === sc.id ? null : sc.id)}
+            style={{background:WHITE,border:activeId===sc.id?`1.5px solid ${GOLD}`:"1px solid rgba(22,47,36,0.1)",borderRadius:"10px",padding:"14px",cursor:"pointer",transition:"border 0.15s"}}>
+            <p style={{fontSize:"13px",fontWeight:600,color:G,margin:"0 0 4px"}}>{sc.label}</p>
+            <p style={{fontSize:"12px",color:MUT,margin:"0 0 8px",lineHeight:1.45}}>{sc.description}</p>
+            <span style={{fontSize:"11px",fontWeight:700,color:GOLD}}>See the impact →</span>
+          </div>
+        ))}
+      </div>
+      {active && (
+        <div style={{marginTop:"12px",background:"rgba(196,150,58,0.07)",border:`1.5px solid ${GOLD}`,borderRadius:"10px",padding:"16px 18px",display:"flex",flexWrap:"wrap",alignItems:"center",gap:"16px"}}>
+          <div style={{flex:1,minWidth:"180px"}}>
+            <p style={{fontSize:"13px",fontWeight:700,color:G,margin:"0 0 4px"}}>{active.label}</p>
+            <p style={{fontSize:"12px",color:MUT,margin:0,lineHeight:1.5}}>{active.description}</p>
+          </div>
+          <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap"}}>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"11px",color:MUT,marginBottom:"2px"}}>Financial impact</div>
+              <div style={{fontSize:"18px",fontWeight:700,color:GOLD}}>{active.impactLabel}</div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"11px",color:MUT,marginBottom:"2px"}}>Score boost</div>
+              <div style={{fontSize:"18px",fontWeight:700,color:"#2d6b4a"}}>+{active.scoreBoost} pts</div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"11px",color:MUT,marginBottom:"2px"}}>New score</div>
+              <div style={{fontSize:"18px",fontWeight:700,color:"#2d6b4a"}}>{Math.min(100, currentScore + active.scoreBoost)}</div>
+            </div>
+          </div>
+          <button onClick={onEditInputs}
+            style={{background:GOLD,border:"none",borderRadius:"8px",padding:"9px 18px",color:G,fontSize:"13px",fontWeight:700,cursor:"pointer",flexShrink:0}}>
+            Apply this change
+          </button>
+          <button onClick={() => setActiveId(null)}
+            style={{background:"transparent",border:"none",fontSize:"16px",color:MUT,cursor:"pointer",padding:"4px"}}>×</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged }) {
   const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
       if (!insights) return null;
@@ -2210,8 +1641,57 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
   return (
     <PageWrap>
       <FeedbackButton />
-      <NavBar right={<div style={{display:"flex",gap:"8px"}}><GhostBtn onClick={onEditInputs}>✏️ Edit inputs</GhostBtn><GhostBtn onClick={onReset}>Start over</GhostBtn></div>}/>
+      <NavBar right={<div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+        <button onClick={onEditInputs} style={{background:GOLD,border:"none",borderRadius:"8px",padding:"9px 18px",color:G,fontSize:"13px",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:"6px"}}>✏️ Edit inputs</button>
+        <GhostBtn onClick={onReset}>Start over</GhostBtn>
+      </div>}/>
       <ContentWrap maxWidth="780px">
+        {/* What changed banner */}
+        {prevInsights && whatChangedOpen && (() => {
+          const scoreDelta = insights.score - prevInsights.score;
+          const changed = Object.keys(insights.modules||{}).filter(k => insights.modules[k]?.status !== prevInsights.modules?.[k]?.status);
+          return (
+            <div style={{background:"rgba(22,47,36,0.05)",border:"1px solid rgba(22,47,36,0.15)",borderRadius:"10px",padding:"14px 16px",marginBottom:"20px"}}>
+              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
+                <div>
+                  <div style={{fontSize:"12px",fontWeight:700,color:G,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"6px"}}>What changed in your report</div>
+                  <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
+                    <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:scoreDelta >= 0 ? "#2d6b4a" : "#c0392b"}}>
+                      {scoreDelta >= 0 ? "+" : ""}{scoreDelta} points
+                    </span>
+                    {changed.length > 0 && (
+                      <span style={{fontSize:"13px",color:MUT}}>{changed.map(k => {
+                        const from = prevInsights.modules[k]?.status, to = insights.modules[k]?.status;
+                        const pretty = {cash:"Cash",investments:"Investments",pension:"Pension",studentLoan:"Student loan",mortgage:"Mortgage",personalLoan:"Personal loan",kids:"Kids",insurance:"Insurance"};
+                        return `${pretty[k]||k}: ${from} → ${to}`;
+                      }).join(" · ")}</span>
+                    )}
+                  </div>
+                </div>
+                <button onClick={onDismissWhatChanged} style={{background:"transparent",border:"none",color:MUT,fontSize:"18px",cursor:"pointer",padding:"2px 6px",flexShrink:0,lineHeight:1}}>×</button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Tax year countdown banner */}
+        {(() => {
+          const now = new Date();
+          const taxYearEnd = new Date(now.getFullYear(), 3, 5); // April 5
+          if (taxYearEnd < now) taxYearEnd.setFullYear(taxYearEnd.getFullYear() + 1);
+          const days = Math.round((taxYearEnd - now) / 86400000);
+          if (days > 90) return null;
+          return (
+            <div style={{borderLeft:`4px solid ${GOLD}`,background:"rgba(196,150,58,0.07)",borderRadius:"0 8px 8px 0",padding:"13px 16px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"12px"}}>
+              <span style={{fontSize:"20px"}}>📅</span>
+              <div>
+                <div style={{fontSize:"12px",fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"2px"}}>Tax year ends in {days} day{days!==1?"s":""}</div>
+                <p style={{fontSize:"13px",color:G,margin:0}}>ISA allowance ({fmt(m.isaHeadroom)} remaining) and other tax reliefs reset on April 6th — use them or lose them.</p>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Score card */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
           <ScoreRing score={insights.score}/>
@@ -2221,6 +1701,36 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
             <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:"16px"}}>{insights.narrative}</p>
           </div>
         </div>
+
+        {/* Action plan */}
+        {insights.priorities?.length > 0 && (
+          <div className="fu1" style={{marginBottom:"24px"}}>
+            <h2 style={{fontFamily:SERIF,fontSize:"26px",color:G,marginBottom:"4px",borderLeft:`4px solid ${GOLD}`,paddingLeft:"14px"}}>Your action plan</h2>
+            <p style={{fontSize:"13px",color:MUT,marginBottom:"16px",paddingLeft:"18px"}}>Ranked by urgency — biggest financial wins first.</p>
+            <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+              {insights.priorities.map((p,i) => {
+                const urgCol = UG[p.urgency] || MUT;
+                return (
+                  <div key={i} style={{background:WHITE,borderRadius:"12px",padding:"20px 22px",border:"1px solid rgba(22,47,36,0.09)",borderLeft:`4px solid ${urgCol}`}}>
+                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px",marginBottom:"8px",flexWrap:"wrap"}}>
+                      <div>
+                        <div style={{fontSize:"10px",fontWeight:700,color:urgCol,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"4px"}}>{p.urgency}</div>
+                        <h3 style={{fontFamily:SERIF,fontSize:"18px",color:G,lineHeight:1.25}}>{p.title}</h3>
+                      </div>
+                      {p.impact && (
+                        <div style={{background:GOLD,borderRadius:"8px",padding:"8px 14px",flexShrink:0,textAlign:"center"}}>
+                          <div style={{fontSize:"20px",fontWeight:800,color:G,fontFamily:SERIF,lineHeight:1}}>{p.impact}</div>
+                          <div style={{fontSize:"10px",color:"rgba(22,47,36,0.65)",fontWeight:600,marginTop:"2px"}}>potential saving</div>
+                        </div>
+                      )}
+                    </div>
+                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,margin:0}}>{p.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Premium bonds countdown */}
         {isNearPremiumBondDraw() && (+d.premiumBonds||0) > 0 && (() => {
@@ -2440,6 +1950,55 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
           );
         })()}
 
+        {/* Scenario modelling */}
+        {(() => {
+          const scenarios = [
+            m.missedMatch > 0 ? {
+              id:"pension_match",
+              label:"Max employer pension match",
+              description:`Contribute ${m.salary > 0 ? (+d.employerMatch||0) : 0}% to capture the full employer match`,
+              impact: m.missedMatch,
+              impactLabel: `+${fmt(m.missedMatch)}/yr from employer`,
+              scoreBoost: Math.min(12, Math.round(m.missedMatch / 500)),
+            } : null,
+            m.annualYieldGap > 200 ? {
+              id:"cash_isa",
+              label:"Move surplus cash to a Cash ISA",
+              description:`Switch ${fmt(m.surplusCash)} above your ${m.bufferMonths}-month buffer to a 5.08% Cash ISA`,
+              impact: m.annualYieldGap,
+              impactLabel: `+${fmt(m.annualYieldGap)}/yr in yield`,
+              scoreBoost: Math.min(8, Math.round(m.annualYieldGap / 200)),
+            } : null,
+            m.isaHeadroom > 3000 ? {
+              id:"max_isa",
+              label:"Use remaining ISA allowance",
+              description:`${fmt(m.isaHeadroom)} left before April 5th — protect this year's growth from tax permanently`,
+              impact: m.isaHeadroom * 0.04,
+              impactLabel: `${fmt(m.isaHeadroom)} sheltered from tax`,
+              scoreBoost: Math.min(6, Math.round(m.isaHeadroom / 3000)),
+            } : null,
+            d.studentLoan !== "none" && !m.willClear && m.annualRepayment > 0 ? {
+              id:"stop_sl_overpay",
+              label:"Stop student loan overpayments",
+              description:"Your loan is unlikely to clear — overpayments will be written off. Redirect to ISA or pension instead",
+              impact: Math.min(2000, m.annualRepayment * 0.5),
+              impactLabel: `Redirect ${fmt(Math.min(2000, m.annualRepayment * 0.5))}/yr`,
+              scoreBoost: 4,
+            } : null,
+          ].filter(Boolean);
+
+          if (scenarios.length === 0) return null;
+          return (
+            <ScenarioPanel scenarios={scenarios} currentScore={insights.score} onEditInputs={onEditInputs}/>
+          );
+        })()}
+
+        {/* Edit inputs banner */}
+        <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.25)",borderRadius:"10px",padding:"13px 16px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
+          <p style={{fontSize:"13px",color:G,lineHeight:1.5,margin:0}}>Changed your circumstances? Update your inputs for a fresh score.</p>
+          <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer",flexShrink:0}}>Update inputs</button>
+        </div>
+
         {/* Module breakdown — sorted, collapsible */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
@@ -2526,30 +2085,20 @@ function Dashboard({ insights, d, m, onReset, onDigDeeper, onOpenModule, complet
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"8px"}}>
               {reviewedModules.map(mm => (
-                <div key={mm.key} onClick={() => onOpenModule(mm.key)} style={{background:"rgba(22,47,36,0.03)",borderRadius:"12px",padding:"14px 16px",border:"1px solid rgba(22,47,36,0.08)",cursor:"pointer",opacity:0.65,display:"flex",alignItems:"center",gap:"10px"}}>
+                <div key={mm.key} onClick={() => onOpenModule(mm.key)} style={{background:WHITE,borderRadius:"12px",padding:"14px 16px",border:`1.5px solid ${GOLD}`,cursor:"pointer",display:"flex",alignItems:"center",gap:"10px",transition:"all 0.15s"}}>
                   <div style={{width:"22px",height:"22px",background:"#2d6b4a",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke={WHITE} strokeWidth="1.8" strokeLinecap="round"/></svg>
                   </div>
                   <span style={{fontSize:"16px"}}>{mm.icon}</span>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</div>
-                    <div style={{fontSize:"11px",color:MUT}}>Reviewed — click to revisit</div>
+                    <div style={{fontSize:"11px",color:GOLD,fontWeight:600}}>Optimise now →</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         )}
-
-        {/* Go Deeper CTA */}
-        <div onClick={onDigDeeper} style={{background:WHITE,borderRadius:"12px",padding:"20px 24px",border:`1.5px solid ${GOLD}`,marginBottom:"28px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div>
-            <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"5px"}}>Go deeper</div>
-            <h3 style={{fontFamily:SERIF,fontSize:"18px",color:G,marginBottom:"4px"}}>Something specific on your mind?</h3>
-            <p style={{fontSize:"13px",color:MUT}}>Walk through a tailored concern — mortgage, pension, student loan, and more.</p>
-          </div>
-          <div style={{fontSize:"24px",color:GOLD,flexShrink:0,marginLeft:"16px"}}>→</div>
-        </div>
 
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>
           Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.
@@ -2633,7 +2182,14 @@ function TakeMeThere({ app, icon, message, demoNote }) {
 function ProductCard({ p, onInternalLink }) {
   return (
     <div style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,position:"relative"}}>
-      {p.badge && <span style={{position:"absolute",top:"14px",right:"14px",fontSize:"10px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.12)",padding:"3px 8px",borderRadius:"100px",letterSpacing:"0.04em"}}>{p.badge}</span>}
+      {p.badge && (() => {
+        const superlative = ["Highest rate","Best buy","Top pick","Lowest cost","Largest UK broker","Easiest consolidation","Best alternative","Best return"].includes(p.badge);
+        return (
+          <span style={{position:"absolute",top:"14px",right:"14px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"5px 11px":"3px 8px",borderRadius:"100px",letterSpacing:"0.04em"}}>
+            {superlative ? `⭐ ${p.badge}` : p.badge}
+          </span>
+        );
+      })()}
       <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"8px"}}>
         <div style={{width:"36px",height:"36px",background:p.highlight ? G : "rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           <span style={{fontSize:"18px"}}>{p.appIcon||"💳"}</span>
@@ -2663,8 +2219,8 @@ function AlternativeInvestments({ age }) {
   const [open, setOpen] = useState(false);
   const youngUser = (+age||30) < 45;
   const label = youngUser
-    ? "Investments your parents would want you to make 👴"
-    : "Investments you'd want your kids to make 🧒";
+    ? "Beyond the basics: higher-risk & alternative investments 🚀"
+    : "Advanced investing: alternatives & passion assets 📈";
   const subLabel = youngUser
     ? "Higher-risk, higher-potential. For when your ISA and pension are sorted."
     : "Growth-oriented strategies worth understanding — even if you'd advise caution.";
@@ -2846,6 +2402,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
   const slInterestRate = d.studentLoan==="plan2" ? 0.075 : d.studentLoan==="plan5" ? 0.075 : 0.05;
   const slInterestSaved = Math.round(slRepaymentFromBonus * slInterestRate * Math.max(1, loanBal/Math.max(1,m.annualRepayment)));
   const showBonusPanel = moduleKey === "pension" && ((+d.bonusAmount||0) > 0 || showBonus);
+  const showSacrificeCalc = moduleKey === "pension" && m.adjustedNetIncome >= 80000 && m.adjustedNetIncome <= 125140;
 
   return (
     <PageWrap>
@@ -3350,6 +2907,51 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
           </div>
         )}
 
+        {/* ── Salary sacrifice calculator (taper zone: £80k–£125,140) ── */}
+        {showSacrificeCalc && (() => {
+          const ani = m.adjustedNetIncome;
+          const taperStart = 100000, taperEnd = 125140;
+          const inTaper = ani > taperStart;
+          const sacrificeToEscape = inTaper ? Math.ceil((ani - taperStart) / 2) : 0; // each £2 sacrifice restores £1 PA
+          const sacrificeToFullPA = inTaper ? Math.ceil((ani - taperStart) / 2) : Math.max(0, taperStart - ani);
+          const niSaving = Math.round(sacrificeToFullPA * 0.02); // employee NI 2% on this band
+          const taxSaving = inTaper ? Math.round(sacrificeToFullPA * 0.60) : 0; // effective 60% in taper
+          const totalSaving = niSaving + taxSaving;
+          return (
+            <div style={{background:"rgba(192,57,43,0.04)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:"12px",padding:"20px 22px",marginBottom:"16px"}}>
+              <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"8px"}}>
+                {inTaper ? "⚠️ You're in the 60% effective rate zone" : "📌 Salary sacrifice opportunity"}
+              </div>
+              <h3 style={{fontFamily:SERIF,fontSize:"17px",color:G,marginBottom:"8px",lineHeight:1.3}}>
+                {inTaper
+                  ? `Sacrificing ${fmt(sacrificeToFullPA)} recovers your full personal allowance`
+                  : `You're ${fmt(Math.max(0, taperStart - ani))} below the £100k taper — sacrifice could be very powerful`}
+              </h3>
+              <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,marginBottom:"12px"}}>
+                {inTaper
+                  ? `Between £100,000 and £125,140, your personal allowance is withdrawn at £1 for every £2 earned — creating an effective 60% tax rate. Salary sacrifice reduces your adjusted net income, restoring the allowance and saving roughly ${fmt(totalSaving)} in tax and NI on that portion.`
+                  : `Your income is in the £80k–£100k zone. Sacrificing into your pension now builds wealth efficiently — and if your income rises above £100k (through bonus or growth), pre-existing sacrifice reduces the taper impact.`}
+              </p>
+              {inTaper && totalSaving > 0 && (
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",textAlign:"center"}}>
+                  <div style={{background:WHITE,borderRadius:"8px",padding:"12px 8px"}}>
+                    <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(sacrificeToFullPA)}</div>
+                    <div style={{fontSize:"11px",color:MUT,marginTop:"3px"}}>sacrifice needed</div>
+                  </div>
+                  <div style={{background:WHITE,borderRadius:"8px",padding:"12px 8px"}}>
+                    <div style={{fontFamily:SERIF,fontSize:"20px",color:"#2d6b4a",fontWeight:700}}>{fmt(taxSaving)}</div>
+                    <div style={{fontSize:"11px",color:MUT,marginTop:"3px"}}>tax saved</div>
+                  </div>
+                  <div style={{background:GOLD,borderRadius:"8px",padding:"12px 8px"}}>
+                    <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(totalSaving)}</div>
+                    <div style={{fontSize:"11px",color:G,marginTop:"3px",fontWeight:600}}>total saving</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* ── Bonus sacrifice calculator (pension module) ── */}
         {moduleKey === "pension" && (
           <div id="bonus-sacrifice-panel" style={{marginTop:"8px"}}>
@@ -3510,147 +3112,23 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
   );
 }
 
-// ── Concern deep-dive ─────────────────────────────────────────────────────────
-function ConcernDeepDive({ concernId, concernIdx, totalConcerns, answers, setAnswer, onAnalyse, d, m }) {
-  const concern = CONCERN_LIST.find(c => c.id === concernId);
-  const questions = CONCERN_QUESTIONS[concernId] || [];
-  const intro = getConcernIntro(concernId, d, m);
-  const allAnswered = questions.every(q => answers[q.id]);
-  return (
-    <PageWrap>
-      <NavBar center={`Concern ${concernIdx+1} of ${totalConcerns}`}/>
-      <ProgressBar pct={(concernIdx+1)/totalConcerns*100}/>
-      <ContentWrap>
-        <div className="fu" style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"6px"}}>
-          <span style={{fontSize:"28px"}}>{concern?.icon}</span>
-          <h2 style={{fontFamily:SERIF,fontSize:"26px",color:G}}>{concern?.label}</h2>
-        </div>
-        <div className="fu1" style={{background:G,borderRadius:"10px",padding:"16px 20px",marginBottom:"32px"}}>
-          <p style={{fontSize:"14px",color:"rgba(255,255,255,0.82)",lineHeight:1.7}}>{intro}</p>
-        </div>
-        {questions.map((q,i) => (
-          <div key={q.id} className={`fu${i+2}`}>
-            <Field label={q.label} hint={q.hint}>
-              {q.type==="toggle"   && <Toggle value={answers[q.id]||""} onChange={v=>setAnswer(q.id,v)} options={q.options}/>}
-              {q.type==="select"   && <select style={INP} value={answers[q.id]||""} onChange={e=>setAnswer(q.id,e.target.value)}><option value="">Select one…</option>{q.options.map(o=><option key={o} value={o}>{o}</option>)}</select>}
-              {q.type==="textarea" && <textarea style={{...INP,minHeight:"100px",resize:"vertical",lineHeight:1.6}} value={answers[q.id]||""} onChange={e=>setAnswer(q.id,e.target.value)} placeholder="Type here…"/>}
-            </Field>
-          </div>
-        ))}
-        <button onClick={onAnalyse} disabled={!allAnswered} style={{marginTop:"20px",width:"100%",padding:"15px",background:allAnswered?G:"rgba(22,47,36,0.2)",border:"none",borderRadius:"10px",color:allAnswered?WHITE:"rgba(255,255,255,0.4)",fontSize:"16px",fontWeight:600,cursor:allAnswered?"pointer":"not-allowed",transition:"all 0.2s"}}>
-          Analyse my {concern?.label.toLowerCase()} →
-        </button>
-      </ContentWrap>
-    </PageWrap>
-  );
-}
-
-// ── Concern result ────────────────────────────────────────────────────────────
-function ConcernResult({ result, concernId, concernIdx, totalConcerns, onNext, onViewAll, isLast }) {
-  const concern = CONCERN_LIST.find(c => c.id === concernId);
-  if (!result) return null;
-  const urgCol = UG[result.urgency] || MUT;
-  return (
-    <PageWrap>
-      <NavBar center={`${concernIdx+1} of ${totalConcerns} done`}/>
-      <ContentWrap maxWidth="620px">
-        <div className="fu" style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"24px"}}>
-          <span style={{fontSize:"26px"}}>{concern?.icon}</span>
-          <div>
-            <div style={{fontSize:"10px",fontWeight:700,color:urgCol,letterSpacing:"0.08em",textTransform:"uppercase"}}>{result.urgency}</div>
-            <h2 style={{fontFamily:SERIF,fontSize:"24px",color:G,lineHeight:1.2}}>{result.headline}</h2>
-          </div>
-        </div>
-        <div className="fu1" style={{background:WHITE,borderRadius:"12px",padding:"24px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"14px"}}>
-          <p style={{fontSize:"15px",color:TEXT,lineHeight:1.75,marginBottom:"16px"}}>{result.narrative}</p>
-          {result.impact && (
-            <div style={{background:"rgba(196,150,58,0.1)",borderRadius:"8px",padding:"12px 16px",display:"inline-flex",alignItems:"center",gap:"12px"}}>
-              <span style={{fontSize:"10px",fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.06em"}}>Estimated impact</span>
-              <span style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{result.impact}</span>
-            </div>
-          )}
-        </div>
-        {(result.actions||[]).length > 0 && (
-          <div className="fu2" style={{background:WHITE,borderRadius:"12px",border:"1px solid rgba(22,47,36,0.09)",overflow:"hidden",marginBottom:"24px"}}>
-            <div style={{padding:"14px 20px",background:"rgba(22,47,36,0.04)",borderBottom:"1px solid rgba(22,47,36,0.08)"}}>
-              <span style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase"}}>What to do</span>
-            </div>
-            {result.actions.map((a,i) => (
-              <div key={i} style={{padding:"14px 20px",borderBottom:i<result.actions.length-1?"1px solid rgba(22,47,36,0.07)":"none",display:"flex",gap:"12px",alignItems:"flex-start"}}>
-                <div style={{width:"22px",height:"22px",background:G,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>
-                  <span style={{fontSize:"11px",fontWeight:700,color:GOLD}}>{i+1}</span>
-                </div>
-                <p style={{fontSize:"14px",color:TEXT,lineHeight:1.6}}>{a}</p>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="fu3" style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-          {!isLast && <button onClick={onNext} style={{width:"100%",padding:"15px",background:G,border:"none",borderRadius:"10px",color:WHITE,fontSize:"16px",fontWeight:600}}>Next concern →</button>}
-          <button onClick={onViewAll} style={{width:"100%",padding:"15px",background:WHITE,border:"1.5px solid rgba(22,47,36,0.2)",borderRadius:"10px",color:G,fontSize:"15px",fontWeight:500}}>
-            {isLast ? "See my full summary →" : "View full report"}
-          </button>
-        </div>
-      </ContentWrap>
-    </PageWrap>
-  );
-}
-
-// ── All concerns done ─────────────────────────────────────────────────────────
-function AllConcernsDone({ concernResults, hasFullScore, onBackToDashboard, onReset }) {
-  const urgPriority = { immediate:0, soon:1, "this tax year":2 };
-  const sorted = [...concernResults].sort((a,b) => (urgPriority[a.result?.urgency]||3)-(urgPriority[b.result?.urgency]||3));
-  return (
-    <PageWrap>
-      <NavBar right={<GhostBtn onClick={onReset}>Start over</GhostBtn>}/>
-      <ContentWrap maxWidth="680px">
-        <div className="fu" style={{marginBottom:"32px"}}>
-          <h1 style={{fontFamily:SERIF,fontSize:"clamp(26px,4vw,36px)",color:G,marginBottom:"10px"}}>Your concern summary</h1>
-          <p style={{fontSize:"15px",color:MUT,lineHeight:1.7}}>Everything we worked through, ranked by urgency.</p>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"32px"}}>
-          {sorted.map(({ concernId, result },i) => {
-            const concern = CONCERN_LIST.find(c => c.id === concernId);
-            const urgCol = UG[result?.urgency] || MUT;
-            return (
-              <div key={concernId} className={`fu${Math.min(i+1,7)}`} style={{background:WHITE,borderRadius:"12px",padding:"20px 22px",border:"1px solid rgba(22,47,36,0.09)",borderLeft:`4px solid ${urgCol}`}}>
-                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px",marginBottom:"8px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"10px",flex:1}}>
-                    <span style={{fontSize:"20px"}}>{concern?.icon}</span>
-                    <div>
-                      <div style={{fontSize:"10px",fontWeight:700,color:urgCol,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>{result?.urgency}</div>
-                      <h3 style={{fontFamily:SERIF,fontSize:"16px",color:G,lineHeight:1.25}}>{result?.headline}</h3>
-                    </div>
-                  </div>
-                  {result?.impact && <div style={{background:"rgba(196,150,58,0.1)",borderRadius:"6px",padding:"5px 10px",flexShrink:0}}><div style={{fontSize:"12px",fontWeight:700,color:GOLD,whiteSpace:"nowrap"}}>{result.impact}</div></div>}
-                </div>
-                <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,paddingLeft:"30px"}}>{(result?.narrative||"").slice(0,180)}{(result?.narrative||"").length>180?"…":""}</p>
-              </div>
-            );
-          })}
-        </div>
-        {hasFullScore && (
-          <button onClick={onBackToDashboard} style={{width:"100%",padding:"15px",background:G,border:"none",borderRadius:"10px",color:WHITE,fontSize:"16px",fontWeight:600,marginBottom:"12px"}}>
-            ← Back to my Candid score
-          </button>
-        )}
-        <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>Candid provides financial education and guidance only — not regulated financial advice. Consider speaking to an IFA for personalised recommendations.</p>
-      </ContentWrap>
-    </PageWrap>
-  );
-}
-
 // ── Main app ──────────────────────────────────────────────────────────────────
 const BLANK_DATA = {
-  name:"", age:"", salary:"", otherIncome:"",
-  monthlyExpenses:"", cashSavings:"", savingsRate:"", premiumBonds:"",
+  name:"", age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"moderate",
+  monthlyExpenses:"", higherBuffer:"no",
+  cashSavings:"", savingsRate:"", premiumBonds:"",
+  cashTiers:[{amount:"",rate:""}],
   hasInvestments:"no", isaUsedThisYear:"", isaPreviousBalance:"", isaType:"none", unwrappedValue:"", unrealisedGains:"",
-  hasPension:"no", myContribution:"", employerMatch:"", potValue:"", retirementAge:"65",
-  studentLoan:"none", loanBalance:"", hasMortgage:"no", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
-  hasBonus:"no", bonusAmount:"", salaryTrajectory:"moderate", savingsGoal:"goals", investHorizon:"5to10",
-  fixExpiry:"", inheritDirection:"", estateValue:"", hasWill:"no",
+  isaThisYearCash:"", isaThisYearSS:"", isaThisYearLISA:"",
+  isaPrevCash:"", isaPrevSS:"", isaPrevLISA:"", isaPrevOther:"",
+  hasPension:"no", myContribution:"", employerMatch:"", potValue:"", potValue2:"", retirementAge:"65",
+  niYears:"",
+  studentLoan:"none", loanBalance:"",
+  hasMortgage:"no", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
+  fixExpiryMonth:"", fixExpiryYear:"", mortgageProvider:"",
+  savingsGoal:"goals", investHorizon:"5to10",
+  inheritDirection:"", estateValue:"", hasWill:"no",
   hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanProvider:"",
-  mortgageProvider:"",
   hasKids:"no", numKids:"", kidsAges:"", hasJISA:"no", juniorISAValue:"",
   hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"no",
 };
@@ -3662,10 +3140,8 @@ export default function Candid() {
   const [step,             setStep]             = useState(0);
   const [d,                setD]                = useState(INIT_DATA);
   const [insights,         setInsights]         = useState(null);
-  const [selectedConcerns, setSelectedConcerns] = useState([]);
-  const [concernIdx,       setConcernIdx]       = useState(0);
-  const [concernAnswers,   setConcernAnswers]   = useState({});
-  const [concernResults,   setConcernResults]   = useState([]);
+  const [prevInsights,     setPrevInsights]     = useState(null);
+  const [whatChangedOpen,  setWhatChangedOpen]  = useState(false);
   const [activeModule,     setActiveModule]     = useState(null);
   const [activeSection,    setActiveSection]    = useState(null);
   const [completedModules, setCompletedModules] = useState([]);
@@ -3684,6 +3160,28 @@ export default function Candid() {
       });
     } catch(e) {}
   }
+
+  const [returningUser, setReturningUser] = useState(false);
+  const [returnBannerOpen, setReturnBannerOpen] = useState(false);
+
+  useEffect(() => {
+    async function checkReturnVisit() {
+      if (!SUPA_URL || !SUPA_KEY) return;
+      try {
+        const distinctId = posthog.get_distinct_id?.();
+        if (!distinctId) return;
+        const r = await fetch(`${SUPA_URL}/rest/v1/test?session_id=eq.${encodeURIComponent(distinctId)}&select=id,score,name&order=created_at.desc&limit=1`, {
+          headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}` }
+        });
+        const rows = await r.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          setReturningUser(true);
+          setReturnBannerOpen(true);
+        }
+      } catch(e) {}
+    }
+    checkReturnVisit();
+  }, []);
 
   const set = (k, v) => setD(p => ({...p, [k]:v}));
   const m = calcMetrics(d);
@@ -3709,13 +3207,6 @@ export default function Candid() {
     }
   }, [completedModules]);
 
-  function toggleConcern(id) {
-    setSelectedConcerns(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
-  }
-  function setAnswer(qId, val) {
-    const cId = selectedConcerns[concernIdx];
-    setConcernAnswers(prev => ({...prev, [cId]:{...(prev[cId]||{}), [qId]:val}}));
-  }
   function openModule(key, from, section) {
     setActiveModule(key);
     setActiveSection(section || null);
@@ -3752,6 +3243,7 @@ export default function Candid() {
 }
 
   async function generateDashboard() {
+    if (insights) setPrevInsights(insights);
     setScreen("loading");
     const prompt = `You are Candid, a UK personal finance guidance tool. Return ONLY valid JSON — no markdown, no backticks, no text outside the JSON.
 
@@ -3791,6 +3283,7 @@ Return exactly this structure:
     try {
       const result = await callClaude(prompt,1200);
       setInsights(result);
+      setWhatChangedOpen(true);
       posthog.capture("report_generated", { score: result.score, tax_band: m.taxBandLabel });
       // ── Supabase insert ──
       const ls = computeModuleStatuses(d, m);
@@ -3847,60 +3340,25 @@ Return exactly this structure:
     finally { setScreen("dashboard"); }
   }
 
-  async function analyseConcern() {
-    const cId = selectedConcerns[concernIdx];
-    const concern = CONCERN_LIST.find(c => c.id === cId);
-    const answers = concernAnswers[cId] || {};
-    setScreen("concernLoading");
-    const prompt = `You are Candid, a UK personal finance guidance tool. Deep-dive: ${concern?.label}.
-USER: Name: ${d.name||"User"}, Age: ${d.age}, Salary: £${d.salary}, Tax: ${m.taxBandLabel} rate (adjusted net income £${m.adjustedNetIncome.toLocaleString()}), Bonus: ${d.hasBonus==="yes"?`~£${d.bonusAmount}/yr`:"None"}
-Cash: £${d.cashSavings||0} at ${d.savingsRate||4.2}%, Bonds: £${d.premiumBonds||0}, Expenses: £${d.monthlyExpenses||0}/mo
-Investments: ${d.hasInvestments==="yes"?`ISA this yr £${d.isaUsedThisYear||0} (${d.isaType||"unspecified"}), ISA prev £${d.isaPreviousBalance||0}, total £${(+d.isaUsedThisYear||0)+(+d.isaPreviousBalance||0)}, unwrapped £${d.unwrappedValue||0}`:"None"}
-Pension: ${d.hasPension==="yes"?`${d.myContribution}%/${d.employerMatch}% match, pot £${d.potValue}`:"No pension"}
-Student loan: ${d.studentLoan==="none"?"None":`${d.studentLoan}, ~£${d.loanBalance}`}, salary trajectory: ${d.salaryTrajectory||"unknown"}
-Mortgage: ${d.hasMortgage==="yes"?`£${d.mortgageBalance} at ${d.mortgageRate}%, fix: ${d.fixExpiry||"unknown"}`:"None"}
-PRE-COMPUTED (treat as facts, do not contradict):
-- Cash runway: ${m.runwayMonths.toFixed(1)} months (${m.runwayMonths > 6 ? "above" : "below"} 6-month recommended buffer)
-- Surplus cash above 6-month buffer: £${Math.round(m.surplusCash)}
-- ISA headroom: £${m.isaHeadroom}
-- Missed employer pension match: £${Math.round(m.missedMatch)}/yr
-- Student loan annual mandatory repayment: £${Math.round(m.annualRepayment)}/yr
-- Student loan WILL${m.willClear?"":" NOT"} clear before write-off at current salary (balance/repayment ratio = ${m.loanBal > 0 && m.annualRepayment > 0 ? (m.loanBal/m.annualRepayment).toFixed(1) : "n/a"} years vs ${d.studentLoan==="plan2"?"30":d.studentLoan==="plan5"?"40":"25"}-year write-off)
-- Student loan interest rate: ~${d.studentLoan==="plan2"?(+d.salary>49130?"7.5":"5.4"):d.studentLoan==="plan5"?"7.3":"5.0"}% p.a.
-- Savings rate: ${d.savingsRate||4.2}% — net benefit of SL overpayment vs saving: ${d.studentLoan!=="none"?((d.studentLoan==="plan2"?(+d.salary>49130?7.5:5.4):7.3)-(+d.savingsRate||4.2)).toFixed(1)+"% in favour of "+(!m.willClear?"saving (don't overpay)":"overpaying"):"n/a"}
-Concern answers: ${Object.entries(answers).map(([k,v])=>`${k}: ${v}`).join(", ")}
-IMPORTANT: If the student loan WILL clear before write-off and the net benefit of overpaying vs saving is positive, advise considering overpayment of the loan. Do NOT give generic "Plan 2 loans shouldn't be overpaid" advice — base advice on the pre-computed facts above.
-Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, first name, specific £ numbers>","impact":"<£ figure>","urgency":"<immediate|soon|this tax year>","actions":["<step 1>","<step 2>","<step 3>"]}`;
-
-    const fallback = {
-      headline:`Your ${concern?.label.toLowerCase()} situation needs attention.`,
-      narrative:`${d.name?d.name.split(" ")[0]+", based":"Based"} on what you've shared, there are meaningful improvements available here.`,
-      impact:"Varies", urgency:"soon",
-      actions:["Review your current setup.","Consider an independent financial adviser.","Revisit annually as circumstances change."]
-    };
-    try { const result = await callClaude(prompt,900); setConcernResults(prev=>[...prev,{concernId:cId,result}]); }
-    catch(e) { setConcernResults(prev=>[...prev,{concernId:cId,result:fallback}]); }
-    finally { setScreen("concernResult"); }
-  }
-
-  function nextConcern() {
-    const next = concernIdx + 1;
-    if (next < selectedConcerns.length) { setConcernIdx(next); setScreen("concernDeepDive"); }
-    else setScreen("allConcernsDone");
-  }
-
   function resetAll() {
-    setScreen("landing"); setStep(0); setInsights(null); setD(INIT_DATA);
-    setSelectedConcerns([]); setConcernIdx(0); setConcernAnswers({}); setConcernResults([]);
+    setScreen("landing"); setStep(0); setInsights(null); setPrevInsights(null); setD(INIT_DATA);
     setActiveModule(null); setCompletedModules([]);
-    setFeedbackOpen(false); feedbackFired.current = false; supaRowId.current = null;
+    setFeedbackOpen(false); setWhatChangedOpen(false); feedbackFired.current = false; supaRowId.current = null;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-}
+  }
 
   // ── Router ──
-  if (screen === "landing") return <Landing onFullJourney={() => setScreen("onboarding")} onConcernOnly={() => setScreen("concernSelector")} onStarterFlow={() => setScreen("starterFlow")}/>;
-
-  if (screen === "starterFlow") return <StarterFlow onBack={() => setScreen("landing")} onUpgrade={() => setScreen("onboarding")}/>;
+  if (screen === "landing") return (
+    <>
+      {returningUser && returnBannerOpen && (
+        <div style={{background:"rgba(196,150,58,0.1)",borderLeft:`4px solid ${GOLD}`,padding:"12px 16px",marginBottom:"0",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",fontSize:"13px",color:G}}>
+          <span>Welcome back — your previous results are still in our records. Run a fresh report below.</span>
+          <button onClick={() => setReturnBannerOpen(false)} style={{background:"transparent",border:"none",fontSize:"16px",cursor:"pointer",color:MUT,padding:"2px 6px"}}>×</button>
+        </div>
+      )}
+      <Landing onFullJourney={() => setScreen("onboarding")}/>
+    </>
+  );
 
   if (screen === "onboarding") return (
     <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
@@ -3920,7 +3378,7 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
       <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
         onOpenModule={key => openModule(key, "dashboard")}
         onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
-        onDigDeeper={() => { setConcernResults([]); setConcernIdx(0); setScreen("concernSelector"); }}/>
+        prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}/>
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
     </>
   );
@@ -3962,48 +3420,6 @@ Return ONLY: {"headline":"<one frank sentence>","narrative":"<3-4 sentences, fir
       </>
     );
   }
-
-  if (screen === "concernSelector") return (
-    <ConcernSelector selected={selectedConcerns} onToggle={toggleConcern}
-      onContinue={() => { setConcernIdx(0); setConcernResults([]); setScreen("concernTriage"); }}
-      onBack={() => setScreen(insights ? "dashboard" : "landing")}/>
-  );
-
-  if (screen === "concernTriage") return (
-    <ConcernTriage selectedConcerns={selectedConcerns} d={d} set={set}
-      onContinue={() => setScreen("concernDeepDive")}
-      onBack={() => setScreen("concernSelector")}/>
-  );
-
-  if (screen === "concernDeepDive") {
-    const cId = selectedConcerns[concernIdx];
-    return (
-      <ConcernDeepDive concernId={cId} concernIdx={concernIdx} totalConcerns={selectedConcerns.length}
-        answers={concernAnswers[cId]||{}} setAnswer={setAnswer}
-        onAnalyse={analyseConcern} d={d} m={m}/>
-    );
-  }
-
-  if (screen === "concernLoading") {
-    const cLabel = CONCERN_LIST.find(c=>c.id===selectedConcerns[concernIdx])?.label.toLowerCase();
-    return <LoadingScreen name={d.name} msgs={[`Looking at your ${cLabel}...`,"Running the numbers...","Checking the rules...","Putting together your guidance..."]}/>;
-  }
-
-  if (screen === "concernResult") {
-    const cId = selectedConcerns[concernIdx];
-    const result = concernResults.find(r => r.concernId === cId)?.result;
-    const isLast = concernIdx === selectedConcerns.length - 1;
-    return (
-      <ConcernResult result={result} concernId={cId} concernIdx={concernIdx}
-        totalConcerns={selectedConcerns.length} onNext={nextConcern}
-        onViewAll={() => setScreen(isLast ? "allConcernsDone" : "dashboard")} isLast={isLast}/>
-    );
-  }
-
-  if (screen === "allConcernsDone") return (
-    <AllConcernsDone concernResults={concernResults} hasFullScore={!!insights}
-      onBackToDashboard={() => setScreen("dashboard")} onReset={resetAll}/>
-  );
 
   return null;
 }
