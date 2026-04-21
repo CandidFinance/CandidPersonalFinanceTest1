@@ -1034,16 +1034,37 @@ function Warn({ msg }) {
   return <p style={{fontSize:"12px",color:"#c4963a",marginTop:"4px",lineHeight:1.5}}>⚠️ {msg}</p>;
 }
 
-function CompanyLogo({ domain, fallback, size = 28 }) {
-  const [err, setErr] = useState(false);
-  if (err || !domain) return <span style={{fontSize:"20px"}}>{fallback}</span>;
+const BRAND_COLORS = {
+  "pensionbee.com":   { bg:"#E8A0B4", text:"#C4347A", label:"PB"   },
+  "vanguard.co.uk":   { bg:"#C41E3A", text:"#fff",    label:"V"    },
+  "hl.co.uk":         { bg:"#00A3E0", text:"#fff",    label:"HL"   },
+  "moneybox.com":     { bg:"#6B4FBB", text:"#fff",    label:"MB"   },
+  "trading212.com":   { bg:"#1DB954", text:"#fff",    label:"T212" },
+  "nutmeg.com":       { bg:"#FF6B35", text:"#fff",    label:"N"    },
+  "chase.co.uk":      { bg:"#117ACA", text:"#fff",    label:"C"    },
+  "marcus.co.uk":     { bg:"#1A1A1A", text:"#fff",    label:"M"    },
+  "nationwide.co.uk": { bg:"#0070CE", text:"#fff",    label:"NW"   },
+  "nsandi.com":       { bg:"#00A550", text:"#fff",    label:"NS&I" },
+  "truelayer.com":    { bg:"#4F46E5", text:"#fff",    label:"TL"   },
+  "investengine.com": { bg:"#00C896", text:"#fff",    label:"IE"   },
+  "lancmortgages.com":{ bg:"#003087", text:"#fff",    label:"L&C"  },
+  "habito.com":       { bg:"#5C35F5", text:"#fff",    label:"H"    },
+  "sprive.com":       { bg:"#FF5733", text:"#fff",    label:"SP"   },
+};
+
+function CompanyLogo({ domain, fallback, size = 32 }) {
+  const brand = BRAND_COLORS[domain];
+  if (!brand) return <span style={{fontSize:"20px"}}>{fallback}</span>;
   return (
-    <img
-      src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
-      onError={() => setErr(true)}
-      style={{width:`${size}px`,height:`${size}px`,borderRadius:"6px",objectFit:"contain",background:"white",padding:"2px"}}
-      alt=""
-    />
+    <div style={{
+      width:`${size}px`, height:`${size}px`, borderRadius:"6px",
+      background:brand.bg, color:brand.text,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      fontSize:size > 28 ? "10px" : "9px", fontWeight:700,
+      letterSpacing:"0.02em", flexShrink:0,
+    }}>
+      {brand.label}
+    </div>
   );
 }
 
@@ -2285,27 +2306,25 @@ function TakeMeThere({ app, icon, message, demoNote }) {
 }
 
 function ProductCard({ p, onInternalLink }) {
+  const superlative = p.badge && ["Highest rate","Best buy","Top pick","Lowest cost","Largest UK broker","Easiest consolidation","Best alternative","Best return"].includes(p.badge);
   return (
-    <div style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,position:"relative"}}>
-      {p.badge && (() => {
-        const superlative = ["Highest rate","Best buy","Top pick","Lowest cost","Largest UK broker","Easiest consolidation","Best alternative","Best return"].includes(p.badge);
-        return (
-          <span style={{position:"absolute",top:"14px",right:"14px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"5px 11px":"3px 8px",borderRadius:"100px",letterSpacing:"0.04em"}}>
-            {superlative ? `⭐ ${p.badge}` : p.badge}
-          </span>
-        );
-      })()}
-      <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"8px"}}>
+    <div style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,display:"flex",flexDirection:"column"}}>
+      <div style={{display:"flex",alignItems:"flex-start",gap:"10px",marginBottom:"8px"}}>
         <div style={{width:"36px",height:"36px",background:p.highlight ? G : "rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           <span style={{fontSize:"18px"}}>{p.appIcon||"💳"}</span>
         </div>
-        <div>
-          <div style={{fontWeight:600,fontSize:"14px",color:TEXT}}>{p.name}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontWeight:600,fontSize:"14px",color:TEXT,lineHeight:1.3}}>{p.name}</div>
           <div style={{fontSize:"12px",color:MUT}}>{p.type}</div>
+          {p.badge && (
+            <span style={{display:"inline-block",marginTop:"5px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"4px 10px":"3px 8px",borderRadius:"100px",letterSpacing:"0.04em"}}>
+              {superlative ? `⭐ ${p.badge}` : p.badge}
+            </span>
+          )}
         </div>
       </div>
       {p.rate && <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginBottom:"6px"}}>{p.rate}</div>}
-      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,marginBottom:"12px"}}>{p.feature}</p>
+      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,marginBottom:"12px",flex:1}}>{p.feature}</p>
       <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
         style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>
         {p.cta}
@@ -3500,7 +3519,7 @@ Return exactly this structure:
     <>
       <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
         onOpenModule={key => openModule(key, "dashboard")}
-        onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
+        onEditInputs={() => { setStep(0); setScreen("onboarding"); /* completedModules intentionally preserved */ }}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}/>
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
     </>
