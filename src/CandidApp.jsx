@@ -209,14 +209,23 @@ function calcBonusTaxBreakdown(taxableSalary, cashBonus) {
   return { tax, effectiveRate, crossesTaper, crossesAR };
 }
 
+const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
+
 function calcMetrics(d) {
+  const salaryGrowthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
   const salary = +d.salary||0, expenses = +d.monthlyExpenses||0,
         cash = +d.cashSavings||0, bonds = +d.premiumBonds||0,
         totalLiquid = cash + bonds,
         runwayMonths = expenses > 0 ? totalLiquid / expenses : 0,
         bufferMonths = d.higherBuffer === "yes" ? 9 : 6,
-        surplusCash = Math.max(0, totalLiquid - expenses * bufferMonths),
-        isaHeadroom = 20000 - (+d.isaUsedThisYear||0),
+        emergencyFund = totalLiquid,
+        emergencyBuffer = expenses * bufferMonths,
+        emergencyShortfall = Math.max(0, emergencyBuffer - emergencyFund),
+        emergencyExcess = Math.max(0, emergencyFund - emergencyBuffer),
+        surplusCash = emergencyExcess,
+        // ISA: derive from granular fields, keep d.isaUsedThisYear as fallback for backwards compat
+        isaUsedThisYearCalc = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0) || (+d.isaUsedThisYear||0),
+        isaHeadroom = Math.max(0, 20000 - isaUsedThisYearCalc),
         myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0,
         missedMatch = Math.max(0, empCapPct - myPct) * salary / 100,
         potVal = (+d.potValue||0) + (+d.potValue2||0),
@@ -234,15 +243,17 @@ function calcMetrics(d) {
   const effectiveSavingsRate = tiersTotal > 0 ? tiersWeightedRate : (+d.savingsRate||3.5);
   let annualRepayment = 0, willClear = false;
   const loanBal = +d.loanBalance||0;
+  const slGrow = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
   if (d.studentLoan === "plan2") {
     annualRepayment = Math.max(0, (salary - 27295) * 0.09);
-    willClear = annualRepayment > 0 && loanBal / annualRepayment <= 30;
+    // Project with salary growth: will compound salary clear the loan within 30 years?
+    willClear = (() => { let b = loanBal; for (let y=1; y<=30; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*(1.054) - Math.max(0,(s-27295)*0.09); if(b<=0) return true; } return false; })();
   } else if (d.studentLoan === "plan5") {
     annualRepayment = Math.max(0, (salary - 25000) * 0.09);
-    willClear = annualRepayment > 0 && loanBal / annualRepayment <= 40;
+    willClear = (() => { let b = loanBal; for (let y=1; y<=40; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*(1.073) - Math.max(0,(s-25000)*0.09); if(b<=0) return true; } return false; })();
   } else if (d.studentLoan === "plan1") {
     annualRepayment = Math.max(0, (salary - 24990) * 0.09);
-    willClear = annualRepayment > 0 && loanBal / annualRepayment <= 25;
+    willClear = (() => { let b = loanBal; for (let y=1; y<=25; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*(1.050) - Math.max(0,(s-24990)*0.09); if(b<=0) return true; } return false; })();
   }
   const otherIncome = +d.otherIncome||0;
   const dividendIncome = +d.dividendIncome||0;
@@ -268,19 +279,22 @@ function calcMetrics(d) {
     const expiryDate = new Date(+d.fixExpiryYear, +d.fixExpiryMonth - 1, 1);
     daysToFixExpiry = Math.round((expiryDate - new Date()) / 86400000);
   }
-  // Net worth
-  const totalIsaValue = (+d.isaUsedThisYear||0) + (+d.isaPreviousBalance||0);
+  // Net worth — use derived ISA totals
+  const isaPrevCalc = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
+  const totalIsaValue = isaUsedThisYearCalc + isaPrevCalc;
   const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal;
   const totalLiabilities = loanBal + (+d.mortgageBalance||0) + (d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0);
   const netWorth = totalAssets - totalLiabilities;
   return {
-    salary, expenses, totalLiquid, runwayMonths, surplusCash, isaHeadroom,
+    salary, expenses, totalLiquid, runwayMonths,
+    emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
+    isaHeadroom, isaUsedThisYear: isaUsedThisYearCalc,
     missedMatch, annualRepayment, willClear, crystallisable, cgtSaving,
     projectedPot, years, annualYieldGap, savingsRate, loanBal, tr,
     cash, bonds, totalAssets, totalLiabilities, netWorth,
     taxBandLabel, adjustedNetIncome, bufferMonths,
     statePensionWeekly, statePensionAnnual, niYearsToFull,
-    daysToFixExpiry, effectiveSavingsRate,
+    daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate,
   };
 }
 
@@ -669,6 +683,16 @@ function getModuleProducts(key, d, m) {
       const overpayAmounts = [5000, 10000, 20000].filter(x => x < m.loanBal);
       const scenarios = overpayAmounts.map(amt => ({ amt, ...projectLoan(amt) }));
       const baseProjection = projectLoan(0);
+      // Ratio table — only meaningful if loan will clear
+      const ratioAmounts = [1000, 2000, 5000, 10000, 20000, Math.round(m.loanBal)].filter((x,i,a) => x <= m.loanBal && a.indexOf(x)===i);
+      const ratioTable = m.willClear ? ratioAmounts.map(amt => {
+        const proj = projectLoan(amt);
+        const basePaid = baseProjection.clearYr ? baseProjection.totalPaid : baseProjection.totalPaid;
+        const interestSaved = Math.max(0, basePaid - proj.totalPaid);
+        const totalBenefit = amt + interestSaved;
+        const ratio = totalBenefit / amt;
+        return { amt, interestSaved, totalBenefit, ratio };
+      }) : null;
       return {
         heading: balanceGrowing
           ? "⚠️ Your loan balance is growing — not shrinking"
@@ -689,6 +713,7 @@ function getModuleProducts(key, d, m) {
           baseProjection, cashRate, writeOffYr, annualRep, annualInterest,
           effectiveBenefit: Math.round(effectiveBenefit * 10) / 10,
           cashSavings: m.cash + m.bonds,
+          ratioTable, willClear: m.willClear,
         }
       };
     }
@@ -1130,8 +1155,8 @@ function OnboardingStep({ step, d, set }) {
         <Field label="Annual bonus (£)" hint="Leave blank if none">
           <FmtInput fmtType="gbp" value={d.bonusAmount||""} onChange={v=>set("bonusAmount",v)} placeholder="e.g. 10,000"/>
         </Field>
-        <Field label="Salary trajectory">
-          <Toggle value={d.salaryTrajectory} onChange={v=>set("salaryTrajectory",v)} options={[{value:"flat",label:"Stable (0–5%)"},{value:"moderate",label:"Steady (5–15%)"},{value:"high",label:"Rapid (20%+)"}]}/>
+        <Field label="Salary trajectory" hint="Used to project your salary in student loan and pension calculations.">
+          <Toggle value={d.salaryTrajectory} onChange={v=>set("salaryTrajectory",v)} options={[{value:"stable",label:"Stable (~2% p.a.)"},{value:"moderate",label:"Steady growth (~5% p.a.)"},{value:"high",label:"Rapid growth (~15% p.a.)"}]}/>
         </Field>
       </div>
     </div>
@@ -1185,56 +1210,41 @@ function OnboardingStep({ step, d, set }) {
       </Field>
       {d.hasInvestments === "yes" && (
         <div>
-          <Field label="Paid into ISA this tax year (£)" hint="£20,000 annual limit — resets every April 5th.">
-            <FmtInput fmtType="gbp" value={d.isaUsedThisYear} onChange={v=>set("isaUsedThisYear",v)} placeholder="e.g. 8,000"/>
-          </Field>
-          {+d.isaUsedThisYear > 0 && (() => {
-            const subTotal = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0);
-            const parent = +d.isaUsedThisYear||0;
-            const over = subTotal > parent;
+          {/* ISA this tax year — 4 granular fields */}
+          {(() => {
+            const total = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0);
+            const over = total > 20000;
             return (
-              <div style={{background:"rgba(196,150,58,0.05)",border:`1px solid ${over?"rgba(192,57,43,0.3)":"rgba(196,150,58,0.2)"}`,borderRadius:"8px",padding:"12px 14px",marginBottom:"16px"}}>
-                <p style={{fontSize:"12px",color:MUT,margin:"0 0 10px",fontStyle:"italic"}}>Optional: break down this year's ISA contributions by type</p>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
+              <div style={{marginBottom:"20px"}}>
+                <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>ISA contributions this tax year <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(April 6 – April 5, £20,000 limit)</span></div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
                   <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearCash} onChange={v=>set("isaThisYearCash",v)} placeholder="0"/></Field>
-                  <Field label="Stocks & Shares (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",v)} placeholder="0"/></Field>
-                  <Field label="Lifetime ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",v)} placeholder="0"/></Field>
+                  <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",v)} placeholder="0"/></Field>
+                  <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",v)} placeholder="0"/></Field>
+                  <Field label="Other ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearOther||""} onChange={v=>set("isaThisYearOther",v)} placeholder="0"/></Field>
                 </div>
-                {subTotal > 0 && (
-                  <div style={{marginTop:"10px",fontSize:"12px",color:over?"#c0392b":MUT,fontWeight:over?700:400}}>
-                    {over ? `⚠️ Sub-fields total ${fmt(subTotal)} — exceeds the ${fmt(parent)} parent total. Please correct before continuing.` : `${fmt(subTotal)} of ${fmt(parent)} allocated across types`}
-                  </div>
-                )}
+                <div style={{marginTop:"8px",fontSize:"12px",color:over?"#c0392b":MUT,fontWeight:over?700:400}}>
+                  {over ? `⚠️ Total this year: ${fmt(total)} — exceeds the £20,000 annual ISA allowance.` : `Total this year: ${fmt(total)} of £20,000 allowance used`}
+                </div>
               </div>
             );
           })()}
-          <Field label="Total ISA value from previous years (£)" hint="Your ISA balance before this tax year's contributions.">
-            <FmtInput fmtType="gbp" value={d.isaPreviousBalance} onChange={v=>set("isaPreviousBalance",v)} placeholder="e.g. 24,000"/>
-          </Field>
-          {+d.isaPreviousBalance > 0 && (() => {
-            const subTotal = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0);
-            const parent = +d.isaPreviousBalance||0;
-            const over = subTotal > parent;
+          {/* ISA previous years — 4 granular fields */}
+          {(() => {
+            const total = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0);
             return (
-              <div style={{background:"rgba(196,150,58,0.05)",border:`1px solid ${over?"rgba(192,57,43,0.3)":"rgba(196,150,58,0.2)"}`,borderRadius:"8px",padding:"12px 14px",marginBottom:"16px"}}>
-                <p style={{fontSize:"12px",color:MUT,margin:"0 0 10px",fontStyle:"italic"}}>Optional: break down previous ISA balance by type</p>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"10px"}}>
-                  <Field label="Cash (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",v)} placeholder="0"/></Field>
-                  <Field label="S&S (£)"><FmtInput fmtType="gbp" value={d.isaPrevSS} onChange={v=>set("isaPrevSS",v)} placeholder="0"/></Field>
+              <div style={{marginBottom:"20px"}}>
+                <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>ISA balance from previous years <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(accumulated before this tax year)</span></div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+                  <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",v)} placeholder="0"/></Field>
+                  <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevSS} onChange={v=>set("isaPrevSS",v)} placeholder="0"/></Field>
                   <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevLISA} onChange={v=>set("isaPrevLISA",v)} placeholder="0"/></Field>
                   <Field label="Other (£)"><FmtInput fmtType="gbp" value={d.isaPrevOther} onChange={v=>set("isaPrevOther",v)} placeholder="0"/></Field>
                 </div>
-                {subTotal > 0 && (
-                  <div style={{marginTop:"10px",fontSize:"12px",color:over?"#c0392b":MUT,fontWeight:over?700:400}}>
-                    {over ? `⚠️ Sub-fields total ${fmt(subTotal)} — exceeds the ${fmt(parent)} parent total. Please correct before continuing.` : `${fmt(subTotal)} of ${fmt(parent)} allocated across types`}
-                  </div>
-                )}
+                {total > 0 && <div style={{marginTop:"8px",fontSize:"12px",color:MUT}}>Total previous years: {fmt(total)}</div>}
               </div>
             );
           })()}
-          <Field label="ISA type">
-            <Toggle value={d.isaType} onChange={v => set("isaType",v)} options={[{value:"cash",label:"Cash ISA"},{value:"ss",label:"Stocks & Shares"},{value:"both",label:"Both"},{value:"none",label:"Neither yet"}]}/>
-          </Field>
           <Field label="Investments outside an ISA (£)"><FmtInput fmtType="gbp" value={d.unwrappedValue} onChange={v=>set("unwrappedValue",v)} placeholder="e.g. 15,000"/></Field>
           <Field label="Estimated unrealised gains (£)" hint="Profit above what you paid for your unwrapped investments."><FmtInput fmtType="gbp" value={d.unrealisedGains} onChange={v=>set("unrealisedGains",v)} placeholder="e.g. 4,500"/></Field>
         </div>
@@ -1361,6 +1371,31 @@ function OnboardingStep({ step, d, set }) {
           </Field>
         </div>
       )}
+
+      {/* Insurance — optional section at end of debt step */}
+      <div style={{marginTop:"28px",paddingTop:"24px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
+        <Field label="Include insurance in your Candid report?" hint="Adds a module reviewing your life, income protection, and critical illness cover.">
+          <Toggle value={d.includeInsurance||"no"} onChange={v=>set("includeInsurance",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"Skip for now"}]}/>
+        </Field>
+        {d.includeInsurance === "yes" && (
+          <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"10px",padding:"16px",marginTop:"4px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+              <Field label="Life insurance">
+                <Toggle value={d.hasLifeInsurance} onChange={v=>set("hasLifeInsurance",v)} options={[{value:"yes",label:"✓ In place"},{value:"no",label:"Not held"}]}/>
+              </Field>
+              <Field label="Income protection">
+                <Toggle value={d.hasIncomeProtection} onChange={v=>set("hasIncomeProtection",v)} options={[{value:"yes",label:"✓ In place"},{value:"no",label:"Not held"}]}/>
+              </Field>
+              <Field label="Critical illness cover">
+                <Toggle value={d.hasCriticalIllness} onChange={v=>set("hasCriticalIllness",v)} options={[{value:"yes",label:"✓ In place"},{value:"no",label:"Not held"}]}/>
+              </Field>
+              <Field label="Contents insurance">
+                <Toggle value={d.hasContentsInsurance} onChange={v=>set("hasContentsInsurance",v)} options={[{value:"yes",label:"✓ In place"},{value:"no",label:"Not held"},{value:"na",label:"Renting (N/A)"}]}/>
+              </Field>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
   return null;
@@ -1528,14 +1563,17 @@ s.pension = {
     impactLabel: kidsImpact > 0 ? `~${fmt(kidsImpact)} JISA growth potential (£100/mo at 7%)` : null,
   };
 
-  // Insurance
-  const missing = [d.hasLifeInsurance, d.hasIncomeProtection, d.hasCriticalIllness].filter(v => v !== "yes").length;
-  const ipImpact = d.hasIncomeProtection !== "yes" ? Math.round(m.salary * 0.6) : 0;
-  s.insurance = {
-    status: missing >= 2 ? "critical" : missing === 1 ? "attention" : "ok",
-    impact: 0, // income-at-risk is a warning not a recoverable £ figure — excluded from ranking
-    impactLabel: missing > 0 ? `${missing} protection gap${missing !== 1 ? "s" : ""} identified` : null,
-  };
+  // Insurance — only include if user opted in
+  if (d.includeInsurance !== "yes") {
+    s.insurance = { status:"na", impact:0, impactLabel:null };
+  } else {
+    const missing = [d.hasLifeInsurance, d.hasIncomeProtection, d.hasCriticalIllness].filter(v => v !== "yes").length;
+    s.insurance = {
+      status: missing >= 2 ? "critical" : missing === 1 ? "attention" : "ok",
+      impact: 0,
+      impactLabel: missing > 0 ? `${missing} protection gap${missing !== 1 ? "s" : ""} identified` : null,
+    };
+  }
 
   return s;
 }
@@ -2762,6 +2800,54 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
                       );
                     })}
 
+                    {/* Ratio table — only when loan will clear */}
+                    {products.slSection.ratioTable && products.slSection.ratioTable.length > 0 && (() => {
+                      const rows = products.slSection.ratioTable;
+                      const sweetSpot = rows.slice().reverse().find(r => r.ratio >= 1.3) || rows[rows.length - 1];
+                      return (
+                        <div style={{marginTop:"12px",marginBottom:"12px"}}>
+                          <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Overpayment return ratios</div>
+                          <div style={{overflowX:"auto"}}>
+                            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"12px"}}>
+                              <thead>
+                                <tr style={{background:"rgba(22,47,36,0.05)"}}>
+                                  {["Overpay","Interest saved","Total benefit","Return ratio"].map(h => (
+                                    <th key={h} style={{padding:"8px 10px",textAlign:"left",fontWeight:700,color:G,fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.05em",whiteSpace:"nowrap"}}>{h}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rows.map((r, i) => {
+                                  const dim = r.ratio < 1.3;
+                                  return (
+                                    <tr key={i} style={{background:dim?"rgba(196,150,58,0.08)":"transparent",borderBottom:"1px solid rgba(22,47,36,0.06)"}}>
+                                      <td style={{padding:"9px 10px",fontWeight:600,color:G}}>{fmt(r.amt)}</td>
+                                      <td style={{padding:"9px 10px",color:"#2d6b4a"}}>{fmt(r.interestSaved)}</td>
+                                      <td style={{padding:"9px 10px",color:G,fontWeight:600}}>{fmt(r.totalBenefit)}</td>
+                                      <td style={{padding:"9px 10px"}}>
+                                        <span style={{fontWeight:700,color:dim?GOLD:"#2d6b4a"}}>1 : {r.ratio.toFixed(2)}</span>
+                                        {dim && <span style={{marginLeft:"6px",fontSize:"10px",color:GOLD}}>↓ diminishing</span>}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div style={{marginTop:"10px",background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 12px",fontSize:"12px",color:TEXT,lineHeight:1.6}}>
+                            <strong>Sweet spot:</strong> Overpaying {fmt(sweetSpot.amt)} offers the best return (1 : {sweetSpot.ratio.toFixed(2)}) before diminishing returns set in. Returns drop below 1.3× beyond this point — at that level, your ISA or pension likely outperforms.
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {!products.slSection.willClear && (
+                      <div style={{background:"rgba(196,150,58,0.07)",border:`1px solid ${GOLD}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"12px"}}>
+                        <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Overpaying is almost certainly not worth it</div>
+                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:0}}>Your loan is projected to be written off before you can clear it. Voluntary overpayments reduce the amount written off — but you never see that money again. Redirect any spare cash to your pension (free tax relief) or ISA (tax-free growth) instead.</p>
+                      </div>
+                    )}
+
                     {/* Cash comparison callout */}
                     {products.slSection.cashSavings > 5000 && (
                       <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginTop:"4px"}}>
@@ -3255,12 +3341,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
 
 // ── Main app ──────────────────────────────────────────────────────────────────
 const BLANK_DATA = {
-  name:"", age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"moderate",
+  name:"", age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"stable",
   monthlyExpenses:"", higherBuffer:"no",
   cashSavings:"", savingsRate:"", premiumBonds:"",
   cashTiers:[{amount:"",rate:""}],
   hasInvestments:"no", isaUsedThisYear:"", isaPreviousBalance:"", isaType:"none", unwrappedValue:"", unrealisedGains:"",
-  isaThisYearCash:"", isaThisYearSS:"", isaThisYearLISA:"",
+  isaThisYearCash:"", isaThisYearSS:"", isaThisYearLISA:"", isaThisYearOther:"",
   isaPrevCash:"", isaPrevSS:"", isaPrevLISA:"", isaPrevOther:"",
   hasPension:"no", myContribution:"", employerMatch:"", potValue:"", potValue2:"", retirementAge:"65",
   niYears:"",
@@ -3272,6 +3358,8 @@ const BLANK_DATA = {
   hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanProvider:"",
   hasKids:"no", numKids:"", kidsAges:"", hasJISA:"no", juniorISAValue:"",
   hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"no",
+  includeInsurance:"no",
+  // Supabase schema note: include_insurance BOOLEAN, isa_this_year_other NUMERIC
 };
 
 const INIT_DATA = BLANK_DATA;
@@ -3445,8 +3533,9 @@ Return exactly this structure:
         savings_rate: +d.savingsRate||null,
         premium_bonds: +d.premiumBonds||null,
         has_investments: d.hasInvestments === "yes",
-        isa_this_year: +d.isaUsedThisYear||null,
-        isa_previous: +d.isaPreviousBalance||null,
+        isa_this_year: m.isaUsedThisYear||null,
+        isa_previous: (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0)||null,
+        include_insurance: d.includeInsurance === "yes",
         isa_type: d.isaType||null,
         unwrapped_investments: +d.unwrappedValue||null,
         has_pension: d.hasPension === "yes",
