@@ -904,7 +904,7 @@ function ProgressBar({ pct }) {
   );
 }
 
-function StepProgress({ step, steps }) {
+function StepProgress({ step, steps, onStepClick }) {
   return (
     <div style={{background:WHITE,borderBottom:`1px solid ${CDARK}`,padding:"20px 24px",flexShrink:0}}>
       <div style={{maxWidth:"580px",margin:"0 auto",display:"flex",alignItems:"center"}}>
@@ -912,16 +912,23 @@ function StepProgress({ step, steps }) {
           const done = i < step;
           const current = i === step;
           const size = current ? 34 : 28;
+          const clickable = done && !!onStepClick;
           return (
             <div key={i} style={{display:"flex",alignItems:"center",flex: i < steps.length - 1 ? 1 : 0}}>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",flexShrink:0}}>
-                <div style={{
-                  width:`${size}px`, height:`${size}px`, borderRadius:"50%",
-                  background: done ? G : current ? WHITE : "rgba(22,47,36,0.08)",
-                  border: current ? `2px solid ${GOLD}` : done ? "none" : "2px solid rgba(22,47,36,0.15)",
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  transition:"all 0.3s ease",
-                }}>
+                <div
+                  onClick={clickable ? () => onStepClick(i) : undefined}
+                  style={{
+                    width:`${size}px`, height:`${size}px`, borderRadius:"50%",
+                    background: done ? G : current ? WHITE : "rgba(22,47,36,0.08)",
+                    border: current ? `2px solid ${GOLD}` : done ? "none" : "2px solid rgba(22,47,36,0.15)",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    transition:"all 0.3s ease",
+                    cursor: clickable ? "pointer" : "default",
+                    opacity: clickable ? 1 : undefined,
+                  }}
+                  title={clickable ? `Go back to ${label}` : undefined}
+                >
                   {done
                     ? <span style={{color:WHITE,fontSize:"13px",fontWeight:700}}>✓</span>
                     : <span style={{color: current ? G : MUT, fontSize:"12px", fontWeight:600}}>{i+1}</span>
@@ -999,13 +1006,13 @@ function Landing({ onFullJourney }) {
 // ── Full onboarding ───────────────────────────────────────────────────────────
 const STEPS = ["About you","Cash & savings","Investments","Pension","Debt"];
 
-function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue }) {
+function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue, onStepClick }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [step]);
   return (
     <PageWrap>
       <NavBar center={`Step ${step+1} of ${steps.length} — ${steps[step]}`}
         right={insights ? <GhostBtn onClick={onBackToDashboard}>← Back to report</GhostBtn> : null}/>
-      <StepProgress step={step} steps={steps}/>
+      <StepProgress step={step} steps={steps} onStepClick={onStepClick}/>
       <ContentWrap>
         <OnboardingStep step={step} d={d} set={set}/>
         <div style={{display:"flex",gap:"10px",marginTop:"40px"}}>
@@ -1027,13 +1034,34 @@ function Warn({ msg }) {
   return <p style={{fontSize:"12px",color:"#c4963a",marginTop:"4px",lineHeight:1.5}}>⚠️ {msg}</p>;
 }
 
-function CompanyLogo({ domain, name, size=24 }) {
-  const [err, setErr] = React.useState(false);
-  if (!domain || err) return <span style={{fontSize:"11px",color:MUT,fontWeight:600}}>{name}</span>;
+function CompanyLogo({ domain, fallback, size = 28 }) {
+  const [err, setErr] = useState(false);
+  if (err || !domain) return <span style={{fontSize:"20px"}}>{fallback}</span>;
   return (
-    <img src={`https://logo.clearbit.com/${domain}`} alt={name}
+    <img
+      src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
       onError={() => setErr(true)}
-      style={{width:size,height:size,objectFit:"contain",borderRadius:"4px",verticalAlign:"middle"}}/>
+      style={{width:`${size}px`,height:`${size}px`,borderRadius:"6px",objectFit:"contain",background:"white",padding:"2px"}}
+      alt=""
+    />
+  );
+}
+
+function InfoTooltip({ text }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span style={{position:"relative",display:"inline-block",marginLeft:"6px",verticalAlign:"middle"}}>
+      <button type="button" onClick={e=>{e.stopPropagation();setShow(v=>!v)}}
+        style={{width:"17px",height:"17px",borderRadius:"50%",background:G,border:"none",color:WHITE,fontSize:"10px",fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        ?
+      </button>
+      {show && (
+        <div style={{position:"absolute",bottom:"24px",left:"50%",transform:"translateX(-50%)",width:"270px",background:G,color:WHITE,borderRadius:"10px",padding:"14px 16px",fontSize:"12px",lineHeight:1.65,zIndex:200,boxShadow:"0 8px 24px rgba(0,0,0,0.22)"}}>
+          {text}
+          <button type="button" onClick={e=>{e.stopPropagation();setShow(false)}} style={{position:"absolute",top:"8px",right:"10px",background:"transparent",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"15px",cursor:"pointer",lineHeight:1}}>×</button>
+        </div>
+      )}
+    </span>
   );
 }
 
@@ -1082,7 +1110,7 @@ function OnboardingStep({ step, d, set }) {
           <FmtInput fmtType="gbp" value={d.bonusAmount||""} onChange={v=>set("bonusAmount",v)} placeholder="e.g. 10,000"/>
         </Field>
         <Field label="Salary trajectory">
-          <Toggle value={d.salaryTrajectory} onChange={v=>set("salaryTrajectory",v)} options={[{value:"flat",label:"Stable"},{value:"moderate",label:"Growing"},{value:"high",label:"Fast"}]}/>
+          <Toggle value={d.salaryTrajectory} onChange={v=>set("salaryTrajectory",v)} options={[{value:"flat",label:"Stable (0–5%)"},{value:"moderate",label:"Steady (5–15%)"},{value:"high",label:"Rapid (20%+)"}]}/>
         </Field>
       </div>
     </div>
@@ -1139,30 +1167,50 @@ function OnboardingStep({ step, d, set }) {
           <Field label="Paid into ISA this tax year (£)" hint="£20,000 annual limit — resets every April 5th.">
             <FmtInput fmtType="gbp" value={d.isaUsedThisYear} onChange={v=>set("isaUsedThisYear",v)} placeholder="e.g. 8,000"/>
           </Field>
-          {+d.isaUsedThisYear > 0 && (
-            <div style={{background:"rgba(196,150,58,0.05)",border:"1px solid rgba(196,150,58,0.2)",borderRadius:"8px",padding:"12px 14px",marginBottom:"16px"}}>
-              <p style={{fontSize:"12px",color:MUT,margin:"0 0 10px",fontStyle:"italic"}}>Optional: break down this year's ISA contributions by type</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
-                <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearCash} onChange={v=>set("isaThisYearCash",v)} placeholder="0"/></Field>
-                <Field label="Stocks & Shares (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",v)} placeholder="0"/></Field>
-                <Field label="Lifetime ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",v)} placeholder="0"/></Field>
+          {+d.isaUsedThisYear > 0 && (() => {
+            const subTotal = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0);
+            const parent = +d.isaUsedThisYear||0;
+            const over = subTotal > parent;
+            return (
+              <div style={{background:"rgba(196,150,58,0.05)",border:`1px solid ${over?"rgba(192,57,43,0.3)":"rgba(196,150,58,0.2)"}`,borderRadius:"8px",padding:"12px 14px",marginBottom:"16px"}}>
+                <p style={{fontSize:"12px",color:MUT,margin:"0 0 10px",fontStyle:"italic"}}>Optional: break down this year's ISA contributions by type</p>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
+                  <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearCash} onChange={v=>set("isaThisYearCash",v)} placeholder="0"/></Field>
+                  <Field label="Stocks & Shares (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",v)} placeholder="0"/></Field>
+                  <Field label="Lifetime ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",v)} placeholder="0"/></Field>
+                </div>
+                {subTotal > 0 && (
+                  <div style={{marginTop:"10px",fontSize:"12px",color:over?"#c0392b":MUT,fontWeight:over?700:400}}>
+                    {over ? `⚠️ Sub-fields total ${fmt(subTotal)} — exceeds the ${fmt(parent)} parent total. Please correct before continuing.` : `${fmt(subTotal)} of ${fmt(parent)} allocated across types`}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
           <Field label="Total ISA value from previous years (£)" hint="Your ISA balance before this tax year's contributions.">
             <FmtInput fmtType="gbp" value={d.isaPreviousBalance} onChange={v=>set("isaPreviousBalance",v)} placeholder="e.g. 24,000"/>
           </Field>
-          {+d.isaPreviousBalance > 0 && (
-            <div style={{background:"rgba(196,150,58,0.05)",border:"1px solid rgba(196,150,58,0.2)",borderRadius:"8px",padding:"12px 14px",marginBottom:"16px"}}>
-              <p style={{fontSize:"12px",color:MUT,margin:"0 0 10px",fontStyle:"italic"}}>Optional: break down previous ISA balance by type</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"10px"}}>
-                <Field label="Cash (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",v)} placeholder="0"/></Field>
-                <Field label="S&S (£)"><FmtInput fmtType="gbp" value={d.isaPrevSS} onChange={v=>set("isaPrevSS",v)} placeholder="0"/></Field>
-                <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevLISA} onChange={v=>set("isaPrevLISA",v)} placeholder="0"/></Field>
-                <Field label="Other (£)"><FmtInput fmtType="gbp" value={d.isaPrevOther} onChange={v=>set("isaPrevOther",v)} placeholder="0"/></Field>
+          {+d.isaPreviousBalance > 0 && (() => {
+            const subTotal = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0);
+            const parent = +d.isaPreviousBalance||0;
+            const over = subTotal > parent;
+            return (
+              <div style={{background:"rgba(196,150,58,0.05)",border:`1px solid ${over?"rgba(192,57,43,0.3)":"rgba(196,150,58,0.2)"}`,borderRadius:"8px",padding:"12px 14px",marginBottom:"16px"}}>
+                <p style={{fontSize:"12px",color:MUT,margin:"0 0 10px",fontStyle:"italic"}}>Optional: break down previous ISA balance by type</p>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"10px"}}>
+                  <Field label="Cash (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",v)} placeholder="0"/></Field>
+                  <Field label="S&S (£)"><FmtInput fmtType="gbp" value={d.isaPrevSS} onChange={v=>set("isaPrevSS",v)} placeholder="0"/></Field>
+                  <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevLISA} onChange={v=>set("isaPrevLISA",v)} placeholder="0"/></Field>
+                  <Field label="Other (£)"><FmtInput fmtType="gbp" value={d.isaPrevOther} onChange={v=>set("isaPrevOther",v)} placeholder="0"/></Field>
+                </div>
+                {subTotal > 0 && (
+                  <div style={{marginTop:"10px",fontSize:"12px",color:over?"#c0392b":MUT,fontWeight:over?700:400}}>
+                    {over ? `⚠️ Sub-fields total ${fmt(subTotal)} — exceeds the ${fmt(parent)} parent total. Please correct before continuing.` : `${fmt(subTotal)} of ${fmt(parent)} allocated across types`}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
           <Field label="ISA type">
             <Toggle value={d.isaType} onChange={v => set("isaType",v)} options={[{value:"cash",label:"Cash ISA"},{value:"ss",label:"Stocks & Shares"},{value:"both",label:"Both"},{value:"none",label:"Neither yet"}]}/>
           </Field>
@@ -1191,7 +1239,7 @@ function OnboardingStep({ step, d, set }) {
           </div>
           <div style={g2}>
             <Field label="Target retirement age"><input style={INP} type="number" value={d.retirementAge} onChange={e => set("retirementAge",e.target.value)} placeholder="65"/></Field>
-            <Field label="NI years completed" hint="Check via HMRC / Personal Tax Account"><input style={INP} type="number" value={d.niYears||""} onChange={e=>set("niYears",e.target.value)} placeholder="e.g. 12"/></Field>
+            <Field label={<>NI years completed <InfoTooltip text="Your National Insurance record determines your State Pension. You need 35 qualifying years for the full new State Pension (currently £221.20/week). Fewer qualifying years = a proportionally smaller State Pension. Check your record for free at gov.uk/check-state-pension — you can also fill gaps by paying voluntary contributions."/></>} hint="Check via HMRC / Personal Tax Account"><input style={INP} type="number" value={d.niYears||""} onChange={e=>set("niYears",e.target.value)} placeholder="e.g. 12"/></Field>
           </div>
         </div>
       ) : (
@@ -1219,6 +1267,9 @@ function OnboardingStep({ step, d, set }) {
       </Field>
       {d.hasMortgage === "yes" && (
         <div>
+          <Field label="Mortgage type">
+            <Toggle value={d.mortgageType||"fixed"} onChange={v=>set("mortgageType",v)} options={[{value:"fixed",label:"Fixed rate"},{value:"variable",label:"Variable (SVR/tracker)"}]}/>
+          </Field>
           <div style={g2}>
             <Field label="Outstanding balance (£)"><FmtInput fmtType="gbp" value={d.mortgageBalance} onChange={v=>set("mortgageBalance",v)} placeholder="e.g. 280,000"/></Field>
             <Field label="Interest rate (%)">
@@ -1227,17 +1278,19 @@ function OnboardingStep({ step, d, set }) {
             </Field>
           </div>
           <Field label="Monthly payment (£)"><FmtInput fmtType="gbp" value={d.monthlyMortgage} onChange={v=>set("monthlyMortgage",v)} placeholder="e.g. 1,400"/></Field>
-          <Field label="Fixed rate expiry" hint="When does your current deal end? Leave blank if variable.">
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
-              <select style={INP} value={d.fixExpiryMonth||""} onChange={e=>set("fixExpiryMonth",e.target.value)}>
-                <option value="">Month…</option>
-                {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m,i)=>(
-                  <option key={i+1} value={String(i+1)}>{m}</option>
-                ))}
-              </select>
-              <input style={INP} type="number" value={d.fixExpiryYear||""} onChange={e=>set("fixExpiryYear",e.target.value)} placeholder="e.g. 2026" min="2024" max="2040"/>
-            </div>
-          </Field>
+          {(d.mortgageType||"fixed") === "fixed" && (
+            <Field label="Fixed rate expiry" hint="When does your current deal end? Leave blank if not yet known.">
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+                <select style={INP} value={d.fixExpiryMonth||""} onChange={e=>set("fixExpiryMonth",e.target.value)}>
+                  <option value="">Month…</option>
+                  {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((mn,i)=>(
+                    <option key={i+1} value={String(i+1)}>{mn}</option>
+                  ))}
+                </select>
+                <input style={INP} type="number" value={d.fixExpiryYear||""} onChange={e=>set("fixExpiryYear",e.target.value)} placeholder="e.g. 2026" min="2024" max="2040"/>
+              </div>
+            </Field>
+          )}
           <Field label="Mortgage provider" hint="Helps us surface better deals when available.">
             <select style={INP} value={d.mortgageProvider||""} onChange={e=>set("mortgageProvider",e.target.value)}>
               <option value="">Select provider…</option>
@@ -1315,15 +1368,17 @@ function ScoreRing({ score }) {
   const col = score>=86 ? "#2d6b4a" : score>=66 ? "#2d6b4a" : score>=41 ? GOLD : "#c0392b";
   const lb  = score>=86 ? "Optimised" : score>=66 ? "On track" : score>=41 ? "Room to improve" : "Needs attention";
   return (
-    <div style={{position:"relative",width:"124px",height:"124px",flexShrink:0}}>
-      <svg width="124" height="124" style={{transform:"rotate(-90deg)"}}>
-        <circle cx="62" cy="62" r={r} fill="none" stroke={`${col}28`} strokeWidth="9"/>
-        <circle cx="62" cy="62" r={r} fill="none" stroke={col} strokeWidth="9" strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{transition:"stroke-dasharray 1.2s ease"}}/>
-      </svg>
-      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-        <span style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:WHITE,lineHeight:1}}>{score}</span>
-        <span style={{fontSize:"10px",color:"rgba(255,255,255,0.55)",fontWeight:500,marginTop:"3px",letterSpacing:"0.04em"}}>{lb}</span>
+    <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
+      <div style={{position:"relative",width:"124px",height:"124px"}}>
+        <svg width="124" height="124" style={{transform:"rotate(-90deg)"}}>
+          <circle cx="62" cy="62" r={r} fill="none" stroke={`${col}28`} strokeWidth="9"/>
+          <circle cx="62" cy="62" r={r} fill="none" stroke={col} strokeWidth="9" strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{transition:"stroke-dasharray 1.2s ease"}}/>
+        </svg>
+        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:WHITE,lineHeight:1}}>{score}</span>
+        </div>
       </div>
+      <span style={{fontSize:"10px",fontWeight:700,color:col,letterSpacing:"0.07em",textTransform:"uppercase"}}>{lb}</span>
     </div>
   );
 }
@@ -1524,6 +1579,93 @@ function FeedbackButton() {
   );
 }
 
+function ActionPlanAccordion({ priorities, scenarioMap, currentScore, onOpenModule }) {
+  const [expandedIdx, setExpandedIdx] = useState(null);
+  const [impactIdx, setImpactIdx] = useState(null);
+  return (
+    <div className="fu1" style={{marginBottom:"24px"}}>
+      <h2 style={{fontFamily:SERIF,fontSize:"26px",color:G,marginBottom:"4px",borderLeft:`4px solid ${GOLD}`,paddingLeft:"14px"}}>Your action plan</h2>
+      <p style={{fontSize:"13px",color:MUT,marginBottom:"16px",paddingLeft:"18px"}}>Ranked by urgency — biggest financial wins first.</p>
+      <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+        {priorities.map((p, i) => {
+          const urgCol = UG[p.urgency] || MUT;
+          const modKey = priorityModuleKey(p.title + " " + (p.description||""));
+          const modMeta = MODULE_META.find(mm => mm.key === modKey);
+          const scenario = scenarioMap[modKey];
+          const isOpen = expandedIdx === i;
+          const isImpactOpen = impactIdx === i;
+          return (
+            <div key={i} style={{background:WHITE,borderRadius:"12px",border:"1px solid rgba(22,47,36,0.09)",borderLeft:`4px solid ${urgCol}`,overflow:"hidden"}}>
+              {/* Collapsed header — always visible */}
+              <div
+                onClick={() => { setExpandedIdx(isOpen ? null : i); setImpactIdx(null); }}
+                style={{padding:"16px 20px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}
+              >
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:"10px",fontWeight:700,color:urgCol,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"3px"}}>{p.urgency}</div>
+                  <h3 style={{fontFamily:SERIF,fontSize:"17px",color:G,lineHeight:1.25,margin:0}}>{p.title}</h3>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:"10px",flexShrink:0}}>
+                  {p.impact && (
+                    <div style={{background:GOLD,borderRadius:"7px",padding:"6px 12px",textAlign:"center"}}>
+                      <div style={{fontSize:"17px",fontWeight:800,color:G,fontFamily:SERIF,lineHeight:1}}>{p.impact}</div>
+                      <div style={{fontSize:"9px",color:"rgba(22,47,36,0.65)",fontWeight:600,marginTop:"1px"}}>potential saving</div>
+                    </div>
+                  )}
+                  <span style={{fontSize:"18px",color:MUT,transition:"transform 0.2s",display:"inline-block",transform:isOpen?"rotate(90deg)":"none"}}>›</span>
+                </div>
+              </div>
+              {/* Expanded body */}
+              {isOpen && (
+                <div style={{padding:"0 20px 18px",borderTop:"1px solid rgba(22,47,36,0.07)"}}>
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,margin:"14px 0 14px"}}>{p.description}</p>
+                  <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                    {scenario && (
+                      <button type="button"
+                        onClick={e=>{e.stopPropagation();setImpactIdx(isImpactOpen?null:i);}}
+                        style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>
+                        {isImpactOpen ? "Hide impact ↑" : "See the impact →"}
+                      </button>
+                    )}
+                    {modMeta && (
+                      <button type="button"
+                        onClick={e=>{e.stopPropagation();onOpenModule(modKey);}}
+                        style={{background:G,border:"none",borderRadius:"7px",padding:"7px 14px",color:WHITE,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>
+                        Go to {modMeta.title} →
+                      </button>
+                    )}
+                  </div>
+                  {isImpactOpen && scenario && (
+                    <div style={{marginTop:"12px",background:"rgba(196,150,58,0.07)",border:`1px solid ${GOLD}`,borderRadius:"10px",padding:"14px 16px",display:"flex",flexWrap:"wrap",gap:"16px",alignItems:"center"}}>
+                      <div style={{flex:1,minWidth:"160px"}}>
+                        <p style={{fontSize:"12px",color:MUT,margin:0,lineHeight:1.5}}>{scenario.description}</p>
+                      </div>
+                      <div style={{display:"flex",gap:"18px",flexWrap:"wrap"}}>
+                        <div style={{textAlign:"center"}}>
+                          <div style={{fontSize:"10px",color:MUT,marginBottom:"2px"}}>Financial impact</div>
+                          <div style={{fontSize:"17px",fontWeight:700,color:GOLD}}>{scenario.impactLabel}</div>
+                        </div>
+                        <div style={{textAlign:"center"}}>
+                          <div style={{fontSize:"10px",color:MUT,marginBottom:"2px"}}>Score boost</div>
+                          <div style={{fontSize:"17px",fontWeight:700,color:"#2d6b4a"}}>+{scenario.scoreBoost} pts</div>
+                        </div>
+                        <div style={{textAlign:"center"}}>
+                          <div style={{fontSize:"10px",color:MUT,marginBottom:"2px"}}>New score</div>
+                          <div style={{fontSize:"17px",fontWeight:700,color:"#2d6b4a"}}>{Math.min(100, currentScore + scenario.scoreBoost)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
   const [activeId, setActiveId] = useState(null);
   const active = scenarios.find(s => s.id === activeId);
@@ -1702,35 +1844,40 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
           </div>
         </div>
 
-        {/* Action plan */}
-        {insights.priorities?.length > 0 && (
-          <div className="fu1" style={{marginBottom:"24px"}}>
-            <h2 style={{fontFamily:SERIF,fontSize:"26px",color:G,marginBottom:"4px",borderLeft:`4px solid ${GOLD}`,paddingLeft:"14px"}}>Your action plan</h2>
-            <p style={{fontSize:"13px",color:MUT,marginBottom:"16px",paddingLeft:"18px"}}>Ranked by urgency — biggest financial wins first.</p>
-            <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
-              {insights.priorities.map((p,i) => {
-                const urgCol = UG[p.urgency] || MUT;
-                return (
-                  <div key={i} style={{background:WHITE,borderRadius:"12px",padding:"20px 22px",border:"1px solid rgba(22,47,36,0.09)",borderLeft:`4px solid ${urgCol}`}}>
-                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px",marginBottom:"8px",flexWrap:"wrap"}}>
-                      <div>
-                        <div style={{fontSize:"10px",fontWeight:700,color:urgCol,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"4px"}}>{p.urgency}</div>
-                        <h3 style={{fontFamily:SERIF,fontSize:"18px",color:G,lineHeight:1.25}}>{p.title}</h3>
-                      </div>
-                      {p.impact && (
-                        <div style={{background:GOLD,borderRadius:"8px",padding:"8px 14px",flexShrink:0,textAlign:"center"}}>
-                          <div style={{fontSize:"20px",fontWeight:800,color:G,fontFamily:SERIF,lineHeight:1}}>{p.impact}</div>
-                          <div style={{fontSize:"10px",color:"rgba(22,47,36,0.65)",fontWeight:600,marginTop:"2px"}}>potential saving</div>
-                        </div>
-                      )}
-                    </div>
-                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,margin:0}}>{p.description}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Action plan — accordion with inline scenarios */}
+        {insights.priorities?.length > 0 && (() => {
+          // Build scenario lookup by module key
+          const scenarioMap = {};
+          if (m.missedMatch > 0) scenarioMap["pension"] = {
+            impactLabel: `+${fmt(m.missedMatch)}/yr from employer`,
+            scoreBoost: Math.min(12, Math.round(m.missedMatch / 500)),
+            description: `Contribute ${+d.employerMatch||0}% to capture the full employer match.`,
+          };
+          if (m.annualYieldGap > 200) scenarioMap["cash"] = {
+            impactLabel: `+${fmt(m.annualYieldGap)}/yr in yield`,
+            scoreBoost: Math.min(8, Math.round(m.annualYieldGap / 200)),
+            description: `Move up to ${fmt(Math.min(m.surplusCash, m.isaHeadroom))} of your ${fmt(m.totalLiquid)} in liquid savings into a 5.08% Cash ISA. This is your remaining ISA allowance for this tax year.`,
+          };
+          if (m.isaHeadroom > 3000) scenarioMap["investments"] = {
+            impactLabel: `${fmt(m.isaHeadroom)} sheltered from tax`,
+            scoreBoost: Math.min(6, Math.round(m.isaHeadroom / 3000)),
+            description: `Up to ${fmt(m.isaHeadroom)} can still be placed in an ISA before April 5th — your remaining allowance for this tax year.`,
+          };
+          if (d.studentLoan !== "none" && !m.willClear && m.annualRepayment > 0) scenarioMap["studentLoan"] = {
+            impactLabel: `Redirect ${fmt(Math.min(2000, m.annualRepayment * 0.5))}/yr`,
+            scoreBoost: 4,
+            description: "Your loan is unlikely to clear before write-off — voluntary overpayments will be lost. Redirect that money to ISA or pension instead.",
+          };
+
+          return (
+            <ActionPlanAccordion
+              priorities={insights.priorities}
+              scenarioMap={scenarioMap}
+              currentScore={insights.score}
+              onOpenModule={onOpenModule}
+            />
+          );
+        })()}
 
         {/* Premium bonds countdown */}
         {isNearPremiumBondDraw() && (+d.premiumBonds||0) > 0 && (() => {
@@ -1950,48 +2097,6 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
           );
         })()}
 
-        {/* Scenario modelling */}
-        {(() => {
-          const scenarios = [
-            m.missedMatch > 0 ? {
-              id:"pension_match",
-              label:"Max employer pension match",
-              description:`Contribute ${m.salary > 0 ? (+d.employerMatch||0) : 0}% to capture the full employer match`,
-              impact: m.missedMatch,
-              impactLabel: `+${fmt(m.missedMatch)}/yr from employer`,
-              scoreBoost: Math.min(12, Math.round(m.missedMatch / 500)),
-            } : null,
-            m.annualYieldGap > 200 ? {
-              id:"cash_isa",
-              label:"Move surplus cash to a Cash ISA",
-              description:`Switch ${fmt(m.surplusCash)} above your ${m.bufferMonths}-month buffer to a 5.08% Cash ISA`,
-              impact: m.annualYieldGap,
-              impactLabel: `+${fmt(m.annualYieldGap)}/yr in yield`,
-              scoreBoost: Math.min(8, Math.round(m.annualYieldGap / 200)),
-            } : null,
-            m.isaHeadroom > 3000 ? {
-              id:"max_isa",
-              label:"Use remaining ISA allowance",
-              description:`${fmt(m.isaHeadroom)} left before April 5th — protect this year's growth from tax permanently`,
-              impact: m.isaHeadroom * 0.04,
-              impactLabel: `${fmt(m.isaHeadroom)} sheltered from tax`,
-              scoreBoost: Math.min(6, Math.round(m.isaHeadroom / 3000)),
-            } : null,
-            d.studentLoan !== "none" && !m.willClear && m.annualRepayment > 0 ? {
-              id:"stop_sl_overpay",
-              label:"Stop student loan overpayments",
-              description:"Your loan is unlikely to clear — overpayments will be written off. Redirect to ISA or pension instead",
-              impact: Math.min(2000, m.annualRepayment * 0.5),
-              impactLabel: `Redirect ${fmt(Math.min(2000, m.annualRepayment * 0.5))}/yr`,
-              scoreBoost: 4,
-            } : null,
-          ].filter(Boolean);
-
-          if (scenarios.length === 0) return null;
-          return (
-            <ScenarioPanel scenarios={scenarios} currentScore={insights.score} onEditInputs={onEditInputs}/>
-          );
-        })()}
 
         {/* Edit inputs banner */}
         <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.25)",borderRadius:"10px",padding:"13px 16px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
@@ -2795,9 +2900,26 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
         {/* ── Mortgage: overpayment scenarios + remortgage timing + Take Me There ── */}
         {moduleKey === "mortgage" && products?.mortgageSection && (() => {
           const { bal, rate, mo, monthsSaved, interestSaved10k, fixUrgent, fixExpiry, savRate, overpayBenefit } = products.mortgageSection;
+          const isVariable = d.mortgageType === "variable";
+          const fixedSavings = isVariable && rate > 4.2 ? Math.round(bal * (rate - 4.2) / 100 / 12) : 0;
           const scenarios = [5000, 10000, 25000].filter(x => x < bal);
           return (
             <div style={{marginTop:"16px"}}>
+              {isVariable && (
+                <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+                    <span style={{fontSize:"16px"}}>⚠️</span>
+                    <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>You're on a variable rate — already exposed to rate movements</span>
+                  </div>
+                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
+                    Variable rates (SVR/tracker) move with the Bank of England base rate. You have no protection if rates rise. Locking into a fixed deal now at ~4.2% could save you
+                    {fixedSavings > 0 ? <strong> {fmt(fixedSavings)}/month</strong> : " significantly"} compared to your current {rate}% rate — and gives you certainty for 2–5 years.
+                  </p>
+                  <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                    A fee-free broker can search the whole market and confirm whether fixing now makes sense for your situation — no obligation.
+                  </div>
+                </div>
+              )}
               {fixUrgent && (
                 <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
@@ -3124,7 +3246,7 @@ const BLANK_DATA = {
   hasPension:"no", myContribution:"", employerMatch:"", potValue:"", potValue2:"", retirementAge:"65",
   niYears:"",
   studentLoan:"none", loanBalance:"",
-  hasMortgage:"no", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
+  hasMortgage:"no", mortgageType:"fixed", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
   fixExpiryMonth:"", fixExpiryYear:"", mortgageProvider:"",
   savingsGoal:"goals", investHorizon:"5to10",
   inheritDirection:"", estateValue:"", hasWill:"no",
@@ -3364,6 +3486,7 @@ Return exactly this structure:
     <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
       onBack={() => step>0 ? setStep(s=>s-1) : setScreen("landing")}
       onBackToDashboard={() => setScreen("dashboard")}
+      onStepClick={i => setStep(i)}
       onContinue={() => {
         posthog.capture("onboarding_step_completed", { step: step + 1, step_name: STEPS[step] });
         step<STEPS.length-1 ? setStep(s=>s+1) : generateDashboard();
