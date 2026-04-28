@@ -33,9 +33,11 @@ button{cursor:pointer;font-family:inherit;}
 button:active{transform:scale(0.98);}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
-@keyframes coinFloat{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-36px) scale(1.2);}}
+@keyframes coinFloat{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-40px) scale(1.3);}}
 @keyframes btnFlash{0%{background:#162f24;}40%{background:#c4963a;}100%{background:#162f24;}}
-@keyframes scalePulse{0%{transform:scale(1);}50%{transform:scale(1.1);}100%{transform:scale(1);}}
+@keyframes btnGold{0%{background:#162f24;}40%{background:#c4963a;}100%{background:#162f24;}}
+@keyframes scalePulse{0%{transform:scale(1);}50%{transform:scale(1.08);}100%{transform:scale(1);}}
+@keyframes btnPulse{0%{transform:scale(1);}50%{transform:scale(1.08);}100%{transform:scale(1);}}
 .fu {animation:fadeUp 0.45s ease forwards;}
 .fu1{animation:fadeUp 0.45s ease 0.07s forwards;opacity:0;}
 .fu2{animation:fadeUp 0.45s ease 0.14s forwards;opacity:0;}
@@ -1483,13 +1485,25 @@ function computeModuleStatuses(d, m) {
 
   const s = {};
 
-  // Cash — yield gap + ISA headroom urgency
+  // Cash — three states: too much (excess above 2× buffer), low yield, or healthy
   const cashImpact = Math.round(m.annualYieldGap + m.isaHeadroom * 0.05 * isaUrgencyBoost);
+  const tooMuchCash = m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
+  const lowYield = m.savingsRate < 3.5 && m.emergencyFund > 0;
+  // Only flag "low cash" when genuinely zero — never show £0 warning when emergencyFund > 0
+  const genuinelyLowCash = m.emergencyFund === 0 && m.expenses > 0;
+  let cashImpactLabel;
+  if (tooMuchCash) {
+    cashImpactLabel = `${fmt(Math.round(m.emergencyExcess))}/yr earning below potential above buffer`;
+  } else if (cashImpact > 0) {
+    cashImpactLabel = `${fmt(cashImpact)}/yr in yield gap vs best-buy rate`;
+  } else {
+    cashImpactLabel = null;
+  }
   s.cash = {
-    status: m.annualYieldGap > 800 || m.runwayMonths > 12 ? "critical"
-          : m.annualYieldGap > 200 || m.runwayMonths > 9 || m.runwayMonths < 3 ? "attention" : "ok",
+    status: tooMuchCash || m.annualYieldGap > 800 ? "critical"
+          : m.annualYieldGap > 200 || genuinelyLowCash ? "attention" : "ok",
     impact: cashImpact,
-    impactLabel: cashImpact > 0 ? `${fmt(cashImpact)}/yr in yield gap` : null,
+    impactLabel: cashImpactLabel,
   };
 
   // Investments — ISA headroom × tax saving proxy + CGT saving
@@ -1506,19 +1520,16 @@ const contributing = isPensionContributing(d);
 const bonusSacrificeOpportunity = (+d.bonusAmount||0) * m.tr;
 const pensionImpact = !contributing
   ? Math.round(m.salary * 0.05 * m.tr + m.missedMatch + 99999) // not contributing = highest priority sentinel
-  : Math.round(m.missedMatch + bonusSacrificeOpportunity); // contributing but may have bonus or match gap
+  : Math.round(m.missedMatch + bonusSacrificeOpportunity);
 
 s.pension = {
-  status: !contributing
-    ? "critical"
-    : m.missedMatch > 0
-      ? "critical"
-      : "attention",
+  // Only "critical" when genuinely missing match or not contributing at all
+  status: !contributing ? "critical" : m.missedMatch > 0 ? "critical" : "attention",
   impact: pensionImpact,
-  impactLabel: m.missedMatch > 0
-    ? `${fmt(m.missedMatch)}/yr in missed employer match`
-    : !contributing
-      ? `No pension — ${fmt(Math.round(m.salary * 0.05 * m.tr))}/yr tax relief foregone`
+  impactLabel: !contributing
+    ? `No pension — ${fmt(Math.round(m.salary * 0.05 * m.tr))}/yr tax relief foregone`
+    : m.missedMatch > 0
+      ? `${fmt(m.missedMatch)}/yr in missed employer match`
       : bonusSacrificeOpportunity > 0
         ? `Up to ${fmt(Math.round(bonusSacrificeOpportunity))} bonus sacrifice saving`
         : null,
@@ -1824,7 +1835,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
     return { ...mm, status, summary, impact, impactLabel: local.impactLabel };
   });
 
-  const activeModules = allModules.filter(mm => mm.status !== "na");
+  const activeModules = allModules.filter(mm => mm.status !== "na" && !(mm.key === "insurance" && d.includeInsurance !== "yes"));
   const sortedModules = [...activeModules].sort((a,b) => {
     const aDone = completedModules.includes(a.key) ? 1 : 0;
     const bDone = completedModules.includes(b.key) ? 1 : 0;
@@ -1903,8 +1914,14 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
             .sort((a,b) => b.impact - a.impact)[0];
           if (!topModule) return null;
           const directives = {
-            pension: `Increase your pension contribution to match your employer cap — saves you ${fmt(m.missedMatch)}/yr in free money.`,
-            cash: `Move your cash to a Cash ISA at 4.9% — earns you ${fmt(m.annualYieldGap)} more per year.`,
+            pension: m.missedMatch > 0
+              ? `Increase your pension contribution to match your employer cap — saves you ${fmt(m.missedMatch)}/yr in free money.`
+              : (+d.bonusAmount||0) > 0
+                ? `Sacrifice your bonus into your pension — saves up to ${fmt(Math.round((+d.bonusAmount||0)*m.tr))} in tax this year.`
+                : `Boost your pension by 1% — costs only ${fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo after ${Math.round(m.tr*100)}% tax relief.`,
+            cash: m.emergencyFund > m.emergencyBuffer * 2 && m.emergencyBuffer > 0
+              ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move the excess to a 4.9% Cash ISA.`
+              : `Move your cash to a Cash ISA at 4.9% — earns you ${fmt(m.annualYieldGap)} more per year.`,
             investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax.`,
             studentLoan: "Check your student loan repayment strategy — you may be overpaying.",
             mortgage: "Your mortgage fix expires soon — start comparing rates now.",
@@ -1939,6 +1956,22 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
 
         {/* Action plan — accordion with inline scenarios */}
         {insights.priorities?.length > 0 && (() => {
+          // Sort priorities: urgency first (immediate→this tax year→soon), then keep relative AI order
+          const urgencyRank = { immediate:0, "this tax year":1, soon:2, when_ready:3 };
+          const sortedPriorities = [...insights.priorities]
+            .filter(p => {
+              if (d.includeInsurance !== "yes") {
+                const t = ((p.title||"")+" "+(p.description||"")).toLowerCase();
+                if (t.includes("insur") || t.includes("life cover") || t.includes("income protect") || t.includes("critical illness")) return false;
+              }
+              return true;
+            })
+            .sort((a, b) => {
+              const ra = urgencyRank[a.urgency] ?? 2, rb = urgencyRank[b.urgency] ?? 2;
+              return ra - rb;
+            });
+          if (!sortedPriorities.length) return null;
+
           // Build scenario lookup by module key
           const scenarioMap = {};
           if (m.missedMatch > 0) scenarioMap["pension"] = {
@@ -1964,7 +1997,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
 
           return (
             <ActionPlanAccordion
-              priorities={insights.priorities}
+              priorities={sortedPriorities}
               scenarioMap={scenarioMap}
               currentScore={insights.score}
               onOpenModule={onOpenModule}
@@ -2200,7 +2233,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
         {/* Module breakdown — sorted, collapsible */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
-          <span style={{fontSize:"12px",color:MUT}}>{completedModules.filter(k => activeModules.some(mm => mm.key === k)).length} of {activeModules.length} reviewed</span>
+          <span style={{fontSize:"12px",color:MUT}}>{completedModules.filter(k => activeModules.some(mm => mm.key === k && !(mm.key==="insurance" && d.includeInsurance!=="yes"))).length} of {activeModules.filter(mm => !(mm.key==="insurance" && d.includeInsurance!=="yes")).length} reviewed</span>
         </div>
 
         {/* Unreviewed modules — top 3 always visible */}
@@ -2514,6 +2547,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
   const [bonusInput,setBonusInput]= useState(+d.bonusAmount||"");
   const [sacrificePct, setSacrificePct] = useState(100);
   const [completionAnim, setCompletionAnim] = useState(false);
+  const animFired = useRef(false);
 
   useEffect(() => {
     if (openSection === "bonusSacrifice") {
@@ -2835,43 +2869,90 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
                       );
                     })}
 
-                    {/* Ratio table — only when loan will clear */}
-                    {products.slSection.ratioTable && products.slSection.ratioTable.length > 0 && (() => {
-                      const rows = products.slSection.ratioTable;
-                      const sweetSpot = rows.slice().reverse().find(r => r.ratio >= 1.3) || rows[rows.length - 1];
+                    {/* Personalised marginal return curve — only when loan will clear */}
+                    {products.slSection.willClear && m.loanBal > 0 && (() => {
+                      const slR = products.slSection.slRatePct / 100;
+                      const writeOffYr = products.slSection.writeOffYr;
+                      const annRep = Math.max(1, m.annualRepayment);
+                      const pensionReturn = 1 / Math.max(0.01, 1 - m.tr);
+                      const mortRate = d.hasMortgage === "yes" && +d.mortgageRate > 0 ? +d.mortgageRate : 4.5;
+                      const mortReturn = 1 + mortRate / 100;
+                      const STEPS = 60;
+                      const data = Array.from({ length: STEPS + 1 }, (_, i) => {
+                        const amt = (m.loanBal * i) / STEPS;
+                        const remBal = m.loanBal - amt;
+                        if (remBal <= 0) return { amt, ratio: 1.0 };
+                        const yrsLeft = Math.min(writeOffYr, remBal / annRep);
+                        return { amt, ratio: 1 + slR * yrsLeft * 0.5 };
+                      });
+                      const yMax = Math.max(pensionReturn + 0.2, data[0].ratio + 0.1, 1.5);
+                      const yMin = 0.95;
+                      const W = 340, H = 180, PL = 42, PR = 16, PT = 16, PB = 38;
+                      const cW = W - PL - PR, cH = H - PT - PB;
+                      const sx = a => PL + (a / m.loanBal) * cW;
+                      const sy = r => PT + cH - ((r - yMin) / (yMax - yMin)) * cH;
+                      const path = data.map((p,i) => `${i===0?"M":"L"}${sx(p.amt).toFixed(1)},${sy(p.ratio).toFixed(1)}`).join(" ");
+                      let crossAmt = null;
+                      for (let i = 0; i < data.length - 1; i++) {
+                        if (data[i].ratio >= pensionReturn && data[i+1].ratio < pensionReturn) {
+                          const t = (pensionReturn - data[i].ratio) / (data[i+1].ratio - data[i].ratio);
+                          crossAmt = data[i].amt + t * (data[i+1].amt - data[i].amt);
+                          break;
+                        }
+                      }
+                      const trPct = Math.round(m.tr * 100);
+                      const yTicks = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5].filter(r => r >= yMin && r <= yMax + 0.05);
+                      const xTicks = [0, 0.25, 0.5, 0.75, 1].map(f => m.loanBal * f);
                       return (
-                        <div style={{marginTop:"12px",marginBottom:"12px"}}>
-                          <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Overpayment return ratios</div>
+                        <div style={{marginTop:"14px",marginBottom:"14px"}}>
+                          <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"8px"}}>Return per £1 overpaid — where the maths tips</div>
                           <div style={{overflowX:"auto"}}>
-                            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"12px"}}>
-                              <thead>
-                                <tr style={{background:"rgba(22,47,36,0.05)"}}>
-                                  {["Overpay","Interest saved","Total benefit","Return ratio"].map(h => (
-                                    <th key={h} style={{padding:"8px 10px",textAlign:"left",fontWeight:700,color:G,fontSize:"10px",textTransform:"uppercase",letterSpacing:"0.05em",whiteSpace:"nowrap"}}>{h}</th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {rows.map((r, i) => {
-                                  const dim = r.ratio < 1.3;
-                                  return (
-                                    <tr key={i} style={{background:dim?"rgba(196,150,58,0.08)":"transparent",borderBottom:"1px solid rgba(22,47,36,0.06)"}}>
-                                      <td style={{padding:"9px 10px",fontWeight:600,color:G}}>{fmt(r.amt)}</td>
-                                      <td style={{padding:"9px 10px",color:"#2d6b4a"}}>{fmt(r.interestSaved)}</td>
-                                      <td style={{padding:"9px 10px",color:G,fontWeight:600}}>{fmt(r.totalBenefit)}</td>
-                                      <td style={{padding:"9px 10px"}}>
-                                        <span style={{fontWeight:700,color:dim?GOLD:"#2d6b4a"}}>1 : {r.ratio.toFixed(2)}</span>
-                                        {dim && <span style={{marginLeft:"6px",fontSize:"10px",color:GOLD}}>↓ diminishing</span>}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
+                            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{display:"block",maxWidth:"100%",minWidth:"260px"}}>
+                              <rect x={PL} y={PT} width={cW} height={cH} fill="rgba(22,47,36,0.025)" rx="3"/>
+                              {yTicks.map(r => (
+                                <g key={r}>
+                                  <line x1={PL} x2={W-PR} y1={sy(r)} y2={sy(r)} stroke="rgba(22,47,36,0.07)" strokeWidth="1"/>
+                                  <text x={PL-5} y={sy(r)+3.5} fontSize="9" fill={MUT} textAnchor="end">{r.toFixed(2)}</text>
+                                </g>
+                              ))}
+                              {/* Pension return reference */}
+                              <line x1={PL} x2={W-PR} y1={sy(pensionReturn)} y2={sy(pensionReturn)} stroke="#d4b97a" strokeWidth="1.5" strokeDasharray="5,3"/>
+                              <text x={W-PR-3} y={sy(pensionReturn)-5} fontSize="9" fill="#d4b97a" textAnchor="end">Pension {trPct}% relief ({pensionReturn.toFixed(2)}×)</text>
+                              {/* Mortgage reference */}
+                              {sy(mortReturn) > PT && sy(mortReturn) < H-PB && (
+                                <>
+                                  <line x1={PL} x2={W-PR} y1={sy(mortReturn)} y2={sy(mortReturn)} stroke={MUT} strokeWidth="1" strokeDasharray="4,4" opacity="0.55"/>
+                                  <text x={W-PR-3} y={sy(mortReturn)-4} fontSize="9" fill={MUT} textAnchor="end" opacity="0.7">Mortgage {mortRate}%</text>
+                                </>
+                              )}
+                              {/* Loan curve */}
+                              <path d={path} fill="none" stroke={GOLD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              {/* Crossover dot + drop line */}
+                              {crossAmt !== null && (
+                                <>
+                                  <line x1={sx(crossAmt)} x2={sx(crossAmt)} y1={PT} y2={H-PB} stroke={GOLD} strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
+                                  <circle cx={sx(crossAmt)} cy={sy(pensionReturn)} r="4.5" fill={GOLD} opacity="0.95"/>
+                                </>
+                              )}
+                              {/* X-axis */}
+                              <line x1={PL} x2={W-PR} y1={H-PB} y2={H-PB} stroke="rgba(22,47,36,0.15)" strokeWidth="1"/>
+                              {xTicks.map((amt,i) => (
+                                <text key={i} x={sx(amt)} y={H-PB+13} fontSize="9" fill={MUT} textAnchor="middle">
+                                  {i===0?"£0":i===4?fmt(amt):"£"+Math.round(amt/1000)+"k"}
+                                </text>
+                              ))}
+                              <text x={W/2} y={H-3} fontSize="9" fill={MUT} textAnchor="middle" opacity="0.7">Overpayment amount →</text>
+                            </svg>
                           </div>
-                          <div style={{marginTop:"10px",background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 12px",fontSize:"12px",color:TEXT,lineHeight:1.6}}>
-                            <strong>Sweet spot:</strong> Overpaying {fmt(sweetSpot.amt)} offers the best return (1 : {sweetSpot.ratio.toFixed(2)}) before diminishing returns set in. Returns drop below 1.3× beyond this point — at that level, your ISA or pension likely outperforms.
-                          </div>
+                          {crossAmt !== null ? (
+                            <div style={{marginTop:"8px",background:`rgba(196,150,58,0.08)`,border:`1px solid rgba(196,150,58,0.3)`,borderRadius:"8px",padding:"10px 12px",fontSize:"12px",color:G,lineHeight:1.6}}>
+                              📍 <strong>Beyond {fmt(Math.round(crossAmt/1000)*1000)}, money works harder in your pension</strong> — pension tax relief ({trPct}%) outperforms the student loan interest saving at that level.
+                            </div>
+                          ) : (
+                            <div style={{marginTop:"8px",fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                              Your pension return ({trPct}% tax relief = {pensionReturn.toFixed(2)}×) exceeds the loan marginal return across all overpayment amounts — pension contributions are likely the better use of surplus cash.
+                            </div>
+                          )}
                         </div>
                       );
                     })()}
@@ -3360,7 +3441,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
             )}
             <button type="button"
               onClick={() => {
-                if (!isComplete) { setCompletionAnim(true); setTimeout(() => setCompletionAnim(false), 900); }
+                if (!isComplete && !animFired.current) {
+                  animFired.current = true;
+                  setCompletionAnim(true);
+                  setTimeout(() => setCompletionAnim(false), 900);
+                }
                 onComplete();
               }}
               style={{
@@ -3686,7 +3771,7 @@ Return exactly this structure:
         ? local.status
         : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
       return { ...mm, status, impact: local.impact||0 };
-    }).filter(mm => mm.status !== "na");
+    }).filter(mm => mm.status !== "na" && !(mm.key === "insurance" && d.includeInsurance !== "yes"));
     const sortedMods = [...allMods].sort((a,b) => {
       const aDone = completedModules.includes(a.key) ? 1 : 0;
       const bDone = completedModules.includes(b.key) ? 1 : 0;
