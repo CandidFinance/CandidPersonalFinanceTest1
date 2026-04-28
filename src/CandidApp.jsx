@@ -119,9 +119,7 @@ function FmtInput({ value, onChange, placeholder, fmtType, step, style }) {
 // ── User contributing to pension ────────────────────────────────────────────────────────
 function isPensionContributing(d) {
   if (d.hasPension !== "yes") return false;
-  // If they confirmed a pension exists but left % blank, treat as contributing
-  const pct = Number(d.myContribution);
-  return isNaN(pct) || d.myContribution === "" || pct > 0;
+  return +d.myContribution > 0;
 }
 
 // ── Equivalence engine ────────────────────────────────────────────────────────
@@ -1909,27 +1907,39 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
 
         {/* Biggest win this week */}
         {(() => {
-          const topModule = allModules
-            .filter(mm => mm.status !== "na" && mm.key !== "insurance" && !completedModules.includes(mm.key))
+          const pensionFullyMatched = isPensionContributing(d) && m.missedMatch === 0 && !(+d.bonusAmount > 0);
+          const topModule = activeModules
+            .filter(mm => {
+              if (mm.key === "insurance") return false;
+              if (completedModules.includes(mm.key)) return false;
+              if (mm.key === "pension" && pensionFullyMatched) return false;
+              return true;
+            })
             .sort((a,b) => b.impact - a.impact)[0];
           if (!topModule) return null;
           const directives = {
-            pension: m.missedMatch > 0
-              ? `Increase your pension contribution to match your employer cap — saves you ${fmt(m.missedMatch)}/yr in free money.`
-              : (+d.bonusAmount||0) > 0
-                ? `Sacrifice your bonus into your pension — saves up to ${fmt(Math.round((+d.bonusAmount||0)*m.tr))} in tax this year.`
-                : `Boost your pension by 1% — costs only ${fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo after ${Math.round(m.tr*100)}% tax relief.`,
-            cash: m.emergencyFund > m.emergencyBuffer * 2 && m.emergencyBuffer > 0
+            pension: !isPensionContributing(d)
+              ? `Start a pension today — every £${100-Math.round(m.tr*100)} you put in becomes £100 with ${Math.round(m.tr*100)}% tax relief.`
+              : m.missedMatch > 0
+                ? `Increase your pension to ${+d.employerMatch||0}% to capture your employer match — ${fmt(m.missedMatch)}/yr in free money.`
+                : (+d.bonusAmount||0) > 0
+                  ? `Sacrifice your bonus into your pension — saves up to ${fmt(Math.round((+d.bonusAmount||0)*m.tr))} in tax this year.`
+                  : `Boost your pension by 1% — costs only ${fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo after ${Math.round(m.tr*100)}% tax relief.`,
+            cash: m.emergencyFund > 0 && m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2
               ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move the excess to a 4.9% Cash ISA.`
-              : `Move your cash to a Cash ISA at 4.9% — earns you ${fmt(m.annualYieldGap)} more per year.`,
-            investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax.`,
-            studentLoan: "Check your student loan repayment strategy — you may be overpaying.",
-            mortgage: "Your mortgage fix expires soon — start comparing rates now.",
-            kids: "Open a Junior ISA for your child — up to £9,000/yr tax-free.",
-            inheritance: "Review your estate planning — IHT threshold is £325,000.",
-            personalLoan: `Pay down your personal loan at ${+d.personalLoanRate||0}% — the highest guaranteed return available to you.`,
+              : m.annualYieldGap > 0
+                ? `Move your cash to a Cash ISA at 4.9% — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
+                : `Review your savings rate — best-buy Cash ISAs are paying 4.9% AER right now.`,
+            investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax permanently.`,
+            studentLoan: "Review your student loan strategy — your salary trajectory determines whether overpaying beats investing.",
+            mortgage: d.daysToFixExpiry !== null && d.daysToFixExpiry < 180
+              ? `Your mortgage fix expires in ${Math.round(d.daysToFixExpiry/30)} months — lock a new rate now before rolling onto SVR.`
+              : "Review your mortgage — overpaying at your rate may beat savings.",
+            kids: "Open a Junior ISA for your child — up to £9,000/yr grows completely tax-free until they turn 18.",
+            inheritance: "Review your estate planning — IHT threshold is £325,000 and every year without a plan can cost your estate.",
+            personalLoan: `Pay down your personal loan at ${+d.personalLoanRate||0}% — a guaranteed ${+d.personalLoanRate||0}% return, better than any savings account.`,
           };
-          const text = directives[topModule.key] || `Review your ${topModule.title.toLowerCase()} to unlock the most value.`;
+          const text = directives[topModule.key] || `Review your ${topModule.title.toLowerCase()} — there's money to unlock here.`;
           return (
             <div className="fu" style={{background:G,borderLeft:`6px solid ${GOLD}`,borderRadius:"14px",padding:"20px 24px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap"}}>
               <div style={{flex:1,minWidth:"200px"}}>
@@ -2044,12 +2054,14 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
 {(assetItems.length > 0 || liabilityItems.length > 0) && (
   <div
     className="fu1"
+    onClick={() => setNetWorthExpanded(v => !v)}
     style={{
       background: WHITE,
       borderRadius: "12px",
       padding: "20px 22px",
       border: "1px solid rgba(22,47,36,0.09)",
-      marginBottom: "24px"
+      marginBottom: "24px",
+      cursor: "pointer",
     }}
   >
     {/* Header + toggle */}
@@ -2093,13 +2105,9 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
   <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase"}}>
     Liabilities — {fmt(m.totalLiabilities)}
   </div>
-  <button
-    type="button"
-    onClick={() => setNetWorthExpanded(v => !v)}
-    style={{background:"transparent",border:"none",fontSize:"10px",fontWeight:700,color:G,cursor:"pointer",whiteSpace:"nowrap",letterSpacing:"0.07em",textTransform:"uppercase"}}
-  >
+  <span style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>
     {netWorthExpanded ? "Breakdown ↑" : "Breakdown ↓"}
-  </button>
+  </span>
 </div>
         
     {/* Detailed breakdown (toggle) */}
@@ -2323,7 +2331,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
                   <span style={{fontSize:"16px"}}>{mm.icon}</span>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</div>
-                    <div style={{fontSize:"11px",color:GOLD,fontWeight:600}}>{mm.title} → Optimised ✓</div>
+                    <div style={{fontSize:"11px",color:GOLD,fontWeight:600}}>{mm.title}: Optimised ✓</div>
                   </div>
                 </div>
               ))}
@@ -2546,8 +2554,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
   const [showBonus, setShowBonus] = useState(false);
   const [bonusInput,setBonusInput]= useState(+d.bonusAmount||"");
   const [sacrificePct, setSacrificePct] = useState(100);
-  const [completionAnim, setCompletionAnim] = useState(false);
-  const animFired = useRef(false);
+  const [showCoins, setShowCoins] = useState(false);
+  const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
     if (openSection === "bonusSacrifice") {
@@ -3432,37 +3440,37 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
         {/* Actions — mark reviewed + navigation */}
         <div className="fu5" style={{marginTop:"32px"}}>
           <div style={{position:"relative"}}>
-            {completionAnim && !isComplete && (
-              <div style={{position:"absolute",top:"-8px",left:"50%",transform:"translateX(-50%)",display:"flex",gap:"8px",pointerEvents:"none",zIndex:10}}>
-                {["🪙","🪙"].map((c,i) => (
-                  <span key={i} style={{fontSize:"20px",display:"inline-block",animation:`coinFloat 0.8s ease-out ${i*0.1}s forwards`}}>{c}</span>
-                ))}
+            {showCoins && (
+              <div style={{position:"relative",pointerEvents:"none",height:0}}>
+                <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",fontSize:"20px",animation:"coinFloat 0.9s ease-out forwards"}}>🪙</span>
+                <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",fontSize:"20px",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}>🪙</span>
               </div>
             )}
             <button type="button"
               onClick={() => {
-                if (!isComplete && !animFired.current) {
-                  animFired.current = true;
-                  setCompletionAnim(true);
-                  setTimeout(() => setCompletionAnim(false), 900);
+                if (!isComplete) {
+                  onComplete();
+                  setAnimating(true);
+                  setShowCoins(true);
+                  setTimeout(() => setShowCoins(false), 900);
+                  setTimeout(() => setAnimating(false), 400);
+                } else {
+                  onComplete();
                 }
-                onComplete();
               }}
               style={{
                 width:"100%",padding:"15px",
-                background:isComplete?"rgba(45,107,74,0.1)":G,
-                border:isComplete?"1.5px solid rgba(45,107,74,0.3)":"none",
+                background: isComplete ? "transparent" : G,
+                border: isComplete ? `1.5px solid ${GOLD}` : "none",
                 borderRadius:"10px",
-                color:isComplete?"#2d6b4a":WHITE,
+                color: isComplete ? GOLD : WHITE,
                 fontSize:"15px",fontWeight:600,
                 display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",
                 cursor:"pointer",
-                animation: completionAnim && !isComplete ? "btnFlash 0.3s ease forwards, scalePulse 0.3s ease forwards" : undefined,
+                animation: animating ? "btnGold 0.4s ease-out" : "none",
               }}>
               {isComplete ? (
-                <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke="#2d6b4a" strokeWidth="2.2" strokeLinecap="round"/></svg>Reviewed — click to unmark</>
-              ) : completionAnim ? (
-                <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/></svg>✓ Optimised</>
+                <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/></svg>{meta?.title}: Optimised ✓</>
               ) : (
                 <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/></svg>Mark as reviewed</>
               )}
