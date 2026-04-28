@@ -33,6 +33,9 @@ button{cursor:pointer;font-family:inherit;}
 button:active{transform:scale(0.98);}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes coinFloat{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-36px) scale(1.2);}}
+@keyframes btnFlash{0%{background:#162f24;}40%{background:#c4963a;}100%{background:#162f24;}}
+@keyframes scalePulse{0%{transform:scale(1);}50%{transform:scale(1.1);}100%{transform:scale(1);}}
 .fu {animation:fadeUp 0.45s ease forwards;}
 .fu1{animation:fadeUp 0.45s ease 0.07s forwards;opacity:0;}
 .fu2{animation:fadeUp 0.45s ease 0.14s forwards;opacity:0;}
@@ -267,7 +270,7 @@ function calcMetrics(d) {
         cgtRate = tr !== 0.20 ? 0.20 : 0.10,
         cgtSaving = crystallisable * cgtRate,
         savingsRate = effectiveSavingsRate,
-        annualYieldGap = surplusCash * (5.1 - savingsRate) / 100;
+        annualYieldGap = emergencyFund * (5.1 - savingsRate) / 100;
   // State pension estimate
   const niYears = +d.niYears||0;
   const statePensionWeekly = (niYears / 35) * 221.20;
@@ -866,8 +869,8 @@ function getCrossModuleLinks(key, d, m) {
   if (key === "personalLoan" && d.hasPension === "yes" && m.missedMatch > 0) {
     links.push({ icon:"🏦", text:`You're missing ${fmt(m.missedMatch)}/yr of employer pension match. That's free money — clear this before overpaying your loan.`, label:"Fix pension match first", target:"pension" });
   }
-  if (key === "personalLoan" && m.surplusCash > +d.personalLoanBalance * 1.5) {
-    links.push({ icon:"💷", text:`You have ${fmt(m.surplusCash)} of surplus cash — enough to clear this loan entirely. Weigh the guaranteed ${d.personalLoanRate}% return of clearing vs keeping cash liquid.`, label:"Review cash position", target:"cash" });
+  if (key === "personalLoan" && m.emergencyFund > +d.personalLoanBalance * 1.5) {
+    links.push({ icon:"💷", text:`You have ${fmt(m.emergencyFund)} in accessible cash — potentially enough to clear this loan entirely. Weigh the guaranteed ${d.personalLoanRate}% return of clearing vs keeping cash liquid.`, label:"Review cash position", target:"cash" });
   }
   if (key === "kids" && m.isaHeadroom > 5000) {
     links.push({ icon:"📈", text:"Maximise your own ISA before the kids' JISAs — your tax-free allowance is larger and the principle applies equally.", label:"Review your ISA", target:"investments" });
@@ -1645,7 +1648,7 @@ function ActionPlanAccordion({ priorities, scenarioMap, currentScore, onOpenModu
     <div className="fu1" style={{marginBottom:"24px"}}>
       <h2 style={{fontFamily:SERIF,fontSize:"26px",color:G,marginBottom:"4px",borderLeft:`4px solid ${GOLD}`,paddingLeft:"14px"}}>Your action plan</h2>
       <p style={{fontSize:"13px",color:MUT,marginBottom:"16px",paddingLeft:"18px"}}>Ranked by urgency — biggest financial wins first.</p>
-      <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
         {priorities.map((p, i) => {
           const urgCol = UG[p.urgency] || MUT;
           const modKey = priorityModuleKey(p.title + " " + (p.description||""));
@@ -1658,7 +1661,7 @@ function ActionPlanAccordion({ priorities, scenarioMap, currentScore, onOpenModu
               {/* Collapsed header — always visible */}
               <div
                 onClick={() => { setExpandedIdx(isOpen ? null : i); setImpactIdx(null); }}
-                style={{padding:"16px 20px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}
+                style={{padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}
               >
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:"10px",fontWeight:700,color:urgCol,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"3px"}}>{p.urgency}</div>
@@ -1676,8 +1679,8 @@ function ActionPlanAccordion({ priorities, scenarioMap, currentScore, onOpenModu
               </div>
               {/* Expanded body */}
               {isOpen && (
-                <div style={{padding:"0 20px 18px",borderTop:"1px solid rgba(22,47,36,0.07)"}}>
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,margin:"14px 0 14px"}}>{p.description}</p>
+                <div style={{padding:"0 14px 12px",borderTop:"1px solid rgba(22,47,36,0.07)"}}>
+                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.65,margin:"12px 0 12px"}}>{p.description}</p>
                   <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
                     {scenario && (
                       <button type="button"
@@ -1781,8 +1784,8 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
 
   // Net worth breakdown
   const netWorthPositive = m.netWorth >= 0;
-  const isaThisYear = +d.isaUsedThisYear||0;
-  const isaPrev     = +d.isaPreviousBalance||0;
+  const isaThisYear = m.isaUsedThisYear; // derived from granular fields in calcMetrics
+  const isaPrev = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
   const totalIsa    = isaThisYear + isaPrev;
   const assetItems = [
     { label:"Cash & savings", value: m.cash + m.bonds, icon:"💷" },
@@ -1893,6 +1896,37 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
           );
         })()}
 
+        {/* Biggest win this week */}
+        {(() => {
+          const topModule = allModules
+            .filter(mm => mm.status !== "na" && mm.key !== "insurance" && !completedModules.includes(mm.key))
+            .sort((a,b) => b.impact - a.impact)[0];
+          if (!topModule) return null;
+          const directives = {
+            pension: `Increase your pension contribution to match your employer cap — saves you ${fmt(m.missedMatch)}/yr in free money.`,
+            cash: `Move your cash to a Cash ISA at 4.9% — earns you ${fmt(m.annualYieldGap)} more per year.`,
+            investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax.`,
+            studentLoan: "Check your student loan repayment strategy — you may be overpaying.",
+            mortgage: "Your mortgage fix expires soon — start comparing rates now.",
+            kids: "Open a Junior ISA for your child — up to £9,000/yr tax-free.",
+            inheritance: "Review your estate planning — IHT threshold is £325,000.",
+            personalLoan: `Pay down your personal loan at ${+d.personalLoanRate||0}% — the highest guaranteed return available to you.`,
+          };
+          const text = directives[topModule.key] || `Review your ${topModule.title.toLowerCase()} to unlock the most value.`;
+          return (
+            <div className="fu" style={{background:G,borderLeft:`6px solid ${GOLD}`,borderRadius:"14px",padding:"20px 24px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap"}}>
+              <div style={{flex:1,minWidth:"200px"}}>
+                <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your biggest win this week</div>
+                <p style={{fontSize:"18px",color:WHITE,fontWeight:500,lineHeight:1.5,margin:0}}>{text}</p>
+              </div>
+              <button type="button" onClick={() => onOpenModule(topModule.key)}
+                style={{background:GOLD,border:"none",borderRadius:"10px",padding:"13px 22px",color:G,fontSize:"14px",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                Do this now →
+              </button>
+            </div>
+          );
+        })()}
+
         {/* Score card */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
           <ScoreRing score={insights.score}/>
@@ -1915,7 +1949,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
           if (m.annualYieldGap > 200) scenarioMap["cash"] = {
             impactLabel: `+${fmt(m.annualYieldGap)}/yr in yield`,
             scoreBoost: Math.min(8, Math.round(m.annualYieldGap / 200)),
-            description: `Move up to ${fmt(Math.min(m.surplusCash, m.isaHeadroom))} of your ${fmt(m.totalLiquid)} in liquid savings into a 5.08% Cash ISA. This is your remaining ISA allowance for this tax year.`,
+            description: `Move up to ${fmt(Math.min(m.emergencyFund, m.isaHeadroom))} of your ${fmt(m.totalLiquid)} in liquid savings into a 5.08% Cash ISA. This is your remaining ISA allowance for this tax year.`,
           };
           if (m.isaHeadroom > 3000) scenarioMap["investments"] = {
             impactLabel: `${fmt(m.isaHeadroom)} sheltered from tax`,
@@ -2256,7 +2290,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
                   <span style={{fontSize:"16px"}}>{mm.icon}</span>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</div>
-                    <div style={{fontSize:"11px",color:GOLD,fontWeight:600}}>Optimise now →</div>
+                    <div style={{fontSize:"11px",color:GOLD,fontWeight:600}}>{mm.title} → Optimised ✓</div>
                   </div>
                 </div>
               ))}
@@ -2479,6 +2513,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
   const [showBonus, setShowBonus] = useState(false);
   const [bonusInput,setBonusInput]= useState(+d.bonusAmount||"");
   const [sacrificePct, setSacrificePct] = useState(100);
+  const [completionAnim, setCompletionAnim] = useState(false);
 
   useEffect(() => {
     if (openSection === "bonusSacrifice") {
@@ -3315,13 +3350,39 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
 
         {/* Actions — mark reviewed + navigation */}
         <div className="fu5" style={{marginTop:"32px"}}>
-          <button type="button" onClick={onComplete} style={{width:"100%",padding:"15px",background:isComplete?"rgba(45,107,74,0.1)":G,border:isComplete?"1.5px solid rgba(45,107,74,0.3)":"none",borderRadius:"10px",color:isComplete?"#2d6b4a":WHITE,fontSize:"15px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",transition:"all 0.2s",cursor:"pointer"}}>
-            {isComplete ? (
-              <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke="#2d6b4a" strokeWidth="2.2" strokeLinecap="round"/></svg>Reviewed — click to unmark</>
-            ) : (
-              <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/></svg>Mark as reviewed</>
+          <div style={{position:"relative"}}>
+            {completionAnim && !isComplete && (
+              <div style={{position:"absolute",top:"-8px",left:"50%",transform:"translateX(-50%)",display:"flex",gap:"8px",pointerEvents:"none",zIndex:10}}>
+                {["🪙","🪙"].map((c,i) => (
+                  <span key={i} style={{fontSize:"20px",display:"inline-block",animation:`coinFloat 0.8s ease-out ${i*0.1}s forwards`}}>{c}</span>
+                ))}
+              </div>
             )}
-          </button>
+            <button type="button"
+              onClick={() => {
+                if (!isComplete) { setCompletionAnim(true); setTimeout(() => setCompletionAnim(false), 900); }
+                onComplete();
+              }}
+              style={{
+                width:"100%",padding:"15px",
+                background:isComplete?"rgba(45,107,74,0.1)":G,
+                border:isComplete?"1.5px solid rgba(45,107,74,0.3)":"none",
+                borderRadius:"10px",
+                color:isComplete?"#2d6b4a":WHITE,
+                fontSize:"15px",fontWeight:600,
+                display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",
+                cursor:"pointer",
+                animation: completionAnim && !isComplete ? "btnFlash 0.3s ease forwards, scalePulse 0.3s ease forwards" : undefined,
+              }}>
+              {isComplete ? (
+                <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke="#2d6b4a" strokeWidth="2.2" strokeLinecap="round"/></svg>Reviewed — click to unmark</>
+              ) : completionAnim ? (
+                <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/></svg>✓ Optimised</>
+              ) : (
+                <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/></svg>Mark as reviewed</>
+              )}
+            </button>
+          </div>
           <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
             <button type="button" onClick={goToDashboard} style={{flex:1,padding:"13px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"10px",color:G,fontSize:"14px",fontWeight:500,cursor:"pointer"}}>
               ← Dashboard
