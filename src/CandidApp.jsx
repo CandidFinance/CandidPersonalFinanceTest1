@@ -2697,6 +2697,97 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
           </div>
         )}
 
+        {/* ── Pension projection chart ── */}
+        {moduleKey === "pension" && d.hasPension === "yes" && ((+d.potValue||0) > 0 || +d.myContribution > 0) && (() => {
+          const salary = m.salary, potVal = +d.potValue||0;
+          const myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0;
+          const retireAge = +d.retirementAge||65, age = +d.age||30;
+          const years = Math.max(1, retireAge - age);
+          const annualContrib = (myPct + empCapPct) / 100 * salary;
+          const currentPot = m.projectedPot;
+
+          const optimisedContrib = (empCapPct * 2) * salary / 100;
+          const bonusExtra = (+d.bonusAmount||0) * 0.9;
+          const optimisedAnnual = optimisedContrib + bonusExtra;
+          const optimisedPot = potVal * Math.pow(1.06, years) + optimisedAnnual * ((Math.pow(1.06, years) - 1) / 0.06);
+
+          const hasMissedMatch = m.missedMatch > 0;
+          const hasBonus = (+d.bonusAmount||0) > 0;
+          const showOptimised = hasMissedMatch || hasBonus;
+
+          // Bars: [now, projected, (optimised?), (with-bonus?)]
+          const bars = [
+            { value: potVal, label: "Now", color: "rgba(196,150,58,0.4)", textCol: G },
+            { value: currentPot, label: `At retirement\n(age ${retireAge})`, color: GOLD, textCol: G },
+            ...(hasMissedMatch ? [{ value: optimisedPot, label: `Optimised\n(match cap)`, color: "#2d6b4a", textCol: WHITE }] : []),
+            ...(hasBonus ? [{ value: optimisedPot + bonusExtra * ((Math.pow(1.06, years)-1)/0.06), label: "With bonus\nsacrifice", color: "rgba(45,107,74,0.7)", textCol: WHITE }] : []),
+          ];
+
+          const maxVal = Math.max(...bars.map(b => b.value)) * 1.15;
+          const VW = 680, VH = 300, PL = 20, PR = 20, PT = 44, PB = 72;
+          const cW = VW - PL - PR, cH = VH - PT - PB;
+          const barW = 110, gap = bars.length > 2 ? (cW - bars.length * barW) / (bars.length + 1) : (cW - bars.length * barW) / (bars.length + 1);
+          const sy = v => PT + cH - (v / maxVal) * cH;
+          const barX = i => PL + gap + i * (barW + gap);
+          const nudge1pct = Math.round(salary * 0.01 * ((Math.pow(1.06, years) - 1) / 0.06));
+          const refY = sy(showOptimised ? optimisedPot : currentPot);
+
+          return (
+            <div className="fu2" style={{marginBottom:"20px"}}>
+              <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible"}}>
+                {/* Dashed "potential" reference line */}
+                {showOptimised && (
+                  <>
+                    <line x1={PL} x2={VW-PR} y1={refY} y2={refY} stroke="#e8d5a3" strokeWidth="1.5" strokeDasharray="8,5" opacity="0.7"/>
+                    <text x={VW-PR-6} y={refY-7} fontSize="13" fill="#e8d5a3" textAnchor="end" fontWeight="600">Potential</text>
+                  </>
+                )}
+                {/* Bars */}
+                {bars.map((bar, i) => {
+                  const x = barX(i);
+                  const barH = Math.max(4, (bar.value / maxVal) * cH);
+                  const y = PT + cH - barH;
+                  const lines = bar.label.split("\n");
+                  return (
+                    <g key={i}>
+                      {/* Bar */}
+                      <rect x={x} y={y} width={barW} height={barH} rx="6" fill={bar.color}/>
+                      {/* Value label above bar */}
+                      <text x={x + barW/2} y={y - 10} fontSize="18" fontWeight="700" fill={G} textAnchor="middle">{fmt(Math.round(bar.value/1000)*1000)}</text>
+                      {/* X-axis label (multi-line) */}
+                      {lines.map((ln, li) => (
+                        <text key={li} x={x + barW/2} y={VH - PB + 20 + li * 18} fontSize="13" fontWeight={li===0?"700":"400"} fill={MUT} textAnchor="middle">{ln}</text>
+                      ))}
+                      {/* Gold arrow between bar 0 and bar 1 */}
+                      {i === 0 && (
+                        <g>
+                          <line x1={x+barW+8} x2={barX(1)-8} y1={(y + PT+cH)/2} y2={(sy(bars[1].value) + PT+cH)/2}
+                            stroke={GOLD} strokeWidth="2.5" markerEnd="url(#arrowGold)"/>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+                {/* Arrow marker def */}
+                <defs>
+                  <marker id="arrowGold" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L8,3 z" fill={GOLD}/>
+                  </marker>
+                </defs>
+                {/* Baseline */}
+                <line x1={PL} x2={VW-PR} y1={PT+cH} y2={PT+cH} stroke="rgba(200,216,204,0.55)" strokeWidth="2"/>
+              </svg>
+              <div style={{fontSize:"12px",color:MUT,marginTop:"4px",lineHeight:1.6}}>
+                Based on 6% annual growth over {years} year{years!==1?"s":""} to age {retireAge}. Contributions shown in today's money.
+              </div>
+              {/* 1% nudge chip */}
+              <div style={{marginTop:"10px",borderLeft:`4px solid ${GOLD}`,background:"rgba(196,150,58,0.07)",borderRadius:"0 8px 8px 0",padding:"10px 14px",fontSize:"13px",color:G,lineHeight:1.5}}>
+                ↑ <strong>1% more contribution = ~{fmt(nudge1pct)} more at retirement</strong> — at {Math.round(m.tr*100)}% tax relief it costs you {fmt(Math.round(salary*0.01/12*(1-m.tr)))}/mo in take-home.
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Cash runway callout */}
         {showRunwayCallout && (
           <div className="fu2" style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"18px 20px",marginBottom:"20px"}}>
@@ -2885,7 +2976,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
                       const pensionReturn = 1 / Math.max(0.01, 1 - m.tr);
                       const mortRate = d.hasMortgage === "yes" && +d.mortgageRate > 0 ? +d.mortgageRate : 4.5;
                       const mortReturn = 1 + mortRate / 100;
-                      const STEPS = 60;
+                      const STEPS = 80;
                       const data = Array.from({ length: STEPS + 1 }, (_, i) => {
                         const amt = (m.loanBal * i) / STEPS;
                         const remBal = m.loanBal - amt;
@@ -2893,10 +2984,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
                         const yrsLeft = Math.min(writeOffYr, remBal / annRep);
                         return { amt, ratio: 1 + slR * yrsLeft * 0.5 };
                       });
-                      const yMax = Math.max(pensionReturn + 0.2, data[0].ratio + 0.1, 1.5);
-                      const yMin = 0.95;
-                      const W = 340, H = 180, PL = 42, PR = 16, PT = 16, PB = 38;
-                      const cW = W - PL - PR, cH = H - PT - PB;
+                      const yMax = Math.max(pensionReturn + 0.3, data[0].ratio + 0.15, 1.6);
+                      const yMin = 0.92;
+                      const VW = 680, VH = 320, PL = 64, PR = 20, PT = 24, PB = 56;
+                      const cW = VW - PL - PR, cH = VH - PT - PB;
                       const sx = a => PL + (a / m.loanBal) * cW;
                       const sy = r => PT + cH - ((r - yMin) / (yMax - yMin)) * cH;
                       const path = data.map((p,i) => `${i===0?"M":"L"}${sx(p.amt).toFixed(1)},${sy(p.ratio).toFixed(1)}`).join(" ");
@@ -2911,54 +3002,66 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
                       const trPct = Math.round(m.tr * 100);
                       const yTicks = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5].filter(r => r >= yMin && r <= yMax + 0.05);
                       const xTicks = [0, 0.25, 0.5, 0.75, 1].map(f => m.loanBal * f);
+                      const crossX = crossAmt !== null ? sx(crossAmt) : null;
+                      const crossY = sy(pensionReturn);
                       return (
-                        <div style={{marginTop:"14px",marginBottom:"14px"}}>
-                          <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"8px"}}>Return per £1 overpaid — where the maths tips</div>
-                          <div style={{overflowX:"auto"}}>
-                            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{display:"block",maxWidth:"100%",minWidth:"260px"}}>
-                              <rect x={PL} y={PT} width={cW} height={cH} fill="rgba(22,47,36,0.025)" rx="3"/>
-                              {yTicks.map(r => (
-                                <g key={r}>
-                                  <line x1={PL} x2={W-PR} y1={sy(r)} y2={sy(r)} stroke="rgba(22,47,36,0.07)" strokeWidth="1"/>
-                                  <text x={PL-5} y={sy(r)+3.5} fontSize="9" fill={MUT} textAnchor="end">{r.toFixed(2)}</text>
+                        <div style={{marginTop:"16px",marginBottom:"16px"}}>
+                          <div style={{fontSize:"12px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Return per £1 overpaid — where the maths tips</div>
+                          <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible"}}>
+                            <rect x={PL} y={PT} width={cW} height={cH} fill="rgba(22,47,36,0.03)" rx="4"/>
+                            {yTicks.map(r => (
+                              <g key={r}>
+                                <line x1={PL} x2={VW-PR} y1={sy(r)} y2={sy(r)} stroke="rgba(22,47,36,0.09)" strokeWidth="1.5"/>
+                                <text x={PL-10} y={sy(r)+5} fontSize="16" fontWeight="700" fill={MUT} textAnchor="end">{r.toFixed(2)}</text>
+                              </g>
+                            ))}
+                            {/* Pension return reference */}
+                            <line x1={PL} x2={VW-PR} y1={sy(pensionReturn)} y2={sy(pensionReturn)} stroke="#d4b97a" strokeWidth="2.5" strokeDasharray="10,5"/>
+                            <text x={VW-PR-8} y={sy(pensionReturn)-10} fontSize="14" fontWeight="700" fill="#d4b97a" textAnchor="end">Pension {trPct}% tax relief ({pensionReturn.toFixed(2)}×)</text>
+                            {/* Mortgage reference */}
+                            {sy(mortReturn) > PT + 20 && sy(mortReturn) < VH-PB - 20 && (
+                              <>
+                                <line x1={PL} x2={VW-PR} y1={sy(mortReturn)} y2={sy(mortReturn)} stroke={MUT} strokeWidth="1.5" strokeDasharray="8,5" opacity="0.55"/>
+                                <text x={VW-PR-8} y={sy(mortReturn)-8} fontSize="13" fill={MUT} textAnchor="end" opacity="0.7">Mortgage {mortRate}%</text>
+                              </>
+                            )}
+                            {/* Loan curve */}
+                            <path d={path} fill="none" stroke={GOLD} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                            {/* Crossover: drop line + glow + dot */}
+                            {crossX !== null && (
+                              <>
+                                <line x1={crossX} x2={crossX} y1={PT} y2={VH-PB} stroke={GOLD} strokeWidth="1.5" strokeDasharray="6,4" opacity="0.45"/>
+                                <circle cx={crossX} cy={crossY} r="14" fill={GOLD} opacity="0.22"/>
+                                <circle cx={crossX} cy={crossY} r="8" fill={GOLD}/>
+                              </>
+                            )}
+                            {/* X-axis */}
+                            <line x1={PL} x2={VW-PR} y1={VH-PB} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="3"/>
+                            {xTicks.map((amt,i) => (
+                              <text key={i} x={sx(amt)} y={VH-PB+22} fontSize="16" fontWeight="700" fill={MUT} textAnchor="middle">
+                                {i===0?"£0":i===4?fmt(amt):"£"+Math.round(amt/1000)+"k"}
+                              </text>
+                            ))}
+                            <text x={VW/2} y={VH-6} fontSize="15" fill={MUT} textAnchor="middle" opacity="0.7">Overpayment amount →</text>
+                            {/* Y-axis */}
+                            <line x1={PL} x2={PL} y1={PT} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="3"/>
+                            {/* Speech bubble at crossover */}
+                            {crossX !== null && (() => {
+                              const bx = Math.min(crossX - 10, VW - PR - 240);
+                              const by = crossY - 70;
+                              return (
+                                <g>
+                                  <rect x={bx} y={by} width={230} height={52} rx="8" fill={G}/>
+                                  <polygon points={`${crossX-8},${crossY-18} ${crossX},${crossY-4} ${crossX+8},${crossY-18}`} fill={G}/>
+                                  <text x={bx+14} y={by+22} fontSize="14" fontWeight="700" fill={WHITE}>Beyond {fmt(Math.round(crossAmt/1000)*1000)}: pension wins</text>
+                                  <text x={bx+14} y={by+40} fontSize="13" fill="rgba(255,255,255,0.7)">{trPct}% relief &gt; loan interest rate</text>
                                 </g>
-                              ))}
-                              {/* Pension return reference */}
-                              <line x1={PL} x2={W-PR} y1={sy(pensionReturn)} y2={sy(pensionReturn)} stroke="#d4b97a" strokeWidth="1.5" strokeDasharray="5,3"/>
-                              <text x={W-PR-3} y={sy(pensionReturn)-5} fontSize="9" fill="#d4b97a" textAnchor="end">Pension {trPct}% relief ({pensionReturn.toFixed(2)}×)</text>
-                              {/* Mortgage reference */}
-                              {sy(mortReturn) > PT && sy(mortReturn) < H-PB && (
-                                <>
-                                  <line x1={PL} x2={W-PR} y1={sy(mortReturn)} y2={sy(mortReturn)} stroke={MUT} strokeWidth="1" strokeDasharray="4,4" opacity="0.55"/>
-                                  <text x={W-PR-3} y={sy(mortReturn)-4} fontSize="9" fill={MUT} textAnchor="end" opacity="0.7">Mortgage {mortRate}%</text>
-                                </>
-                              )}
-                              {/* Loan curve */}
-                              <path d={path} fill="none" stroke={GOLD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                              {/* Crossover dot + drop line */}
-                              {crossAmt !== null && (
-                                <>
-                                  <line x1={sx(crossAmt)} x2={sx(crossAmt)} y1={PT} y2={H-PB} stroke={GOLD} strokeWidth="1" strokeDasharray="3,3" opacity="0.5"/>
-                                  <circle cx={sx(crossAmt)} cy={sy(pensionReturn)} r="4.5" fill={GOLD} opacity="0.95"/>
-                                </>
-                              )}
-                              {/* X-axis */}
-                              <line x1={PL} x2={W-PR} y1={H-PB} y2={H-PB} stroke="rgba(22,47,36,0.15)" strokeWidth="1"/>
-                              {xTicks.map((amt,i) => (
-                                <text key={i} x={sx(amt)} y={H-PB+13} fontSize="9" fill={MUT} textAnchor="middle">
-                                  {i===0?"£0":i===4?fmt(amt):"£"+Math.round(amt/1000)+"k"}
-                                </text>
-                              ))}
-                              <text x={W/2} y={H-3} fontSize="9" fill={MUT} textAnchor="middle" opacity="0.7">Overpayment amount →</text>
-                            </svg>
-                          </div>
-                          {crossAmt !== null ? (
-                            <div style={{marginTop:"8px",background:`rgba(196,150,58,0.08)`,border:`1px solid rgba(196,150,58,0.3)`,borderRadius:"8px",padding:"10px 12px",fontSize:"12px",color:G,lineHeight:1.6}}>
-                              📍 <strong>Beyond {fmt(Math.round(crossAmt/1000)*1000)}, money works harder in your pension</strong> — pension tax relief ({trPct}%) outperforms the student loan interest saving at that level.
-                            </div>
-                          ) : (
-                            <div style={{marginTop:"8px",fontSize:"12px",color:MUT,lineHeight:1.6}}>
-                              Your pension return ({trPct}% tax relief = {pensionReturn.toFixed(2)}×) exceeds the loan marginal return across all overpayment amounts — pension contributions are likely the better use of surplus cash.
+                              );
+                            })()}
+                          </svg>
+                          {crossAmt === null && (
+                            <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>
+                              Your pension return ({trPct}% tax relief = {pensionReturn.toFixed(2)}×) exceeds the loan marginal return at all overpayment levels — pension contributions are the better use of spare cash.
                             </div>
                           )}
                         </div>
