@@ -279,7 +279,11 @@ function LandingPage({ onStart }) {
         <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", lineHeight: 1.6, maxWidth: "560px" }}>
           Candid provides financial guidance and education only — not regulated financial advice. Always consider your personal circumstances and consult a qualified adviser for complex situations. Candid may earn referral fees when you click through to product providers.
         </div>
-        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)" }}>© 2025 Candid Finance</div>
+        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", display:"flex", gap:"12px", alignItems:"center", flexWrap:"wrap" }}>
+          <span>© 2026 Candid Finance</span>
+          <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Privacy Policy</a>
+          <a href="/terms.html"   target="_blank" rel="noreferrer" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Terms of Service</a>
+        </div>
       </div>
 
     </div>

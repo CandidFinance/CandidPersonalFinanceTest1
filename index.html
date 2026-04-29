@@ -16,6 +16,18 @@
       html { scroll-behavior: smooth; }
       body { font-family: 'DM Sans', sans-serif; background: #f6f0e6; }
     </style>
+  <!-- Cookie consent -->
+  <script>
+    if (!localStorage.getItem('cookieAccepted')) {
+      document.addEventListener('DOMContentLoaded', function() {
+        var banner = document.createElement('div');
+        banner.id = 'cookie-banner';
+        banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#162F24;color:rgba(255,255,255,0.8);font-family:sans-serif;font-size:13px;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;z-index:99999;flex-wrap:wrap;';
+        banner.innerHTML = '<span>We use cookies and anonymised analytics to improve Candid. <a href="/privacy.html" target="_blank" style="color:#C4963A;text-decoration:none;">Privacy Policy</a></span><button onclick="localStorage.setItem(\'cookieAccepted\',\'1\');document.getElementById(\'cookie-banner\').remove();" style="background:#C4963A;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;color:#162F24;cursor:pointer;white-space:nowrap;flex-shrink:0;">Got it</button>';
+        document.body.appendChild(banner);
+      });
+    }
+  </script>
   </head>
   <body>
     <div id="root"></div>

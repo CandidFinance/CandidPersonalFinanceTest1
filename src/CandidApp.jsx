@@ -1104,7 +1104,7 @@ const BRAND_COLORS = {
   "vanguard.co.uk":   { bg:"#C41E3A", text:"#fff",    label:"V"    },
   "hl.co.uk":         { bg:"#00A3E0", text:"#fff",    label:"HL"   },
   "moneybox.com":     { bg:"#6B4FBB", text:"#fff",    label:"MB"   },
-  "trading212.com":   { bg:"#1DB954", text:"#fff",    label:"T212" },
+  "trading212.com":   { bg:"#1DB954", text:"#fff",    label:"T"    },
   "nutmeg.com":       { bg:"#FF6B35", text:"#fff",    label:"N"    },
   "chase.co.uk":      { bg:"#117ACA", text:"#fff",    label:"C"    },
   "marcus.co.uk":     { bg:"#1A1A1A", text:"#fff",    label:"M"    },
@@ -1115,6 +1115,10 @@ const BRAND_COLORS = {
   "lancmortgages.com":{ bg:"#003087", text:"#fff",    label:"L&C"  },
   "habito.com":       { bg:"#5C35F5", text:"#fff",    label:"H"    },
   "sprive.com":       { bg:"#FF5733", text:"#fff",    label:"SP"   },
+  "freetrade.io":     { bg:"#FF5F57", text:"#fff",    label:"FT"   },
+  "plum.com":         { bg:"#7B5EA7", text:"#fff",    label:"PL"   },
+  "moneyfarm.com":    { bg:"#00C4B4", text:"#fff",    label:"MF"   },
+  "wealthify.com":    { bg:"#6366F1", text:"#fff",    label:"W"    },
 };
 
 function CompanyLogo({ domain, fallback, size = 32 }) {
@@ -2389,7 +2393,10 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
         )}
 
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>
-          Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.
+          Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.{" "}
+          <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy Policy</a>
+          {" · "}
+          <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms of Service</a>
         </p>
       </ContentWrap>
     </PageWrap>
