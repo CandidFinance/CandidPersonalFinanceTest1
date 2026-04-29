@@ -122,6 +122,43 @@ function isPensionContributing(d) {
   return +d.myContribution > 0;
 }
 
+// ── Pension return ratio (salary sacrifice vs relief at source) ───────────────────────
+function pensionReturnRatio(d, m) {
+  const isSS = d.pensionType === "sacrifice";
+  const niSaving = isSS && m.salary > 50270 ? 0.02 : 0;
+  return 1 / Math.max(0.01, 1 - (m.tr + niSaving));
+}
+function pensionReturnLabel(d, m) {
+  const ratio = pensionReturnRatio(d, m);
+  if (d.pensionType === "sacrifice") return `1:${ratio.toFixed(2)} — includes income tax + NI saving (employer never sees this income)`;
+  if (d.pensionType === "relief") return `1:${ratio.toFixed(2)} — income tax relief only (claim higher rate via self-assessment if applicable)`;
+  const low = (1 / Math.max(0.01, 1 - m.tr)).toFixed(2);
+  const high = (1 / Math.max(0.01, 1 - (m.tr + 0.02))).toFixed(2);
+  return low === high ? `1:${low}` : `1:${low}–1:${high} — check your payslip: if pension deduction appears before tax, it's likely salary sacrifice`;
+}
+
+// ── Month-by-month student loan simulator ────────────────────────────────────────────
+function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRate, repaymentThreshold, repaymentRate, maxYears = 30) {
+  let balance = openingBalance;
+  let salary = annualSalary;
+  let totalInterest = 0;
+  let totalPaid = 0;
+  const monthlyRate = interestRate / 12;
+  for (let month = 0; month < maxYears * 12; month++) {
+    if (balance <= 0) break;
+    const interest = balance * monthlyRate;
+    balance += interest;
+    totalInterest += interest;
+    const annualRepayment = Math.max(0, (salary - repaymentThreshold) * repaymentRate);
+    const monthlyRepayment = annualRepayment / 12;
+    const payment = Math.min(monthlyRepayment, balance);
+    balance -= payment;
+    totalPaid += payment;
+    if ((month + 1) % 12 === 0) salary *= (1 + salaryGrowthRate);
+  }
+  return { totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid), cleared: balance <= 0 };
+}
+
 // ── Equivalence engine ────────────────────────────────────────────────────────
 // Returns a witty real-world comparison for a £ saving
 function getEquivalence(amount) {
@@ -391,8 +428,8 @@ function getModuleInsights(key, d, m) {
           tooltip:`Your employer matches up to ${empPct}% of your salary (${fmt(empPct/100*m.salary)}/yr). You're contributing ${myPct}% (${fmt(myPct/100*m.salary)}/yr). The gap — ${fmt(employerLeaving)}/yr — is money your employer would pay that you are not claiming. This is the highest-priority fix.`
         },
         {
-          label:"Tax relief rate", value: trPct+"%", flag: false,
-          tooltip:`Every £${100-trPct} you contribute, the government adds £${trPct} via tax relief — making the effective contribution ${fmt(100)}. A ${trPct}% rate taxpayer contributing £1,000/yr actually costs them £${100-trPct}0 in take-home pay. Higher-rate relief is claimed via self-assessment if not applied at source.`
+          label:"Pension return ratio", value: pensionReturnLabel(d, m), flag: false,
+          tooltip:`For every £1 you put into your pension, you get back ${pensionReturnRatio(d,m).toFixed(2)} in pension value thanks to tax (${d.pensionType==="sacrifice"?"and NI":""}) relief. ${d.pensionType==="sacrifice"?"Salary sacrifice: contributions reduce your gross pay — you save income tax AND employee NI at 2% on earnings above £50,270.":d.pensionType==="relief"?"Relief at source / net pay: your pension provider claims basic-rate tax relief automatically. Higher-rate taxpayers must claim the extra via self-assessment.":"Check your payslip — if pension appears before the income tax calculation it is likely salary sacrifice, which also saves NI."}`
         },
         {
           label:"Projected pot at retirement", value: fmt(m.projectedPot), flag: false,
@@ -706,7 +743,7 @@ function getModuleProducts(key, d, m) {
           ? `Your repayments are outstripping interest. You'll clear the loan in ~${baseProjection.clearYr} years. Overpaying saves interest at ${slRatePct}% — compare that to your savings rate (${cashRate}%). Net benefit of overpaying vs saving: ${effectiveBenefit > 0 ? `+${Math.round(effectiveBenefit*10)/10}%` : "negative — save instead"}.`
           : `At ${slRatePct}% interest, overpaying this loan mostly reduces what gets written off — not what you repay. The better use of spare cash is almost certainly your pension or ISA.`,
         products: [
-          { name:"Your pension", type:"Alternative use of funds", rate:Math.round(m.tr*100)+"% instant return", badge:"Best alternative", feature:`A pension contribution gives an immediate ${Math.round(m.tr*100)}% return via tax relief. Even if your loan balance is growing, this outperforms the ${slRatePct}% loan rate for most people.`, cta:"Go to Pension", highlight:!m.willClear, internalLink:"pension" },
+          { name:"Your pension", type:"Alternative use of funds", rate:`1:${pensionReturnRatio(d,m).toFixed(2)} return`, badge:"Best alternative", feature:`A pension contribution gives an immediate 1:${pensionReturnRatio(d,m).toFixed(2)} return via tax${d.pensionType==="sacrifice"?" and NI":""} relief. ${pensionReturnLabel(d,m)}. Even when the loan balance is growing, this outperforms the ${slRatePct}% loan rate for most people.`, cta:"Go to Pension", highlight:!m.willClear, internalLink:"pension" },
           { name:"Cash ISA", type:"Alternative use of funds", rate:`Up to 5.08% AER`, badge:"Tax-free", feature:`Your savings rate is ${cashRate}%. Net benefit of overpaying vs saving: ${effectiveBenefit > 0 ? `${Math.round(effectiveBenefit*10)/10}% in favour of overpaying` : "saving wins — keep cash in ISA"}.`, cta:"Go to Savings", highlight:false, internalLink:"cash" },
           { name:"Student Finance", type:"Official balance check", rate:"", badge:"Free", feature:"Verify your exact balance, interest rate and repayment history at studentfinance.service.gov.uk.", cta:"Check balance", highlight:false },
         ],
@@ -1275,6 +1312,18 @@ function OnboardingStep({ step, d, set }) {
             <Field label="Target retirement age"><input style={INP} type="number" value={d.retirementAge} onChange={e => set("retirementAge",e.target.value)} placeholder="65"/></Field>
             <Field label={<>NI years completed <InfoTooltip text="Your National Insurance record determines your State Pension. You need 35 qualifying years for the full new State Pension (currently £221.20/week). Fewer qualifying years = a proportionally smaller State Pension. Check your record for free at gov.uk/check-state-pension — you can also fill gaps by paying voluntary contributions."/></>} hint="Check via HMRC / Personal Tax Account"><input style={INP} type="number" value={d.niYears||""} onChange={e=>set("niYears",e.target.value)} placeholder="e.g. 12"/></Field>
           </div>
+          <Field label="How are your pension contributions made?" hint="Affects the exact return ratio — salary sacrifice saves NI too">
+            <Toggle value={d.pensionType||""} onChange={v=>set("pensionType",v)} options={[
+              {value:"sacrifice", label:"Salary sacrifice"},
+              {value:"relief",   label:"Relief at source / net pay"},
+              {value:"",         label:"Not sure"},
+            ]}/>
+            <p style={{fontSize:"11px",color:MUT,marginTop:"6px",lineHeight:1.5}}>
+              {d.pensionType==="sacrifice" ? "Contributions come off your gross pay before tax — check your payslip for a deduction labelled 'pension' before income tax." :
+               d.pensionType==="relief"   ? "Contributions come from your take-home pay — your provider claims basic rate relief from HMRC, higher rate via self-assessment." :
+               "Check your payslip — if the pension deduction appears before tax is calculated, it's likely salary sacrifice."}
+            </p>
+          </Field>
         </div>
       ) : (
         <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"16px",marginTop:"4px"}}>
@@ -2782,7 +2831,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
               </div>
               {/* 1% nudge chip */}
               <div style={{marginTop:"10px",borderLeft:`4px solid ${GOLD}`,background:"rgba(196,150,58,0.07)",borderRadius:"0 8px 8px 0",padding:"10px 14px",fontSize:"13px",color:G,lineHeight:1.5}}>
-                ↑ <strong>1% more contribution = ~{fmt(nudge1pct)} more at retirement</strong> — at {Math.round(m.tr*100)}% tax relief it costs you {fmt(Math.round(salary*0.01/12*(1-m.tr)))}/mo in take-home.
+                ↑ <strong>1% more contribution = ~{fmt(nudge1pct)} more at retirement</strong> — return ratio {pensionReturnLabel(d, m)}, net cost {fmt(Math.round(salary*0.01/12*(1-m.tr)))}/mo after tax relief.
               </div>
             </div>
           );
@@ -2970,20 +3019,28 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
 
                     {/* Personalised marginal return curve — only when loan will clear */}
                     {products.slSection.willClear && m.loanBal > 0 && (() => {
-                      const slR = products.slSection.slRatePct / 100;
                       const writeOffYr = products.slSection.writeOffYr;
-                      const annRep = Math.max(1, m.annualRepayment);
-                      const pensionReturn = 1 / Math.max(0.01, 1 - m.tr);
+                      const pensionReturn = pensionReturnRatio(d, m);
                       const mortRate = d.hasMortgage === "yes" && +d.mortgageRate > 0 ? +d.mortgageRate : 4.5;
                       const mortReturn = 1 + mortRate / 100;
-                      const STEPS = 80;
-                      const data = Array.from({ length: STEPS + 1 }, (_, i) => {
-                        const amt = (m.loanBal * i) / STEPS;
-                        const remBal = m.loanBal - amt;
-                        if (remBal <= 0) return { amt, ratio: 1.0 };
-                        const yrsLeft = Math.min(writeOffYr, remBal / annRep);
-                        return { amt, ratio: 1 + slR * yrsLeft * 0.5 };
-                      });
+                      // Plan config for simulator
+                      const planRate = d.studentLoan === "plan1" ? 0.05 : 0.075;
+                      const planThreshold = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
+                      const growthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.03;
+                      // Base case (no overpayment) — run once
+                      const baseCase = simulateLoan(m.loanBal, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+                      // Small-amount case for y-intercept
+                      const tiny = simulateLoan(Math.max(0, m.loanBal - 100), m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+                      const tinyIntSaved = Math.max(0, baseCase.totalInterest - tiny.totalInterest);
+                      const yIntercept = 1 + tinyIntSaved / 100;
+                      const STEPS = 36;
+                      const data = [{ amt: 0, ratio: yIntercept }, ...Array.from({ length: STEPS }, (_, i) => {
+                        const amt = (m.loanBal * (i + 1)) / STEPS;
+                        if (amt >= m.loanBal) return { amt: m.loanBal, ratio: 1.0 };
+                        const oc = simulateLoan(m.loanBal - amt, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+                        const intSaved = Math.max(0, baseCase.totalInterest - oc.totalInterest);
+                        return { amt, ratio: (amt + intSaved) / amt };
+                      })];
                       const yMax = Math.max(pensionReturn + 0.3, data[0].ratio + 0.15, 1.6);
                       const yMin = 0.92;
                       const VW = 680, VH = 320, PL = 64, PR = 20, PT = 24, PB = 56;
@@ -3017,7 +3074,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
                             ))}
                             {/* Pension return reference */}
                             <line x1={PL} x2={VW-PR} y1={sy(pensionReturn)} y2={sy(pensionReturn)} stroke="#d4b97a" strokeWidth="2.5" strokeDasharray="10,5"/>
-                            <text x={VW-PR-8} y={sy(pensionReturn)-10} fontSize="14" fontWeight="700" fill="#d4b97a" textAnchor="end">Pension {trPct}% tax relief ({pensionReturn.toFixed(2)}×)</text>
+                            <text x={VW-PR-8} y={sy(pensionReturn)-10} fontSize="14" fontWeight="700" fill="#d4b97a" textAnchor="end">Pension {d.pensionType==="sacrifice"?"(salary sacrifice)":d.pensionType==="relief"?"(relief at source)":"return"} {pensionReturn.toFixed(2)}×</text>
                             {/* Mortgage reference */}
                             {sy(mortReturn) > PT + 20 && sy(mortReturn) < VH-PB - 20 && (
                               <>
@@ -3047,23 +3104,28 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
                             <line x1={PL} x2={PL} y1={PT} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="3"/>
                             {/* Speech bubble at crossover */}
                             {crossX !== null && (() => {
-                              const bx = Math.min(crossX - 10, VW - PR - 240);
-                              const by = crossY - 70;
+                              const bx = Math.min(crossX - 10, VW - PR - 270);
+                              const by = crossY - 74;
                               return (
                                 <g>
-                                  <rect x={bx} y={by} width={230} height={52} rx="8" fill={G}/>
+                                  <rect x={bx} y={by} width={258} height={56} rx="8" fill={G}/>
                                   <polygon points={`${crossX-8},${crossY-18} ${crossX},${crossY-4} ${crossX+8},${crossY-18}`} fill={G}/>
-                                  <text x={bx+14} y={by+22} fontSize="14" fontWeight="700" fill={WHITE}>Beyond {fmt(Math.round(crossAmt/1000)*1000)}: pension wins</text>
-                                  <text x={bx+14} y={by+40} fontSize="13" fill="rgba(255,255,255,0.7)">{trPct}% relief &gt; loan interest rate</text>
+                                  <text x={bx+14} y={by+24} fontSize="14" fontWeight="700" fill={WHITE}>Beyond {fmt(Math.round(crossAmt/1000)*1000)}: pension wins</text>
+                                  <text x={bx+14} y={by+44} fontSize="13" fill="rgba(255,255,255,0.75)">Your {pensionReturn.toFixed(2)}× return beats the loan rate</text>
                                 </g>
                               );
                             })()}
                           </svg>
-                          {crossAmt === null && (
-                            <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>
-                              Your pension return ({trPct}% tax relief = {pensionReturn.toFixed(2)}×) exceeds the loan marginal return at all overpayment levels — pension contributions are the better use of spare cash.
-                            </div>
-                          )}
+                          {crossAmt === null && (() => {
+                            const lastRatio = data[data.length - 1]?.ratio ?? 1;
+                            if (data[0].ratio < pensionReturn) {
+                              return <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>Every £1 works harder in your pension than on your loan — your {pensionReturn.toFixed(2)}× pension return ({pensionReturnLabel(d,m)}) exceeds the loan marginal return at all overpayment levels.</div>;
+                            }
+                            if (lastRatio > pensionReturn) {
+                              return <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>Overpaying your loan may beat your pension at current contribution levels — your loan marginal return exceeds your {pensionReturn.toFixed(2)}× pension return throughout. Consider clearing the loan before maximising pension contributions.</div>;
+                            }
+                            return null;
+                          })()}
                         </div>
                       );
                     })()}
@@ -3605,7 +3667,7 @@ const BLANK_DATA = {
   hasInvestments:"no", isaUsedThisYear:"", isaPreviousBalance:"", isaType:"none", unwrappedValue:"", unrealisedGains:"",
   isaThisYearCash:"", isaThisYearSS:"", isaThisYearLISA:"", isaThisYearOther:"",
   isaPrevCash:"", isaPrevSS:"", isaPrevLISA:"", isaPrevOther:"",
-  hasPension:"no", myContribution:"", employerMatch:"", potValue:"", potValue2:"", retirementAge:"65",
+  hasPension:"no", myContribution:"", employerMatch:"", potValue:"", potValue2:"", retirementAge:"65", pensionType:"",
   niYears:"",
   studentLoan:"none", loanBalance:"",
   hasMortgage:"no", mortgageType:"fixed", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
