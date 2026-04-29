@@ -128,8 +128,10 @@ function moduleScoreDelta(status) {
 
 // ── User contributing to pension ────────────────────────────────────────────────────────
 function isPensionContributing(d) {
+  // pensionType has zero effect here — only affects return ratio
   if (d.hasPension !== "yes") return false;
-  return +d.myContribution > 0;
+  const pct = Number(d.myContribution);
+  return isNaN(pct) || d.myContribution === "" ? false : pct > 0;
 }
 
 // ── Pension return ratio (salary sacrifice vs relief at source) ───────────────────────
@@ -980,7 +982,7 @@ function ProgressBar({ pct }) {
   );
 }
 
-function StepProgress({ step, steps, onStepClick }) {
+function StepProgress({ step, steps, onStepClick, isEditMode }) {
   return (
     <div style={{background:WHITE,borderBottom:`1px solid ${CDARK}`,padding:"20px 24px",flexShrink:0}}>
       <div style={{maxWidth:"580px",margin:"0 auto",display:"flex",alignItems:"center"}}>
@@ -988,7 +990,7 @@ function StepProgress({ step, steps, onStepClick }) {
           const done = i < step;
           const current = i === step;
           const size = current ? 34 : 28;
-          const clickable = done && !!onStepClick;
+          const clickable = (isEditMode || done) && !!onStepClick && i !== step;
           return (
             <div key={i} style={{display:"flex",alignItems:"center",flex: i < steps.length - 1 ? 1 : 0}}>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",flexShrink:0}}>
@@ -996,21 +998,21 @@ function StepProgress({ step, steps, onStepClick }) {
                   onClick={clickable ? () => onStepClick(i) : undefined}
                   style={{
                     width:`${size}px`, height:`${size}px`, borderRadius:"50%",
-                    background: done ? G : current ? WHITE : "rgba(22,47,36,0.08)",
-                    border: current ? `2px solid ${GOLD}` : done ? "none" : "2px solid rgba(22,47,36,0.15)",
+                    background: done ? G : current ? WHITE : isEditMode ? "rgba(22,47,36,0.12)" : "rgba(22,47,36,0.08)",
+                    border: current ? `2px solid ${GOLD}` : clickable ? `2px solid rgba(22,47,36,0.3)` : done ? "none" : "2px solid rgba(22,47,36,0.15)",
                     display:"flex", alignItems:"center", justifyContent:"center",
                     transition:"all 0.3s ease",
                     cursor: clickable ? "pointer" : "default",
-                    opacity: clickable ? 1 : undefined,
+                    opacity: i > step && !isEditMode ? 0.4 : 1,
                   }}
-                  title={clickable ? `Go back to ${label}` : undefined}
+                  title={clickable ? `Jump to ${label}` : undefined}
                 >
                   {done
                     ? <span style={{color:WHITE,fontSize:"13px",fontWeight:700}}>✓</span>
-                    : <span style={{color: current ? G : MUT, fontSize:"12px", fontWeight:600}}>{i+1}</span>
+                    : <span style={{color: current ? G : isEditMode ? G : MUT, fontSize:"12px", fontWeight:600}}>{i+1}</span>
                   }
                 </div>
-                <span style={{fontSize:"10px",fontWeight:600,color:current?G:done?G:MUT,letterSpacing:"0.04em",whiteSpace:"nowrap",opacity:current?1:done?0.7:0.5}}>{label}</span>
+                <span style={{fontSize:"10px",fontWeight:600,color:current?G:done?G:MUT,letterSpacing:"0.04em",whiteSpace:"nowrap",opacity:current?1:done?0.7:(isEditMode?0.7:0.5)}}>{label}</span>
               </div>
               {i < steps.length - 1 && (
                 <div style={{flex:1,height:"2px",background: i < step ? G : "rgba(22,47,36,0.12)",marginBottom:"18px",marginLeft:"6px",marginRight:"6px",transition:"background 0.4s ease"}}/>
@@ -1019,6 +1021,9 @@ function StepProgress({ step, steps, onStepClick }) {
           );
         })}
       </div>
+      {isEditMode && (
+        <div style={{maxWidth:"580px",margin:"6px auto 0",textAlign:"center",fontSize:"11px",color:MUT}}>Click any step to jump directly to it</div>
+      )}
     </div>
   );
 }
@@ -1088,7 +1093,7 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
     <PageWrap>
       <NavBar center={`Step ${step+1} of ${steps.length} — ${steps[step]}`}
         right={insights ? <GhostBtn onClick={onBackToDashboard}>← Back to report</GhostBtn> : null}/>
-      <StepProgress step={step} steps={steps} onStepClick={onStepClick}/>
+      <StepProgress step={step} steps={steps} onStepClick={onStepClick} isEditMode={!!insights}/>
       <ContentWrap>
         <OnboardingStep step={step} d={d} set={set}/>
         <div style={{display:"flex",gap:"10px",marginTop:"40px"}}>
@@ -1577,9 +1582,17 @@ function computeModuleStatuses(d, m) {
   } else if (accessType === "partial") {
     accessLabel = accessOk ? "Some cash may not be immediately accessible" : null;
   }
+  // Premium bonds: surplus above emergency buffer could earn more in Cash ISA
+  const bondsHeld = +d.premiumBonds||0;
+  const bondsSurplus = Math.max(0, bondsHeld - m.emergencyBuffer);
+  const bondsYieldGain = Math.round(bondsSurplus * (0.049 - 0.044));
+  const hasBondOpportunity = bondsSurplus > 1000 && bondsYieldGain > 50;
+
   let cashImpactLabel;
   if (tooMuchCash) {
     cashImpactLabel = `${fmt(Math.round(m.emergencyExcess))}/yr earning below potential above buffer`;
+  } else if (hasBondOpportunity) {
+    cashImpactLabel = `${fmt(bondsYieldGain)}/yr by switching surplus bonds to Cash ISA`;
   } else if (accessLabel) {
     cashImpactLabel = accessLabel;
   } else if (cashImpact > 0) {
@@ -1588,10 +1601,9 @@ function computeModuleStatuses(d, m) {
     cashImpactLabel = null;
   }
   s.cash = {
-    // Never show critical for emergency cash when emergencyFund > emergencyBuffer
     status: tooMuchCash || m.annualYieldGap > 800 ? "critical"
-          : m.annualYieldGap > 200 || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
-    impact: cashImpact,
+          : m.annualYieldGap > 200 || hasBondOpportunity || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
+    impact: Math.max(cashImpact, hasBondOpportunity ? bondsYieldGain : 0),
     impactLabel: cashImpactLabel,
   };
 
@@ -1877,7 +1889,9 @@ function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
   );
 }
 
-function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef }) {
+function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
+  const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
+  const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
       if (!insights) return null;
@@ -1915,9 +1929,15 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
       ? local.status
       : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
     const rawSummary = aiMod?.summary || (local.status !== "na" ? `Review your ${mm.title.toLowerCase()} situation.` : "N/A");
-    // For pension: if local says contributing but AI says otherwise, use local-derived summary
-    const summary = (mm.key === "pension" && isPensionContributing(d) && rawSummary.toLowerCase().includes("no pension"))
-      ? `You're contributing ${d.myContribution}% with ${d.employerMatch}% employer match. Review your bonus sacrifice and projected pot.`
+    // For pension: if contributing, never show AI copy that says "no pension" or "start contributions"
+    const pensionContrib = mm.key === "pension" && isPensionContributing(d);
+    const aiHasFalsePositive = pensionContrib && (
+      rawSummary.toLowerCase().includes("no pension") ||
+      rawSummary.toLowerCase().includes("start contribution") ||
+      rawSummary.toLowerCase().includes("not contributing")
+    );
+    const summary = aiHasFalsePositive
+      ? `Contributing ${d.myContribution||""}% with ${d.employerMatch||"0"}% employer match. ${m.missedMatch > 0 ? `Increase to ${d.employerMatch}% to capture ${fmt(m.missedMatch)}/yr in free employer match.` : "Review your projected pot and bonus sacrifice options."}`
       : rawSummary;
     // Always use local impact for sorting — AI doesn't provide numeric impact
     const impact = local.impact || 0;
@@ -2058,7 +2078,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
 
         {/* Score card */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
-          <ScoreRing score={insights.score} pulse={showScorePulse} delta={lastScoreDelta} moduleName={lastCompletedModule ? (MODULE_META.find(mm=>mm.key===lastCompletedModule)?.title||null) : null}/>
+          <ScoreRing score={displayScore} pulse={showScorePulse} delta={lastScoreDelta} moduleName={lastCompletedModule ? (MODULE_META.find(mm=>mm.key===lastCompletedModule)?.title||null) : null}/>
           <div style={{flex:1,minWidth:"200px"}}>
             <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"8px"}}>Your Candid Score</div>
             <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"10px"}}>{insights.headline}</h2>
@@ -2075,6 +2095,11 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
               if (d.includeInsurance !== "yes") {
                 const t = ((p.title||"")+" "+(p.description||"")).toLowerCase();
                 if (t.includes("insur") || t.includes("life cover") || t.includes("income protect") || t.includes("critical illness")) return false;
+              }
+              // Never show "start contributions" when already contributing and no missed match
+              if (isPensionContributing(d) && m.missedMatch === 0) {
+                const t = ((p.title||"")+" "+(p.description||"")).toLowerCase();
+                if (t.includes("start pension") || t.includes("start contribution") || t.includes("no pension")) return false;
               }
               return true;
             })
@@ -2160,57 +2185,25 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
     style={{
       background: WHITE,
       borderRadius: "12px",
-      padding: "20px 22px",
+      padding: "14px 18px",
       border: "1px solid rgba(22,47,36,0.09)",
-      marginBottom: "24px",
+      marginBottom: "16px",
       cursor: "pointer",
     }}
   >
-    {/* Header + toggle */}
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: "14px",
-        flexWrap: "wrap",
-        gap: "8px"
-      }}
-    >
-      <span style={{ fontFamily: SERIF, fontSize: "17px", color: G, fontWeight: 600 }}>
-        Net worth snapshot
-      </span>
-          </div>
-
-    {/* Net worth headline */}
-    <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "16px" }}>
-      <span
-        style={{
-          fontFamily: SERIF,
-          fontSize: "24px",
-          fontWeight: 700,
-          color: netWorthPositive ? "#2d6b4a" : "#c0392b"
-        }}
-      >
-        {fmt(Math.abs(m.netWorth))}
-      </span>
-      <span style={{ fontSize: "12px", color: MUT }}>
-        {netWorthPositive ? "net positive" : "net negative"}
-      </span>
+    {/* Collapsed row: title + net worth + assets/liabilities + toggle — all on one line */}
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",flexWrap:"wrap"}}>
+      <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
+        <span style={{fontFamily:SERIF,fontSize:"14px",color:G,fontWeight:600}}>Net worth</span>
+        <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:netWorthPositive?"#2d6b4a":"#c0392b",lineHeight:1}}>{fmt(Math.abs(m.netWorth))}</span>
+        <span style={{fontSize:"11px",color:MUT}}>{netWorthPositive?"net positive":"net negative"}</span>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
+        <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase"}}>Assets {fmt(m.totalAssets)}</div>
+        <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase"}}>Liabilities {fmt(m.totalLiabilities)}</div>
+        <span style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>{netWorthExpanded?"↑":"↓"}</span>
+      </div>
     </div>
-
-    {/* Assets / Liabilities summary row + breakdown toggle */}
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px",gap:"16px"}}>
-  <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase"}}>
-    Assets — {fmt(m.totalAssets)}
-  </div>
-  <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase"}}>
-    Liabilities — {fmt(m.totalLiabilities)}
-  </div>
-  <span style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>
-    {netWorthExpanded ? "Breakdown ↑" : "Breakdown ↓"}
-  </span>
-</div>
         
     {/* Detailed breakdown (toggle) */}
     {netWorthExpanded && (
@@ -2942,6 +2935,41 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
             )}
           </div>
         )}
+
+        {/* Premium bonds yield opportunity */}
+        {moduleKey === "cash" && bondsVal > 0 && (() => {
+          const bondsSurplusAmt = Math.max(0, bondsVal - m.emergencyBuffer);
+          const annualGain = Math.round(bondsSurplusAmt * (0.049 - 0.044));
+          if (bondsSurplusAmt < 1000 || annualGain <= 0) return null;
+          return (
+            <div className="fu3" style={{background:"rgba(196,150,58,0.06)",border:`1px solid ${GOLD}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
+                <span style={{fontSize:"16px"}}>💰</span>
+                <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Yield opportunity: surplus premium bonds</span>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"12px"}}>
+                <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
+                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Your bonds surplus</div>
+                  <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700}}>{fmt(bondsSurplusAmt)}</div>
+                  <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>above buffer</div>
+                </div>
+                <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
+                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Prize draw equiv.</div>
+                  <div style={{fontFamily:SERIF,fontSize:"17px",color:GOLD,fontWeight:700}}>~4.4%</div>
+                  <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax-free avg.</div>
+                </div>
+                <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
+                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Best Cash ISA</div>
+                  <div style={{fontFamily:SERIF,fontSize:"17px",color:"#2d6b4a",fontWeight:700}}>4.9%</div>
+                  <div style={{fontSize:"10px",color:"#2d6b4a",marginTop:"2px"}}>guaranteed</div>
+                </div>
+              </div>
+              <div style={{background:"rgba(45,107,74,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
+                Moving {fmt(bondsSurplusAmt)} of surplus bonds to a 4.9% Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average. Premium bonds are government-backed and penalty-free to withdraw; this is a personal risk decision based on whether you value guaranteed income over the chance of tax-free prizes.
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Cross-module links */}
         {crossLinks.length > 0 && (
@@ -3761,6 +3789,7 @@ export default function Candid() {
   const [showScorePulse,  setShowScorePulse]  = useState(false);
   const [lastScoreDelta,  setLastScoreDelta]  = useState(0);
   const [lastCompletedModule, setLastCompletedModule] = useState(null);
+  const [scoreDeltas, setScoreDeltas] = useState([]);
   const feedbackFired = useRef(false);
   const supaRowId = useRef(null);
   const prevScoreRef = useRef(null);
@@ -3839,15 +3868,18 @@ export default function Candid() {
       if (!prev.includes(key)) {
         posthog.capture("module_completed", { module_key: key, total_completed: next.length });
         supaUpdate({ modules_completed: next.length });
-        // Local score delta animation
         const localStatuses = computeModuleStatuses(d, m);
         const delta = moduleScoreDelta(localStatuses[key]?.status);
         if (delta > 0) {
+          setScoreDeltas(sd => [...sd, { key, delta, timestamp: Date.now() }]);
           setLastScoreDelta(delta);
           setLastCompletedModule(key);
           setShowScorePulse(true);
           setTimeout(() => setShowScorePulse(false), 2500);
         }
+      } else {
+        // Unmark: remove that module's delta from the running total
+        setScoreDeltas(sd => sd.filter(s => s.key !== key));
       }
       return next;
     });
@@ -4006,7 +4038,7 @@ Return exactly this structure:
         onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
         showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
-        prevScoreRef={prevScoreRef}/>
+        prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
     </>
   );
