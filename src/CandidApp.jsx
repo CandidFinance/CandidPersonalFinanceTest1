@@ -34,6 +34,8 @@ button:active{transform:scale(0.98);}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @keyframes coinFloat{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-40px) scale(1.3);}}
+@keyframes scorePulse{0%{box-shadow:0 0 0 0 rgba(196,150,58,0.6);}70%{box-shadow:0 0 0 14px rgba(196,150,58,0);}100%{box-shadow:0 0 0 0 rgba(196,150,58,0);}}
+@keyframes badgeFadeUp{0%{opacity:0;transform:translateY(8px);}20%{opacity:1;transform:translateY(0);}70%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-6px);}}
 @keyframes btnFlash{0%{background:#162f24;}40%{background:#c4963a;}100%{background:#162f24;}}
 @keyframes btnGold{0%{background:#162f24;}40%{background:#c4963a;}100%{background:#162f24;}}
 @keyframes scalePulse{0%{transform:scale(1);}50%{transform:scale(1.08);}100%{transform:scale(1);}}
@@ -114,6 +116,14 @@ function FmtInput({ value, onChange, placeholder, fmtType, step, style }) {
       />
     </div>
   );
+}
+
+// ── Local score delta per module completion ───────────────────────────────────────────
+function moduleScoreDelta(status) {
+  if (status === "critical") return 8;
+  if (status === "attention") return 4;
+  if (status === "ok") return 1;
+  return 0;
 }
 
 // ── User contributing to pension ────────────────────────────────────────────────────────
@@ -254,8 +264,16 @@ const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
 function calcMetrics(d) {
   const salaryGrowthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
   const salary = +d.salary||0, expenses = +d.monthlyExpenses||0,
-        cash = +d.cashSavings||0, bonds = +d.premiumBonds||0,
-        totalLiquid = cash + bonds,
+        bonds = +d.premiumBonds||0;
+  // Cash: prefer sum of cashTiers (more granular); fall back to d.cashSavings
+  const tiers = Array.isArray(d.cashTiers) ? d.cashTiers : [];
+  const tiersTotal = tiers.reduce((s, t) => s + (+t.amount||0), 0);
+  const tiersWeightedRate = tiersTotal > 0
+    ? tiers.reduce((s, t) => s + (+t.amount||0) * (+t.rate||0), 0) / tiersTotal
+    : 0;
+  const effectiveSavingsRate = tiersTotal > 0 ? tiersWeightedRate : (+d.savingsRate||3.5);
+  const cash = tiersTotal > 0 ? tiersTotal : (+d.cashSavings||0);
+  const totalLiquid = cash + bonds,
         runwayMonths = expenses > 0 ? totalLiquid / expenses : 0,
         bufferMonths = d.higherBuffer === "yes" ? 9 : 6,
         emergencyFund = totalLiquid,
@@ -263,8 +281,8 @@ function calcMetrics(d) {
         emergencyShortfall = Math.max(0, emergencyBuffer - emergencyFund),
         emergencyExcess = Math.max(0, emergencyFund - emergencyBuffer),
         surplusCash = emergencyExcess,
-        // ISA: derive from granular fields, keep d.isaUsedThisYear as fallback for backwards compat
-        isaUsedThisYearCalc = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0) || (+d.isaUsedThisYear||0),
+        // ISA: always derived from granular breakdown fields
+        isaUsedThisYearCalc = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0),
         isaHeadroom = Math.max(0, 20000 - isaUsedThisYearCalc),
         myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0,
         missedMatch = Math.max(0, empCapPct - myPct) * salary / 100,
@@ -274,13 +292,6 @@ function calcMetrics(d) {
         annualContrib = (myPct + empCapPct) / 100 * salary,
         projectedPot = potVal * Math.pow(1.06, years) +
           annualContrib * ((Math.pow(1.06, years) - 1) / 0.06);
-  // Weighted average cash savings rate across tiers
-  const tiers = Array.isArray(d.cashTiers) ? d.cashTiers : [];
-  const tiersTotal = tiers.reduce((s, t) => s + (+t.amount||0), 0);
-  const tiersWeightedRate = tiersTotal > 0
-    ? tiers.reduce((s, t) => s + (+t.amount||0) * (+t.rate||0), 0) / tiersTotal
-    : 0;
-  const effectiveSavingsRate = tiersTotal > 0 ? tiersWeightedRate : (+d.savingsRate||3.5);
   let annualRepayment = 0, willClear = false;
   const loanBal = +d.loanBalance||0;
   const slGrow = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
@@ -1243,6 +1254,18 @@ function OnboardingStep({ step, d, set }) {
         </button>
       </Field>
       <Field label="Premium bonds (£)" hint="Max £50,000. Enter 0 if none."><FmtInput fmtType="gbp" value={d.premiumBonds} onChange={v=>set("premiumBonds",v)} placeholder="e.g. 10,000"/></Field>
+      <Field label="Is your cash savings in an easy-access account?" hint="Affects emergency fund accessibility assessment">
+        <Toggle value={d.cashAccessType||""} onChange={v=>set("cashAccessType",v)} options={[
+          {value:"yes",     label:"Yes — instant access"},
+          {value:"partial", label:"Partially — some in notice accounts"},
+          {value:"no",      label:"No — notice or fixed term"},
+        ]}/>
+        <p style={{fontSize:"11px",color:MUT,marginTop:"6px",lineHeight:1.5}}>
+          {d.cashAccessType==="no" ? "Consider keeping at least 3 months of expenses in an instant-access account for emergencies." :
+           d.cashAccessType==="partial" ? "Some of your cash may not be immediately accessible in an emergency." :
+           "Instant-access cash can be withdrawn same day if needed."}
+        </p>
+      </Field>
     </div>
   );
   if (step === 2) return (
@@ -1475,14 +1498,14 @@ function LoadingScreen({ name, msgs }) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function ScoreRing({ score }) {
+function ScoreRing({ score, pulse, delta, moduleName }) {
   const r=50, circ=2*Math.PI*r, dash=(score/100)*circ;
   const col = score>=86 ? "#2d6b4a" : score>=66 ? "#2d6b4a" : score>=41 ? GOLD : "#c0392b";
   const lb  = score>=86 ? "Optimised" : score>=66 ? "On track" : score>=41 ? "Room to improve" : "Needs attention";
   return (
     <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
       <div style={{position:"relative",width:"124px",height:"124px"}}>
-        <svg width="124" height="124" style={{transform:"rotate(-90deg)"}}>
+        <svg width="124" height="124" style={{transform:"rotate(-90deg)",borderRadius:"50%",animation:pulse?"scorePulse 0.6s ease-out":"none"}}>
           <circle cx="62" cy="62" r={r} fill="none" stroke={`${col}28`} strokeWidth="9"/>
           <circle cx="62" cy="62" r={r} fill="none" stroke={col} strokeWidth="9" strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{transition:"stroke-dasharray 1.2s ease"}}/>
         </svg>
@@ -1491,6 +1514,11 @@ function ScoreRing({ score }) {
         </div>
       </div>
       <span style={{fontSize:"10px",fontWeight:700,color:col,letterSpacing:"0.07em",textTransform:"uppercase"}}>{lb}</span>
+      {pulse && delta > 0 && (
+        <div style={{animation:"badgeFadeUp 2.5s ease-out forwards",background:GOLD,color:G,borderRadius:"100px",padding:"3px 12px",fontSize:"12px",fontWeight:700,whiteSpace:"nowrap"}}>
+          +{delta} pts{moduleName ? ` · ${moduleName}` : ""}
+        </div>
+      )}
     </div>
   );
 }
@@ -1536,23 +1564,33 @@ function computeModuleStatuses(d, m) {
 
   const s = {};
 
-  // Cash — three states: too much (excess above 2× buffer), low yield, or healthy
+  // Cash — access type + yield gap + emergency buffer
   const cashImpact = Math.round(m.annualYieldGap + m.isaHeadroom * 0.05 * isaUrgencyBoost);
   const tooMuchCash = m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
-  const lowYield = m.savingsRate < 3.5 && m.emergencyFund > 0;
-  // Only flag "low cash" when genuinely zero — never show £0 warning when emergencyFund > 0
   const genuinelyLowCash = m.emergencyFund === 0 && m.expenses > 0;
+  const accessType = d.cashAccessType || "partial";
+  const accessOk = m.emergencyFund >= m.emergencyBuffer;
+  // Emergency access warnings — only critical when truly no cash at all
+  let accessLabel = null;
+  if (accessType === "no" && accessOk) {
+    accessLabel = `Cash not in easy-access — consider keeping ${m.bufferMonths} months in instant-access`;
+  } else if (accessType === "partial") {
+    accessLabel = accessOk ? "Some cash may not be immediately accessible" : null;
+  }
   let cashImpactLabel;
   if (tooMuchCash) {
     cashImpactLabel = `${fmt(Math.round(m.emergencyExcess))}/yr earning below potential above buffer`;
+  } else if (accessLabel) {
+    cashImpactLabel = accessLabel;
   } else if (cashImpact > 0) {
     cashImpactLabel = `${fmt(cashImpact)}/yr in yield gap vs best-buy rate`;
   } else {
     cashImpactLabel = null;
   }
   s.cash = {
+    // Never show critical for emergency cash when emergencyFund > emergencyBuffer
     status: tooMuchCash || m.annualYieldGap > 800 ? "critical"
-          : m.annualYieldGap > 200 || genuinelyLowCash ? "attention" : "ok",
+          : m.annualYieldGap > 200 || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
     impact: cashImpact,
     impactLabel: cashImpactLabel,
   };
@@ -1839,7 +1877,7 @@ function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
   );
 }
 
-function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged }) {
+function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef }) {
   const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
       if (!insights) return null;
@@ -1912,6 +1950,17 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
         <GhostBtn onClick={onReset}>Start over</GhostBtn>
       </div>}/>
       <ContentWrap maxWidth="780px">
+        {/* Score improvement banner (on regeneration) */}
+        {prevScoreRef?.current !== null && insights.score > (prevScoreRef?.current||0) && whatChangedOpen && (
+          <div style={{background:"rgba(45,107,74,0.1)",border:"1px solid rgba(45,107,74,0.3)",borderRadius:"10px",padding:"12px 18px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"12px"}}>
+            <span style={{fontSize:"20px"}}>📈</span>
+            <div>
+              <div style={{fontSize:"13px",fontWeight:700,color:"#2D6B4A"}}>Your score improved by +{insights.score - (prevScoreRef?.current||0)} points</div>
+              <div style={{fontSize:"12px",color:MUT}}>Your recent changes moved your Candid score from {prevScoreRef?.current} to {insights.score}</div>
+            </div>
+          </div>
+        )}
+
         {/* What changed banner */}
         {prevInsights && whatChangedOpen && (() => {
           const scoreDelta = insights.score - prevInsights.score;
@@ -2009,7 +2058,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
 
         {/* Score card */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
-          <ScoreRing score={insights.score}/>
+          <ScoreRing score={insights.score} pulse={showScorePulse} delta={lastScoreDelta} moduleName={lastCompletedModule ? (MODULE_META.find(mm=>mm.key===lastCompletedModule)?.title||null) : null}/>
           <div style={{flex:1,minWidth:"200px"}}>
             <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"8px"}}>Your Candid Score</div>
             <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"10px"}}>{insights.headline}</h2>
@@ -3612,12 +3661,19 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
         {/* Actions — mark reviewed + navigation */}
         <div className="fu5" style={{marginTop:"32px"}}>
           <div style={{position:"relative"}}>
-            {showCoins && (
-              <div style={{position:"relative",pointerEvents:"none",height:0}}>
-                <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",fontSize:"20px",animation:"coinFloat 0.9s ease-out forwards"}}>🪙</span>
-                <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",fontSize:"20px",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}>🪙</span>
-              </div>
-            )}
+            {showCoins && (() => {
+              const localStatuses = computeModuleStatuses(d, m);
+              const localDelta = moduleScoreDelta(localStatuses[moduleKey]?.status);
+              return (
+                <div style={{position:"relative",pointerEvents:"none",height:0}}>
+                  <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",fontSize:"20px",animation:"coinFloat 0.9s ease-out forwards"}}>🪙</span>
+                  <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",fontSize:"20px",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}>🪙</span>
+                  {localDelta > 0 && (
+                    <span style={{position:"absolute",top:"-12px",right:"calc(50% - 60px)",background:"#2D6B4A",color:WHITE,borderRadius:"100px",padding:"3px 10px",fontSize:"13px",fontWeight:700,animation:"coinFloat 0.9s ease-out 0.05s forwards",whiteSpace:"nowrap"}}>+{localDelta} pts</span>
+                  )}
+                </div>
+              );
+            })()}
             <button type="button"
               onClick={() => {
                 if (!isComplete) {
@@ -3669,7 +3725,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
 const BLANK_DATA = {
   name:"", age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"stable",
   monthlyExpenses:"", higherBuffer:"no",
-  cashSavings:"", savingsRate:"", premiumBonds:"",
+  cashSavings:"", savingsRate:"", premiumBonds:"", cashAccessType:"",
   cashTiers:[{amount:"",rate:""}],
   hasInvestments:"no", isaUsedThisYear:"", isaPreviousBalance:"", isaType:"none", unwrappedValue:"", unrealisedGains:"",
   isaThisYearCash:"", isaThisYearSS:"", isaThisYearLISA:"", isaThisYearOther:"",
@@ -3702,8 +3758,12 @@ export default function Candid() {
   const [completedModules, setCompletedModules] = useState([]);
   const [prevScreen,       setPrevScreen]       = useState("dashboard");
   const [feedbackOpen,    setFeedbackOpen]    = useState(false);
+  const [showScorePulse,  setShowScorePulse]  = useState(false);
+  const [lastScoreDelta,  setLastScoreDelta]  = useState(0);
+  const [lastCompletedModule, setLastCompletedModule] = useState(null);
   const feedbackFired = useRef(false);
-  const supaRowId = useRef(null); // tracks the inserted row for later patches
+  const supaRowId = useRef(null);
+  const prevScoreRef = useRef(null);
 
   async function supaUpdate(patch) {
     if (!supaRowId.current || !SUPA_URL || !SUPA_KEY) return;
@@ -3779,6 +3839,15 @@ export default function Candid() {
       if (!prev.includes(key)) {
         posthog.capture("module_completed", { module_key: key, total_completed: next.length });
         supaUpdate({ modules_completed: next.length });
+        // Local score delta animation
+        const localStatuses = computeModuleStatuses(d, m);
+        const delta = moduleScoreDelta(localStatuses[key]?.status);
+        if (delta > 0) {
+          setLastScoreDelta(delta);
+          setLastCompletedModule(key);
+          setShowScorePulse(true);
+          setTimeout(() => setShowScorePulse(false), 2500);
+        }
       }
       return next;
     });
@@ -3798,13 +3867,13 @@ export default function Candid() {
 }
 
   async function generateDashboard() {
-    if (insights) setPrevInsights(insights);
+    if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
     setScreen("loading");
     const prompt = `You are Candid, a UK personal finance guidance tool. Return ONLY valid JSON — no markdown, no backticks, no text outside the JSON.
 
 USER: Name: ${d.name||"User"}, Age: ${d.age||"?"}, Salary: £${d.salary||0}, Tax: ${m.taxBandLabel} rate (auto-calculated from £${m.adjustedNetIncome.toLocaleString()} adjusted net income)
-Cash: £${d.cashSavings||0} at ${d.savingsRate||4.5}%, Premium bonds: £${d.premiumBonds||0}, Monthly expenses: £${d.monthlyExpenses||0}
-Investments: ${d.hasInvestments==="yes" ? `ISA this year £${d.isaUsedThisYear||0} (${d.isaType||"unspecified"}), ISA previous years £${d.isaPreviousBalance||0}, total ISA £${(+d.isaUsedThisYear||0)+(+d.isaPreviousBalance||0)}, unwrapped £${d.unwrappedValue||0}, ~£${d.unrealisedGains||0} gains` : "None"}
+Cash: £${Math.round(m.cash)} at ${m.effectiveSavingsRate.toFixed(1)}%, Premium bonds: £${d.premiumBonds||0}, Monthly expenses: £${d.monthlyExpenses||0}
+Investments: ${d.hasInvestments==="yes" ? `ISA this year £${m.isaUsedThisYear} (${d.isaType||"unspecified"}), ISA previous years £${(+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0)||0}, total ISA £${m.isaUsedThisYear+((+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0))}, unwrapped £${d.unwrappedValue||0}, ~£${d.unrealisedGains||0} gains` : "None"}
 Pension: ${d.hasPension==="yes" ? `${d.myContribution}%/${d.employerMatch}% employer, pot ~£${d.potValue}, retire ${d.retirementAge}` : "No pension"}
 Student loan: ${d.studentLoan==="none" ? "None" : `${d.studentLoan}, ~£${d.loanBalance||0}`}
 Mortgage: ${d.hasMortgage==="yes" ? `£${d.mortgageBalance} at ${d.mortgageRate}%, £${d.monthlyMortgage}/mo` : "None"}
@@ -3934,8 +4003,10 @@ Return exactly this structure:
     <>
       <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
         onOpenModule={key => openModule(key, "dashboard")}
-        onEditInputs={() => { setStep(0); setScreen("onboarding"); /* completedModules intentionally preserved */ }}
-        prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}/>
+        onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
+        prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
+        showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
+        prevScoreRef={prevScoreRef}/>
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
     </>
   );
