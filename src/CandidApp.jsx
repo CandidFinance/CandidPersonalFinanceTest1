@@ -599,26 +599,6 @@ function getModuleInsightsExtended(key, d, m) {
           tooltip:`Your current ${fmt(jisaVal)} JISA balance, invested for ${runway} more years at 7% p.a., projects to ~${fmt(fvJISA)} by the time your child turns 18.` } : null,
       ].filter(Boolean);
     }
-    case "insurance": {
-      const hasMortgage = d.hasMortgage === "yes";
-      const hasKids = d.hasKids === "yes";
-      const noLife = d.hasLifeInsurance !== "yes";
-      const noIP   = d.hasIncomeProtection !== "yes";
-      const noCI   = d.hasCriticalIllness !== "yes";
-      const salary = m.salary;
-      const ipCostEst = Math.round(salary * 0.015 / 12);
-      const lifeCostEst = 15;
-      return [
-        { label:"Life insurance", value: d.hasLifeInsurance==="yes" ? "✓ In place" : "Not held", flag: noLife && (hasMortgage || hasKids),
-          tooltip:`Life insurance pays a lump sum if you die. ${hasMortgage ? "With a mortgage, this ensures your partner isn't left with a debt they can't service." : ""} ${hasKids ? "With children, it replaces your income until they're independent." : ""} Level term cover (same payout throughout) is the most common and cheapest form. A healthy 29-year-old can get £500,000 of cover for ~£${lifeCostEst}/month.` },
-        { label:"Income protection", value: d.hasIncomeProtection==="yes" ? "✓ In place" : "Not held", flag: noIP,
-          tooltip:`Income protection pays a proportion of your salary (typically 50-70%) if you can't work due to illness or injury. State sick pay (SSP) is only £116/week — far below your ${fmt(salary/52)}/week salary. At your income, this is arguably the most important insurance you can hold. Estimated cost: ~${fmt(ipCostEst)}/month.` },
-        { label:"Critical illness", value: d.hasCriticalIllness==="yes" ? "✓ In place" : "Not held", flag: noCI,
-          tooltip:`Critical illness cover pays a tax-free lump sum on diagnosis of a serious illness (cancer, heart attack, stroke, etc.). Unlike income protection it's a one-off payment — useful for clearing a mortgage or adapting your home. Often bundled with life insurance.` },
-        { label:"Contents / buildings", value: d.hasContentsInsurance==="yes" ? "✓ In place" : d.hasContentsInsurance==="na" ? "Renting (N/A)" : "Not held", flag: d.hasContentsInsurance==="no",
-          tooltip:`${hasMortgage ? "Buildings insurance is a legal requirement for most mortgages." : "Contents insurance protects your possessions against theft, fire, and accidental damage."} As a renter, your landlord covers buildings — but contents insurance is still worth having.` },
-      ];
-    }
     case "inheritance": {
       const estate  = +d.estateValue||0;
       const ihtThreshold = 325000;
@@ -852,23 +832,6 @@ function getModuleProductsExtended(key, d, m) {
         kidsSection: { monthly50, monthly100, runway, childPensionFV }
       };
     }
-    case "insurance": {
-      const hasMortgage = d.hasMortgage === "yes";
-      const hasKids = d.hasKids === "yes";
-      const salary = m.salary;
-      const ipReplacement = Math.round(salary * 0.6 / 12);
-      return {
-        heading:"Your protection gaps — and how to close them",
-        subheading: `Insurance isn't exciting — but the absence of it at the wrong moment is catastrophic. Based on your profile, ${[d.hasLifeInsurance!=="yes"&&"life insurance",d.hasIncomeProtection!=="yes"&&"income protection",d.hasCriticalIllness!=="yes"&&"critical illness cover"].filter(Boolean).join(", ")} ${[d.hasLifeInsurance,d.hasIncomeProtection,d.hasCriticalIllness].filter(v=>v!=="yes").length>1?"are":"is"} not in place.`,
-        products: [
-          { name:"Life insurance",       type:"Term cover",          rate:"From ~£10/month", badge: (!d.hasLifeInsurance||d.hasLifeInsurance!=="yes") ? "Not held" : "✓ Held", feature:`A healthy 29-year-old can get £500,000 of cover for as little as £10-15/month. ${hasMortgage?"Essential with a mortgage.":""} ${hasKids?"Critical with dependants.":""}`, cta:"Compare quotes", highlight:d.hasLifeInsurance!=="yes" && (hasMortgage||hasKids), appIcon:"🛡️", demoNote:"Would open Compare the Market" },
-          { name:"Income protection",    type:"Long-term sick pay",  rate:"50–70% of salary", badge:d.hasIncomeProtection!=="yes"?"Not held":"✓ Held", feature:`Replaces ~${fmt(ipReplacement)}/month of your income if illness stops you working. State sick pay covers only £116/week. This is the most overlooked insurance for high earners.`, cta:"Get a quote", highlight:d.hasIncomeProtection!=="yes", appIcon:"💼", demoNote:"Would open Drewberry" },
-          { name:"Critical illness",     type:"Lump sum on diagnosis",rate:"From ~£20/month", badge:d.hasCriticalIllness!=="yes"?"Not held":"✓ Held", feature:"Pays a tax-free lump sum on serious diagnosis. Often used to clear a mortgage or cover adaptation costs. Often bundled with life insurance for better value.", cta:"Get a quote", highlight:false, appIcon:"❤️", demoNote:"Would open Cavendish Online" },
-          { name:"Contents insurance",   type:"Home & possessions",  rate:"From ~£5/month",  badge:d.hasContentsInsurance==="no"?"Not held":"✓ Held / N/A", feature:`Protects your possessions against theft, fire, and damage. If renting, your landlord covers buildings — but your contents aren't covered unless you arrange your own policy.`, cta:"Compare quotes", highlight:d.hasContentsInsurance==="no", appIcon:"🏡", demoNote:"Would open MoneySupermarket" },
-        ],
-        disclaimer:"Insurance premiums vary by age, health, and circumstances. Quotes shown are illustrative. Always read the full policy terms. A financial adviser can help identify the right level of cover. Candid may earn a referral fee."
-      };
-    }
     case "inheritance": {
       const estate  = +d.estateValue||0;
       const ihtThreshold = 500000; // NRB + RNRB
@@ -927,9 +890,6 @@ function getCrossModuleLinks(key, d, m) {
   }
   if (key === "kids" && d.hasPension !== "yes") {
     links.push({ icon:"🏦", text:"Sorting your own pension before a child's JISA will give you more money to pass on in the long run.", label:"Set up your pension first", target:"pension" });
-  }
-  if (key === "insurance" && d.hasMortgage === "yes" && d.hasLifeInsurance !== "yes") {
-    links.push({ icon:"🏠", text:"Most mortgage providers recommend life insurance — your outstanding mortgage could become a burden on your estate or partner without it.", label:"Review mortgage", target:"mortgage" });
   }
   if (key === "mortgage" && m.isaHeadroom > 5000) {
     links.push({ icon:"📈", text:`Before overpaying your mortgage, consider whether maxing your ISA (${fmt(m.isaHeadroom)} remaining) is a better use of the same cash.`, label:"Review in Investments", target:"investments" });
@@ -1456,30 +1416,6 @@ function OnboardingStep({ step, d, set }) {
         </div>
       )}
 
-      {/* Insurance — optional section at end of debt step */}
-      <div style={{marginTop:"28px",paddingTop:"24px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
-        <Field label="Include insurance in your Candid report?" hint="Adds a module reviewing your life, income protection, and critical illness cover.">
-          <Toggle value={d.includeInsurance||"no"} onChange={v=>set("includeInsurance",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"Skip for now"}]}/>
-        </Field>
-        {d.includeInsurance === "yes" && (
-          <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"10px",padding:"16px",marginTop:"4px"}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
-              <Field label="Life insurance">
-                <Toggle value={d.hasLifeInsurance} onChange={v=>set("hasLifeInsurance",v)} options={[{value:"yes",label:"✓ In place"},{value:"no",label:"Not held"}]}/>
-              </Field>
-              <Field label="Income protection">
-                <Toggle value={d.hasIncomeProtection} onChange={v=>set("hasIncomeProtection",v)} options={[{value:"yes",label:"✓ In place"},{value:"no",label:"Not held"}]}/>
-              </Field>
-              <Field label="Critical illness cover">
-                <Toggle value={d.hasCriticalIllness} onChange={v=>set("hasCriticalIllness",v)} options={[{value:"yes",label:"✓ In place"},{value:"no",label:"Not held"}]}/>
-              </Field>
-              <Field label="Contents insurance">
-                <Toggle value={d.hasContentsInsurance} onChange={v=>set("hasContentsInsurance",v)} options={[{value:"yes",label:"✓ In place"},{value:"no",label:"Not held"},{value:"na",label:"Renting (N/A)"}]}/>
-              </Field>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
   return null;
@@ -1503,27 +1439,51 @@ function LoadingScreen({ name, msgs }) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function ScoreRing({ score, pulse, delta, moduleName }) {
-  const r=50, circ=2*Math.PI*r, dash=(score/100)*circ;
-  const col = score>=86 ? "#2d6b4a" : score>=66 ? "#2d6b4a" : score>=41 ? GOLD : "#c0392b";
-  const lb  = score>=86 ? "Optimised" : score>=66 ? "On track" : score>=41 ? "Room to improve" : "Needs attention";
+function ScoreRing({ score, delta = 0 }) {
+  const r = 50, circ = 2 * Math.PI * r;
+  const col = score >= 86 ? "#2d6b4a" : score >= 66 ? "#2d6b4a" : score >= 41 ? GOLD : "#c0392b";
+  const lb  = score >= 86 ? "Optimised" : score >= 66 ? "On track" : score >= 41 ? "Room to improve" : "Needs attention";
+  const [fadeDelta, setFadeDelta] = useState(false);
+  const prevDelta = useRef(0);
+  useEffect(() => {
+    if (delta > prevDelta.current) {
+      setFadeDelta(false);
+      const t = setTimeout(() => setFadeDelta(true), 1800);
+      prevDelta.current = delta;
+      return () => clearTimeout(t);
+    }
+    prevDelta.current = delta;
+  }, [delta]);
+  const baseScore = Math.max(0, score - delta);
+  const baseDash  = (baseScore / 100) * circ;
+  const totalDash = (score   / 100) * circ;
+  const deltaDash = Math.max(0, totalDash - baseDash);
   return (
     <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:"8px"}}>
       <div style={{position:"relative",width:"124px",height:"124px"}}>
-        <svg width="124" height="124" style={{transform:"rotate(-90deg)",borderRadius:"50%",animation:pulse?"scorePulse 0.6s ease-out":"none"}}>
+        <svg width="124" height="124" style={{transform:"rotate(-90deg)"}}>
           <circle cx="62" cy="62" r={r} fill="none" stroke={`${col}28`} strokeWidth="9"/>
-          <circle cx="62" cy="62" r={r} fill="none" stroke={col} strokeWidth="9" strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{transition:"stroke-dasharray 1.2s ease"}}/>
+          <circle cx="62" cy="62" r={r} fill="none" stroke={col} strokeWidth="9"
+            strokeDasharray={`${baseDash} ${circ}`} strokeLinecap="round"
+            style={{transition:"stroke-dasharray 0.8s ease"}}/>
+          {delta > 0 && (
+            <circle cx="62" cy="62" r={r} fill="none"
+              stroke={fadeDelta ? col : GOLD}
+              strokeWidth="9"
+              strokeDasharray={`${deltaDash} ${circ}`}
+              strokeDashoffset={-baseDash}
+              strokeLinecap="round"
+              style={{transition: fadeDelta ? "stroke 1.5s ease, stroke-dasharray 0.8s ease" : "stroke-dasharray 0.6s ease"}}/>
+          )}
         </svg>
-        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:WHITE,lineHeight:1}}>{score}</span>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+          <span style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:WHITE,lineHeight:1}}>{score}</span>
+          {delta > 0 && (
+            <span style={{fontSize:"11px",color:fadeDelta?"rgba(255,255,255,0.4)":GOLD,fontWeight:600,marginTop:"2px",transition:"color 1.5s ease"}}>+{delta} pts</span>
+          )}
         </div>
       </div>
       <span style={{fontSize:"10px",fontWeight:700,color:col,letterSpacing:"0.07em",textTransform:"uppercase"}}>{lb}</span>
-      {pulse && delta > 0 && (
-        <div style={{animation:"badgeFadeUp 2.5s ease-out forwards",background:GOLD,color:G,borderRadius:"100px",padding:"3px 12px",fontSize:"12px",fontWeight:700,whiteSpace:"nowrap"}}>
-          +{delta} pts{moduleName ? ` · ${moduleName}` : ""}
-        </div>
-      )}
     </div>
   );
 }
@@ -1540,7 +1500,6 @@ const MODULE_META = [
   { key:"mortgage",    icon:"🏠", title:"Mortgage"        },
   { key:"personalLoan",icon:"💳", title:"Personal loan"   },
   { key:"kids",        icon:"👶", title:"Kids & family"   },
-  { key:"insurance",   icon:"🛡️", title:"Insurance"       },
 ];
 
 function priorityModuleKey(title) {
@@ -1552,7 +1511,6 @@ function priorityModuleKey(title) {
   if (t.includes("personal loan") || t.includes("credit")) return "personalLoan";
   if (t.includes("mortgage") || t.includes("overpay")) return "mortgage";
   if (t.includes("kid") || t.includes("child") || t.includes("jisa") || t.includes("family")) return "kids";
-  if (t.includes("insur") || t.includes("life cover") || t.includes("income protection")) return "insurance";
   return "cash";
 }
 
@@ -1677,18 +1635,6 @@ s.pension = {
     impact: kidsImpact,
     impactLabel: kidsImpact > 0 ? `~${fmt(kidsImpact)} JISA growth potential (£100/mo at 7%)` : null,
   };
-
-  // Insurance — only include if user opted in
-  if (d.includeInsurance !== "yes") {
-    s.insurance = { status:"na", impact:0, impactLabel:null };
-  } else {
-    const missing = [d.hasLifeInsurance, d.hasIncomeProtection, d.hasCriticalIllness].filter(v => v !== "yes").length;
-    s.insurance = {
-      status: missing >= 2 ? "critical" : missing === 1 ? "attention" : "ok",
-      impact: 0,
-      impactLabel: missing > 0 ? `${missing} protection gap${missing !== 1 ? "s" : ""} identified` : null,
-    };
-  }
 
   return s;
 }
@@ -1944,7 +1890,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
     return { ...mm, status, summary, impact, impactLabel: local.impactLabel };
   });
 
-  const activeModules = allModules.filter(mm => mm.status !== "na" && !(mm.key === "insurance" && d.includeInsurance !== "yes"));
+  const activeModules = allModules.filter(mm => mm.status !== "na");
   const sortedModules = [...activeModules].sort((a,b) => {
     const aDone = completedModules.includes(a.key) ? 1 : 0;
     const bDone = completedModules.includes(b.key) ? 1 : 0;
@@ -1997,7 +1943,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
                     {changed.length > 0 && (
                       <span style={{fontSize:"13px",color:MUT}}>{changed.map(k => {
                         const from = prevInsights.modules[k]?.status, to = insights.modules[k]?.status;
-                        const pretty = {cash:"Cash",investments:"Investments",pension:"Pension",studentLoan:"Student loan",mortgage:"Mortgage",personalLoan:"Personal loan",kids:"Kids",insurance:"Insurance"};
+                        const pretty = {cash:"Cash",investments:"Investments",pension:"Pension",studentLoan:"Student loan",mortgage:"Mortgage",personalLoan:"Personal loan",kids:"Kids"};
                         return `${pretty[k]||k}: ${from} → ${to}`;
                       }).join(" · ")}</span>
                     )}
@@ -2032,8 +1978,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
           const pensionFullyMatched = isPensionContributing(d) && m.missedMatch === 0 && !(+d.bonusAmount > 0);
           const topModule = activeModules
             .filter(mm => {
-              if (mm.key === "insurance") return false;
-              if (completedModules.includes(mm.key)) return false;
+                  if (completedModules.includes(mm.key)) return false;
               if (mm.key === "pension" && pensionFullyMatched) return false;
               return true;
             })
@@ -2078,7 +2023,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
 
         {/* Score card */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
-          <ScoreRing score={displayScore} pulse={showScorePulse} delta={lastScoreDelta} moduleName={lastCompletedModule ? (MODULE_META.find(mm=>mm.key===lastCompletedModule)?.title||null) : null}/>
+          <ScoreRing score={displayScore} delta={totalDelta}/>
           <div style={{flex:1,minWidth:"200px"}}>
             <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"8px"}}>Your Candid Score</div>
             <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"10px"}}>{insights.headline}</h2>
@@ -2092,13 +2037,11 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
           const urgencyRank = { immediate:0, "this tax year":1, soon:2, when_ready:3 };
           const sortedPriorities = [...insights.priorities]
             .filter(p => {
-              if (d.includeInsurance !== "yes") {
-                const t = ((p.title||"")+" "+(p.description||"")).toLowerCase();
-                if (t.includes("insur") || t.includes("life cover") || t.includes("income protect") || t.includes("critical illness")) return false;
-              }
+              const t = ((p.title||"")+" "+(p.description||"")).toLowerCase();
+              // Strip any insurance-related priorities entirely
+              if (t.includes("insur") || t.includes("life cover") || t.includes("income protect") || t.includes("critical illness")) return false;
               // Never show "start contributions" when already contributing and no missed match
               if (isPensionContributing(d) && m.missedMatch === 0) {
-                const t = ((p.title||"")+" "+(p.description||"")).toLowerCase();
                 if (t.includes("start pension") || t.includes("start contribution") || t.includes("no pension")) return false;
               }
               return true;
@@ -2301,7 +2244,6 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
         {/* Total opportunity banner */}
         {(() => {
           const totalOpp = activeModules.reduce((sum, mm) => {
-            if (mm.key === "insurance") return sum; // income-at-risk figure inflates total misleadingly
             const raw = mm.impact || 0;
             // Exclude pension sentinel value (99999 + tax relief) used for sorting
             const capped = Math.min(raw, 99998);
@@ -2336,7 +2278,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
         {/* Module breakdown — sorted, collapsible */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
-          <span style={{fontSize:"12px",color:MUT}}>{completedModules.filter(k => activeModules.some(mm => mm.key === k && !(mm.key==="insurance" && d.includeInsurance!=="yes"))).length} of {activeModules.filter(mm => !(mm.key==="insurance" && d.includeInsurance!=="yes")).length} reviewed</span>
+          <span style={{fontSize:"12px",color:MUT}}>{completedModules.filter(k => activeModules.some(mm => mm.key === k)).length} of {activeModules.length} reviewed</span>
         </div>
 
         {/* Unreviewed modules — top 3 always visible */}
@@ -2668,7 +2610,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
 
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   // Use extended functions for new modules, original for existing
-  const newModules = ["personalLoan","kids","insurance","inheritance","mortgage"];
+  const newModules = ["personalLoan","kids","inheritance","mortgage"];
   const modInsights = newModules.includes(moduleKey)
     ? getModuleInsightsExtended(moduleKey, d, m)
     : getModuleInsights(moduleKey, d, m);
@@ -3364,16 +3306,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
           );
         })()}
 
-        {/* ── Take Me There (insurance module) ── */}
-        {moduleKey === "insurance" && (
-          <div style={{marginTop:"16px",background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"12px",padding:"16px 18px"}}>
-            <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Get a quote</div>
-            <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"12px"}}>In the full app, these would open comparison sites or insurers pre-filled with your details.</p>
-            {d.hasLifeInsurance !== "yes" && <TakeMeThere app="Compare the Market" icon="🛡️" message="Compare life insurance quotes" demoNote="Would open Compare the Market pre-filled"/>}
-            {d.hasIncomeProtection !== "yes" && <TakeMeThere app="Drewberry" icon="💼" message="Get income protection quote" demoNote="Would open Drewberry income protection quote"/>}
-            {d.hasCriticalIllness !== "yes" && <TakeMeThere app="Cavendish Online" icon="❤️" message="Compare critical illness cover" demoNote="Would open Cavendish Online"/>}
-          </div>
-        )}
 
         {/* ── Mortgage: overpayment scenarios + remortgage timing + Take Me There ── */}
         {moduleKey === "mortgage" && products?.mortgageSection && (() => {
@@ -3767,9 +3699,7 @@ const BLANK_DATA = {
   inheritDirection:"", estateValue:"", hasWill:"no",
   hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanProvider:"",
   hasKids:"no", numKids:"", kidsAges:"", hasJISA:"no", juniorISAValue:"",
-  hasLifeInsurance:"no", hasIncomeProtection:"no", hasCriticalIllness:"no", hasContentsInsurance:"no",
-  includeInsurance:"no",
-  // Supabase schema note: include_insurance BOOLEAN, isa_this_year_other NUMERIC
+  // Supabase schema note: isa_this_year_other NUMERIC
 };
 
 const INIT_DATA = BLANK_DATA;
@@ -3911,11 +3841,10 @@ Student loan: ${d.studentLoan==="none" ? "None" : `${d.studentLoan}, ~£${d.loan
 Mortgage: ${d.hasMortgage==="yes" ? `£${d.mortgageBalance} at ${d.mortgageRate}%, £${d.monthlyMortgage}/mo` : "None"}
 Personal loan: ${d.hasPersonalLoan==="yes" ? `£${d.personalLoanBalance} at ${d.personalLoanRate}%, ${d.personalLoanTermRemaining} months remaining` : "None"}
 Kids: ${d.hasKids==="yes" ? `${d.numKids} child(ren), ages: ${d.kidsAges}, JISA: ${d.hasJISA==="yes"?`£${d.juniorISAValue}`:"None"}` : "None"}
-Insurance: life ${d.hasLifeInsurance}, income protection ${d.hasIncomeProtection}, critical illness ${d.hasCriticalIllness}
 Calculated: runway ${m.runwayMonths.toFixed(1)}mo, surplus £${Math.round(m.surplusCash)}, ISA headroom £${m.isaHeadroom}, missed match £${Math.round(m.missedMatch)}/yr, CGT saving £${Math.round(m.cgtSaving)}, yield gap £${Math.round(m.annualYieldGap)}/yr, loan repay ${m.annualRepayment>0?fmt(m.annualRepayment)+"/yr":"n/a"}, will${m.willClear?"":" NOT"} clear, pension at retire ~£${Math.round(m.projectedPot)}
 
 Return exactly this structure:
-{"score":<0-100>,"headline":"<one punchy sentence>","narrative":"<3-4 sentences, use first name, specific numbers>","priorities":[{"title":"<max 6 words>","impact":"<£ figure>","description":"<2-3 sentences>","urgency":"<immediate|soon|this tax year>"}],"modules":{"cash":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"investments":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"pension":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"studentLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"mortgage":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"personalLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"kids":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"insurance":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"}}}`;
+{"score":<0-100>,"headline":"<one punchy sentence>","narrative":"<3-4 sentences, use first name, specific numbers>","priorities":[{"title":"<max 6 words>","impact":"<£ figure>","description":"<2-3 sentences>","urgency":"<immediate|soon|this tax year>"}],"modules":{"cash":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"investments":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"pension":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"studentLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"mortgage":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"personalLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"kids":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"}}}`;
 
     const fallback = {
       score:46, headline:"You're leaving meaningful money on the table — but it's all fixable.",
@@ -3945,7 +3874,6 @@ Return exactly this structure:
       const ls = computeModuleStatuses(d, m);
       const criticals = Object.entries(ls).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
       const totalOpp = Object.entries(ls).reduce((sum, [k,v]) => {
-        if (k === "insurance") return sum;
         return sum + Math.min(v.impact||0, 99998);
       }, 0);
       const rowId = await supaInsert("test", {
@@ -3962,7 +3890,6 @@ Return exactly this structure:
         has_investments: d.hasInvestments === "yes",
         isa_this_year: m.isaUsedThisYear||null,
         isa_previous: (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0)||null,
-        include_insurance: d.includeInsurance === "yes",
         isa_type: d.isaType||null,
         unwrapped_investments: +d.unwrappedValue||null,
         has_pension: d.hasPension === "yes",
@@ -4054,7 +3981,7 @@ Return exactly this structure:
         ? local.status
         : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
       return { ...mm, status, impact: local.impact||0 };
-    }).filter(mm => mm.status !== "na" && !(mm.key === "insurance" && d.includeInsurance !== "yes"));
+    }).filter(mm => mm.status !== "na");
     const sortedMods = [...allMods].sort((a,b) => {
       const aDone = completedModules.includes(a.key) ? 1 : 0;
       const bDone = completedModules.includes(b.key) ? 1 : 0;
