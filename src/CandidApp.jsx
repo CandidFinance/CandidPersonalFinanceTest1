@@ -3915,64 +3915,166 @@ export default function Candid() {
   async function generateDashboard() {
     if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
     setScreen("loading");
-    const prompt = `You are Candid, a UK personal finance guidance tool. Return ONLY valid JSON — no markdown, no backticks, no text outside the JSON.
 
-USER: Name: ${d.name||"User"}, Age: ${d.age||"?"}, Salary: £${d.salary||0}, Tax: ${m.taxBandLabel} rate (auto-calculated from £${m.adjustedNetIncome.toLocaleString()} adjusted net income)
-Cash: £${Math.round(m.cash)} at ${m.effectiveSavingsRate.toFixed(1)}%, Premium bonds: £${d.premiumBonds||0}, Monthly expenses: £${d.monthlyExpenses||0}
-Investments: ${d.hasInvestments==="yes" ? `ISA this year £${m.isaUsedThisYear} (${d.isaType||"unspecified"}), ISA previous years £${(+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0)||0}, total ISA £${m.isaUsedThisYear+((+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0))}, unwrapped £${d.unwrappedValue||0}, ~£${d.unrealisedGains||0} gains` : "None"}
-Pension: ${d.hasPension==="yes" ? `${d.myContribution}%/${d.employerMatch}% employer, pot ~£${d.potValue}, retire ${d.retirementAge}` : "No pension"}
-Student loan: ${d.studentLoan==="none" ? "None" : `${d.studentLoan}, ~£${d.loanBalance||0}`}
-Mortgage: ${d.hasMortgage==="yes" ? `£${d.mortgageBalance} at ${d.mortgageRate}%, £${d.monthlyMortgage}/mo` : "None"}
-Personal loan: ${d.hasPersonalLoan==="yes" ? `£${d.personalLoanBalance} at ${d.personalLoanRate}%, ${d.personalLoanTermRemaining} months remaining` : "None"}
-Kids: ${d.hasKids==="yes" ? `${d.numKids} child(ren), ages: ${d.kidsAges}, JISA: ${d.hasJISA==="yes"?`£${d.juniorISAValue}`:"None"}` : "None"}
-Calculated: runway ${m.runwayMonths.toFixed(1)}mo, surplus £${Math.round(m.surplusCash)}, ISA headroom £${m.isaHeadroom}, missed match £${Math.round(m.missedMatch)}/yr, CGT saving £${Math.round(m.cgtSaving)}, yield gap £${Math.round(m.annualYieldGap)}/yr, loan repay ${m.annualRepayment>0?fmt(m.annualRepayment)+"/yr":"n/a"}, will${m.willClear?"":" NOT"} clear, pension at retire ~£${Math.round(m.projectedPot)}
+    // ── Pre-calculate all metrics before passing to Claude ──────────────────────
+    const metrics = calcMetrics(d);
+    const statuses = computeModuleStatuses(d, metrics);
+    const isaPrev = (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0);
+    const totalOppForSummary = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
 
-Return exactly this structure:
-{"score":<0-100>,"headline":"<one punchy sentence>","narrative":"<3-4 sentences, use first name, specific numbers>","priorities":[{"title":"<max 6 words>","impact":"<£ figure>","description":"<2-3 sentences>","urgency":"<immediate|soon|this tax year>"}],"modules":{"cash":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"investments":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"pension":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"studentLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"mortgage":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"personalLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"kids":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"}}}`;
+    const financialSummary = {
+      name: d.name || "User",
+      age: +d.age || null,
+
+      // Income
+      grossSalary: fmt(+d.salary||0),
+      adjustedNetIncome: fmt(metrics.adjustedNetIncome||0),
+      taxBand: metrics.tr >= 0.45 ? "Additional rate (45%)" : metrics.tr === 0.40 ? "Higher rate (40%)" : metrics.adjustedNetIncome > 100000 ? "60% taper zone (£100k–£125,140)" : "Basic rate (20%)",
+      otherIncome: +d.otherIncome > 0 ? fmt(+d.otherIncome) : null,
+      dividendIncome: +d.dividendIncome > 0 ? fmt(+d.dividendIncome) : null,
+      bonusAmount: +d.bonusAmount > 0 ? fmt(+d.bonusAmount) : null,
+
+      // Cash
+      cashSavings: fmt(metrics.cash||0),
+      premiumBonds: fmt(+d.premiumBonds||0),
+      totalLiquid: fmt(metrics.totalLiquid||0),
+      monthlyExpenses: fmt(metrics.expenses||0),
+      runwayMonths: +metrics.runwayMonths.toFixed(1),
+      emergencyStatus: metrics.emergencyFund >= metrics.emergencyBuffer
+        ? `Adequate (${metrics.runwayMonths.toFixed(1)} months)`
+        : `Shortfall of ${fmt(metrics.emergencyBuffer - metrics.emergencyFund)}`,
+      effectiveSavingsRate: metrics.effectiveSavingsRate.toFixed(2) + "%",
+      annualYieldGap: fmt(Math.round(metrics.annualYieldGap||0)),
+
+      // ISA
+      isaUsedThisYear: fmt(metrics.isaUsedThisYear||0),
+      isaHeadroom: fmt(metrics.isaHeadroom||0),
+      isaPreviousBalance: isaPrev > 0 ? fmt(isaPrev) : null,
+
+      // Investments
+      hasInvestments: d.hasInvestments === "yes",
+      unwrappedValue: +d.unwrappedValue > 0 ? fmt(+d.unwrappedValue) : null,
+      unrealisedGains: +d.unrealisedGains > 0 ? fmt(+d.unrealisedGains) : null,
+      cgtSaving: metrics.cgtSaving > 0 ? fmt(Math.round(metrics.cgtSaving)) : null,
+
+      // Pension
+      pensionContributing: isPensionContributing(d),
+      myContributionPct: isPensionContributing(d) ? (+d.myContribution||0) + "%" : null,
+      employerMatchCap: (+d.employerMatch||0) + "%",
+      missedMatchAnnual: metrics.missedMatch > 0 ? fmt(Math.round(metrics.missedMatch)) + "/yr" : "None",
+      pensionPot: (+d.potValue||0) + (+d.potValue2||0) > 0 ? fmt((+d.potValue||0)+(+d.potValue2||0)) : null,
+      projectedPotAtRetirement: fmt(Math.round(metrics.projectedPot||0)),
+      retirementAge: +d.retirementAge||65,
+      pensionReturnRatio: "1:" + pensionReturnRatio(d, metrics).toFixed(2),
+      pensionType: d.pensionType === "sacrifice" ? "Salary sacrifice" : d.pensionType === "relief" ? "Relief at source" : "Unknown",
+
+      // Student loan
+      studentLoan: d.studentLoan !== "none" ? {
+        plan: d.studentLoan,
+        balance: fmt(+d.loanBalance||0),
+        annualRepayment: fmt(Math.round(metrics.annualRepayment||0)),
+        willClear: metrics.willClear ? "Yes — before write-off" : "No — likely written off",
+      } : null,
+
+      // Mortgage
+      mortgage: d.hasMortgage === "yes" ? {
+        balance: fmt(+d.mortgageBalance||0),
+        rate: (+d.mortgageRate||0) + "%",
+        monthlyPayment: fmt(+d.monthlyMortgage||0),
+        daysToFixExpiry: metrics.daysToFixExpiry || null,
+      } : null,
+
+      // Personal loan
+      personalLoan: d.hasPersonalLoan === "yes" ? {
+        balance: fmt(+d.personalLoanBalance||0),
+        rate: (+d.personalLoanRate||0) + "%",
+      } : null,
+
+      // Kids
+      kids: d.hasKids === "yes" ? {
+        numKids: d.numKids,
+        ages: d.kidsAges,
+        hasJISA: d.hasJISA === "yes",
+        jisaValue: d.hasJISA === "yes" ? fmt(+d.juniorISAValue||0) : null,
+      } : null,
+
+      // Net worth
+      netWorth: fmt(metrics.netWorth||0),
+      totalAssets: fmt(metrics.totalAssets||0),
+      totalLiabilities: fmt(metrics.totalLiabilities||0),
+
+      // Pre-calculated module statuses — Claude uses these, does not recalculate
+      moduleStatuses: Object.fromEntries(
+        Object.entries(statuses).map(([key, s]) => [key, {
+          status: s.status,
+          impact: s.impact > 0 ? fmt(Math.min(s.impact, 99998)) : null,
+          impactLabel: s.impactLabel || null,
+        }])
+      ),
+
+      totalOpportunity: fmt(Math.round(totalOppForSummary / 100) * 100),
+    };
+
+    if (import.meta.env.DEV) {
+      console.log("Metrics sent to Claude:", financialSummary);
+    }
+
+    const prompt = `You are Candid, a UK personal finance guidance tool. A user has completed their financial health assessment. Below are their pre-calculated financial metrics. Your job is to generate a personalised financial health report based ONLY on these figures — do not recalculate or re-derive any numbers.
+
+USER FINANCIAL SUMMARY:
+${JSON.stringify(financialSummary, null, 2)}
+
+Generate a JSON response with exactly this structure:
+{"score":<integer 0-100 based on moduleStatuses>,"headline":"<one punchy sentence: the single most important thing to address>","narrative":"<2-3 sentences of personalised narrative using specific figures from the summary. Use first name if provided. Tone: direct, like a knowledgeable friend.>","priorities":[{"title":"<max 6 words>","impact":"<£ figure>","description":"<1-2 sentences explaining why this matters for this specific person>","urgency":"<immediate|soon|this tax year>","module":"<cash|investments|pension|studentLoan|mortgage|personalLoan|kids|inheritance>"}],"modules":{"cash":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"investments":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"pension":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"studentLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"mortgage":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"personalLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"kids":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"}}}
+
+Rules:
+- Use ONLY the figures in the summary above. Do not invent or recalculate numbers.
+- If a module has status "na" in moduleStatuses, set its status to "na" and summary to "Not applicable based on your inputs."
+- Pension summary MUST reflect pensionContributing: ${financialSummary.pensionContributing} — never say "no contributions" or "start contributing" if pensionContributing is true.
+- Priorities ordered by urgency then impact. Maximum 4 priorities. No insurance priorities.
+- Score should correlate with moduleStatuses: each critical module reduces score significantly.
+- Write in British English. Do not use "silently", "quietly", or "invisible".
+- Return valid JSON only. No preamble, no markdown, no backticks.`;
 
     const fallback = {
       score:46, headline:"You're leaving meaningful money on the table — but it's all fixable.",
       narrative:`${d.name?d.name.split(" ")[0]:""}, your finances have a solid foundation with clear optimisation gaps. The pension and ISA opportunities alone could significantly boost your long-term wealth.`,
       priorities:[
-        {title:"Start pension contributions now",impact:"£3,000+",description:"Tax relief plus employer match means a £100 contribution costs ~£80 in take-home. Higher-rate taxpayers get even more back.",urgency:"immediate"},
+        {title:"Review your pension contributions",impact:"£3,000+",description:"Tax relief plus employer match means a £100 contribution costs ~£80 in take-home. Higher-rate taxpayers get even more back.",urgency:"immediate"},
         {title:"Maximise ISA allowance before April",impact:"£800+",description:"You have unused ISA allowance expiring April 5th. Moving surplus cash protects all future growth from tax permanently.",urgency:"this tax year"},
-        {title:"Review student loan overpayment",impact:"Varies",description:"Most Plan 2/5 borrowers won't clear before write-off. That money works harder in a pension.",urgency:"soon"},
+        {title:"Review student loan strategy",impact:"Varies",description:"Most Plan 2/5 borrowers won't clear before write-off. That money works harder in a pension.",urgency:"soon"},
       ],
       modules:{
         cash:{status:"attention",summary:"Cash position looks reasonable but yield could be higher."},
         investments:{status:"attention",summary:"ISA allowance may not be fully utilised this tax year."},
-        pension:{status:"critical",summary:"No pension contributions — this is your highest-priority fix."},
+        pension:{status:"attention",summary:"Review your pension contributions and projected retirement pot."},
         studentLoan:{status:"attention",summary:"Overpayment strategy worth reviewing at your income level."},
-        mortgage:{status:"na",summary:"N/A"},
-        personalLoan:{status:"attention",summary:"Personal loan at a high rate — worth reviewing overpayment options."},
-        kids:{status:"na",summary:"N/A"},
-        insurance:{status:"attention",summary:"Income protection and life insurance not confirmed — worth reviewing."}
+        mortgage:{status:"na",summary:"Not applicable based on your inputs."},
+        personalLoan:{status:"na",summary:"Not applicable based on your inputs."},
+        kids:{status:"na",summary:"Not applicable based on your inputs."},
       }
     };
     try {
-      const result = await callClaude(prompt,1200);
+      const result = await callClaude(prompt, 1400);
       setInsights(result);
       setWhatChangedOpen(true);
-      posthog.capture("report_generated", { score: result.score, tax_band: m.taxBandLabel });
-      // ── Supabase insert ──
-      const ls = computeModuleStatuses(d, m);
-      const criticals = Object.entries(ls).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
-      const totalOpp = Object.entries(ls).reduce((sum, [k,v]) => {
-        return sum + Math.min(v.impact||0, 99998);
-      }, 0);
+      posthog.capture("report_generated", { score: result.score, tax_band: metrics.taxBandLabel });
+      // ── Supabase insert — reuse pre-computed statuses ──
+      const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
+      const totalOpp = totalOppForSummary;
       const rowId = await supaInsert("test", {
         session_id: posthog.get_distinct_id?.() || null,
         age: +d.age||null,
         salary: +d.salary||null,
         other_income: +d.otherIncome||null,
-        tax_band: m.taxBandLabel,
+        tax_band: metrics.taxBandLabel,
         salary_trajectory: d.salaryTrajectory||null,
         monthly_expenses: +d.monthlyExpenses||null,
         cash_savings: +d.cashSavings||null,
         savings_rate: +d.savingsRate||null,
         premium_bonds: +d.premiumBonds||null,
         has_investments: d.hasInvestments === "yes",
-        isa_this_year: m.isaUsedThisYear||null,
+        isa_this_year: metrics.isaUsedThisYear||null,
         isa_previous: (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0)||null,
         isa_type: d.isaType||null,
         unwrapped_investments: +d.unwrappedValue||null,
