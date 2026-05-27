@@ -1075,6 +1075,27 @@ function Warn({ msg }) {
   return <p style={{fontSize:"12px",color:"#c4963a",marginTop:"4px",lineHeight:1.5}}>⚠️ {msg}</p>;
 }
 
+// Hard caps — silently clamp value, no message shown
+const FIELD_CAPS = {
+  salary:1000000, bonusAmount:5000000, otherIncome:1000000, dividendIncome:5000000,
+  monthlyExpenses:50000,
+  savingsRate:10, premiumBonds:50000,
+  isaThisYearCash:20000, isaThisYearSS:20000, isaThisYearLISA:4000, isaThisYearOther:20000,
+  isaPrevCash:500000, isaPrevSS:500000, isaPrevLISA:500000, isaPrevOther:500000,
+  unwrappedValue:10000000, unrealisedGains:5000000,
+  myContribution:60, employerMatch:20,
+  potValue:10000000, potValue2:10000000, niYears:35,
+  loanBalance:200000, mortgageBalance:5000000, mortgageRate:15,
+  personalLoanBalance:500000, personalLoanRate:50,
+};
+function capField(field, raw) {
+  const v = parseFloat(String(raw).replace(/[£,%,\s]/g,""));
+  if (isNaN(v)) return raw;
+  const cap = FIELD_CAPS[field];
+  if (cap !== undefined && v > cap) return String(cap);
+  return raw;
+}
+
 const BRAND_COLORS = {
   "pensionbee.com":   { bg:"#E8A0B4", text:"#C4347A", label:"PB"   },
   "vanguard.co.uk":   { bg:"#C41E3A", text:"#fff",    label:"V"    },
@@ -1144,11 +1165,10 @@ function OnboardingStep({ step, d, set }) {
           <Warn msg={+d.age > 0 && (+d.age < 16 || +d.age > 80) ? "Unusual age — double-check this." : null}/>
         </Field>
         <Field label="Gross annual salary (£)">
-          <FmtInput fmtType="gbp" value={d.salary} onChange={v=>set("salary",v)} placeholder="e.g. 65,000"/>
-          <Warn msg={+d.salary > 0 && (+d.salary < 12000 || +d.salary > 500000) ? "Unusual salary — this affects all calculations." : null}/>
+          <FmtInput fmtType="gbp" value={d.salary} onChange={v=>set("salary",capField("salary",v))} placeholder="e.g. 65,000"/>
+          <Warn msg={+d.salary > 500000 ? "That's a very high salary — double-check this" : null}/>
         </Field>
       </div>
-      {/* Auto tax band display */}
       {+d.salary > 0 && (
         <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"12px 14px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
           <div>
@@ -1165,15 +1185,18 @@ function OnboardingStep({ step, d, set }) {
       )}
       <div style={g2}>
         <Field label="Other income (£/yr)" hint="Rental, freelance — leave blank if none">
-          <FmtInput fmtType="gbp" value={d.otherIncome||""} onChange={v=>set("otherIncome",v)} placeholder="e.g. 8,000"/>
+          <FmtInput fmtType="gbp" value={d.otherIncome||""} onChange={v=>set("otherIncome",capField("otherIncome",v))} placeholder="e.g. 8,000"/>
+          <Warn msg={+d.otherIncome > 200000 ? "Unusually high other income — double-check" : null}/>
         </Field>
         <Field label="Dividend income (£/yr)" hint="From shares or funds — leave blank if none">
-          <FmtInput fmtType="gbp" value={d.dividendIncome||""} onChange={v=>set("dividendIncome",v)} placeholder="e.g. 2,000"/>
+          <FmtInput fmtType="gbp" value={d.dividendIncome||""} onChange={v=>set("dividendIncome",capField("dividendIncome",v))} placeholder="e.g. 2,000"/>
+          <Warn msg={+d.dividendIncome > 500000 ? "Large dividend income — double-check" : null}/>
         </Field>
       </div>
       <div style={g2}>
         <Field label="Annual bonus (£)" hint="Leave blank if none">
-          <FmtInput fmtType="gbp" value={d.bonusAmount||""} onChange={v=>set("bonusAmount",v)} placeholder="e.g. 10,000"/>
+          <FmtInput fmtType="gbp" value={d.bonusAmount||""} onChange={v=>set("bonusAmount",capField("bonusAmount",v))} placeholder="e.g. 10,000"/>
+          <Warn msg={+d.bonusAmount > (+d.salary||0) * 3 && +d.bonusAmount > 0 ? "Bonus exceeds 3× salary — is this right?" : null}/>
         </Field>
         <Field label="Salary trajectory" hint="Used to project your salary in student loan and pension calculations.">
           <Toggle value={d.salaryTrajectory} onChange={v=>set("salaryTrajectory",v)} options={[{value:"stable",label:"Stable (~2% p.a.)"},{value:"moderate",label:"Steady growth (~5% p.a.)"},{value:"high",label:"Rapid growth (~15% p.a.)"}]}/>
@@ -1186,7 +1209,10 @@ function OnboardingStep({ step, d, set }) {
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Cash & savings</h2>
       <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>How your liquid money is sitting right now.</p>
       <div style={g2}>
-        <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport"><FmtInput fmtType="gbp" value={d.monthlyExpenses} onChange={v=>set("monthlyExpenses",v)} placeholder="e.g. 2,500"/></Field>
+        <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport">
+        <FmtInput fmtType="gbp" value={d.monthlyExpenses} onChange={v=>set("monthlyExpenses",capField("monthlyExpenses",v))} placeholder="e.g. 2,500"/>
+        <Warn msg={+d.monthlyExpenses > 0 && +d.monthlyExpenses < 300 ? "Expenses seem very low — double-check" : +d.monthlyExpenses > (+d.salary||0)/12*0.95 && +d.salary > 0 ? "Expenses exceed almost all income" : null}/>
+      </Field>
         <Field label="Emergency fund target">
           <Toggle value={d.higherBuffer||"no"} onChange={v=>set("higherBuffer",v)} options={[{value:"no",label:"6 months"},{value:"yes",label:"9 months"}]}/>
           <p style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>9 months if self-employed or variable income</p>
@@ -1198,14 +1224,18 @@ function OnboardingStep({ step, d, set }) {
             <div>
               {i===0 && <label style={{fontSize:"12px",color:MUT,display:"block",marginBottom:"4px"}}>Amount (£)</label>}
               <FmtInput fmtType="gbp" value={tier.amount} onChange={v=>{
-                const t=[...(d.cashTiers||[])]; t[i]={...t[i],amount:v}; set("cashTiers",t);
+                const capped = capField("isaPrevCash", v); // reuse 500k cap for individual cash tier
+                const t=[...(d.cashTiers||[])]; t[i]={...t[i],amount:capped}; set("cashTiers",t);
               }} placeholder="e.g. 10,000"/>
+              <Warn msg={+tier.amount > 500000 ? "Large cash holding — double-check" : null}/>
             </div>
             <div>
               {i===0 && <label style={{fontSize:"12px",color:MUT,display:"block",marginBottom:"4px"}}>Rate (%)</label>}
               <FmtInput fmtType="pct" value={tier.rate} onChange={v=>{
-                const t=[...(d.cashTiers||[])]; t[i]={...t[i],rate:v}; set("cashTiers",t);
+                const capped = capField("savingsRate", v);
+                const t=[...(d.cashTiers||[])]; t[i]={...t[i],rate:capped}; set("cashTiers",t);
               }} placeholder="4.5"/>
+              <Warn msg={+tier.rate > 6 && +tier.rate <= 10 ? "Most accounts pay under 6% — double-check this rate" : +tier.rate > 0 && +tier.rate < 0.5 ? "Very low rate — are you sure?" : null}/>
             </div>
             <button onClick={()=>{
               const t=(d.cashTiers||[]).filter((_,j)=>j!==i);
@@ -1218,7 +1248,7 @@ function OnboardingStep({ step, d, set }) {
           + Add another account
         </button>
       </Field>
-      <Field label="Premium bonds (£)" hint="Max £50,000. Enter 0 if none."><FmtInput fmtType="gbp" value={d.premiumBonds} onChange={v=>set("premiumBonds",v)} placeholder="e.g. 10,000"/></Field>
+      <Field label="Premium bonds (£)"><FmtInput fmtType="gbp" value={d.premiumBonds} onChange={v=>set("premiumBonds",capField("premiumBonds",v))} placeholder="e.g. 10,000"/></Field>
       <Field label="Is your cash savings in an easy-access account?" hint="Affects emergency fund accessibility assessment">
         <Toggle value={d.cashAccessType||""} onChange={v=>set("cashAccessType",v)} options={[
           {value:"yes",     label:"Yes — instant access"},
@@ -1250,14 +1280,16 @@ function OnboardingStep({ step, d, set }) {
               <div style={{marginBottom:"20px"}}>
                 <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>ISA contributions this tax year <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(April 6 – April 5, £20,000 limit)</span></div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
-                  <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearCash} onChange={v=>set("isaThisYearCash",v)} placeholder="0"/></Field>
-                  <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",v)} placeholder="0"/></Field>
-                  <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",v)} placeholder="0"/></Field>
-                  <Field label="Other ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearOther||""} onChange={v=>set("isaThisYearOther",v)} placeholder="0"/></Field>
+                  <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearCash} onChange={v=>set("isaThisYearCash",capField("isaThisYearCash",v))} placeholder="0"/></Field>
+                  <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",capField("isaThisYearSS",v))} placeholder="0"/></Field>
+                  <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",capField("isaThisYearLISA",v))} placeholder="0"/></Field>
+                  <Field label="Other ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearOther||""} onChange={v=>set("isaThisYearOther",capField("isaThisYearOther",v))} placeholder="0"/></Field>
                 </div>
-                <div style={{marginTop:"8px",fontSize:"12px",color:over?"#c0392b":MUT,fontWeight:over?700:400}}>
-                  {over ? `⚠️ Total this year: ${fmt(total)} — exceeds the £20,000 annual ISA allowance.` : `Total this year: ${fmt(total)} of £20,000 allowance used`}
-                </div>
+                {over && (
+                  <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700}}>
+                    ⚠️ Total this year: {fmt(total)} — exceeds the £20,000 annual ISA allowance.
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -1268,17 +1300,24 @@ function OnboardingStep({ step, d, set }) {
               <div style={{marginBottom:"20px"}}>
                 <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>ISA balance from previous years <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(accumulated before this tax year)</span></div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
-                  <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",v)} placeholder="0"/></Field>
-                  <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevSS} onChange={v=>set("isaPrevSS",v)} placeholder="0"/></Field>
-                  <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevLISA} onChange={v=>set("isaPrevLISA",v)} placeholder="0"/></Field>
-                  <Field label="Other (£)"><FmtInput fmtType="gbp" value={d.isaPrevOther} onChange={v=>set("isaPrevOther",v)} placeholder="0"/></Field>
+                  <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",capField("isaPrevCash",v))} placeholder="0"/></Field>
+                  <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevSS} onChange={v=>set("isaPrevSS",capField("isaPrevSS",v))} placeholder="0"/></Field>
+                  <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevLISA} onChange={v=>set("isaPrevLISA",capField("isaPrevLISA",v))} placeholder="0"/></Field>
+                  <Field label="Other (£)"><FmtInput fmtType="gbp" value={d.isaPrevOther} onChange={v=>set("isaPrevOther",capField("isaPrevOther",v))} placeholder="0"/></Field>
                 </div>
                 {total > 0 && <div style={{marginTop:"8px",fontSize:"12px",color:MUT}}>Total previous years: {fmt(total)}</div>}
+                <Warn msg={total > 200000 ? "Large ISA balance — double-check" : null}/>
               </div>
             );
           })()}
-          <Field label="Investments outside an ISA (£)"><FmtInput fmtType="gbp" value={d.unwrappedValue} onChange={v=>set("unwrappedValue",v)} placeholder="e.g. 15,000"/></Field>
-          <Field label="Estimated unrealised gains (£)" hint="Profit above what you paid for your unwrapped investments."><FmtInput fmtType="gbp" value={d.unrealisedGains} onChange={v=>set("unrealisedGains",v)} placeholder="e.g. 4,500"/></Field>
+          <Field label="Investments outside an ISA (£)">
+            <FmtInput fmtType="gbp" value={d.unwrappedValue} onChange={v=>set("unwrappedValue",capField("unwrappedValue",v))} placeholder="e.g. 15,000"/>
+            <Warn msg={+d.unwrappedValue > 1000000 ? "Very large unwrapped portfolio — double-check" : null}/>
+          </Field>
+          <Field label="Estimated unrealised gains (£)" hint="Profit above what you paid for your unwrapped investments.">
+            <FmtInput fmtType="gbp" value={d.unrealisedGains} onChange={v=>set("unrealisedGains",capField("unrealisedGains",v))} placeholder="e.g. 4,500"/>
+            <Warn msg={+d.unrealisedGains > (+d.unwrappedValue||0) && +d.unrealisedGains > 0 ? "Gains exceed total investment value — double-check" : null}/>
+          </Field>
         </div>
       )}
     </div>
@@ -1293,16 +1332,39 @@ function OnboardingStep({ step, d, set }) {
       {d.hasPension === "yes" ? (
         <div>
           <div style={g2}>
-            <Field label="Your contribution (%)"><FmtInput fmtType="pct" value={d.myContribution} onChange={v=>set("myContribution",v)} placeholder="e.g. 5"/></Field>
-            <Field label="Employer match cap (%)" hint="Max employer will contribute"><FmtInput fmtType="pct" value={d.employerMatch} onChange={v=>set("employerMatch",v)} placeholder="e.g. 5"/></Field>
+            <Field label="Your contribution (%)">
+              <FmtInput fmtType="pct" value={d.myContribution} onChange={v=>set("myContribution",capField("myContribution",v))} placeholder="e.g. 5"/>
+              <Warn msg={+d.myContribution > 30 ? "Very high contribution — double-check" : null}/>
+            </Field>
+            <Field label="Employer match cap (%)" hint="Max employer will contribute">
+              <FmtInput fmtType="pct" value={d.employerMatch} onChange={v=>set("employerMatch",capField("employerMatch",v))} placeholder="e.g. 5"/>
+              <Warn msg={+d.employerMatch > 10 ? "Unusually generous employer match — double-check" : null}/>
+            </Field>
           </div>
           <div style={g2}>
-            <Field label="Main pot value (£)"><FmtInput fmtType="gbp" value={d.potValue} onChange={v=>set("potValue",v)} placeholder="e.g. 35,000"/></Field>
-            <Field label="Other pots combined (£)" hint="Old employer pensions etc."><FmtInput fmtType="gbp" value={d.potValue2||""} onChange={v=>set("potValue2",v)} placeholder="e.g. 8,000"/></Field>
+            <Field label="Main pot value (£)">
+              <FmtInput fmtType="gbp" value={d.potValue} onChange={v=>set("potValue",capField("potValue",v))} placeholder="e.g. 35,000"/>
+              <Warn msg={+d.potValue > 2000000 ? "Large pension pot — double-check (lifetime allowance context)" : null}/>
+            </Field>
+            <Field label="Other pots combined (£)" hint="Old employer pensions etc.">
+              <FmtInput fmtType="gbp" value={d.potValue2||""} onChange={v=>set("potValue2",capField("potValue2",v))} placeholder="e.g. 8,000"/>
+              <Warn msg={+d.potValue2 > 2000000 ? "Large pension pot — double-check" : null}/>
+            </Field>
           </div>
           <div style={g2}>
-            <Field label="Target retirement age"><input style={INP} type="number" value={d.retirementAge} onChange={e => set("retirementAge",e.target.value)} placeholder="65"/></Field>
-            <Field label={<>NI years completed <InfoTooltip text="Your National Insurance record determines your State Pension. You need 35 qualifying years for the full new State Pension (currently £221.20/week). Fewer qualifying years = a proportionally smaller State Pension. Check your record for free at gov.uk/check-state-pension — you can also fill gaps by paying voluntary contributions."/></>} hint="Check via HMRC / Personal Tax Account"><input style={INP} type="number" value={d.niYears||""} onChange={e=>set("niYears",e.target.value)} placeholder="e.g. 12"/></Field>
+            <Field label="Target retirement age">
+              <input style={INP} type="number" value={d.retirementAge} onChange={e => {
+                const v = Math.min(80, +e.target.value || 0);
+                set("retirementAge", v > 0 ? String(v) : e.target.value);
+              }} placeholder="65"/>
+              <Warn msg={+d.retirementAge > 0 && +d.retirementAge < 55 ? "Pension access age is currently 57 from 2028 — double-check" : null}/>
+            </Field>
+            <Field label={<>NI years completed <InfoTooltip text="Your National Insurance record determines your State Pension. You need 35 qualifying years for the full new State Pension (currently £221.20/week). Fewer qualifying years = a proportionally smaller State Pension. Check your record for free at gov.uk/check-state-pension — you can also fill gaps by paying voluntary contributions."/></>} hint="Check via HMRC / Personal Tax Account">
+              <input style={INP} type="number" value={d.niYears||""} onChange={e => {
+                const v = Math.min(35, Math.max(0, +e.target.value || 0));
+                set("niYears", e.target.value === "" ? "" : String(v));
+              }} placeholder="e.g. 12"/>
+            </Field>
           </div>
           <Field label="How are your pension contributions made?" hint="Affects the exact return ratio — salary sacrifice saves NI too">
             <Toggle value={d.pensionType||""} onChange={v=>set("pensionType",v)} options={[
@@ -1336,7 +1398,12 @@ function OnboardingStep({ step, d, set }) {
           <option value="plan5">Plan 5 — 2023 onwards</option>
         </select>
       </Field>
-      {d.studentLoan !== "none" && <Field label="Outstanding balance (£)"><FmtInput fmtType="gbp" value={d.loanBalance} onChange={v=>set("loanBalance",v)} placeholder="e.g. 35,000"/></Field>}
+      {d.studentLoan !== "none" && (
+        <Field label="Outstanding balance (£)">
+          <FmtInput fmtType="gbp" value={d.loanBalance} onChange={v=>set("loanBalance",capField("loanBalance",v))} placeholder="e.g. 35,000"/>
+          <Warn msg={+d.loanBalance > 100000 ? "Very large loan balance — double-check" : null}/>
+        </Field>
+      )}
       <Field label="Do you have a mortgage?">
         <Toggle value={d.hasMortgage} onChange={v => set("hasMortgage",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"Not yet"}]}/>
       </Field>
@@ -1346,13 +1413,24 @@ function OnboardingStep({ step, d, set }) {
             <Toggle value={d.mortgageType||"fixed"} onChange={v=>set("mortgageType",v)} options={[{value:"fixed",label:"Fixed rate"},{value:"variable",label:"Variable (SVR/tracker)"}]}/>
           </Field>
           <div style={g2}>
-            <Field label="Outstanding balance (£)"><FmtInput fmtType="gbp" value={d.mortgageBalance} onChange={v=>set("mortgageBalance",v)} placeholder="e.g. 280,000"/></Field>
+            <Field label="Outstanding balance (£)">
+              <FmtInput fmtType="gbp" value={d.mortgageBalance} onChange={v=>set("mortgageBalance",capField("mortgageBalance",v))} placeholder="e.g. 280,000"/>
+              <Warn msg={+d.mortgageBalance > 2000000 ? "Large mortgage — double-check" : null}/>
+            </Field>
             <Field label="Interest rate (%)">
-              <FmtInput fmtType="pct" value={d.mortgageRate} onChange={v=>set("mortgageRate",v)} placeholder="e.g. 4.5"/>
-              <Warn msg={+d.mortgageRate > 0 && (+d.mortgageRate < 1 || +d.mortgageRate > 15) ? "Unusual mortgage rate — double-check." : null}/>
+              <FmtInput fmtType="pct" value={d.mortgageRate} onChange={v=>set("mortgageRate",capField("mortgageRate",v))} placeholder="e.g. 4.5"/>
+              <Warn msg={+d.mortgageRate > 7 ? "High mortgage rate — double-check (current rates are 4–6%)" : null}/>
             </Field>
           </div>
-          <Field label="Monthly payment (£)"><FmtInput fmtType="gbp" value={d.monthlyMortgage} onChange={v=>set("monthlyMortgage",v)} placeholder="e.g. 1,400"/></Field>
+          <Field label="Monthly payment (£)">
+            <FmtInput fmtType="gbp" value={d.monthlyMortgage} onChange={v=>set("monthlyMortgage",capField("monthlyExpenses",v))} placeholder="e.g. 1,400"/>
+            {(() => {
+              const expected = +d.mortgageBalance * (+d.mortgageRate/100) / 12;
+              const actual = +d.monthlyMortgage;
+              const warn = actual > 0 && expected > 0 && (actual > expected * 2.5 || actual < expected * 0.1);
+              return <Warn msg={warn ? "Monthly payment looks unusual for this balance and rate — double-check" : null}/>;
+            })()}
+          </Field>
           {(d.mortgageType||"fixed") === "fixed" && (
             <Field label="Fixed rate expiry" hint="When does your current deal end? Leave blank if not yet known.">
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
@@ -1390,8 +1468,14 @@ function OnboardingStep({ step, d, set }) {
       {d.hasPersonalLoan === "yes" && (
         <div>
           <div style={g2}>
-            <Field label="Outstanding balance (£)"><FmtInput fmtType="gbp" value={d.personalLoanBalance} onChange={v=>set("personalLoanBalance",v)} placeholder="e.g. 8,000"/></Field>
-            <Field label="Interest rate (%)"><FmtInput fmtType="pct" value={d.personalLoanRate} onChange={v=>set("personalLoanRate",v)} placeholder="e.g. 9.9"/></Field>
+            <Field label="Outstanding balance (£)">
+              <FmtInput fmtType="gbp" value={d.personalLoanBalance} onChange={v=>set("personalLoanBalance",capField("personalLoanBalance",v))} placeholder="e.g. 8,000"/>
+              <Warn msg={+d.personalLoanBalance > 100000 ? "Large personal loan — double-check" : null}/>
+            </Field>
+            <Field label="Interest rate (%)">
+              <FmtInput fmtType="pct" value={d.personalLoanRate} onChange={v=>set("personalLoanRate",capField("personalLoanRate",v))} placeholder="e.g. 9.9"/>
+              <Warn msg={+d.personalLoanRate > 30 ? "Very high loan rate — double-check" : null}/>
+            </Field>
           </div>
           <div style={g2}>
             <Field label="Monthly payment (£)"><FmtInput fmtType="gbp" value={d.personalLoanMonthly} onChange={v=>set("personalLoanMonthly",v)} placeholder="e.g. 180"/></Field>
