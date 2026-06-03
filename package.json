@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp privacy.html dist/privacy.html && cp terms.html dist/terms.html"
     "preview": "vite preview"
   },
   "dependencies": {
