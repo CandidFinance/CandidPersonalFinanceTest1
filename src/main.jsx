@@ -25,47 +25,37 @@ const MUT  = "#6b6b6b"
 const SERIF= "'Playfair Display', serif"
 const SANS = "'DM Sans', sans-serif"
 
-// ── Stat chip ─────────────────────────────────────────────────────────────────
-function Stat({ n, label }) {
+// ── Shared CTA button ─────────────────────────────────────────────────────────
+function CtaButton({ onClick, dark }) {
+  return (
+    <button onClick={onClick} style={{
+      background: GOLD, border: "none", borderRadius: "10px",
+      padding: "18px 44px", fontSize: "17px", fontWeight: 700,
+      color: G, cursor: "pointer", fontFamily: SANS,
+      display: "inline-block",
+    }}>Get my free Candid report →</button>
+  )
+}
+
+function TrustLine({ light }) {
   return (
     <div style={{
-      border: `1px solid rgba(196,150,58,0.35)`,
-      borderRadius: "12px", padding: "20px 28px", textAlign: "center", minWidth: "160px"
+      fontSize: "12px", marginTop: "12px",
+      color: light ? "rgba(255,255,255,0.35)" : MUT,
+      letterSpacing: "0.03em",
     }}>
-      <div style={{ fontFamily: SERIF, fontSize: "36px", fontWeight: 700, color: GOLD, lineHeight: 1 }}>{n}</div>
-      <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", marginTop: "6px", lineHeight: 1.45 }}>{label}</div>
+      Free · No account needed · Takes 5 minutes
     </div>
   )
 }
 
-// ── How it works step ─────────────────────────────────────────────────────────
-function Step({ num, title, body }) {
-  return (
-    <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-      <div style={{
-        width: "32px", height: "32px", borderRadius: "50%",
-        background: "rgba(196,150,58,0.15)", border: "1px solid rgba(196,150,58,0.35)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: SERIF, fontSize: "15px", fontWeight: 700, color: GOLD, flexShrink: 0
-      }}>{num}</div>
-      <div>
-        <div style={{ fontSize: "15px", fontWeight: 600, color: WHITE, marginBottom: "4px" }}>{title}</div>
-        <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{body}</div>
-      </div>
-    </div>
-  )
-}
-
-// ── Module pill ───────────────────────────────────────────────────────────────
-function ModulePill({ icon, label }) {
+// ── Section label ─────────────────────────────────────────────────────────────
+function SectionLabel({ children }) {
   return (
     <div style={{
-      display: "inline-flex", alignItems: "center", gap: "7px",
-      background: "rgba(22,47,36,0.06)", border: "1px solid rgba(22,47,36,0.12)",
-      borderRadius: "100px", padding: "7px 14px", fontSize: "13px", color: G, fontWeight: 500
-    }}>
-      <span>{icon}</span><span>{label}</span>
-    </div>
+      fontSize: "10px", fontWeight: 700, color: GOLD,
+      letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "20px",
+    }}>{children}</div>
   )
 }
 
@@ -74,212 +64,218 @@ function LandingPage({ onStart }) {
   return (
     <div style={{ fontFamily: SANS }}>
 
-      {/* NAV */}
-      <nav style={{
-        background: G, padding: "0 32px", height: "58px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        position: "sticky", top: 0, zIndex: 100
-      }}>
-        <div style={{ fontFamily: SERIF, fontSize: "22px", fontWeight: 700, color: GOLD }}>Candid.</div>
-        <button onClick={onStart} style={{
-          background: GOLD, border: "none", borderRadius: "7px",
-          padding: "9px 20px", fontSize: "13px", fontWeight: 600,
-          color: G, cursor: "pointer", fontFamily: SANS
-        }}>Get my report →</button>
-      </nav>
-
-      {/* HERO */}
+      {/* ── SECTION 1: HERO ── */}
       <div style={{
-        background: G, padding: "80px 24px 96px",
-        display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
-        position: "relative", overflow: "hidden"
+        background: G,
+        minHeight: "100vh",
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        textAlign: "center", padding: "60px 24px",
+        position: "relative", overflow: "hidden",
       }}>
-        {/* Subtle grid bg */}
+        {/* subtle grid texture */}
         <div style={{
-          position: "absolute", inset: 0, opacity: 0.4,
+          position: "absolute", inset: 0, opacity: 0.35, pointerEvents: "none",
           backgroundImage: "linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)",
-          backgroundSize: "60px 60px", pointerEvents: "none"
+          backgroundSize: "64px 64px",
         }}/>
 
-        <div style={{ position: "relative", zIndex: 1, maxWidth: "720px" }}>
+        <div style={{ position: "relative", zIndex: 1, maxWidth: "640px" }}>
+          {/* Wordmark */}
           <div style={{
-            display: "inline-block", fontSize: "11px", fontWeight: 600, color: GOLD,
-            letterSpacing: "0.14em", textTransform: "uppercase",
-            background: "rgba(196,150,58,0.1)", border: "1px solid rgba(196,150,58,0.25)",
-            borderRadius: "100px", padding: "5px 16px", marginBottom: "28px"
-          }}>Personal finance, honestly.</div>
-
-          <h1 style={{
-            fontFamily: SERIF, fontSize: "clamp(38px, 7vw, 68px)",
-            color: WHITE, fontWeight: 700, lineHeight: 1.08, marginBottom: "24px"
+            fontFamily: SERIF, fontSize: "clamp(52px,8vw,72px)", fontWeight: 700,
+            color: GOLD, lineHeight: 1, marginBottom: "18px", letterSpacing: "-0.01em",
           }}>
-            The financial friend<br />everyone deserves.
-          </h1>
-
-          <p style={{
-            fontSize: "clamp(15px, 2vw, 18px)", color: "rgba(255,255,255,0.6)",
-            lineHeight: 1.75, maxWidth: "560px", margin: "0 auto 44px"
-          }}>
-            Most people with good incomes are quietly losing thousands every year — through missed tax relief, unused allowances, and wrong savings rates. Candid finds exactly what's costing you and tells you what to do about it.
-          </p>
-
-          <button onClick={onStart} style={{
-            background: GOLD, border: "none", borderRadius: "10px",
-            padding: "18px 40px", fontSize: "17px", fontWeight: 600,
-            color: G, cursor: "pointer", fontFamily: SANS,
-            marginBottom: "14px", display: "block", margin: "0 auto 14px"
-          }}>Get my free Candid report →</button>
-
-          <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginBottom: "64px" }}>
-            Free · Takes 5 minutes · No account required
+            Candid.
           </div>
 
-          {/* Stats row */}
-          <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
-            <Stat n="£1.46bn" label={"in pension tax relief\nunclaimed annually"} />
-            <Stat n="8.6%"    label={"of UK adults received\nfinancial advice last year"} />
-            <Stat n="11.9M"   label={"adults projected to earn\n£30k+ in 2025/26"} />
+          {/* Tagline */}
+          <div style={{
+            fontSize: "18px", color: `${CREAM}99`, fontStyle: "italic",
+            marginBottom: "52px", letterSpacing: "0.01em",
+          }}>
+            Personal finance, honestly.
+          </div>
+
+          <CtaButton onClick={onStart}/>
+          <TrustLine light/>
+        </div>
+      </div>
+
+      {/* ── SECTION 2: PROBLEM STATEMENT ── */}
+      <div style={{ background: CREAM, padding: "88px 24px" }}>
+        <div style={{ maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{
+            fontFamily: SERIF, fontSize: "clamp(26px,4vw,32px)",
+            color: G, fontWeight: 700, lineHeight: 1.2, marginBottom: "22px",
+          }}>
+            Good income. Good career.<br />Still losing thousands.
+          </h2>
+          <p style={{
+            fontSize: "clamp(15px,2vw,18px)", color: MUT,
+            lineHeight: 1.75, marginBottom: "52px", maxWidth: "600px", margin: "0 auto 52px",
+          }}>
+            Most professionals on £50k–£150k are unknowingly leaving significant money behind every year — through pension underoptimisation, yield gaps, tax inefficiencies, and missed allowances. Candid finds exactly what it's costing you and tells you what to do about it.
+          </p>
+
+          {/* Stat chips */}
+          <div style={{
+            display: "flex", gap: "16px", justifyContent: "center",
+            flexWrap: "wrap",
+          }}>
+            {[
+              { n: "£4,200", label: "avg annual pension tax relief unclaimed" },
+              { n: "£680",   label: "left on the table in savings yield gaps" },
+              { n: "6.5m",   label: "higher-rate taxpayers in the UK" },
+            ].map(chip => (
+              <div key={chip.n} style={{
+                background: G, borderRadius: "12px", padding: "20px 24px",
+                textAlign: "center", minWidth: "160px", flex: "1 1 160px", maxWidth: "220px",
+              }}>
+                <div style={{
+                  fontFamily: SERIF, fontSize: "28px", fontWeight: 700,
+                  color: GOLD, lineHeight: 1, marginBottom: "8px",
+                }}>{chip.n}</div>
+                <div style={{
+                  fontSize: "13px", color: `${CREAM}99`, lineHeight: 1.4,
+                }}>{chip.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* HOW IT WORKS */}
-      <div style={{ background: CREAM, padding: "80px 24px" }}>
+      {/* ── SECTION 3: HOW IT WORKS ── */}
+      <div style={{ background: WHITE, padding: "88px 24px" }}>
         <div style={{ maxWidth: "960px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "56px" }}>
-            <div style={{
-              fontSize: "10px", fontWeight: 700, color: GOLD, letterSpacing: "0.14em",
-              textTransform: "uppercase", marginBottom: "14px"
-            }}>How it works</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: "clamp(28px,4vw,40px)", color: G, fontWeight: 700 }}>
+            <SectionLabel>How it works</SectionLabel>
+            <h2 style={{
+              fontFamily: SERIF, fontSize: "clamp(26px,4vw,34px)",
+              color: G, fontWeight: 700, lineHeight: 1.2,
+            }}>
               Your complete financial picture,<br />in 5 minutes.
             </h2>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "32px" }}>
-            {[
-              { num:"1", title:"Tell us about your finances", body:"Salary, savings, pension, ISA, investments, debt. Takes 3 minutes. Approximate figures are fine — you can refine later." },
-              { num:"2", title:"Get your Candid score", body:"A 0–100 financial health score with a personalised narrative — and a prioritised list of exactly what's costing you, with specific £ figures attached." },
-              { num:"3", title:"Explore your deep-dives", body:"Eight modules covering every area of your finances. Each one calculates your exact gap and shows you the products that fix it." },
-            ].map(s => (
-              <div key={s.num} style={{
-                background: WHITE, borderRadius: "14px", padding: "28px 28px",
-                border: "1px solid rgba(22,47,36,0.08)", borderTop: `3px solid ${GOLD}`
-              }}>
-                <div style={{
-                  width: "36px", height: "36px", borderRadius: "50%",
-                  background: "rgba(196,150,58,0.12)", display: "flex",
-                  alignItems: "center", justifyContent: "center",
-                  fontFamily: SERIF, fontSize: "17px", fontWeight: 700,
-                  color: GOLD, marginBottom: "16px"
-                }}>{s.num}</div>
-                <div style={{ fontFamily: SERIF, fontSize: "18px", color: G, fontWeight: 600, marginBottom: "8px" }}>{s.title}</div>
-                <div style={{ fontSize: "13.5px", color: MUT, lineHeight: 1.7 }}>{s.body}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* MODULES */}
-      <div style={{ background: WHITE, padding: "80px 24px" }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
           <div style={{
-            fontSize: "10px", fontWeight: 700, color: GOLD, letterSpacing: "0.14em",
-            textTransform: "uppercase", marginBottom: "14px"
-          }}>Eight modules</div>
-          <h2 style={{ fontFamily: SERIF, fontSize: "clamp(26px,3.5vw,36px)", color: G, fontWeight: 700, marginBottom: "12px" }}>
-            Every area of your finances, covered.
-          </h2>
-          <p style={{ fontSize: "15px", color: MUT, lineHeight: 1.7, marginBottom: "36px" }}>
-            Most financial tools cover one thing. Candid calculates your complete picture — including the interactions between modules that most people miss.
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center", marginBottom: "44px" }}>
-            {[
-              ["💷","Cash & savings"],["📈","Investments & CGT"],["🏦","Pension"],
-              ["🎓","Student loan"],["🏠","Mortgage"],["🛡️","Insurance"],
-              ["👶","Kids & family"],["📜","Inheritance"],
-            ].map(([icon, label]) => <ModulePill key={label} icon={icon} label={label} />)}
-          </div>
-          <div style={{
-            background: CREAM, borderRadius: "12px", padding: "20px 24px",
-            fontSize: "13px", color: MUT, lineHeight: 1.7,
-            borderLeft: `4px solid ${GOLD}`
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: "28px",
           }}>
-            Candid provides financial <strong style={{color:G}}>guidance</strong>, not regulated advice. All calculations use your specific inputs — no estimates, no averages. We operate outside the FCA's regulated advice perimeter.
-          </div>
-        </div>
-      </div>
-
-      {/* SOCIAL PROOF / WHAT YOU GET */}
-      <div style={{ background: G, padding: "80px 24px" }}>
-        <div style={{ maxWidth: "840px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "52px" }}>
-            <h2 style={{ fontFamily: SERIF, fontSize: "clamp(26px,3.5vw,38px)", color: WHITE, fontWeight: 700 }}>
-              What you'll find out.
-            </h2>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "16px" }}>
             {[
-              { icon:"🎯", title:"Your exact tax position", body:"Whether you're approaching the £100k taper zone, how much bonus sacrifice would save, what rate of pension relief you're getting." },
-              { icon:"📅", title:"ISA deadline countdown", body:"How much of your £20,000 annual allowance is still available, and exactly how many days before it expires permanently." },
-              { icon:"🎓", title:"Student loan strategy", body:"Whether you'll repay before write-off, the 9% effective income surcharge, and whether overpaying makes mathematical sense for you." },
-              { icon:"💰", title:"The yield gap", body:"How much interest you're losing by keeping cash in the wrong account — calculated against the best available rate today." },
-              { icon:"📈", title:"CGT crystallisation window", body:"Whether you have gains you could realise tax-free this year, and how Bed & ISA works to move them into a protected wrapper." },
-              { icon:"🏠", title:"Mortgage overpayment ROI", body:"The guaranteed after-tax return of overpaying vs. the ISA return — calculated at your actual rate and remaining balance." },
-            ].map(item => (
-              <div key={item.title} style={{
-                background: "rgba(255,255,255,0.04)", borderRadius: "12px",
-                padding: "20px 22px", border: "1px solid rgba(255,255,255,0.08)",
-                display: "flex", gap: "14px"
+              {
+                icon: "📋", title: "Tell us about your finances",
+                body: "Salary, savings, pension, debts. Takes about 5 minutes. Approximate figures are fine — you can refine later.",
+              },
+              {
+                icon: "🎯", title: "Get your Candid score",
+                body: "A personalised 0–100 financial health score showing where you stand and what matters most.",
+              },
+              {
+                icon: "🔍", title: "Explore your modules",
+                body: "Deep-dive into each area of your finances with specific actions and their £ impact, calculated from your actual inputs.",
+              },
+            ].map(step => (
+              <div key={step.title} style={{
+                background: CREAM, borderRadius: "14px", padding: "32px 28px",
+                borderTop: `4px solid ${GOLD}`,
               }}>
-                <span style={{ fontSize: "22px", flexShrink: 0, marginTop: "2px" }}>{item.icon}</span>
-                <div>
-                  <div style={{ fontSize: "14px", fontWeight: 600, color: WHITE, marginBottom: "5px" }}>{item.title}</div>
-                  <div style={{ fontSize: "12.5px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{item.body}</div>
-                </div>
+                <div style={{ fontSize: "28px", marginBottom: "16px" }}>{step.icon}</div>
+                <div style={{
+                  fontFamily: SERIF, fontSize: "18px", color: G,
+                  fontWeight: 600, marginBottom: "10px",
+                }}>{step.title}</div>
+                <div style={{ fontSize: "14px", color: MUT, lineHeight: 1.7 }}>{step.body}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* FINAL CTA */}
-      <div style={{
-        background: CREAM, padding: "88px 24px",
-        display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center"
-      }}>
-        <div style={{
-          fontSize: "10px", fontWeight: 700, color: GOLD, letterSpacing: "0.14em",
-          textTransform: "uppercase", marginBottom: "16px"
-        }}>Free — no account needed</div>
-        <h2 style={{
-          fontFamily: SERIF, fontSize: "clamp(30px,5vw,52px)",
-          color: G, fontWeight: 700, lineHeight: 1.1, marginBottom: "20px"
-        }}>Find your financial gaps.<br />Fix them today.</h2>
-        <p style={{ fontSize: "15px", color: MUT, maxWidth: "440px", lineHeight: 1.7, marginBottom: "36px" }}>
-          Takes under 5 minutes. No account, no email, no commitment. Just honest numbers about your money.
-        </p>
-        <button onClick={onStart} style={{
-          background: G, border: "none", borderRadius: "10px",
-          padding: "18px 44px", fontSize: "17px", fontWeight: 600,
-          color: WHITE, cursor: "pointer", fontFamily: SANS, marginBottom: "10px"
-        }}>Get my free Candid report →</button>
-        <div style={{ fontSize: "12px", color: MUT }}>Your data stays on your device. We never sell or share it.</div>
+      {/* ── SECTION 4: AREAS COVERED ── */}
+      <div style={{ background: G, padding: "88px 24px", textAlign: "center" }}>
+        <div style={{ maxWidth: "700px", margin: "0 auto" }}>
+          <SectionLabel>What Candid covers</SectionLabel>
+          <h2 style={{
+            fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,32px)",
+            color: WHITE, fontWeight: 700, marginBottom: "36px", lineHeight: 1.25,
+          }}>
+            Every area of your finances, connected.
+          </h2>
+
+          {/* Area chips */}
+          <div style={{
+            display: "flex", flexWrap: "wrap", gap: "12px",
+            justifyContent: "center", marginBottom: "16px",
+          }}>
+            {[
+              "Pension & salary sacrifice",
+              "ISA & investments",
+              "Student loan strategy",
+              "Mortgage & debt",
+            ].map(area => (
+              <div key={area} style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "100px", padding: "10px 20px",
+                fontSize: "14px", color: WHITE, fontWeight: 500,
+              }}>{area}</div>
+            ))}
+          </div>
+
+          <div style={{
+            fontSize: "13px", color: "rgba(255,255,255,0.4)",
+            marginBottom: "44px", letterSpacing: "0.01em",
+          }}>
+            + more areas depending on your situation
+          </div>
+
+          {/* Guidance disclaimer — visually distinct */}
+          <div style={{
+            borderTop: "1px solid rgba(255,255,255,0.1)",
+            paddingTop: "32px",
+            fontSize: "16px", color: `${CREAM}cc`,
+            fontStyle: "italic", lineHeight: 1.7, maxWidth: "540px", margin: "0 auto",
+          }}>
+            Guidance, not advice. Candid helps you understand your options — the decisions are always yours.
+          </div>
+        </div>
       </div>
 
-      {/* FOOTER */}
+      {/* ── SECTION 5: FINAL CTA ── */}
+      <div style={{
+        background: CREAM, padding: "96px 24px",
+        display: "flex", flexDirection: "column",
+        alignItems: "center", textAlign: "center",
+      }}>
+        <h2 style={{
+          fontFamily: SERIF, fontSize: "clamp(22px,3.5vw,28px)",
+          color: G, fontWeight: 700, marginBottom: "32px", lineHeight: 1.3,
+        }}>
+          Ready to see what Candid finds?
+        </h2>
+        <CtaButton onClick={onStart}/>
+        <TrustLine/>
+      </div>
+
+      {/* ── FOOTER ── */}
       <div style={{
         background: G, padding: "28px 32px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap", gap: "12px"
+        flexWrap: "wrap", gap: "12px",
       }}>
         <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: GOLD }}>Candid.</div>
-        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", lineHeight: 1.6, maxWidth: "560px" }}>
+        <div style={{
+          fontSize: "11px", color: "rgba(255,255,255,0.3)",
+          lineHeight: 1.6, maxWidth: "560px",
+        }}>
           Candid provides financial guidance and education only — not regulated financial advice. Always consider your personal circumstances and consult a qualified adviser for complex situations. Candid may earn referral fees when you click through to product providers.
         </div>
-        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", display:"flex", gap:"12px", alignItems:"center", flexWrap:"wrap" }}>
+        <div style={{
+          fontSize: "11px", color: "rgba(255,255,255,0.25)",
+          display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap",
+        }}>
           <span>© 2026 Candid Finance</span>
           <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Privacy Policy</a>
           <a href="/terms.html"   target="_blank" rel="noreferrer" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Terms of Service</a>
@@ -290,7 +286,7 @@ function LandingPage({ onStart }) {
   )
 }
 
-// ── Feedback banner (shown after completing the app) ──────────────────────────
+// ── Root ──────────────────────────────────────────────────────────────────────
 function Root() {
   const [launched, setLaunched] = useState(false)
 
