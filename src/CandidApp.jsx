@@ -942,6 +942,8 @@ function ProgressBar({ pct }) {
   );
 }
 
+const STEP_SHORT_LABELS = ["Income","Savings","Invest.","Pension","Debt"];
+
 function StepProgress({ step, steps, onStepClick, isEditMode }) {
   return (
     <div style={{background:WHITE,borderBottom:`1px solid ${CDARK}`,padding:"20px 24px",flexShrink:0}}>
@@ -951,6 +953,7 @@ function StepProgress({ step, steps, onStepClick, isEditMode }) {
           const current = i === step;
           const size = current ? 34 : 28;
           const clickable = (isEditMode || done) && !!onStepClick && i !== step;
+          const shortLabel = STEP_SHORT_LABELS[i] || label;
           return (
             <div key={i} style={{display:"flex",alignItems:"center",flex: i < steps.length - 1 ? 1 : 0}}>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",flexShrink:0}}>
@@ -972,7 +975,7 @@ function StepProgress({ step, steps, onStepClick, isEditMode }) {
                     : <span style={{color: current ? G : isEditMode ? G : MUT, fontSize:"12px", fontWeight:600}}>{i+1}</span>
                   }
                 </div>
-                <span style={{fontSize:"10px",fontWeight:600,color:current?G:done?G:MUT,letterSpacing:"0.04em",whiteSpace:"nowrap",opacity:current?1:done?0.7:(isEditMode?0.7:0.5)}}>{label}</span>
+                <span style={{fontSize:"10px",fontWeight:600,color:current?G:done?G:MUT,letterSpacing:"0.04em",whiteSpace:"nowrap",opacity:current?1:done?0.7:(isEditMode?0.7:0.5)}}>{shortLabel}</span>
               </div>
               {i < steps.length - 1 && (
                 <div style={{flex:1,height:"2px",background: i < step ? G : "rgba(22,47,36,0.12)",marginBottom:"18px",marginLeft:"6px",marginRight:"6px",transition:"background 0.4s ease"}}/>
@@ -981,9 +984,9 @@ function StepProgress({ step, steps, onStepClick, isEditMode }) {
           );
         })}
       </div>
-      {isEditMode && (
-        <div style={{maxWidth:"580px",margin:"6px auto 0",textAlign:"center",fontSize:"11px",color:MUT}}>Click any step to jump directly to it</div>
-      )}
+      <div style={{maxWidth:"580px",margin:"6px auto 0",textAlign:"center",fontSize:"11px",color:MUT}}>
+        {isEditMode ? "Click any step to jump directly to it" : `Step ${step + 1} of ${steps.length}`}
+      </div>
     </div>
   );
 }
@@ -1032,7 +1035,7 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
           </button>
         </div>
         <p style={{marginTop:"18px",textAlign:"center",fontSize:"11px",color:MUT,lineHeight:1.6}}>
-          🔒 Your responses are anonymised and used only to improve Candid's accuracy. No personally identifiable information is stored.
+          🔒 Your data is never sold or shared. Candid is guidance, not advice.
         </p>
       </ContentWrap>
     </PageWrap>
@@ -1123,11 +1126,12 @@ function InfoTooltip({ text }) {
 
 function OnboardingStep({ step, d, set }) {
   const g2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"};
+  const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
   if (step === 0) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Tell us about you</h2>
-      <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>A few basics to calibrate your report.</p>
-      <Field label="First name"><input style={INP} value={d.name} onChange={e => set("name",e.target.value)} placeholder="e.g. Harvey"/></Field>
+      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We use your income to work out your tax band, savings potential, and which optimisations matter most for you.</p>
+      <Field label="First name"><input style={INP} value={d.name} onChange={e => set("name",e.target.value)} placeholder="What should we call you?"/></Field>
       <div style={g2}>
         <Field label="Age">
           <input style={INP} type="number" value={d.age} onChange={e => set("age",e.target.value)} placeholder="e.g. 29"/>
@@ -1152,31 +1156,36 @@ function OnboardingStep({ step, d, set }) {
           </div>
         </div>
       )}
-      <div style={g2}>
-        <Field label="Other income (£/yr)" hint="Rental, freelance — leave blank if none">
-          <FmtInput fmtType="gbp" value={d.otherIncome||""} onChange={v=>set("otherIncome",capField("otherIncome",v))} placeholder="e.g. 8,000"/>
-          <Warn msg={+d.otherIncome > 200000 ? "Unusually high other income — double-check" : null}/>
-        </Field>
-        <Field label="Dividend income (£/yr)" hint="From shares or funds — leave blank if none">
-          <FmtInput fmtType="gbp" value={d.dividendIncome||""} onChange={v=>set("dividendIncome",capField("dividendIncome",v))} placeholder="e.g. 2,000"/>
-          <Warn msg={+d.dividendIncome > 500000 ? "Large dividend income — double-check" : null}/>
-        </Field>
-      </div>
-      <div style={g2}>
-        <Field label="Annual bonus (£)" hint="Leave blank if none">
-          <FmtInput fmtType="gbp" value={d.bonusAmount||""} onChange={v=>set("bonusAmount",capField("bonusAmount",v))} placeholder="e.g. 10,000"/>
-          <Warn msg={+d.bonusAmount > (+d.salary||0) * 3 && +d.bonusAmount > 0 ? "Bonus exceeds 3× salary — is this right?" : null}/>
-        </Field>
-        <Field label="Salary trajectory" hint="Used to project your salary in student loan and pension calculations.">
-          <Toggle value={d.salaryTrajectory} onChange={v=>set("salaryTrajectory",v)} options={[{value:"stable",label:"Stable (~2% p.a.)"},{value:"moderate",label:"Steady growth (~5% p.a.)"},{value:"high",label:"Rapid growth (~15% p.a.)"}]}/>
-        </Field>
-      </div>
+      <Field label="Salary trajectory" hint="Used to project your salary in student loan and pension calculations.">
+        <Toggle value={d.salaryTrajectory} onChange={v=>set("salaryTrajectory",v)} options={[{value:"stable",label:"Stable (~2% p.a.)"},{value:"moderate",label:"Steady growth (~5% p.a.)"},{value:"high",label:"Rapid growth (~15% p.a.)"}]}/>
+      </Field>
+      <button type="button" onClick={() => setShowAdditionalIncome(v => !v)} style={{background:"transparent",border:"none",color:GOLD,fontSize:"13px",fontWeight:600,cursor:"pointer",padding:"4px 0",marginTop:"8px",marginBottom:"4px",display:"block"}}>
+        {showAdditionalIncome ? "− Hide additional income" : "+ Add bonus / other income"}
+      </button>
+      {showAdditionalIncome && (
+        <div>
+          <div style={g2}>
+            <Field label="Other income (£/yr)" hint="Rental, freelance — leave blank if none">
+              <FmtInput fmtType="gbp" value={d.otherIncome||""} onChange={v=>set("otherIncome",capField("otherIncome",v))} placeholder="e.g. 8,000"/>
+              <Warn msg={+d.otherIncome > 200000 ? "Unusually high other income — double-check" : null}/>
+            </Field>
+            <Field label="Dividend income (£/yr)" hint="From shares or funds — leave blank if none">
+              <FmtInput fmtType="gbp" value={d.dividendIncome||""} onChange={v=>set("dividendIncome",capField("dividendIncome",v))} placeholder="e.g. 2,000"/>
+              <Warn msg={+d.dividendIncome > 500000 ? "Large dividend income — double-check" : null}/>
+            </Field>
+          </div>
+          <Field label="Annual bonus (£)" hint="Leave blank if none">
+            <FmtInput fmtType="gbp" value={d.bonusAmount||""} onChange={v=>set("bonusAmount",capField("bonusAmount",v))} placeholder="e.g. 10,000"/>
+            <Warn msg={+d.bonusAmount > (+d.salary||0) * 3 && +d.bonusAmount > 0 ? "Bonus exceeds 3× salary — is this right?" : null}/>
+          </Field>
+        </div>
+      )}
     </div>
   );
   if (step === 1) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Cash & savings</h2>
-      <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>How your liquid money is sitting right now.</p>
+      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>Helps us identify yield gaps and whether your cash is working as hard as it should be.</p>
       <div style={g2}>
         <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport">
         <FmtInput fmtType="gbp" value={d.monthlyExpenses} onChange={v=>set("monthlyExpenses",capField("monthlyExpenses",v))} placeholder="e.g. 2,500"/>
@@ -1235,7 +1244,7 @@ function OnboardingStep({ step, d, set }) {
   if (step === 2) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Investments</h2>
-      <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>Stocks, funds, anything in a brokerage.</p>
+      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We'll check whether your investments are sheltered efficiently and whether any CGT opportunities exist.</p>
       <Field label="Do you have investments?">
         <Toggle value={d.hasInvestments} onChange={v => set("hasInvestments",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"}]}/>
       </Field>
@@ -1294,7 +1303,7 @@ function OnboardingStep({ step, d, set }) {
   if (step === 3) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Pension</h2>
-      <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>The most powerful savings vehicle most people underuse.</p>
+      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>The single biggest optimisation for most people in your income bracket. Takes 60 seconds to fill in.</p>
       <Field label="Do you contribute to a pension?">
         <Toggle value={d.hasPension} onChange={v => set("hasPension",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"}]}/>
       </Field>
@@ -1358,7 +1367,7 @@ function OnboardingStep({ step, d, set }) {
   if (step === 4) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Debt</h2>
-      <p style={{color:MUT,marginBottom:"32px",lineHeight:1.6,fontSize:"15px"}}>Student loans, mortgages, and personal loans — each needs its own strategy.</p>
+      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>Understanding your debt profile lets us prioritise what to pay down first and in what order.</p>
       <Field label="Student loan">
         <select style={INP} value={d.studentLoan} onChange={e => set("studentLoan",e.target.value)}>
           <option value="none">No student loan</option>
@@ -2073,6 +2082,11 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
             </div>
           );
         })()}
+
+        {/* Greeting */}
+        <h1 style={{fontFamily:SERIF,fontSize:"clamp(22px,4vw,28px)",color:G,fontWeight:700,marginBottom:"20px",lineHeight:1.2}}>
+          {d.name ? `Hi ${d.name},` : "Hi,"} here's your Candid report.
+        </h1>
 
         {/* Score card */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
