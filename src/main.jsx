@@ -60,9 +60,28 @@ function SectionLabel({ children }) {
 }
 
 // ── Landing page ──────────────────────────────────────────────────────────────
-function LandingPage({ onStart }) {
+function LandingPage({ onStart, hasLocalData, savedName, onReviewInputs }) {
   return (
     <div style={{ fontFamily: SANS }}>
+      {hasLocalData && savedName && (
+        <div style={{
+          background: "rgba(196,150,58,0.12)",
+          borderBottom: "1px solid rgba(196,150,58,0.3)",
+          padding: "10px 24px",
+          fontSize: "13px",
+          color: "#c4963a",
+          textAlign: "center",
+        }}>
+          Welcome back, {savedName}. Your inputs are saved —{" "}
+          <button onClick={onReviewInputs} style={{background:"none",border:"none",color:"#c4963a",textDecoration:"underline",cursor:"pointer",fontSize:"13px",padding:"0 4px"}}>
+            review them
+          </button>
+          or{" "}
+          <button onClick={onStart} style={{background:"none",border:"none",color:"#c4963a",textDecoration:"underline",cursor:"pointer",fontSize:"13px",padding:"0 4px"}}>
+            generate a new report
+          </button>
+        </div>
+      )}
 
       {/* ── SECTION 1: HERO ── */}
       <div style={{
@@ -290,6 +309,14 @@ function LandingPage({ onStart }) {
 function Root() {
   const [view, setView] = useState("landing")
 
+  const hasLocalData = (() => {
+    try { return !!localStorage.getItem('candid_inputs'); } catch(e) { return false; }
+  })();
+  const savedName = (() => {
+    try { const s = localStorage.getItem('candid_inputs'); return s ? (JSON.parse(s).name || "") : ""; }
+    catch(e) { return ""; }
+  })();
+
   function handleStart() {
     posthog.capture("app_started")
     setView("onboarding")
@@ -298,7 +325,7 @@ function Root() {
 
   return (
     <div>
-      {view === "landing" && <LandingPage onStart={handleStart} />}
+      {view === "landing" && <LandingPage onStart={handleStart} hasLocalData={hasLocalData} savedName={savedName} onReviewInputs={handleStart} />}
       {view === "onboarding" && (
         <div id="candid-app" style={{ minHeight: "100vh" }}>
           <CandidApp onGoHome={() => { setView("landing"); window.scrollTo({ top: 0, behavior: "instant" }); }} />

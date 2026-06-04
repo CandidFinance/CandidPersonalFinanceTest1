@@ -1019,7 +1019,7 @@ function ContentWrap({ children, maxWidth="580px" }) {
 // ── Full onboarding ───────────────────────────────────────────────────────────
 const STEPS = ["About you","Cash & savings","Investments","Pension","Debt"];
 
-function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue, onStepClick }) {
+function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue, onStepClick, onClearData }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [step]);
   return (
     <PageWrap>
@@ -1037,6 +1037,13 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
         <p style={{marginTop:"18px",textAlign:"center",fontSize:"11px",color:MUT,lineHeight:1.6}}>
           🔒 Your data is never sold or shared. Candid is guidance, not advice.
         </p>
+        {onClearData && (
+          <p style={{textAlign:"center",marginTop:"6px"}}>
+            <button type="button" onClick={onClearData} style={{background:"none",border:"none",fontSize:"11px",color:MUT,cursor:"pointer",textDecoration:"underline",padding:0}}>
+              Clear saved data
+            </button>
+          </p>
+        )}
       </ContentWrap>
     </PageWrap>
   );
@@ -3769,12 +3776,18 @@ const BLANK_DATA = {
   // Supabase schema note: isa_this_year_other NUMERIC
 };
 
-const INIT_DATA = BLANK_DATA;
+function loadInitialData() {
+  try {
+    const saved = localStorage.getItem('candid_inputs');
+    if (saved) return { ...BLANK_DATA, ...JSON.parse(saved) };
+  } catch(e) {}
+  return BLANK_DATA;
+}
 
 export default function Candid({ onGoHome = () => {} }) {
   const [screen,           setScreen]           = useState("onboarding");
   const [step,             setStep]             = useState(0);
-  const [d,                setD]                = useState(INIT_DATA);
+  const [d,                setD]                = useState(loadInitialData);
   const [insights,         setInsights]         = useState(null);
   const [prevInsights,     setPrevInsights]     = useState(null);
   const [whatChangedOpen,  setWhatChangedOpen]  = useState(false);
@@ -3803,6 +3816,12 @@ export default function Candid({ onGoHome = () => {} }) {
   }
 
   const set = (k, v) => setD(p => ({...p, [k]:v}));
+
+  useEffect(() => {
+    try { localStorage.setItem('candid_inputs', JSON.stringify(d)); }
+    catch(e) {}
+  }, [d]);
+
   const m = calcMetrics(d);
 
   // One-shot feedback trigger: 90s after dashboard loads OR 3s after all modules reviewed
@@ -4075,12 +4094,22 @@ Rules:
     onGoHome();
   }
 
+  function clearSavedData() {
+    localStorage.removeItem('candid_inputs');
+    setD(BLANK_DATA);
+    setInsights(null);
+    setStep(0);
+    setScreen("onboarding");
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
   // ── Router ──
   if (screen === "onboarding") return (
     <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
       onBack={() => step>0 ? setStep(s=>s-1) : onGoHome()}
       onBackToDashboard={() => setScreen("dashboard")}
       onStepClick={i => setStep(i)}
+      onClearData={clearSavedData}
       onContinue={() => {
         posthog.capture("onboarding_step_completed", { step: step + 1, step_name: STEPS[step] });
         step<STEPS.length-1 ? setStep(s=>s+1) : generateDashboard();
