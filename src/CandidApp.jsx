@@ -3784,11 +3784,19 @@ function loadInitialData() {
   return BLANK_DATA;
 }
 
-export default function Candid({ onGoHome = () => {} }) {
-  const [screen,           setScreen]           = useState("onboarding");
+function loadSavedInsights() {
+  try {
+    const saved = localStorage.getItem('candid_insights');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return null;
+}
+
+export default function Candid({ onGoHome = () => {}, initialScreen = "onboarding" }) {
+  const [screen,           setScreen]           = useState(initialScreen);
   const [step,             setStep]             = useState(0);
   const [d,                setD]                = useState(loadInitialData);
-  const [insights,         setInsights]         = useState(null);
+  const [insights,         setInsights]         = useState(loadSavedInsights);
   const [prevInsights,     setPrevInsights]     = useState(null);
   const [whatChangedOpen,  setWhatChangedOpen]  = useState(false);
   const [activeModule,     setActiveModule]     = useState(null);
@@ -4037,6 +4045,10 @@ Rules:
     try {
       const result = await callClaude(prompt, 1400);
       setInsights(result);
+      try {
+        localStorage.setItem('candid_insights', JSON.stringify(result));
+        localStorage.setItem('candid_insights_date', new Date().toISOString());
+      } catch(e) {}
       setWhatChangedOpen(true);
       posthog.capture("report_generated", { score: result.score, tax_band: metrics.taxBandLabel });
       // ── Supabase insert — reuse pre-computed statuses ──
@@ -4086,7 +4098,14 @@ Rules:
       });
       if (rowId) supaRowId.current = rowId;
     }
-    catch(e) { setInsights(fallback); posthog.capture("report_generated", { score: fallback.score, fallback: true }); }
+    catch(e) {
+      setInsights(fallback);
+      try {
+        localStorage.setItem('candid_insights', JSON.stringify(fallback));
+        localStorage.setItem('candid_insights_date', new Date().toISOString());
+      } catch(_) {}
+      posthog.capture("report_generated", { score: fallback.score, fallback: true });
+    }
     finally { setScreen("dashboard"); }
   }
 

@@ -60,28 +60,9 @@ function SectionLabel({ children }) {
 }
 
 // ── Landing page ──────────────────────────────────────────────────────────────
-function LandingPage({ onStart, hasLocalData, savedName, onReviewInputs }) {
+function LandingPage({ onStart }) {
   return (
     <div style={{ fontFamily: SANS }}>
-      {hasLocalData && savedName && (
-        <div style={{
-          background: "rgba(196,150,58,0.12)",
-          borderBottom: "1px solid rgba(196,150,58,0.3)",
-          padding: "10px 24px",
-          fontSize: "13px",
-          color: "#c4963a",
-          textAlign: "center",
-        }}>
-          Welcome back, {savedName}. Your inputs are saved —{" "}
-          <button onClick={onReviewInputs} style={{background:"none",border:"none",color:"#c4963a",textDecoration:"underline",cursor:"pointer",fontSize:"13px",padding:"0 4px"}}>
-            review them
-          </button>
-          or{" "}
-          <button onClick={onStart} style={{background:"none",border:"none",color:"#c4963a",textDecoration:"underline",cursor:"pointer",fontSize:"13px",padding:"0 4px"}}>
-            generate a new report
-          </button>
-        </div>
-      )}
 
       {/* ── SECTION 1: HERO ── */}
       <div style={{
@@ -305,17 +286,73 @@ function LandingPage({ onStart, hasLocalData, savedName, onReviewInputs }) {
   )
 }
 
+// ── Welcome back screen ───────────────────────────────────────────────────────
+function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStartFresh }) {
+  const date = insightsDate
+    ? new Date(insightsDate).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })
+    : null;
+  return (
+    <div style={{
+      minHeight:"100vh", background:G,
+      display:"flex", flexDirection:"column",
+      alignItems:"center", justifyContent:"center",
+      padding:"40px 24px", textAlign:"center", fontFamily:SANS,
+    }}>
+      <div style={{
+        fontFamily:SERIF, fontSize:"clamp(52px,10vw,72px)", fontWeight:700,
+        color:GOLD, lineHeight:1, marginBottom:"12px", letterSpacing:"-1px",
+      }}>
+        {name || "Welcome"}
+      </div>
+      <div style={{
+        fontSize:"20px", color:"rgba(246,240,230,0.7)",
+        marginBottom:"48px", fontFamily:SERIF, fontStyle:"italic",
+      }}>
+        Welcome back.
+      </div>
+      <div style={{display:"flex", flexDirection:"column", gap:"14px", width:"100%", maxWidth:"320px"}}>
+        <button onClick={onViewReport} style={{
+          background:GOLD, color:G, border:"none",
+          borderRadius:"10px", padding:"18px 32px",
+          fontSize:"17px", fontWeight:700, cursor:"pointer", fontFamily:SANS,
+        }}>
+          My Candid report →
+        </button>
+        {date && (
+          <div style={{fontSize:"11px", color:"rgba(246,240,230,0.35)", marginTop:"-8px"}}>
+            Last generated {date}
+          </div>
+        )}
+        <button onClick={onUpdateInputs} style={{
+          background:"transparent", color:GOLD,
+          border:"1.5px solid rgba(196,150,58,0.4)",
+          borderRadius:"10px", padding:"16px 32px",
+          fontSize:"17px", fontWeight:600, cursor:"pointer", fontFamily:SANS,
+        }}>
+          Something's changed
+        </button>
+        <button onClick={onStartFresh} style={{
+          background:"none", border:"none",
+          color:"rgba(246,240,230,0.3)", fontSize:"13px",
+          cursor:"pointer", marginTop:"8px", fontFamily:SANS,
+        }}>
+          Start fresh
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Root ──────────────────────────────────────────────────────────────────────
 function Root() {
-  const [view, setView] = useState("landing")
-
-  const hasLocalData = (() => {
-    try { return !!localStorage.getItem('candid_inputs'); } catch(e) { return false; }
-  })();
-  const savedName = (() => {
-    try { const s = localStorage.getItem('candid_inputs'); return s ? (JSON.parse(s).name || "") : ""; }
-    catch(e) { return ""; }
-  })();
+  const [view, setView] = useState(() => {
+    try {
+      const hasSavedInputs = !!localStorage.getItem('candid_inputs');
+      const hasSavedInsights = !!localStorage.getItem('candid_insights');
+      if (hasSavedInputs && hasSavedInsights) return 'welcome_back';
+    } catch(e) {}
+    return 'landing';
+  });
 
   function handleStart() {
     posthog.capture("app_started")
@@ -323,12 +360,46 @@ function Root() {
     window.scrollTo({ top: 0, behavior: "instant" })
   }
 
+  function goHome() {
+    setView("landing");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
   return (
     <div>
-      {view === "landing" && <LandingPage onStart={handleStart} hasLocalData={hasLocalData} savedName={savedName} onReviewInputs={handleStart} />}
+      {view === "landing" && <LandingPage onStart={handleStart} />}
+
+      {view === "welcome_back" && (
+        <WelcomeBack
+          name={(() => { try { const s = localStorage.getItem('candid_inputs'); return s ? JSON.parse(s).name || "" : ""; } catch(e) { return ""; } })()}
+          insightsDate={(() => { try { return localStorage.getItem('candid_insights_date'); } catch(e) { return null; } })()}
+          onViewReport={() => { setView("dashboard"); window.scrollTo({ top:0, behavior:"instant" }); }}
+          onUpdateInputs={() => {
+            try { localStorage.removeItem('candid_insights'); localStorage.removeItem('candid_insights_date'); } catch(e) {}
+            setView("onboarding");
+            window.scrollTo({ top:0, behavior:"instant" });
+          }}
+          onStartFresh={() => {
+            try {
+              localStorage.removeItem('candid_inputs');
+              localStorage.removeItem('candid_insights');
+              localStorage.removeItem('candid_insights_date');
+            } catch(e) {}
+            setView("landing");
+            window.scrollTo({ top:0, behavior:"instant" });
+          }}
+        />
+      )}
+
       {view === "onboarding" && (
         <div id="candid-app" style={{ minHeight: "100vh" }}>
-          <CandidApp onGoHome={() => { setView("landing"); window.scrollTo({ top: 0, behavior: "instant" }); }} />
+          <CandidApp initialScreen="onboarding" onGoHome={goHome} />
+        </div>
+      )}
+
+      {view === "dashboard" && (
+        <div id="candid-app" style={{ minHeight: "100vh" }}>
+          <CandidApp initialScreen="dashboard" onGoHome={goHome} />
         </div>
       )}
     </div>
