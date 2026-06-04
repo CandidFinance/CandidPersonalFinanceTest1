@@ -288,22 +288,20 @@ function LandingPage({ onStart }) {
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 function Root() {
-  const [launched, setLaunched] = useState(false)
+  const [view, setView] = useState("landing")
 
   function handleStart() {
-    setLaunched(true)
     posthog.capture("app_started")
-    setTimeout(() => {
-      document.getElementById("candid-app")?.scrollIntoView({ behavior: "smooth" })
-    }, 100)
+    setView("onboarding")
+    window.scrollTo({ top: 0, behavior: "instant" })
   }
 
   return (
     <div>
-      {!launched && <LandingPage onStart={handleStart} />}
-      {launched && (
+      {view === "landing" && <LandingPage onStart={handleStart} />}
+      {view === "onboarding" && (
         <div id="candid-app" style={{ minHeight: "100vh" }}>
-          <CandidApp />
+          <CandidApp onGoHome={() => { setView("landing"); window.scrollTo({ top: 0, behavior: "instant" }); }} />
         </div>
       )}
     </div>

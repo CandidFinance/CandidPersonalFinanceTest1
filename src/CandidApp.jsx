@@ -1013,37 +1013,6 @@ function ContentWrap({ children, maxWidth="580px" }) {
   );
 }
 
-// ── Landing ────────────────────────────────────────────────────────────────────
-function Landing({ onFullJourney }) {
-  return (
-    <div style={{minHeight:"100vh",background:G,fontFamily:SANS,display:"flex",flexDirection:"column"}}>
-      <style>{FONTS}</style>
-      <nav style={{padding:"22px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap"}}>
-        <span style={{fontFamily:SERIF,color:GOLD,fontSize:"24px",fontWeight:700}}>Candid.</span>
-      </nav>
-      <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"40px 40px 60px",maxWidth:"760px"}}>
-        <div className="fu"  style={{fontSize:"11px",fontWeight:600,letterSpacing:"0.12em",textTransform:"uppercase",color:GOLD,marginBottom:"20px"}}>Personal finance, honestly</div>
-        <h1  className="fu1" style={{fontFamily:SERIF,fontSize:"clamp(38px,6vw,66px)",color:WHITE,lineHeight:1.08,fontWeight:700,marginBottom:"24px"}}>Your finances<br/>deserve better.</h1>
-        <p   className="fu2" style={{fontSize:"17px",color:"rgba(255,255,255,0.65)",lineHeight:1.7,maxWidth:"520px",marginBottom:"40px"}}>Most people are quietly leaving thousands of pounds behind every year. Get your personalised Candid score in 5 minutes.</p>
-        <div className="fu3" style={{maxWidth:"420px"}}>
-          <button type="button" onClick={onFullJourney} style={{width:"100%",background:GOLD,border:"none",borderRadius:"12px",padding:"20px 28px",textAlign:"left",cursor:"pointer",transition:"all 0.2s",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div>
-              <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700,marginBottom:"4px",lineHeight:1.2}}>Get my Candid score</div>
-              <div style={{fontSize:"13px",color:"rgba(22,47,36,0.65)",lineHeight:1.5}}>5 minutes · free · no sign-up needed</div>
-            </div>
-            <span style={{fontSize:"24px",color:G,opacity:0.7,marginLeft:"16px"}}>→</span>
-          </button>
-        </div>
-      </div>
-      <div className="fu5" style={{padding:"0 40px 40px",display:"flex",gap:"10px",flexWrap:"wrap"}}>
-        {["ISA optimisation","Pension gap","Student loan strategy","CGT crystallisation","Cash runway","Bonus sacrifice"].map(f => (
-          <div key={f} style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:"100px",padding:"7px 14px",fontSize:"12px",color:"rgba(255,255,255,0.6)",fontWeight:500}}>{f}</div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ── Full onboarding ───────────────────────────────────────────────────────────
 const STEPS = ["About you","Cash & savings","Investments","Pension","Debt"];
 
@@ -3788,8 +3757,8 @@ const BLANK_DATA = {
 
 const INIT_DATA = BLANK_DATA;
 
-export default function Candid() {
-  const [screen,           setScreen]           = useState("landing");
+export default function Candid({ onGoHome = () => {} }) {
+  const [screen,           setScreen]           = useState("onboarding");
   const [step,             setStep]             = useState(0);
   const [d,                setD]                = useState(INIT_DATA);
   const [insights,         setInsights]         = useState(null);
@@ -3818,28 +3787,6 @@ export default function Candid() {
       });
     } catch(e) {}
   }
-
-  const [returningUser, setReturningUser] = useState(false);
-  const [returnBannerOpen, setReturnBannerOpen] = useState(false);
-
-  useEffect(() => {
-    async function checkReturnVisit() {
-      if (!SUPA_URL || !SUPA_KEY) return;
-      try {
-        const distinctId = posthog.get_distinct_id?.();
-        if (!distinctId) return;
-        const r = await fetch(`${SUPA_URL}/rest/v1/test?session_id=eq.${encodeURIComponent(distinctId)}&select=id,score,name&order=created_at.desc&limit=1`, {
-          headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}` }
-        });
-        const rows = await r.json();
-        if (Array.isArray(rows) && rows.length > 0) {
-          setReturningUser(true);
-          setReturnBannerOpen(true);
-        }
-      } catch(e) {}
-    }
-    checkReturnVisit();
-  }, []);
 
   const set = (k, v) => setD(p => ({...p, [k]:v}));
   const m = calcMetrics(d);
@@ -4111,28 +4058,13 @@ Rules:
   }
 
   function resetAll() {
-    setScreen("landing"); setStep(0); setInsights(null); setPrevInsights(null); setD(INIT_DATA);
-    setActiveModule(null); setCompletedModules([]);
-    setFeedbackOpen(false); setWhatChangedOpen(false); feedbackFired.current = false; supaRowId.current = null;
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    onGoHome();
   }
 
   // ── Router ──
-  if (screen === "landing") return (
-    <>
-      {returningUser && returnBannerOpen && (
-        <div style={{background:"rgba(196,150,58,0.1)",borderLeft:`4px solid ${GOLD}`,padding:"12px 16px",marginBottom:"0",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",fontSize:"13px",color:G}}>
-          <span>Welcome back — your previous results are still in our records. Run a fresh report below.</span>
-          <button onClick={() => setReturnBannerOpen(false)} style={{background:"transparent",border:"none",fontSize:"16px",cursor:"pointer",color:MUT,padding:"2px 6px"}}>×</button>
-        </div>
-      )}
-      <Landing onFullJourney={() => setScreen("onboarding")}/>
-    </>
-  );
-
   if (screen === "onboarding") return (
     <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
-      onBack={() => step>0 ? setStep(s=>s-1) : setScreen("landing")}
+      onBack={() => step>0 ? setStep(s=>s-1) : onGoHome()}
       onBackToDashboard={() => setScreen("dashboard")}
       onStepClick={i => setStep(i)}
       onContinue={() => {
