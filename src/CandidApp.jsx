@@ -335,12 +335,13 @@ function calcMetrics(d) {
   // Net worth — use derived ISA totals
   const isaPrevCalc = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
   const totalIsaValue = isaUsedThisYearCalc + isaPrevCalc;
-  const propertyEquity = +d.propertyEquity || 0;
+  const hasMortgage = d.hasMortgage === "yes";
+  const propertyEquity = hasMortgage ? (+d.propertyEquity || 0) : 0;
   const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal + propertyEquity;
-  const totalLiabilities = loanBal + (+d.mortgageBalance||0) + (d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0);
+  const totalLiabilities = loanBal + (hasMortgage ? (+d.mortgageBalance||0) : 0) + (d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0);
   const netWorth = totalAssets - totalLiabilities;
-  const propertyValue = propertyEquity + (+d.mortgageBalance || 0);
-  const ltv = propertyValue > 0 ? Math.round((+d.mortgageBalance / propertyValue) * 100) : null;
+  const propertyValue = hasMortgage ? (propertyEquity + (+d.mortgageBalance || 0)) : 0;
+  const ltv = hasMortgage && propertyValue > 0 ? Math.round((+d.mortgageBalance / propertyValue) * 100) : null;
   return {
     salary, expenses, totalLiquid, runwayMonths,
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
