@@ -1904,7 +1904,7 @@ function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
   );
 }
 
-function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
+function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas, showEmailCapture, emailCaptured, emailInput, setEmailInput, emailSubmitting, setShowEmailCapture, handleEmailSubmit }) {
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [showAllModules, setShowAllModules] = useState(false);
@@ -2094,6 +2094,41 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
         <h1 style={{fontFamily:SERIF,fontSize:"clamp(22px,4vw,28px)",color:G,fontWeight:700,marginBottom:"20px",lineHeight:1.2}}>
           {d.name ? `Hi ${d.name},` : "Hi,"} here's your Candid report.
         </h1>
+
+        {/* Email capture banner */}
+        {emailCaptured && (
+          <div style={{background:"rgba(45,107,74,0.15)",border:"1px solid rgba(45,107,74,0.3)",borderRadius:"8px",padding:"10px 16px",marginBottom:"16px",fontSize:"13px",color:"#2D6B4A",textAlign:"center"}}>
+            ✓ Report sent — check your inbox.
+          </div>
+        )}
+        {showEmailCapture && !emailCaptured && (
+          <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.25)",borderRadius:"12px",padding:"16px 20px",marginBottom:"20px",display:"flex",flexDirection:"column",gap:"10px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div>
+                <div style={{fontSize:"14px",fontWeight:700,color:GOLD,marginBottom:"4px"}}>Get your Candid report by email</div>
+                <div style={{fontSize:"12px",color:MUT}}>Refer back to it anytime. No spam, no account needed.</div>
+              </div>
+              <button onClick={() => setShowEmailCapture(false)} style={{background:"none",border:"none",color:MUT,cursor:"pointer",fontSize:"18px",padding:"0 0 0 12px",lineHeight:1}}>×</button>
+            </div>
+            <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+              <input
+                type="email"
+                placeholder="your@email.com"
+                value={emailInput}
+                onChange={e => setEmailInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleEmailSubmit()}
+                style={{flex:1,minWidth:"200px",padding:"10px 14px",borderRadius:"8px",border:"1px solid rgba(196,150,58,0.3)",background:"rgba(255,255,255,0.05)",color:TEXT,fontSize:"14px",fontFamily:SANS}}
+              />
+              <button
+                onClick={handleEmailSubmit}
+                disabled={emailSubmitting || !emailInput.includes("@")}
+                style={{background:GOLD,color:G,border:"none",borderRadius:"8px",padding:"10px 20px",fontSize:"14px",fontWeight:700,cursor:"pointer",opacity:emailInput.includes("@") ? 1 : 0.5,fontFamily:SANS}}
+              >
+                {emailSubmitting ? "Sending…" : "Send report →"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Score card */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
@@ -3808,6 +3843,10 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
   const [lastScoreDelta,  setLastScoreDelta]  = useState(0);
   const [lastCompletedModule, setLastCompletedModule] = useState(null);
   const [scoreDeltas, setScoreDeltas] = useState([]);
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [emailCaptured,    setEmailCaptured]    = useState(false);
+  const [emailInput,       setEmailInput]       = useState("");
+  const [emailSubmitting,  setEmailSubmitting]  = useState(false);
   const feedbackFired = useRef(false);
   const supaRowId = useRef(null);
   const prevScoreRef = useRef(null);
@@ -4049,6 +4088,9 @@ Rules:
         localStorage.setItem('candid_insights', JSON.stringify(result));
         localStorage.setItem('candid_insights_date', new Date().toISOString());
       } catch(e) {}
+      if (!localStorage.getItem('candid_email_captured')) {
+        setTimeout(() => setShowEmailCapture(true), 3000);
+      }
       setWhatChangedOpen(true);
       posthog.capture("report_generated", { score: result.score, tax_band: metrics.taxBandLabel });
       // ── Supabase insert — reuse pre-computed statuses ──
@@ -4113,6 +4155,23 @@ Rules:
     onGoHome();
   }
 
+  // Requires 'emails' table in Supabase with columns: id (uuid), email (text), name (text), score (int), created_at (timestamp)
+  async function handleEmailSubmit() {
+    if (!emailInput.includes("@")) return;
+    setEmailSubmitting(true);
+    await supaInsert('emails', {
+      email: emailInput,
+      name: d.name || null,
+      score: insights?.score || null,
+      created_at: new Date().toISOString(),
+    });
+    try { localStorage.setItem('candid_email_captured', '1'); } catch(e) {}
+    setEmailCaptured(true);
+    setShowEmailCapture(false);
+    setEmailSubmitting(false);
+    setTimeout(() => setEmailCaptured(false), 4000);
+  }
+
   function clearSavedData() {
     localStorage.removeItem('candid_inputs');
     setD(BLANK_DATA);
@@ -4145,7 +4204,11 @@ Rules:
         onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
         showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
-        prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
+        prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}
+        showEmailCapture={showEmailCapture} emailCaptured={emailCaptured}
+        emailInput={emailInput} setEmailInput={setEmailInput}
+        emailSubmitting={emailSubmitting} setShowEmailCapture={setShowEmailCapture}
+        handleEmailSubmit={handleEmailSubmit}/>
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
     </>
   );
