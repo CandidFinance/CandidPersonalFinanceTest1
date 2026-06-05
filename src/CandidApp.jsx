@@ -335,9 +335,12 @@ function calcMetrics(d) {
   // Net worth — use derived ISA totals
   const isaPrevCalc = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
   const totalIsaValue = isaUsedThisYearCalc + isaPrevCalc;
-  const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal;
+  const propertyEquity = +d.propertyEquity || 0;
+  const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal + propertyEquity;
   const totalLiabilities = loanBal + (+d.mortgageBalance||0) + (d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0);
   const netWorth = totalAssets - totalLiabilities;
+  const propertyValue = propertyEquity + (+d.mortgageBalance || 0);
+  const ltv = propertyValue > 0 ? Math.round((+d.mortgageBalance / propertyValue) * 100) : null;
   return {
     salary, expenses, totalLiquid, runwayMonths,
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
@@ -348,6 +351,7 @@ function calcMetrics(d) {
     taxBandLabel, adjustedNetIncome, bufferMonths,
     statePensionWeekly, statePensionAnnual, niYearsToFull,
     daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate,
+    propertyEquity, propertyValue, ltv,
   };
 }
 
@@ -549,6 +553,18 @@ function getModuleInsights(key, d, m) {
           tooltip: totalInterestRemaining ? `At ${fmt(mo)}/month, you'll clear the mortgage in ~${yearsLeft} years and pay ~${fmt(totalInterestRemaining)} in total interest. Each £10,000 lump sum overpayment today saves approximately ${fmt(Math.round(10000 * rate/100 * yearsLeft * 0.5))} in interest over the remaining term.` : "Enter your monthly payment to see full amortisation." },
         { label:"Fix expiry", value: fixExpiry === "" ? "Not set" : fixExpiry === "variable" ? "Already variable" : fixExpiry.replace("under6m","< 6 months").replace("6to12m","6–12 months").replace("1to2y","1–2 years").replace("2yplus","2+ years"), flag: fixUrgency,
           tooltip: fixUrgency ? `Your fixed rate expires soon. Lenders typically allow you to lock a new rate 6 months before expiry — meaning you should be exploring your options now. A 0.5% rate difference on ${fmt(bal)} saves ${fmt(Math.round(bal*0.005))} per year. Get whole-of-market advice from a fee-free broker.` : `When your fix expires, your lender's standard variable rate (SVR) typically jumps to 7-8%+. Start exploring 6 months before expiry to avoid rolling onto the SVR.` },
+        ...(m.ltv !== null ? [{
+          label: "Loan to value",
+          value: `${m.ltv}%`,
+          flag: m.ltv > 75,
+          tooltip: m.ltv < 60
+            ? `${m.ltv}% LTV — excellent. You'll access the best remortgage rates available. Lenders reserve their top deals for sub-60% LTV borrowers.`
+            : m.ltv < 75
+            ? `${m.ltv}% LTV — good. You're close to the 75% threshold which unlocks meaningfully better rates. Reducing your balance further before remortgaging could save you.`
+            : m.ltv < 85
+            ? `${m.ltv}% LTV — standard. Rates improve meaningfully below 75% LTV. Focus on balance reduction to cross the next threshold.`
+            : `${m.ltv}% LTV — higher LTV. Focus on reducing your balance before remortgaging. Rates drop significantly at 85%, 75%, and 60% LTV thresholds.`,
+        }] : []),
       ];
     }
     default: return [];
@@ -1445,6 +1461,9 @@ function OnboardingStep({ step, d, set }) {
               <option value="other">Other</option>
             </select>
           </Field>
+          <Field label="Estimated equity (£)" hint="Your approximate ownership stake — property value minus outstanding mortgage">
+            <FmtInput fmtType="gbp" value={d.propertyEquity||""} onChange={v=>set("propertyEquity",v)} placeholder="e.g. 150,000"/>
+          </Field>
         </div>
       )}
       <Field label="Do you have a personal loan?">
@@ -1925,6 +1944,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
     ] : []),
     { label:"Unwrapped investments", value: +d.unwrappedValue||0, icon:"📊" },
     { label:"Pension pot", value: +d.potValue||0, icon:"🏦" },
+    { label:"Property equity", value: m.propertyEquity||0, icon:"🏠" },
   ].filter(a => a.value > 0);
   const liabilityItems = [
     { label:"Mortgage", value: d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0, icon:"🏠" },
@@ -3803,7 +3823,7 @@ const BLANK_DATA = {
   niYears:"",
   studentLoan:"none", loanBalance:"",
   hasMortgage:"no", mortgageType:"fixed", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
-  fixExpiryMonth:"", fixExpiryYear:"", mortgageProvider:"",
+  fixExpiryMonth:"", fixExpiryYear:"", mortgageProvider:"", propertyEquity:"",
   savingsGoal:"goals", investHorizon:"5to10",
   inheritDirection:"", estateValue:"", hasWill:"no",
   hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanProvider:"",
