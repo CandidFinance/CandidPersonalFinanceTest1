@@ -959,7 +959,7 @@ function ProgressBar({ pct }) {
   );
 }
 
-const STEP_SHORT_LABELS = ["Income","Savings","Invest.","Pension","Debt"];
+const STEP_SHORT_LABELS = ["Name","Email","Interests","Income","Savings","Invest.","Pension","Debt"];
 
 function StepProgress({ step, steps, onStepClick, isEditMode }) {
   return (
@@ -1034,7 +1034,7 @@ function ContentWrap({ children, maxWidth="580px" }) {
 }
 
 // ── Full onboarding ───────────────────────────────────────────────────────────
-const STEPS = ["About you","Cash & savings","Investments","Pension","Debt"];
+const STEPS = ["Name","Email","Interests","About you","Cash & savings","Investments","Pension","Debt"];
 
 function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue, onStepClick, onClearData }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [step]);
@@ -1047,10 +1047,21 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
         <OnboardingStep step={step} d={d} set={set}/>
         <div style={{display:"flex",gap:"10px",marginTop:"40px"}}>
           <button onClick={onBack} style={{flex:1,padding:"13px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.22)",borderRadius:"8px",fontSize:"15px",color:TEXT,fontWeight:500}}>← Back</button>
-          <button onClick={onContinue} style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"8px",fontSize:"15px",fontWeight:600,color:WHITE}}>
+          <button
+            onClick={onContinue}
+            disabled={step === 0 && !d.name.trim()}
+            style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"8px",fontSize:"15px",fontWeight:600,color:WHITE,opacity:(step===0 && !d.name.trim()) ? 0.45 : 1,cursor:(step===0 && !d.name.trim()) ? "not-allowed" : "pointer"}}
+          >
             {step===steps.length-1 ? (insights ? "Regenerate my report →" : "Generate my Candid report →") : "Continue →"}
           </button>
         </div>
+        {step === 1 && (
+          <p style={{textAlign:"center",marginTop:"14px"}}>
+            <button type="button" onClick={onContinue} style={{background:"none",border:"none",fontSize:"13px",color:MUT,cursor:"pointer",textDecoration:"underline",padding:0}}>
+              Skip
+            </button>
+          </p>
+        )}
         <p style={{marginTop:"18px",textAlign:"center",fontSize:"11px",color:MUT,lineHeight:1.6}}>
           🔒 Your data is never sold or shared. Candid is guidance, not advice.
         </p>
@@ -1151,11 +1162,76 @@ function InfoTooltip({ text }) {
 function OnboardingStep({ step, d, set }) {
   const g2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"};
   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
+  const INTEREST_TILES = [
+    { key:"savings",      emoji:"💷", label:"Savings"      },
+    { key:"investments",  emoji:"📈", label:"Investments"  },
+    { key:"pensions",     emoji:"👵", label:"Pensions"     },
+    { key:"mortgages",    emoji:"🏠", label:"Mortgages"    },
+    { key:"studentLoans", emoji:"🎓", label:"Student Loans"},
+    { key:"tax",          emoji:"🧾", label:"Tax"          },
+  ];
   if (step === 0) return (
+    <div style={{textAlign:"center",paddingTop:"20px"}}>
+      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"12px"}}>What should we call you?</h2>
+      <input
+        style={{...INP,maxWidth:"340px",margin:"0 auto",display:"block",textAlign:"center",fontSize:"17px",padding:"14px 18px"}}
+        value={d.name}
+        onChange={e => set("name", e.target.value)}
+        placeholder="Your first name"
+        autoFocus
+      />
+    </div>
+  );
+  if (step === 1) return (
+    <div style={{textAlign:"center",paddingTop:"20px"}}>
+      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Where shall we send a backup version of your report?</h2>
+      <p style={{fontSize:"13px",color:MUT,marginBottom:"24px",lineHeight:1.5}}>Optional — so you can refer back to it anytime.</p>
+      <input
+        type="email"
+        style={{...INP,maxWidth:"340px",margin:"0 auto",display:"block",textAlign:"center",fontSize:"17px",padding:"14px 18px"}}
+        value={d.email}
+        onChange={e => set("email", e.target.value)}
+        placeholder="your@email.com"
+      />
+    </div>
+  );
+  if (step === 2) return (
+    <div>
+      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px",textAlign:"center"}}>What would you most like to understand?</h2>
+      <p style={{fontSize:"13px",color:MUT,marginBottom:"28px",lineHeight:1.5,textAlign:"center"}}>Pick any that apply — we'll tailor your guidance.</p>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"12px"}}>
+        {INTEREST_TILES.map(({ key, emoji, label }) => {
+          const selected = (d.interests || []).includes(key);
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => set("interests", selected
+                ? (d.interests || []).filter(k => k !== key)
+                : [...(d.interests || []), key]
+              )}
+              style={{
+                display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                gap:"8px", padding:"18px 12px", borderRadius:"12px", cursor:"pointer",
+                background: selected ? "#162F24" : "rgba(255,255,255,0.04)",
+                border: selected ? `2px solid ${GOLD}` : "1px solid rgba(200,216,204,0.25)",
+                color: selected ? WHITE : MUT,
+                transition:"all 0.15s ease",
+                transform: selected ? "scale(1.03)" : "scale(1)",
+              }}
+            >
+              <span style={{fontSize:"28px",opacity: selected ? 1 : 0.6}}>{emoji}</span>
+              <span style={{fontSize:"13px",fontWeight:600,fontFamily:SANS}}>{label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+  if (step === 3) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Tell us about you</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We use your income to work out your tax band, savings potential, and which optimisations matter most for you.</p>
-      <Field label="First name"><input style={INP} value={d.name} onChange={e => set("name",e.target.value)} placeholder="What should we call you?"/></Field>
       <div style={g2}>
         <Field label="Age">
           <input style={INP} type="number" value={d.age} onChange={e => set("age",e.target.value)} placeholder="e.g. 29"/>
@@ -1206,7 +1282,7 @@ function OnboardingStep({ step, d, set }) {
       )}
     </div>
   );
-  if (step === 1) return (
+  if (step === 4) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Cash & savings</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>Helps us identify yield gaps and whether your cash is working as hard as it should be.</p>
@@ -1265,7 +1341,7 @@ function OnboardingStep({ step, d, set }) {
       </Field>
     </div>
   );
-  if (step === 2) return (
+  if (step === 5) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Investments</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We'll check whether your investments are sheltered efficiently and whether any CGT opportunities exist.</p>
@@ -1324,7 +1400,7 @@ function OnboardingStep({ step, d, set }) {
       )}
     </div>
   );
-  if (step === 3) return (
+  if (step === 6) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Pension</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>The single biggest optimisation for most people in your income bracket. Takes 60 seconds to fill in.</p>
@@ -1388,7 +1464,7 @@ function OnboardingStep({ step, d, set }) {
       )}
     </div>
   );
-  if (step === 4) return (
+  if (step === 7) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Debt</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>Understanding your debt profile lets us prioritise what to pay down first and in what order.</p>
@@ -1924,7 +2000,7 @@ function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
   );
 }
 
-function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas, showEmailCapture, emailCaptured, emailInput, setEmailInput, emailSubmitting, setShowEmailCapture, handleEmailSubmit }) {
+function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [showAllModules, setShowAllModules] = useState(false);
@@ -2115,41 +2191,6 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
         <h1 style={{fontFamily:SERIF,fontSize:"clamp(22px,4vw,28px)",color:G,fontWeight:700,marginBottom:"20px",lineHeight:1.2}}>
           {d.name ? `Hi ${d.name},` : "Hi,"} here's your Candid report.
         </h1>
-
-        {/* Email capture banner */}
-        {emailCaptured && (
-          <div style={{background:"rgba(45,107,74,0.15)",border:"1px solid rgba(45,107,74,0.3)",borderRadius:"8px",padding:"10px 16px",marginBottom:"16px",fontSize:"13px",color:"#2D6B4A",textAlign:"center"}}>
-            ✓ Report sent — check your inbox.
-          </div>
-        )}
-        {showEmailCapture && !emailCaptured && (
-          <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.25)",borderRadius:"12px",padding:"16px 20px",marginBottom:"20px",display:"flex",flexDirection:"column",gap:"10px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div>
-                <div style={{fontSize:"14px",fontWeight:700,color:GOLD,marginBottom:"4px"}}>Get your Candid report by email</div>
-                <div style={{fontSize:"12px",color:MUT}}>Refer back to it anytime. No spam, no account needed.</div>
-              </div>
-              <button onClick={() => setShowEmailCapture(false)} style={{background:"none",border:"none",color:MUT,cursor:"pointer",fontSize:"18px",padding:"0 0 0 12px",lineHeight:1}}>×</button>
-            </div>
-            <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-              <input
-                type="email"
-                placeholder="your@email.com"
-                value={emailInput}
-                onChange={e => setEmailInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleEmailSubmit()}
-                style={{flex:1,minWidth:"200px",padding:"10px 14px",borderRadius:"8px",border:"1px solid rgba(196,150,58,0.3)",background:"rgba(255,255,255,0.05)",color:TEXT,fontSize:"14px",fontFamily:SANS}}
-              />
-              <button
-                onClick={handleEmailSubmit}
-                disabled={emailSubmitting || !emailInput.includes("@")}
-                style={{background:GOLD,color:G,border:"none",borderRadius:"8px",padding:"10px 20px",fontSize:"14px",fontWeight:700,cursor:"pointer",opacity:emailInput.includes("@") ? 1 : 0.5,fontFamily:SANS}}
-              >
-                {emailSubmitting ? "Sending…" : "Send report →"}
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Score card */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
@@ -3813,7 +3854,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
 
 // ── Main app ──────────────────────────────────────────────────────────────────
 const BLANK_DATA = {
-  name:"", age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"stable",
+  name:"", email:"", interests:[],
+  age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"stable",
   monthlyExpenses:"", higherBuffer:"no",
   cashSavings:"", savingsRate:"", premiumBonds:"", cashAccessType:"",
   cashTiers:[{amount:"",rate:""}],
@@ -3864,10 +3906,6 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
   const [lastScoreDelta,  setLastScoreDelta]  = useState(0);
   const [lastCompletedModule, setLastCompletedModule] = useState(null);
   const [scoreDeltas, setScoreDeltas] = useState([]);
-  const [showEmailCapture, setShowEmailCapture] = useState(false);
-  const [emailCaptured,    setEmailCaptured]    = useState(false);
-  const [emailInput,       setEmailInput]       = useState("");
-  const [emailSubmitting,  setEmailSubmitting]  = useState(false);
   const feedbackFired = useRef(false);
   const supaRowId = useRef(null);
   const prevScoreRef = useRef(null);
@@ -4109,17 +4147,18 @@ Rules:
         localStorage.setItem('candid_insights', JSON.stringify(result));
         localStorage.setItem('candid_insights_date', new Date().toISOString());
       } catch(e) {}
-      if (!localStorage.getItem('candid_email_captured')) {
-        setTimeout(() => setShowEmailCapture(true), 3000);
-      }
       setWhatChangedOpen(true);
       posthog.capture("report_generated", { score: result.score, tax_band: metrics.taxBandLabel });
       // ── Supabase insert — reuse pre-computed statuses ──
       const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
       const totalOpp = totalOppForSummary;
+      // test table requires columns: email (text), name (text), interests (text) — all nullable
       console.log("[Candid] Supabase insert starting — score:", result.score, "session:", posthog.get_distinct_id?.());
       const rowId = await supaInsert("test", {
         session_id: posthog.get_distinct_id?.() || null,
+        email: d.email || null,
+        name: d.name || null,
+        interests: (d.interests || []).join(", ") || null,
         age: +d.age||null,
         salary: +d.salary||null,
         other_income: +d.otherIncome||null,
@@ -4178,24 +4217,6 @@ Rules:
     onGoHome();
   }
 
-  // Requires 'emails' table in Supabase with columns: id (uuid), email (text), name (text), score (int), created_at (timestamp)
-  async function handleEmailSubmit() {
-    if (!emailInput.includes("@")) return;
-    setEmailSubmitting(true);
-    console.log("[Candid] emails insert — URL:", SUPA_URL, "key prefix:", SUPA_KEY?.slice(0,12));
-    await supaInsert('emails', {
-      email: emailInput,
-      name: d.name || null,
-      score: insights?.score || null,
-      created_at: new Date().toISOString(),
-    });
-    try { localStorage.setItem('candid_email_captured', '1'); } catch(e) {}
-    setEmailCaptured(true);
-    setShowEmailCapture(false);
-    setEmailSubmitting(false);
-    setTimeout(() => setEmailCaptured(false), 4000);
-  }
-
   function clearSavedData() {
     localStorage.removeItem('candid_inputs');
     setD(BLANK_DATA);
@@ -4228,11 +4249,7 @@ Rules:
         onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
         showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
-        prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}
-        showEmailCapture={showEmailCapture} emailCaptured={emailCaptured}
-        emailInput={emailInput} setEmailInput={setEmailInput}
-        emailSubmitting={emailSubmitting} setShowEmailCapture={setShowEmailCapture}
-        handleEmailSubmit={handleEmailSubmit}/>
+        prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
     </>
   );
