@@ -4182,6 +4182,7 @@ Rules:
   async function handleEmailSubmit() {
     if (!emailInput.includes("@")) return;
     setEmailSubmitting(true);
+    console.log("[Candid] emails insert — URL:", SUPA_URL, "key prefix:", SUPA_KEY?.slice(0,12));
     await supaInsert('emails', {
       email: emailInput,
       name: d.name || null,
