@@ -4117,6 +4117,7 @@ Rules:
       // ── Supabase insert — reuse pre-computed statuses ──
       const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
       const totalOpp = totalOppForSummary;
+      console.log("[Candid] Supabase insert starting — score:", result.score, "session:", posthog.get_distinct_id?.());
       const rowId = await supaInsert("test", {
         session_id: posthog.get_distinct_id?.() || null,
         age: +d.age||null,
@@ -4159,6 +4160,7 @@ Rules:
         modules_completed: 0,
         feedback_submitted: false,
       });
+      console.log("[Candid] Supabase insert complete — rowId:", rowId, "SUPA_URL set:", !!SUPA_URL, "SUPA_KEY set:", !!SUPA_KEY);
       if (rowId) supaRowId.current = rowId;
     }
     catch(e) {
