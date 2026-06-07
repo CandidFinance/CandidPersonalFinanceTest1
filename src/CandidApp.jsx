@@ -378,8 +378,8 @@ function getModuleInsights(key, d, m) {
           tooltip:`Gap = your cash (${fmt(totalCash)}) × your rate (${cashRate}%) vs best Cash ISA (${bestISARate}%). Annual difference: ${fmt(gap)}. Moving your surplus to a Cash ISA at ${bestISARate}% would close this.`
         },
         {
-          label:"Cash runway", value: m.runwayMonths.toFixed(1)+" months", flag: m.runwayMonths > 9 || m.runwayMonths < 3,
-          tooltip:`Runway = total liquid assets (${fmt(m.totalLiquid)}) ÷ monthly expenses (${fmt(m.expenses)}). The recommended buffer is 3–6 months. Yours is ${m.runwayMonths > 9 ? "well above — consider putting surplus to work" : m.runwayMonths < 3 ? "below the safe minimum — build this up before investing" : "in the ideal range"}.`
+          label:"Cash runway", value: m.runwayMonths.toFixed(1)+" months", flag: m.runwayMonths > m.bufferMonths * 2 || m.runwayMonths < m.bufferMonths,
+          tooltip:`Runway = total liquid assets (${fmt(m.totalLiquid)}) ÷ monthly expenses (${fmt(m.expenses)}). Your target buffer is ${m.bufferMonths} months. Yours is ${m.runwayMonths > m.bufferMonths * 2 ? "well above — consider putting surplus to work" : m.runwayMonths < m.bufferMonths ? "below your target — build this up before investing" : "in the ideal range"}.`
         },
         {
           label:"ISA allowance remaining", value: fmt(m.isaHeadroom), flag: m.isaHeadroom > 5000,
@@ -2792,7 +2792,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
   const modSummary = insights?.modules?.[moduleKey];
   const col = SC[modSummary?.status] || MUT;
   const surplus = m.surplusCash;
-  const showRunwayCallout = moduleKey === "cash" && m.runwayMonths > 9;
+  const showRunwayCallout = moduleKey === "cash" && m.runwayMonths > m.bufferMonths * 2;
   const bondsVal = m.bonds || 0;
   const showBondsOverlay = moduleKey === "cash" && bondsVal > 0;
   const cashRate = +d.savingsRate || 3.5;
@@ -3007,7 +3007,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
               <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Your cash is working hard — maybe too hard</span>
             </div>
             <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
-              You have <strong>{m.runwayMonths.toFixed(0)} months</strong> of runway — that's {(m.runwayMonths / 6).toFixed(1)}× the recommended 3–6 months. The excess ({fmt(surplus)}) is sitting in cash while likely losing ground to inflation. Consider putting it to work:
+              You have <strong>{m.runwayMonths.toFixed(0)} months</strong> of runway — that's {(m.runwayMonths / m.bufferMonths).toFixed(1)}× your {m.bufferMonths}-month target. The excess ({fmt(surplus)}) is sitting in cash while likely losing ground to inflation. Consider putting it to work:
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
               {[
