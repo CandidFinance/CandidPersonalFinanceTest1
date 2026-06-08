@@ -1103,44 +1103,6 @@ function capField(field, raw) {
   return raw;
 }
 
-const BRAND_COLORS = {
-  "pensionbee.com":   { bg:"#E8A0B4", text:"#C4347A", label:"PB"   },
-  "vanguard.co.uk":   { bg:"#C41E3A", text:"#fff",    label:"V"    },
-  "hl.co.uk":         { bg:"#00A3E0", text:"#fff",    label:"HL"   },
-  "moneybox.com":     { bg:"#6B4FBB", text:"#fff",    label:"MB"   },
-  "trading212.com":   { bg:"#1DB954", text:"#fff",    label:"T"    },
-  "nutmeg.com":       { bg:"#FF6B35", text:"#fff",    label:"N"    },
-  "chase.co.uk":      { bg:"#117ACA", text:"#fff",    label:"C"    },
-  "marcus.co.uk":     { bg:"#1A1A1A", text:"#fff",    label:"M"    },
-  "nationwide.co.uk": { bg:"#0070CE", text:"#fff",    label:"NW"   },
-  "nsandi.com":       { bg:"#00A550", text:"#fff",    label:"NS&I" },
-  "truelayer.com":    { bg:"#4F46E5", text:"#fff",    label:"TL"   },
-  "investengine.com": { bg:"#00C896", text:"#fff",    label:"IE"   },
-  "lancmortgages.com":{ bg:"#003087", text:"#fff",    label:"L&C"  },
-  "habito.com":       { bg:"#5C35F5", text:"#fff",    label:"H"    },
-  "sprive.com":       { bg:"#FF5733", text:"#fff",    label:"SP"   },
-  "freetrade.io":     { bg:"#FF5F57", text:"#fff",    label:"FT"   },
-  "plum.com":         { bg:"#7B5EA7", text:"#fff",    label:"PL"   },
-  "moneyfarm.com":    { bg:"#00C4B4", text:"#fff",    label:"MF"   },
-  "wealthify.com":    { bg:"#6366F1", text:"#fff",    label:"W"    },
-};
-
-function CompanyLogo({ domain, fallback, size = 32 }) {
-  const brand = BRAND_COLORS[domain];
-  if (!brand) return <span style={{fontSize:"20px"}}>{fallback}</span>;
-  return (
-    <div style={{
-      width:`${size}px`, height:`${size}px`, borderRadius:"6px",
-      background:brand.bg, color:brand.text,
-      display:"flex", alignItems:"center", justifyContent:"center",
-      fontSize:size > 28 ? "10px" : "9px", fontWeight:700,
-      letterSpacing:"0.02em", flexShrink:0,
-    }}>
-      {brand.label}
-    </div>
-  );
-}
-
 function InfoTooltip({ text }) {
   const [show, setShow] = useState(false);
   return (
@@ -2585,28 +2547,6 @@ function FeedbackModal({ onDismiss }) {
 // ── Module deep-dive ──────────────────────────────────────────────────────────
 // ── Take Me There demo CTA ────────────────────────────────────────────────────
 // ── Starter affiliate link (demo state) ───────────────────────────────────────
-function StarterLink({ label, icon, app }) {
-  const [tapped, setTapped] = useState(false);
-  return (
-    <button type="button" onClick={() => setTapped(true)} style={{
-      width:"100%", padding:"12px 14px", marginBottom:"6px",
-      background: tapped ? "rgba(22,47,36,0.05)" : WHITE,
-      border:`1.5px solid ${tapped ? "rgba(22,47,36,0.15)" : "rgba(22,47,36,0.18)"}`,
-      borderRadius:"10px", display:"flex", alignItems:"center", gap:"12px",
-      cursor: tapped ? "default" : "pointer", transition:"all 0.15s", textAlign:"left"
-    }}>
-      <span style={{fontSize:"20px",flexShrink:0}}>{icon}</span>
-      <div style={{flex:1}}>
-        <div style={{fontSize:"13px",fontWeight:600,color:tapped?MUT:G,lineHeight:1.3}}>
-          {tapped ? `↗ Opening ${app}…` : label}
-        </div>
-        {tapped && <div style={{fontSize:"11px",color:MUT,marginTop:"2px",fontStyle:"italic"}}>Demo — would open {app} in the full app</div>}
-      </div>
-      {!tapped && <span style={{fontSize:"13px",color:GOLD,fontWeight:700,flexShrink:0}}>→</span>}
-    </button>
-  );
-}
-
 function TakeMeThere({ app, icon, message, demoNote }) {
   const [tapped, setTapped] = useState(false);
   return (
