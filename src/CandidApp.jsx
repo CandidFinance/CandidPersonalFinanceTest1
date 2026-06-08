@@ -20,7 +20,10 @@ async function supaInsert(table, row) {
     });
     const data = await res.json();
     return Array.isArray(data) && data[0]?.id ? data[0].id : null;
-  } catch(e) { return null; }
+  } catch(e) {
+    if (import.meta.env.DEV) console.warn(`[Candid] Supabase insert into "${table}" failed:`, e);
+    return null;
+  }
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -2161,6 +2164,11 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
             <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"8px"}}>Your Candid Score</div>
             <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"10px"}}>{insights.headline}</h2>
             <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:"16px"}}>{insights.narrative}</p>
+            {insights.isFallback && (
+              <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",marginBottom:"16px"}}>
+                We couldn't generate your personalised analysis just now, so you're seeing a general summary — try regenerating shortly.
+              </p>
+            )}
           </div>
         </div>
 
@@ -3825,7 +3833,7 @@ function loadInitialData() {
   try {
     const saved = localStorage.getItem('candid_inputs');
     if (saved) return { ...BLANK_DATA, ...JSON.parse(saved) };
-  } catch(e) {}
+  } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to load saved inputs from localStorage:", e); }
   return BLANK_DATA;
 }
 
@@ -3833,7 +3841,7 @@ function loadSavedInsights() {
   try {
     const saved = localStorage.getItem('candid_insights');
     if (saved) return JSON.parse(saved);
-  } catch(e) {}
+  } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to load saved insights from localStorage:", e); }
   return null;
 }
 
@@ -3865,14 +3873,14 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
         headers: { "Content-Type":"application/json", "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Prefer":"return=minimal" },
         body: JSON.stringify(patch),
       });
-    } catch(e) {}
+    } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Supabase update failed:", e); }
   }
 
   const set = (k, v) => setD(p => ({...p, [k]:v}));
 
   useEffect(() => {
     try { localStorage.setItem('candid_inputs', JSON.stringify(d)); }
-    catch(e) {}
+    catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist inputs to localStorage:", e); }
   }, [d]);
 
   const m = useMemo(() => calcMetrics(d), [d]);
@@ -3941,7 +3949,12 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
   const res = await Promise.race([call, timeout]);
   const json = await res.json();
   const raw = (json.content?.[0]?.text||"").replace(/```json|```/g,"").trim();
-  return JSON.parse(raw);
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error("[Candid] Claude returned malformed JSON — falling back.", raw);
+    throw new Error("Claude response was truncated or malformed");
+  }
 }
 
   async function generateDashboard() {
@@ -4068,6 +4081,7 @@ Rules:
 - Return valid JSON only. No preamble, no markdown, no backticks.`;
 
     const fallback = {
+      isFallback:true,
       score:46, headline:"You're leaving meaningful money on the table — but it's all fixable.",
       narrative:`${d.name?d.name.split(" ")[0]:""}, your finances have a solid foundation with clear optimisation gaps. The pension and ISA opportunities alone could significantly boost your long-term wealth.`,
       priorities:[
@@ -4091,7 +4105,7 @@ Rules:
       try {
         localStorage.setItem('candid_insights', JSON.stringify(result));
         localStorage.setItem('candid_insights_date', new Date().toISOString());
-      } catch(e) {}
+      } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist insights to localStorage:", e); }
       setWhatChangedOpen(true);
       posthog.capture("report_generated", { score: result.score, tax_band: metrics.taxBandLabel });
       // ── Supabase insert — reuse pre-computed statuses ──
@@ -4152,12 +4166,13 @@ Rules:
       if (rowId) supaRowId.current = rowId;
     }
     catch(e) {
+      if (import.meta.env.DEV) console.warn("[Candid] AI generation failed, using fallback insights:", e);
       setInsights(fallback);
       try {
         localStorage.setItem('candid_insights', JSON.stringify(fallback));
         localStorage.setItem('candid_insights_date', new Date().toISOString());
-      } catch(_) {}
-      posthog.capture("report_generated", { score: fallback.score, fallback: true });
+      } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist fallback insights to localStorage:", e); }
+      posthog.capture("report_generated", { score: fallback.score, fallback: true, error: e?.message });
     }
     finally { setScreen("dashboard"); }
   }
