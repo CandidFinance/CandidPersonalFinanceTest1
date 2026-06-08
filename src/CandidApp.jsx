@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import posthog from "posthog-js";
 
@@ -2000,7 +2000,7 @@ function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
   );
 }
 
-function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
+function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [showAllModules, setShowAllModules] = useState(false);
@@ -2030,7 +2030,7 @@ function Dashboard({ insights, d, m, onReset, onOpenModule, completedModules, on
   ].filter(l => l.value > 0);
 
   // Build merged module data: local computation provides status/impact, AI provides summary
-  const localStatuses = computeModuleStatuses(d, m);
+  const localStatuses = statuses;
   const statusOrder = { critical:0, attention:1, ok:2, na:3 };
 
   const allModules = MODULE_META.map(mm => {
@@ -2759,7 +2759,7 @@ function AlternativeInvestments({ age }) {
   );
 }
 
-function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDashboard, onComplete, isComplete, onOpenModule, nextModule }) {
+function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBack, goToDashboard, onComplete, isComplete, onOpenModule, nextModule }) {
   const [openTip,   setOpenTip]   = useState(null);
   const [expandAlt, setExpandAlt] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
@@ -2789,6 +2789,55 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
     ? getModuleProductsExtended(moduleKey, d, m)
     : getModuleProducts(moduleKey, d, m);
   const crossLinks = getCrossModuleLinks(moduleKey, d, m);
+
+  // Marginal-return curve for student loan overpayments — runs ~38 loan
+  // simulations, so memoize it to avoid rerunning on unrelated re-renders
+  // (e.g. opening an accordion elsewhere on the page).
+  const loanCurve = useMemo(() => {
+    const slSection = products.slSection;
+    if (!slSection?.willClear || m.loanBal <= 0) return null;
+    const writeOffYr = slSection.writeOffYr;
+    const pensionReturn = pensionReturnRatio(d, m);
+    const mortRate = d.hasMortgage === "yes" && +d.mortgageRate > 0 ? +d.mortgageRate : 4.5;
+    const mortReturn = 1 + mortRate / 100;
+    const planRate = d.studentLoan === "plan1" ? 0.05 : 0.075;
+    const planThreshold = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
+    const growthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.03;
+    const baseCase = simulateLoan(m.loanBal, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+    const tiny = simulateLoan(Math.max(0, m.loanBal - 100), m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+    const tinyIntSaved = Math.max(0, baseCase.totalInterest - tiny.totalInterest);
+    const yIntercept = 1 + tinyIntSaved / 100;
+    const STEPS = 36;
+    const data = [{ amt: 0, ratio: yIntercept }, ...Array.from({ length: STEPS }, (_, i) => {
+      const amt = (m.loanBal * (i + 1)) / STEPS;
+      if (amt >= m.loanBal) return { amt: m.loanBal, ratio: 1.0 };
+      const oc = simulateLoan(m.loanBal - amt, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+      const intSaved = Math.max(0, baseCase.totalInterest - oc.totalInterest);
+      return { amt, ratio: (amt + intSaved) / amt };
+    })];
+    const yMax = Math.max(pensionReturn + 0.3, data[0].ratio + 0.15, 1.6);
+    const yMin = 0.92;
+    const VW = 680, VH = 320, PL = 64, PR = 20, PT = 24, PB = 56;
+    const cW = VW - PL - PR, cH = VH - PT - PB;
+    const sx = a => PL + (a / m.loanBal) * cW;
+    const sy = r => PT + cH - ((r - yMin) / (yMax - yMin)) * cH;
+    const path = data.map((p,i) => `${i===0?"M":"L"}${sx(p.amt).toFixed(1)},${sy(p.ratio).toFixed(1)}`).join(" ");
+    let crossAmt = null;
+    for (let i = 0; i < data.length - 1; i++) {
+      if (data[i].ratio >= pensionReturn && data[i+1].ratio < pensionReturn) {
+        const t = (pensionReturn - data[i].ratio) / (data[i+1].ratio - data[i].ratio);
+        crossAmt = data[i].amt + t * (data[i+1].amt - data[i].amt);
+        break;
+      }
+    }
+    const trPct = Math.round(m.tr * 100);
+    const yTicks = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5].filter(r => r >= yMin && r <= yMax + 0.05);
+    const xTicks = [0, 0.25, 0.5, 0.75, 1].map(f => m.loanBal * f);
+    const crossX = crossAmt !== null ? sx(crossAmt) : null;
+    const crossY = sy(pensionReturn);
+    return { writeOffYr, pensionReturn, mortRate, mortReturn, data, yMax, yMin, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, crossAmt, crossX, crossY, trPct, yTicks, xTicks };
+  }, [products.slSection, m.loanBal, m.salary, m.tr, d.studentLoan, d.salaryTrajectory, d.pensionType, d.hasMortgage, d.mortgageRate]);
+
   const modSummary = insights?.modules?.[moduleKey];
   const col = SC[modSummary?.status] || MUT;
   const surplus = m.surplusCash;
@@ -3215,49 +3264,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
                     })}
 
                     {/* Personalised marginal return curve — only when loan will clear */}
-                    {products.slSection.willClear && m.loanBal > 0 && (() => {
-                      const writeOffYr = products.slSection.writeOffYr;
-                      const pensionReturn = pensionReturnRatio(d, m);
-                      const mortRate = d.hasMortgage === "yes" && +d.mortgageRate > 0 ? +d.mortgageRate : 4.5;
-                      const mortReturn = 1 + mortRate / 100;
-                      // Plan config for simulator
-                      const planRate = d.studentLoan === "plan1" ? 0.05 : 0.075;
-                      const planThreshold = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
-                      const growthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.03;
-                      // Base case (no overpayment) — run once
-                      const baseCase = simulateLoan(m.loanBal, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
-                      // Small-amount case for y-intercept
-                      const tiny = simulateLoan(Math.max(0, m.loanBal - 100), m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
-                      const tinyIntSaved = Math.max(0, baseCase.totalInterest - tiny.totalInterest);
-                      const yIntercept = 1 + tinyIntSaved / 100;
-                      const STEPS = 36;
-                      const data = [{ amt: 0, ratio: yIntercept }, ...Array.from({ length: STEPS }, (_, i) => {
-                        const amt = (m.loanBal * (i + 1)) / STEPS;
-                        if (amt >= m.loanBal) return { amt: m.loanBal, ratio: 1.0 };
-                        const oc = simulateLoan(m.loanBal - amt, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
-                        const intSaved = Math.max(0, baseCase.totalInterest - oc.totalInterest);
-                        return { amt, ratio: (amt + intSaved) / amt };
-                      })];
-                      const yMax = Math.max(pensionReturn + 0.3, data[0].ratio + 0.15, 1.6);
-                      const yMin = 0.92;
-                      const VW = 680, VH = 320, PL = 64, PR = 20, PT = 24, PB = 56;
-                      const cW = VW - PL - PR, cH = VH - PT - PB;
-                      const sx = a => PL + (a / m.loanBal) * cW;
-                      const sy = r => PT + cH - ((r - yMin) / (yMax - yMin)) * cH;
-                      const path = data.map((p,i) => `${i===0?"M":"L"}${sx(p.amt).toFixed(1)},${sy(p.ratio).toFixed(1)}`).join(" ");
-                      let crossAmt = null;
-                      for (let i = 0; i < data.length - 1; i++) {
-                        if (data[i].ratio >= pensionReturn && data[i+1].ratio < pensionReturn) {
-                          const t = (pensionReturn - data[i].ratio) / (data[i+1].ratio - data[i].ratio);
-                          crossAmt = data[i].amt + t * (data[i+1].amt - data[i].amt);
-                          break;
-                        }
-                      }
-                      const trPct = Math.round(m.tr * 100);
-                      const yTicks = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5].filter(r => r >= yMin && r <= yMax + 0.05);
-                      const xTicks = [0, 0.25, 0.5, 0.75, 1].map(f => m.loanBal * f);
-                      const crossX = crossAmt !== null ? sx(crossAmt) : null;
-                      const crossY = sy(pensionReturn);
+                    {loanCurve && (() => {
+                      const { writeOffYr, pensionReturn, mortRate, mortReturn, data, yMax, yMin, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, crossAmt, crossX, crossY, trPct, yTicks, xTicks } = loanCurve;
                       return (
                         <div style={{marginTop:"16px",marginBottom:"16px"}}>
                           <div style={{fontSize:"12px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Return per £1 overpaid — where the maths tips</div>
@@ -3793,8 +3801,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, openSection, goBack, goToDa
         <div className="fu5" style={{marginTop:"32px"}}>
           <div style={{position:"relative"}}>
             {showCoins && (() => {
-              const localStatuses = computeModuleStatuses(d, m);
-              const localDelta = moduleScoreDelta(localStatuses[moduleKey]?.status);
+              const localDelta = moduleScoreDelta(statuses[moduleKey]?.status);
               return (
                 <div style={{position:"relative",pointerEvents:"none",height:0}}>
                   <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",fontSize:"20px",animation:"coinFloat 0.9s ease-out forwards"}}>🪙</span>
@@ -3928,7 +3935,8 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
     catch(e) {}
   }, [d]);
 
-  const m = calcMetrics(d);
+  const m = useMemo(() => calcMetrics(d), [d]);
+  const statuses = useMemo(() => computeModuleStatuses(d, m), [d, m]);
 
   // One-shot feedback trigger: 90s after dashboard loads OR 3s after all modules reviewed
   useEffect(() => {
@@ -3941,8 +3949,7 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
 
   useEffect(() => {
     if (feedbackFired.current || !insights) return;
-    const localStatuses = computeModuleStatuses(d, m);
-    const activeCount = Object.values(localStatuses).filter(s => s.status !== "na").length;
+    const activeCount = Object.values(statuses).filter(s => s.status !== "na").length;
     if (activeCount > 0 && completedModules.length >= activeCount) {
       const t3 = setTimeout(() => {
         if (!feedbackFired.current) { feedbackFired.current = true; setFeedbackOpen(true); posthog.capture("feedback_modal_shown", { trigger: "completion" }); }
@@ -3968,8 +3975,7 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
       if (!prev.includes(key)) {
         posthog.capture("module_completed", { module_key: key, total_completed: next.length });
         supaUpdate({ modules_completed: next.length });
-        const localStatuses = computeModuleStatuses(d, m);
-        const delta = moduleScoreDelta(localStatuses[key]?.status);
+        const delta = moduleScoreDelta(statuses[key]?.status);
         if (delta > 0) {
           setScoreDeltas(sd => [...sd, { key, delta, timestamp: Date.now() }]);
           setLastScoreDelta(delta);
@@ -4002,9 +4008,8 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
     if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
     setScreen("loading");
 
-    // ── Pre-calculate all metrics before passing to Claude ──────────────────────
-    const metrics = calcMetrics(d);
-    const statuses = computeModuleStatuses(d, metrics);
+    // ── Reuse the metrics/statuses already computed for this render — no need to recalculate ──
+    const metrics = m;
     const isaPrev = (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0);
     const totalOppForSummary = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
 
@@ -4248,7 +4253,7 @@ Rules:
 
   if (screen === "dashboard") return (
     <>
-      <Dashboard insights={insights} d={d} m={m} onReset={resetAll} completedModules={completedModules}
+      <Dashboard insights={insights} d={d} m={m} statuses={statuses} onReset={resetAll} completedModules={completedModules}
         onOpenModule={key => openModule(key, "dashboard")}
         onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
@@ -4259,7 +4264,7 @@ Rules:
   );
 
   if (screen === "moduleDeepDive") {
-    const localStatuses = computeModuleStatuses(d, m);
+    const localStatuses = statuses;
     const statusOrder = { critical:0, attention:1, ok:2, na:3 };
     const allMods = MODULE_META.map(mm => {
       const local = localStatuses[mm.key] || { status:"na", impact:0 };
@@ -4283,7 +4288,7 @@ Rules:
     const nextMod = sortedMods.find(mm => mm.key !== activeModule && !completedModules.includes(mm.key)) || null;
     return (
       <>
-        <ModuleDeepDive moduleKey={activeModule} insights={insights} d={d} m={m}
+        <ModuleDeepDive moduleKey={activeModule} insights={insights} d={d} m={m} statuses={statuses}
           openSection={activeSection}
           goBack={() => setScreen("dashboard")}
           goToDashboard={() => setScreen("dashboard")}
