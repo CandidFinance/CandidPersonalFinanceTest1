@@ -1571,7 +1571,7 @@ function LoadingScreen({ name, msgs }) {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function ScoreRing({ score, delta = 0 }) {
   const r = 50, circ = 2 * Math.PI * r;
-  const col = score >= 86 ? "#2d6b4a" : score >= 66 ? "#2d6b4a" : score >= 41 ? GOLD : "#c0392b";
+  const col = score >= 86 ? G : score >= 66 ? "#2d6b4a" : score >= 41 ? GOLD : "#c0392b";
   const lb  = score >= 86 ? "Optimised" : score >= 66 ? "On track" : score >= 41 ? "Room to improve" : "Needs attention";
   const [fadeDelta, setFadeDelta] = useState(false);
   const prevDelta = useRef(0);
