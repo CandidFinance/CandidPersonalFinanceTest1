@@ -1007,19 +1007,38 @@ function ProgressBar({ pct }) {
 }
 
 const STEP_SHORT_LABELS = ["Name","Email","Interests","Income","Savings","Invest.","Pension","Debt"];
+const STEP_MOBILE_LABELS = ["Name","Email","Int.","Inc.","Sav.","Inv.","Pension","Debt"];
 
 function StepProgress({ step, steps, onStepClick, isEditMode }) {
+  const [windowWidth, setWindowWidth] = useState(() => typeof window !== "undefined" ? window.innerWidth : 1024);
+  useEffect(() => {
+    const onResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const isNarrow = windowWidth < 480;
+  const WINDOW_SIZE = 4;
+  // On narrow screens, slide a 4-circle window that keeps the current step visible
+  // without overflowing past the first or last step.
+  const start = isNarrow ? Math.max(0, Math.min(step - (WINDOW_SIZE - 1), steps.length - WINDOW_SIZE)) : 0;
+  const visibleIndices = isNarrow
+    ? Array.from({ length: Math.min(WINDOW_SIZE, steps.length) }, (_, idx) => start + idx)
+    : steps.map((_, i) => i);
+
   return (
-    <div style={{background:WHITE,borderBottom:`1px solid ${CDARK}`,padding:"20px 24px",flexShrink:0}}>
+    <div style={{background:WHITE,borderBottom:`1px solid ${CDARK}`,padding:"20px 24px",flexShrink:0,overflow:"hidden"}}>
       <div style={{maxWidth:"580px",margin:"0 auto",display:"flex",alignItems:"center"}}>
-        {steps.map((label, i) => {
+        {visibleIndices.map((i, idx) => {
+          const label = steps[i];
           const done = i < step;
           const current = i === step;
           const size = current ? 34 : 28;
           const clickable = (isEditMode || done) && !!onStepClick && i !== step;
-          const shortLabel = STEP_SHORT_LABELS[i] || label;
+          const shortLabel = (isNarrow ? STEP_MOBILE_LABELS[i] : STEP_SHORT_LABELS[i]) || label;
+          const isLastVisible = idx === visibleIndices.length - 1;
           return (
-            <div key={i} style={{display:"flex",alignItems:"center",flex: i < steps.length - 1 ? 1 : 0}}>
+            <div key={i} style={{display:"flex",alignItems:"center",flex: !isLastVisible ? 1 : 0}}>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",flexShrink:0}}>
                 <div
                   onClick={clickable ? () => onStepClick(i) : undefined}
@@ -1041,7 +1060,7 @@ function StepProgress({ step, steps, onStepClick, isEditMode }) {
                 </div>
                 <span style={{fontSize:"10px",fontWeight:600,color:current?G:done?G:MUT,letterSpacing:"0.04em",whiteSpace:"nowrap",opacity:current?1:done?0.7:(isEditMode?0.7:0.5)}}>{shortLabel}</span>
               </div>
-              {i < steps.length - 1 && (
+              {!isLastVisible && (
                 <div style={{flex:1,height:"2px",background: i < step ? G : "rgba(22,47,36,0.12)",marginBottom:"18px",marginLeft:"6px",marginRight:"6px",transition:"background 0.4s ease"}}/>
               )}
             </div>
@@ -2945,6 +2964,28 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
             </div>
           )}
         </div>
+
+        {/* Emergency fund progress visual */}
+        {moduleKey === "cash" && (() => {
+          const target = m.emergencyBuffer;
+          const current = m.totalLiquid;
+          const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+          const fullyFunded = pct >= 100;
+          const tierColor = pct >= 100 ? "#2d6b4a" : pct >= 33 ? GOLD : "#c0392b";
+          return (
+            <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
+              <div style={{fontSize:"13px",color:"rgba(255,255,255,0.85)",marginBottom:"10px"}}>
+                {fmt(current)} of {fmt(target)} emergency fund target
+              </div>
+              <div style={{width:"100%",height:"12px",borderRadius:"6px",background:"rgba(255,255,255,0.1)",overflow:"hidden"}}>
+                <div style={{width:`${pct}%`,height:"100%",borderRadius:"6px",background:`linear-gradient(90deg, ${GOLD}, ${tierColor})`,transition:"width 0.4s ease"}}/>
+              </div>
+              <div style={{marginTop:"8px",fontSize:"13px",color:"rgba(255,255,255,0.85)"}}>
+                {fullyFunded ? <span style={{color:"#8fd9b6",fontWeight:600}}>✓ Fully funded</span> : `${Math.round(pct)}% covered`}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Pension: "I don't know" guidance — replaces the normal AI summary */}
         {isPensionUnknown && (
