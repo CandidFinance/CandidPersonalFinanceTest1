@@ -961,7 +961,7 @@ function Toggle({ value, onChange, options }) {
     <div style={{display:"flex",gap:"8px",marginTop:"6px",flexWrap:"wrap"}}>
       {options.map(o => (
         <button key={o.value} onClick={() => onChange(o.value)} style={{
-          flex:"1 1 auto", minWidth:"72px", padding:"10px 8px",
+          flex: o.full ? "1 1 100%" : "1 1 auto", minWidth:"72px", padding:"10px 8px",
           border:`1.5px solid ${value===o.value ? G : "rgba(22,47,36,0.18)"}`,
           borderRadius:"8px", background:value===o.value ? G : WHITE,
           color:value===o.value ? WHITE : TEXT,
@@ -1432,16 +1432,21 @@ function OnboardingStep({ step, d, set }) {
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Pension</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>The single biggest optimisation for most people in your income bracket. Takes 60 seconds to fill in.</p>
-      <Checkbox checked={!!d.pensionUnknown} onChange={v=>set("pensionUnknown",v)} label="I'm not sure / I don't have a pension set up"/>
+      <Field label="Do you contribute to a pension?">
+        <Toggle value={d.pensionUnknown ? "unsure" : (d.hasPension || "no")} onChange={v => {
+          if (v === "unsure") { set("pensionUnknown", true); }
+          else { set("pensionUnknown", false); set("hasPension", v); }
+        }} options={[
+          {value:"yes",label:"Yes"},
+          {value:"no",label:"No"},
+          {value:"unsure",label:"I'm not sure / I don't have a pension set up", full:true},
+        ]}/>
+      </Field>
       {d.pensionUnknown ? (
         <div style={{background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"16px",marginTop:"4px"}}>
           <p style={{fontSize:"14px",color:G,lineHeight:1.6}}>No problem — this is really common. Your full report will walk you through exactly how to find out, and we won't hold it against your score.</p>
         </div>
-      ) : (<>
-      <Field label="Do you contribute to a pension?">
-        <Toggle value={d.hasPension} onChange={v => set("hasPension",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"}]}/>
-      </Field>
-      {d.hasPension === "yes" ? (
+      ) : d.hasPension === "yes" ? (
         <div>
           <div style={g2}>
             <Field label="Your contribution (%)">
@@ -1496,7 +1501,6 @@ function OnboardingStep({ step, d, set }) {
           <p style={{fontSize:"14px",color:G,lineHeight:1.6}}><strong>This is likely your biggest financial gap.</strong> We'll quantify exactly what it's costing you.</p>
         </div>
       )}
-      </>)}
     </div>
   );
   if (step === 7) return (
