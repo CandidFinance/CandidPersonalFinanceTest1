@@ -1521,16 +1521,21 @@ function OnboardingStep({ step, d, set }) {
           <Warn msg={+d.loanBalance > 100000 ? "Very large loan balance — double-check" : null}/>
         </Field>
       )}
-      <Checkbox checked={!!d.ownsOutright} onChange={v=>set("ownsOutright",v)} label="I own my home outright (no mortgage)"/>
+      <Field label="Do you have a mortgage?">
+        <Toggle value={d.ownsOutright ? "outright" : (d.hasMortgage || "no")} onChange={v => {
+          if (v === "outright") { set("ownsOutright", true); }
+          else { set("ownsOutright", false); set("hasMortgage", v); }
+        }} options={[
+          {value:"yes",label:"Yes"},
+          {value:"no",label:"Not yet"},
+          {value:"outright",label:"I own my home outright", full:true},
+        ]}/>
+      </Field>
       {d.ownsOutright ? (
         <Field label="Estimated value of your home (£)">
           <FmtInput fmtType="gbp" value={d.outrightPropertyValue||""} onChange={v=>set("outrightPropertyValue",v)} placeholder="e.g. 350,000"/>
         </Field>
-      ) : (<>
-      <Field label="Do you have a mortgage?">
-        <Toggle value={d.hasMortgage} onChange={v => set("hasMortgage",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"Not yet"}]}/>
-      </Field>
-      {d.hasMortgage === "yes" && (
+      ) : d.hasMortgage === "yes" && (
         <div>
           <Field label="Mortgage type">
             <Toggle value={d.mortgageType||"fixed"} onChange={v=>set("mortgageType",v)} options={[{value:"fixed",label:"Fixed rate"},{value:"variable",label:"Variable (SVR/tracker)"}]}/>
@@ -1588,7 +1593,6 @@ function OnboardingStep({ step, d, set }) {
           </Field>
         </div>
       )}
-      </>)}
       <Field label="Do you have a personal loan?">
         <Toggle value={d.hasPersonalLoan} onChange={v => set("hasPersonalLoan",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"}]}/>
       </Field>
