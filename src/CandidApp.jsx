@@ -153,11 +153,12 @@ function pensionReturnLabel(d, m) {
 }
 
 // ── Month-by-month student loan simulator ────────────────────────────────────────────
-function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRate, repaymentThreshold, repaymentRate, maxYears = 30) {
+function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRate, repaymentThreshold, repaymentRate, maxYears = 30, extraMonthly = 0) {
   let balance = openingBalance;
   let salary = annualSalary;
   let totalInterest = 0;
   let totalPaid = 0;
+  let monthsToClear = null;
   const monthlyRate = interestRate / 12;
   for (let month = 0; month < maxYears * 12; month++) {
     if (balance <= 0) break;
@@ -165,13 +166,14 @@ function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRa
     balance += interest;
     totalInterest += interest;
     const annualRepayment = Math.max(0, (salary - repaymentThreshold) * repaymentRate);
-    const monthlyRepayment = annualRepayment / 12;
+    const monthlyRepayment = annualRepayment / 12 + extraMonthly;
     const payment = Math.min(monthlyRepayment, balance);
     balance -= payment;
     totalPaid += payment;
+    if (balance <= 0 && monthsToClear === null) monthsToClear = month + 1;
     if ((month + 1) % 12 === 0) salary *= (1 + salaryGrowthRate);
   }
-  return { totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid), cleared: balance <= 0 };
+  return { totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid), cleared: balance <= 0, monthsToClear };
 }
 
 // ── Equivalence engine ────────────────────────────────────────────────────────
@@ -366,6 +368,16 @@ function calcMetrics(d) {
       }
     }
   }
+  // Monthly surplus — rough "free cash" per month after estimated income tax,
+  // NI, pension contributions, living expenses, and existing debt repayments.
+  // Used as the default monthly contribution for forecasting (see calcForecast).
+  const niAnnual = 0.08 * Math.min(Math.max(0, salary - 12570), 37700) + 0.02 * Math.max(0, salary - 50270);
+  const incomeTaxAnnual = calcIncomeTax(adjustedNetIncome);
+  const netAnnualIncome = adjustedNetIncome - incomeTaxAnnual - niAnnual;
+  const existingMortgagePmt = hasMortgage ? (+d.monthlyMortgage||0) : 0;
+  const existingPersonalLoanPmt = d.hasPersonalLoan === "yes" ? plMonthly : 0;
+  const monthlySurplus = Math.max(0, netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - annualRepayment / 12);
+
   return {
     salary, expenses, totalLiquid, runwayMonths,
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
@@ -378,7 +390,166 @@ function calcMetrics(d) {
     daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate,
     propertyEquity, propertyValue, ltv,
     pensionStatus, personalLoanAnnualRepayment, personalLoanPayoffMonths,
+    monthlySurplus,
   };
+}
+
+// ── Forecast helpers ───────────────────────────────────────────────────────
+// Future value of a stream of equal monthly contributions, compounded monthly.
+// FV = PMT × (((1+r)^n - 1) / r), where r = monthly rate and n = number of months.
+function fvAnnuity(pmt, annualRatePct, months) {
+  if (months <= 0 || pmt <= 0) return 0;
+  const r = annualRatePct / 100 / 12;
+  if (r === 0) return pmt * months;
+  return pmt * ((Math.pow(1 + r, months) - 1) / r);
+}
+
+// Amortises a repayment loan/mortgage month-by-month at a fixed annual rate,
+// with an optional extra monthly overpayment on top of the normal payment.
+// Returns total interest paid over maxMonths, and (if the balance clears
+// within that window) the month it cleared.
+function simulateAmortisation(balance, annualRatePct, monthlyPayment, maxMonths) {
+  const r = annualRatePct / 100 / 12;
+  let bal = balance, totalInterest = 0, monthsToClear = null;
+  for (let month = 1; month <= maxMonths; month++) {
+    if (bal <= 0) break;
+    const interest = bal * r;
+    totalInterest += interest;
+    bal += interest;
+    const payment = Math.min(monthlyPayment, bal);
+    bal -= payment;
+    if (bal <= 0 && monthsToClear === null) monthsToClear = month;
+  }
+  return { totalInterest, monthsToClear, cleared: monthsToClear !== null };
+}
+
+// Projects low/central/high values at `horizonYears` for each way the user's
+// monthly surplus could be put to work: mortgage overpayment, student loan
+// overpayment, Stocks & Shares ISA, cash savings, and pension salary sacrifice.
+// Returns { horizonYears, monthlySurplus, options }, where `options` only
+// includes entries applicable to this user (applicable: true).
+function calcForecast(d, m, surplusOverride, horizonYears) {
+  const surplus = surplusOverride != null ? +surplusOverride : m.monthlySurplus;
+  const months = horizonYears * 12;
+  const options = [];
+
+  // ── 1. Mortgage overpayment ────────────────────────────────────────────
+  const hasOverpayableMortgage = d.hasMortgage === "yes" && !d.ownsOutright && (+d.mortgageBalance||0) > 0;
+  if (hasOverpayableMortgage) {
+    const bal = +d.mortgageBalance||0;
+    const pay = +d.monthlyMortgage||0;
+    const baseRate = +d.mortgageRate||0;
+    const valueAtRate = (rate) => {
+      const base = simulateAmortisation(bal, rate, pay, months);
+      const over = simulateAmortisation(bal, rate, pay + surplus, months);
+      let value = base.totalInterest - over.totalInterest;
+      if (over.monthsToClear !== null && over.monthsToClear < months) {
+        // Mortgage cleared early — the freed-up payment (original payment +
+        // surplus) is invested in savings for the remaining years at 4%.
+        value += fvAnnuity(pay + surplus, 4, months - over.monthsToClear);
+      }
+      return value;
+    };
+    options.push({
+      label: "Mortgage overpayment",
+      low: Math.round(valueAtRate(Math.max(0, baseRate - 0.5))),
+      central: Math.round(valueAtRate(baseRate)),
+      high: Math.round(valueAtRate(baseRate + 0.5)),
+      applicable: true,
+    });
+  }
+
+  // ── 2. Student loan overpayment ────────────────────────────────────────
+  if (m.loanBal > 0) {
+    const writeOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
+    const threshold  = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
+    const baseSlRate = d.studentLoan === "plan2" ? (m.salary > 49130 ? 0.075 : 0.054)
+      : d.studentLoan === "plan5" ? 0.073 : 0.050;
+
+    let writeOffNeutral = false;
+    const valueAtRate = (rate) => {
+      // Does overpaying actually change whether the loan clears before it
+      // would be written off? If not, the marginal value of overpaying is £0
+      // — the extra money just reduces the amount that gets forgiven.
+      const baseWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, rate, threshold, 0.09, writeOffYr, 0);
+      const overWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, rate, threshold, 0.09, writeOffYr, surplus);
+      if (!baseWriteOff.cleared && !overWriteOff.cleared) {
+        writeOffNeutral = true;
+        return 0;
+      }
+      const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, rate, threshold, 0.09, horizonYears, 0);
+      const over = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, rate, threshold, 0.09, horizonYears, surplus);
+      let value = base.totalInterest - over.totalInterest;
+      if (over.monthsToClear !== null && over.monthsToClear < months) {
+        // Loan cleared early — the freed-up repayment (current annual
+        // repayment ÷ 12, plus surplus) is invested in savings at 4%.
+        const freedUp = m.annualRepayment / 12 + surplus;
+        value += fvAnnuity(freedUp, 4, months - over.monthsToClear);
+      }
+      return value;
+    };
+
+    const low = valueAtRate(Math.max(0, baseSlRate - 0.005));
+    const central = valueAtRate(baseSlRate);
+    const high = valueAtRate(baseSlRate + 0.005);
+    options.push({
+      label: "Student loan overpayment",
+      low: Math.round(low),
+      central: Math.round(central),
+      high: Math.round(high),
+      applicable: true,
+      writeOffNeutral,
+    });
+  }
+
+  // ── 3. Stocks & Shares ISA ──────────────────────────────────────────────
+  options.push({
+    label: "Stocks & Shares ISA",
+    low: Math.round(fvAnnuity(surplus, 4, months)),
+    central: Math.round(fvAnnuity(surplus, 6, months)),
+    high: Math.round(fvAnnuity(surplus, 8, months)),
+    applicable: true,
+  });
+
+  // ── 4. Cash savings ───────────────────────────────────────────────────────
+  // Cash rates have more limited upside than downside risk, so the low/high
+  // band is asymmetric around the central rate.
+  const cashCentral = +d.cashRate || +d.savingsRate || 4;
+  options.push({
+    label: "Cash savings",
+    low: Math.round(fvAnnuity(surplus, Math.max(0, cashCentral - 1), months)),
+    central: Math.round(fvAnnuity(surplus, cashCentral, months)),
+    high: Math.round(fvAnnuity(surplus, cashCentral + 0.5, months)),
+    applicable: true,
+  });
+
+  // ── 5. Pension (salary sacrifice) ──────────────────────────────────────
+  if (d.pensionType === "sacrifice") {
+    // Tax + NI relief boosts every £1 of surplus into the pension immediately.
+    const effectiveContribution = surplus * pensionReturnRatio(d, m);
+    options.push({
+      label: "Pension (salary sacrifice)",
+      low: Math.round(fvAnnuity(effectiveContribution, 4, months)),
+      central: Math.round(fvAnnuity(effectiveContribution, 6, months)),
+      high: Math.round(fvAnnuity(effectiveContribution, 8, months)),
+      applicable: true,
+    });
+  }
+
+  return { horizonYears, monthlySurplus: surplus, options };
+}
+
+// Returns the year-by-year CENTRAL trajectory (years 0..horizonYears) for
+// each applicable forecast option, for plotting on a line graph. Uses the
+// same logic as calcForecast, evaluated at each year from 0 to horizonYears.
+function calcForecastSeries(d, m, surplusOverride, horizonYears) {
+  const years = Array.from({ length: horizonYears + 1 }, (_, i) => i);
+  const labels = calcForecast(d, m, surplusOverride, horizonYears).options.map(o => o.label);
+  const series = labels.map(label => ({
+    label,
+    values: years.map(y => calcForecast(d, m, surplusOverride, y).options.find(o => o.label === label).central),
+  }));
+  return { years, series };
 }
 
 // ── Premium Bond Context Aware Surfacing ──────────────────────────────────────────
