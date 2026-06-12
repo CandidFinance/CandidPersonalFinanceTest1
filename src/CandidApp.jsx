@@ -339,12 +339,33 @@ function calcMetrics(d) {
   const isaPrevCalc = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
   const totalIsaValue = isaUsedThisYearCalc + isaPrevCalc;
   const hasMortgage = d.hasMortgage === "yes";
-  const propertyEquity = hasMortgage ? (+d.propertyEquity || 0) : 0;
+  const propertyEquity = hasMortgage ? (+d.propertyEquity || 0) : (d.ownsOutright ? (+d.outrightPropertyValue || 0) : 0);
   const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal + propertyEquity;
   const totalLiabilities = loanBal + (hasMortgage ? (+d.mortgageBalance||0) : 0) + (d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0);
   const netWorth = totalAssets - totalLiabilities;
   const propertyValue = hasMortgage ? (propertyEquity + (+d.mortgageBalance || 0)) : 0;
   const ltv = hasMortgage && propertyValue > 0 ? Math.round((+d.mortgageBalance / propertyValue) * 100) : null;
+  // Pension: user has told us they don't know their pension situation —
+  // exclude from the normal "no contributions = critical" scoring
+  const pensionStatus = d.pensionUnknown ? "unknown" : null;
+  // Personal loan payoff projection — factor in an optional extra annual repayment
+  const plMonthly = +d.personalLoanMonthly||0;
+  const plAnnualExtra = +d.personalLoanAnnualExtra||0;
+  const personalLoanAnnualRepayment = plMonthly * 12 + plAnnualExtra;
+  let personalLoanPayoffMonths = null;
+  if (d.hasPersonalLoan === "yes") {
+    const plBal = +d.personalLoanBalance||0;
+    const plRate = +d.personalLoanRate||0;
+    const monthlyEquiv = personalLoanAnnualRepayment / 12;
+    const r = plRate / 100 / 12;
+    if (plBal > 0 && monthlyEquiv > 0) {
+      if (r > 0 && monthlyEquiv > plBal * r) {
+        personalLoanPayoffMonths = Math.ceil(Math.log(monthlyEquiv / (monthlyEquiv - plBal * r)) / Math.log(1 + r));
+      } else if (r === 0) {
+        personalLoanPayoffMonths = Math.ceil(plBal / monthlyEquiv);
+      }
+    }
+  }
   return {
     salary, expenses, totalLiquid, runwayMonths,
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
@@ -356,6 +377,7 @@ function calcMetrics(d) {
     statePensionWeekly, statePensionAnnual, niYearsToFull,
     daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate,
     propertyEquity, propertyValue, ltv,
+    pensionStatus, personalLoanAnnualRepayment, personalLoanPayoffMonths,
   };
 }
 
@@ -588,6 +610,8 @@ function getModuleInsightsExtended(key, d, m) {
       const totalInterestRemaining = Math.max(0, totalRemaining - bal);
       const savingsRate = +d.savingsRate||4.2;
       const overpayBenefit = (rate - savingsRate).toFixed(1);
+      const annualExtra = +d.personalLoanAnnualExtra||0;
+      const monthsSaved = (m.personalLoanPayoffMonths != null && mos > 0) ? Math.max(0, mos - m.personalLoanPayoffMonths) : 0;
       return [
         { label:"Outstanding balance", value: bal > 0 ? fmt(bal) : "—", flag: bal > 5000,
           tooltip:`Your personal loan balance. At ${rate}% AER, you're paying ~${fmt(annualInterest)}/yr in interest on this balance.` },
@@ -597,6 +621,10 @@ function getModuleInsightsExtended(key, d, m) {
           tooltip:`If you make only the minimum payments over ${mos} months, you'll pay ~${fmt(totalInterestRemaining)} in interest on top of your ${fmt(bal)} balance. Overpaying reduces this directly.` },
         { label:"vs saving: net benefit of overpaying", value: +overpayBenefit > 0 ? `+${overpayBenefit}%` : `${overpayBenefit}%`, flag: +overpayBenefit > 0,
           tooltip:`Your loan rate (${rate}%) minus your savings rate (${savingsRate}%). Overpaying the loan gives a guaranteed ${rate}% return — better than leaving cash in savings by ${overpayBenefit}%. This is the risk-free, after-tax comparison.` },
+        ...(annualExtra > 0 && m.personalLoanPayoffMonths != null ? [
+          { label:"Payoff time with extra repayment", value:`~${m.personalLoanPayoffMonths} months`, flag: monthsSaved > 0,
+            tooltip:`Paying ${fmt(mo)}/mo plus an extra ${fmt(annualExtra)}/yr (${fmt(m.personalLoanAnnualRepayment)}/yr total) clears this loan in ~${m.personalLoanPayoffMonths} months${monthsSaved > 0 ? ` — ${monthsSaved} month${monthsSaved!==1?"s":""} sooner than the ${mos}-month minimum-payment term.` : "."}` },
+        ] : []),
       ];
     }
     case "kids": {
@@ -941,6 +969,22 @@ function Toggle({ value, onChange, options }) {
         }}>{o.label}</button>
       ))}
     </div>
+  );
+}
+
+function Checkbox({ checked, onChange, label }) {
+  return (
+    <label style={{
+      display:"flex", alignItems:"flex-start", gap:"10px", cursor:"pointer",
+      marginBottom:"20px", padding:"13px 16px",
+      border:`1.5px solid ${checked ? G : "rgba(22,47,36,0.18)"}`,
+      borderRadius:"8px", background:checked ? "rgba(196,150,58,0.08)" : WHITE,
+      transition:"all 0.15s"
+    }}>
+      <input type="checkbox" checked={checked} onChange={e=>onChange(e.target.checked)}
+        style={{marginTop:"2px", width:"16px", height:"16px", accentColor:G, flexShrink:0, cursor:"pointer"}}/>
+      <span style={{fontSize:"14px", color:TEXT, lineHeight:1.5}}>{label}</span>
+    </label>
   );
 }
 
@@ -1369,6 +1413,12 @@ function OnboardingStep({ step, d, set }) {
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Pension</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>The single biggest optimisation for most people in your income bracket. Takes 60 seconds to fill in.</p>
+      <Checkbox checked={!!d.pensionUnknown} onChange={v=>set("pensionUnknown",v)} label="I'm not sure / I don't have a pension set up"/>
+      {d.pensionUnknown ? (
+        <div style={{background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"16px",marginTop:"4px"}}>
+          <p style={{fontSize:"14px",color:G,lineHeight:1.6}}>No problem — this is really common. Your full report will walk you through exactly how to find out, and we won't hold it against your score.</p>
+        </div>
+      ) : (<>
       <Field label="Do you contribute to a pension?">
         <Toggle value={d.hasPension} onChange={v => set("hasPension",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"}]}/>
       </Field>
@@ -1427,6 +1477,7 @@ function OnboardingStep({ step, d, set }) {
           <p style={{fontSize:"14px",color:G,lineHeight:1.6}}><strong>This is likely your biggest financial gap.</strong> We'll quantify exactly what it's costing you.</p>
         </div>
       )}
+      </>)}
     </div>
   );
   if (step === 7) return (
@@ -1447,6 +1498,12 @@ function OnboardingStep({ step, d, set }) {
           <Warn msg={+d.loanBalance > 100000 ? "Very large loan balance — double-check" : null}/>
         </Field>
       )}
+      <Checkbox checked={!!d.ownsOutright} onChange={v=>set("ownsOutright",v)} label="I own my home outright (no mortgage)"/>
+      {d.ownsOutright ? (
+        <Field label="Estimated value of your home (£)">
+          <FmtInput fmtType="gbp" value={d.outrightPropertyValue||""} onChange={v=>set("outrightPropertyValue",v)} placeholder="e.g. 350,000"/>
+        </Field>
+      ) : (<>
       <Field label="Do you have a mortgage?">
         <Toggle value={d.hasMortgage} onChange={v => set("hasMortgage",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"Not yet"}]}/>
       </Field>
@@ -1508,6 +1565,7 @@ function OnboardingStep({ step, d, set }) {
           </Field>
         </div>
       )}
+      </>)}
       <Field label="Do you have a personal loan?">
         <Toggle value={d.hasPersonalLoan} onChange={v => set("hasPersonalLoan",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"}]}/>
       </Field>
@@ -1527,6 +1585,9 @@ function OnboardingStep({ step, d, set }) {
             <Field label="Monthly payment (£)"><FmtInput fmtType="gbp" value={d.personalLoanMonthly} onChange={v=>set("personalLoanMonthly",v)} placeholder="e.g. 180"/></Field>
             <Field label="Months remaining"><input style={INP} type="number" value={d.personalLoanTermRemaining} onChange={e=>set("personalLoanTermRemaining",e.target.value)} placeholder="e.g. 36"/></Field>
           </div>
+          <Field label="Additional annual repayment (optional)" hint="E.g. a lump sum from a bonus, on top of your monthly repayment">
+            <FmtInput fmtType="gbp" value={d.personalLoanAnnualExtra||""} onChange={v=>set("personalLoanAnnualExtra",v)} placeholder="e.g. 1,000"/>
+          </Field>
           <Field label="Loan provider" hint="Helps us surface better refinancing deals when available.">
             <select style={INP} value={d.personalLoanProvider||""} onChange={e=>set("personalLoanProvider",e.target.value)}>
               <option value="">Select provider…</option>
@@ -1618,8 +1679,8 @@ function ScoreRing({ score, delta = 0 }) {
   );
 }
 
-const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT };
-const SL = { ok:"On track", attention:"Review", critical:"Action needed", na:"N/A" };
+const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT, unknown:MUT };
+const SL = { ok:"On track", attention:"Review", critical:"Action needed", na:"N/A", unknown:"Find out" };
 const UG = { immediate:"#c0392b", soon:GOLD, "this tax year":"#2d6b4a" };
 
 const MODULE_META = [
@@ -1711,7 +1772,13 @@ const pensionImpact = !contributing
   ? Math.round(m.salary * 0.05 * m.tr + m.missedMatch + 99999) // not contributing = highest priority sentinel
   : Math.round(m.missedMatch + bonusSacrificeOpportunity);
 
-s.pension = {
+s.pension = m.pensionStatus === "unknown" ? {
+  // User told us they don't know their pension situation — neutral/informational,
+  // not a scored "missed opportunity"
+  status: "unknown",
+  impact: 0,
+  impactLabel: null,
+} : {
   // Only "critical" when genuinely missing match or not contributing at all
   status: !contributing ? "critical" : m.missedMatch > 0 ? "critical" : "attention",
   impact: pensionImpact,
@@ -2110,7 +2177,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
           const topModule = activeModules
             .filter(mm => {
                   if (completedModules.includes(mm.key)) return false;
-              if (mm.key === "pension" && pensionFullyMatched) return false;
+              if (mm.key === "pension" && (pensionFullyMatched || m.pensionStatus === "unknown")) return false;
               return true;
             })
             .sort((a,b) => b.impact - a.impact)[0];
@@ -2787,7 +2854,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
   }, [products.slSection, m.loanBal, m.salary, m.tr, d.studentLoan, d.salaryTrajectory, d.pensionType, d.hasMortgage, d.mortgageRate]);
 
   const modSummary = insights?.modules?.[moduleKey];
-  const col = SC[modSummary?.status] || MUT;
+  // Pension: user told us they don't know their pension situation — show a
+  // dedicated "find out" guide instead of the normal critical/attention framing
+  const isPensionUnknown = moduleKey === "pension" && m.pensionStatus === "unknown";
+  const col = isPensionUnknown ? MUT : (SC[modSummary?.status] || MUT);
   const surplus = m.surplusCash;
   const showRunwayCallout = moduleKey === "cash" && m.runwayMonths > m.bufferMonths * 2;
   const bondsVal = m.bonds || 0;
@@ -2863,8 +2933,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
             <span style={{fontSize:"32px"}}>{meta?.icon}</span>
             <div>
               <h2 style={{fontFamily:SERIF,fontSize:"26px",color:G,lineHeight:1.2}}>{meta?.title}</h2>
-              {modSummary?.status && (
-                <span style={{fontSize:"11px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 10px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginTop:"6px"}}>{SL[modSummary.status]}</span>
+              {(isPensionUnknown || modSummary?.status) && (
+                <span style={{fontSize:"11px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 10px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginTop:"6px"}}>{isPensionUnknown ? SL.unknown : SL[modSummary.status]}</span>
               )}
             </div>
           </div>
@@ -2876,15 +2946,33 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
           )}
         </div>
 
+        {/* Pension: "I don't know" guidance — replaces the normal AI summary */}
+        {isPensionUnknown && (
+          <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
+            <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75,marginBottom:"12px"}}>
+              Not knowing your pension situation isn't a failure — it's incredibly common, and it's costing you the ability to plan. Here's how to find out in about 10 minutes:
+            </p>
+            <ol style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75,paddingLeft:"20px",marginBottom:"12px"}}>
+              <li>Check your payslip for pension deductions</li>
+              <li>Ask your employer's HR or payroll team which scheme you're in and what they contribute</li>
+              <li>Search gov.uk/find-pension-contact-details for any pensions from previous employers</li>
+              <li>Check for a State Pension forecast at gov.uk/check-state-pension</li>
+            </ol>
+            <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75}}>
+              Once you know these details, come back and update this section — it's likely one of your biggest opportunities.
+            </p>
+          </div>
+        )}
+
         {/* AI summary */}
-        {modSummary?.summary && (
+        {!isPensionUnknown && modSummary?.summary && (
           <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
             <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75}}>{modSummary.summary}</p>
           </div>
         )}
 
         {/* Computed metrics with tooltips */}
-        {modInsights.length > 0 && (
+        {!isPensionUnknown && modInsights.length > 0 && (
           <div className="fu2" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px",marginBottom:"20px"}}>
             {modInsights.map((ins,i) => (
               <div key={i} style={{background:ins.flag ? "rgba(196,150,58,0.08)" : WHITE,borderRadius:"10px",padding:"14px 16px",border:`1px solid ${ins.flag ? "rgba(196,150,58,0.3)" : "rgba(22,47,36,0.09)"}`,position:"relative"}}>
@@ -3097,7 +3185,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
         )}
 
         {/* Products */}
-        {products && (
+        {products && !isPensionUnknown && (
           <div className="fu4">
             <div style={{marginBottom:"16px"}}>
               <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>{products.heading}</h3>
@@ -3818,13 +3906,15 @@ const BLANK_DATA = {
   isaThisYearCash:"", isaThisYearSS:"", isaThisYearLISA:"", isaThisYearOther:"",
   isaPrevCash:"", isaPrevSS:"", isaPrevLISA:"", isaPrevOther:"",
   hasPension:"no", myContribution:"", employerMatch:"", potValue:"", potValue2:"", retirementAge:"65", pensionType:"",
+  pensionUnknown:false,
   niYears:"",
   studentLoan:"none", loanBalance:"",
   hasMortgage:"no", mortgageType:"fixed", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
   fixExpiryMonth:"", fixExpiryYear:"", mortgageProvider:"", propertyEquity:"",
+  ownsOutright:false, outrightPropertyValue:"",
   savingsGoal:"goals", investHorizon:"5to10",
   inheritDirection:"", estateValue:"", hasWill:"no",
-  hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanProvider:"",
+  hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanAnnualExtra:"", personalLoanProvider:"",
   hasKids:"no", numKids:"", kidsAges:"", hasJISA:"no", juniorISAValue:"",
   // Supabase schema note: isa_this_year_other NUMERIC
 };

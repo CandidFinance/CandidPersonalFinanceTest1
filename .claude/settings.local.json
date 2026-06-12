@@ -6,7 +6,9 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(node -e ' *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(grep -n \"key={i}\\\\|key={idx}\\\\|key={index}\\\\|key={\\\\`.*-\\\\${i}\\\\`}\" src/CandidApp.jsx)",
+      "Bash(awk 'NR==4001,NR==4214' src/CandidApp.jsx)"
     ]
   }
 }
