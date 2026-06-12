@@ -1006,17 +1006,23 @@ function ProgressBar({ pct }) {
   );
 }
 
+// Tracks window width via a resize listener — shared breakpoint pattern for
+// switching between mobile and desktop/tablet layouts.
+function useWindowWidth() {
+  const [width, setWidth] = useState(() => typeof window !== "undefined" ? window.innerWidth : 1024);
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return width;
+}
+
 const STEP_SHORT_LABELS = ["Name","Email","Interests","Income","Savings","Invest.","Pension","Debt"];
 const STEP_MOBILE_LABELS = ["Name","Email","Int.","Inc.","Sav.","Inv.","Pension","Debt"];
 
 function StepProgress({ step, steps, onStepClick, isEditMode }) {
-  const [windowWidth, setWindowWidth] = useState(() => typeof window !== "undefined" ? window.innerWidth : 1024);
-  useEffect(() => {
-    const onResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
+  const windowWidth = useWindowWidth();
   const isNarrow = windowWidth < 480;
   const WINDOW_SIZE = 4;
   // On narrow screens, slide a 4-circle window that keeps the current step visible
@@ -2064,6 +2070,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
+  const isMobile = useWindowWidth() < 768;
       if (!insights) return null;
 
   // Net worth breakdown
@@ -2517,7 +2524,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
         </div>
 
         {/* Unreviewed modules — top 3 always visible */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"10px"}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:"16px",marginBottom:"10px"}}>
           {visibleUnreviewed.map((mm,i) => {
             const col = SC[mm.status] || MUT;
             return (
@@ -2528,7 +2535,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
                   <span style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</span>
                 </div>
                 <span style={{fontSize:"10px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginBottom:"8px"}}>{SL[mm.status]}</span>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginBottom:"6px"}}>{mm.summary}</p>
+                <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginBottom:"6px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{mm.summary}</p>
                 <div style={{marginTop:"auto",paddingTop:"8px"}}>
                   {mm.impactLabel && (
                     <div style={{fontSize:"11px",color:G,fontWeight:600,background:"rgba(22,47,36,0.05)",borderRadius:"5px",padding:"4px 8px",marginBottom:"4px"}}>{mm.impactLabel}</div>
@@ -2550,7 +2557,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
         {hiddenCount > 0 && (
           <>
             {showAllModules && (
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"10px"}}>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:"16px",marginBottom:"10px"}}>
                 {hiddenUnreviewed.map((mm) => {
                   const col = SC[mm.status] || MUT;
                   return (
@@ -2561,7 +2568,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
                         <span style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</span>
                       </div>
                       <span style={{fontSize:"10px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginBottom:"8px"}}>{SL[mm.status]}</span>
-                      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginBottom:"6px"}}>{mm.summary}</p>
+                      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginBottom:"6px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{mm.summary}</p>
                       <div style={{marginTop:"auto",paddingTop:"8px"}}>
                         {mm.impactLabel && (
                           <div style={{fontSize:"11px",color:G,fontWeight:600,background:"rgba(22,47,36,0.05)",borderRadius:"5px",padding:"4px 8px",marginBottom:"4px"}}>{mm.impactLabel}</div>
@@ -2690,11 +2697,11 @@ function ProductCard({ p, onInternalLink }) {
         </div>
       </div>
       {p.rate && <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginBottom:"6px"}}>{p.rate}</div>}
-      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,marginBottom:"12px",flex:1}}>{p.feature}</p>
       <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
-        style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>
+        style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",marginBottom:"10px"}}>
         {p.cta}
       </button>
+      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,marginBottom:"12px",flex:1}}>{p.feature}</p>
       {!p.internalLink && (
         <div style={{marginTop:"8px",fontSize:"11px",color:"rgba(22,47,36,0.4)",textAlign:"center",fontStyle:"italic"}}>
           Demo: {p.demoNote || `Would open ${p.name} — not yet a live link in this preview`}
