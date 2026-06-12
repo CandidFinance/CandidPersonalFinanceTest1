@@ -1887,6 +1887,15 @@ const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT, unknown:M
 const SL = { ok:"On track", attention:"Review", critical:"Action needed", na:"N/A", unknown:"Find out" };
 const UG = { immediate:"#c0392b", soon:GOLD, "this tax year":"#2d6b4a" };
 
+// ── Your Forecast — per-option line colours (chart + legend + table dots) ─────
+const FORECAST_COLORS = {
+  "Mortgage overpayment": "#c0392b",
+  "Student loan overpayment": "#8a4fae",
+  "Stocks & Shares ISA": GOLD,
+  "Cash savings": "#1a6fa3",
+  "Pension (salary sacrifice)": "#2d6b4a",
+};
+
 const MODULE_META = [
   { key:"cash",        icon:"💷", title:"Cash & savings"  },
   { key:"investments", icon:"📈", title:"Investments"     },
@@ -2241,6 +2250,8 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
+  const [forecastHorizon, setForecastHorizon] = useState(5);
+  const [forecastSurplus, setForecastSurplus] = useState(null); // null = use calculated default
   const isMobile = useWindowWidth() < 768;
       if (!insights) return null;
 
@@ -2310,6 +2321,27 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
   const visibleUnreviewed = unreviewedModules.slice(0, SHOW_DEFAULT);
   const hiddenUnreviewed  = unreviewedModules.slice(SHOW_DEFAULT);
   const hiddenCount = hiddenUnreviewed.length;
+
+  // ── Your Forecast — recalculates live as horizon/surplus controls change ────
+  const forecast = calcForecast(d, m, forecastSurplus, forecastHorizon);
+  const forecastSeries = calcForecastSeries(d, m, forecastSurplus, forecastHorizon);
+  const forecastChart = (() => {
+    const { years, series } = forecastSeries;
+    const allValues = series.flatMap(s => s.values);
+    const yMax = Math.max(1, ...allValues);
+    const horizonYrs = years[years.length - 1] || 1;
+    const VW = 680, VH = 280, PL = 60, PR = 16, PT = 16, PB = 32;
+    const cW = VW - PL - PR, cH = VH - PT - PB;
+    const sx = yr => PL + (yr / horizonYrs) * cW;
+    const sy = v => PT + cH - (v / yMax) * cH;
+    const paths = series.map(s => ({
+      label: s.label,
+      d: s.values.map((v,i) => `${i===0?"M":"L"}${sx(years[i]).toFixed(1)},${sy(v).toFixed(1)}`).join(" "),
+    }));
+    const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => yMax * f);
+    const xTicks = [...new Set([0, Math.round(horizonYrs*0.25), Math.round(horizonYrs*0.5), Math.round(horizonYrs*0.75), horizonYrs])];
+    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks };
+  })();
 
   return (
     <PageWrap>
@@ -2686,6 +2718,93 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
         <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.25)",borderRadius:"10px",padding:"13px 16px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
           <p style={{fontSize:"13px",color:G,lineHeight:1.5,margin:0}}>Changed your circumstances? Update your inputs for a fresh score.</p>
           <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer",flexShrink:0}}>Update inputs</button>
+        </div>
+
+        {/* Your Forecast */}
+        <div className="fu1" style={{background:WHITE,borderRadius:"16px",padding:isMobile?"18px":"24px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"24px"}}>
+          <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G,marginBottom:"4px"}}>Your Forecast</h3>
+          <p style={{fontSize:"13px",color:MUT,marginBottom:"18px"}}>See what your surplus could become under different strategies.</p>
+
+          {/* Controls row */}
+          <div style={{display:"flex",gap:"20px",flexWrap:"wrap",alignItems:"flex-start",marginBottom:"22px"}}>
+            <div style={{flex:"1 1 280px"}}>
+              <label style={LBL}>Time horizon</label>
+              <Toggle value={forecastHorizon} onChange={setForecastHorizon} options={[
+                {value:5,label:"5 years"},{value:10,label:"10 years"},{value:20,label:"20 years"},{value:40,label:"40 years"},
+              ]}/>
+            </div>
+            <div style={{flex:"0 0 160px"}}>
+              <label style={LBL}>Monthly surplus</label>
+              <FmtInput
+                value={forecastSurplus != null ? forecastSurplus : Math.round(m.monthlySurplus)}
+                onChange={v => setForecastSurplus(v === "" ? null : +v)}
+                fmtType="gbp"
+                style={{marginTop:"6px"}}
+              />
+              <div style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>per month</div>
+            </div>
+          </div>
+
+          {/* Line graph */}
+          <svg viewBox={`0 0 ${forecastChart.VW} ${forecastChart.VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible",marginBottom:"12px"}}>
+            <rect x={forecastChart.PL} y={forecastChart.PT} width={forecastChart.cW} height={forecastChart.cH} fill="rgba(22,47,36,0.03)" rx="4"/>
+            {forecastChart.yTicks.map((v,i) => (
+              <g key={i}>
+                <line x1={forecastChart.PL} x2={forecastChart.VW-forecastChart.PR} y1={forecastChart.sy(v)} y2={forecastChart.sy(v)} stroke="rgba(22,47,36,0.09)" strokeWidth="1.5"/>
+                <text x={forecastChart.PL-10} y={forecastChart.sy(v)+4} fontSize="12" fontWeight="700" fill={MUT} textAnchor="end">{v >= 1000 ? `£${Math.round(v/1000)}k` : fmt(v)}</text>
+              </g>
+            ))}
+            {forecastChart.paths.map(p => (
+              <path key={p.label} d={p.d} fill="none" stroke={FORECAST_COLORS[p.label]||MUT} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            ))}
+            <line x1={forecastChart.PL} x2={forecastChart.VW-forecastChart.PR} y1={forecastChart.VH-forecastChart.PB} y2={forecastChart.VH-forecastChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="2"/>
+            {forecastChart.xTicks.map((yr,i) => (
+              <text key={i} x={forecastChart.sx(yr)} y={forecastChart.VH-forecastChart.PB+20} fontSize="12" fontWeight="700" fill={MUT} textAnchor="middle">Yr {yr}</text>
+            ))}
+            <line x1={forecastChart.PL} x2={forecastChart.PL} y1={forecastChart.PT} y2={forecastChart.VH-forecastChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="2"/>
+          </svg>
+
+          {/* Legend */}
+          <div style={{display:"flex",gap:"16px",flexWrap:"wrap",marginBottom:"22px"}}>
+            {forecastChart.paths.map(p => (
+              <div key={p.label} style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12px",color:TEXT}}>
+                <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[p.label]||MUT,display:"inline-block",flexShrink:0}}/>
+                {p.label}
+              </div>
+            ))}
+          </div>
+
+          {/* Summary table */}
+          <div style={{overflowX:"auto",marginBottom:"16px"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
+              <thead>
+                <tr>
+                  <th style={{textAlign:"left",padding:"8px 10px",borderBottom:"1.5px solid rgba(22,47,36,0.12)",color:MUT,fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Option</th>
+                  <th style={{textAlign:"right",padding:"8px 10px",borderBottom:"1.5px solid rgba(22,47,36,0.12)",color:MUT,fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Low</th>
+                  <th style={{textAlign:"right",padding:"8px 10px",borderBottom:"1.5px solid rgba(22,47,36,0.12)",color:MUT,fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Central</th>
+                  <th style={{textAlign:"right",padding:"8px 10px",borderBottom:"1.5px solid rgba(22,47,36,0.12)",color:MUT,fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>High</th>
+                </tr>
+              </thead>
+              <tbody>
+                {forecast.options.map(o => (
+                  <tr key={o.label}>
+                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",color:TEXT,fontWeight:600,whiteSpace:"nowrap"}}>
+                      <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",marginRight:"8px"}}/>
+                      {o.label}
+                    </td>
+                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",textAlign:"right",color:MUT}}>{fmt(o.low)}</td>
+                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",textAlign:"right",color:G,fontWeight:700}}>{fmt(o.central)}</td>
+                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",textAlign:"right",color:MUT}}>{fmt(o.high)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Disclaimer */}
+          <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:0}}>
+            These are illustrative projections based on assumed rates of return, which are not guaranteed and may vary significantly. This is guidance, not financial advice — the right strategy depends on your full circumstances.
+          </p>
         </div>
 
         {/* Module breakdown — sorted, collapsible */}
