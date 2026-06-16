@@ -2435,37 +2435,65 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
   const forecastSeries = calcForecastSeries(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
   const forecastSlRatePct = Math.round(resolveSlRate(d, m.salary) * 1000) / 10;
   const FORECAST_ASSUMPTIONS = {
-    "Mortgage overpayment": [
-      `Rate: your entered mortgage rate of ${+d.mortgageRate||0}%.`,
-      `If cleared early, freed-up payments are assumed to earn ${(CASH_RATE_CENTRAL*100).toFixed(1)}% in savings for the remaining period.`,
-      `Low / High: mortgage rate shifted ±0.5%.`,
-    ],
-    "Student loan overpayment": [
-      `Rate: ${forecastSlRatePct}% (${+d.studentLoanRate > 0 ? "your entered rate" : "SLC 2024/25 default for your plan"}).`,
-      `Shows cumulative interest saved versus making no extra repayments.`,
-      `Low / High: salary growth uncertainty, ±15% on the central benefit.`,
-      `Benefit is zero if the loan is likely written off regardless of overpayment.`,
-    ],
-    "Stocks & Shares ISA": [
-      `Low: 4% p.a.  ·  Central: 6% p.a.  ·  High: 8% p.a.`,
-      `Returns compound monthly and are tax-free inside an ISA.`,
-      `Past performance is not a reliable guide to future returns.`,
-    ],
-    "Cash savings": [
-      `Low: ${(CASH_RATE_LOW*100).toFixed(1)}%  ·  Central: ${(CASH_RATE_CENTRAL*100).toFixed(1)}%  ·  High: ${(CASH_RATE_HIGH*100).toFixed(1)}% p.a.`,
-      `UK market defaults (Sep 2024). If you entered your own savings rate it is used as central, with a ±1.5% spread.`,
-    ],
-    "Pension (salary sacrifice)": [
-      `Your surplus is paid before tax and NI — HMRC effectively tops it up immediately.`,
-      `The uplift shown reflects your marginal tax rate plus the employer NI saving passed through.`,
-      `Growth: Low 4%  ·  Central 6%  ·  High 8% p.a.`,
-      `Excludes any employer contributions on the extra amount.`,
-    ],
-    "Pension (relief at source)": [
-      `Every £1 you contribute becomes £1.25 in the pension (20% basic-rate top-up added by HMRC).`,
-      `Higher or additional-rate relief via self-assessment is not modelled — this is a conservative estimate.`,
-      `Growth: Low 4%  ·  Central 6%  ·  High 8% p.a.`,
-    ],
+    "Mortgage overpayment": {
+      lines: [
+        `Interest saved by overpaying at your current mortgage rate.`,
+        `If cleared early, freed-up payments earn ${(CASH_RATE_CENTRAL*100).toFixed(1)}% in savings for the remaining period.`,
+        `Low / High shift the mortgage rate ±0.5%.`,
+      ],
+      rates: {
+        low: `${Math.max(0, (+d.mortgageRate||0) - 0.5).toFixed(1)}%`,
+        central: `${(+d.mortgageRate||0).toFixed(1)}%`,
+        high: `${((+d.mortgageRate||0) + 0.5).toFixed(1)}%`,
+      },
+    },
+    "Student loan overpayment": {
+      lines: [
+        `Cumulative interest saved vs making no extra repayments.`,
+        `Interest rate: ${forecastSlRatePct}% p.a. (${+d.studentLoanRate > 0 ? "your entered rate" : "SLC 2024/25 default"}).`,
+        `Low / High reflect salary growth uncertainty — not a rate variation.`,
+        `Benefit is zero if the loan is written off regardless of overpayment.`,
+      ],
+      rates: {
+        low: `${forecastSlRatePct}%`,
+        central: `${forecastSlRatePct}%`,
+        high: `${forecastSlRatePct}%`,
+      },
+    },
+    "Stocks & Shares ISA": {
+      lines: [
+        `Globally diversified index fund, returns compound monthly.`,
+        `Tax-free inside an ISA.`,
+        `Past performance is not a reliable guide to future returns.`,
+      ],
+      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
+    },
+    "Cash savings": {
+      lines: [
+        `Easy-access savings account or Cash ISA.`,
+        `UK market defaults (Sep 2024). Your entered rate used as central if provided, with a ±1.5% spread.`,
+      ],
+      rates: {
+        low: `${(CASH_RATE_LOW*100).toFixed(1)}% p.a.`,
+        central: `${(CASH_RATE_CENTRAL*100).toFixed(1)}% p.a.`,
+        high: `${(CASH_RATE_HIGH*100).toFixed(1)}% p.a.`,
+      },
+    },
+    "Pension (salary sacrifice)": {
+      lines: [
+        `Surplus paid before tax and NI — HMRC effectively tops it up immediately.`,
+        `Uplift reflects your marginal tax rate plus the employer NI saving passed through.`,
+        `Excludes employer contributions on the extra amount.`,
+      ],
+      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
+    },
+    "Pension (relief at source)": {
+      lines: [
+        `Every £1 you contribute becomes £1.25 in the pension (20% HMRC basic-rate top-up).`,
+        `Higher-rate relief via self-assessment not modelled — conservative estimate.`,
+      ],
+      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
+    },
   };
   const forecastChart = (() => {
     const { years, series } = forecastSeries;
@@ -2982,11 +3010,14 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
                       </tr>
                       {isOpen && assumptions && (
                         <tr key={o.label+"-tip"}>
-                          <td colSpan={4} style={{padding:"0 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4"}}>
-                            {assumptions.map((line, i) => (
-                              <div key={i} style={{fontSize:"12px",color:TEXT,lineHeight:1.65,paddingTop: i===0 ? "10px" : "5px"}}>{line}</div>
+                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",verticalAlign:"top"}}>
+                            {assumptions.lines.map((line, i) => (
+                              <div key={i} style={{fontSize:"12px",color:TEXT,lineHeight:1.65,paddingTop: i===0 ? 0 : "4px"}}>{line}</div>
                             ))}
                           </td>
+                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",textAlign:"right",verticalAlign:"top",color:MUT,fontSize:"12px",whiteSpace:"nowrap"}}>{assumptions.rates.low}</td>
+                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",textAlign:"right",verticalAlign:"top",color:G,fontSize:"12px",fontWeight:700,whiteSpace:"nowrap"}}>{assumptions.rates.central}</td>
+                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",textAlign:"right",verticalAlign:"top",color:MUT,fontSize:"12px",whiteSpace:"nowrap"}}>{assumptions.rates.high}</td>
                         </tr>
                       )}
                     </>
