@@ -2955,48 +2955,46 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
                 </tr>
               </thead>
               <tbody>
-                {forecast.options.map(o => (
-                  <tr key={o.label} style={{background: forecastTip === o.label ? "rgba(22,47,36,0.03)" : "transparent"}}>
-                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",color:TEXT,fontWeight:600}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px",whiteSpace:"nowrap"}}>
-                        <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
-                        {o.label}
-                        {FORECAST_ASSUMPTIONS[o.label] && (
-                          <button type="button"
-                            onClick={() => setForecastTip(forecastTip === o.label ? null : o.label)}
-                            style={{width:"16px",height:"16px",borderRadius:"50%",background: forecastTip===o.label ? MUT : "rgba(22,47,36,0.18)",border:"none",color:WHITE,fontSize:"10px",fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            ?
-                          </button>
-                        )}
-                      </div>
-                      {o.note && <div style={{fontSize:"11px",color:MUT,fontWeight:400,marginTop:"3px",whiteSpace:"normal"}}>{o.note}</div>}
-                    </td>
-                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",textAlign:"right",color:MUT}}>{fmt(o.low)}</td>
-                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",textAlign:"right",color:G,fontWeight:700}}>{fmt(o.central)}</td>
-                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",textAlign:"right",color:MUT}}>{fmt(o.high)}</td>
-                  </tr>
-                ))}
+                {forecast.options.map(o => {
+                  const isOpen = forecastTip === o.label;
+                  const assumptions = FORECAST_ASSUMPTIONS[o.label];
+                  const rowBorder = isOpen ? "none" : "1px solid rgba(22,47,36,0.06)";
+                  return (
+                    <>
+                      <tr key={o.label}>
+                        <td style={{padding:"10px",borderBottom:rowBorder,color:TEXT,fontWeight:600}}>
+                          <div style={{display:"flex",alignItems:"center",gap:"8px",whiteSpace:"nowrap"}}>
+                            <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
+                            {o.label}
+                            {assumptions && (
+                              <button type="button"
+                                onClick={() => setForecastTip(isOpen ? null : o.label)}
+                                style={{width:"16px",height:"16px",borderRadius:"50%",background:isOpen ? MUT : "rgba(22,47,36,0.18)",border:"none",color:WHITE,fontSize:"10px",fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                ?
+                              </button>
+                            )}
+                          </div>
+                          {o.note && <div style={{fontSize:"11px",color:MUT,fontWeight:400,marginTop:"3px",whiteSpace:"normal"}}>{o.note}</div>}
+                        </td>
+                        <td style={{padding:"10px",borderBottom:rowBorder,textAlign:"right",color:MUT}}>{fmt(o.low)}</td>
+                        <td style={{padding:"10px",borderBottom:rowBorder,textAlign:"right",color:G,fontWeight:700}}>{fmt(o.central)}</td>
+                        <td style={{padding:"10px",borderBottom:rowBorder,textAlign:"right",color:MUT}}>{fmt(o.high)}</td>
+                      </tr>
+                      {isOpen && assumptions && (
+                        <tr key={o.label+"-tip"}>
+                          <td colSpan={4} style={{padding:"0 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4"}}>
+                            {assumptions.map((line, i) => (
+                              <div key={i} style={{fontSize:"12px",color:TEXT,lineHeight:1.65,paddingTop: i===0 ? "10px" : "5px"}}>{line}</div>
+                            ))}
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-
-          {/* Assumption explainer panel — always same position, one open at a time */}
-          {forecastTip && FORECAST_ASSUMPTIONS[forecastTip] && (
-            <div style={{background:"#f8f7f4",border:"1px solid rgba(22,47,36,0.13)",borderRadius:"10px",padding:"14px 18px",marginBottom:"16px"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[forecastTip]||MUT,display:"inline-block",flexShrink:0}}/>
-                  <span style={{fontSize:"13px",fontWeight:700,color:G}}>{forecastTip}</span>
-                  <span style={{fontSize:"12px",color:MUT,fontWeight:400}}>— assumptions</span>
-                </div>
-                <button type="button" onClick={() => setForecastTip(null)}
-                  style={{background:"transparent",border:"none",color:MUT,fontSize:"18px",cursor:"pointer",lineHeight:1,padding:"0 0 0 8px"}}>×</button>
-              </div>
-              {FORECAST_ASSUMPTIONS[forecastTip].map((line, i) => (
-                <div key={i} style={{fontSize:"12px",color:TEXT,lineHeight:1.65,paddingTop: i > 0 ? "5px" : 0}}>{line}</div>
-              ))}
-            </div>
-          )}
 
           {/* Disclaimer */}
           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:0}}>
