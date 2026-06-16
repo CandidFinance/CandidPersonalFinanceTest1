@@ -2359,6 +2359,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
   const [forecastHorizon, setForecastHorizon] = useState(5);
   const [forecastSurplus, setForecastSurplus] = useState(null); // null = use calculated default
   const [forecastLumpSum, setForecastLumpSum] = useState(null); // null = 0
+  const [forecastTip, setForecastTip] = useState(null); // label of active assumption panel, or null
   const isMobile = useWindowWidth() < 768;
       if (!insights) return null;
 
@@ -2432,6 +2433,40 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
   // ── Your Forecast — recalculates live as horizon/surplus controls change ────
   const forecast = calcForecast(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
   const forecastSeries = calcForecastSeries(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
+  const forecastSlRatePct = Math.round(resolveSlRate(d, m.salary) * 1000) / 10;
+  const FORECAST_ASSUMPTIONS = {
+    "Mortgage overpayment": [
+      `Rate: your entered mortgage rate of ${+d.mortgageRate||0}%.`,
+      `If cleared early, freed-up payments are assumed to earn ${(CASH_RATE_CENTRAL*100).toFixed(1)}% in savings for the remaining period.`,
+      `Low / High: mortgage rate shifted ±0.5%.`,
+    ],
+    "Student loan overpayment": [
+      `Rate: ${forecastSlRatePct}% (${+d.studentLoanRate > 0 ? "your entered rate" : "SLC 2024/25 default for your plan"}).`,
+      `Shows cumulative interest saved versus making no extra repayments.`,
+      `Low / High: salary growth uncertainty, ±15% on the central benefit.`,
+      `Benefit is zero if the loan is likely written off regardless of overpayment.`,
+    ],
+    "Stocks & Shares ISA": [
+      `Low: 4% p.a.  ·  Central: 6% p.a.  ·  High: 8% p.a.`,
+      `Returns compound monthly and are tax-free inside an ISA.`,
+      `Past performance is not a reliable guide to future returns.`,
+    ],
+    "Cash savings": [
+      `Low: ${(CASH_RATE_LOW*100).toFixed(1)}%  ·  Central: ${(CASH_RATE_CENTRAL*100).toFixed(1)}%  ·  High: ${(CASH_RATE_HIGH*100).toFixed(1)}% p.a.`,
+      `UK market defaults (Sep 2024). If you entered your own savings rate it is used as central, with a ±1.5% spread.`,
+    ],
+    "Pension (salary sacrifice)": [
+      `Your surplus is paid before tax and NI — HMRC effectively tops it up immediately.`,
+      `The uplift shown reflects your marginal tax rate plus the employer NI saving passed through.`,
+      `Growth: Low 4%  ·  Central 6%  ·  High 8% p.a.`,
+      `Excludes any employer contributions on the extra amount.`,
+    ],
+    "Pension (relief at source)": [
+      `Every £1 you contribute becomes £1.25 in the pension (20% basic-rate top-up added by HMRC).`,
+      `Higher or additional-rate relief via self-assessment is not modelled — this is a conservative estimate.`,
+      `Growth: Low 4%  ·  Central 6%  ·  High 8% p.a.`,
+    ],
+  };
   const forecastChart = (() => {
     const { years, series } = forecastSeries;
     const allValues = series.flatMap(s => s.values);
@@ -2909,18 +2944,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
           </div>
 
           {/* Summary table */}
-          {(() => {
-            const slRatePct = Math.round(resolveSlRate(d, m.salary) * 1000) / 10;
-            const FORECAST_ASSUMPTIONS = {
-              "Mortgage overpayment": `Interest saved by overpaying your mortgage at your current rate (${+d.mortgageRate||0}%). If the mortgage clears early, the freed-up payment is assumed to earn ${(CASH_RATE_CENTRAL*100).toFixed(1)}% in savings for the remaining period. Low/High shift the mortgage rate ±0.5%.`,
-              "Student loan overpayment": `Cumulative interest saved vs making no extra repayments. Uses your plan's 2024/25 rate (${slRatePct}%${+d.studentLoanRate > 0 ? " — your rate" : " — SLC default"}). Low/High reflect salary growth uncertainty (±15%). Benefit is zero if the loan is written off regardless.`,
-              "Stocks & Shares ISA": `Future value of investing your surplus in a globally diversified index fund inside a Stocks & Shares ISA. Low: 4% p.a., Central: 6% p.a., High: 8% p.a. — all net of charges. Returns compound monthly and are tax-free inside an ISA. Past performance is not a reliable guide to future returns.`,
-              "Cash savings": `Future value in an easy-access savings account or Cash ISA. Low: ${(CASH_RATE_LOW*100).toFixed(1)}%, Central: ${(CASH_RATE_CENTRAL*100).toFixed(1)}%, High: ${(CASH_RATE_HIGH*100).toFixed(1)}% p.a. — UK market defaults (Sep 2024). If you've entered your own savings rate it is used as the central figure with a ±1.5% spread.`,
-              "Pension (salary sacrifice)": `Your surplus is paid into your pension before tax and NI, so HMRC effectively tops it up. The boost shown reflects your tax rate and employer NI saving passed through. Growth assumed at 4–8% p.a. inside the pension fund. Does not include employer contributions on the extra amount.`,
-              "Pension (relief at source)": `You contribute from net pay and HMRC automatically adds 20% basic-rate relief (every £1 becomes £1.25 in the pension). Higher/additional-rate taxpayers can claim further relief via self-assessment — this projection shows the conservative floor only. Growth assumed at 4–8% p.a.`,
-            };
-            return (
-          <div style={{overflowX:"auto",marginBottom:"16px"}}>
+          <div style={{overflowX:"auto",marginBottom:"12px"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
               <thead>
                 <tr>
@@ -2932,12 +2956,18 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
               </thead>
               <tbody>
                 {forecast.options.map(o => (
-                  <tr key={o.label}>
+                  <tr key={o.label} style={{background: forecastTip === o.label ? "rgba(22,47,36,0.03)" : "transparent"}}>
                     <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",color:TEXT,fontWeight:600}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px",whiteSpace:"nowrap"}}>
                         <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
                         {o.label}
-                        {FORECAST_ASSUMPTIONS[o.label] && <InfoTooltip text={FORECAST_ASSUMPTIONS[o.label]}/>}
+                        {FORECAST_ASSUMPTIONS[o.label] && (
+                          <button type="button"
+                            onClick={() => setForecastTip(forecastTip === o.label ? null : o.label)}
+                            style={{width:"16px",height:"16px",borderRadius:"50%",background: forecastTip===o.label ? MUT : "rgba(22,47,36,0.18)",border:"none",color:WHITE,fontSize:"10px",fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            ?
+                          </button>
+                        )}
                       </div>
                       {o.note && <div style={{fontSize:"11px",color:MUT,fontWeight:400,marginTop:"3px",whiteSpace:"normal"}}>{o.note}</div>}
                     </td>
@@ -2949,8 +2979,24 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
               </tbody>
             </table>
           </div>
-            );
-          })()}
+
+          {/* Assumption explainer panel — always same position, one open at a time */}
+          {forecastTip && FORECAST_ASSUMPTIONS[forecastTip] && (
+            <div style={{background:"#f8f7f4",border:"1px solid rgba(22,47,36,0.13)",borderRadius:"10px",padding:"14px 18px",marginBottom:"16px"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                  <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[forecastTip]||MUT,display:"inline-block",flexShrink:0}}/>
+                  <span style={{fontSize:"13px",fontWeight:700,color:G}}>{forecastTip}</span>
+                  <span style={{fontSize:"12px",color:MUT,fontWeight:400}}>— assumptions</span>
+                </div>
+                <button type="button" onClick={() => setForecastTip(null)}
+                  style={{background:"transparent",border:"none",color:MUT,fontSize:"18px",cursor:"pointer",lineHeight:1,padding:"0 0 0 8px"}}>×</button>
+              </div>
+              {FORECAST_ASSUMPTIONS[forecastTip].map((line, i) => (
+                <div key={i} style={{fontSize:"12px",color:TEXT,lineHeight:1.65,paddingTop: i > 0 ? "5px" : 0}}>{line}</div>
+              ))}
+            </div>
+          )}
 
           {/* Disclaimer */}
           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:0}}>
