@@ -618,8 +618,14 @@ function calcForecastSeries(d, m, surplusOverride, horizonYears, lumpSumOverride
       // Flatline at the year the overpayment scenario clears: once cleared, the
       // interest saving is fully realised and the curve stops growing.
       const clearYear = over.monthsToClear !== null ? Math.ceil(over.monthsToClear / 12) : null;
+      // termYear = the year where the series stops changing (loan cleared or written off)
+      const flatlineAt = Math.min(clearYear !== null ? clearYear : simYears, simYears);
+      const termYear = flatlineAt < horizonYears ? flatlineAt : null;
+      const termLabel = termYear !== null ? (clearYear !== null ? "Cleared" : "Written off") : null;
       return {
         label: opt.label,
+        termYear,
+        termLabel,
         values: years.map(y => {
           const capY = Math.min(y, clearYear !== null ? clearYear : simYears, simYears);
           const baseInt = base.yearlyInterest[capY] ?? 0;
@@ -2424,10 +2430,16 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
     const cW = VW - PL - PR, cH = VH - PT - PB;
     const sx = yr => PL + (yr / horizonYrs) * cW;
     const sy = v => PT + cH - (v / yMax) * cH;
-    const paths = series.map(s => ({
-      label: s.label,
-      d: s.values.map((v,i) => `${i===0?"M":"L"}${sx(years[i]).toFixed(1)},${sy(v).toFixed(1)}`).join(" "),
-    }));
+    const paths = series.map(s => {
+      const endIdx = s.termYear != null ? s.termYear : s.values.length - 1;
+      const d = s.values.slice(0, endIdx + 1).map((v, i) => `${i===0?"M":"L"}${sx(years[i]).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
+      const termDot = s.termYear != null ? {
+        x: +sx(s.termYear).toFixed(1),
+        y: +sy(s.values[s.termYear]).toFixed(1),
+        label: s.termLabel,
+      } : null;
+      return { label: s.label, d, termDot };
+    });
     const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => yMax * f);
     const xTicks = [...new Set([0, Math.round(horizonYrs*0.25), Math.round(horizonYrs*0.5), Math.round(horizonYrs*0.75), horizonYrs])];
     return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks };
@@ -2854,9 +2866,20 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
                 <text x={forecastChart.PL-10} y={forecastChart.sy(v)+4} fontSize="12" fontWeight="700" fill={MUT} textAnchor="end">{v >= 1000 ? `£${Math.round(v/1000)}k` : fmt(v)}</text>
               </g>
             ))}
-            {forecastChart.paths.map(p => (
-              <path key={p.label} d={p.d} fill="none" stroke={FORECAST_COLORS[p.label]||MUT} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-            ))}
+            {forecastChart.paths.map(p => {
+              const color = FORECAST_COLORS[p.label] || MUT;
+              return (
+                <g key={p.label}>
+                  <path d={p.d} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                  {p.termDot && (
+                    <>
+                      <circle cx={p.termDot.x} cy={p.termDot.y} r="5" fill={color}/>
+                      <text x={p.termDot.x + 8} y={p.termDot.y + 4} fontSize="10" fontWeight="600" fill={color}>{p.termDot.label}</text>
+                    </>
+                  )}
+                </g>
+              );
+            })}
             <line x1={forecastChart.PL} x2={forecastChart.VW-forecastChart.PR} y1={forecastChart.VH-forecastChart.PB} y2={forecastChart.VH-forecastChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="2"/>
             {forecastChart.xTicks.map((yr,i) => (
               <text key={i} x={forecastChart.sx(yr)} y={forecastChart.VH-forecastChart.PB+20} fontSize="12" fontWeight="700" fill={MUT} textAnchor="middle">Yr {yr}</text>
