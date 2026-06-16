@@ -314,14 +314,13 @@ function calcMetrics(d) {
   const slGrow = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
   if (d.studentLoan === "plan2") {
     annualRepayment = Math.max(0, (salary - 27295) * 0.09);
-    // Project with salary growth: will compound salary clear the loan within 30 years?
-    willClear = (() => { let b = loanBal; for (let y=1; y<=30; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*(1.054) - Math.max(0,(s-27295)*0.09); if(b<=0) return true; } return false; })();
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=30; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-27295)*0.09); if(b<=0) return true; } return false; })();
   } else if (d.studentLoan === "plan5") {
     annualRepayment = Math.max(0, (salary - 25000) * 0.09);
-    willClear = (() => { let b = loanBal; for (let y=1; y<=40; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*(1.073) - Math.max(0,(s-25000)*0.09); if(b<=0) return true; } return false; })();
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=40; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-25000)*0.09); if(b<=0) return true; } return false; })();
   } else if (d.studentLoan === "plan1") {
     annualRepayment = Math.max(0, (salary - 24990) * 0.09);
-    willClear = (() => { let b = loanBal; for (let y=1; y<=25; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*(1.050) - Math.max(0,(s-24990)*0.09); if(b<=0) return true; } return false; })();
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=25; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-24990)*0.09); if(b<=0) return true; } return false; })();
   }
   const otherIncome = +d.otherIncome||0;
   const dividendIncome = +d.dividendIncome||0;
@@ -411,6 +410,25 @@ const CASH_RATE_LOW     = 0.030; // below average, high-street loyal-customer ra
 const CASH_RATE_CENTRAL = 0.045; // market-leading easy access rate
 const CASH_RATE_HIGH    = 0.050; // best available, a ceiling not a guarantee
 
+// Resolves the effective student loan interest rate for a given user.
+// Uses d.studentLoanRate (user-entered, %) if supplied, otherwise falls back to
+// statutory defaults. Update defaults each September when SLC publishes annual rates.
+// Plan 2: RPI+0%→+3% banded (2024/25 rates; RPI 3.1% → 3.1%–6.1%)
+// Plan 5: Prevailing market rate (2024/25: 7.3%)
+// Plan 1: Lower of RPI or BoE base+1% (2024/25 floor: 6.25%)
+function resolveSlRate(d, grossSalary) {
+  if (+d.studentLoanRate > 0) return +d.studentLoanRate / 100;
+  if (d.studentLoan === "plan2") return grossSalary > 49130 ? 0.061 : 0.031;
+  if (d.studentLoan === "plan5") return 0.073;
+  return 0.0625; // plan1 fallback
+}
+
+// Future value of a single lump sum invested today, compounded monthly.
+function fvSingle(pv, annualRatePct, months) {
+  if (pv <= 0 || months <= 0) return 0;
+  return pv * Math.pow(1 + annualRatePct / 100 / 12, months);
+}
+
 // Future value of a stream of equal monthly contributions, compounded monthly.
 // FV = PMT × (((1+r)^n - 1) / r), where r = monthly rate and n = number of months.
 function fvAnnuity(pmt, annualRatePct, months) {
@@ -444,8 +462,9 @@ function simulateAmortisation(balance, annualRatePct, monthlyPayment, maxMonths)
 // overpayment, Stocks & Shares ISA, cash savings, and pension salary sacrifice.
 // Returns { horizonYears, monthlySurplus, options }, where `options` only
 // includes entries applicable to this user (applicable: true).
-function calcForecast(d, m, surplusOverride, horizonYears) {
+function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverride = 0) {
   const surplus = surplusOverride != null ? +surplusOverride : m.monthlySurplus;
+  const lump = +lumpSumOverride || 0;
   const months = horizonYears * 12;
   const options = [];
 
@@ -456,13 +475,14 @@ function calcForecast(d, m, surplusOverride, horizonYears) {
     const pay = +d.monthlyMortgage||0;
     const baseRate = +d.mortgageRate||0;
     const valueAtRate = (rate) => {
+      // Lump sum reduces opening balance immediately; monthly surplus added to regular payment
+      const openBal = Math.max(0, bal - lump);
       const base = simulateAmortisation(bal, rate, pay, months);
-      const over = simulateAmortisation(bal, rate, pay + surplus, months);
-      let value = base.totalInterest - over.totalInterest;
+      const over = simulateAmortisation(openBal, rate, pay + surplus, months);
+      let value = base.totalInterest - over.totalInterest + lump;
       if (over.monthsToClear !== null && over.monthsToClear < months) {
-        // Mortgage cleared early — the freed-up payment (original payment +
-        // surplus) is invested in savings for the remaining years at 4%.
-        value += fvAnnuity(pay + surplus, 4, months - over.monthsToClear);
+        // Freed-up payment invested in cash savings for remaining months
+        value += fvAnnuity(pay + surplus, CASH_RATE_CENTRAL * 100, months - over.monthsToClear);
       }
       return value;
     };
@@ -479,14 +499,15 @@ function calcForecast(d, m, surplusOverride, horizonYears) {
   if (m.loanBal > 0) {
     const writeOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
     const threshold  = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
-    const baseSlRate = d.studentLoan === "plan2" ? (m.salary > 49130 ? 0.075 : 0.054)
-      : d.studentLoan === "plan5" ? 0.073 : 0.050;
+    const baseSlRate = resolveSlRate(d, m.salary);
     // Cap simulation at write-off year — no point modelling interest past when the loan is forgiven
     const simYears = Math.min(horizonYears, writeOffYr);
+    // Lump sum reduces opening balance for the overpayment scenario; baseline is unchanged
+    const overBal = Math.max(0, m.loanBal - lump);
 
     // First check whether overpaying changes the write-off outcome at all
     const baseWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, writeOffYr, 0);
-    const overWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, writeOffYr, surplus);
+    const overWriteOff = simulateLoan(overBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, writeOffYr, surplus);
     // If the loan is written off in both scenarios, overpaying just reduces the amount forgiven — no benefit
     const writtenOffAnyway = !baseWriteOff.cleared && !overWriteOff.cleared;
 
@@ -494,7 +515,7 @@ function calcForecast(d, m, surplusOverride, horizonYears) {
     if (!writtenOffAnyway) {
       // Benefit = cumulative interest saved vs baseline (not a compounding figure)
       const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, 0);
-      const over = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus);
+      const over = simulateLoan(overBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus);
       const interestSaved = Math.max(0, base.totalInterest - over.totalInterest);
       // Low/high reflect salary growth uncertainty — not rate-sensitive
       slCentral = Math.round(interestSaved);
@@ -516,9 +537,9 @@ function calcForecast(d, m, surplusOverride, horizonYears) {
   // ── 3. Stocks & Shares ISA ──────────────────────────────────────────────
   options.push({
     label: "Stocks & Shares ISA",
-    low: Math.round(fvAnnuity(surplus, 4, months)),
-    central: Math.round(fvAnnuity(surplus, 6, months)),
-    high: Math.round(fvAnnuity(surplus, 8, months)),
+    low: Math.round(fvSingle(lump, 4, months) + fvAnnuity(surplus, 4, months)),
+    central: Math.round(fvSingle(lump, 6, months) + fvAnnuity(surplus, 6, months)),
+    high: Math.round(fvSingle(lump, 8, months) + fvAnnuity(surplus, 8, months)),
     applicable: true,
   });
 
@@ -526,27 +547,43 @@ function calcForecast(d, m, surplusOverride, horizonYears) {
   // Use hardcoded UK market defaults unless the user has supplied their own rate.
   // d.cashRate and d.savingsRate are stored as percentages (e.g. 4.5 = 4.5%).
   const userRatePct = +d.cashRate > 0 ? +d.cashRate : +d.savingsRate > 0 ? +d.savingsRate : 0;
-  // Convert to decimal for spread arithmetic, then back to % for fvAnnuity
+  // Convert to decimal for spread arithmetic, then back to % for fvAnnuity/fvSingle
   const cashCentralDec = userRatePct > 0 ? userRatePct / 100 : CASH_RATE_CENTRAL;
   const cashLowDec     = userRatePct > 0 ? cashCentralDec - 0.015 : CASH_RATE_LOW;
   const cashHighDec    = Math.min(userRatePct > 0 ? cashCentralDec + 0.005 : CASH_RATE_CENTRAL + 0.005, CASH_RATE_HIGH);
   options.push({
     label: "Cash savings",
-    low: Math.round(fvAnnuity(surplus, Math.max(0, cashLowDec * 100), months)),
-    central: Math.round(fvAnnuity(surplus, cashCentralDec * 100, months)),
-    high: Math.round(fvAnnuity(surplus, cashHighDec * 100, months)),
+    low: Math.round(fvSingle(lump, Math.max(0, cashLowDec * 100), months) + fvAnnuity(surplus, Math.max(0, cashLowDec * 100), months)),
+    central: Math.round(fvSingle(lump, cashCentralDec * 100, months) + fvAnnuity(surplus, cashCentralDec * 100, months)),
+    high: Math.round(fvSingle(lump, cashHighDec * 100, months) + fvAnnuity(surplus, cashHighDec * 100, months)),
     applicable: true,
   });
 
   // ── 5. Pension (salary sacrifice) ──────────────────────────────────────
   if (d.pensionType === "sacrifice") {
     // Tax + NI relief boosts every £1 of surplus into the pension immediately.
-    const effectiveContribution = surplus * pensionReturnRatio(d, m);
+    const ratio = pensionReturnRatio(d, m);
     options.push({
       label: "Pension (salary sacrifice)",
-      low: Math.round(fvAnnuity(effectiveContribution, 4, months)),
-      central: Math.round(fvAnnuity(effectiveContribution, 6, months)),
-      high: Math.round(fvAnnuity(effectiveContribution, 8, months)),
+      low: Math.round(fvSingle(lump * ratio, 4, months) + fvAnnuity(surplus * ratio, 4, months)),
+      central: Math.round(fvSingle(lump * ratio, 6, months) + fvAnnuity(surplus * ratio, 6, months)),
+      high: Math.round(fvSingle(lump * ratio, 8, months) + fvAnnuity(surplus * ratio, 8, months)),
+      applicable: true,
+    });
+  }
+
+  // ── 6. Pension (relief at source) ──────────────────────────────────────
+  if (d.pensionType === "relief") {
+    // HMRC adds 20% basic-rate relief automatically — every £1 you put in becomes £1.25 in the pension.
+    // Higher/additional rate taxpayers can claim further relief via self-assessment, but we model the
+    // conservative floor (basic rate top-up only) to avoid over-stating the benefit.
+    const effectiveLump = lump * 1.25;
+    const effectiveMonthly = surplus * 1.25;
+    options.push({
+      label: "Pension (relief at source)",
+      low: Math.round(fvSingle(effectiveLump, 4, months) + fvAnnuity(effectiveMonthly, 4, months)),
+      central: Math.round(fvSingle(effectiveLump, 6, months) + fvAnnuity(effectiveMonthly, 6, months)),
+      high: Math.round(fvSingle(effectiveLump, 8, months) + fvAnnuity(effectiveMonthly, 8, months)),
       applicable: true,
     });
   }
@@ -559,10 +596,11 @@ function calcForecast(d, m, surplusOverride, horizonYears) {
 // Student loan uses a dedicated cumulative-interest-saved model (rises then
 // flatlines once the overpayment scenario clears the loan — see note inline).
 // All other options use calcForecast evaluated at each year.
-function calcForecastSeries(d, m, surplusOverride, horizonYears) {
+function calcForecastSeries(d, m, surplusOverride, horizonYears, lumpSumOverride = 0) {
   const surplus = surplusOverride != null ? +surplusOverride : m.monthlySurplus;
+  const lump = +lumpSumOverride || 0;
   const years = Array.from({ length: horizonYears + 1 }, (_, i) => i);
-  const { options } = calcForecast(d, m, surplusOverride, horizonYears);
+  const { options } = calcForecast(d, m, surplusOverride, horizonYears, lump);
 
   const series = options.map(opt => {
     if (opt.label === "Student loan overpayment") {
@@ -571,12 +609,12 @@ function calcForecastSeries(d, m, surplusOverride, horizonYears) {
 
       const writeOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
       const threshold  = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
-      const baseSlRate = d.studentLoan === "plan2" ? (m.salary > 49130 ? 0.075 : 0.054)
-        : d.studentLoan === "plan5" ? 0.073 : 0.050;
+      const baseSlRate = resolveSlRate(d, m.salary);
+      const overBal = Math.max(0, m.loanBal - lump);
       // Simulate both scenarios once, capturing yearly cumulative interest snapshots
       const simYears = Math.min(horizonYears, writeOffYr);
       const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, 0, true);
-      const over = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus, true);
+      const over = simulateLoan(overBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus, true);
       // Flatline at the year the overpayment scenario clears: once cleared, the
       // interest saving is fully realised and the curve stops growing.
       const clearYear = over.monthsToClear !== null ? Math.ceil(over.monthsToClear / 12) : null;
@@ -594,7 +632,7 @@ function calcForecastSeries(d, m, surplusOverride, horizonYears) {
     // All other options: evaluate calcForecast at each year for the central value
     return {
       label: opt.label,
-      values: years.map(y => calcForecast(d, m, surplusOverride, y).options.find(o => o.label === opt.label)?.central ?? 0),
+      values: years.map(y => calcForecast(d, m, surplusOverride, y, lump).options.find(o => o.label === opt.label)?.central ?? 0),
     };
   });
 
@@ -714,10 +752,7 @@ function getModuleInsights(key, d, m) {
     }
     case "studentLoan": {
       const writeOffYr = d.studentLoan==="plan2" ? 30 : d.studentLoan==="plan5" ? 40 : 25;
-      // SL interest rates (simplified — Plan 2 higher earners RPI+3%, Plan 5 RPI+4%, Plan 1 ~5%)
-      const slInterestRate = d.studentLoan==="plan2" ? (m.salary > 49130 ? 0.075 : 0.054)
-        : d.studentLoan==="plan5" ? 0.073
-        : 0.050;
+      const slInterestRate = resolveSlRate(d, m.salary);
       const threshold = d.studentLoan==="plan2" ? 27295 : d.studentLoan==="plan5" ? 25000 : 24990;
       const annualInterest = Math.round(m.loanBal * slInterestRate);
       const annualRep = m.annualRepayment;
@@ -954,8 +989,7 @@ function getModuleProducts(key, d, m) {
         disclaimer:"Pension tax relief figures are illustrative. Annual allowance is £60,000 (2025/26). Lifetime allowance was abolished April 2024. Always confirm tax relief with your pension provider. Candid may earn a referral fee."
       };
     case "studentLoan": {
-      const slInterestRate = d.studentLoan==="plan2" ? (m.salary > 49130 ? 0.075 : 0.054)
-        : d.studentLoan==="plan5" ? 0.073 : 0.050;
+      const slInterestRate = resolveSlRate(d, m.salary);
       const slRatePct = Math.round(slInterestRate * 1000) / 10;
       const writeOffYr = d.studentLoan==="plan2" ? 30 : d.studentLoan==="plan5" ? 40 : 25;
       const threshold = d.studentLoan==="plan2" ? 27295 : d.studentLoan==="plan5" ? 25000 : 24990;
@@ -1742,10 +1776,15 @@ function OnboardingStep({ step, d, set }) {
         </select>
       </Field>
       {d.studentLoan !== "none" && (
-        <Field label="Outstanding balance (£)">
-          <FmtInput fmtType="gbp" value={d.loanBalance} onChange={v=>set("loanBalance",capField("loanBalance",v))} placeholder="e.g. 35,000"/>
-          <Warn msg={+d.loanBalance > 100000 ? "Very large loan balance — double-check" : null}/>
-        </Field>
+        <>
+          <Field label="Outstanding balance (£)">
+            <FmtInput fmtType="gbp" value={d.loanBalance} onChange={v=>set("loanBalance",capField("loanBalance",v))} placeholder="e.g. 35,000"/>
+            <Warn msg={+d.loanBalance > 100000 ? "Very large loan balance — double-check" : null}/>
+          </Field>
+          <Field label="Current interest rate (%) — find on your SLC online account (optional)">
+            <FmtInput fmtType="pct" value={d.studentLoanRate} onChange={v=>set("studentLoanRate",v)} placeholder="e.g. 6.1"/>
+          </Field>
+        </>
       )}
       <Field label="Do you have a mortgage?">
         <Toggle value={d.ownsOutright ? "outright" : (d.hasMortgage || "no")} onChange={v => {
@@ -1943,6 +1982,7 @@ const FORECAST_COLORS = {
   "Stocks & Shares ISA": GOLD,
   "Cash savings": "#1a6fa3",
   "Pension (salary sacrifice)": "#2d6b4a",
+  "Pension (relief at source)": "#1e7a5a",
 };
 
 const MODULE_META = [
@@ -2301,6 +2341,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
   const [forecastHorizon, setForecastHorizon] = useState(5);
   const [forecastSurplus, setForecastSurplus] = useState(null); // null = use calculated default
+  const [forecastLumpSum, setForecastLumpSum] = useState(null); // null = 0
   const isMobile = useWindowWidth() < 768;
       if (!insights) return null;
 
@@ -2372,8 +2413,8 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
   const hiddenCount = hiddenUnreviewed.length;
 
   // ── Your Forecast — recalculates live as horizon/surplus controls change ────
-  const forecast = calcForecast(d, m, forecastSurplus, forecastHorizon);
-  const forecastSeries = calcForecastSeries(d, m, forecastSurplus, forecastHorizon);
+  const forecast = calcForecast(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
+  const forecastSeries = calcForecastSeries(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
   const forecastChart = (() => {
     const { years, series } = forecastSeries;
     const allValues = series.flatMap(s => s.values);
@@ -2791,6 +2832,16 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
                 style={{marginTop:"6px"}}
               />
               <div style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>per month</div>
+            </div>
+            <div style={{flex:"0 0 160px"}}>
+              <label style={LBL}>Lump sum today</label>
+              <FmtInput
+                value={forecastLumpSum != null ? forecastLumpSum : 0}
+                onChange={v => setForecastLumpSum(v === "" ? null : +v)}
+                fmtType="gbp"
+                style={{marginTop:"6px"}}
+              />
+              <div style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>one-off today</div>
             </div>
           </div>
 
@@ -4306,7 +4357,7 @@ const BLANK_DATA = {
   hasPension:"no", myContribution:"", employerMatch:"", potValue:"", potValue2:"", retirementAge:"65", pensionType:"",
   pensionUnknown:false,
   niYears:"",
-  studentLoan:"none", loanBalance:"",
+  studentLoan:"none", loanBalance:"", studentLoanRate:"",
   hasMortgage:"no", mortgageType:"fixed", mortgageBalance:"", mortgageRate:"", monthlyMortgage:"",
   fixExpiryMonth:"", fixExpiryYear:"", mortgageProvider:"", propertyEquity:"",
   ownsOutright:false, outrightPropertyValue:"",
