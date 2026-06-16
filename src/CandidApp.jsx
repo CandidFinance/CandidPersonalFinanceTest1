@@ -153,13 +153,15 @@ function pensionReturnLabel(d, m) {
 }
 
 // ── Month-by-month student loan simulator ────────────────────────────────────────────
-function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRate, repaymentThreshold, repaymentRate, maxYears = 30, extraMonthly = 0) {
+function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRate, repaymentThreshold, repaymentRate, maxYears = 30, extraMonthly = 0, trackYearly = false) {
   let balance = openingBalance;
   let salary = annualSalary;
   let totalInterest = 0;
   let totalPaid = 0;
   let monthsToClear = null;
   const monthlyRate = interestRate / 12;
+  // yearlyInterest[y] = cumulative interest accrued through end of year y (index 0 = £0 at start)
+  const yearlyInterest = trackYearly ? [0] : null;
   for (let month = 0; month < maxYears * 12; month++) {
     if (balance <= 0) break;
     const interest = balance * monthlyRate;
@@ -171,9 +173,17 @@ function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRa
     balance -= payment;
     totalPaid += payment;
     if (balance <= 0 && monthsToClear === null) monthsToClear = month + 1;
-    if ((month + 1) % 12 === 0) salary *= (1 + salaryGrowthRate);
+    if ((month + 1) % 12 === 0) {
+      salary *= (1 + salaryGrowthRate);
+      if (trackYearly) yearlyInterest.push(Math.round(totalInterest));
+    }
   }
-  return { totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid), cleared: balance <= 0, monthsToClear };
+  // Pad remaining years (if loan cleared early) so yearlyInterest[y] is always valid up to maxYears
+  if (trackYearly) {
+    while (yearlyInterest.length <= maxYears) yearlyInterest.push(Math.round(totalInterest));
+  }
+  const cleared = balance <= 0;
+  return { totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid), cleared, writtenOff: !cleared, monthsToClear, yearlyInterest };
 }
 
 // ── Equivalence engine ────────────────────────────────────────────────────────
@@ -395,6 +405,12 @@ function calcMetrics(d) {
 }
 
 // ── Forecast helpers ───────────────────────────────────────────────────────
+
+// Static defaults — replace with live Moneyfacts API rates in future
+const CASH_RATE_LOW     = 0.030; // below average, high-street loyal-customer rate
+const CASH_RATE_CENTRAL = 0.045; // market-leading easy access rate
+const CASH_RATE_HIGH    = 0.050; // best available, a ceiling not a guarantee
+
 // Future value of a stream of equal monthly contributions, compounded monthly.
 // FV = PMT × (((1+r)^n - 1) / r), where r = monthly rate and n = number of months.
 function fvAnnuity(pmt, annualRatePct, months) {
@@ -465,40 +481,35 @@ function calcForecast(d, m, surplusOverride, horizonYears) {
     const threshold  = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
     const baseSlRate = d.studentLoan === "plan2" ? (m.salary > 49130 ? 0.075 : 0.054)
       : d.studentLoan === "plan5" ? 0.073 : 0.050;
+    // Cap simulation at write-off year — no point modelling interest past when the loan is forgiven
+    const simYears = Math.min(horizonYears, writeOffYr);
 
-    let writeOffNeutral = false;
-    const valueAtRate = (rate) => {
-      // Does overpaying actually change whether the loan clears before it
-      // would be written off? If not, the marginal value of overpaying is £0
-      // — the extra money just reduces the amount that gets forgiven.
-      const baseWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, rate, threshold, 0.09, writeOffYr, 0);
-      const overWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, rate, threshold, 0.09, writeOffYr, surplus);
-      if (!baseWriteOff.cleared && !overWriteOff.cleared) {
-        writeOffNeutral = true;
-        return 0;
-      }
-      const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, rate, threshold, 0.09, horizonYears, 0);
-      const over = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, rate, threshold, 0.09, horizonYears, surplus);
-      let value = base.totalInterest - over.totalInterest;
-      if (over.monthsToClear !== null && over.monthsToClear < months) {
-        // Loan cleared early — the freed-up repayment (current annual
-        // repayment ÷ 12, plus surplus) is invested in savings at 4%.
-        const freedUp = m.annualRepayment / 12 + surplus;
-        value += fvAnnuity(freedUp, 4, months - over.monthsToClear);
-      }
-      return value;
-    };
+    // First check whether overpaying changes the write-off outcome at all
+    const baseWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, writeOffYr, 0);
+    const overWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, writeOffYr, surplus);
+    // If the loan is written off in both scenarios, overpaying just reduces the amount forgiven — no benefit
+    const writtenOffAnyway = !baseWriteOff.cleared && !overWriteOff.cleared;
 
-    const low = valueAtRate(Math.max(0, baseSlRate - 0.005));
-    const central = valueAtRate(baseSlRate);
-    const high = valueAtRate(baseSlRate + 0.005);
+    let slCentral = 0, slLow = 0, slHigh = 0;
+    if (!writtenOffAnyway) {
+      // Benefit = cumulative interest saved vs baseline (not a compounding figure)
+      const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, 0);
+      const over = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus);
+      const interestSaved = Math.max(0, base.totalInterest - over.totalInterest);
+      // Low/high reflect salary growth uncertainty — not rate-sensitive
+      slCentral = Math.round(interestSaved);
+      slLow     = Math.round(interestSaved * 0.85); // slower salary growth → mandatory repayments stretch, less benefit
+      slHigh    = Math.round(interestSaved * 1.05); // marginal upside from faster clearance
+    }
+
     options.push({
       label: "Student loan overpayment",
-      low: Math.round(low),
-      central: Math.round(central),
-      high: Math.round(high),
+      low: slLow, central: slCentral, high: slHigh,
       applicable: true,
-      writeOffNeutral,
+      writtenOffAnyway,
+      note: writtenOffAnyway
+        ? "Overpaying doesn't change the outcome — this loan is likely written off before clearance regardless."
+        : null,
     });
   }
 
@@ -512,14 +523,18 @@ function calcForecast(d, m, surplusOverride, horizonYears) {
   });
 
   // ── 4. Cash savings ───────────────────────────────────────────────────────
-  // Cash rates have more limited upside than downside risk, so the low/high
-  // band is asymmetric around the central rate.
-  const cashCentral = +d.cashRate || +d.savingsRate || 4;
+  // Use hardcoded UK market defaults unless the user has supplied their own rate.
+  // d.cashRate and d.savingsRate are stored as percentages (e.g. 4.5 = 4.5%).
+  const userRatePct = +d.cashRate > 0 ? +d.cashRate : +d.savingsRate > 0 ? +d.savingsRate : 0;
+  // Convert to decimal for spread arithmetic, then back to % for fvAnnuity
+  const cashCentralDec = userRatePct > 0 ? userRatePct / 100 : CASH_RATE_CENTRAL;
+  const cashLowDec     = userRatePct > 0 ? cashCentralDec - 0.015 : CASH_RATE_LOW;
+  const cashHighDec    = Math.min(userRatePct > 0 ? cashCentralDec + 0.005 : CASH_RATE_CENTRAL + 0.005, CASH_RATE_HIGH);
   options.push({
     label: "Cash savings",
-    low: Math.round(fvAnnuity(surplus, Math.max(0, cashCentral - 1), months)),
-    central: Math.round(fvAnnuity(surplus, cashCentral, months)),
-    high: Math.round(fvAnnuity(surplus, cashCentral + 0.5, months)),
+    low: Math.round(fvAnnuity(surplus, Math.max(0, cashLowDec * 100), months)),
+    central: Math.round(fvAnnuity(surplus, cashCentralDec * 100, months)),
+    high: Math.round(fvAnnuity(surplus, cashHighDec * 100, months)),
     applicable: true,
   });
 
@@ -540,15 +555,49 @@ function calcForecast(d, m, surplusOverride, horizonYears) {
 }
 
 // Returns the year-by-year CENTRAL trajectory (years 0..horizonYears) for
-// each applicable forecast option, for plotting on a line graph. Uses the
-// same logic as calcForecast, evaluated at each year from 0 to horizonYears.
+// each applicable forecast option, for plotting on a line graph.
+// Student loan uses a dedicated cumulative-interest-saved model (rises then
+// flatlines once the overpayment scenario clears the loan — see note inline).
+// All other options use calcForecast evaluated at each year.
 function calcForecastSeries(d, m, surplusOverride, horizonYears) {
+  const surplus = surplusOverride != null ? +surplusOverride : m.monthlySurplus;
   const years = Array.from({ length: horizonYears + 1 }, (_, i) => i);
-  const labels = calcForecast(d, m, surplusOverride, horizonYears).options.map(o => o.label);
-  const series = labels.map(label => ({
-    label,
-    values: years.map(y => calcForecast(d, m, surplusOverride, y).options.find(o => o.label === label).central),
-  }));
+  const { options } = calcForecast(d, m, surplusOverride, horizonYears);
+
+  const series = options.map(opt => {
+    if (opt.label === "Student loan overpayment") {
+      // All-zero if written off in both scenarios
+      if (opt.writtenOffAnyway) return { label: opt.label, values: years.map(() => 0) };
+
+      const writeOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
+      const threshold  = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
+      const baseSlRate = d.studentLoan === "plan2" ? (m.salary > 49130 ? 0.075 : 0.054)
+        : d.studentLoan === "plan5" ? 0.073 : 0.050;
+      // Simulate both scenarios once, capturing yearly cumulative interest snapshots
+      const simYears = Math.min(horizonYears, writeOffYr);
+      const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, 0, true);
+      const over = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus, true);
+      // Flatline at the year the overpayment scenario clears: once cleared, the
+      // interest saving is fully realised and the curve stops growing.
+      const clearYear = over.monthsToClear !== null ? Math.ceil(over.monthsToClear / 12) : null;
+      return {
+        label: opt.label,
+        values: years.map(y => {
+          const capY = Math.min(y, clearYear !== null ? clearYear : simYears, simYears);
+          const baseInt = base.yearlyInterest[capY] ?? 0;
+          const overInt = over.yearlyInterest[capY] ?? 0;
+          return Math.max(0, Math.round(baseInt - overInt));
+        }),
+      };
+    }
+
+    // All other options: evaluate calcForecast at each year for the central value
+    return {
+      label: opt.label,
+      values: years.map(y => calcForecast(d, m, surplusOverride, y).options.find(o => o.label === opt.label)?.central ?? 0),
+    };
+  });
+
   return { years, series };
 }
 
@@ -2788,9 +2837,12 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
               <tbody>
                 {forecast.options.map(o => (
                   <tr key={o.label}>
-                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",color:TEXT,fontWeight:600,whiteSpace:"nowrap"}}>
-                      <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",marginRight:"8px"}}/>
-                      {o.label}
+                    <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",color:TEXT,fontWeight:600}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"8px",whiteSpace:"nowrap"}}>
+                        <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
+                        {o.label}
+                      </div>
+                      {o.note && <div style={{fontSize:"11px",color:MUT,fontWeight:400,marginTop:"3px",whiteSpace:"normal"}}>{o.note}</div>}
                     </td>
                     <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",textAlign:"right",color:MUT}}>{fmt(o.low)}</td>
                     <td style={{padding:"10px",borderBottom:"1px solid rgba(22,47,36,0.06)",textAlign:"right",color:G,fontWeight:700}}>{fmt(o.central)}</td>
