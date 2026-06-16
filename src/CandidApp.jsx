@@ -1436,17 +1436,28 @@ function capField(field, raw) {
 }
 
 function InfoTooltip({ text }) {
-  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState(null);
+  const btnRef = useRef(null);
+  const open = (e) => {
+    e.stopPropagation();
+    if (pos) { setPos(null); return; }
+    const r = btnRef.current.getBoundingClientRect();
+    // Position above the button, clamped so the 270px box stays inside the viewport
+    setPos({
+      bottom: window.innerHeight - r.top + 6,
+      left: Math.max(140, Math.min(r.left + r.width / 2, window.innerWidth - 140)),
+    });
+  };
   return (
-    <span style={{position:"relative",display:"inline-block",marginLeft:"6px",verticalAlign:"middle"}}>
-      <button type="button" onClick={e=>{e.stopPropagation();setShow(v=>!v)}}
+    <span style={{display:"inline-block",marginLeft:"6px",verticalAlign:"middle"}}>
+      <button ref={btnRef} type="button" onClick={open}
         style={{width:"17px",height:"17px",borderRadius:"50%",background:G,border:"none",color:WHITE,fontSize:"10px",fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
         ?
       </button>
-      {show && (
-        <div style={{position:"absolute",bottom:"24px",left:"50%",transform:"translateX(-50%)",width:"270px",background:G,color:WHITE,borderRadius:"10px",padding:"14px 16px",fontSize:"12px",lineHeight:1.65,zIndex:200,boxShadow:"0 8px 24px rgba(0,0,0,0.22)"}}>
+      {pos && (
+        <div style={{position:"fixed",bottom:pos.bottom+"px",left:pos.left+"px",transform:"translateX(-50%)",width:"270px",whiteSpace:"normal",background:G,color:WHITE,borderRadius:"10px",padding:"14px 16px",fontSize:"12px",lineHeight:1.65,zIndex:1000,boxShadow:"0 8px 24px rgba(0,0,0,0.22)"}}>
           {text}
-          <button type="button" onClick={e=>{e.stopPropagation();setShow(false)}} style={{position:"absolute",top:"8px",right:"10px",background:"transparent",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"15px",cursor:"pointer",lineHeight:1}}>×</button>
+          <button type="button" onClick={e=>{e.stopPropagation();setPos(null)}} style={{position:"absolute",top:"8px",right:"10px",background:"transparent",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"15px",cursor:"pointer",lineHeight:1}}>×</button>
         </div>
       )}
     </span>
