@@ -2898,6 +2898,17 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
           </div>
 
           {/* Summary table */}
+          {(() => {
+            const slRatePct = Math.round(resolveSlRate(d, m.salary) * 1000) / 10;
+            const FORECAST_ASSUMPTIONS = {
+              "Mortgage overpayment": `Interest saved by overpaying your mortgage at your current rate (${+d.mortgageRate||0}%). If the mortgage clears early, the freed-up payment is assumed to earn ${(CASH_RATE_CENTRAL*100).toFixed(1)}% in savings for the remaining period. Low/High shift the mortgage rate ±0.5%.`,
+              "Student loan overpayment": `Cumulative interest saved vs making no extra repayments. Uses your plan's 2024/25 rate (${slRatePct}%${+d.studentLoanRate > 0 ? " — your rate" : " — SLC default"}). Low/High reflect salary growth uncertainty (±15%). Benefit is zero if the loan is written off regardless.`,
+              "Stocks & Shares ISA": `Future value of investing your surplus in a globally diversified index fund inside a Stocks & Shares ISA. Low: 4% p.a., Central: 6% p.a., High: 8% p.a. — all net of charges. Returns compound monthly and are tax-free inside an ISA. Past performance is not a reliable guide to future returns.`,
+              "Cash savings": `Future value in an easy-access savings account or Cash ISA. Low: ${(CASH_RATE_LOW*100).toFixed(1)}%, Central: ${(CASH_RATE_CENTRAL*100).toFixed(1)}%, High: ${(CASH_RATE_HIGH*100).toFixed(1)}% p.a. — UK market defaults (Sep 2024). If you've entered your own savings rate it is used as the central figure with a ±1.5% spread.`,
+              "Pension (salary sacrifice)": `Your surplus is paid into your pension before tax and NI, so HMRC effectively tops it up. The boost shown reflects your tax rate and employer NI saving passed through. Growth assumed at 4–8% p.a. inside the pension fund. Does not include employer contributions on the extra amount.`,
+              "Pension (relief at source)": `You contribute from net pay and HMRC automatically adds 20% basic-rate relief (every £1 becomes £1.25 in the pension). Higher/additional-rate taxpayers can claim further relief via self-assessment — this projection shows the conservative floor only. Growth assumed at 4–8% p.a.`,
+            };
+            return (
           <div style={{overflowX:"auto",marginBottom:"16px"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
               <thead>
@@ -2915,6 +2926,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
                       <div style={{display:"flex",alignItems:"center",gap:"8px",whiteSpace:"nowrap"}}>
                         <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
                         {o.label}
+                        {FORECAST_ASSUMPTIONS[o.label] && <InfoTooltip text={FORECAST_ASSUMPTIONS[o.label]}/>}
                       </div>
                       {o.note && <div style={{fontSize:"11px",color:MUT,fontWeight:400,marginTop:"3px",whiteSpace:"normal"}}>{o.note}</div>}
                     </td>
@@ -2926,6 +2938,8 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
               </tbody>
             </table>
           </div>
+            );
+          })()}
 
           {/* Disclaimer */}
           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:0}}>
