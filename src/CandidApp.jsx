@@ -2060,7 +2060,7 @@ function computeModuleStatuses(d, m) {
   if (tooMuchCash) {
     cashImpactLabel = `${fmt(Math.round(m.emergencyExcess))}/yr earning below potential above buffer`;
   } else if (hasBondOpportunity) {
-    cashImpactLabel = `${fmt(bondsYieldGain)}/yr by switching surplus bonds to Cash ISA`;
+    cashImpactLabel = `${fmt(bondsYieldGain)}/yr by switching surplus bonds to ${m.isaHeadroom > 0 ? "Cash ISA" : "a best-buy savings account"}`;
   } else if (accessLabel) {
     cashImpactLabel = accessLabel;
   } else if (cashImpact > 0) {
@@ -2595,6 +2595,9 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
             })
             .sort((a,b) => b.impact - a.impact)[0];
           if (!topModule) return null;
+          // Only suggest a Cash ISA specifically while allowance remains; once it's
+          // fully used, point to a best-buy savings account instead.
+          const cashVehicle = m.isaHeadroom > 0 ? "Cash ISA" : "best-buy savings account";
           const directives = {
             pension: !isPensionContributing(d)
               ? `Start a pension today — every £${100-Math.round(m.tr*100)} you put in becomes £100 with ${Math.round(m.tr*100)}% tax relief.`
@@ -2604,10 +2607,10 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
                   ? `Sacrifice your bonus into your pension — saves up to ${fmt(Math.round((+d.bonusAmount||0)*m.tr))} in tax this year.`
                   : `Boost your pension by 1% — costs only ${fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo after ${Math.round(m.tr*100)}% tax relief.`,
             cash: m.emergencyFund > 0 && m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2
-              ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move the excess to a 4.9% Cash ISA.`
+              ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move the excess to a 4.9% ${cashVehicle}.`
               : m.annualYieldGap > 0
-                ? `Move your cash to a Cash ISA at 4.9% — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
-                : `Review your savings rate — best-buy Cash ISAs are paying 4.9% AER right now.`,
+                ? `Move your cash to a 4.9% ${cashVehicle} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
+                : `Review your savings rate — best-buy ${cashVehicle}s are paying 4.9% AER right now.`,
             investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax permanently.`,
             studentLoan: "Review your student loan strategy — your salary trajectory determines whether overpaying beats investing.",
             mortgage: d.daysToFixExpiry !== null && d.daysToFixExpiry < 180
@@ -2680,7 +2683,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
             scoreBoost: Math.min(12, Math.round(m.missedMatch / 500)),
             description: `Contribute ${+d.employerMatch||0}% to capture the full employer match.`,
           };
-          if (m.annualYieldGap > 200) scenarioMap["cash"] = {
+          if (m.annualYieldGap > 200 && m.isaHeadroom > 0) scenarioMap["cash"] = {
             impactLabel: `+${fmt(m.annualYieldGap)}/yr in yield`,
             scoreBoost: Math.min(8, Math.round(m.annualYieldGap / 200)),
             description: `Move up to ${fmt(Math.min(m.emergencyFund, m.isaHeadroom))} of your ${fmt(m.totalLiquid)} in liquid savings into a 5.08% Cash ISA. This is your remaining ISA allowance for this tax year.`,
@@ -3169,6 +3172,67 @@ function FeedbackModal({ onDismiss }) {
   );
 }
 
+function PdfReportModal({ email, insights, onDismiss }) {
+  const hadPrefill = !!(email && email.trim());
+  const [value, setValue] = useState(email || "");
+  const [marketingOptIn, setMarketingOptIn] = useState(true);
+  const [error, setError] = useState(false);
+  const isValidEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+  function submit() {
+    const trimmed = value.trim();
+    if (!isValidEmail(trimmed)) { setError(true); return; }
+    const emailSource = !hadPrefill ? "new" : trimmed === email.trim() ? "prefilled" : "edited";
+    if (import.meta.env.DEV) {
+      console.log("[Candid] PDF report requested —", { email: trimmed, emailSource, marketingOptIn });
+    }
+    posthog.capture("pdf_report_requested", { email_source: emailSource, marketing_opt_in: marketingOptIn });
+    supaInsert("report_pdf_requests", {
+      session_id: posthog.get_distinct_id?.() || null,
+      email: trimmed,
+      email_source: emailSource,
+      marketing_opt_in: marketingOptIn,
+      candid_score: insights?.score ?? null,
+    });
+    onDismiss();
+  }
+
+  return createPortal(
+    <div onClick={onDismiss} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
+        <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
+          <span style={{fontSize:"20px"}}>📄</span>
+          <div>
+            <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>Get your full report as a PDF</div>
+            <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>Keep it, share it, come back to it anytime</div>
+          </div>
+          <button onClick={onDismiss} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:"20px",color:"rgba(22,47,36,0.4)",cursor:"pointer",lineHeight:1}}>×</button>
+        </div>
+        <div style={{padding:"24px"}}>
+          <label style={LBL}>{hadPrefill ? `We'll send your report to ${email}` : "Email address"}</label>
+          <input
+            type="email"
+            style={{...INP, border: error ? "1.5px solid #c0392b" : INP.border}}
+            value={value}
+            onChange={e => { setValue(e.target.value); if (error) setError(false); }}
+            placeholder="your@email.com"
+            autoFocus
+          />
+          {error && <div style={{fontSize:"12px",color:"#c0392b",marginTop:"6px"}}>Enter a valid email address</div>}
+
+          <div style={{marginTop:"18px"}}>
+            <Checkbox checked={marketingOptIn} onChange={setMarketingOptIn} label="Also send me quarterly check-ins and early access to new features" />
+          </div>
+
+          <button onClick={submit} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,border:"none",marginBottom:"10px"}}>Email my report</button>
+          <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>No thanks</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // ── Module deep-dive ──────────────────────────────────────────────────────────
 // ── Take Me There demo CTA ────────────────────────────────────────────────────
 // ── Starter affiliate link (demo state) ───────────────────────────────────────
@@ -3380,13 +3444,18 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
       const intSaved = Math.max(0, baseCase.totalInterest - oc.totalInterest);
       return { amt, ratio: (amt + intSaved) / amt };
     })];
-    const yMax = Math.max(pensionReturn + 0.3, data[0].ratio + 0.15, 1.6);
+    // Base yMax on the pension/mortgage reference lines, not data[0].ratio — the marginal
+    // return at amt≈0 can spike to 4-8x+ for loans that stay outstanding almost the entire
+    // write-off window, which would compress every tick into a sliver near the axis floor.
+    const yMax = Math.max(pensionReturn + 0.3, 1.6);
     const yMin = 0.92;
     const VW = 680, VH = 320, PL = 64, PR = 20, PT = 24, PB = 56;
     const cW = VW - PL - PR, cH = VH - PT - PB;
     const sx = a => PL + (a / m.loanBal) * cW;
     const sy = r => PT + cH - ((r - yMin) / (yMax - yMin)) * cH;
-    const path = data.map((p,i) => `${i===0?"M":"L"}${sx(p.amt).toFixed(1)},${sy(p.ratio).toFixed(1)}`).join(" ");
+    // Clamp plotted points to yMax so an outlier ratio flattens visually at the top of the
+    // chart instead of stretching the axis (crossover detection below still uses raw ratios).
+    const path = data.map((p,i) => `${i===0?"M":"L"}${sx(p.amt).toFixed(1)},${sy(Math.min(p.ratio, yMax)).toFixed(1)}`).join(" ");
     let crossAmt = null;
     for (let i = 0; i < data.length - 1; i++) {
       if (data[i].ratio >= pensionReturn && data[i+1].ratio < pensionReturn) {
@@ -3887,7 +3956,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
                             ))}
                             {/* Pension return reference */}
                             <line x1={PL} x2={VW-PR} y1={sy(pensionReturn)} y2={sy(pensionReturn)} stroke="#d4b97a" strokeWidth="2.5" strokeDasharray="10,5"/>
-                            <text x={VW-PR-8} y={sy(pensionReturn)-10} fontSize="14" fontWeight="700" fill="#d4b97a" textAnchor="end">Pension {d.pensionType==="sacrifice"?"(salary sacrifice)":d.pensionType==="relief"?"(relief at source)":"return"} {pensionReturn.toFixed(2)}×</text>
+                            {/* Below the line when a crossover bubble is present (bubble only ever sits above crossY) to avoid the two overlapping */}
+                            <text x={VW-PR-8} y={sy(pensionReturn) + (crossX !== null ? 20 : -10)} fontSize="14" fontWeight="700" fill="#d4b97a" textAnchor="end">Pension {d.pensionType==="sacrifice"?"(salary sacrifice)":d.pensionType==="relief"?"(relief at source)":"return"} {pensionReturn.toFixed(2)}×</text>
                             {/* Mortgage reference */}
                             {sy(mortReturn) > PT + 20 && sy(mortReturn) < VH-PB - 20 && (
                               <>
@@ -4519,11 +4589,13 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
   const [completedModules, setCompletedModules] = useState([]);
   const [prevScreen,       setPrevScreen]       = useState("dashboard");
   const [feedbackOpen,    setFeedbackOpen]    = useState(false);
+  const [pdfModalOpen,    setPdfModalOpen]    = useState(false);
   const [showScorePulse,  setShowScorePulse]  = useState(false);
   const [lastScoreDelta,  setLastScoreDelta]  = useState(0);
   const [lastCompletedModule, setLastCompletedModule] = useState(null);
   const [scoreDeltas, setScoreDeltas] = useState([]);
   const feedbackFired = useRef(false);
+  const pdfModalFired = useRef(false);
   const supaRowId = useRef(null);
   const prevScoreRef = useRef(null);
 
@@ -4547,6 +4619,15 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
 
   const m = useMemo(() => calcMetrics(d), [d]);
   const statuses = useMemo(() => computeModuleStatuses(d, m), [d, m]);
+
+  // One-shot PDF-email-capture trigger: 5s after the report/dashboard finishes rendering
+  useEffect(() => {
+    if (screen !== "dashboard" || pdfModalFired.current) return;
+    const t5 = setTimeout(() => {
+      if (!pdfModalFired.current) { pdfModalFired.current = true; setPdfModalOpen(true); posthog.capture("pdf_modal_shown"); }
+    }, 5000);
+    return () => clearTimeout(t5);
+  }, [screen]);
 
   // One-shot feedback trigger: 90s after dashboard loads OR 3s after all modules reviewed
   useEffect(() => {
@@ -4876,6 +4957,7 @@ Rules:
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
         showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
         prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
+      {pdfModalOpen && <PdfReportModal email={d.email} insights={insights} onDismiss={() => setPdfModalOpen(false)} />}
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
     </>
   );
