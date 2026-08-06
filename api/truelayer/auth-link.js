@@ -42,6 +42,12 @@ export default function handler(req, res) {
     `state=${state}`,
   ].join("&");
 
-  res.writeHead(302, { Location: `${AUTH_BASE}/?${query}` });
+  const location = `${AUTH_BASE}/?${query}`;
+  // Temporary diagnostic — compare redirectUri character-for-character against
+  // what's registered in TrueLayer Console. Remove once the mismatch is found.
+  console.log("[truelayer/auth-link] redirect_uri (raw env value):", JSON.stringify(redirectUri));
+  console.log("[truelayer/auth-link] full auth URL sent to TrueLayer:", location);
+
+  res.writeHead(302, { Location: location });
   res.end();
 }
