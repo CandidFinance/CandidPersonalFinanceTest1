@@ -3,8 +3,8 @@ import { createPortal } from "react-dom";
 import posthog from "posthog-js";
 
 // ── Supabase client — module level, no package needed ─────────────────────────
-const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
+const SUPA_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY;
 async function supaInsert(table, row) {
   if (!SUPA_URL || !SUPA_KEY) return null;
   try {
@@ -53,7 +53,7 @@ button:active{transform:scale(0.98);}
 .fu7{animation:fadeUp 0.45s ease 0.49s forwards;opacity:0;}
 `;
 
-const G = "#162f24", GOLD = "#c4963a", CREAM = "#f6f0e6", CDARK = "#ede7db",
+export const G = "#162f24", GOLD = "#c4963a", CREAM = "#f6f0e6", CDARK = "#ede7db",
       TEXT = "#1a1a1a", MUT = "#6b6b6b", WHITE = "#ffffff",
       SERIF = "'Playfair Display',serif", SANS = "'DM Sans',sans-serif";
 
@@ -68,7 +68,7 @@ const LBL = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function fmt(n) {
+export function fmt(n) {
   return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Math.abs(n||0));
 }
 
@@ -278,7 +278,7 @@ function calcBonusTaxBreakdown(taxableSalary, cashBonus) {
 
 const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
 
-function calcMetrics(d) {
+export function calcMetrics(d) {
   const salaryGrowthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
   const salary = +d.salary||0, expenses = +d.monthlyExpenses||0,
         bonds = +d.premiumBonds||0;
@@ -1590,7 +1590,16 @@ function OnboardingStep({ step, d, set }) {
   if (step === 4) return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Cash & savings</h2>
-      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>Helps us identify yield gaps and whether your cash is working as hard as it should be.</p>
+      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"20px",lineHeight:1.5}}>Helps us identify yield gaps and whether your cash is working as hard as it should be.</p>
+      <button type="button" onClick={() => { window.location.href = `/api/truelayer/auth-link?email=${encodeURIComponent(d.email || "")}`; }} style={{
+        display:"flex",alignItems:"center",gap:"9px",width:"100%",textAlign:"left",
+        background:"rgba(22,47,36,0.04)",border:`1.5px dashed ${GOLD}`,borderRadius:"10px",
+        padding:"13px 16px",color:G,fontSize:"13px",fontWeight:600,cursor:"pointer",
+        marginBottom:"24px",fontFamily:SANS,
+      }}>
+        <span style={{fontSize:"17px"}}>🏦</span>
+        <span>Connect your bank (Sandbox) — auto-fill your cash balances</span>
+      </button>
       <div style={g2}>
         <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport">
         <FmtInput fmtType="gbp" value={d.monthlyExpenses} onChange={v=>set("monthlyExpenses",capField("monthlyExpenses",v))} placeholder="e.g. 2,500"/>
@@ -1988,7 +1997,7 @@ function ScoreRing({ score, delta = 0 }) {
   );
 }
 
-const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT, unknown:MUT };
+export const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT, unknown:MUT };
 const SL = { ok:"On track", attention:"Review", critical:"Action needed", na:"N/A", unknown:"Find out" };
 const UG = { immediate:"#c0392b", soon:GOLD, "this tax year":"#2d6b4a" };
 
@@ -2002,7 +2011,7 @@ const FORECAST_COLORS = {
   "Pension (relief at source)": "#1e7a5a",
 };
 
-const MODULE_META = [
+export const MODULE_META = [
   { key:"cash",        icon:"💷", title:"Cash & savings"  },
   { key:"investments", icon:"📈", title:"Investments"     },
   { key:"pension",     icon:"🏦", title:"Pension"         },
@@ -2027,7 +2036,7 @@ function priorityModuleKey(title) {
 // ── Local module status computation ──────────────────────────────────────────
 // Computes status + £ impact for all 8 modules from user data alone.
 // AI response takes precedence for narrative summary; this drives sorting + visibility.
-function computeModuleStatuses(d, m) {
+export function computeModuleStatuses(d, m) {
   const daysToTaxEnd = (() => {
     const now = new Date(), taxEnd = new Date(now.getFullYear(), 3, 5);
     if (taxEnd < now) taxEnd.setFullYear(taxEnd.getFullYear() + 1);
@@ -2068,11 +2077,19 @@ function computeModuleStatuses(d, m) {
   } else {
     cashImpactLabel = null;
   }
+  // amount: a clean, always-£/yr figure for consumers (e.g. the PDF report) that need a
+  // real monetary saving rather than `impact` (a sort-priority score — see pension below,
+  // where impact includes a +99999 sentinel that must never be summed or displayed).
+  const cashAmount = tooMuchCash ? Math.round(m.emergencyExcess)
+    : hasBondOpportunity ? bondsYieldGain
+    : cashImpact > 0 ? cashImpact
+    : 0; // accessLabel-only attention has no £ figure
   s.cash = {
     status: tooMuchCash || m.annualYieldGap > 800 ? "critical"
           : m.annualYieldGap > 200 || hasBondOpportunity || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
     impact: Math.max(cashImpact, hasBondOpportunity ? bondsYieldGain : 0),
     impactLabel: cashImpactLabel,
+    amount: cashAmount,
   };
 
   // Investments — ISA headroom × tax saving proxy + CGT saving
@@ -2082,6 +2099,7 @@ function computeModuleStatuses(d, m) {
           : m.isaHeadroom > 2000 || m.cgtSaving > 0 ? "attention" : "ok",
     impact: isaImpact,
     impactLabel: isaImpact > 0 ? `${fmt(m.isaHeadroom)} ISA headroom` : null,
+    amount: isaImpact > 0 ? isaImpact : 0, // the projected tax saving, not the headroom itself
   };
 
 // Pension — missed match + contribution check
@@ -2090,6 +2108,14 @@ const bonusSacrificeOpportunity = (+d.bonusAmount||0) * m.tr;
 const pensionImpact = !contributing
   ? Math.round(m.salary * 0.05 * m.tr + m.missedMatch + 99999) // not contributing = highest priority sentinel
   : Math.round(m.missedMatch + bonusSacrificeOpportunity);
+// Clean £/yr figure mirroring impactLabel below, without the sentinel baked into pensionImpact
+const pensionAmount = !contributing
+  ? Math.round(m.salary * 0.05 * m.tr)
+  : m.missedMatch > 0
+    ? m.missedMatch
+    : bonusSacrificeOpportunity > 0
+      ? Math.round(bonusSacrificeOpportunity)
+      : 0;
 
 s.pension = m.pensionStatus === "unknown" ? {
   // User told us they don't know their pension situation — neutral/informational,
@@ -2097,6 +2123,7 @@ s.pension = m.pensionStatus === "unknown" ? {
   status: "unknown",
   impact: 0,
   impactLabel: null,
+  amount: 0,
 } : {
   // Only "critical" when genuinely missing match or not contributing at all
   status: !contributing ? "critical" : m.missedMatch > 0 ? "critical" : "attention",
@@ -2108,6 +2135,7 @@ s.pension = m.pensionStatus === "unknown" ? {
       : bonusSacrificeOpportunity > 0
         ? `Up to ${fmt(Math.round(bonusSacrificeOpportunity))} bonus sacrifice saving`
         : null,
+  amount: pensionAmount,
 };
 
   // Student loan
@@ -2121,13 +2149,16 @@ s.pension = m.pensionStatus === "unknown" ? {
       ? "Below repayment threshold — no deductions currently"
       : slBalance > 0 ? `${fmt(slBalance)} outstanding` : null,
     belowThreshold,
+    amount: slImpact, // 0 (no card) unless the loan will actually clear before write-off
   };
 
   // Mortgage
+  const mortgageImpact = d.hasMortgage === "yes" ? Math.round(+d.mortgageBalance * +d.mortgageRate / 100 * 0.05) : 0;
   s.mortgage = {
     status: d.hasMortgage !== "yes" ? "na" : +d.mortgageRate > 4.5 ? "attention" : "ok",
-    impact: d.hasMortgage === "yes" ? Math.round(+d.mortgageBalance * +d.mortgageRate / 100 * 0.05) : 0,
+    impact: mortgageImpact,
     impactLabel: d.hasMortgage === "yes" ? `${d.mortgageRate}% rate — ${+d.mortgageRate > 4.5 ? "above average" : "below average"}` : null,
+    amount: mortgageImpact, // only surfaced when status is "attention" (rate above average)
   };
 
   // Personal loan
@@ -2139,6 +2170,7 @@ s.pension = m.pensionStatus === "unknown" ? {
           : plRate > 10 ? "critical" : plRate > 6 ? "attention" : "ok",
     impact: plInterestRemaining,
     impactLabel: plBal > 0 ? `${fmt(plInterestRemaining)} interest remaining at ${plRate}%` : null,
+    amount: plInterestRemaining,
   };
 
   // Kids
@@ -2150,9 +2182,37 @@ s.pension = m.pensionStatus === "unknown" ? {
     status: d.hasKids !== "yes" ? "na" : d.hasJISA !== "yes" ? "attention" : "ok",
     impact: kidsImpact,
     impactLabel: kidsImpact > 0 ? `~${fmt(kidsImpact)} JISA growth potential (£100/mo at 7%)` : null,
+    amount: kidsImpact,
+    amountIsLumpSum: true, // projected total by age 18, not a £/yr figure — exclude from /yr sums
   };
 
   return s;
+}
+
+// Merges a module's local (deterministic) status with the AI-generated narrative summary,
+// applying the pension false-positive guard. Single source of truth for the explainer copy
+// shown in the "Module breakdown" cards, ModuleDeepDive's header, and the PDF report.
+export function getModuleSummary(mm, d, m, statuses, insights) {
+  const local = statuses[mm.key] || { status:"na", impact:0 };
+  const aiMod = insights?.modules?.[mm.key];
+  // Pension + personalLoan: always trust local status — AI stale data causes false positives
+  const status = (mm.key === "pension" || mm.key === "personalLoan")
+    ? local.status
+    : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
+  const rawSummary = aiMod?.summary || (local.status !== "na" ? `Review your ${mm.title.toLowerCase()} situation.` : "N/A");
+  // For pension: if contributing, never show AI copy that says "no pension" or "start contributions"
+  const pensionContrib = mm.key === "pension" && isPensionContributing(d);
+  const aiHasFalsePositive = pensionContrib && (
+    rawSummary.toLowerCase().includes("no pension") ||
+    rawSummary.toLowerCase().includes("start contribution") ||
+    rawSummary.toLowerCase().includes("not contributing")
+  );
+  const summary = aiHasFalsePositive
+    ? `Contributing ${d.myContribution||""}% with ${d.employerMatch||"0"}% employer match. ${m.missedMatch > 0 ? `Increase to ${d.employerMatch}% to capture ${fmt(m.missedMatch)}/yr in free employer match.` : "Review your projected pot and bonus sacrifice options."}`
+    : rawSummary;
+  // Always use local impact for sorting — AI doesn't provide numeric impact
+  const impact = local.impact || 0;
+  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum };
 }
 
 function FeedbackButton() {
@@ -2389,28 +2449,7 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
   const localStatuses = statuses;
   const statusOrder = { critical:0, attention:1, ok:2, na:3 };
 
-  const allModules = MODULE_META.map(mm => {
-    const local = localStatuses[mm.key] || { status:"na", impact:0 };
-    const aiMod = insights.modules?.[mm.key];
-    // Pension + personalLoan: always trust local status — AI stale data causes false positives
-    const status = (mm.key === "pension" || mm.key === "personalLoan")
-      ? local.status
-      : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
-    const rawSummary = aiMod?.summary || (local.status !== "na" ? `Review your ${mm.title.toLowerCase()} situation.` : "N/A");
-    // For pension: if contributing, never show AI copy that says "no pension" or "start contributions"
-    const pensionContrib = mm.key === "pension" && isPensionContributing(d);
-    const aiHasFalsePositive = pensionContrib && (
-      rawSummary.toLowerCase().includes("no pension") ||
-      rawSummary.toLowerCase().includes("start contribution") ||
-      rawSummary.toLowerCase().includes("not contributing")
-    );
-    const summary = aiHasFalsePositive
-      ? `Contributing ${d.myContribution||""}% with ${d.employerMatch||"0"}% employer match. ${m.missedMatch > 0 ? `Increase to ${d.employerMatch}% to capture ${fmt(m.missedMatch)}/yr in free employer match.` : "Review your projected pot and bonus sacrifice options."}`
-      : rawSummary;
-    // Always use local impact for sorting — AI doesn't provide numeric impact
-    const impact = local.impact || 0;
-    return { ...mm, status, summary, impact, impactLabel: local.impactLabel };
-  });
+  const allModules = MODULE_META.map(mm => getModuleSummary(mm, d, m, localStatuses, insights));
 
   const activeModules = allModules.filter(mm => mm.status !== "na");
   const sortedModules = [...activeModules].sort((a,b) => {
@@ -3172,12 +3211,27 @@ function FeedbackModal({ onDismiss }) {
   );
 }
 
-function PdfReportModal({ email, insights, onDismiss }) {
+function PdfReportModal({ email, insights, d, onDismiss }) {
   const hadPrefill = !!(email && email.trim());
   const [value, setValue] = useState(email || "");
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [error, setError] = useState(false);
+  const [phase, setPhase] = useState("form");      // "form" | "confirm" | "exit"
+  const [contentIn, setContentIn] = useState(true); // drives the form→confirm content crossfade
   const isValidEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+  // Hold the confirmation on screen just long enough to read, then fade the whole modal out.
+  useEffect(() => {
+    if (phase !== "confirm") return;
+    const t = setTimeout(() => setPhase("exit"), 1800);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "exit") return;
+    const t = setTimeout(onDismiss, 300);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   function submit() {
     const trimmed = value.trim();
@@ -3187,45 +3241,78 @@ function PdfReportModal({ email, insights, onDismiss }) {
       console.log("[Candid] PDF report requested —", { email: trimmed, emailSource, marketingOptIn });
     }
     posthog.capture("pdf_report_requested", { email_source: emailSource, marketing_opt_in: marketingOptIn });
-    supaInsert("report_pdf_requests", {
-      session_id: posthog.get_distinct_id?.() || null,
-      email: trimmed,
-      email_source: emailSource,
-      marketing_opt_in: marketingOptIn,
-      candid_score: insights?.score ?? null,
-    });
-    onDismiss();
+    fetch("/api/generate-report-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        d,
+        insights,
+        email: trimmed,
+        email_source: emailSource,
+        marketing_opt_in: marketingOptIn,
+        session_id: posthog.get_distinct_id?.() || null,
+        candid_score: insights?.score ?? null,
+      }),
+    })
+      .then(res => res.json().then(data => {
+        if (import.meta.env.DEV) console.log("[Candid] generate-report-pdf response —", res.status, data);
+      }))
+      .catch(e => { if (import.meta.env.DEV) console.warn("[Candid] generate-report-pdf request failed:", e); });
+
+    // Crossfade into the confirmation state — fade the form out, swap content
+    // while invisible, then fade the confirmation in. Purely visual; the
+    // request above has already been fired and isn't gated on this.
+    setContentIn(false);
+    setTimeout(() => { setPhase("confirm"); setContentIn(true); }, 200);
   }
 
   return createPortal(
-    <div onClick={onDismiss} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
-        <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
-          <span style={{fontSize:"20px"}}>📄</span>
-          <div>
-            <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>Get your full report as a PDF</div>
-            <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>Keep it, share it, come back to it anytime</div>
-          </div>
-          <button onClick={onDismiss} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:"20px",color:"rgba(22,47,36,0.4)",cursor:"pointer",lineHeight:1}}>×</button>
-        </div>
-        <div style={{padding:"24px"}}>
-          <label style={LBL}>{hadPrefill ? `We'll send your report to ${email}` : "Email address"}</label>
-          <input
-            type="email"
-            style={{...INP, border: error ? "1.5px solid #c0392b" : INP.border}}
-            value={value}
-            onChange={e => { setValue(e.target.value); if (error) setError(false); }}
-            placeholder="your@email.com"
-            autoFocus
-          />
-          {error && <div style={{fontSize:"12px",color:"#c0392b",marginTop:"6px"}}>Enter a valid email address</div>}
+    <div onClick={phase === "form" ? onDismiss : undefined} style={{
+      position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,
+      background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",
+      opacity: phase === "exit" ? 0 : 1, transition:"opacity 0.3s ease",
+    }}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)",
+        transform: phase === "form" ? "scale(1)" : "scale(0.96)", transition:"transform 0.3s ease",
+      }}>
+        <div style={{opacity: contentIn ? 1 : 0, transition:"opacity 0.2s ease"}}>
+          {phase === "form" ? (
+            <>
+              <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
+                <span style={{fontSize:"20px"}}>📄</span>
+                <div>
+                  <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>Get your full report as a PDF</div>
+                  <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>Keep it, share it, come back to it anytime</div>
+                </div>
+                <button onClick={onDismiss} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:"20px",color:"rgba(22,47,36,0.4)",cursor:"pointer",lineHeight:1}}>×</button>
+              </div>
+              <div style={{padding:"24px"}}>
+                <label style={LBL}>{hadPrefill ? `We'll send your report to ${email}` : "Email address"}</label>
+                <input
+                  type="email"
+                  style={{...INP, border: error ? "1.5px solid #c0392b" : INP.border}}
+                  value={value}
+                  onChange={e => { setValue(e.target.value); if (error) setError(false); }}
+                  placeholder="your@email.com"
+                  autoFocus
+                />
+                {error && <div style={{fontSize:"12px",color:"#c0392b",marginTop:"6px"}}>Enter a valid email address</div>}
 
-          <div style={{marginTop:"18px"}}>
-            <Checkbox checked={marketingOptIn} onChange={setMarketingOptIn} label="Also send me quarterly check-ins and early access to new features" />
-          </div>
+                <div style={{marginTop:"18px"}}>
+                  <Checkbox checked={marketingOptIn} onChange={setMarketingOptIn} label="Also send me quarterly check-ins and early access to new features" />
+                </div>
 
-          <button onClick={submit} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,border:"none",marginBottom:"10px"}}>Email my report</button>
-          <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>No thanks</button>
+                <button onClick={submit} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,border:"none",marginBottom:"10px"}}>Email my report</button>
+                <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>No thanks</button>
+              </div>
+            </>
+          ) : (
+            <div style={{padding:"38px 24px",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
+              <span style={{fontSize:"28px",marginBottom:"12px"}}>📬</span>
+              <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G}}>Report on its way — check your emails →</div>
+            </div>
+          )}
         </div>
       </div>
     </div>,
@@ -4617,6 +4704,38 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
     catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist inputs to localStorage:", e); }
   }, [d]);
 
+  // ── Return from TrueLayer bank-connect redirect — runs once on mount ─────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tlStatus = params.get("truelayer");
+    if (!tlStatus) return;
+    const reason = params.get("reason");
+    // Strip the query string immediately so a refresh doesn't reprocess it.
+    window.history.replaceState({}, "", window.location.pathname);
+
+    if (tlStatus === "success") {
+      // The mapped data lives server-side in a one-time HttpOnly cookie set by
+      // the callback — fetched here rather than read off the URL, so it never
+      // touches browser history, server logs, or Referer headers.
+      fetch("/api/truelayer/session-data")
+        .then(res => (res.ok ? res.json() : Promise.reject(new Error(`status ${res.status}`))))
+        .then(parsed => {
+          setD(p => ({
+            ...p,
+            cashSavings: parsed.cashSavings != null ? String(parsed.cashSavings) : p.cashSavings,
+            cashTiers: parsed.cashTiers?.length ? parsed.cashTiers : p.cashTiers,
+            monthlyExpenses: parsed.monthlyExpenses != null ? String(parsed.monthlyExpenses) : p.monthlyExpenses,
+          }));
+          setScreen("onboarding");
+          setStep(4);
+          posthog.capture("truelayer_connected", { accounts: parsed.accountsConnected ?? null });
+        })
+        .catch(e => { if (import.meta.env.DEV) console.warn("[Candid] Failed to fetch TrueLayer session data:", e); });
+    } else if (tlStatus === "error") {
+      posthog.capture("truelayer_connect_failed", { reason: reason || null });
+    }
+  }, []);
+
   const m = useMemo(() => calcMetrics(d), [d]);
   const statuses = useMemo(() => computeModuleStatuses(d, m), [d, m]);
 
@@ -4957,7 +5076,7 @@ Rules:
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
         showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
         prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
-      {pdfModalOpen && <PdfReportModal email={d.email} insights={insights} onDismiss={() => setPdfModalOpen(false)} />}
+      {pdfModalOpen && <PdfReportModal email={d.email} insights={insights} d={d} onDismiss={() => setPdfModalOpen(false)} />}
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
     </>
   );
