@@ -103,7 +103,12 @@
       "Bash(rm -f .test-supa-failure.mjs .test-supa-failure2.mjs .build-supa-test.mjs)",
       "Bash(sed -i -e 's/^export async function supaInsert/async function supaInsert/' -e 's/^export async function supaSelect/async function supaSelect/' src/CandidApp.jsx)",
       "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-supafinal.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
-      "Bash(node_modules/.bin/esbuild.cmd src/main.jsx --bundle --platform=browser --format=esm --outfile=/tmp/main-supafinal.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
+      "Bash(node_modules/.bin/esbuild.cmd src/main.jsx --bundle --platform=browser --format=esm --outfile=/tmp/main-supafinal.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-biggestwin-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd \"C:/Users/harvp/AppData/Local/Temp/claude/c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1/c210abb6-8941-4a4b-9122-b50db9855167/scratchpad/test-biggestwin.mjs\" --bundle --platform=node --format=esm --outfile=./.test-biggestwin.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node ./.test-biggestwin.mjs)",
+      "Bash(rm -f .test-biggestwin.mjs)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-biggestwin-final.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
     ]
   }
 }

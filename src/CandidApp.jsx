@@ -715,10 +715,18 @@ function getModuleInsights(key, d, m, savingsRates) {
       // 5.08 fallback only covers the brief window before savingsRates loads.
       const bestISARate = topRate(savingsRates, true)?.rate_aer ?? 5.08;
       const totalCash = m.cash + m.bonds;
+      // Never claim the whole surplus fits "a Cash ISA" — only isaHeadroom's worth can.
+      const nonIsaRow = topRate(savingsRates, false);
+      const cashSplit = splitByIsaHeadroom(totalCash, m.isaHeadroom, nonIsaRow ? +nonIsaRow.rate_aer : null, cashRate);
+      const moveDestination = cashSplit.fitsEntirelyInIsa
+        ? `a Cash ISA at ${bestISARate}%`
+        : cashSplit.nonIsaWorthMoving
+          ? `a Cash ISA at ${bestISARate}% (${fmt(cashSplit.isaPortion)}) and a ${nonIsaRow ? nonIsaRow.rate_aer+"%" : "top-paying"} savings account (${fmt(cashSplit.nonIsaPortion)})`
+          : `a Cash ISA at ${bestISARate}% (${fmt(cashSplit.isaPortion)}, your remaining allowance)`;
       return [
         {
           label:"Current yield gap vs best Cash ISA", value: gap > 0 ? fmt(gap)+"/yr" : "None", flag: gap > 200,
-          tooltip:`Gap = your cash (${fmt(totalCash)}) × your rate (${cashRate}%) vs best Cash ISA (${bestISARate}%). Annual difference: ${fmt(gap)}. Moving your surplus to a Cash ISA at ${bestISARate}% would close this.`
+          tooltip:`Gap = your cash (${fmt(totalCash)}) × your rate (${cashRate}%) vs best Cash ISA (${bestISARate}%). Annual difference: ${fmt(gap)}. Moving your surplus to ${moveDestination} would close this.`
         },
         {
           label:"Cash runway", value: m.runwayMonths.toFixed(1)+" months", flag: m.runwayMonths > m.bufferMonths * 2 || m.runwayMonths < m.bufferMonths,
@@ -995,6 +1003,21 @@ export function topRate(rows, isIsa) {
   const filtered = (rows || []).filter(r => r.is_isa === isIsa);
   if (!filtered.length) return null;
   return filtered.reduce((best, r) => (!best || +r.rate_aer > +best.rate_aer) ? r : best, null);
+}
+
+// Splits a £ amount into "fits within remaining ISA headroom" vs "the rest", and
+// whether that rest is actually worth moving to a non-ISA account (only if its rate
+// beats the given baseline). Single source of truth for every "move cash into an ISA"
+// recommendation — cashMoveAmount alone isn't enough for this, since it returns the
+// FULL amount whenever the excess is worth moving *somewhere* (even a non-ISA
+// account), and a sentence naming only "a Cash ISA" as the destination is wrong
+// whenever amount > isaHeadroom, regardless of whether cashMoveAmount looks "capped".
+export function splitByIsaHeadroom(amount, isaHeadroom, nonIsaRatePct, baselineRatePct) {
+  const isaPortion = Math.min(amount, isaHeadroom);
+  const nonIsaPortion = Math.max(0, amount - isaHeadroom);
+  const fitsEntirelyInIsa = nonIsaPortion <= 0;
+  const nonIsaWorthMoving = !fitsEntirelyInIsa && nonIsaRatePct != null && nonIsaRatePct > baselineRatePct;
+  return { isaPortion, nonIsaPortion, fitsEntirelyInIsa, nonIsaWorthMoving };
 }
 
 // Initial visible tile count / "See more" increment for the Cash & savings tile
@@ -2751,11 +2774,26 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
             })
             .sort((a,b) => b.impact - a.impact)[0];
           if (!topModule) return null;
-          // Only suggest a Cash ISA specifically while allowance remains; once it's
-          // fully used, point to a best-buy savings account instead.
-          const cashVehicle = m.isaHeadroom > 0 ? "Cash ISA" : "best-buy savings account";
-          const bestCashRateRow = m.isaHeadroom > 0 ? topRate(savingsRates, true) : topRate(savingsRates, false);
-          const bestCashRateLabel = bestCashRateRow ? `${bestCashRateRow.rate_aer}%` : "top-paying";
+          const topIsaRateRow = topRate(savingsRates, true);
+          const topNonIsaRateRow = topRate(savingsRates, false);
+          const isaRateLabel = topIsaRateRow ? `${topIsaRateRow.rate_aer}%` : "top-paying";
+          const nonIsaRateLabel = topNonIsaRateRow ? `${topNonIsaRateRow.rate_aer}%` : "top-paying";
+
+          // Builds the "move £X into a Y% Cash ISA[, and £Z into a W% savings account]"
+          // clause for a given £ amount — the single source of truth for how much of it
+          // actually fits in "a Cash ISA" specifically, so no sentence overstates that
+          // by naming a single vehicle for an amount that exceeds the remaining headroom.
+          function describeCashMove(amount) {
+            const split = splitByIsaHeadroom(amount, m.isaHeadroom, topNonIsaRateRow ? +topNonIsaRateRow.rate_aer : null, +m.savingsRate);
+            if (split.fitsEntirelyInIsa) {
+              return `a ${isaRateLabel} Cash ISA`;
+            }
+            if (split.nonIsaWorthMoving) {
+              return `a ${isaRateLabel} Cash ISA (${fmt(split.isaPortion)}) and a ${nonIsaRateLabel} savings account (${fmt(split.nonIsaPortion)})`;
+            }
+            return `a ${isaRateLabel} Cash ISA (${fmt(split.isaPortion)}, your remaining allowance — the rest doesn't currently beat your savings rate anywhere else)`;
+          }
+
           const directives = {
             pension: !isPensionContributing(d)
               ? `Start a pension today — every £${100-Math.round(m.tr*100)} you put in becomes £100 with ${Math.round(m.tr*100)}% tax relief.`
@@ -2765,13 +2803,13 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                   ? `Sacrifice your bonus into your pension — saves up to ${fmt(Math.round((+d.bonusAmount||0)*m.tr))} in tax this year.`
                   : `Boost your pension by 1% — costs only ${fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo after ${Math.round(m.tr*100)}% tax relief.`,
             cash: m.emergencyFund > 0 && m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2
-              ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move the excess to a ${bestCashRateLabel} ${cashVehicle}.`
+              ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move it into ${describeCashMove(Math.round(m.emergencyExcess))}.`
               : m.annualYieldGap > 0
-                // cashMoveAmount is capped to the ISA-eligible portion when moving the
-                // excess isn't worthwhile — so this states what's actually recommended,
-                // not the full balance, whenever those two amounts diverge.
-                ? `Move ${fmt(Math.round(m.cashMoveAmount))} of your cash to a ${bestCashRateLabel} ${cashVehicle} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
-                : `Review your savings rate — best-buy ${cashVehicle}s are paying ${bestCashRateRow ? bestCashRateRow.rate_aer+"%" : "market-leading"} AER right now.`,
+                // describeCashMove is the single source of truth for how much of this
+                // actually fits "a Cash ISA" — never state a single-vehicle amount that
+                // exceeds the remaining headroom.
+                ? `Move your cash into ${describeCashMove(Math.round(m.emergencyFund))} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
+                : `Review your savings rate — best-buy accounts are paying ${topIsaRateRow ? topIsaRateRow.rate_aer+"%" : "market-leading"} AER right now.`,
             investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax permanently.`,
             studentLoan: "Review your student loan strategy — your salary trajectory determines whether overpaying beats investing.",
             mortgage: d.daysToFixExpiry !== null && d.daysToFixExpiry < 180
