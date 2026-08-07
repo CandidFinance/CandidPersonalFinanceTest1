@@ -978,7 +978,9 @@ export function topRate(rows, isIsa) {
   return filtered.reduce((best, r) => (!best || +r.rate_aer > +best.rate_aer) ? r : best, null);
 }
 
-const CASH_TILE_LIMIT = 5;
+// Initial visible tile count / "See more" increment for the Cash & savings tile
+// list — pagination itself lives at the render site (ModuleDeepDive), not here.
+const CASH_TILE_PAGE_SIZE = 5;
 
 function getModuleProducts(key, d, m, savingsRates) {
   switch (key) {
@@ -998,7 +1000,7 @@ function getModuleProducts(key, d, m, savingsRates) {
         return { heading, subheading, products: [], disclaimer: "Current rates are temporarily unavailable — check back shortly." };
       }
 
-      const sorted = [...isaRows].sort((a, b) => +b.rate_aer - +a.rate_aer).slice(0, CASH_TILE_LIMIT);
+      const sorted = [...isaRows].sort((a, b) => +b.rate_aer - +a.rate_aer);
       // Conservative "correct as of" date — the oldest row's updated_at, so the
       // disclaimer never overstates freshness for a stale entry in the list.
       const oldestUpdate = sorted.reduce((oldest, r) =>
@@ -1107,13 +1109,20 @@ function getModuleProducts(key, d, m, savingsRates) {
         return { amt, interestSaved, totalBenefit, ratio };
       }) : null;
       return {
+        // Must agree with effectiveBenefit's sign — willClear alone doesn't mean
+        // overpaying is worth it; if the loan rate is below what savings could earn,
+        // saving wins, and the heading needs to lead with that, not the opposite.
         heading: balanceGrowing
           ? "⚠️ Your loan balance is growing — not shrinking"
-          : m.willClear ? "You will clear this loan — overpaying could save interest" : "Your loan will be written off — do not overpay",
+          : m.willClear
+          ? (effectiveBenefit > 0 ? "You will clear this loan — overpaying could save interest" : "You will clear this loan — but saving beats overpaying here")
+          : "Your loan will be written off — do not overpay",
         subheading: balanceGrowing
           ? `At ${slRatePct}% interest, your balance grows by ${fmt(annualInterest - annualRep)}/yr net. Your repayments (${fmt(annualRep)}/yr) are not keeping up with interest. This is an effective ${slRatePct}% surcharge on your income above the threshold — for as long as your balance keeps growing.`
           : m.willClear
-          ? `Your repayments are outstripping interest. You'll clear the loan in ~${baseProjection.clearYr} years. Overpaying saves interest at ${slRatePct}% — compare that to your savings rate (${cashRate}%). Net benefit of overpaying vs saving: ${effectiveBenefit > 0 ? `+${Math.round(effectiveBenefit*10)/10}%` : "negative — save instead"}.`
+          ? (effectiveBenefit > 0
+              ? `Your repayments are outstripping interest. You'll clear the loan in ~${baseProjection.clearYr} years. Overpaying saves interest at ${slRatePct}% — compare that to your savings rate (${cashRate}%). Net benefit of overpaying vs saving: +${Math.round(effectiveBenefit*10)/10}%.`
+              : `Your savings rate (${cashRate}%) beats your ${slRatePct}% loan rate, so you're better off saving than overpaying here. You'll clear the loan in ~${baseProjection.clearYr} years through regular repayments alone — no need to divert extra cash to it.`)
           : `At ${slRatePct}% interest, overpaying this loan mostly reduces what gets written off — not what you repay. The better use of spare cash is almost certainly your pension or ISA.`,
         products: [
           { name:"Your pension", type:"Alternative use of funds", rate:`1:${pensionReturnRatio(d,m).toFixed(2)} return`, badge:"Best alternative", feature:`A pension contribution gives an immediate 1:${pensionReturnRatio(d,m).toFixed(2)} return via tax${d.pensionType==="sacrifice"?" and NI":""} relief. ${pensionReturnLabel(d,m)}. Even when the loan balance is growing, this outperforms the ${slRatePct}% loan rate for most people.`, cta:"Go to Pension", highlight:!m.willClear, internalLink:"pension" },
@@ -3445,14 +3454,39 @@ function TakeMeThere({ app, icon, message, demoNote }) {
 
 function ProductCard({ p, onInternalLink }) {
   const superlative = p.badge && ["Highest rate","Best buy","Top pick","Lowest cost","Largest UK broker","Easiest consolidation","Best alternative","Best return"].includes(p.badge);
-  // Real outbound links (p.productUrl) make the whole tile clickable — an <a>
-  // can't contain a nested <button>, so the CTA becomes a styled div in that case.
-  const Wrapper = p.productUrl ? "a" : "div";
-  const wrapperProps = p.productUrl
-    ? { href: p.productUrl, target: "_blank", rel: "noopener noreferrer" }
-    : {};
+
+  // Real outbound links (savings_rates rows) get a compact horizontal row — rate in a
+  // box on the right — instead of the taller stacked layout below, since these lists
+  // can run to a dozen+ tiles and the stacked form wastes a lot of vertical space for
+  // what's just "provider, rate, click through".
+  if (p.productUrl) {
+    return (
+      <a href={p.productUrl} target="_blank" rel="noopener noreferrer" style={{
+        background:WHITE,borderRadius:"10px",padding:"12px 14px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,
+        display:"flex",alignItems:"center",gap:"12px",textDecoration:"none",color:"inherit",cursor:"pointer",
+      }}>
+        <div style={{width:"32px",height:"32px",background:p.highlight ? G : "rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <span style={{fontSize:"16px"}}>{p.appIcon||"🏦"}</span>
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontWeight:600,fontSize:"14px",color:TEXT,lineHeight:1.3}}>{p.name}</div>
+          <div style={{fontSize:"12px",color:MUT}}>{p.type}</div>
+          {p.badge && (
+            <span style={{display:"inline-block",marginTop:"4px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"3px 9px":"2px 7px",borderRadius:"100px",letterSpacing:"0.04em"}}>
+              {superlative ? `⭐ ${p.badge}` : p.badge}
+            </span>
+          )}
+        </div>
+        <div style={{textAlign:"center",flexShrink:0,background:p.highlight?G:"rgba(22,47,36,0.05)",borderRadius:"8px",padding:"8px 14px",minWidth:"76px"}}>
+          <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:p.highlight?WHITE:G,whiteSpace:"nowrap"}}>{p.rate}</div>
+          <div style={{fontSize:"9px",color:p.highlight?"rgba(255,255,255,0.7)":MUT,marginTop:"1px"}}>{p.cta} ↗</div>
+        </div>
+      </a>
+    );
+  }
+
   return (
-    <Wrapper {...wrapperProps} style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,display:"flex",flexDirection:"column",textDecoration:"none",color:"inherit",cursor:p.productUrl?"pointer":"default"}}>
+    <div style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,display:"flex",flexDirection:"column"}}>
       <div style={{display:"flex",alignItems:"flex-start",gap:"10px",marginBottom:"8px"}}>
         <div style={{width:"36px",height:"36px",background:p.highlight ? G : "rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           <span style={{fontSize:"18px"}}>{p.appIcon||"💳"}</span>
@@ -3468,23 +3502,17 @@ function ProductCard({ p, onInternalLink }) {
         </div>
       </div>
       {p.rate && <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginBottom:"6px"}}>{p.rate}</div>}
-      {p.productUrl ? (
-        <div style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,textAlign:"center",marginBottom:"10px"}}>
-          {p.cta} ↗
-        </div>
-      ) : (
-        <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
-          style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",marginBottom:"10px"}}>
-          {p.cta}
-        </button>
-      )}
+      <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
+        style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",marginBottom:"10px"}}>
+        {p.cta}
+      </button>
       {p.feature && <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,marginBottom:"12px",flex:1}}>{p.feature}</p>}
-      {!p.internalLink && !p.productUrl && (
+      {!p.internalLink && (
         <div style={{marginTop:"8px",fontSize:"11px",color:"rgba(22,47,36,0.4)",textAlign:"center",fontStyle:"italic"}}>
           Demo: {p.demoNote || `Would open ${p.name} — not yet a live link in this preview`}
         </div>
       )}
-    </Wrapper>
+    </div>
   );
 }
 
@@ -3593,6 +3621,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   const [sacrificePct, setSacrificePct] = useState(100);
   const [showCoins, setShowCoins] = useState(false);
   const [animating, setAnimating] = useState(false);
+  // Tile pagination (currently only Cash & savings has enough rows for this to matter —
+  // harmless no-op elsewhere since other modules never exceed the page size).
+  const [visibleTileCount, setVisibleTileCount] = useState(CASH_TILE_PAGE_SIZE);
+  useEffect(() => { setVisibleTileCount(CASH_TILE_PAGE_SIZE); }, [moduleKey]);
 
   useEffect(() => {
     if (openSection === "bonusSacrifice") {
@@ -3848,10 +3880,16 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const annualContrib = (myPct + empCapPct) / 100 * salary;
           const currentPot = m.projectedPot;
 
+          // Match-cap contribution ALONE — must not include bonusExtra here, or the
+          // "With bonus sacrifice" bar below double-counts it (previously did: this pot
+          // already had bonusExtra baked in via optimisedAnnual, then the bonus annuity
+          // was added again on top).
           const optimisedContrib = (empCapPct * 2) * salary / 100;
+          const optimisedPot = potVal * Math.pow(1.06, years) + optimisedContrib * ((Math.pow(1.06, years) - 1) / 0.06);
+
           const bonusExtra = (+d.bonusAmount||0) * 0.9;
-          const optimisedAnnual = optimisedContrib + bonusExtra;
-          const optimisedPot = potVal * Math.pow(1.06, years) + optimisedAnnual * ((Math.pow(1.06, years) - 1) / 0.06);
+          const withBonusAnnual = optimisedContrib + bonusExtra;
+          const withBonusPot = potVal * Math.pow(1.06, years) + withBonusAnnual * ((Math.pow(1.06, years) - 1) / 0.06);
 
           const hasMissedMatch = m.missedMatch > 0;
           const hasBonus = (+d.bonusAmount||0) > 0;
@@ -3862,7 +3900,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             { value: potVal, label: "Now", color: "rgba(196,150,58,0.4)", textCol: G },
             { value: currentPot, label: `At retirement\n(age ${retireAge})`, color: GOLD, textCol: G },
             ...(hasMissedMatch ? [{ value: optimisedPot, label: `Optimised\n(match cap)`, color: "#2d6b4a", textCol: WHITE }] : []),
-            ...(hasBonus ? [{ value: optimisedPot + bonusExtra * ((Math.pow(1.06, years)-1)/0.06), label: "With bonus\nsacrifice", color: "rgba(45,107,74,0.7)", textCol: WHITE }] : []),
+            ...(hasBonus ? [{ value: withBonusPot, label: "With bonus\nsacrifice", color: "rgba(45,107,74,0.7)", textCol: WHITE }] : []),
           ];
 
           const maxVal = Math.max(...bars.map(b => b.value)) * 1.15;
@@ -3941,12 +3979,21 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               You have <strong>{m.runwayMonths.toFixed(0)} months</strong> of runway — that's {(m.runwayMonths / m.bufferMonths).toFixed(1)}× your {m.bufferMonths}-month target. The excess ({fmt(surplus)}) is sitting in cash while likely losing ground to inflation. Consider putting it to work:
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-              {[
-                d.hasPension === "yes" && (+d.myContribution||0) < (+d.employerMatch||0) && { icon:"🏦", text:`Top up pension — every £ contributes ${Math.round(m.tr*100)}% tax relief instantly`, target:"pension" },
-                d.hasMortgage === "yes" && (+d.mortgageRate||0) >= 4 && { icon:"🏠", text:`Overpay mortgage — guaranteed ${d.mortgageRate}% return, risk-free`, target:"mortgage" },
-                d.studentLoan !== "none" && m.willClear && { icon:"🎓", text:"Student loan — your salary means you'll clear before write-off; overpaying saves interest at 7.5%", target:"studentLoan" },
-                m.isaHeadroom > 2000 && { icon:"📈", text:`ISA — ${fmt(m.isaHeadroom)} of allowance remaining; shelter returns from tax permanently`, target:"investments" },
-              ].filter(Boolean).map((s,i) => (
+              {(() => {
+                // Tied to the user's actual input (or a plan-based statutory estimate if
+                // they didn't specify a rate) via resolveSlRate — never a flat guess. Only
+                // suggest overpaying if that rate actually beats the best ISA rate available;
+                // otherwise saving beats overpaying and this tile shouldn't appear at all.
+                const slRateNum = d.studentLoan !== "none" ? resolveSlRate(d, m.salary) * 100 : 0;
+                const bestIsaRow = topRate(savingsRates, true);
+                const slBeatsSavings = !bestIsaRow || slRateNum > +bestIsaRow.rate_aer;
+                return [
+                  d.hasPension === "yes" && (+d.myContribution||0) < (+d.employerMatch||0) && { icon:"🏦", text:`Top up pension — every £ contributes ${Math.round(m.tr*100)}% tax relief instantly`, target:"pension" },
+                  d.hasMortgage === "yes" && (+d.mortgageRate||0) >= 4 && { icon:"🏠", text:`Overpay mortgage — guaranteed ${d.mortgageRate}% return, risk-free`, target:"mortgage" },
+                  d.studentLoan !== "none" && m.willClear && slBeatsSavings && { icon:"🎓", text:`Student loan — your salary means you'll clear before write-off; overpaying saves interest at ${slRateNum.toFixed(1)}%`, target:"studentLoan" },
+                  m.isaHeadroom > 2000 && { icon:"📈", text:`ISA — ${fmt(m.isaHeadroom)} of allowance remaining; shelter returns from tax permanently`, target:"investments" },
+                ];
+              })().filter(Boolean).map((s,i) => (
                 <div key={i} onClick={() => onOpenModule(s.target)} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"10px 12px",background:"rgba(255,255,255,0.6)",borderRadius:"8px",cursor:"pointer",border:"1px solid transparent",transition:"border-color 0.15s"}}>
                   <span style={{fontSize:"14px",flexShrink:0}}>{s.icon}</span>
                   <span style={{fontSize:"13px",color:TEXT,lineHeight:1.5,flex:1}}>{s.text}</span>
@@ -3987,6 +4034,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
           const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
           const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
+          const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
           // Blended, floored: only isaHeadroom worth of the surplus is ISA-eligible, and
           // the excess only contributes if the non-ISA rate actually beats the 4.4%
           // NS&I baseline — otherwise there's nowhere better for that excess to go.
@@ -3998,6 +4046,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           // The amount actually worth recommending — capped to the ISA-eligible portion
           // when moving the excess isn't worthwhile, so the copy below doesn't overstate it.
           const moveAmount = excessNotWorthMoving ? isaPortion : bondsSurplusAmt;
+          // Whether the whole surplus fits within this tax year's remaining ISA allowance
+          // (isaHeadroom is itself already capped at £20k) — if not, the copy must not
+          // claim the entire surplus goes into "a Cash ISA", since only isaPortion can.
+          const fitsEntirelyInIsa = nonIsaPortion <= 0;
           if (bondsSurplusAmt < 1000 || annualGain <= 0) return null;
           return (
             <div className="fu3" style={{background:"rgba(196,150,58,0.06)",border:`1px solid ${GOLD}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
@@ -4023,9 +4075,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </div>
               </div>
               <div style={{background:"rgba(45,107,74,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                {excessNotWorthMoving
-                  ? <>Moving {fmt(moveAmount)} of your {fmt(bondsSurplusAmt)} surplus (your remaining ISA allowance) to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — the rest doesn't currently beat the bond prize draw average anywhere else, so it's best left as-is for now.</>
-                  : <>Moving {fmt(moveAmount)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average.</>
+                {fitsEntirelyInIsa
+                  ? <>Moving {fmt(moveAmount)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average.</>
+                  : excessNotWorthMoving
+                    ? <>You can only shelter {fmt(isaPortion)} of your {fmt(bondsSurplusAmt)} surplus in an ISA this tax year (your remaining allowance) — moving that into a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong>. The remaining {fmt(nonIsaPortion)} doesn't currently beat the bond prize draw average anywhere else, so it's best left as-is for now.</>
+                    : <>Your {fmt(bondsSurplusAmt)} surplus won't all fit in an ISA this tax year — only {fmt(isaPortion)} of remaining allowance is left. Splitting it — {fmt(isaPortion)} into a {isaRateDisplay} Cash ISA and the remaining {fmt(nonIsaPortion)} into a {nonIsaRateDisplay} non-ISA account — would earn <strong>{fmt(annualGain)}/yr more</strong> combined, still a guaranteed return vs the bond prize draw average.</>
                 } Premium bonds are government-backed and penalty-free to withdraw; this is a personal risk decision based on whether you value guaranteed income over the chance of tax-free prizes.
               </div>
             </div>
@@ -4054,11 +4108,25 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>{products.heading}</h3>
               <p style={{fontSize:"14px",color:MUT,lineHeight:1.65}}>{products.subheading}</p>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"14px"}}>
-              {products.products.map((p,i) => (
+            {/* Cash tiles use a compact single-column list (rate box on the right of each
+                row — see ProductCard's productUrl branch); other modules keep the grid. */}
+            <div style={moduleKey === "cash"
+              ? {display:"flex",flexDirection:"column",gap:"8px",marginBottom:"14px"}
+              : {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"14px"}
+            }>
+              {products.products.slice(0, visibleTileCount).map((p,i) => (
                 <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>
               ))}
             </div>
+            {products.products.length > visibleTileCount && (
+              <button type="button" onClick={() => setVisibleTileCount(c => c + CASH_TILE_PAGE_SIZE)} style={{
+                display:"block",width:"100%",padding:"10px",background:"transparent",
+                border:"1.5px dashed rgba(22,47,36,0.25)",borderRadius:"8px",color:G,
+                fontSize:"13px",fontWeight:600,cursor:"pointer",marginBottom:"14px",fontFamily:SANS,
+              }}>
+                See {Math.min(CASH_TILE_PAGE_SIZE, products.products.length - visibleTileCount)} more ({products.products.length - visibleTileCount} remaining) ↓
+              </button>
+            )}
             {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
 
             {/* CGT crystallisation action panel */}
@@ -5096,6 +5164,7 @@ Rules:
 - If a module has status "na" in moduleStatuses, set its status to "na" and summary to "Not applicable based on your inputs."
 - Pension summary MUST reflect pensionContributing: ${financialSummary.pensionContributing} — never say "no contributions" or "start contributing" if pensionContributing is true.
 - Priorities ordered by urgency then impact. Maximum 4 priorities. No insurance priorities.
+- Module summaries must be direct and specific, not hedgy — cite the actual £ figure from the summary above (e.g. "£8,000 of unused ISA allowance") rather than vague phrasing like "may not be fully utilised".
 - Score should correlate with moduleStatuses: each critical module reduces score significantly.
 - Write in British English. Do not use "silently", "quietly", or "invisible".
 - Return valid JSON only. No preamble, no markdown, no backticks.`;
@@ -5111,7 +5180,9 @@ Rules:
       ],
       modules:{
         cash:{status:"attention",summary:"Cash position looks reasonable but yield could be higher."},
-        investments:{status:"attention",summary:"ISA allowance may not be fully utilised this tax year."},
+        investments:{status:"attention",summary: metrics.isaHeadroom > 0
+          ? `You have ${fmt(metrics.isaHeadroom)} of unused ISA allowance this tax year — shelter it before April 5th or lose it for good.`
+          : "Your ISA allowance is fully used this tax year — well done."},
         pension:{status:"attention",summary:"Review your pension contributions and projected retirement pot."},
         studentLoan:{status:"attention",summary:"Overpayment strategy worth reviewing at your income level."},
         mortgage:{status:"na",summary:"Not applicable based on your inputs."},
