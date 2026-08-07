@@ -74,7 +74,12 @@
       "Bash(node_modules/.bin/esbuild.cmd \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\test-blend.mjs\" --bundle --platform=node --format=esm --outfile=./.test-blend.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
       "Bash(node ./.test-blend.mjs)",
       "Bash(rm -f .test-blend.mjs)",
-      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-final3.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-final3.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-floor-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\test-floor.mjs\" --bundle --platform=node --format=esm --outfile=./.test-floor.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node ./.test-floor.mjs)",
+      "Bash(rm -f .test-floor.mjs)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-floor-final.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
     ]
   }
 }

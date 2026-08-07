@@ -355,10 +355,19 @@ export function calcMetrics(d, marketRates = {}) {
         // Blended, not flat: only isaHeadroom worth of emergencyFund could actually go
         // into an ISA — the rest would realistically land in a (usually lower-rate)
         // non-ISA account. Each portion's gain is measured against the user's own
-        // current rate, then summed.
+        // current rate, then summed. The non-ISA portion is floored at £0 (not left
+        // negative) — if the best non-ISA rate doesn't even beat the user's current
+        // rate, there's nowhere better to move that excess right now.
         isaEligiblePortion = Math.min(emergencyFund, isaHeadroom),
         nonIsaPortion = Math.max(0, emergencyFund - isaHeadroom),
-        annualYieldGap = (isaEligiblePortion * (isaRate - savingsRate) + nonIsaPortion * (nonIsaRate - savingsRate)) / 100;
+        isaPortionGain = isaEligiblePortion * (isaRate - savingsRate),
+        nonIsaPortionGain = nonIsaPortion * (nonIsaRate - savingsRate),
+        cashExcessNotWorthMoving = nonIsaPortionGain < 0,
+        annualYieldGap = (isaPortionGain + Math.max(0, nonIsaPortionGain)) / 100,
+        // What to actually recommend moving: the full balance normally, but capped to
+        // the ISA-eligible portion when the excess has nowhere better to go — copy
+        // generators use this instead of emergencyFund so they don't overstate the ask.
+        cashMoveAmount = cashExcessNotWorthMoving ? isaEligiblePortion : emergencyFund;
   // State pension estimate
   const niYears = +d.niYears||0;
   const statePensionWeekly = (niYears / 35) * 221.20;
@@ -417,6 +426,7 @@ export function calcMetrics(d, marketRates = {}) {
     isaHeadroom, isaUsedThisYear: isaUsedThisYearCalc,
     missedMatch, annualRepayment, willClear, crystallisable, cgtSaving,
     projectedPot, years, annualYieldGap, savingsRate, loanBal, tr,
+    cashMoveAmount, cashExcessNotWorthMoving,
     cash, bonds, totalAssets, totalLiabilities, netWorth,
     taxBandLabel, adjustedNetIncome, bufferMonths,
     statePensionWeekly, statePensionAnnual, niYearsToFull,
@@ -2129,12 +2139,19 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const bondsHeld = +d.premiumBonds||0;
   const bondsSurplus = Math.max(0, bondsHeld - m.emergencyBuffer);
   // Blended, not flat: only isaHeadroom worth of the surplus could actually go into
-  // an ISA — the rest would realistically land in a non-ISA account instead.
+  // an ISA — the rest would realistically land in a non-ISA account instead. The
+  // non-ISA portion is floored at £0, same reasoning as annualYieldGap above — if
+  // the best non-ISA rate doesn't beat NS&I's average, there's nothing better to
+  // move that excess into right now.
   const bondsIsaPortion = Math.min(bondsSurplus, m.isaHeadroom);
   const bondsNonIsaPortion = Math.max(0, bondsSurplus - m.isaHeadroom);
-  const bondsYieldGain = Math.round(
-    bondsIsaPortion * (isaRate / 100 - 0.044) + bondsNonIsaPortion * (nonIsaRate / 100 - 0.044)
-  );
+  const bondsIsaPortionGain = bondsIsaPortion * (isaRate / 100 - 0.044);
+  const bondsNonIsaPortionGain = bondsNonIsaPortion * (nonIsaRate / 100 - 0.044);
+  const bondsExcessNotWorthMoving = bondsNonIsaPortionGain < 0;
+  const bondsYieldGain = Math.round(bondsIsaPortionGain + Math.max(0, bondsNonIsaPortionGain));
+  // What to actually recommend moving — capped to the ISA-eligible portion when the
+  // excess has nowhere better to go, same as calcMetrics' cashMoveAmount.
+  const bondsMoveAmount = bondsExcessNotWorthMoving ? bondsIsaPortion : bondsSurplus;
   const hasBondOpportunity = bondsSurplus > 1000 && bondsYieldGain > 50;
 
   let cashImpactLabel;
@@ -2722,7 +2739,10 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
             cash: m.emergencyFund > 0 && m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2
               ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move the excess to a ${bestCashRateLabel} ${cashVehicle}.`
               : m.annualYieldGap > 0
-                ? `Move your cash to a ${bestCashRateLabel} ${cashVehicle} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
+                // cashMoveAmount is capped to the ISA-eligible portion when moving the
+                // excess isn't worthwhile — so this states what's actually recommended,
+                // not the full balance, whenever those two amounts diverge.
+                ? `Move ${fmt(Math.round(m.cashMoveAmount))} of your cash to a ${bestCashRateLabel} ${cashVehicle} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
                 : `Review your savings rate — best-buy ${cashVehicle}s are paying ${bestCashRateRow ? bestCashRateRow.rate_aer+"%" : "market-leading"} AER right now.`,
             investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax permanently.`,
             studentLoan: "Review your student loan strategy — your salary trajectory determines whether overpaying beats investing.",
@@ -3601,6 +3621,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // grammatical fallback since "5.08%" doesn't drop cleanly into every sentence shape.
   const topIsaRow = topRate(savingsRates, true);
   const isaRatePct = topIsaRow ? topIsaRow.rate_aer : null;
+  const topNonIsaRow = topRate(savingsRates, false);
+  const nonIsaRatePct = topNonIsaRow ? topNonIsaRow.rate_aer : null;
 
   // Marginal-return curve for student loan overpayments — runs ~38 loan
   // simulations, so memoize it to avoid rerunning on unrelated re-renders
@@ -3961,10 +3983,21 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
         {/* Premium bonds yield opportunity */}
         {moduleKey === "cash" && bondsVal > 0 && (() => {
           const bondsSurplusAmt = Math.max(0, bondsVal - m.emergencyBuffer);
-          // 0.049 fallback only covers the brief window before savingsRates loads.
+          // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
           const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
           const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
-          const annualGain = Math.round(bondsSurplusAmt * (isaRateDecimal - 0.044));
+          const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
+          // Blended, floored: only isaHeadroom worth of the surplus is ISA-eligible, and
+          // the excess only contributes if the non-ISA rate actually beats the 4.4%
+          // NS&I baseline — otherwise there's nowhere better for that excess to go.
+          const isaPortion = Math.min(bondsSurplusAmt, m.isaHeadroom);
+          const nonIsaPortion = Math.max(0, bondsSurplusAmt - m.isaHeadroom);
+          const nonIsaPortionGain = nonIsaPortion * (nonIsaRateDecimal - 0.044);
+          const excessNotWorthMoving = nonIsaPortionGain < 0;
+          const annualGain = Math.round(isaPortion * (isaRateDecimal - 0.044) + Math.max(0, nonIsaPortionGain));
+          // The amount actually worth recommending — capped to the ISA-eligible portion
+          // when moving the excess isn't worthwhile, so the copy below doesn't overstate it.
+          const moveAmount = excessNotWorthMoving ? isaPortion : bondsSurplusAmt;
           if (bondsSurplusAmt < 1000 || annualGain <= 0) return null;
           return (
             <div className="fu3" style={{background:"rgba(196,150,58,0.06)",border:`1px solid ${GOLD}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
@@ -3990,7 +4023,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </div>
               </div>
               <div style={{background:"rgba(45,107,74,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                Moving {fmt(bondsSurplusAmt)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average. Premium bonds are government-backed and penalty-free to withdraw; this is a personal risk decision based on whether you value guaranteed income over the chance of tax-free prizes.
+                {excessNotWorthMoving
+                  ? <>Moving {fmt(moveAmount)} of your {fmt(bondsSurplusAmt)} surplus (your remaining ISA allowance) to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — the rest doesn't currently beat the bond prize draw average anywhere else, so it's best left as-is for now.</>
+                  : <>Moving {fmt(moveAmount)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average.</>
+                } Premium bonds are government-backed and penalty-free to withdraw; this is a personal risk decision based on whether you value guaranteed income over the chance of tax-free prizes.
               </div>
             </div>
           );
