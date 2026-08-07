@@ -25,6 +25,19 @@ async function supaInsert(table, row) {
     return null;
   }
 }
+async function supaSelect(table, query = "") {
+  if (!SUPA_URL || !SUPA_KEY) return null;
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${table}${query}`, {
+      headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}` },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch(e) {
+    if (import.meta.env.DEV) console.warn(`[Candid] Supabase select from "${table}" failed:`, e);
+    return null;
+  }
+}
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const FONTS = `
@@ -934,22 +947,45 @@ function getModuleInsightsExtended(key, d, m) {
   }
 }
 
-function getModuleProducts(key, d, m) {
+function getModuleProducts(key, d, m, savingsRates) {
   switch (key) {
-    case "cash":
+    case "cash": {
+      const subheading = m.isaHeadroom > 0
+        ? `You have ${fmt(m.isaHeadroom)} of ISA allowance remaining — any interest earned inside an ISA is tax-free, permanently.`
+        : "Your ISA allowance is fully used this year. Consider a high-interest easy-access account for remaining cash.";
+      const heading = "Best easy-access Cash ISAs right now";
+
+      if (savingsRates === null || savingsRates === undefined) {
+        return { heading, subheading: "Loading current rates…", products: [], disclaimer: "" };
+      }
+      if (savingsRates.length === 0) {
+        return { heading, subheading, products: [], disclaimer: "Current rates are temporarily unavailable — check back shortly." };
+      }
+
+      const sorted = [...savingsRates].sort((a, b) => b.rate_aer - a.rate_aer);
+      // Conservative "correct as of" date — the oldest row's updated_at, so the
+      // disclaimer never overstates freshness for a stale entry in the list.
+      const oldestUpdate = sorted.reduce((oldest, r) =>
+        !oldest || new Date(r.updated_at) < new Date(oldest) ? r.updated_at : oldest, null);
+      const dateLabel = oldestUpdate
+        ? new Date(oldestUpdate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+        : "recently";
+
       return {
-        heading: "Best easy-access Cash ISAs right now",
-        subheading: m.isaHeadroom > 0
-          ? `You have ${fmt(m.isaHeadroom)} of ISA allowance remaining — any interest earned inside an ISA is tax-free, permanently.`
-          : "Your ISA allowance is fully used this year. Consider a high-interest easy-access account for remaining cash.",
-        products: [
-          { name:"Trading 212", type:"Cash ISA", rate:"5.08% AER", badge:"Highest rate", feature:"Flexible ISA — withdraw and replace within the same tax year", cta:"Open Cash ISA", highlight:true },
-          { name:"Plum",         type:"Cash ISA", rate:"4.92% AER", badge:"",             feature:"App-based, instant access, no minimum deposit", cta:"Open Cash ISA", highlight:false },
-          { name:"Chip",         type:"Cash ISA", rate:"4.84% AER", badge:"",             feature:"FSCS protected, instant access, auto-save features", cta:"Open Cash ISA", highlight:false },
-          { name:"Chase",        type:"Easy access", rate:"4.10% AER", badge:"High street", feature:"No ISA wrapper but highly rated for ease of use", cta:"View account", highlight:false },
-        ],
-        disclaimer:"Rates are indicative as of early 2026 and subject to change. Candid may earn a referral fee if you open an account via these links — this does not affect our ranking."
+        heading, subheading,
+        products: sorted.map((r, i) => ({
+          name: r.provider_name,
+          type: r.account_type,
+          rate: `${r.rate_aer}% AER`,
+          badge: i === 0 ? "Highest rate" : "",
+          highlight: i === 0,
+          cta: "View account",
+          appIcon: "🏦",
+          productUrl: r.product_url,
+        })),
+        disclaimer: `Rates correct as of ${dateLabel} — always confirm current rates directly with the provider before applying.`,
       };
+    }
     case "investments": {
       const daysToTaxYearEnd = (() => {
         const now = new Date();
@@ -3347,8 +3383,14 @@ function TakeMeThere({ app, icon, message, demoNote }) {
 
 function ProductCard({ p, onInternalLink }) {
   const superlative = p.badge && ["Highest rate","Best buy","Top pick","Lowest cost","Largest UK broker","Easiest consolidation","Best alternative","Best return"].includes(p.badge);
+  // Real outbound links (p.productUrl) make the whole tile clickable — an <a>
+  // can't contain a nested <button>, so the CTA becomes a styled div in that case.
+  const Wrapper = p.productUrl ? "a" : "div";
+  const wrapperProps = p.productUrl
+    ? { href: p.productUrl, target: "_blank", rel: "noopener noreferrer" }
+    : {};
   return (
-    <div style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,display:"flex",flexDirection:"column"}}>
+    <Wrapper {...wrapperProps} style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,display:"flex",flexDirection:"column",textDecoration:"none",color:"inherit",cursor:p.productUrl?"pointer":"default"}}>
       <div style={{display:"flex",alignItems:"flex-start",gap:"10px",marginBottom:"8px"}}>
         <div style={{width:"36px",height:"36px",background:p.highlight ? G : "rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           <span style={{fontSize:"18px"}}>{p.appIcon||"💳"}</span>
@@ -3364,17 +3406,23 @@ function ProductCard({ p, onInternalLink }) {
         </div>
       </div>
       {p.rate && <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginBottom:"6px"}}>{p.rate}</div>}
-      <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
-        style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",marginBottom:"10px"}}>
-        {p.cta}
-      </button>
-      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,marginBottom:"12px",flex:1}}>{p.feature}</p>
-      {!p.internalLink && (
+      {p.productUrl ? (
+        <div style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,textAlign:"center",marginBottom:"10px"}}>
+          {p.cta} ↗
+        </div>
+      ) : (
+        <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
+          style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",marginBottom:"10px"}}>
+          {p.cta}
+        </button>
+      )}
+      {p.feature && <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,marginBottom:"12px",flex:1}}>{p.feature}</p>}
+      {!p.internalLink && !p.productUrl && (
         <div style={{marginTop:"8px",fontSize:"11px",color:"rgba(22,47,36,0.4)",textAlign:"center",fontStyle:"italic"}}>
           Demo: {p.demoNote || `Would open ${p.name} — not yet a live link in this preview`}
         </div>
       )}
-    </div>
+    </Wrapper>
   );
 }
 
@@ -3483,6 +3531,15 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
   const [sacrificePct, setSacrificePct] = useState(100);
   const [showCoins, setShowCoins] = useState(false);
   const [animating, setAnimating] = useState(false);
+  const [savingsRates, setSavingsRates] = useState(null);
+
+  useEffect(() => {
+    if (moduleKey !== "cash") return;
+    let cancelled = false;
+    supaSelect("savings_rates", "?select=provider_name,account_type,rate_aer,product_url,updated_at&order=rate_aer.desc")
+      .then(rows => { if (!cancelled) setSavingsRates(rows || []); });
+    return () => { cancelled = true; };
+  }, [moduleKey]);
 
   useEffect(() => {
     if (openSection === "bonusSacrifice") {
@@ -3503,7 +3560,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
     : getModuleInsights(moduleKey, d, m);
   const products = newModules.includes(moduleKey)
     ? getModuleProductsExtended(moduleKey, d, m)
-    : getModuleProducts(moduleKey, d, m);
+    : getModuleProducts(moduleKey, d, m, savingsRates);
   const crossLinks = getCrossModuleLinks(moduleKey, d, m);
 
   // Marginal-return curve for student loan overpayments — runs ~38 loan
@@ -3924,7 +3981,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
                 <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>
               ))}
             </div>
-            <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>
+            {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
 
             {/* CGT crystallisation action panel */}
             {products.cgtSection && (

@@ -47,7 +47,15 @@
       "Bash(awk '{ print NR\": \"length\\($0\\) }' \"06_08_26_PrivacyPolicy.txt\")",
       "Bash(node \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\merge-privacy.mjs\")",
       "Bash(python -c ' *)",
-      "Bash(node_modules/.bin/esbuild.cmd src/main.jsx --bundle --platform=browser --format=esm --outfile=/tmp/main-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
+      "Bash(node_modules/.bin/esbuild.cmd src/main.jsx --bundle --platform=browser --format=esm --outfile=/tmp/main-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "WebFetch(domain:www.moneysavingexpert.com)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-check-savings.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\test-savings-rates.mjs\" --bundle --platform=node --format=esm --outfile=/tmp/test-savings-bundled.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node /tmp/test-savings-bundled.mjs)",
+      "Bash(node_modules/.bin/esbuild.cmd \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\test-savings-rates.mjs\" --bundle --platform=node --format=esm --outfile=./.test-savings-bundled.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node ./.test-savings-bundled.mjs)",
+      "Bash(rm -f .test-savings-bundled.mjs)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-final-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
     ]
   }
 }
