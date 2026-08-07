@@ -346,6 +346,13 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
 // ── Root ──────────────────────────────────────────────────────────────────────
 function Root() {
   const [view, setView] = useState(() => {
+    // A TrueLayer bank-connect redirect lands here with ?truelayer=... — CandidApp
+    // only mounts (and only then can its own effect read that param, fetch the
+    // session data, and jump to Cash & savings) once view is "onboarding"/"dashboard".
+    // Without this check, a mid-onboarding user (inputs saved, no insights yet)
+    // would fall through to the landing view below and CandidApp would never mount
+    // until they manually clicked back in.
+    if (new URLSearchParams(window.location.search).get('truelayer')) return 'onboarding';
     try {
       const hasSavedInputs = !!localStorage.getItem('candid_inputs');
       const hasSavedInsights = !!localStorage.getItem('candid_insights');

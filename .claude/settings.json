@@ -46,7 +46,8 @@
       "Bash(git check-ignore *)",
       "Bash(awk '{ print NR\": \"length\\($0\\) }' \"06_08_26_PrivacyPolicy.txt\")",
       "Bash(node \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\merge-privacy.mjs\")",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(node_modules/.bin/esbuild.cmd src/main.jsx --bundle --platform=browser --format=esm --outfile=/tmp/main-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
     ]
   }
 }
