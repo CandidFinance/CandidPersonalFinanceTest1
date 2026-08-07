@@ -5,6 +5,14 @@ import posthog from "posthog-js";
 // ── Supabase client — module level, no package needed ─────────────────────────
 const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
 const SUPA_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+// Only source of production visibility for Supabase failures — DEV console.warn is
+// stripped from the production build, so without this, every read/write below can
+// fail completely silently (this is what let the report_pdf_requests RLS gap and
+// the generateDashboard AI-failure both go undetected).
+function reportSupabaseFailure(table, operation, errorMessage, status) {
+  if (import.meta.env.DEV) console.warn(`[Candid] Supabase ${operation} on "${table}" failed:`, errorMessage, status ? `(HTTP ${status})` : "(network error)");
+  posthog.capture("supabase_operation_failed", { table, operation, error_message: errorMessage, status: status ?? null });
+}
 async function supaInsert(table, row) {
   if (!SUPA_URL || !SUPA_KEY) return null;
   try {
@@ -19,9 +27,16 @@ async function supaInsert(table, row) {
       body: JSON.stringify(row),
     });
     const data = await res.json();
+    // A non-2xx response (e.g. an RLS rejection or an unknown table) never throws —
+    // fetch() resolves normally, so this must be checked explicitly or it silently
+    // falls through to the Array.isArray check below and returns null unreported.
+    if (!res.ok) {
+      reportSupabaseFailure(table, "insert", data?.message || JSON.stringify(data), res.status);
+      return null;
+    }
     return Array.isArray(data) && data[0]?.id ? data[0].id : null;
   } catch(e) {
-    if (import.meta.env.DEV) console.warn(`[Candid] Supabase insert into "${table}" failed:`, e);
+    reportSupabaseFailure(table, "insert", e?.message || String(e));
     return null;
   }
 }
@@ -31,10 +46,14 @@ async function supaSelect(table, query = "") {
     const res = await fetch(`${SUPA_URL}/rest/v1/${table}${query}`, {
       headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}` },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      reportSupabaseFailure(table, "select", data?.message || `HTTP ${res.status}`, res.status);
+      return null;
+    }
     return await res.json();
   } catch(e) {
-    if (import.meta.env.DEV) console.warn(`[Candid] Supabase select from "${table}" failed:`, e);
+    reportSupabaseFailure(table, "select", e?.message || String(e));
     return null;
   }
 }

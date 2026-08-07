@@ -4,7 +4,6 @@ import posthog from "posthog-js"
 import CandidApp from "./CandidApp.jsx"
 
 console.log("SUPABASE URL:", import.meta.env.VITE_SUPABASE_URL)
-console.log("SUPABASE KEY:", import.meta.env.VITE_SUPABASE_ANON_KEY)
 
 // ── Analytics — runs once at module load, production only ─────────────────────
 if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
