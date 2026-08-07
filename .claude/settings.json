@@ -55,7 +55,26 @@
       "Bash(node_modules/.bin/esbuild.cmd \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\test-savings-rates.mjs\" --bundle --platform=node --format=esm --outfile=./.test-savings-bundled.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
       "Bash(node ./.test-savings-bundled.mjs)",
       "Bash(rm -f .test-savings-bundled.mjs)",
-      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-final-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-final-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-savings2-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\test-savings-rates-v2.mjs\" --bundle --platform=node --format=esm --outfile=./.test-savings-v2.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node ./.test-savings-v2.mjs)",
+      "Bash(rm -f .test-savings-v2.mjs)",
+      "Bash(sed -i -e 's/^export function getModuleInsights/function getModuleInsights/' -e 's/^export function topRate/function topRate/' -e 's/^export function getModuleProducts/function getModuleProducts/' src/CandidApp.jsx)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-savings-final.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-marketrates-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd api/generate-report-pdf.js --bundle --platform=node --format=esm --outfile=/tmp/pdf-route-check.mjs --external:@react-pdf/renderer)",
+      "Bash(node_modules/.bin/esbuild.cmd \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\test-market-rates.mjs\" --bundle --platform=node --format=esm --outfile=./.test-market-rates.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node ./.test-market-rates.mjs)",
+      "Bash(rm -f .test-market-rates.mjs)",
+      "Bash(sed -i -e 's/^export function getModuleInsights/function getModuleInsights/' -e 's/^export function getModuleProducts/function getModuleProducts/' src/CandidApp.jsx)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-final2.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd api/generate-report-pdf.js --bundle --platform=node --format=esm --outfile=/tmp/pdf-route-final2.mjs --external:@react-pdf/renderer)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-blend-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\c210abb6-8941-4a4b-9122-b50db9855167\\\\scratchpad\\\\test-blend.mjs\" --bundle --platform=node --format=esm --outfile=./.test-blend.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node ./.test-blend.mjs)",
+      "Bash(rm -f .test-blend.mjs)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-final3.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
     ]
   }
 }

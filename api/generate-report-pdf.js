@@ -4,7 +4,7 @@ import os from "os";
 import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import ReportPdf from "../src/pdf/ReportPdf.jsx";
-import { calcMetrics, computeModuleStatuses } from "../src/CandidApp.jsx";
+import { calcMetrics, computeModuleStatuses, topRate } from "../src/CandidApp.jsx";
 
 // ── Layer 1: only our own site (or local dev) may call this route ────────────
 const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
@@ -83,6 +83,29 @@ async function insertPdfRequest({ session_id, email, email_source, marketing_opt
   return Array.isArray(data) && data[0]?.id ? data[0].id : null;
 }
 
+// Fetched once per request, before calcMetrics/computeModuleStatuses are called —
+// both stay synchronous and just receive the resolved numbers as arguments.
+async function getMarketRates() {
+  if (!SUPA_URL || !SUPA_KEY) return {};
+  try {
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/savings_rates?select=rate_aer,is_isa`,
+      { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` } }
+    );
+    if (!res.ok) return {};
+    const rows = await res.json();
+    const topIsa = topRate(rows, true);
+    const topNonIsa = topRate(rows, false);
+    return {
+      isaRate: topIsa ? +topIsa.rate_aer : undefined,
+      nonIsaRate: topNonIsa ? +topNonIsa.rate_aer : undefined,
+    };
+  } catch (e) {
+    console.error("[generate-report-pdf] Failed to fetch market rates, using calcMetrics/computeModuleStatuses defaults:", e);
+    return {};
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -116,8 +139,9 @@ export default async function handler(req, res) {
 
   let pdfPath;
   try {
-    const m = calcMetrics(d);
-    const statuses = computeModuleStatuses(d, m);
+    const marketRates = await getMarketRates();
+    const m = calcMetrics(d, marketRates);
+    const statuses = computeModuleStatuses(d, m, marketRates);
     const buffer = await renderToBuffer(createElement(ReportPdf, { d, m, statuses, insights }));
     pdfPath = path.join(os.tmpdir(), `candid-report-${requestId || Date.now()}.pdf`);
     fs.writeFileSync(pdfPath, buffer);

@@ -291,7 +291,12 @@ function calcBonusTaxBreakdown(taxableSalary, cashBonus) {
 
 const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
 
-export function calcMetrics(d) {
+// marketRates: { isaRate, nonIsaRate } — the live max(rate_aer) from savings_rates,
+// resolved ONCE by the caller (client: Candid's useMemo; server: the PDF route) and
+// passed in here as plain numbers so this function stays synchronous. Defaults
+// preserve the exact prior hardcoded behaviour for any caller that omits it.
+export function calcMetrics(d, marketRates = {}) {
+  const { isaRate = 5.1, nonIsaRate = 5.1 } = marketRates;
   const salaryGrowthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
   const salary = +d.salary||0, expenses = +d.monthlyExpenses||0,
         bonds = +d.premiumBonds||0;
@@ -347,7 +352,13 @@ export function calcMetrics(d) {
         cgtRate = tr !== 0.20 ? 0.20 : 0.10,
         cgtSaving = crystallisable * cgtRate,
         savingsRate = effectiveSavingsRate,
-        annualYieldGap = emergencyFund * (5.1 - savingsRate) / 100;
+        // Blended, not flat: only isaHeadroom worth of emergencyFund could actually go
+        // into an ISA — the rest would realistically land in a (usually lower-rate)
+        // non-ISA account. Each portion's gain is measured against the user's own
+        // current rate, then summed.
+        isaEligiblePortion = Math.min(emergencyFund, isaHeadroom),
+        nonIsaPortion = Math.max(0, emergencyFund - isaHeadroom),
+        annualYieldGap = (isaEligiblePortion * (isaRate - savingsRate) + nonIsaPortion * (nonIsaRate - savingsRate)) / 100;
   // State pension estimate
   const niYears = +d.niYears||0;
   const statePensionWeekly = (niYears / 35) * 221.20;
@@ -666,13 +677,14 @@ function isNearPremiumBondDraw() {
 
 // ── Module product + insight config ──────────────────────────────────────────
 
-function getModuleInsights(key, d, m) {
+function getModuleInsights(key, d, m, savingsRates) {
   const name = d.name ? d.name.split(" ")[0] : "You";
   switch (key) {
     case "cash": {
       const gap = m.annualYieldGap;
       const cashRate = +d.savingsRate || 3.5;
-      const bestISARate = 5.08;
+      // 5.08 fallback only covers the brief window before savingsRates loads.
+      const bestISARate = topRate(savingsRates, true)?.rate_aer ?? 5.08;
       const totalCash = m.cash + m.bonds;
       return [
         {
@@ -947,6 +959,17 @@ function getModuleInsightsExtended(key, d, m) {
   }
 }
 
+// Highest-rate row for a given ISA/non-ISA category — returns the whole row
+// (not just the number) so display keeps the DB's own "X.XX" string formatting
+// rather than reformatting a coerced float. Null if no row of that category.
+export function topRate(rows, isIsa) {
+  const filtered = (rows || []).filter(r => r.is_isa === isIsa);
+  if (!filtered.length) return null;
+  return filtered.reduce((best, r) => (!best || +r.rate_aer > +best.rate_aer) ? r : best, null);
+}
+
+const CASH_TILE_LIMIT = 5;
+
 function getModuleProducts(key, d, m, savingsRates) {
   switch (key) {
     case "cash": {
@@ -958,11 +981,14 @@ function getModuleProducts(key, d, m, savingsRates) {
       if (savingsRates === null || savingsRates === undefined) {
         return { heading, subheading: "Loading current rates…", products: [], disclaimer: "" };
       }
-      if (savingsRates.length === 0) {
+      // Tiles are ISA-specific, matching the heading — non-ISA rows still feed
+      // topRate(savingsRates, false) elsewhere (e.g. Dashboard copy) but aren't shown here.
+      const isaRows = savingsRates.filter(r => r.is_isa === true);
+      if (isaRows.length === 0) {
         return { heading, subheading, products: [], disclaimer: "Current rates are temporarily unavailable — check back shortly." };
       }
 
-      const sorted = [...savingsRates].sort((a, b) => b.rate_aer - a.rate_aer);
+      const sorted = [...isaRows].sort((a, b) => +b.rate_aer - +a.rate_aer).slice(0, CASH_TILE_LIMIT);
       // Conservative "correct as of" date — the oldest row's updated_at, so the
       // disclaimer never overstates freshness for a stale entry in the list.
       const oldestUpdate = sorted.reduce((oldest, r) =>
@@ -1081,7 +1107,7 @@ function getModuleProducts(key, d, m, savingsRates) {
           : `At ${slRatePct}% interest, overpaying this loan mostly reduces what gets written off — not what you repay. The better use of spare cash is almost certainly your pension or ISA.`,
         products: [
           { name:"Your pension", type:"Alternative use of funds", rate:`1:${pensionReturnRatio(d,m).toFixed(2)} return`, badge:"Best alternative", feature:`A pension contribution gives an immediate 1:${pensionReturnRatio(d,m).toFixed(2)} return via tax${d.pensionType==="sacrifice"?" and NI":""} relief. ${pensionReturnLabel(d,m)}. Even when the loan balance is growing, this outperforms the ${slRatePct}% loan rate for most people.`, cta:"Go to Pension", highlight:!m.willClear, internalLink:"pension" },
-          { name:"Cash ISA", type:"Alternative use of funds", rate:`Up to 5.08% AER`, badge:"Tax-free", feature:`Your savings rate is ${cashRate}%. Net benefit of overpaying vs saving: ${effectiveBenefit > 0 ? `${Math.round(effectiveBenefit*10)/10}% in favour of overpaying` : "saving wins — keep cash in ISA"}.`, cta:"Go to Savings", highlight:false, internalLink:"cash" },
+          { name:"Cash ISA", type:"Alternative use of funds", rate:`Up to ${topRate(savingsRates, true)?.rate_aer ?? "5"}% AER`, badge:"Tax-free", feature:`Your savings rate is ${cashRate}%. Net benefit of overpaying vs saving: ${effectiveBenefit > 0 ? `${Math.round(effectiveBenefit*10)/10}% in favour of overpaying` : "saving wins — keep cash in ISA"}.`, cta:"Go to Savings", highlight:false, internalLink:"cash" },
           { name:"Student Finance", type:"Official balance check", rate:"", badge:"Free", feature:"Verify your exact balance, interest rate and repayment history at studentfinance.service.gov.uk.", cta:"Check balance", highlight:false },
         ],
         disclaimer:"Interest rates are estimates based on current RPI and plan thresholds. Actual rates vary — check your SLC online account. This is guidance only. Consider speaking to an IFA before making large overpayments.",
@@ -2072,7 +2098,9 @@ function priorityModuleKey(title) {
 // ── Local module status computation ──────────────────────────────────────────
 // Computes status + £ impact for all 8 modules from user data alone.
 // AI response takes precedence for narrative summary; this drives sorting + visibility.
-export function computeModuleStatuses(d, m) {
+// marketRates: same shape/contract as calcMetrics — resolved once by the caller.
+export function computeModuleStatuses(d, m, marketRates = {}) {
+  const { isaRate = 5, nonIsaRate = 4.5 } = marketRates;
   const daysToTaxEnd = (() => {
     const now = new Date(), taxEnd = new Date(now.getFullYear(), 3, 5);
     if (taxEnd < now) taxEnd.setFullYear(taxEnd.getFullYear() + 1);
@@ -2083,7 +2111,9 @@ export function computeModuleStatuses(d, m) {
   const s = {};
 
   // Cash — access type + yield gap + emergency buffer
-  const cashImpact = Math.round(m.annualYieldGap + m.isaHeadroom * 0.05 * isaUrgencyBoost);
+  // isaHeadroom is by definition ISA-eligible, so this term always uses isaRate
+  // (unlike annualYieldGap/bondsYieldGain below, which cover amounts that may exceed it).
+  const cashImpact = Math.round(m.annualYieldGap + m.isaHeadroom * (isaRate / 100) * isaUrgencyBoost);
   const tooMuchCash = m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
   const genuinelyLowCash = m.emergencyFund === 0 && m.expenses > 0;
   const accessType = d.cashAccessType || "partial";
@@ -2098,7 +2128,13 @@ export function computeModuleStatuses(d, m) {
   // Premium bonds: surplus above emergency buffer could earn more in Cash ISA
   const bondsHeld = +d.premiumBonds||0;
   const bondsSurplus = Math.max(0, bondsHeld - m.emergencyBuffer);
-  const bondsYieldGain = Math.round(bondsSurplus * (0.049 - 0.044));
+  // Blended, not flat: only isaHeadroom worth of the surplus could actually go into
+  // an ISA — the rest would realistically land in a non-ISA account instead.
+  const bondsIsaPortion = Math.min(bondsSurplus, m.isaHeadroom);
+  const bondsNonIsaPortion = Math.max(0, bondsSurplus - m.isaHeadroom);
+  const bondsYieldGain = Math.round(
+    bondsIsaPortion * (isaRate / 100 - 0.044) + bondsNonIsaPortion * (nonIsaRate / 100 - 0.044)
+  );
   const hasBondOpportunity = bondsSurplus > 1000 && bondsYieldGain > 50;
 
   let cashImpactLabel;
@@ -2447,7 +2483,7 @@ function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
   );
 }
 
-function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
+function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [showAllModules, setShowAllModules] = useState(false);
@@ -2673,6 +2709,8 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
           // Only suggest a Cash ISA specifically while allowance remains; once it's
           // fully used, point to a best-buy savings account instead.
           const cashVehicle = m.isaHeadroom > 0 ? "Cash ISA" : "best-buy savings account";
+          const bestCashRateRow = m.isaHeadroom > 0 ? topRate(savingsRates, true) : topRate(savingsRates, false);
+          const bestCashRateLabel = bestCashRateRow ? `${bestCashRateRow.rate_aer}%` : "top-paying";
           const directives = {
             pension: !isPensionContributing(d)
               ? `Start a pension today — every £${100-Math.round(m.tr*100)} you put in becomes £100 with ${Math.round(m.tr*100)}% tax relief.`
@@ -2682,10 +2720,10 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
                   ? `Sacrifice your bonus into your pension — saves up to ${fmt(Math.round((+d.bonusAmount||0)*m.tr))} in tax this year.`
                   : `Boost your pension by 1% — costs only ${fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo after ${Math.round(m.tr*100)}% tax relief.`,
             cash: m.emergencyFund > 0 && m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2
-              ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move the excess to a 4.9% ${cashVehicle}.`
+              ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move the excess to a ${bestCashRateLabel} ${cashVehicle}.`
               : m.annualYieldGap > 0
-                ? `Move your cash to a 4.9% ${cashVehicle} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
-                : `Review your savings rate — best-buy ${cashVehicle}s are paying 4.9% AER right now.`,
+                ? `Move your cash to a ${bestCashRateLabel} ${cashVehicle} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
+                : `Review your savings rate — best-buy ${cashVehicle}s are paying ${bestCashRateRow ? bestCashRateRow.rate_aer+"%" : "market-leading"} AER right now.`,
             investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax permanently.`,
             studentLoan: "Review your student loan strategy — your salary trajectory determines whether overpaying beats investing.",
             mortgage: d.daysToFixExpiry !== null && d.daysToFixExpiry < 180
@@ -2758,11 +2796,15 @@ function Dashboard({ insights, d, m, statuses, onReset, onOpenModule, completedM
             scoreBoost: Math.min(12, Math.round(m.missedMatch / 500)),
             description: `Contribute ${+d.employerMatch||0}% to capture the full employer match.`,
           };
-          if (m.annualYieldGap > 200 && m.isaHeadroom > 0) scenarioMap["cash"] = {
-            impactLabel: `+${fmt(m.annualYieldGap)}/yr in yield`,
-            scoreBoost: Math.min(8, Math.round(m.annualYieldGap / 200)),
-            description: `Move up to ${fmt(Math.min(m.emergencyFund, m.isaHeadroom))} of your ${fmt(m.totalLiquid)} in liquid savings into a 5.08% Cash ISA. This is your remaining ISA allowance for this tax year.`,
-          };
+          if (m.annualYieldGap > 200 && m.isaHeadroom > 0) {
+            const topIsaRow = topRate(savingsRates, true);
+            const isaRateLabel = topIsaRow ? `${topIsaRow.rate_aer}%` : "top-paying";
+            scenarioMap["cash"] = {
+              impactLabel: `+${fmt(m.annualYieldGap)}/yr in yield`,
+              scoreBoost: Math.min(8, Math.round(m.annualYieldGap / 200)),
+              description: `Move up to ${fmt(Math.min(m.emergencyFund, m.isaHeadroom))} of your ${fmt(m.totalLiquid)} in liquid savings into a ${isaRateLabel} Cash ISA. This is your remaining ISA allowance for this tax year.`,
+            };
+          }
           if (m.isaHeadroom > 3000) scenarioMap["investments"] = {
             impactLabel: `${fmt(m.isaHeadroom)} sheltered from tax`,
             scoreBoost: Math.min(6, Math.round(m.isaHeadroom / 3000)),
@@ -3523,7 +3565,7 @@ function AlternativeInvestments({ age }) {
   );
 }
 
-function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBack, goToDashboard, onComplete, isComplete, onOpenModule, nextModule }) {
+function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, openSection, goBack, goToDashboard, onComplete, isComplete, onOpenModule, nextModule }) {
   const [openTip,   setOpenTip]   = useState(null);
   const [expandAlt, setExpandAlt] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
@@ -3531,15 +3573,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
   const [sacrificePct, setSacrificePct] = useState(100);
   const [showCoins, setShowCoins] = useState(false);
   const [animating, setAnimating] = useState(false);
-  const [savingsRates, setSavingsRates] = useState(null);
-
-  useEffect(() => {
-    if (moduleKey !== "cash") return;
-    let cancelled = false;
-    supaSelect("savings_rates", "?select=provider_name,account_type,rate_aer,product_url,updated_at&order=rate_aer.desc")
-      .then(rows => { if (!cancelled) setSavingsRates(rows || []); });
-    return () => { cancelled = true; };
-  }, [moduleKey]);
 
   useEffect(() => {
     if (openSection === "bonusSacrifice") {
@@ -3557,11 +3590,17 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
   const newModules = ["personalLoan","kids","inheritance","mortgage"];
   const modInsights = newModules.includes(moduleKey)
     ? getModuleInsightsExtended(moduleKey, d, m)
-    : getModuleInsights(moduleKey, d, m);
+    : getModuleInsights(moduleKey, d, m, savingsRates);
   const products = newModules.includes(moduleKey)
     ? getModuleProductsExtended(moduleKey, d, m)
     : getModuleProducts(moduleKey, d, m, savingsRates);
   const crossLinks = getCrossModuleLinks(moduleKey, d, m);
+  // Used by the Premium bonds sections below — a single source for "best Cash ISA rate"
+  // rather than each section computing its own. isaRatePct is the DB's own "X.XX"
+  // string (null while loading/unavailable) — each usage site below handles its own
+  // grammatical fallback since "5.08%" doesn't drop cleanly into every sentence shape.
+  const topIsaRow = topRate(savingsRates, true);
+  const isaRatePct = topIsaRow ? topIsaRow.rate_aer : null;
 
   // Marginal-return curve for student loan overpayments — runs ~38 loan
   // simulations, so memoize it to avoid rerunning on unrelated re-renders
@@ -3913,7 +3952,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
               </div>
             ) : (
               <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                At your savings level and tax band, your interest income likely falls within your Personal Savings Allowance (£{psaLimit.toLocaleString()}/yr), so the tax-free benefit of bonds over a Cash ISA is less critical. The key trade-off is: <strong>bonds offer no guaranteed return</strong> whereas a Cash ISA at 5.08% is certain.
+                At your savings level and tax band, your interest income likely falls within your Personal Savings Allowance (£{psaLimit.toLocaleString()}/yr), so the tax-free benefit of bonds over a Cash ISA is less critical. The key trade-off is: <strong>bonds offer no guaranteed return</strong> whereas a Cash ISA {isaRatePct != null ? `at ${isaRatePct}%` : "at a top-paying rate"} is certain.
               </div>
             )}
           </div>
@@ -3922,7 +3961,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
         {/* Premium bonds yield opportunity */}
         {moduleKey === "cash" && bondsVal > 0 && (() => {
           const bondsSurplusAmt = Math.max(0, bondsVal - m.emergencyBuffer);
-          const annualGain = Math.round(bondsSurplusAmt * (0.049 - 0.044));
+          // 0.049 fallback only covers the brief window before savingsRates loads.
+          const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
+          const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
+          const annualGain = Math.round(bondsSurplusAmt * (isaRateDecimal - 0.044));
           if (bondsSurplusAmt < 1000 || annualGain <= 0) return null;
           return (
             <div className="fu3" style={{background:"rgba(196,150,58,0.06)",border:`1px solid ${GOLD}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
@@ -3943,12 +3985,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, openSection, goBa
                 </div>
                 <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
                   <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Best Cash ISA</div>
-                  <div style={{fontFamily:SERIF,fontSize:"17px",color:"#2d6b4a",fontWeight:700}}>4.9%</div>
+                  <div style={{fontFamily:SERIF,fontSize:"17px",color:"#2d6b4a",fontWeight:700}}>{isaRateDisplay}</div>
                   <div style={{fontSize:"10px",color:"#2d6b4a",marginTop:"2px"}}>guaranteed</div>
                 </div>
               </div>
               <div style={{background:"rgba(45,107,74,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                Moving {fmt(bondsSurplusAmt)} of surplus bonds to a 4.9% Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average. Premium bonds are government-backed and penalty-free to withdraw; this is a personal risk decision based on whether you value guaranteed income over the chance of tax-free prizes.
+                Moving {fmt(bondsSurplusAmt)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average. Premium bonds are government-backed and penalty-free to withdraw; this is a personal risk decision based on whether you value guaranteed income over the chance of tax-free prizes.
               </div>
             </div>
           );
@@ -4761,6 +4803,16 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
     catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist inputs to localStorage:", e); }
   }, [d]);
 
+  // ── Savings rates — fetched once here (not per-component) since both Dashboard's
+  // copy and ModuleDeepDive's Cash tiles need it. null = still loading.
+  const [savingsRates, setSavingsRates] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    supaSelect("savings_rates", "?select=provider_name,account_type,rate_aer,product_url,updated_at,is_isa&order=rate_aer.desc")
+      .then(rows => { if (!cancelled) setSavingsRates(rows || []); });
+    return () => { cancelled = true; };
+  }, []);
+
   // ── Return from TrueLayer bank-connect redirect — runs once on mount ─────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -4793,8 +4845,21 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
     }
   }, []);
 
-  const m = useMemo(() => calcMetrics(d), [d]);
-  const statuses = useMemo(() => computeModuleStatuses(d, m), [d, m]);
+  // Resolved once here from the already-fetched savings_rates and threaded into both
+  // functions as plain numbers — calcMetrics/computeModuleStatuses stay synchronous.
+  // rate_aer comes back from PostgREST as a string (numeric columns are stringified
+  // for precision) — converted explicitly here rather than relying on JS's implicit
+  // coercion throughout the downstream arithmetic.
+  const marketRates = useMemo(() => {
+    const topIsa = topRate(savingsRates, true);
+    const topNonIsa = topRate(savingsRates, false);
+    return {
+      isaRate: topIsa ? +topIsa.rate_aer : undefined,
+      nonIsaRate: topNonIsa ? +topNonIsa.rate_aer : undefined,
+    };
+  }, [savingsRates]);
+  const m = useMemo(() => calcMetrics(d, marketRates), [d, marketRates]);
+  const statuses = useMemo(() => computeModuleStatuses(d, m, marketRates), [d, m, marketRates]);
 
   // One-shot PDF-email-capture trigger: 5s after the report/dashboard finishes rendering
   useEffect(() => {
@@ -5127,7 +5192,7 @@ Rules:
 
   if (screen === "dashboard") return (
     <>
-      <Dashboard insights={insights} d={d} m={m} statuses={statuses} onReset={resetAll} completedModules={completedModules}
+      <Dashboard insights={insights} d={d} m={m} statuses={statuses} savingsRates={savingsRates} onReset={resetAll} completedModules={completedModules}
         onOpenModule={key => openModule(key, "dashboard")}
         onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
@@ -5163,7 +5228,7 @@ Rules:
     const nextMod = sortedMods.find(mm => mm.key !== activeModule && !completedModules.includes(mm.key)) || null;
     return (
       <>
-        <ModuleDeepDive moduleKey={activeModule} insights={insights} d={d} m={m} statuses={statuses}
+        <ModuleDeepDive moduleKey={activeModule} insights={insights} d={d} m={m} statuses={statuses} savingsRates={savingsRates}
           openSection={activeSection}
           goBack={() => setScreen("dashboard")}
           goToDashboard={() => setScreen("dashboard")}
