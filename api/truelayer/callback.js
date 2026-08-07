@@ -9,6 +9,11 @@ const STATE_COOKIE = "tl_state";
 const DATA_COOKIE = "tl_data";
 const APP_ORIGIN = "https://candid-finance.co.uk";
 const TRANSACTION_LOOKBACK_DAYS = 90;
+// Must match auth-link.js's Domain exactly — both for the tl_state cookie to
+// carry over an apex/www redirect hop, and because clearing a cookie (Max-Age=0)
+// only works if Domain (and Path) match what it was originally set with;
+// otherwise the clear just sets an unrelated stray cookie and the real one lingers.
+const COOKIE_DOMAIN = ".candid-finance.co.uk";
 
 function parseCookies(req) {
   const header = req.headers.cookie || "";
@@ -22,7 +27,7 @@ function parseCookies(req) {
 
 function redirectWithError(res, reason, extraCookies = []) {
   res.setHeader("Set-Cookie", [
-    `${STATE_COOKIE}=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax`,
+    `${STATE_COOKIE}=; Max-Age=0; Path=/; Domain=${COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax`,
     ...extraCookies,
   ]);
   res.writeHead(302, { Location: `${APP_ORIGIN}/?truelayer=error&reason=${encodeURIComponent(reason)}` });
@@ -154,9 +159,9 @@ export default async function handler(req, res) {
     // Handed to the client only via an authenticated same-origin fetch to
     // /api/truelayer/session-data — never via the redirect URL, so it can't leak
     // through browser history, server access logs, or Referer headers.
-    const dataCookie = `${DATA_COOKIE}=${Buffer.from(JSON.stringify(payload)).toString("base64")}; Max-Age=120; Path=/; HttpOnly; Secure; SameSite=Lax`;
+    const dataCookie = `${DATA_COOKIE}=${Buffer.from(JSON.stringify(payload)).toString("base64")}; Max-Age=120; Path=/; Domain=${COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax`;
     res.setHeader("Set-Cookie", [
-      `${STATE_COOKIE}=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      `${STATE_COOKIE}=; Max-Age=0; Path=/; Domain=${COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax`,
       dataCookie,
     ]);
     res.writeHead(302, { Location: `${APP_ORIGIN}/?truelayer=success` });

@@ -6,6 +6,10 @@ const SCOPES = ["accounts", "balance", "transactions", "offline_access"];
 const STATE_COOKIE = "tl_state";
 const STATE_TTL_SECONDS = 600;
 const MAX_EMAIL_LEN = 254;
+// Vercel redirects between the apex and www hosts, and a host-scoped cookie
+// doesn't survive that hop — scoping to the parent domain (leading dot) makes
+// it valid on both candid-finance.co.uk and www.candid-finance.co.uk.
+const COOKIE_DOMAIN = ".candid-finance.co.uk";
 
 export default function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end();
@@ -21,7 +25,7 @@ export default function handler(req, res) {
   const nonce = crypto.randomBytes(16).toString("hex");
   res.setHeader(
     "Set-Cookie",
-    `${STATE_COOKIE}=${nonce}; Max-Age=${STATE_TTL_SECONDS}; Path=/; HttpOnly; Secure; SameSite=Lax`
+    `${STATE_COOKIE}=${nonce}; Max-Age=${STATE_TTL_SECONDS}; Path=/; Domain=${COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax`
   );
 
   // The callback route runs server-side with no access to the browser's app state,
