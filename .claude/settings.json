@@ -114,7 +114,10 @@
       "Bash(node_modules/.bin/esbuild.cmd \"C:/Users/harvp/AppData/Local/Temp/claude/c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1/c210abb6-8941-4a4b-9122-b50db9855167/scratchpad/test-cash-consolidation.mjs\" --bundle --platform=node --format=esm --outfile=/tmp/test-cash-consolidation-bundled.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
       "Bash(node /tmp/test-cash-consolidation-bundled.mjs)",
       "Bash(node_modules/.bin/esbuild.cmd \"C:/Users/harvp/AppData/Local/Temp/claude/c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1/c210abb6-8941-4a4b-9122-b50db9855167/scratchpad/test-cash-consolidation.mjs\" --bundle --platform=node --format=esm --outfile=.test-cash-consolidation.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
-      "Bash(node .test-cash-consolidation.mjs)"
+      "Bash(node .test-cash-consolidation.mjs)",
+      "Bash(node_modules/.bin/esbuild.cmd \"C:/Users/harvp/AppData/Local/Temp/claude/c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1/c210abb6-8941-4a4b-9122-b50db9855167/scratchpad/test-investments-consolidation.mjs\" --bundle --platform=node --format=esm --outfile=.test-investments-consolidation.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node .test-investments-consolidation.mjs)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-investments-final.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
     ]
   }
 }

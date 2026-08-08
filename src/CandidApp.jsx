@@ -367,8 +367,11 @@ export function calcMetrics(d, marketRates = {}) {
            : adjustedNetIncome > 50270  ? 0.40
            : 0.20;
   const taxBandLabel = adjustedNetIncome > 125140 ? "additional" : adjustedNetIncome > 50270 ? "higher" : "basic";
+  // CGT rates on shares/other assets (non-property): 18% basic, 24% higher/additional —
+  // aligned with residential property rates from the 30 Oct 2024 Budget. Not 10%/20%,
+  // which were the pre-Budget rates.
   const gains = +d.unrealisedGains||0, crystallisable = Math.min(gains, 3000),
-        cgtRate = tr !== 0.20 ? 0.20 : 0.10,
+        cgtRate = tr !== 0.20 ? 0.24 : 0.18,
         cgtSaving = crystallisable * cgtRate,
         savingsRate = effectiveSavingsRate,
         // Blended, not flat: only isaHeadroom worth of CASH could actually go into an
@@ -448,7 +451,7 @@ export function calcMetrics(d, marketRates = {}) {
     salary, expenses, totalLiquid, runwayMonths,
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
     isaHeadroom, isaUsedThisYear: isaUsedThisYearCalc,
-    missedMatch, annualRepayment, willClear, crystallisable, cgtSaving,
+    missedMatch, annualRepayment, willClear, crystallisable, cgtSaving, cgtRate,
     projectedPot, years, annualYieldGap, savingsRate, loanBal, tr,
     cashMoveAmount, cashExcessNotWorthMoving,
     cash, bonds, totalAssets, totalLiabilities, netWorth,
@@ -754,10 +757,6 @@ function getModuleInsights(key, d, m, savingsRates) {
     case "investments": {
       const unwrapped = +d.unwrappedValue||0;
       const gains = m.crystallisable;
-      const cgtRate = m.tr !== 0.20 ? 0.20 : 0.10;
-      // What CGT would cost if gains NOT crystallised and exceed £3k next year
-      const gainsAbove3k = Math.max(0, (+d.unrealisedGains||0) - 3000);
-      const futureCgtIfUnused = Math.round(gainsAbove3k * cgtRate);
       // Compound illustration: £12k ISA per year for 10 years at 7%
       const isaCompoundEx = Math.round(12000 * ((Math.pow(1.07,10)-1)/0.07));
       return [
@@ -766,16 +765,16 @@ function getModuleInsights(key, d, m, savingsRates) {
           tooltip:`🔒 ISA = tax-free for life. Every £ inside an ISA grows completely free of income tax, dividend tax, and CGT — forever. Your ${fmt(m.isaHeadroom)} of remaining allowance expires on 5 April and CANNOT be carried forward. Example: £12,000/yr invested inside an ISA for 10 years at 7% grows to ~${fmt(isaCompoundEx)} with zero tax due on gains or income, ever. Outside an ISA, you'd owe tax on every dividend and every gain above £3,000.`
         },
         {
-          label:"Unwrapped investments", value: unwrapped > 0 ? fmt(unwrapped) : "None", flag: unwrapped > 0,
-          tooltip:`${fmt(unwrapped)} sits outside an ISA or pension wrapper — exposed to CGT on any gains and income tax on dividends. Consider a Bed & ISA: sell the holding, immediately repurchase inside your ISA, and all future gains are tax-free. You can move up to ${fmt(m.isaHeadroom)} this tax year before your allowance expires.`
-        },
-        {
-          label:"Crystallisable CGT gain (within £3k exempt)", value: gains > 0 ? fmt(gains) : "—", flag: gains > 0,
-          tooltip:`USE IT OR LOSE IT — the £3,000 CGT annual exempt amount does not carry forward. If you don't use it this tax year, it is permanently gone.\n\nYou can sell enough to realise up to ${fmt(gains)} of gain right now — completely tax-free. You can then repurchase the same assets after 30 days (bed & breakfasting rules) or buy something similar immediately.\n\nIf you don't crystallise this year and your gains grow: next year you'd owe CGT on everything above £3,000. At your rate (${Math.round(cgtRate*100)}%), a ${fmt((+d.unrealisedGains||0))} gain would cost ${fmt(futureCgtIfUnused)} in CGT on the portion above the exempt amount. Doing this every year is one of the most consistently overlooked tax-saving habits.`
-        },
-        {
-          label:"CGT saving if crystallised now", value: gains > 0 ? fmt(m.cgtSaving)+" this year" : "—", flag: gains > 0,
-          tooltip:`By realising ${fmt(gains)} of gain within the annual exempt amount, you pay zero CGT today. If left unrealised and the gain grows further, the tax owed grows too — and you still only get one £3,000 exemption per year. Acting now locks in today's tax-free treatment and resets your cost basis upward.`
+          // Merges the old "Unwrapped investments" and "Crystallisable CGT gain" tiles —
+          // both were describing the same underlying situation (money sitting outside a
+          // wrapper). Leads with the actual £ saved by using this year's £3,000 CGT
+          // exempt amount. The old "CGT saving if crystallised now" tile is gone — its
+          // one fact (the £ saving) is now the headline number here instead of a
+          // separate tile restating it. Full "how to do it / what happens if you don't"
+          // mechanics live in the "Crystallise your CGT exemption" panel below, not
+          // repeated here, to avoid saying it twice.
+          label:"Unwrapped investments", value: gains > 0 ? fmt(m.cgtSaving)+" saved" : unwrapped > 0 ? fmt(unwrapped) : "None", flag: gains > 0 || unwrapped > 0,
+          tooltip:`${fmt(unwrapped)} sits outside an ISA or pension wrapper — exposed to CGT on any gains and income tax on dividends.${gains > 0 ? ` You have ${fmt(+d.unrealisedGains||0)} of unrealised gain, of which ${fmt(gains)} falls within this year's £3,000 CGT exempt amount — realising it now costs £0 tax, saving ${fmt(m.cgtSaving)} at your ${Math.round(m.cgtRate*100)}% CGT rate (see "Crystallise your CGT exemption" below for how).` : ""} Consider a Bed & ISA: sell and immediately repurchase inside your ISA — up to ${fmt(m.isaHeadroom)} of headroom this tax year — and all future gains become tax-free.`
         },
       ];
     }
@@ -1087,10 +1086,17 @@ function getModuleProducts(key, d, m, savingsRates) {
         : daysToTaxYearEnd < 90
         ? `${daysToTaxYearEnd} days until your allowance expires on April 5th.`
         : `Your allowance expires on April 5th — ${daysToTaxYearEnd} days away.`;
+      // Forward-looking upside illustration rather than just restating the allowance
+      // figure (that's already shown in the ISA allowance remaining tile above).
+      // 7% nominal / 25 years is a common long-term equity-market illustration —
+      // explicitly flagged as illustrative, not a forecast, per FCA guidance-vs-advice
+      // boundaries (this is guidance, not a personal recommendation or promise).
+      const growthRatePct = 7, growthYears = 25;
+      const isaGrowthIllustration = Math.round(m.isaHeadroom * Math.pow(1 + growthRatePct/100, growthYears));
       return {
-        heading: m.isaHeadroom > 0 ? `You have ${fmt(m.isaHeadroom)} of TAX-FREE ISA allowance left` : "Your ISA allowance is fully used — well done",
+        heading: m.isaHeadroom > 0 ? `${fmt(m.isaHeadroom)} left unused could become ~${fmt(isaGrowthIllustration)}` : "Your ISA allowance is fully used — well done",
         subheading: m.isaHeadroom > 0
-          ? `${urgencyMsg} Once it expires, it's gone forever — you can't bank it for next year. Every £ inside an ISA is completely free of CGT and income tax for life. This is the single most efficient personal finance decision most people never fully use.`
+          ? `Illustration only, not a forecast: ${fmt(m.isaHeadroom)} invested inside an ISA today and left for ${growthYears} years at a hypothetical ${growthRatePct}% nominal annual growth would become ~${fmt(isaGrowthIllustration)} — entirely free of income tax, dividend tax, and CGT, for life. ${urgencyMsg} Real returns are never guaranteed and could be lower or negative. Here's where you could actually do this:`
           : `You've used your full £20,000 ISA allowance this tax year. New allowance opens on April 6th. If you have unwrapped investments, consider a Bed & ISA strategy next tax year.`,
         products: [
           { name:"Vanguard",      type:"S&S ISA", rate:"0.15%/yr", badge:"Lowest cost",       feature:"Index fund specialist. Best for low-cost, long-term investors. No dealing fees on funds.", cta:"Open S&S ISA", highlight:true },
@@ -1102,7 +1108,7 @@ function getModuleProducts(key, d, m, savingsRates) {
         cgtSection: m.crystallisable > 0 ? {
           heading:"Crystallise your CGT exemption before April 5th",
           body:`You have an estimated ${fmt(m.crystallisable)} of unrealised gain that falls within the annual £3,000 CGT exempt amount — meaning you could realise it right now and pay zero tax. The 30-day bed & breakfasting rule means you can't immediately repurchase the identical holding in an unwrapped account, but you can: (1) repurchase inside your ISA immediately (Bed & ISA — the clean solution), or (2) wait 30 days and repurchase the same asset outside the ISA. Either way, you reset your cost basis upward and eliminate future CGT on those gains.`,
-          warning:`The £3,000 annual exempt amount does not roll over. If unused, it is permanently lost on April 5th. And if your gains continue to grow next year, you'll owe ${Math.round(m.tr!==0.20?20:10)}% CGT on everything above £3,000 — with no way to reclaim this year's unused exemption.`
+          warning:`The £3,000 annual exempt amount does not roll over. If unused, it is permanently lost on April 5th. And if your gains continue to grow next year, you'll owe ${Math.round(m.cgtRate*100)}% CGT on everything above £3,000 — with no way to reclaim this year's unused exemption.`
         } : null
       };
     }
@@ -1306,9 +1312,6 @@ function getCrossModuleLinks(key, d, m) {
   const links = [];
   if (key === "cash" && d.hasPension !== "yes") {
     links.push({ icon:"🏦", text:"You have no pension — the tax relief on contributions will likely outperform any savings rate.", label:"Go to Pension", target:"pension" });
-  }
-  if (key === "investments" && m.surplusCash > 5000) {
-    links.push({ icon:"💷", text:`You have ${fmt(m.surplusCash)} of surplus cash above your 6-month emergency fund. Consider moving some into your ISA.`, label:"Review in Savings", target:"cash" });
   }
   if (key === "pension" && (+d.bonusAmount||0) > 0) {
     links.push({ icon:"💰", text:`You receive a bonus of ~${fmt(+d.bonusAmount)}. Sacrificing some or all into your pension before it's paid saves both income tax and National Insurance.`, label:"Model bonus sacrifice", target:"pension", section:"bonusSacrifice" });
@@ -4058,7 +4061,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   d.hasPension === "yes" && (+d.myContribution||0) < (+d.employerMatch||0) && { icon:"🏦", text:`Top up pension — every £ contributes ${Math.round(m.tr*100)}% tax relief instantly`, target:"pension" },
                   d.hasMortgage === "yes" && (+d.mortgageRate||0) >= 4 && { icon:"🏠", text:`Overpay mortgage — guaranteed ${d.mortgageRate}% return, risk-free`, target:"mortgage" },
                   d.studentLoan !== "none" && m.willClear && slBeatsSavings && { icon:"🎓", text:`Student loan — your salary means you'll clear before write-off; overpaying saves interest at ${slRateNum.toFixed(1)}%`, target:"studentLoan" },
-                  m.isaHeadroom > 2000 && { icon:"📈", text:`ISA — ${fmt(m.isaHeadroom)} of allowance remaining; shelter returns from tax permanently`, target:"investments" },
+                  // ISA suggestion deliberately omitted here — that point is now made once,
+                  // in the Investments module's own surplus-into-ISA callout, combining
+                  // this surplus cash with any unwrapped investments in one place.
                 ];
               })().filter(Boolean).map((s,i) => (
                 <div key={i} onClick={() => onOpenModule(s.target)} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"10px 12px",background:"rgba(255,255,255,0.6)",borderRadius:"8px",cursor:"pointer",border:"1px solid transparent",transition:"border-color 0.15s"}}>
@@ -4144,6 +4149,28 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             ))}
           </div>
         )}
+
+        {/* Move surplus into S&S ISA — the single place this point is made (the
+            equivalent Cash & Savings runway suggestion was removed to avoid stating it
+            twice), combining surplus cash and unwrapped investments as two possible
+            sources rather than two separate messages. */}
+        {moduleKey === "investments" && m.isaHeadroom > 0 && (m.surplusCash > 5000 || (+d.unwrappedValue||0) > 0) && (() => {
+          const unwrappedVal = +d.unwrappedValue||0;
+          const sources = [];
+          if (m.surplusCash > 5000) sources.push(`${fmt(m.surplusCash)} of surplus cash above your ${m.bufferMonths}-month emergency fund`);
+          if (unwrappedVal > 0) sources.push(`${fmt(unwrappedVal)} of unwrapped investments`);
+          return (
+            <div className="fu2" style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+                <span style={{fontSize:"16px"}}>💷</span>
+                <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Move this into your S&S ISA</span>
+              </div>
+              <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7}}>
+                You have {sources.join(" and ")} — {fmt(m.isaHeadroom)} of ISA allowance is available to shelter it from tax, permanently. The providers below are where you'd actually do this.
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Products */}
         {products && !isPensionUnknown && (
@@ -4396,18 +4423,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
         {/* ── Alternative investments (investments module) ── */}
         {moduleKey === "investments" && (
           <AlternativeInvestments age={d.age}/>
-        )}
-
-        {/* ── Take Me There (investments module) ── */}
-        {moduleKey === "investments" && m.isaHeadroom > 0 && (
-          <div style={{marginTop:"16px",background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"12px",padding:"16px 18px"}}>
-            <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Take me there</div>
-            <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"12px"}}>
-              Ready to act? In the full app, these would deep-link directly into your existing investment platforms.
-            </p>
-            <TakeMeThere app="Hargreaves Lansdown" icon="📱" message={`Top up my HL ISA — ${fmt(m.isaHeadroom)} allowance left before April 5th`} demoNote="Would open HL app to ISA top-up screen"/>
-            <TakeMeThere app="Vanguard" icon="📱" message="Open Vanguard S&S ISA" demoNote="Would open Vanguard app to ISA setup"/>
-          </div>
         )}
 
         {/* ── Kids compound growth visualisation ── */}
