@@ -1088,15 +1088,22 @@ function getModuleProducts(key, d, m, savingsRates) {
         : `Your allowance expires on April 5th — ${daysToTaxYearEnd} days away.`;
       // Forward-looking upside illustration rather than just restating the allowance
       // figure (that's already shown in the ISA allowance remaining tile above).
-      // 7% nominal / 25 years is a common long-term equity-market illustration —
-      // explicitly flagged as illustrative, not a forecast, per FCA guidance-vs-advice
-      // boundaries (this is guidance, not a personal recommendation or promise).
-      const growthRatePct = 7, growthYears = 25;
+      // Years = UK State Pension age (67) minus current age — not d.retirementAge,
+      // which is a different concept (the user's chosen *private* pension access age,
+      // captured elsewhere for pension projections). 7% nominal is a common long-term
+      // equity-market illustration — explicitly flagged as illustrative, not a
+      // forecast, per FCA guidance-vs-advice boundaries.
+      const growthRatePct = 7, retirementAge = 67, currentAge = +d.age || 30;
+      const growthYears = Math.max(1, retirementAge - currentAge);
       const isaGrowthIllustration = Math.round(m.isaHeadroom * Math.pow(1 + growthRatePct/100, growthYears));
       return {
         heading: m.isaHeadroom > 0 ? `${fmt(m.isaHeadroom)} left unused could become ~${fmt(isaGrowthIllustration)}` : "Your ISA allowance is fully used — well done",
+        // The growth-illustration sentence itself is now the chart below (see
+        // ModuleDeepDive's "ISA compound-growth chart" block) — this subheading keeps
+        // only the surrounding copy: urgency, the tax-free-for-life point, and the
+        // hand-off into the provider tiles.
         subheading: m.isaHeadroom > 0
-          ? `Illustration only, not a forecast: ${fmt(m.isaHeadroom)} invested inside an ISA today and left for ${growthYears} years at a hypothetical ${growthRatePct}% nominal annual growth would become ~${fmt(isaGrowthIllustration)} — entirely free of income tax, dividend tax, and CGT, for life. ${urgencyMsg} Real returns are never guaranteed and could be lower or negative. Here's where you could actually do this:`
+          ? `${urgencyMsg} Entirely free of income tax, dividend tax, and CGT, for life. Here's where you could actually do this:`
           : `You've used your full £20,000 ISA allowance this tax year. New allowance opens on April 6th. If you have unwrapped investments, consider a Bed & ISA strategy next tax year.`,
         products: [
           { name:"Vanguard",      type:"S&S ISA", rate:"0.15%/yr", badge:"Lowest cost",       feature:"Index fund specialist. Best for low-cost, long-term investors. No dealing fees on funds.", cta:"Open S&S ISA", highlight:true },
@@ -4177,6 +4184,57 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           <div className="fu4">
             <div style={{marginBottom:"16px"}}>
               <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>{products.heading}</h3>
+
+              {/* ISA compound-growth chart — real inline SVG (matches the pension/
+                  student-loan charts elsewhere in this file), not an approximation:
+                  actual compound values plotted at each step, not a straight line.
+                  Single lump sum, no further contributions, matching the "left
+                  unused" figure in the heading above. */}
+              {moduleKey === "investments" && m.isaHeadroom > 0 && (() => {
+                const principal = m.isaHeadroom;
+                const growthRatePct = 7;
+                // UK State Pension age (67) — fixed, since we don't capture it as a
+                // user input (d.retirementAge is a different concept: the user's
+                // chosen private pension access age, used for pension projections).
+                const retirementAge = 67;
+                const currentAge = +d.age || 30;
+                const years = Math.max(1, retirementAge - currentAge);
+                const finalValue = principal * Math.pow(1 + growthRatePct/100, years);
+                const STEPS = Math.min(years, 60);
+                const points = Array.from({ length: STEPS + 1 }, (_, i) => {
+                  const yr = (years * i) / STEPS;
+                  return { yr, val: principal * Math.pow(1 + growthRatePct/100, yr) };
+                });
+                const VW = 640, VH = 200, PL = 18, PR = 18, PT = 48, PB = 30;
+                const cW = VW - PL - PR, cH = VH - PT - PB;
+                const maxVal = finalValue * 1.05;
+                const sx = yr => PL + (yr / years) * cW;
+                const sy = val => PT + cH - (val / maxVal) * cH;
+                const linePath = points.map((p, i) => `${i===0?"M":"L"}${sx(p.yr).toFixed(1)},${sy(p.val).toFixed(1)}`).join(" ");
+                const areaPath = `${linePath} L${sx(years).toFixed(1)},${(PT+cH).toFixed(1)} L${sx(0).toFixed(1)},${(PT+cH).toFixed(1)} Z`;
+                return (
+                  <div style={{background:"#F4EEE2",borderRadius:"12px",padding:"16px 18px 12px",marginBottom:"14px"}}>
+                    <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible"}}>
+                      <defs>
+                        <linearGradient id="isaGrowthFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#153524" stopOpacity="0.24"/>
+                          <stop offset="100%" stopColor="#153524" stopOpacity="0.02"/>
+                        </linearGradient>
+                      </defs>
+                      <path d={areaPath} fill="url(#isaGrowthFill)"/>
+                      <path d={linePath} fill="none" stroke="#C79A3D" strokeWidth="3" strokeLinecap="round"/>
+                      <text x={VW-PR} y={PT-20} textAnchor="end" fontSize="21" fontWeight="700" fill="#153524" fontFamily={SERIF}>{`~${fmt(Math.round(finalValue))}`}</text>
+                      <text x={VW-PR} y={PT-5} textAnchor="end" fontSize="11" fill="#153524" opacity="0.75">{`at ${growthRatePct}% p.a., tax-free`}</text>
+                      <text x={PL} y={PT+cH+20} fontSize="11" fontWeight="600" fill="#153524" opacity="0.8">{`Today · ${fmt(Math.round(principal))}`}</text>
+                      <text x={VW-PR} y={PT+cH+20} textAnchor="end" fontSize="11" fill="#153524" opacity="0.6">{`${years} years`}</text>
+                    </svg>
+                    <p style={{fontSize:"11px",color:"#153524",opacity:0.65,lineHeight:1.5,marginTop:"2px"}}>
+                      Illustrative only — assumes {growthRatePct}% p.a. nominal growth (not guaranteed) and retirement at {retirementAge}. Real returns could be lower or negative.
+                    </p>
+                  </div>
+                );
+              })()}
+
               <p style={{fontSize:"14px",color:MUT,lineHeight:1.65}}>{products.subheading}</p>
             </div>
             {/* Cash tiles use a compact single-column list (rate box on the right of each

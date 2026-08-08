@@ -117,7 +117,10 @@
       "Bash(node .test-cash-consolidation.mjs)",
       "Bash(node_modules/.bin/esbuild.cmd \"C:/Users/harvp/AppData/Local/Temp/claude/c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1/c210abb6-8941-4a4b-9122-b50db9855167/scratchpad/test-investments-consolidation.mjs\" --bundle --platform=node --format=esm --outfile=.test-investments-consolidation.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
       "Bash(node .test-investments-consolidation.mjs)",
-      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-investments-final.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)"
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-investments-final.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-isachart-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node_modules/.bin/esbuild.cmd \"C:/Users/harvp/AppData/Local/Temp/claude/c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1/c210abb6-8941-4a4b-9122-b50db9855167/scratchpad/test-isa-growth-chart.mjs\" --bundle --platform=node --format=esm --outfile=.test-isa-growth-chart.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
+      "Bash(node .test-isa-growth-chart.mjs)"
     ]
   }
 }
