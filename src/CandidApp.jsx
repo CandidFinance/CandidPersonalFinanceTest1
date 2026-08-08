@@ -371,22 +371,27 @@ export function calcMetrics(d, marketRates = {}) {
         cgtRate = tr !== 0.20 ? 0.20 : 0.10,
         cgtSaving = crystallisable * cgtRate,
         savingsRate = effectiveSavingsRate,
-        // Blended, not flat: only isaHeadroom worth of emergencyFund could actually go
-        // into an ISA — the rest would realistically land in a (usually lower-rate)
-        // non-ISA account. Each portion's gain is measured against the user's own
-        // current rate, then summed. The non-ISA portion is floored at £0 (not left
-        // negative) — if the best non-ISA rate doesn't even beat the user's current
-        // rate, there's nowhere better to move that excess right now.
-        isaEligiblePortion = Math.min(emergencyFund, isaHeadroom),
-        nonIsaPortion = Math.max(0, emergencyFund - isaHeadroom),
+        // Blended, not flat: only isaHeadroom worth of CASH could actually go into an
+        // ISA — the rest would realistically land in a (usually lower-rate) non-ISA
+        // account. Each portion's gain is measured against the user's own current
+        // rate, then summed. The non-ISA portion is floored at £0 (not left negative)
+        // — if the best non-ISA rate doesn't even beat the user's current rate,
+        // there's nowhere better to move that excess right now.
+        // Deliberately `cash`, not `emergencyFund` (= cash + bonds) — premium bonds
+        // have their own separate yield-gap calculation (bondsYieldGain, in
+        // computeModuleStatuses, based on bondsSurplus). Basing this on emergencyFund
+        // would silently double-count the same bonds balance in both calculations.
+        isaEligiblePortion = Math.min(cash, isaHeadroom),
+        nonIsaPortion = Math.max(0, cash - isaHeadroom),
         isaPortionGain = isaEligiblePortion * (isaRate - savingsRate),
         nonIsaPortionGain = nonIsaPortion * (nonIsaRate - savingsRate),
         cashExcessNotWorthMoving = nonIsaPortionGain < 0,
         annualYieldGap = (isaPortionGain + Math.max(0, nonIsaPortionGain)) / 100,
-        // What to actually recommend moving: the full balance normally, but capped to
-        // the ISA-eligible portion when the excess has nowhere better to go — copy
-        // generators use this instead of emergencyFund so they don't overstate the ask.
-        cashMoveAmount = cashExcessNotWorthMoving ? isaEligiblePortion : emergencyFund;
+        // What to actually recommend moving: the full cash balance normally, but
+        // capped to the ISA-eligible portion when the excess has nowhere better to
+        // go — copy generators use this instead of the raw cash figure so they don't
+        // overstate the ask.
+        cashMoveAmount = cashExcessNotWorthMoving ? isaEligiblePortion : cash;
   // State pension estimate
   const niYears = +d.niYears||0;
   const statePensionWeekly = (niYears / 35) * 221.20;
@@ -714,31 +719,35 @@ function getModuleInsights(key, d, m, savingsRates) {
       const cashRate = +d.savingsRate || 3.5;
       // 5.08 fallback only covers the brief window before savingsRates loads.
       const bestISARate = topRate(savingsRates, true)?.rate_aer ?? 5.08;
-      const totalCash = m.cash + m.bonds;
-      // Never claim the whole surplus fits "a Cash ISA" — only isaHeadroom's worth can.
+      // Cash only, deliberately — premium bonds have their own separate yield
+      // calculation (bondsYieldGain) and their own tile below; combining them here
+      // would double-count the same bonds balance against this tile's gap figure.
       const nonIsaRow = topRate(savingsRates, false);
-      const cashSplit = splitByIsaHeadroom(totalCash, m.isaHeadroom, nonIsaRow ? +nonIsaRow.rate_aer : null, cashRate);
+      const cashSplit = splitByIsaHeadroom(m.cash, m.isaHeadroom, nonIsaRow ? +nonIsaRow.rate_aer : null, cashRate);
       const moveDestination = cashSplit.fitsEntirelyInIsa
         ? `a Cash ISA at ${bestISARate}%`
         : cashSplit.nonIsaWorthMoving
           ? `a Cash ISA at ${bestISARate}% (${fmt(cashSplit.isaPortion)}) and a ${nonIsaRow ? nonIsaRow.rate_aer+"%" : "top-paying"} savings account (${fmt(cashSplit.nonIsaPortion)})`
           : `a Cash ISA at ${bestISARate}% (${fmt(cashSplit.isaPortion)}, your remaining allowance)`;
+      // Premium bonds tile folds in the essential "worth keeping?" explainer that used
+      // to be its own separate overlay card — same bondAdvantage logic, condensed.
+      const psaLimit = m.taxBandLabel==="basic"?1000:m.taxBandLabel==="higher"?500:0;
+      const taxableInterest = m.cash * cashRate / 100;
+      const interestOverPsa = Math.max(0, taxableInterest - psaLimit);
+      const taxOnInterest = interestOverPsa * m.tr;
+      const bondAdvantage = m.bonds > 0 && taxOnInterest > 0;
       return [
         {
-          label:"Current yield gap vs best Cash ISA", value: gap > 0 ? fmt(gap)+"/yr" : "None", flag: gap > 200,
-          tooltip:`Gap = your cash (${fmt(totalCash)}) × your rate (${cashRate}%) vs best Cash ISA (${bestISARate}%). Annual difference: ${fmt(gap)}. Moving your surplus to ${moveDestination} would close this.`
+          // Merges the old "yield gap" and "ISA allowance remaining" tiles, plus the
+          // wording from the cross-module "Explore in Investments" nudge (now removed
+          // from getCrossModuleLinks to avoid saying the same thing twice) — these were
+          // three separate cards all pointing at the same underlying action.
+          label:"Cash ISA", value: gap > 200 ? fmt(gap)+"/yr more" : m.isaHeadroom > 0 ? fmt(m.isaHeadroom)+" left" : "Fully used", flag: gap > 200 || m.isaHeadroom > 5000,
+          tooltip:`${gap > 200 ? `Gap = your cash (${fmt(m.cash)}) × your rate (${cashRate}%) vs best Cash ISA (${bestISARate}%). Annual difference: ${fmt(gap)}. Moving your surplus to ${moveDestination} would close this. ` : ""}You have ${fmt(m.isaHeadroom)} of ISA allowance remaining this tax year (up to £20,000 total, any combination of Cash and Stocks & Shares) — interest and gains inside an ISA are tax-free, permanently. Allowance resets 6 April and cannot be carried forward.`
         },
         {
-          label:"Cash runway", value: m.runwayMonths.toFixed(1)+" months", flag: m.runwayMonths > m.bufferMonths * 2 || m.runwayMonths < m.bufferMonths,
-          tooltip:`Runway = total liquid assets (${fmt(m.totalLiquid)}) ÷ monthly expenses (${fmt(m.expenses)}). Your target buffer is ${m.bufferMonths} months. Yours is ${m.runwayMonths > m.bufferMonths * 2 ? "well above — consider putting surplus to work" : m.runwayMonths < m.bufferMonths ? "below your target — build this up before investing" : "in the ideal range"}.`
-        },
-        {
-          label:"ISA allowance remaining", value: fmt(m.isaHeadroom), flag: m.isaHeadroom > 5000,
-          tooltip:`You can deposit up to £20,000 per tax year into ISAs (any combination of Cash and Stocks & Shares). You've used ${fmt(20000 - m.isaHeadroom)} so far this tax year. Allowance resets on 6 April — unused allowance cannot be carried forward.`
-        },
-        {
-          label:"Premium bonds held", value: fmt(m.bonds), flag: m.bonds > 0,
-          tooltip:`Premium bonds are government-backed savings (via NS&I). Returns come as monthly tax-free prize draws at ~4.4% average rate. No guaranteed return — all winnings are tax-free, which makes them attractive if your savings interest exceeds your Personal Savings Allowance (£${m.taxBandLabel==="basic"?"1,000":m.taxBandLabel==="higher"?"500":"0"} for your tax band).`
+          label:"Premium bonds", value: fmt(m.bonds), flag: m.bonds > 0,
+          tooltip:`Premium bonds are government-backed savings (via NS&I). Returns come as monthly tax-free prize draws at ~4.4% average rate — no guaranteed return. ${bondAdvantage ? `Worth keeping, potentially worth adding more: your cash is earning ~${fmt(taxableInterest)}/yr in interest, of which ~${fmt(interestOverPsa)} exceeds your Personal Savings Allowance (£${psaLimit.toLocaleString()}) — costing ~${fmt(taxOnInterest)}/yr in tax. Bonds' winnings are entirely tax-free.` : `At your savings level and tax band, your interest likely falls within your Personal Savings Allowance (£${psaLimit.toLocaleString()}/yr), so bonds' tax-free edge over a Cash ISA matters less here — the real trade-off is no guaranteed return vs a Cash ISA's certain rate.`}`
         },
       ];
     }
@@ -1295,9 +1304,6 @@ function getModuleProductsExtended(key, d, m) {
 
 function getCrossModuleLinks(key, d, m) {
   const links = [];
-  if (key === "cash" && m.isaHeadroom > 2000) {
-    links.push({ icon:"📈", text:`You have ${fmt(m.isaHeadroom)} of ISA allowance remaining this tax year — surplus cash could be sheltered from tax permanently.`, label:"Explore in Investments", target:"investments" });
-  }
   if (key === "cash" && d.hasPension !== "yes") {
     links.push({ icon:"🏦", text:"You have no pension — the tax relief on contributions will likely outperform any savings rate.", label:"Go to Pension", target:"pension" });
   }
@@ -2807,8 +2813,10 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
               : m.annualYieldGap > 0
                 // describeCashMove is the single source of truth for how much of this
                 // actually fits "a Cash ISA" — never state a single-vehicle amount that
-                // exceeds the remaining headroom.
-                ? `Move your cash into ${describeCashMove(Math.round(m.emergencyFund))} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
+                // exceeds the remaining headroom. m.cash, not m.emergencyFund (cash +
+                // bonds) — annualYieldGap is cash-only now; bonds get their own
+                // separate directive via bondsYieldGain in the Premium Bonds panel.
+                ? `Move your cash into ${describeCashMove(Math.round(m.cash))} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
                 : `Review your savings rate — best-buy accounts are paying ${topIsaRateRow ? topIsaRateRow.rate_aer+"%" : "market-leading"} AER right now.`,
             investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax permanently.`,
             studentLoan: "Review your student loan strategy — your salary trajectory determines whether overpaying beats investing.",
@@ -3774,13 +3782,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   const surplus = m.surplusCash;
   const showRunwayCallout = moduleKey === "cash" && m.runwayMonths > m.bufferMonths * 2;
   const bondsVal = m.bonds || 0;
-  const showBondsOverlay = moduleKey === "cash" && bondsVal > 0;
-  const cashRate = +d.savingsRate || 3.5;
-  const taxableInterest = m.cash * cashRate / 100;
-  const psaLimit = m.taxBandLabel === "basic" ? 1000 : m.taxBandLabel === "higher" ? 500 : 0;
-  const interestOverPsa = Math.max(0, taxableInterest - psaLimit);
-  const taxOnInterest = interestOverPsa * m.tr;
-  const bondAdvantage = bondsVal > 0 && taxOnInterest > 0;
 
   const altProducts = [
     { name:"NS&I Premium Bonds", type:"Government-backed savings", rate:"~4.4% tax-free (avg)", badge:"Tax-free winnings", feature:"All winnings are 100% tax-free. Max £50,000 holding. FSCS unlimited (government-backed). No guaranteed return.", cta:"Apply via NS&I", highlight:true },
@@ -3859,23 +3860,32 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           )}
         </div>
 
-        {/* Emergency fund progress visual */}
+        {/* Cash runway — merges the old separate "Emergency fund" progress tile and the
+            verbose "Cash runway" insight tile into one compact status + progress bar.
+            Thresholds reused as-is from the code that already defined them elsewhere:
+            the 100%-of-target cutoff for "sufficient" (Cash runway tooltip) and the 33%
+            cutoff for "insufficient" (this tile's own pre-merge tierColor). */}
         {moduleKey === "cash" && (() => {
           const target = m.emergencyBuffer;
           const current = m.totalLiquid;
           const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
           const fullyFunded = pct >= 100;
           const tierColor = pct >= 100 ? "#2d6b4a" : pct >= 33 ? GOLD : "#c0392b";
+          const statusLabel = pct >= 100 ? "Sufficient" : pct >= 33 ? "Borderline" : "Insufficient";
           return (
             <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
-              <div style={{fontSize:"13px",color:"rgba(255,255,255,0.85)",marginBottom:"10px"}}>
-                {fmt(current)} of {fmt(target)} emergency fund target
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px",flexWrap:"wrap",gap:"8px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                  <span style={{width:"9px",height:"9px",borderRadius:"50%",background:tierColor,flexShrink:0,display:"inline-block"}}/>
+                  <span style={{fontSize:"13px",fontWeight:600,color:"rgba(255,255,255,0.9)"}}>Cash runway — {statusLabel}</span>
+                </div>
+                <span style={{fontSize:"13px",color:"rgba(255,255,255,0.7)"}}>{m.runwayMonths.toFixed(1)} months</span>
               </div>
               <div style={{width:"100%",height:"12px",borderRadius:"6px",background:"rgba(255,255,255,0.1)",overflow:"hidden"}}>
                 <div style={{width:`${pct}%`,height:"100%",borderRadius:"6px",background:`linear-gradient(90deg, ${GOLD}, ${tierColor})`,transition:"width 0.4s ease"}}/>
               </div>
               <div style={{marginTop:"8px",fontSize:"13px",color:"rgba(255,255,255,0.85)"}}>
-                {fullyFunded ? <span style={{color:"#8fd9b6",fontWeight:600}}>✓ Fully funded</span> : `${Math.round(pct)}% covered`}
+                {fullyFunded ? <span style={{color:"#8fd9b6",fontWeight:600}}>✓ Fully funded — {fmt(current)} of {fmt(target)} target</span> : `${fmt(current)} of ${fmt(target)} emergency fund target (${Math.round(pct)}% covered)`}
               </div>
             </div>
           );
@@ -4058,29 +4068,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Premium bonds overlay */}
-        {showBondsOverlay && (
-          <div className="fu3" style={{background:WHITE,border:"1px solid rgba(22,47,36,0.09)",borderRadius:"12px",padding:"18px 20px",marginBottom:"20px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
-              <span style={{fontSize:"18px"}}>🏆</span>
-              <h4 style={{fontFamily:SERIF,fontSize:"16px",color:G}}>About your premium bonds ({fmt(bondsVal)})</h4>
-            </div>
-            <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
-              Premium bonds are a cash-like asset backed by the government (NS&I). Your "interest" comes as monthly prize draws — <strong>100% tax-free</strong>. The current prize fund rate is approximately 4.4% AER across all bonds, though your personal return will vary by luck.
-            </p>
-            {bondAdvantage ? (
-              <div style={{background:"rgba(45,107,74,0.07)",borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                <strong>Worth keeping, potentially worth adding more.</strong> Your cash savings ({fmt(m.cash)}) are earning ~{fmt(taxableInterest)}/yr in interest. After your Personal Savings Allowance (£{psaLimit.toLocaleString()}), roughly {fmt(interestOverPsa)} is taxable — costing you ~{fmt(taxOnInterest)}/yr in {Math.round(m.tr*100)}% tax.
-                {bondsVal < 50000 && ` Shifting more into bonds (up to the £50k max) could eliminate that tax exposure entirely.`}
-              </div>
-            ) : (
-              <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                At your savings level and tax band, your interest income likely falls within your Personal Savings Allowance (£{psaLimit.toLocaleString()}/yr), so the tax-free benefit of bonds over a Cash ISA is less critical. The key trade-off is: <strong>bonds offer no guaranteed return</strong> whereas a Cash ISA {isaRatePct != null ? `at ${isaRatePct}%` : "at a top-paying rate"} is certain.
-              </div>
-            )}
           </div>
         )}
 
