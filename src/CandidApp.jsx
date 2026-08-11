@@ -4326,18 +4326,22 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               >
                 {m.crystallisable > 0 ? (
                   <div>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
                       You have ~{fmt(+d.unrealisedGains||0)} of unrealised gain. £3,000 is exempt from CGT every year — realising it now banks {fmt(m.crystallisable)} of gain with £0 tax.
                     </p>
-                    <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-                      <div style={{display:"flex",alignItems:"flex-start",gap:"8px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                        <span style={{fontSize:"14px",flexShrink:0}}>🔄</span>
-                        <span><strong>30-day rule:</strong> repurchase inside your ISA immediately, or wait 30 days to buy the same asset back outside it.</span>
+                    <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"14px 16px",marginBottom:"12px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
+                        <span style={{fontSize:"15px"}}>🔄</span>
+                        <span style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>30-day rule</span>
                       </div>
-                      <div style={{display:"flex",alignItems:"flex-start",gap:"8px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                        <span style={{fontSize:"14px",flexShrink:0}}>⏳</span>
-                        <span><strong>Use it or lose it:</strong> this year's £3,000 exemption doesn't carry over — unused, it's gone for good on April 5th.</span>
+                      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>Repurchase inside your ISA immediately, or wait 30 days to buy the same asset back outside it.</p>
+                    </div>
+                    <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"14px 16px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
+                        <span style={{fontSize:"15px"}}>⏳</span>
+                        <span style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Use it or lose it</span>
                       </div>
+                      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>This year's £3,000 exemption doesn't carry over — unused, it's gone for good on April 5th.</p>
                     </div>
                   </div>
                 ) : (
