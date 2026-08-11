@@ -104,15 +104,6 @@ export function fmt(n) {
   return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Math.abs(n||0));
 }
 
-// UK tax year runs 6 April → 5 April. Used to key self-reported item-completion
-// state so it resets automatically each new tax year (matches ISA/CGT allowances).
-function currentTaxYearLabel(date = new Date()) {
-  const y = date.getFullYear();
-  const afterApril6 = date.getMonth() > 3 || (date.getMonth() === 3 && date.getDate() >= 6);
-  const startYear = afterApril6 ? y : y - 1;
-  return `${startYear}-${String((startYear + 1) % 100).padStart(2,"0")}`;
-}
-
 // Formats a raw numeric value for display inside an input on blur
 // type: "gbp" → £12,345 | "pct" → 5.0% | else raw
 function fmtInput(val, type) {
@@ -3693,16 +3684,15 @@ function AlternativeInvestments({ age }) {
 }
 
 // ── Expandable step-through item (Investments module) ─────────────────────────
-// Collapsed: title + one-line headline. Expanded: arbitrary children.
-// "Mark as complete" is a self-reported, per-item toggle — separate from the
-// module-level "Mark as reviewed" action and does NOT affect the Candid score
-// (see itemStatus/toggleItemComplete in ModuleDeepDive for the persisted schema).
-function ExpandableInvestmentItem({ number, title, headline, tag, completed, onToggleComplete, children }) {
+// Collapsed: numbered badge + title + one-line headline + category tag.
+// Expanded: arbitrary children, set off from the next item by a bottom divider
+// so it's clear where one optimisation ends and the next begins.
+function ExpandableInvestmentItem({ number, title, headline, tag, children }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{marginBottom:"14px"}}>
-      <div style={{opacity: completed ? 0.55 : 1, transition:"opacity 0.2s", background: open ? G : WHITE, border:`1.5px solid ${open ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"12px", overflow:"hidden"}}>
-        <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"16px 18px 12px", background:"transparent", border:"none", display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
+    <div style={{marginBottom: open ? "24px" : "14px", paddingBottom: open ? "20px" : 0, borderBottom: open ? "1px solid rgba(22,47,36,0.14)" : "none"}}>
+      <div style={{background: open ? G : WHITE, border:`1.5px solid ${open ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"12px", overflow:"hidden"}}>
+        <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"16px 18px", background:"transparent", border:"none", display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
           <div style={{display:"flex", alignItems:"flex-start", gap:"12px", minWidth:0, flex:1}}>
             {number != null && (
               <div style={{width:"24px", height:"24px", borderRadius:"50%", background:G, border:"1.5px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:"1px"}}>
@@ -3710,7 +3700,7 @@ function ExpandableInvestmentItem({ number, title, headline, tag, completed, onT
               </div>
             )}
             <div style={{minWidth:0}}>
-              <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G, textDecoration: completed ? "line-through" : "none"}}>
+              <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G}}>
                 {number != null && <span style={{fontWeight:800, fontSize:"15px"}}>Optimisation {number}: </span>}
                 {title}
               </div>
@@ -3724,10 +3714,6 @@ function ExpandableInvestmentItem({ number, title, headline, tag, completed, onT
             <span style={{fontSize:"18px", color: open ? GOLD : MUT, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s"}}>›</span>
           </div>
         </button>
-        <label style={{display:"flex", alignItems:"center", gap:"7px", padding:"0 18px 14px", cursor:"pointer", userSelect:"none"}}>
-          <input type="checkbox" checked={completed} onChange={onToggleComplete} style={{width:"15px", height:"15px", accentColor:GOLD, cursor:"pointer"}}/>
-          <span style={{fontSize:"11px", color: open ? "rgba(255,255,255,0.6)" : MUT}}>Mark as complete — personal tracking only, doesn't affect your Candid score</span>
-        </label>
       </div>
       {open && <div style={{marginTop:"12px"}}>{children}</div>}
     </div>
@@ -3746,31 +3732,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // harmless no-op elsewhere since other modules never exceed the page size).
   const [visibleTileCount, setVisibleTileCount] = useState(CASH_TILE_PAGE_SIZE);
   useEffect(() => { setVisibleTileCount(CASH_TILE_PAGE_SIZE); }, [moduleKey]);
-
-  // Investments module: self-reported "mark as complete" per item (ISA allowance,
-  // CGT crystallisation), keyed to the current UK tax year so it resets 6 April
-  // alongside the allowances themselves. `status: "self_reported"` (vs "verified")
-  // leaves room for a future TrueLayer-backed check to upgrade this without a
-  // schema change. Purely a personal tracker — never feeds the Candid score.
-  const [itemStatus, setItemStatus] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("candid_item_status_v1") || "null");
-      if (saved && saved.taxYear === currentTaxYearLabel()) return saved.items || {};
-    } catch(e) {}
-    return {};
-  });
-  useEffect(() => {
-    try { localStorage.setItem("candid_item_status_v1", JSON.stringify({ taxYear: currentTaxYearLabel(), items: itemStatus })); }
-    catch(e) {}
-  }, [itemStatus]);
-  function toggleItemComplete(key) {
-    setItemStatus(prev => {
-      const next = {...prev};
-      if (next[key]) delete next[key];
-      else next[key] = { status:"self_reported", completedAt: new Date().toISOString() };
-      return next;
-    });
-  }
 
   useEffect(() => {
     if (openSection === "bonusSacrifice") {
@@ -4234,10 +4195,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             Replaces the old flat tile stack. "Unused ISA allowance" nests the
             compound-growth chart and ISA provider comparison; "CGT allowance
             crystallisation" nests the existing "Action before April 5th" panel.
-            Item-level "mark as complete" (itemStatus/toggleItemComplete) is a
-            self-reported personal tracker only — it does not affect the Candid
-            score. The module-level score-affecting action remains the separate
-            "Mark as reviewed" button at the bottom of this page. */}
+            The score-affecting action remains the separate "Mark as reviewed"
+            button at the bottom of this page. */}
         {moduleKey === "investments" && products && !isPensionUnknown && (() => {
           const unwrappedVal = +d.unwrappedValue||0;
           const surplusSources = [];
@@ -4257,8 +4216,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 title="Utilise unused ISA allowance"
                 headline={isaHeadline}
                 tag={{ label: "Future opportunity", color: "#2d6b4a" }}
-                completed={!!itemStatus.isaAllowance}
-                onToggleComplete={() => toggleItemComplete("isaAllowance")}
               >
                 <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"14px"}}>{products.subheading}</p>
 
@@ -4335,13 +4292,19 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 title="Crystallise paper gains not shielded by tax"
                 headline={cgtHeadline}
                 tag={{ label: "Today", color: GOLD }}
-                completed={!!itemStatus.cgtCrystallisation}
-                onToggleComplete={() => toggleItemComplete("cgtCrystallisation")}
               >
-                {m.crystallisable > 0 ? (
+                {m.crystallisable > 0 ? (() => {
+                  const totalGains = +d.unrealisedGains||0;
+                  const cgtRatePct = Math.round(m.cgtRate*100);
+                  const yearsNeeded = Math.ceil(totalGains / 3000);
+                  return (
                   <div>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                      You have ~{fmt(+d.unrealisedGains||0)} of unrealised gain. £3,000 is exempt from CGT every year — realising it now banks {fmt(m.crystallisable)} of gain with £0 tax.
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
+                      You have ~{fmt(totalGains)} of unrealised gain. £3,000 is exempt from CGT every year — realising it now banks {fmt(m.crystallisable)} of gain with £0 tax.
+                    </p>
+                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,marginBottom:"14px"}}>
+                      Every tax year you're entitled to shield up to £3,000 of capital gains from tax completely — but it's a "use it or lose it" allowance that resets each 6 April and can't be carried forward. To use it, you sell (crystallise) shares or funds held outside an ISA or pension that have gains attached; any gain above £3,000 in a single tax year is taxed at your {cgtRatePct}% CGT rate.
+                      {yearsNeeded > 1 && ` With ${fmt(totalGains)} of unrealised, unshielded gains in total, it would take ${yearsNeeded} tax years of this allowance to crystallise all of it tax-free.`}
                     </p>
                     <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"14px 16px",marginBottom:"12px"}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
@@ -4358,7 +4321,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>This year's £3,000 exemption doesn't carry over — unused, it's gone for good on April 5th.</p>
                     </div>
                   </div>
-                ) : (
+                  );
+                })() : (
                   <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>You have no unrealised gains recorded outside an ISA or pension this tax year, so there's nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount.</p>
                 )}
               </ExpandableInvestmentItem>
