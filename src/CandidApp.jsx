@@ -4208,6 +4208,18 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const potentialInterest = currentInterest + Math.round(m.annualYieldGap);
           const bestBlendedRate = m.cash > 0 ? (m.savingsRate + m.annualYieldGap / m.cash * 100) : m.savingsRate;
 
+          // Step-out for Win 2: what each pot earns today, then the ISA/non-ISA split
+          // of the WHOLE cash balance (not just the surplus — that's Win 1's job).
+          const displayTiers = (Array.isArray(d.cashTiers) && d.cashTiers.some(t => +t.amount > 0))
+            ? d.cashTiers.filter(t => +t.amount > 0)
+            : (m.cash > 0 ? [{ amount: m.cash, rate: m.savingsRate }] : []);
+          const wholeCashSplit = splitByIsaHeadroom(m.cash, m.isaHeadroom, nonIsaRatePct, m.savingsRate);
+          const isaPortionInterest = Math.round(wholeCashSplit.isaPortion * isaRateDecimal);
+          const nonIsaPortionRateUsed = wholeCashSplit.nonIsaWorthMoving ? nonIsaRateDecimal : m.savingsRate/100;
+          const nonIsaPortionInterest = Math.round(wholeCashSplit.nonIsaPortion * nonIsaPortionRateUsed);
+          const splitTotalInterest = isaPortionInterest + nonIsaPortionInterest;
+          const splitGain = splitTotalInterest - currentInterest;
+
           // A separate, genuinely different list from Win 1's Cash ISA grid below —
           // non-ISA rows, for the buffer amount rather than the ISA-eligible surplus.
           const nonIsaProducts = (savingsRates||[])
@@ -4314,8 +4326,28 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 tag={{ label:"Today", color:GOLD }}
               >
                 <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                  A single headline rate rarely tells the whole story — what you actually earn is a blend across every account you hold. Right now your cash earns a blended {m.savingsRate.toFixed(2)}% across {fmt(m.cash)}.
+                  A single headline rate rarely tells the whole story — what you actually earn is a blend across every account you hold. Here's that worked through step by step, so you can check it yourself.
                 </p>
+
+                {displayTiers.length > 0 && (
+                  <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
+                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Your accounts today</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"10px"}}>
+                      {displayTiers.map((t,i) => (
+                        <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
+                          <span>Account {i+1} — {fmt(+t.amount||0)} at {(+t.rate||0).toFixed(2)}%</span>
+                          <span style={{fontWeight:600}}>{fmt(Math.round((+t.amount||0) * (+t.rate||0) / 100))}/yr</span>
+                        </div>
+                      ))}
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)",fontWeight:700}}>
+                        <span>Total — {fmt(m.cash)} blended at {m.savingsRate.toFixed(2)}%</span>
+                        <span>{fmt(currentInterest)}/yr</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>Step 1 — move it all to the single best rate</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"16px"}}>
                   <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px"}}>
                     <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>Now — {m.savingsRate.toFixed(2)}%</div>
@@ -4331,6 +4363,33 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     Switching closes the gap: <strong>{fmt(Math.round(m.annualYieldGap))}/yr more</strong>, guaranteed — not a market forecast.
                   </div>
                 )}
+
+                <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>Step 2 — split between an ISA and a normal account</div>
+                <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"10px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
+                      <span>{fmt(wholeCashSplit.isaPortion)} into a Cash ISA at {isaRateDisplay}</span>
+                      <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(isaPortionInterest)}/yr</span>
+                    </div>
+                    {wholeCashSplit.nonIsaPortion > 0 && (
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
+                        <span>{fmt(wholeCashSplit.nonIsaPortion)} {wholeCashSplit.nonIsaWorthMoving ? `into a non-ISA account at ${nonIsaRateDisplay}` : "left where it is — already competitive"}</span>
+                        <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(nonIsaPortionInterest)}/yr</span>
+                      </div>
+                    )}
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)",fontWeight:700}}>
+                      <span>Combined total</span>
+                      <span>{fmt(splitTotalInterest)}/yr</span>
+                    </div>
+                  </div>
+                  <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                    {splitGain > 0
+                      ? <>That's <strong>{fmt(splitGain)}/yr more</strong> than your current {fmt(currentInterest)}/yr — and the ISA portion is tax-free for life, on top of the extra interest.</>
+                      : <>You're already close to optimal here — the gain from splitting like this is minimal.</>
+                    }
+                  </div>
+                </div>
+
                 {nonIsaProducts.length > 0 && (
                   <>
                     <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Best non-ISA easy-access accounts</div>
