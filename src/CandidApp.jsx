@@ -4879,72 +4879,99 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
 
         {/* ── Mortgage: overpayment scenarios + remortgage timing + Take Me There ── */}
+        {/* Mortgage: numbered when genuinely actionable — being on a variable rate,
+            a fix expiring soon, or overpaying while the rate beats saving are all
+            "Today"-tagged (guaranteed/immediate, no deadline in the "Future
+            opportunity" sense). Overpayment scenario cards stay visible either
+            way — wrapped in the numbered tile when overpaying is favourable,
+            shown plainly (FYI) when it isn't, since the "maths favours saving"
+            framing already lives in the heading/subheading above. */}
         {moduleKey === "mortgage" && products?.mortgageSection && (() => {
           const { bal, rate, mo, monthsSaved, interestSaved10k, fixUrgent, fixExpiry, savRate, overpayBenefit } = products.mortgageSection;
           const isVariable = d.mortgageType === "variable";
           const fixedSavings = isVariable && rate > 4.2 ? Math.round(bal * (rate - 4.2) / 100 / 12) : 0;
           const scenarios = [5000, 10000, 25000].filter(x => x < bal);
+          const shouldOverpay = mo > 0 && scenarios.length > 0 && overpayBenefit > 0;
+
+          let n = 0;
+          const items = [];
+
+          if (isVariable) {
+            items.push(
+              <OptimisationTile key="variable" number={++n} title="Lock in a fixed rate"
+                headline={fixedSavings > 0 ? `Could save ~${fmt(fixedSavings)}/month by fixing now` : "Remove your exposure to rate rises"}
+                tag={OPT_TAG.today}>
+                <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
+                  Variable rates (SVR/tracker) move with the Bank of England base rate. You have no protection if rates rise. Locking into a fixed deal now at ~4.2% could save you
+                  {fixedSavings > 0 ? <strong> {fmt(fixedSavings)}/month</strong> : " significantly"} compared to your current {rate}% rate — and gives you certainty for 2–5 years.
+                </p>
+                <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                  A fee-free broker can search the whole market and confirm whether fixing now makes sense for your situation — no obligation.
+                </div>
+              </OptimisationTile>
+            );
+          }
+
+          if (fixUrgent) {
+            items.push(
+              <OptimisationTile key="fixexpiry" number={++n} title="Remortgage before your fix expires"
+                headline={`Fix expires ${fixExpiry === "under6m" ? "within 6 months" : "in 6–12 months"} — could cost ${fmt(Math.round(bal * 0.025 / 12))}/mo more on SVR`}
+                tag={OPT_TAG.today}>
+                <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
+                  Your fixed rate expires {fixExpiry === "under6m" ? "within 6 months" : "in 6–12 months"}. After expiry you roll onto your lender's Standard Variable Rate (SVR) — typically 7–8%+, costing you <strong>{fmt(Math.round(bal * 0.025 / 12))}/month more</strong> than a competitive fixed deal. Start the process now.
+                </p>
+                <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                  Most lenders allow you to lock a new rate up to 6 months before your current deal ends — without paying early repayment charges. A fee-free broker searches the whole market in one go.
+                </div>
+              </OptimisationTile>
+            );
+          }
+
+          const scenarioCards = mo > 0 && scenarios.length > 0 && (
+            <div style={{marginBottom:"14px"}}>
+              <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Overpayment scenarios</div>
+              {scenarios.map((extra, i) => {
+                let baseMos = 0, baseRem = bal;
+                while (baseRem > 0 && baseMos < 600) { baseRem = baseRem*(1+rate/100/12)-mo; baseMos++; if(baseRem<=0) break; }
+                let newMos = 0, newRem = Math.max(0, bal - extra);
+                while (newRem > 0 && newMos < 600) { newRem = newRem*(1+rate/100/12)-mo; newMos++; if(newRem<=0) break; }
+                const mosSaved = Math.max(0, baseMos - newMos);
+                const intSaved = Math.max(0, mosSaved * mo - extra);
+                return (
+                  <div key={i} style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.09)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"6px"}}>
+                      <div>
+                        <div style={{fontSize:"10px",fontWeight:700,color:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>Overpay {fmt(extra)} today</div>
+                        <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>{mosSaved > 0 ? `${mosSaved} months shorter` : "Minimal impact"}</div>
+                      </div>
+                      <div style={{textAlign:"right",flexShrink:0}}>
+                        <div style={{fontSize:"10px",color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Interest saved</div>
+                        <div style={{fontFamily:SERIF,fontSize:"18px",color:"#2d6b4a",fontWeight:700}}>{intSaved > 0 ? fmt(intSaved) : "—"}</div>
+                      </div>
+                    </div>
+                    <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                      Guaranteed {rate}% return. vs saving at {savRate}%: {+overpayBenefit > 0 ? `overpaying wins by ${overpayBenefit}%` : `saving wins by ${Math.abs(+overpayBenefit)}%`}.
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          );
+
+          if (shouldOverpay) {
+            items.push(
+              <OptimisationTile key="overpay" number={++n} title="Overpay your mortgage while the rate beats saving"
+                headline={`Guaranteed ${rate}% return vs your ${savRate}% savings rate`}
+                tag={OPT_TAG.today}>
+                {scenarioCards}
+              </OptimisationTile>
+            );
+          }
+
           return (
             <div style={{marginTop:"16px"}}>
-              {isVariable && (
-                <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                    <span style={{fontSize:"16px"}}>⚠️</span>
-                    <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>You're on a variable rate — already exposed to rate movements</span>
-                  </div>
-                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
-                    Variable rates (SVR/tracker) move with the Bank of England base rate. You have no protection if rates rise. Locking into a fixed deal now at ~4.2% could save you
-                    {fixedSavings > 0 ? <strong> {fmt(fixedSavings)}/month</strong> : " significantly"} compared to your current {rate}% rate — and gives you certainty for 2–5 years.
-                  </p>
-                  <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                    A fee-free broker can search the whole market and confirm whether fixing now makes sense for your situation — no obligation.
-                  </div>
-                </div>
-              )}
-              {fixUrgent && (
-                <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                    <span style={{fontSize:"16px"}}>🚨</span>
-                    <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Fixed rate expiring soon</span>
-                  </div>
-                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
-                    Your fixed rate expires {fixExpiry === "under6m" ? "within 6 months" : "in 6–12 months"}. After expiry you roll onto your lender's Standard Variable Rate (SVR) — typically 7–8%+, costing you <strong>{fmt(Math.round(bal * 0.025 / 12))}/month more</strong> than a competitive fixed deal. Start the process now.
-                  </p>
-                  <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                    Most lenders allow you to lock a new rate up to 6 months before your current deal ends — without paying early repayment charges. A fee-free broker searches the whole market in one go.
-                  </div>
-                </div>
-              )}
-              {mo > 0 && scenarios.length > 0 && (
-                <div style={{marginBottom:"14px"}}>
-                  <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Overpayment scenarios</div>
-                  {scenarios.map((extra, i) => {
-                    let baseMos = 0, baseRem = bal;
-                    while (baseRem > 0 && baseMos < 600) { baseRem = baseRem*(1+rate/100/12)-mo; baseMos++; if(baseRem<=0) break; }
-                    let newMos = 0, newRem = Math.max(0, bal - extra);
-                    while (newRem > 0 && newMos < 600) { newRem = newRem*(1+rate/100/12)-mo; newMos++; if(newRem<=0) break; }
-                    const mosSaved = Math.max(0, baseMos - newMos);
-                    const intSaved = Math.max(0, mosSaved * mo - extra);
-                    return (
-                      <div key={i} style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.09)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"6px"}}>
-                          <div>
-                            <div style={{fontSize:"10px",fontWeight:700,color:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>Overpay {fmt(extra)} today</div>
-                            <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>{mosSaved > 0 ? `${mosSaved} months shorter` : "Minimal impact"}</div>
-                          </div>
-                          <div style={{textAlign:"right",flexShrink:0}}>
-                            <div style={{fontSize:"10px",color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Interest saved</div>
-                            <div style={{fontFamily:SERIF,fontSize:"18px",color:"#2d6b4a",fontWeight:700}}>{intSaved > 0 ? fmt(intSaved) : "—"}</div>
-                          </div>
-                        </div>
-                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>
-                          Guaranteed {rate}% return. vs saving at {savRate}%: {+overpayBenefit > 0 ? `overpaying wins by ${overpayBenefit}%` : `saving wins by ${Math.abs(+overpayBenefit)}%`}.
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {items.length > 0 && <div className="fu4">{items}</div>}
+              {!shouldOverpay && scenarioCards}
               <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"12px",padding:"16px 18px"}}>
                 <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Take me there</div>
                 <TakeMeThere app="L&C Mortgages" icon="🏠" message={fixUrgent ? "Find my best remortgage deal now" : "Compare mortgage overpayment options"} demoNote="Would open L&C whole-of-market comparison"/>
