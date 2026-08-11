@@ -1121,11 +1121,6 @@ function getModuleProducts(key, d, m, savingsRates) {
           { name:"InvestEngine",  type:"S&S ISA", rate:"0% platform fee", badge:"ETFs only",  feature:"Zero platform fees on ETF portfolios. Very competitive for passive investors.", cta:"Open S&S ISA", highlight:false },
         ],
         disclaimer:"Platform fees shown are indicative annual charges on equity holdings. Fund OCF costs are additional. Investments can fall as well as rise. Tax treatment depends on individual circumstances. Candid may earn a referral fee — this does not affect our ranking.",
-        cgtSection: m.crystallisable > 0 ? {
-          heading:"Crystallise your CGT exemption before April 5th",
-          body:`You have an estimated ${fmt(m.crystallisable)} of unrealised gain that falls within the annual £3,000 CGT exempt amount — meaning you could realise it right now and pay zero tax. The 30-day bed & breakfasting rule means you can't immediately repurchase the identical holding in an unwrapped account, but you can: (1) repurchase inside your ISA immediately (Bed & ISA — the clean solution), or (2) wait 30 days and repurchase the same asset outside the ISA. Either way, you reset your cost basis upward and eliminate future CGT on those gains.`,
-          warning:`The £3,000 annual exempt amount does not roll over. If unused, it is permanently lost on April 5th. And if your gains continue to grow next year, you'll owe ${Math.round(m.cgtRate*100)}% CGT on everything above £3,000 — with no way to reclaim this year's unused exemption.`
-        } : null
       };
     }
     case "pension":
@@ -3702,14 +3697,17 @@ function AlternativeInvestments({ age }) {
 // "Mark as complete" is a self-reported, per-item toggle — separate from the
 // module-level "Mark as reviewed" action and does NOT affect the Candid score
 // (see itemStatus/toggleItemComplete in ModuleDeepDive for the persisted schema).
-function ExpandableInvestmentItem({ title, headline, completed, onToggleComplete, children }) {
+function ExpandableInvestmentItem({ number, title, headline, completed, onToggleComplete, children }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginBottom:"14px"}}>
       <div style={{opacity: completed ? 0.55 : 1, transition:"opacity 0.2s", background: open ? G : WHITE, border:`1.5px solid ${open ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"12px", overflow:"hidden"}}>
         <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"16px 18px 12px", background:"transparent", border:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
           <div style={{minWidth:0}}>
-            <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G, textDecoration: completed ? "line-through" : "none"}}>{title}</div>
+            <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G, textDecoration: completed ? "line-through" : "none"}}>
+              {number != null && <span style={{fontWeight:800, fontSize:"15px"}}>Optimisation {number}: </span>}
+              {title}
+            </div>
             <div style={{fontSize:"13px", color: open ? "rgba(255,255,255,0.75)" : MUT, marginTop:"3px", lineHeight:1.5}}>{headline}</div>
           </div>
           <span style={{fontSize:"18px", color: open ? GOLD : MUT, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s", flexShrink:0}}>›</span>
@@ -4243,6 +4241,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           return (
             <div className="fu4">
               <ExpandableInvestmentItem
+                number={1}
                 title="Unused ISA allowance"
                 headline={isaHeadline}
                 completed={!!itemStatus.isaAllowance}
@@ -4319,23 +4318,25 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               </ExpandableInvestmentItem>
 
               <ExpandableInvestmentItem
+                number={2}
                 title="CGT allowance crystallisation"
                 headline={cgtHeadline}
                 completed={!!itemStatus.cgtCrystallisation}
                 onToggleComplete={() => toggleItemComplete("cgtCrystallisation")}
               >
-                {products.cgtSection ? (
-                  <div style={{background:"rgba(22,47,36,0.03)",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"12px",overflow:"hidden"}}>
-                    <div style={{background:G,padding:"12px 18px",display:"flex",alignItems:"center",gap:"8px"}}>
-                      <span style={{fontSize:"14px"}}>⏳</span>
-                      <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Action before April 5th</span>
-                    </div>
-                    <div style={{padding:"16px 18px"}}>
-                      <h4 style={{fontFamily:SERIF,fontSize:"16px",color:G,marginBottom:"10px"}}>{products.cgtSection.heading}</h4>
-                      <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>{products.cgtSection.body}</p>
-                      <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"8px",padding:"12px 14px"}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"5px"}}>Use it or lose it</div>
-                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65}}>{products.cgtSection.warning}</p>
+                {m.crystallisable > 0 ? (
+                  <div>
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
+                      You have ~{fmt(+d.unrealisedGains||0)} of unrealised gain. £3,000 is exempt from CGT every year — realising it now banks {fmt(m.crystallisable)} of gain with £0 tax.
+                    </p>
+                    <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:"8px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                        <span style={{fontSize:"14px",flexShrink:0}}>🔄</span>
+                        <span><strong>30-day rule:</strong> repurchase inside your ISA immediately, or wait 30 days to buy the same asset back outside it.</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:"8px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                        <span style={{fontSize:"14px",flexShrink:0}}>⏳</span>
+                        <span><strong>Use it or lose it:</strong> this year's £3,000 exemption doesn't carry over — unused, it's gone for good on April 5th.</span>
                       </div>
                     </div>
                   </div>
