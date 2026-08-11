@@ -3590,9 +3590,10 @@ function ProductCard({ p, onInternalLink }) {
 function AlternativeInvestments({ age }) {
   const [open, setOpen] = useState(false);
   const youngUser = (+age||30) < 45;
-  const label = youngUser
-    ? "Beyond the basics: higher-risk & alternative investments 🚀"
-    : "Advanced investing: alternatives & passion assets 📈";
+  const eyebrow = youngUser
+    ? "Higher-risk & alternative investments"
+    : "Alternatives & passion assets";
+  const label = youngUser ? "Beyond the basics 🚀" : "Advanced investing 📈";
   const subLabel = youngUser
     ? "Higher-risk, higher-potential. For when your ISA and pension are sorted."
     : "Growth-oriented strategies worth understanding — even if you'd advise caution.";
@@ -3626,12 +3627,13 @@ function AlternativeInvestments({ age }) {
   ];
   return (
     <div style={{marginTop:"8px"}}>
-      <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%",padding:"13px 18px",background:open?G:"rgba(22,47,36,0.04)",border:`1px solid ${open?G:"rgba(22,47,36,0.12)"}`,borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all 0.2s",marginBottom:open?"16px":"0"}}>
+      <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%",padding:"16px 18px",background:open?G:WHITE,border:`1.5px solid ${open?G:"rgba(22,47,36,0.12)"}`,borderRadius:"12px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all 0.2s",marginBottom:open?"16px":"0"}}>
         <div style={{textAlign:"left"}}>
+          <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"3px"}}>{eyebrow}</div>
           <div style={{fontSize:"14px",fontWeight:600,color:open?WHITE:G}}>{label}</div>
-          <div style={{fontSize:"12px",color:open?"rgba(255,255,255,0.55)":MUT,marginTop:"2px"}}>{subLabel}</div>
+          <div style={{fontSize:"13px",color:open?"rgba(255,255,255,0.75)":MUT,marginTop:"3px",lineHeight:1.5}}>{subLabel}</div>
         </div>
-        <span style={{fontSize:"16px",color:open?GOLD:MUT,transform:open?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0,marginLeft:"12px"}}>›</span>
+        <span style={{fontSize:"18px",color:open?GOLD:MUT,transform:open?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0,marginLeft:"12px"}}>›</span>
       </button>
       {open && (
         <div>
@@ -3700,10 +3702,10 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children }) {
               </div>
             )}
             <div style={{minWidth:0}}>
-              <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G}}>
-                {number != null && <span style={{fontWeight:800, fontSize:"15px"}}>Optimisation {number}: </span>}
-                {title}
-              </div>
+              {number != null && (
+                <div style={{fontSize:"11px", fontWeight:800, color:GOLD, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"3px"}}>Win {number}</div>
+              )}
+              <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G}}>{title}</div>
               <div style={{fontSize:"13px", color: open ? "rgba(255,255,255,0.75)" : MUT, marginTop:"3px", lineHeight:1.5}}>{headline}</div>
             </div>
           </div>
@@ -3716,6 +3718,29 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children }) {
         </button>
       </div>
       {open && <div style={{marginTop:"12px"}}>{children}</div>}
+    </div>
+  );
+}
+
+// ── Compact expandable callout — collapsed to a single line (icon + label +
+// one-liner) so two can sit side by side without dead space; click reveals the
+// fuller mechanics in `children`. Used for the CGT "Bed & breakfasting rule"
+// and "Use it or lose it" callouts. ─────────────────────────────────────────
+function MiniExpandTile({ icon, label, color, summary, children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{background:`${color}0D`, border:`1.5px solid ${color}38`, borderRadius:"10px", overflow:"hidden"}}>
+      <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"10px 12px", background:"transparent", border:"none", cursor:"pointer", textAlign:"left", display:"flex", flexDirection:"column", gap:"2px"}}>
+        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:"6px"}}>
+          <div style={{display:"flex", alignItems:"center", gap:"6px", minWidth:0}}>
+            <span style={{fontSize:"13px"}}>{icon}</span>
+            <span style={{fontSize:"10px", fontWeight:700, color, letterSpacing:"0.05em", textTransform:"uppercase", whiteSpace:"nowrap"}}>{label}</span>
+          </div>
+          <span style={{fontSize:"14px", color, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s", flexShrink:0}}>›</span>
+        </div>
+        <p style={{fontSize:"12px", color:TEXT, lineHeight:1.5, margin:0}}>{summary}</p>
+      </button>
+      {open && <div style={{padding:"0 12px 12px"}}>{children}</div>}
     </div>
   );
 }
@@ -3820,6 +3845,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // Pension: user told us they don't know their pension situation — show a
   // dedicated "find out" guide instead of the normal critical/attention framing
   const isPensionUnknown = moduleKey === "pension" && m.pensionStatus === "unknown";
+  // ISA headroom grown to UK State Pension age (67, fixed — see the compound-growth
+  // chart below for the same assumption) at 7% p.a. nominal. Used both by the "Utilise
+  // unused ISA allowance" tile headline and the top-of-page opportunity summary.
+  const isaProjectionYears = Math.max(1, 67 - (+d.age||30));
+  const isaProjectedValue = (m.isaHeadroom||0) * Math.pow(1.07, isaProjectionYears);
   const col = isPensionUnknown ? MUT : (SC[modSummary?.status] || MUT);
   const surplus = m.surplusCash;
   const showRunwayCallout = moduleKey === "cash" && m.runwayMonths > m.bufferMonths * 2;
@@ -3958,6 +3988,36 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75}}>{modSummary.summary}</p>
           </div>
         )}
+
+        {/* Investments: top-of-page opportunity summary — quantifies what's on the
+            table (ISA headroom grown to 67, CGT saving available this year) before
+            the user drills into the individual win tiles below. */}
+        {moduleKey === "investments" && !isPensionUnknown && (m.isaHeadroom > 0 || m.crystallisable > 0) && (() => {
+          const cols = [];
+          if (m.isaHeadroom > 0) cols.push({
+            label: "Unused ISA allowance", value: fmt(m.isaHeadroom),
+            sub: `→ ~${fmt(Math.round(isaProjectedValue))} tax-free by 67 if invested`,
+          });
+          if (m.crystallisable > 0) cols.push({
+            label: "CGT saving available", value: fmt(m.cgtSaving),
+            sub: "if crystallised this tax year",
+          });
+          return (
+            <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
+              <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
+              <div style={{display:"grid",gridTemplateColumns:`repeat(${cols.length},1fr)`,gap:"14px"}}>
+                {cols.map((c,i) => (
+                  <div key={i}>
+                    <div style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700}}>{c.value}</div>
+                    <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>{c.label}</div>
+                    <div style={{fontSize:"11px",color:"rgba(255,255,255,0.55)",marginTop:"2px"}}>{c.sub}</div>
+                  </div>
+                ))}
+              </div>
+              <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below to act on these.</p>
+            </div>
+          );
+        })()}
 
         {/* Computed metrics with tooltips — omitted for Investments: folded into
             the two expandable step-through items below. */}
@@ -4204,7 +4264,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           if (unwrappedVal > 0) surplusSources.push(`${fmt(unwrappedVal)} of unwrapped investments`);
           const showMoveMsg = m.isaHeadroom > 0 && surplusSources.length > 0;
           const isaHeadline = m.isaHeadroom > 0
-            ? `You have ${fmt(m.isaHeadroom)} of ISA allowance remaining`
+            ? `${fmt(m.isaHeadroom)} of ISA allowance remaining — invested, that could grow to ~${fmt(Math.round(isaProjectedValue))} tax-free by 67`
             : "You've used your full £20,000 ISA allowance this tax year.";
           const cgtHeadline = m.crystallisable > 0
             ? `${fmt(m.cgtSaving)} saved this tax year`
@@ -4297,6 +4357,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   const totalGains = +d.unrealisedGains||0;
                   const cgtRatePct = Math.round(m.cgtRate*100);
                   const yearsNeeded = Math.ceil(totalGains / 3000);
+                  const taxpayerBand = m.tr !== 0.20 ? "higher/additional-rate" : "basic-rate";
+                  const taxIfWait = Math.round((totalGains - 3000) * m.cgtRate);
                   return (
                   <div>
                     <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
@@ -4306,19 +4368,33 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       Every tax year you're entitled to shield up to £3,000 of capital gains from tax completely — but it's a "use it or lose it" allowance that resets each 6 April and can't be carried forward. To use it, you sell (crystallise) shares or funds held outside an ISA or pension that have gains attached; any gain above £3,000 in a single tax year is taxed at your {cgtRatePct}% CGT rate.
                       {yearsNeeded > 1 && ` With ${fmt(totalGains)} of unrealised, unshielded gains in total, it would take ${yearsNeeded} tax years of this allowance to crystallise all of it tax-free.`}
                     </p>
-                    <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"14px 16px",marginBottom:"12px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
-                        <span style={{fontSize:"15px"}}>🔄</span>
-                        <span style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Bed &amp; breakfasting rule</span>
+
+                    {yearsNeeded > 1 && (
+                      <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
+                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Wait and sell it all at once, vs shielding £3,000/yr</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"12px"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}><span>Total unrealised gain</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:MUT}}><span>Less: one year's CGT exemption</span><span>−{fmt(3000)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)"}}><span>Taxable gain</span><span style={{fontWeight:600}}>{fmt(totalGains-3000)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:"#c0392b",fontWeight:700}}><span>Tax due at {cgtRatePct}%</span><span>{fmt(taxIfWait)}</span></div>
+                        </div>
+                        <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                          Shield {fmt(3000)} a year instead — spread across {yearsNeeded} tax years — and the same {fmt(totalGains)} of gain costs <strong>£0</strong> in total: a saving of <strong>{fmt(taxIfWait)}</strong> versus leaving it all until you sell.
+                        </div>
                       </div>
-                      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>Repurchase inside your ISA immediately, or wait 30 days before buying the same holding back outside it.</p>
-                    </div>
-                    <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"14px 16px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
-                        <span style={{fontSize:"15px"}}>⏳</span>
-                        <span style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Use it or lose it</span>
-                      </div>
-                      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>This year's £3,000 exemption doesn't carry over — unused, it's gone for good on April 5th.</p>
+                    )}
+
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+                      <MiniExpandTile icon="🔄" label="Bed &amp; breakfasting" color={GOLD} summary="Repurchase inside an ISA immediately, or wait 30 days outside it.">
+                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
+                          HMRC's "30-day rule" matches a repurchase of the same holding within 30 days against the shares you just bought back — not your original, cheaper ones — which cancels out the gain you were trying to bank. Buying back inside an ISA or pension sidesteps the rule entirely, since that's a different tax wrapper, so you can crystallise and reinvest immediately there. Outside a wrapper, you either wait the full 30 days before repurchasing the same holding, or buy a different (but similarly-exposed) fund instead.
+                        </p>
+                      </MiniExpandTile>
+                      <MiniExpandTile icon="⏳" label="Use it or lose it" color="#c0392b" summary="This year's £3,000 exemption doesn't carry over — unused, it's gone on April 5th.">
+                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
+                          The £3,000 annual exempt amount is flat — every taxpayer gets the same allowance regardless of income, and it can't be carried forward once the tax year ends. What income does change is the rate charged on any gain above it: basic-rate taxpayers pay 18%, higher and additional-rate taxpayers pay 24%. You're a {taxpayerBand} taxpayer, so gains above your exemption are taxed at {cgtRatePct}%.
+                        </p>
+                      </MiniExpandTile>
                     </div>
                   </div>
                   );
@@ -5014,7 +5090,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               ← Dashboard
             </button>
             {nextModule && (
-              <button type="button" onClick={() => { if (!isComplete) onComplete(); onOpenModule(nextModule.key); }} style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"10px",color:WHITE,fontSize:"14px",fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+              <button type="button" onClick={() => onOpenModule(nextModule.key)} style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"10px",color:WHITE,fontSize:"14px",fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
                 <span style={{fontSize:"15px"}}>{nextModule.icon}</span>
                 <span>Next: {nextModule.title} →</span>
               </button>
