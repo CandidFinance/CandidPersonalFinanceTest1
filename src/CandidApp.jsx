@@ -4578,88 +4578,99 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             )}
             {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
 
-            {/* Student loan overpayment scenarios */}
-            {products.slSection && (
-              <div style={{marginTop:"16px"}}>
-                {/* Inflection point warning */}
-                {products.slSection.balanceGrowing && (
-                  <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"12px"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                      <span style={{fontSize:"16px"}}>🚨</span>
-                      <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Effective 9% income surcharge</span>
-                    </div>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
-                      Your loan balance is growing faster than you repay it. Every £1 of income above the threshold (£{products.slSection.balanceGrowing ? "27,295" : "—"}) is taxed an extra 9% — and your balance compounds upward. This continues until you either reach the <strong>inflection point</strong> or the loan is written off.
-                    </p>
-                    <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
-                      <div>
-                        <div style={{fontSize:"11px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"3px"}}>Inflection point salary</div>
-                        <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(products.slSection.inflectionSalary)}</div>
-                        <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>where repayments = interest</div>
-                      </div>
-                      <div style={{fontSize:"13px",color:MUT,lineHeight:1.6,flex:1,minWidth:"160px"}}>
-                        At this salary, 9% of income above the threshold exactly matches your annual interest charge. Above this point, every pay rise reduces your balance. Below it, every year adds to it.
-                      </div>
-                    </div>
-                  </div>
-                )}
+            {/* Student loan: numbered only when overpaying is genuinely the right
+                call (clears && the loan rate beats savings) — tagged "Today"
+                since the guaranteed return is available right now. Otherwise this
+                stays FYI/explanatory throughout (balance-growing reality check,
+                the marginal-return chart, and a clear savings-beats-loan £
+                comparison) — no numbered badge, since there's nothing to "do".
+                Uses baseProjection.clearYr (computed right here) rather than
+                m.willClear (a separate, salary-growth-aware simulation in
+                calcMetrics) so the headline's "clears in ~N yrs" always agrees
+                with the number it's quoting — the two can disagree at the
+                margin since they model repayment growth differently. */}
+            {products.slSection && (() => {
+              const sl = products.slSection;
+              const clears = !!sl.baseProjection.clearYr;
+              const shouldOverpay = clears && sl.effectiveBenefit > 0;
 
-                {/* Overpayment scenario cards */}
-                {products.slSection.scenarios.length > 0 && (
-                  <div style={{marginBottom:"12px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"12px"}}>
-                      What if you overpaid today?
-                    </div>
-                    {/* Baseline */}
-                    <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px",display:"flex",gap:"16px",flexWrap:"wrap",alignItems:"center"}}>
-                      <div style={{flex:"0 0 auto"}}>
-                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment</div>
-                        <div style={{fontFamily:SERIF,fontSize:"17px",color:TEXT,fontWeight:600}}>
-                          {products.slSection.baseProjection.clearYr
-                            ? `Clears in ${products.slSection.baseProjection.clearYr} yrs`
-                            : `${fmt(products.slSection.baseProjection.writeOffBal)} written off`}
+              const scenarioContent = (
+                <>
+                  {/* Inflection point warning */}
+                  {sl.balanceGrowing && (
+                    <CalloutTile icon="🚨" label="Effective 9% income surcharge" tone="red">
+                      <p style={{marginBottom:"10px"}}>
+                        Based on your inputs and expected future earnings, the principal + interest is currently growing faster than your repayments — every £1 of income above the threshold (£27,295) is taxed an extra 9%, and your balance compounds upward. This assumes your income grows as entered; paying down a large chunk, or a significant pay rise, could change this.
+                      </p>
+                      <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
+                        <div>
+                          <div style={{fontSize:"11px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"3px"}}>Salary where this reverses</div>
+                          <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(sl.inflectionSalary)}</div>
+                          <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>where repayments catch up with interest</div>
+                        </div>
+                        <div style={{fontSize:"13px",color:MUT,lineHeight:1.6,flex:1,minWidth:"160px"}}>
+                          Above this salary, every pay rise starts shrinking your balance instead of adding to it — worth knowing if a promotion or new role is on the horizon.
                         </div>
                       </div>
-                      <div style={{flex:1,minWidth:"140px",fontSize:"12px",color:MUT,lineHeight:1.6}}>
-                        Total repaid: {fmt(products.slSection.baseProjection.totalPaid)} over {products.slSection.writeOffYr} years. Interest accruing: {fmt(products.slSection.annualInterest)}/yr.
+                    </CalloutTile>
+                  )}
+
+                  {/* Overpayment scenario cards */}
+                  {sl.scenarios.length > 0 && (
+                    <div style={{marginBottom:"12px"}}>
+                      <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"12px"}}>
+                        What if you overpaid today?
                       </div>
-                    </div>
-                    {products.slSection.scenarios.map((s,i) => {
-                      const reaches = s.crossesInflection;
-                      const clears = !!s.clearYr;
-                      const bg = clears ? "rgba(45,107,74,0.06)" : reaches ? "rgba(196,150,58,0.06)" : WHITE;
-                      const bdr = clears ? "rgba(45,107,74,0.22)" : reaches ? "rgba(196,150,58,0.3)" : "rgba(22,47,36,0.09)";
-                      const savedVsBase = products.slSection.baseProjection.totalPaid - s.totalPaid;
-                      return (
-                        <div key={i} style={{background:bg,border:`1.5px solid ${bdr}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"8px"}}>
-                            <div>
-                              <div style={{fontSize:"10px",fontWeight:700,color:clears?"#2d6b4a":reaches?GOLD:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>
-                                {clears ? "✓ Clears the loan" : reaches ? "✓ Reaches inflection point" : `Overpay ${fmt(s.amt)} today`}
-                              </div>
-                              <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>
-                                {clears ? `Clears in ${s.clearYr} yrs (vs ${products.slSection.baseProjection.clearYr||products.slSection.writeOffYr})` : `${fmt(s.writeOffBal)} written off`}
-                              </div>
-                            </div>
-                            <div style={{textAlign:"right",flexShrink:0}}>
-                              <div style={{fontSize:"10px",color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Overpayment</div>
-                              <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>{fmt(s.amt)}</div>
-                            </div>
+                      {/* Baseline */}
+                      <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px",display:"flex",gap:"16px",flexWrap:"wrap",alignItems:"center"}}>
+                        <div style={{flex:"0 0 auto"}}>
+                          <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment</div>
+                          <div style={{fontFamily:SERIF,fontSize:"17px",color:TEXT,fontWeight:600}}>
+                            {sl.baseProjection.clearYr
+                              ? `Clears in ${sl.baseProjection.clearYr} yrs`
+                              : `${fmt(sl.baseProjection.writeOffBal)} written off`}
                           </div>
-                          <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:MUT,lineHeight:1.6}}>
-                            <span>Total repaid: {fmt(s.totalPaid)}</span>
-                            {savedVsBase > 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Saves: {fmt(savedVsBase)} vs doing nothing</span>}
-                            {!clears && s.newNetChange <= 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Balance now shrinking by {fmt(-s.newNetChange)}/yr</span>}
-                            {!clears && s.newNetChange > 0 && <span style={{color:GOLD}}>Balance still growing by {fmt(s.newNetChange)}/yr</span>}
-                          </div>
-                          {reaches && !clears && (
-                            <div style={{marginTop:"8px",fontSize:"12px",color:"#1e4030",background:"rgba(45,107,74,0.06)",borderRadius:"6px",padding:"8px 10px",lineHeight:1.5}}>
-                              This overpayment brings you to the inflection point — your balance will now start shrinking with every repayment. This is the most impactful outcome possible without clearing the loan entirely.
-                            </div>
-                          )}
                         </div>
-                      );
-                    })}
+                        <div style={{flex:1,minWidth:"140px",fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                          Total repaid: {fmt(sl.baseProjection.totalPaid)} over {sl.writeOffYr} years. Interest accruing: {fmt(sl.annualInterest)}/yr.
+                        </div>
+                      </div>
+                      {sl.scenarios.map((s,i) => {
+                        const reaches = s.crossesInflection;
+                        const clears = !!s.clearYr;
+                        const bg = clears ? "rgba(45,107,74,0.06)" : reaches ? "rgba(196,150,58,0.06)" : WHITE;
+                        const bdr = clears ? "rgba(45,107,74,0.22)" : reaches ? "rgba(196,150,58,0.3)" : "rgba(22,47,36,0.09)";
+                        const savedVsBase = sl.baseProjection.totalPaid - s.totalPaid;
+                        return (
+                          <div key={i} style={{background:bg,border:`1.5px solid ${bdr}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"8px"}}>
+                              <div>
+                                <div style={{fontSize:"10px",fontWeight:700,color:clears?"#2d6b4a":reaches?GOLD:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>
+                                  {clears ? "✓ Clears the loan" : reaches ? "✓ Reaches inflection point" : `Overpay ${fmt(s.amt)} today`}
+                                </div>
+                                <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>
+                                  {clears ? `Clears in ${s.clearYr} yrs (vs ${sl.baseProjection.clearYr||sl.writeOffYr})` : `${fmt(s.writeOffBal)} written off`}
+                                </div>
+                              </div>
+                              <div style={{textAlign:"right",flexShrink:0}}>
+                                <div style={{fontSize:"10px",color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Overpayment</div>
+                                <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>{fmt(s.amt)}</div>
+                              </div>
+                            </div>
+                            <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                              <span>Total repaid: {fmt(s.totalPaid)}</span>
+                              {savedVsBase > 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Saves: {fmt(savedVsBase)} vs doing nothing</span>}
+                              {!clears && s.newNetChange <= 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Balance now shrinking by {fmt(-s.newNetChange)}/yr</span>}
+                              {!clears && s.newNetChange > 0 && <span style={{color:GOLD}}>Balance still growing by {fmt(s.newNetChange)}/yr</span>}
+                            </div>
+                            {reaches && !clears && (
+                              <div style={{marginTop:"8px",fontSize:"12px",color:"#1e4030",background:"rgba(45,107,74,0.06)",borderRadius:"6px",padding:"8px 10px",lineHeight:1.5}}>
+                                This overpayment brings you to the inflection point — your balance will now start shrinking with every repayment. This is the most impactful outcome possible without clearing the loan entirely.
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
 
                     {/* Personalised marginal return curve — only when loan will clear */}
                     {loanCurve && (() => {
@@ -4734,30 +4745,42 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       );
                     })()}
 
-                    {!products.slSection.willClear && (
-                      <div style={{background:"rgba(196,150,58,0.07)",border:`1px solid ${GOLD}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"12px"}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Overpaying is almost certainly not worth it</div>
-                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:0}}>Your loan is projected to be written off before you can clear it. Voluntary overpayments reduce the amount written off — but you never see that money again. Redirect any spare cash to your pension (free tax relief) or ISA (tax-free growth) instead.</p>
-                      </div>
-                    )}
-
-                    {/* Cash comparison callout */}
-                    {products.slSection.cashSavings > 5000 && (
-                      <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginTop:"4px"}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>vs holding cash</div>
-                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                          You hold {fmt(products.slSection.cashSavings)} in cash earning ~{products.slSection.cashRate}%. Your loan accrues at ~{products.slSection.slRatePct}%.
-                          {products.slSection.effectiveBenefit > 0
-                            ? ` Overpaying has an effective advantage of ${products.slSection.effectiveBenefit}% over keeping that cash — but only if you will actually clear the loan before write-off.`
-                            : ` The loan will be written off before you'd clear it, so the effective benefit of overpaying is negative. Keep the cash earning ${products.slSection.cashRate}%.`
-                          }
-                        </p>
-                      </div>
-                    )}
                   </div>
-                )}
-              </div>
-            )}
+                  )}
+
+                  {/* Savings-vs-loan comparison — shown whenever savings beats (or ties)
+                      the loan rate, whether because the loan clears anyway or because
+                      it'll be written off. Spells out the £-per-£1 delta on the actual
+                      principal, not just the rate difference, per the "clearer position"
+                      ask. */}
+                  {sl.effectiveBenefit <= 0 && (() => {
+                    const delta = Math.round(m.loanBal * (sl.cashRate - sl.slRatePct) / 100);
+                    return (
+                      <CalloutTile icon={clears ? "💡" : "🏁"} label={clears ? "Saving beats overpaying here" : "Loan will be written off — don't overpay"} tone="gold">
+                        <p style={{margin:0}}>
+                          {clears
+                            ? `You'll clear this loan through regular repayments alone in ~${sl.baseProjection.clearYr} years — no need to divert extra cash to it. `
+                            : `Your loan is projected to be written off before you'd clear it — voluntary overpayments reduce the amount written off, but you never see that money again. `}
+                          Based on your {fmt(m.loanBal)} principal: each £1 of debt costs ~{sl.slRatePct}p/yr in interest, while each £1 in savings earns ~{sl.cashRate}p/yr. Since savings beats the loan rate here, keeping this in savings is worth {delta > 0 ? `~${fmt(delta)}/yr more` : "at least as much"} than overpaying — redirect spare cash to your pension or ISA instead.
+                        </p>
+                      </CalloutTile>
+                    );
+                  })()}
+                </>
+              );
+
+              return shouldOverpay ? (
+                <div className="fu4" style={{marginTop:"16px"}}>
+                  <OptimisationTile number={1} title="Overpay your student loan while the rate beats saving"
+                    headline={`Guaranteed ${sl.slRatePct}% return vs your ${sl.cashRate}% savings rate — clears in ~${sl.baseProjection.clearYr} yrs`}
+                    tag={OPT_TAG.today}>
+                    {scenarioContent}
+                  </OptimisationTile>
+                </div>
+              ) : (
+                <div style={{marginTop:"16px"}}>{scenarioContent}</div>
+              );
+            })()}
 
           </div>
         )}
