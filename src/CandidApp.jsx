@@ -3586,9 +3586,29 @@ function ProductCard({ p, onInternalLink }) {
   );
 }
 
+// ── Collapsible non-win section — same eyebrow/title/subtitle type hierarchy as
+// ExpandableInvestmentItem's Win tiles, but with no numbered badge and no score-
+// affecting tag: used for "explore further, not a recommendation" content like
+// Investments' "Beyond the basics" and Cash's "Other cash-like options". ───────
+function NonWinExpandable({ eyebrow, title, subtitle, children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{marginTop:"8px"}}>
+      <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%",padding:"16px 18px",background:open?G:WHITE,border:`1.5px solid ${open?G:"rgba(22,47,36,0.12)"}`,borderRadius:"12px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all 0.2s",marginBottom:open?"16px":"0"}}>
+        <div style={{textAlign:"left"}}>
+          <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"3px"}}>{eyebrow}</div>
+          <div style={{fontSize:"14px",fontWeight:600,color:open?WHITE:G}}>{title}</div>
+          <div style={{fontSize:"13px",color:open?"rgba(255,255,255,0.75)":MUT,marginTop:"3px",lineHeight:1.5}}>{subtitle}</div>
+        </div>
+        <span style={{fontSize:"18px",color:open?GOLD:MUT,transform:open?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0,marginLeft:"12px"}}>›</span>
+      </button>
+      {open && <div>{children}</div>}
+    </div>
+  );
+}
+
 // ── Alternative investments section (age-gated framing) ───────────────────────
 function AlternativeInvestments({ age }) {
-  const [open, setOpen] = useState(false);
   const youngUser = (+age||30) < 45;
   const eyebrow = youngUser
     ? "Higher-risk & alternative investments"
@@ -3626,62 +3646,50 @@ function AlternativeInvestments({ age }) {
       platforms:["RM Sotheby's","Bonhams","Historics"], gate:"Best for: genuine enthusiasm + deep pockets" },
   ];
   return (
-    <div style={{marginTop:"8px"}}>
-      <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%",padding:"16px 18px",background:open?G:WHITE,border:`1.5px solid ${open?G:"rgba(22,47,36,0.12)"}`,borderRadius:"12px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all 0.2s",marginBottom:open?"16px":"0"}}>
-        <div style={{textAlign:"left"}}>
-          <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"3px"}}>{eyebrow}</div>
-          <div style={{fontSize:"14px",fontWeight:600,color:open?WHITE:G}}>{label}</div>
-          <div style={{fontSize:"13px",color:open?"rgba(255,255,255,0.75)":MUT,marginTop:"3px",lineHeight:1.5}}>{subLabel}</div>
-        </div>
-        <span style={{fontSize:"18px",color:open?GOLD:MUT,transform:open?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0,marginLeft:"12px"}}>›</span>
-      </button>
-      {open && (
-        <div>
-          <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.2)",borderRadius:"10px",padding:"12px 14px",marginBottom:"16px"}}>
-            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.7}}>These should only be considered once your ISA allowance is maxed, pension is on track, and you have a solid emergency fund. Think of them as the layer on top — not the foundation.</p>
-          </div>
-          <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Higher-risk, regulated</div>
-          <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"20px"}}>
-            {higherRisk.map((h,i) => (
-              <div key={i} style={{background:WHITE,borderRadius:"10px",padding:"16px",border:"1px solid rgba(22,47,36,0.09)"}}>
-                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px",marginBottom:"8px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                    <span style={{fontSize:"22px"}}>{h.icon}</span>
-                    <div>
-                      <div style={{fontWeight:600,fontSize:"14px",color:TEXT}}>{h.name}</div>
-                      <div style={{fontSize:"11px",color:MUT}}>{h.type}</div>
-                    </div>
-                  </div>
-                  <span style={{fontSize:"10px",fontWeight:700,color:"#c0392b",background:"rgba(192,57,43,0.08)",padding:"3px 8px",borderRadius:"100px",whiteSpace:"nowrap",flexShrink:0}}>Risk: {h.risk}</span>
-                </div>
-                <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"10px"}}>{h.desc}</p>
-                <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
-                  <span style={{fontSize:"11px",color:MUT}}>Platforms:</span>
-                  {h.platforms.map(pl => (
-                    <span key={pl} style={{fontSize:"11px",fontWeight:600,color:G,background:"rgba(22,47,36,0.07)",padding:"2px 8px",borderRadius:"100px"}}>{pl}</span>
-                  ))}
+    <NonWinExpandable eyebrow={eyebrow} title={label} subtitle={subLabel}>
+      <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.2)",borderRadius:"10px",padding:"12px 14px",marginBottom:"16px"}}>
+        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.7}}>These should only be considered once your ISA allowance is maxed, pension is on track, and you have a solid emergency fund. Think of them as the layer on top — not the foundation.</p>
+      </div>
+      <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Higher-risk, regulated</div>
+      <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"20px"}}>
+        {higherRisk.map((h,i) => (
+          <div key={i} style={{background:WHITE,borderRadius:"10px",padding:"16px",border:"1px solid rgba(22,47,36,0.09)"}}>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px",marginBottom:"8px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                <span style={{fontSize:"22px"}}>{h.icon}</span>
+                <div>
+                  <div style={{fontWeight:600,fontSize:"14px",color:TEXT}}>{h.name}</div>
+                  <div style={{fontSize:"11px",color:MUT}}>{h.type}</div>
                 </div>
               </div>
-            ))}
+              <span style={{fontSize:"10px",fontWeight:700,color:"#c0392b",background:"rgba(192,57,43,0.08)",padding:"3px 8px",borderRadius:"100px",whiteSpace:"nowrap",flexShrink:0}}>Risk: {h.risk}</span>
+            </div>
+            <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"10px"}}>{h.desc}</p>
+            <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
+              <span style={{fontSize:"11px",color:MUT}}>Platforms:</span>
+              {h.platforms.map(pl => (
+                <span key={pl} style={{fontSize:"11px",fontWeight:600,color:G,background:"rgba(22,47,36,0.07)",padding:"2px 8px",borderRadius:"100px"}}>{pl}</span>
+              ))}
+            </div>
           </div>
-          <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Alternative & passion assets</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"10px",marginBottom:"12px"}}>
-            {alternatives.map((a,i) => (
-              <div key={i} style={{background:WHITE,borderRadius:"10px",padding:"14px 16px",border:"1px solid rgba(22,47,36,0.09)"}}>
-                <div style={{fontSize:"22px",marginBottom:"8px"}}>{a.icon}</div>
-                <div style={{fontWeight:600,fontSize:"14px",color:TEXT,marginBottom:"3px"}}>{a.name}</div>
-                <div style={{fontSize:"11px",color:MUT,marginBottom:"8px"}}>{a.type}</div>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginBottom:"8px"}}>{a.desc}</p>
-                <div style={{fontSize:"11px",color:GOLD,fontWeight:600,background:"rgba(196,150,58,0.08)",padding:"4px 8px",borderRadius:"6px"}}>{a.gate}</div>
-              </div>
-            ))}
+        ))}
+      </div>
+      <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Alternative & passion assets</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"10px",marginBottom:"12px"}}>
+        {alternatives.map((a,i) => (
+          <div key={i} style={{background:WHITE,borderRadius:"10px",padding:"14px 16px",border:"1px solid rgba(22,47,36,0.09)"}}>
+            <div style={{fontSize:"22px",marginBottom:"8px"}}>{a.icon}</div>
+            <div style={{fontWeight:600,fontSize:"14px",color:TEXT,marginBottom:"3px"}}>{a.name}</div>
+            <div style={{fontSize:"11px",color:MUT,marginBottom:"8px"}}>{a.type}</div>
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginBottom:"8px"}}>{a.desc}</p>
+            <div style={{fontSize:"11px",color:GOLD,fontWeight:600,background:"rgba(196,150,58,0.08)",padding:"4px 8px",borderRadius:"6px"}}>{a.gate}</div>
           </div>
-          <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"10px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
-            Alternative investments are illiquid, unregulated (in most cases), and carry significant risk of total loss. EIS/SEIS are regulated by the FCA. This section is for information only — not a recommendation. Candid may earn a referral fee for EIS/SEIS platform introductions.
-          </p>
-        </div>
-      )}
-    </div>
+        ))}
+      </div>
+      <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"10px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
+        Alternative investments are illiquid, unregulated (in most cases), and carry significant risk of total loss. EIS/SEIS are regulated by the FCA. This section is for information only — not a recommendation. Candid may earn a referral fee for EIS/SEIS platform introductions.
+      </p>
+    </NonWinExpandable>
   );
 }
 
@@ -3747,7 +3755,6 @@ function MiniExpandTile({ icon, label, color, summary, children }) {
 
 function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, openSection, goBack, goToDashboard, onComplete, isComplete, onOpenModule, nextModule }) {
   const [openTip,   setOpenTip]   = useState(null);
-  const [expandAlt, setExpandAlt] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
   const [bonusInput,setBonusInput]= useState(+d.bonusAmount||"");
   const [sacrificePct, setSacrificePct] = useState(100);
@@ -3855,10 +3862,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   const showRunwayCallout = moduleKey === "cash" && m.runwayMonths > m.bufferMonths * 2;
   const bondsVal = m.bonds || 0;
 
+  // Premium Bonds have their own dedicated Win tile below when the user holds none;
+  // Fixed-term savings folds into the "higher-earning account" Win. This list is
+  // deliberately just the two genuinely different asset types worth a quick explainer.
   const altProducts = [
-    { name:"NS&I Premium Bonds", type:"Government-backed savings", rate:"~4.4% tax-free (avg)", badge:"Tax-free winnings", feature:"All winnings are 100% tax-free. Max £50,000 holding. FSCS unlimited (government-backed). No guaranteed return.", cta:"Apply via NS&I", highlight:true },
     { name:"UK Gilts (via ETF)", type:"Government bonds", rate:"~4.3–4.6% yield", badge:"Capital secure", feature:"UK government debt — effectively risk-free to maturity. Tradeable ETF wrappers available on HL and Vanguard. Interest taxable (unless in ISA).", cta:"Explore gilts", highlight:false },
-    { name:"Fixed-term savings", type:"Fixed rate bond", rate:"Up to 5.2% AER (1yr)", badge:"Highest fixed rate", feature:"Higher rates than easy access in exchange for locking funds. FSCS protected to £85k. Consider if runway is high and cash not needed soon.", cta:"Compare fixed rates", highlight:false },
     { name:"Money market funds", type:"Near-cash fund", rate:"~5.0% (variable)", badge:"Institutional quality", feature:"Very low risk funds that hold short-term government debt. Available inside ISA wrappers — unlike cash savings. Royal London, BlackRock, Fidelity all offer these.", cta:"Explore options", highlight:false },
   ];
 
@@ -3940,10 +3948,17 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
         {moduleKey === "cash" && (() => {
           const target = m.emergencyBuffer;
           const current = m.totalLiquid;
-          const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
-          const fullyFunded = pct >= 100;
-          const tierColor = pct >= 100 ? "#2d6b4a" : pct >= 33 ? GOLD : "#c0392b";
-          const statusLabel = pct >= 100 ? "Sufficient" : pct >= 33 ? "Borderline" : "Insufficient";
+          // pctRaw is uncapped (unlike the old `pct`, which capped at 100 and made a
+          // 10-month runway against a 6-month target look identical to an 18-month one).
+          const pctRaw = target > 0 ? (current / target) * 100 : 0;
+          const tierColor = pctRaw >= 100 ? "#2d6b4a" : pctRaw >= 33 ? GOLD : "#c0392b";
+          const statusLabel = pctRaw >= 150 ? "More than sufficient" : pctRaw >= 100 ? "Sufficient" : pctRaw >= 33 ? "Borderline" : "Insufficient";
+          // Bar represents a fixed 0–2× target scale so the marker can show exactly
+          // where the user sits, rather than a bar that saturates the moment they clear
+          // the target and hides how far past it they actually are. Positions beyond
+          // 2× target pin the marker at the right edge — the text below still states
+          // the real multiple.
+          const markerPct = target > 0 ? Math.min(100, (pctRaw / 200) * 100) : 0;
           return (
             <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px",flexWrap:"wrap",gap:"8px"}}>
@@ -3953,11 +3968,23 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </div>
                 <span style={{fontSize:"13px",color:"rgba(255,255,255,0.7)"}}>{m.runwayMonths.toFixed(1)} months</span>
               </div>
-              <div style={{width:"100%",height:"12px",borderRadius:"6px",background:"rgba(255,255,255,0.1)",overflow:"hidden"}}>
-                <div style={{width:`${pct}%`,height:"100%",borderRadius:"6px",background:`linear-gradient(90deg, ${GOLD}, ${tierColor})`,transition:"width 0.4s ease"}}/>
+              <div style={{position:"relative",width:"100%",height:"14px",borderRadius:"7px",background:`linear-gradient(90deg, #c0392b 0%, ${GOLD} 33%, #2d6b4a 60%, #1e4d35 100%)`,overflow:"visible"}}>
+                {/* Target tick — always the scale's midpoint, since the scale is fixed at 0–2× target */}
+                <div style={{position:"absolute",left:"50%",top:"-3px",bottom:"-3px",width:"2px",background:"rgba(255,255,255,0.65)",transform:"translateX(-1px)"}}/>
+                {/* Actual-position marker */}
+                <div style={{position:"absolute",left:`${markerPct}%`,top:"-4px",bottom:"-4px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)",transition:"left 0.4s ease"}}/>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:"5px"}}>
+                <span style={{fontSize:"10px",color:"rgba(255,255,255,0.45)"}}>0 mo</span>
+                <span style={{fontSize:"10px",color:"rgba(255,255,255,0.6)",fontWeight:600}}>{m.bufferMonths}mo target</span>
+                <span style={{fontSize:"10px",color:"rgba(255,255,255,0.45)"}}>{m.bufferMonths*2}mo+</span>
               </div>
               <div style={{marginTop:"8px",fontSize:"13px",color:"rgba(255,255,255,0.85)"}}>
-                {fullyFunded ? <span style={{color:"#8fd9b6",fontWeight:600}}>✓ Fully funded — {fmt(current)} of {fmt(target)} target</span> : `${fmt(current)} of ${fmt(target)} emergency fund target (${Math.round(pct)}% covered)`}
+                {pctRaw >= 150
+                  ? <span style={{color:"#8fd9b6",fontWeight:600}}>✓ More than sufficient — {fmt(current)} saved, {(pctRaw/100).toFixed(1)}× your {m.bufferMonths}-month target ({fmt(target)})</span>
+                  : pctRaw >= 100
+                    ? <span style={{color:"#8fd9b6",fontWeight:600}}>✓ Fully funded — {fmt(current)} of {fmt(target)} target</span>
+                    : `${fmt(current)} of ${fmt(target)} emergency fund target (${Math.round(pctRaw)}% covered)`}
               </div>
             </div>
           );
@@ -3981,9 +4008,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           </div>
         )}
 
-        {/* AI summary — omitted for Investments: its content is now the collapsed
-            headline of the "CGT allowance crystallisation" expandable item below. */}
-        {!isPensionUnknown && modSummary?.summary && moduleKey !== "investments" && (
+        {/* AI summary — omitted for Investments and Cash: their content is now the
+            collapsed headlines of the Win tiles below. */}
+        {!isPensionUnknown && modSummary?.summary && moduleKey !== "investments" && moduleKey !== "cash" && (
           <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
             <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75}}>{modSummary.summary}</p>
           </div>
@@ -4019,9 +4046,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           );
         })()}
 
-        {/* Computed metrics with tooltips — omitted for Investments: folded into
-            the two expandable step-through items below. */}
-        {!isPensionUnknown && modInsights.length > 0 && moduleKey !== "investments" && (
+        {/* Computed metrics with tooltips — omitted for Investments and Cash: folded
+            into their Win tiles below. */}
+        {!isPensionUnknown && modInsights.length > 0 && moduleKey !== "investments" && moduleKey !== "cash" && (
           <div className="fu2" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px",marginBottom:"20px"}}>
             {modInsights.map((ins,i) => (
               <div key={i} style={{background:ins.flag ? "rgba(196,150,58,0.08)" : WHITE,borderRadius:"10px",padding:"14px 16px",border:`1px solid ${ins.flag ? "rgba(196,150,58,0.3)" : "rgba(22,47,36,0.09)"}`,position:"relative"}}>
@@ -4139,103 +4166,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           );
         })()}
 
-        {/* Cash runway callout */}
-        {showRunwayCallout && (
-          <div className="fu2" style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"18px 20px",marginBottom:"20px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-              <span style={{fontSize:"16px"}}>💡</span>
-              <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Your cash is working hard — maybe too hard</span>
-            </div>
-            <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
-              You have <strong>{m.runwayMonths.toFixed(0)} months</strong> of runway — that's {(m.runwayMonths / m.bufferMonths).toFixed(1)}× your {m.bufferMonths}-month target. The excess ({fmt(surplus)}) is sitting in cash while likely losing ground to inflation. Consider putting it to work:
-            </p>
-            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-              {(() => {
-                // Tied to the user's actual input (or a plan-based statutory estimate if
-                // they didn't specify a rate) via resolveSlRate — never a flat guess. Only
-                // suggest overpaying if that rate actually beats the best ISA rate available;
-                // otherwise saving beats overpaying and this tile shouldn't appear at all.
-                const slRateNum = d.studentLoan !== "none" ? resolveSlRate(d, m.salary) * 100 : 0;
-                const bestIsaRow = topRate(savingsRates, true);
-                const slBeatsSavings = !bestIsaRow || slRateNum > +bestIsaRow.rate_aer;
-                return [
-                  d.hasPension === "yes" && (+d.myContribution||0) < (+d.employerMatch||0) && { icon:"🏦", text:`Top up pension — every £ contributes ${Math.round(m.tr*100)}% tax relief instantly`, target:"pension" },
-                  d.hasMortgage === "yes" && (+d.mortgageRate||0) >= 4 && { icon:"🏠", text:`Overpay mortgage — guaranteed ${d.mortgageRate}% return, risk-free`, target:"mortgage" },
-                  d.studentLoan !== "none" && m.willClear && slBeatsSavings && { icon:"🎓", text:`Student loan — your salary means you'll clear before write-off; overpaying saves interest at ${slRateNum.toFixed(1)}%`, target:"studentLoan" },
-                  // ISA suggestion deliberately omitted here — that point is now made once,
-                  // in the Investments module's own surplus-into-ISA callout, combining
-                  // this surplus cash with any unwrapped investments in one place.
-                ];
-              })().filter(Boolean).map((s,i) => (
-                <div key={i} onClick={() => onOpenModule(s.target)} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"10px 12px",background:"rgba(255,255,255,0.6)",borderRadius:"8px",cursor:"pointer",border:"1px solid transparent",transition:"border-color 0.15s"}}>
-                  <span style={{fontSize:"14px",flexShrink:0}}>{s.icon}</span>
-                  <span style={{fontSize:"13px",color:TEXT,lineHeight:1.5,flex:1}}>{s.text}</span>
-                  <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>→</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Premium bonds yield opportunity */}
-        {moduleKey === "cash" && bondsVal > 0 && (() => {
-          const bondsSurplusAmt = Math.max(0, bondsVal - m.emergencyBuffer);
-          // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
-          const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
-          const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
-          const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
-          const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
-          // Blended, floored: only isaHeadroom worth of the surplus is ISA-eligible, and
-          // the excess only contributes if the non-ISA rate actually beats the 4.4%
-          // NS&I baseline — otherwise there's nowhere better for that excess to go.
-          const isaPortion = Math.min(bondsSurplusAmt, m.isaHeadroom);
-          const nonIsaPortion = Math.max(0, bondsSurplusAmt - m.isaHeadroom);
-          const nonIsaPortionGain = nonIsaPortion * (nonIsaRateDecimal - 0.044);
-          const excessNotWorthMoving = nonIsaPortionGain < 0;
-          const annualGain = Math.round(isaPortion * (isaRateDecimal - 0.044) + Math.max(0, nonIsaPortionGain));
-          // The amount actually worth recommending — capped to the ISA-eligible portion
-          // when moving the excess isn't worthwhile, so the copy below doesn't overstate it.
-          const moveAmount = excessNotWorthMoving ? isaPortion : bondsSurplusAmt;
-          // Whether the whole surplus fits within this tax year's remaining ISA allowance
-          // (isaHeadroom is itself already capped at £20k) — if not, the copy must not
-          // claim the entire surplus goes into "a Cash ISA", since only isaPortion can.
-          const fitsEntirelyInIsa = nonIsaPortion <= 0;
-          if (bondsSurplusAmt < 1000 || annualGain <= 0) return null;
-          return (
-            <div className="fu3" style={{background:"rgba(196,150,58,0.06)",border:`1px solid ${GOLD}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
-                <span style={{fontSize:"16px"}}>💰</span>
-                <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Yield opportunity: surplus premium bonds</span>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"12px"}}>
-                <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
-                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Your bonds surplus</div>
-                  <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700}}>{fmt(bondsSurplusAmt)}</div>
-                  <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>above buffer</div>
-                </div>
-                <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
-                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Prize draw equiv.</div>
-                  <div style={{fontFamily:SERIF,fontSize:"17px",color:GOLD,fontWeight:700}}>~4.4%</div>
-                  <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax-free avg.</div>
-                </div>
-                <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
-                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Best Cash ISA</div>
-                  <div style={{fontFamily:SERIF,fontSize:"17px",color:"#2d6b4a",fontWeight:700}}>{isaRateDisplay}</div>
-                  <div style={{fontSize:"10px",color:"#2d6b4a",marginTop:"2px"}}>guaranteed</div>
-                </div>
-              </div>
-              <div style={{background:"rgba(45,107,74,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                {fitsEntirelyInIsa
-                  ? <>Moving {fmt(moveAmount)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average.</>
-                  : excessNotWorthMoving
-                    ? <>You can only shelter {fmt(isaPortion)} of your {fmt(bondsSurplusAmt)} surplus in an ISA this tax year (your remaining allowance) — moving that into a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong>. The remaining {fmt(nonIsaPortion)} doesn't currently beat the bond prize draw average anywhere else, so it's best left as-is for now.</>
-                    : <>Your {fmt(bondsSurplusAmt)} surplus won't all fit in an ISA this tax year — only {fmt(isaPortion)} of remaining allowance is left. Splitting it — {fmt(isaPortion)} into a {isaRateDisplay} Cash ISA and the remaining {fmt(nonIsaPortion)} into a {nonIsaRateDisplay} non-ISA account — would earn <strong>{fmt(annualGain)}/yr more</strong> combined, still a guaranteed return vs the bond prize draw average.</>
-                } Premium bonds are government-backed and penalty-free to withdraw; this is a personal risk decision based on whether you value guaranteed income over the chance of tax-free prizes.
-              </div>
-            </div>
-          );
-        })()}
-
         {/* Cross-module links */}
         {crossLinks.length > 0 && (
           <div className="fu3" style={{marginBottom:"28px",display:"flex",flexDirection:"column",gap:"10px"}}>
@@ -4250,6 +4180,237 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             ))}
           </div>
         )}
+
+        {/* ── Cash & Savings: Win tiles — mirrors the Investments module's structure.
+            Consolidates what used to be four scattered flat tiles (the runway-surplus
+            callout, the premium-bonds-surplus callout, the ISA product grid, and the
+            "other cash-like options" expandable) into three collapsible Win tiles plus
+            one non-win explainer. */}
+        {moduleKey === "cash" && !isPensionUnknown && (() => {
+          const psaLimit = m.taxBandLabel==="basic"?1000:m.taxBandLabel==="higher"?500:0;
+          const bondsSurplusAmt = Math.max(0, bondsVal - m.emergencyBuffer);
+          // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
+          const isaRateDecimal = isaRatePct != null ? +isaRatePct/100 : 0.049;
+          const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
+          const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct/100 : 0.045;
+          const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
+          const bondsIsaPortion = Math.min(bondsSurplusAmt, m.isaHeadroom);
+          const bondsNonIsaPortion = Math.max(0, bondsSurplusAmt - m.isaHeadroom);
+          const bondsNonIsaGain = bondsNonIsaPortion * (nonIsaRateDecimal - 0.044);
+          const bondsExcessNotWorthMoving = bondsNonIsaGain < 0;
+          const bondsAnnualGain = Math.round(bondsIsaPortion * (isaRateDecimal - 0.044) + Math.max(0, bondsNonIsaGain));
+          const bondsFitsEntirelyInIsa = bondsNonIsaPortion <= 0;
+          const hasBondsOpportunity = bondsSurplusAmt >= 1000 && bondsAnnualGain > 0;
+
+          const cashSplit = splitByIsaHeadroom(surplus, m.isaHeadroom, nonIsaRatePct, m.savingsRate);
+
+          const currentInterest = Math.round(m.cash * m.savingsRate / 100);
+          const potentialInterest = currentInterest + Math.round(m.annualYieldGap);
+          const bestBlendedRate = m.cash > 0 ? (m.savingsRate + m.annualYieldGap / m.cash * 100) : m.savingsRate;
+
+          // A separate, genuinely different list from Win 1's Cash ISA grid below —
+          // non-ISA rows, for the buffer amount rather than the ISA-eligible surplus.
+          const nonIsaProducts = (savingsRates||[])
+            .filter(r => r.is_isa === false)
+            .sort((a,b) => +b.rate_aer - +a.rate_aer)
+            .slice(0, 4)
+            .map((r,i) => ({ name:r.provider_name, type:r.account_type, rate:`${r.rate_aer}% AER`, badge:i===0?"Highest rate":"", highlight:i===0, cta:"View account", appIcon:"🏦", productUrl:r.product_url }));
+
+          const opportunityCols = [];
+          if (m.annualYieldGap > 50) opportunityCols.push({ label:"Yield gap on your cash", value:`${fmt(Math.round(m.annualYieldGap))}/yr`, sub:"by switching to the best available rate" });
+          if (hasBondsOpportunity) opportunityCols.push({ label:"Premium bonds surplus opportunity", value:`${fmt(bondsAnnualGain)}/yr`, sub:"moving surplus bonds into an ISA" });
+
+          return (
+            <div className="fu4">
+              {opportunityCols.length > 0 && (
+                <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
+                  <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
+                  <div style={{display:"grid",gridTemplateColumns:`repeat(${opportunityCols.length},1fr)`,gap:"14px"}}>
+                    {opportunityCols.map((c,i) => (
+                      <div key={i}>
+                        <div style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700}}>{c.value}</div>
+                        <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>{c.label}</div>
+                        <div style={{fontSize:"11px",color:"rgba(255,255,255,0.55)",marginTop:"2px"}}>{c.sub}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below to act on these.</p>
+                </div>
+              )}
+
+              <ExpandableInvestmentItem
+                number={1}
+                title="Move cash above your buffer into an ISA"
+                headline={m.isaHeadroom > 0 ? `${fmt(m.isaHeadroom)} of ISA allowance remaining` : "Your ISA allowance is fully used this tax year."}
+                tag={{ label:"Future opportunity", color:"#2d6b4a" }}
+              >
+                <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
+                  Interest earned inside a Cash ISA is completely free of tax, for life. Outside one, interest above your Personal Savings Allowance — {psaLimit > 0 ? `${fmt(psaLimit)}/yr for a ${m.taxBandLabel}-rate taxpayer` : "£0, since additional-rate taxpayers get none"} — is taxed at your marginal rate. Every £ you shelter also uses up your £20,000-a-year ISA allowance, which resets each 6 April and can't be carried forward — so it's worth using deliberately, not leaving idle.
+                </p>
+
+                {surplus > 0 && (
+                  <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+                      <span style={{fontSize:"16px"}}>💷</span>
+                      <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Move your surplus cash</span>
+                    </div>
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7}}>
+                      You're holding {fmt(surplus)} above your {m.bufferMonths}-month buffer.{" "}
+                      {cashSplit.fitsEntirelyInIsa
+                        ? `All of it fits within your ${fmt(m.isaHeadroom)} of remaining ISA allowance this tax year.`
+                        : cashSplit.nonIsaWorthMoving
+                          ? `${fmt(cashSplit.isaPortion)} fits within your remaining ISA allowance; the other ${fmt(cashSplit.nonIsaPortion)} is still worth moving to a top non-ISA account — see Win 2 below.`
+                          : `${fmt(cashSplit.isaPortion)} fits within your remaining ISA allowance; the other ${fmt(cashSplit.nonIsaPortion)} doesn't currently beat your existing rate anywhere else, so it's fine left as-is for now.`
+                      }
+                    </p>
+                  </div>
+                )}
+
+                {bondsVal > 0 && hasBondsOpportunity && (
+                  <div style={{background:"rgba(196,150,58,0.06)",border:`1px solid ${GOLD}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
+                      <span style={{fontSize:"16px"}}>💰</span>
+                      <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Your premium bonds surplus</span>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"12px"}}>
+                      <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
+                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Bonds surplus</div>
+                        <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700}}>{fmt(bondsSurplusAmt)}</div>
+                        <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>above buffer</div>
+                      </div>
+                      <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
+                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Prize draw equiv.</div>
+                        <div style={{fontFamily:SERIF,fontSize:"17px",color:GOLD,fontWeight:700}}>~4.4%</div>
+                        <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax-free avg.</div>
+                      </div>
+                      <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
+                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Best Cash ISA</div>
+                        <div style={{fontFamily:SERIF,fontSize:"17px",color:"#2d6b4a",fontWeight:700}}>{isaRateDisplay}</div>
+                        <div style={{fontSize:"10px",color:"#2d6b4a",marginTop:"2px"}}>guaranteed</div>
+                      </div>
+                    </div>
+                    <div style={{background:"rgba(45,107,74,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
+                      {bondsFitsEntirelyInIsa
+                        ? <>Moving {fmt(bondsSurplusAmt)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(bondsAnnualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average.</>
+                        : bondsExcessNotWorthMoving
+                          ? <>Only {fmt(bondsIsaPortion)} fits your remaining ISA allowance — moving that would earn <strong>{fmt(bondsAnnualGain)}/yr more</strong>. The rest doesn't currently beat the bond average anywhere else.</>
+                          : <>Splitting it — {fmt(bondsIsaPortion)} into a {isaRateDisplay} Cash ISA and {fmt(bondsNonIsaPortion)} into a {nonIsaRateDisplay} non-ISA account — would earn <strong>{fmt(bondsAnnualGain)}/yr more</strong> combined.</>
+                      } Premium bonds are penalty-free to withdraw; this is a personal risk decision between a guaranteed return and the chance of tax-free prizes.
+                    </div>
+                  </div>
+                )}
+
+                <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>{products.heading}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
+                  {products.products.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
+                </div>
+                {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
+              </ExpandableInvestmentItem>
+
+              <ExpandableInvestmentItem
+                number={2}
+                title="Move your buffer into a higher-earning account"
+                headline={m.annualYieldGap > 50 ? `${fmt(Math.round(m.annualYieldGap))}/yr more available at today's best rate` : "You're already earning a competitive rate."}
+                tag={{ label:"Today", color:GOLD }}
+              >
+                <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
+                  A single headline rate rarely tells the whole story — what you actually earn is a blend across every account you hold. Right now your cash earns a blended {m.savingsRate.toFixed(2)}% across {fmt(m.cash)}.
+                </p>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"16px"}}>
+                  <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px"}}>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>Now — {m.savingsRate.toFixed(2)}%</div>
+                    <div style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700}}>{fmt(currentInterest)}/yr</div>
+                  </div>
+                  <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"10px",padding:"14px 16px"}}>
+                    <div style={{fontSize:"10px",color:"#2d6b4a",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>At the best available rate — {bestBlendedRate.toFixed(2)}%</div>
+                    <div style={{fontFamily:SERIF,fontSize:"20px",color:"#2d6b4a",fontWeight:700}}>{fmt(potentialInterest)}/yr</div>
+                  </div>
+                </div>
+                {m.annualYieldGap > 50 && (
+                  <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"16px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                    Switching closes the gap: <strong>{fmt(Math.round(m.annualYieldGap))}/yr more</strong>, guaranteed — not a market forecast.
+                  </div>
+                )}
+                {nonIsaProducts.length > 0 && (
+                  <>
+                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Best non-ISA easy-access accounts</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
+                      {nonIsaProducts.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
+                    </div>
+                  </>
+                )}
+                <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>Rates change frequently — always confirm the current rate directly with the provider before moving money. Any portion above your ISA allowance may be taxable interest.</p>
+              </ExpandableInvestmentItem>
+
+              {bondsVal === 0 && (
+                <ExpandableInvestmentItem
+                  number={3}
+                  title="Consider Premium Bonds"
+                  headline="A tax-free, lottery-style alternative to a savings account"
+                  tag={{ label:"Worth exploring", color:MUT }}
+                >
+                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
+                    Premium Bonds (via NS&amp;I, backed directly by HM Treasury) don't pay interest — instead, every £1 bond is entered into a monthly prize draw, with prizes from £25 up to £1 million. Nothing is guaranteed in any given month, but averaged out, the prize fund currently pays out the equivalent of <strong>~4.4% a year, entirely tax-free</strong>.
+                  </p>
+                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
+                    That tax-free status matters most if you're a {m.taxBandLabel}-rate taxpayer: your Personal Savings Allowance is {psaLimit > 0 ? `${fmt(psaLimit)}/yr` : "£0 — every penny of ordinary savings interest is taxable for you"}, so a normal savings account's interest above that is taxed at your marginal rate, while Premium Bonds winnings never are.
+                  </p>
+                  <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"12px"}}>
+                    <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:0}}>Minimum £25, maximum £50,000 holding. Fully accessible — cash out penalty-free any time, typically within a few working days. The trade-off is no guaranteed return: you could win nothing at all in a given year.</p>
+                  </div>
+                  {surplus > 0 && (
+                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.7}}>Some savers use part of their surplus above their emergency buffer — up to the £50,000 max — as a tax-free alternative or complement to a Cash ISA, especially once their ISA allowance is used elsewhere.</p>
+                  )}
+                </ExpandableInvestmentItem>
+              )}
+
+              {showRunwayCallout && (
+                <div className="fu2" style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"18px 20px",marginBottom:"20px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+                    <span style={{fontSize:"16px"}}>💡</span>
+                    <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Your cash is working hard — maybe too hard</span>
+                  </div>
+                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
+                    You have <strong>{m.runwayMonths.toFixed(0)} months</strong> of runway — that's {(m.runwayMonths / m.bufferMonths).toFixed(1)}× your {m.bufferMonths}-month target. The excess ({fmt(surplus)}) goes beyond the ISA and savings moves above — it may be even better used elsewhere:
+                  </p>
+                  <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                    {(() => {
+                      // Tied to the user's actual input (or a plan-based statutory estimate if
+                      // they didn't specify a rate) via resolveSlRate — never a flat guess. Only
+                      // suggest overpaying if that rate actually beats the best ISA rate available;
+                      // otherwise saving beats overpaying and this tile shouldn't appear at all.
+                      const slRateNum = d.studentLoan !== "none" ? resolveSlRate(d, m.salary) * 100 : 0;
+                      const bestIsaRow = topRate(savingsRates, true);
+                      const slBeatsSavings = !bestIsaRow || slRateNum > +bestIsaRow.rate_aer;
+                      return [
+                        d.hasPension === "yes" && (+d.myContribution||0) < (+d.employerMatch||0) && { icon:"🏦", text:`Top up pension — every £ contributes ${Math.round(m.tr*100)}% tax relief instantly`, target:"pension" },
+                        d.hasMortgage === "yes" && (+d.mortgageRate||0) >= 4 && { icon:"🏠", text:`Overpay mortgage — guaranteed ${d.mortgageRate}% return, risk-free`, target:"mortgage" },
+                        d.studentLoan !== "none" && m.willClear && slBeatsSavings && { icon:"🎓", text:`Student loan — your salary means you'll clear before write-off; overpaying saves interest at ${slRateNum.toFixed(1)}%`, target:"studentLoan" },
+                      ];
+                    })().filter(Boolean).map((s,i) => (
+                      <div key={i} onClick={() => onOpenModule(s.target)} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"10px 12px",background:"rgba(255,255,255,0.6)",borderRadius:"8px",cursor:"pointer",border:"1px solid transparent",transition:"border-color 0.15s"}}>
+                        <span style={{fontSize:"14px",flexShrink:0}}>{s.icon}</span>
+                        <span style={{fontSize:"13px",color:TEXT,lineHeight:1.5,flex:1}}>{s.text}</span>
+                        <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>→</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <NonWinExpandable
+                eyebrow="Other low-risk places for cash"
+                title="Other cash-like options"
+                subtitle="Beyond savings accounts — different trade-offs on rate, liquidity, and tax."
+              >
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"12px"}}>
+                  {altProducts.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
+                </div>
+                <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"10px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>All rates indicative as of early 2026. Gilts and money market funds carry low but non-zero risk. Candid may earn a referral fee.</p>
+              </NonWinExpandable>
+            </div>
+          );
+        })()}
 
         {/* ── Investments: two expandable step-through items ──────────────────
             Replaces the old flat tile stack. "Unused ISA allowance" nests the
@@ -4406,19 +4567,14 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           );
         })()}
 
-        {/* Products */}
-        {products && !isPensionUnknown && moduleKey !== "investments" && (
+        {/* Products — omitted for Investments and Cash: folded into their Win tiles. */}
+        {products && !isPensionUnknown && moduleKey !== "investments" && moduleKey !== "cash" && (
           <div className="fu4">
             <div style={{marginBottom:"16px"}}>
               <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>{products.heading}</h3>
               <p style={{fontSize:"14px",color:MUT,lineHeight:1.65}}>{products.subheading}</p>
             </div>
-            {/* Cash tiles use a compact single-column list (rate box on the right of each
-                row — see ProductCard's productUrl branch); other modules keep the grid. */}
-            <div style={moduleKey === "cash"
-              ? {display:"flex",flexDirection:"column",gap:"8px",marginBottom:"14px"}
-              : {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"14px"}
-            }>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"14px"}}>
               {products.products.slice(0, visibleTileCount).map((p,i) => (
                 <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>
               ))}
@@ -4615,24 +4771,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               </div>
             )}
 
-            {/* Expandable: other cash-like options (cash module only) */}
-            {moduleKey === "cash" && (
-              <div style={{marginTop:"8px"}}>
-                <button type="button" onClick={() => setExpandAlt(v => !v)} style={{width:"100%",padding:"13px 18px",background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",marginBottom: expandAlt ? "12px" : "0"}}>
-                  <span style={{fontSize:"14px",fontWeight:600,color:G}}>Explore other cash-like options</span>
-                  <span style={{fontSize:"18px",color:MUT,transform: expandAlt ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}>›</span>
-                </button>
-                {expandAlt && (
-                  <div>
-                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,marginBottom:"14px"}}>Beyond easy-access savings accounts, there are other low-risk places to park cash — each with different trade-offs on rate, liquidity, and tax efficiency.</p>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"12px"}}>
-                      {altProducts.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
-                    </div>
-                    <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"10px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>All rates indicative as of early 2026. Premium bonds prize rate is an average — individual returns vary. Gilts and money market funds carry low but non-zero risk. Candid may earn a referral fee.</p>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 
