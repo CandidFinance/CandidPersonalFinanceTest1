@@ -718,20 +718,9 @@ function getModuleInsights(key, d, m, savingsRates) {
   const name = d.name ? d.name.split(" ")[0] : "You";
   switch (key) {
     case "cash": {
-      const gap = m.annualYieldGap;
+      // The old "Cash ISA" tile (yield gap / ISA headroom) now lives as Optimisation 1
+      // in ModuleDeepDive's numbered-tile block, not here — this array is FYI-only.
       const cashRate = +d.savingsRate || 3.5;
-      // 5.08 fallback only covers the brief window before savingsRates loads.
-      const bestISARate = topRate(savingsRates, true)?.rate_aer ?? 5.08;
-      // Cash only, deliberately — premium bonds have their own separate yield
-      // calculation (bondsYieldGain) and their own tile below; combining them here
-      // would double-count the same bonds balance against this tile's gap figure.
-      const nonIsaRow = topRate(savingsRates, false);
-      const cashSplit = splitByIsaHeadroom(m.cash, m.isaHeadroom, nonIsaRow ? +nonIsaRow.rate_aer : null, cashRate);
-      const moveDestination = cashSplit.fitsEntirelyInIsa
-        ? `a Cash ISA at ${bestISARate}%`
-        : cashSplit.nonIsaWorthMoving
-          ? `a Cash ISA at ${bestISARate}% (${fmt(cashSplit.isaPortion)}) and a ${nonIsaRow ? nonIsaRow.rate_aer+"%" : "top-paying"} savings account (${fmt(cashSplit.nonIsaPortion)})`
-          : `a Cash ISA at ${bestISARate}% (${fmt(cashSplit.isaPortion)}, your remaining allowance)`;
       // Premium bonds tile folds in the essential "worth keeping?" explainer that used
       // to be its own separate overlay card — same bondAdvantage logic, condensed.
       const psaLimit = m.taxBandLabel==="basic"?1000:m.taxBandLabel==="higher"?500:0;
@@ -740,14 +729,6 @@ function getModuleInsights(key, d, m, savingsRates) {
       const taxOnInterest = interestOverPsa * m.tr;
       const bondAdvantage = m.bonds > 0 && taxOnInterest > 0;
       return [
-        {
-          // Merges the old "yield gap" and "ISA allowance remaining" tiles, plus the
-          // wording from the cross-module "Explore in Investments" nudge (now removed
-          // from getCrossModuleLinks to avoid saying the same thing twice) — these were
-          // three separate cards all pointing at the same underlying action.
-          label:"Cash ISA", value: gap > 200 ? fmt(gap)+"/yr more" : m.isaHeadroom > 0 ? fmt(m.isaHeadroom)+" left" : "Fully used", flag: gap > 200 || m.isaHeadroom > 5000,
-          tooltip:`${gap > 200 ? `Gap = your cash (${fmt(m.cash)}) × your rate (${cashRate}%) vs best Cash ISA (${bestISARate}%). Annual difference: ${fmt(gap)}. Moving your surplus to ${moveDestination} would close this. ` : ""}You have ${fmt(m.isaHeadroom)} of ISA allowance remaining this tax year (up to £20,000 total, any combination of Cash and Stocks & Shares) — interest and gains inside an ISA are tax-free, permanently. Allowance resets 6 April and cannot be carried forward.`
-        },
         {
           label:"Premium bonds", value: fmt(m.bonds), flag: m.bonds > 0,
           tooltip:`Premium bonds are government-backed savings (via NS&I). Returns come as monthly tax-free prize draws at ~4.4% average rate — no guaranteed return. ${bondAdvantage ? `Worth keeping, potentially worth adding more: your cash is earning ~${fmt(taxableInterest)}/yr in interest, of which ~${fmt(interestOverPsa)} exceeds your Personal Savings Allowance (£${psaLimit.toLocaleString()}) — costing ~${fmt(taxOnInterest)}/yr in tax. Bonds' winnings are entirely tax-free.` : `At your savings level and tax band, your interest likely falls within your Personal Savings Allowance (£${psaLimit.toLocaleString()}/yr), so bonds' tax-free edge over a Cash ISA matters less here — the real trade-off is no guaranteed return vs a Cash ISA's certain rate.`}`
@@ -4109,102 +4090,156 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           );
         })()}
 
-        {/* Cash runway callout */}
-        {showRunwayCallout && (
-          <div className="fu2" style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"18px 20px",marginBottom:"20px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-              <span style={{fontSize:"16px"}}>💡</span>
-              <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Your cash is working hard — maybe too hard</span>
-            </div>
-            <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
-              You have <strong>{m.runwayMonths.toFixed(0)} months</strong> of runway — that's {(m.runwayMonths / m.bufferMonths).toFixed(1)}× your {m.bufferMonths}-month target. The excess ({fmt(surplus)}) is sitting in cash while likely losing ground to inflation. Consider putting it to work:
-            </p>
-            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-              {(() => {
-                // Tied to the user's actual input (or a plan-based statutory estimate if
-                // they didn't specify a rate) via resolveSlRate — never a flat guess. Only
-                // suggest overpaying if that rate actually beats the best ISA rate available;
-                // otherwise saving beats overpaying and this tile shouldn't appear at all.
-                const slRateNum = d.studentLoan !== "none" ? resolveSlRate(d, m.salary) * 100 : 0;
-                const bestIsaRow = topRate(savingsRates, true);
-                const slBeatsSavings = !bestIsaRow || slRateNum > +bestIsaRow.rate_aer;
-                return [
-                  d.hasPension === "yes" && (+d.myContribution||0) < (+d.employerMatch||0) && { icon:"🏦", text:`Top up pension — every £ contributes ${Math.round(m.tr*100)}% tax relief instantly`, target:"pension" },
-                  d.hasMortgage === "yes" && (+d.mortgageRate||0) >= 4 && { icon:"🏠", text:`Overpay mortgage — guaranteed ${d.mortgageRate}% return, risk-free`, target:"mortgage" },
-                  d.studentLoan !== "none" && m.willClear && slBeatsSavings && { icon:"🎓", text:`Student loan — your salary means you'll clear before write-off; overpaying saves interest at ${slRateNum.toFixed(1)}%`, target:"studentLoan" },
-                  // ISA suggestion deliberately omitted here — that point is now made once,
-                  // in the Investments module's own surplus-into-ISA callout, combining
-                  // this surplus cash with any unwrapped investments in one place.
-                ];
-              })().filter(Boolean).map((s,i) => (
-                <div key={i} onClick={() => onOpenModule(s.target)} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"10px 12px",background:"rgba(255,255,255,0.6)",borderRadius:"8px",cursor:"pointer",border:"1px solid transparent",transition:"border-color 0.15s"}}>
-                  <span style={{fontSize:"14px",flexShrink:0}}>{s.icon}</span>
-                  <span style={{fontSize:"13px",color:TEXT,lineHeight:1.5,flex:1}}>{s.text}</span>
-                  <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>→</span>
+        {/* ── Cash & Savings: numbered optimisation tiles ──────────────────────
+            Optimisation 1 (always shown) nests the rate comparison and provider
+            tiles (moved out of the shared "Products" block below, which now
+            excludes cash). Optimisations 2/3 are conditional: redirecting
+            surplus cash above the emergency buffer, and moving surplus premium
+            bonds to a better guaranteed rate. */}
+        {moduleKey === "cash" && products && !isPensionUnknown && (() => {
+          const gap = m.annualYieldGap;
+          const cashHeadline = gap > 200
+            ? `${fmt(gap)}/yr more available by moving your cash`
+            : m.isaHeadroom > 0
+              ? `${fmt(m.isaHeadroom)} of ISA allowance remaining`
+              : "Your cash is already earning a competitive rate";
+          let n = 0;
+          const items = [];
+
+          items.push(
+            <OptimisationTile key="rate" number={++n} title="Move cash into a better-rate account" headline={cashHeadline} tag={OPT_TAG.future}>
+              <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"14px"}}>{products.subheading}</p>
+              <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"14px"}}>
+                {products.products.slice(0, visibleTileCount).map((p,i) => (
+                  <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>
+                ))}
+              </div>
+              {products.products.length > visibleTileCount && (
+                <button type="button" onClick={() => setVisibleTileCount(c => c + CASH_TILE_PAGE_SIZE)} style={{
+                  display:"block",width:"100%",padding:"10px",background:"transparent",
+                  border:"1.5px dashed rgba(22,47,36,0.25)",borderRadius:"8px",color:G,
+                  fontSize:"13px",fontWeight:600,cursor:"pointer",marginBottom:"14px",fontFamily:SANS,
+                }}>
+                  See {Math.min(CASH_TILE_PAGE_SIZE, products.products.length - visibleTileCount)} more ({products.products.length - visibleTileCount} remaining) ↓
+                </button>
+              )}
+              {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
+            </OptimisationTile>
+          );
+
+          if (showRunwayCallout) {
+            items.push(
+              <OptimisationTile key="surplus" number={++n} title="Redirect surplus cash above your emergency fund" headline={`${fmt(surplus)} sitting idle above your ${m.bufferMonths}-month buffer`} tag={OPT_TAG.today}>
+                <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
+                  You have <strong>{m.runwayMonths.toFixed(0)} months</strong> of runway — that's {(m.runwayMonths / m.bufferMonths).toFixed(1)}× your {m.bufferMonths}-month target. The excess ({fmt(surplus)}) is sitting in cash while likely losing ground to inflation. Consider putting it to work:
+                </p>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  {(() => {
+                    // Tied to the user's actual input (or a plan-based statutory estimate if
+                    // they didn't specify a rate) via resolveSlRate — never a flat guess. Only
+                    // suggest overpaying if that rate actually beats the best ISA rate available;
+                    // otherwise saving beats overpaying and this tile shouldn't appear at all.
+                    const slRateNum = d.studentLoan !== "none" ? resolveSlRate(d, m.salary) * 100 : 0;
+                    const bestIsaRow = topRate(savingsRates, true);
+                    const slBeatsSavings = !bestIsaRow || slRateNum > +bestIsaRow.rate_aer;
+                    return [
+                      d.hasPension === "yes" && (+d.myContribution||0) < (+d.employerMatch||0) && { icon:"🏦", text:`Top up pension — every £ contributes ${Math.round(m.tr*100)}% tax relief instantly`, target:"pension" },
+                      d.hasMortgage === "yes" && (+d.mortgageRate||0) >= 4 && { icon:"🏠", text:`Overpay mortgage — guaranteed ${d.mortgageRate}% return, risk-free`, target:"mortgage" },
+                      d.studentLoan !== "none" && m.willClear && slBeatsSavings && { icon:"🎓", text:`Student loan — your salary means you'll clear before write-off; overpaying saves interest at ${slRateNum.toFixed(1)}%`, target:"studentLoan" },
+                      // ISA suggestion deliberately omitted here — that point is now made once,
+                      // in the Investments module's own surplus-into-ISA callout, combining
+                      // this surplus cash with any unwrapped investments in one place.
+                    ];
+                  })().filter(Boolean).map((s,i) => (
+                    <div key={i} onClick={() => onOpenModule(s.target)} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"10px 12px",background:"rgba(22,47,36,0.04)",borderRadius:"8px",cursor:"pointer",border:"1px solid transparent",transition:"border-color 0.15s"}}>
+                      <span style={{fontSize:"14px",flexShrink:0}}>{s.icon}</span>
+                      <span style={{fontSize:"13px",color:TEXT,lineHeight:1.5,flex:1}}>{s.text}</span>
+                      <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>→</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </OptimisationTile>
+            );
+          }
+
+          if (bondsVal > 0) {
+            const bondsSurplusAmt = Math.max(0, bondsVal - m.emergencyBuffer);
+            // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
+            const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
+            const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
+            const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
+            const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
+            // Blended, floored: only isaHeadroom worth of the surplus is ISA-eligible, and
+            // the excess only contributes if the non-ISA rate actually beats the 4.4%
+            // NS&I baseline — otherwise there's nowhere better for that excess to go.
+            const isaPortion = Math.min(bondsSurplusAmt, m.isaHeadroom);
+            const nonIsaPortion = Math.max(0, bondsSurplusAmt - m.isaHeadroom);
+            const nonIsaPortionGain = nonIsaPortion * (nonIsaRateDecimal - 0.044);
+            const excessNotWorthMoving = nonIsaPortionGain < 0;
+            const annualGain = Math.round(isaPortion * (isaRateDecimal - 0.044) + Math.max(0, nonIsaPortionGain));
+            // The amount actually worth recommending — capped to the ISA-eligible portion
+            // when moving the excess isn't worthwhile, so the copy below doesn't overstate it.
+            const moveAmount = excessNotWorthMoving ? isaPortion : bondsSurplusAmt;
+            // Whether the whole surplus fits within this tax year's remaining ISA allowance
+            // (isaHeadroom is itself already capped at £20k) — if not, the copy must not
+            // claim the entire surplus goes into "a Cash ISA", since only isaPortion can.
+            const fitsEntirelyInIsa = nonIsaPortion <= 0;
+            if (bondsSurplusAmt >= 1000 && annualGain > 0) {
+              items.push(
+                <OptimisationTile key="bonds" number={++n} title="Move surplus premium bonds to a guaranteed rate" headline={`${fmt(annualGain)}/yr more from ${fmt(bondsSurplusAmt)} of surplus bonds`} tag={OPT_TAG.today}>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"12px"}}>
+                    <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
+                      <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Your bonds surplus</div>
+                      <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700}}>{fmt(bondsSurplusAmt)}</div>
+                      <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>above buffer</div>
+                    </div>
+                    <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
+                      <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Prize draw equiv.</div>
+                      <div style={{fontFamily:SERIF,fontSize:"17px",color:GOLD,fontWeight:700}}>~4.4%</div>
+                      <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax-free avg.</div>
+                    </div>
+                    <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
+                      <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Best Cash ISA</div>
+                      <div style={{fontFamily:SERIF,fontSize:"17px",color:"#2d6b4a",fontWeight:700}}>{isaRateDisplay}</div>
+                      <div style={{fontSize:"10px",color:"#2d6b4a",marginTop:"2px"}}>guaranteed</div>
+                    </div>
+                  </div>
+                  <div style={{background:"rgba(45,107,74,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
+                    {fitsEntirelyInIsa
+                      ? <>Moving {fmt(moveAmount)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average.</>
+                      : excessNotWorthMoving
+                        ? <>You can only shelter {fmt(isaPortion)} of your {fmt(bondsSurplusAmt)} surplus in an ISA this tax year (your remaining allowance) — moving that into a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong>. The remaining {fmt(nonIsaPortion)} doesn't currently beat the bond prize draw average anywhere else, so it's best left as-is for now.</>
+                        : <>Your {fmt(bondsSurplusAmt)} surplus won't all fit in an ISA this tax year — only {fmt(isaPortion)} of remaining allowance is left. Splitting it — {fmt(isaPortion)} into a {isaRateDisplay} Cash ISA and the remaining {fmt(nonIsaPortion)} into a {nonIsaRateDisplay} non-ISA account — would earn <strong>{fmt(annualGain)}/yr more</strong> combined, still a guaranteed return vs the bond prize draw average.</>
+                    } Premium bonds are government-backed and penalty-free to withdraw; this is a personal risk decision based on whether you value guaranteed income over the chance of tax-free prizes.
+                  </div>
+                </OptimisationTile>
+              );
+            }
+          }
+
+          return <div className="fu4">{items}</div>;
+        })()}
+
+        {/* Explore other cash-like options (cash module only) — kept as its own
+            unchanged collapsible, same role as Investments' "Beyond the basics":
+            optional exploration, not a numbered optimisation. */}
+        {moduleKey === "cash" && (
+          <div style={{marginTop:"8px"}}>
+            <button type="button" onClick={() => setExpandAlt(v => !v)} style={{width:"100%",padding:"13px 18px",background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",marginBottom: expandAlt ? "12px" : "0"}}>
+              <span style={{fontSize:"14px",fontWeight:600,color:G}}>Explore other cash-like options</span>
+              <span style={{fontSize:"18px",color:MUT,transform: expandAlt ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}>›</span>
+            </button>
+            {expandAlt && (
+              <div>
+                <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,marginBottom:"14px"}}>Beyond easy-access savings accounts, there are other low-risk places to park cash — each with different trade-offs on rate, liquidity, and tax efficiency.</p>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"12px"}}>
+                  {altProducts.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
+                </div>
+                <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"10px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>All rates indicative as of early 2026. Premium bonds prize rate is an average — individual returns vary. Gilts and money market funds carry low but non-zero risk. Candid may earn a referral fee.</p>
+              </div>
+            )}
           </div>
         )}
-
-        {/* Premium bonds yield opportunity */}
-        {moduleKey === "cash" && bondsVal > 0 && (() => {
-          const bondsSurplusAmt = Math.max(0, bondsVal - m.emergencyBuffer);
-          // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
-          const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
-          const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
-          const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
-          const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
-          // Blended, floored: only isaHeadroom worth of the surplus is ISA-eligible, and
-          // the excess only contributes if the non-ISA rate actually beats the 4.4%
-          // NS&I baseline — otherwise there's nowhere better for that excess to go.
-          const isaPortion = Math.min(bondsSurplusAmt, m.isaHeadroom);
-          const nonIsaPortion = Math.max(0, bondsSurplusAmt - m.isaHeadroom);
-          const nonIsaPortionGain = nonIsaPortion * (nonIsaRateDecimal - 0.044);
-          const excessNotWorthMoving = nonIsaPortionGain < 0;
-          const annualGain = Math.round(isaPortion * (isaRateDecimal - 0.044) + Math.max(0, nonIsaPortionGain));
-          // The amount actually worth recommending — capped to the ISA-eligible portion
-          // when moving the excess isn't worthwhile, so the copy below doesn't overstate it.
-          const moveAmount = excessNotWorthMoving ? isaPortion : bondsSurplusAmt;
-          // Whether the whole surplus fits within this tax year's remaining ISA allowance
-          // (isaHeadroom is itself already capped at £20k) — if not, the copy must not
-          // claim the entire surplus goes into "a Cash ISA", since only isaPortion can.
-          const fitsEntirelyInIsa = nonIsaPortion <= 0;
-          if (bondsSurplusAmt < 1000 || annualGain <= 0) return null;
-          return (
-            <div className="fu3" style={{background:"rgba(196,150,58,0.06)",border:`1px solid ${GOLD}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
-                <span style={{fontSize:"16px"}}>💰</span>
-                <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Yield opportunity: surplus premium bonds</span>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"12px"}}>
-                <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
-                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Your bonds surplus</div>
-                  <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700}}>{fmt(bondsSurplusAmt)}</div>
-                  <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>above buffer</div>
-                </div>
-                <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
-                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Prize draw equiv.</div>
-                  <div style={{fontFamily:SERIF,fontSize:"17px",color:GOLD,fontWeight:700}}>~4.4%</div>
-                  <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax-free avg.</div>
-                </div>
-                <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
-                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Best Cash ISA</div>
-                  <div style={{fontFamily:SERIF,fontSize:"17px",color:"#2d6b4a",fontWeight:700}}>{isaRateDisplay}</div>
-                  <div style={{fontSize:"10px",color:"#2d6b4a",marginTop:"2px"}}>guaranteed</div>
-                </div>
-              </div>
-              <div style={{background:"rgba(45,107,74,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                {fitsEntirelyInIsa
-                  ? <>Moving {fmt(moveAmount)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average.</>
-                  : excessNotWorthMoving
-                    ? <>You can only shelter {fmt(isaPortion)} of your {fmt(bondsSurplusAmt)} surplus in an ISA this tax year (your remaining allowance) — moving that into a {isaRateDisplay} Cash ISA would earn <strong>{fmt(annualGain)}/yr more</strong>. The remaining {fmt(nonIsaPortion)} doesn't currently beat the bond prize draw average anywhere else, so it's best left as-is for now.</>
-                    : <>Your {fmt(bondsSurplusAmt)} surplus won't all fit in an ISA this tax year — only {fmt(isaPortion)} of remaining allowance is left. Splitting it — {fmt(isaPortion)} into a {isaRateDisplay} Cash ISA and the remaining {fmt(nonIsaPortion)} into a {nonIsaRateDisplay} non-ISA account — would earn <strong>{fmt(annualGain)}/yr more</strong> combined, still a guaranteed return vs the bond prize draw average.</>
-                } Premium bonds are government-backed and penalty-free to withdraw; this is a personal risk decision based on whether you value guaranteed income over the chance of tax-free prizes.
-              </div>
-            </div>
-          );
-        })()}
 
         {/* Cross-module links */}
         {crossLinks.length > 0 && (
@@ -4361,18 +4396,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
         })()}
 
         {/* Products */}
-        {products && !isPensionUnknown && moduleKey !== "investments" && (
+        {products && !isPensionUnknown && moduleKey !== "investments" && moduleKey !== "cash" && (
           <div className="fu4">
             <div style={{marginBottom:"16px"}}>
               <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>{products.heading}</h3>
               <p style={{fontSize:"14px",color:MUT,lineHeight:1.65}}>{products.subheading}</p>
             </div>
-            {/* Cash tiles use a compact single-column list (rate box on the right of each
-                row — see ProductCard's productUrl branch); other modules keep the grid. */}
-            <div style={moduleKey === "cash"
-              ? {display:"flex",flexDirection:"column",gap:"8px",marginBottom:"14px"}
-              : {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"14px"}
-            }>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"14px"}}>
               {products.products.slice(0, visibleTileCount).map((p,i) => (
                 <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>
               ))}
@@ -4569,24 +4599,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               </div>
             )}
 
-            {/* Expandable: other cash-like options (cash module only) */}
-            {moduleKey === "cash" && (
-              <div style={{marginTop:"8px"}}>
-                <button type="button" onClick={() => setExpandAlt(v => !v)} style={{width:"100%",padding:"13px 18px",background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",marginBottom: expandAlt ? "12px" : "0"}}>
-                  <span style={{fontSize:"14px",fontWeight:600,color:G}}>Explore other cash-like options</span>
-                  <span style={{fontSize:"18px",color:MUT,transform: expandAlt ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}>›</span>
-                </button>
-                {expandAlt && (
-                  <div>
-                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,marginBottom:"14px"}}>Beyond easy-access savings accounts, there are other low-risk places to park cash — each with different trade-offs on rate, liquidity, and tax efficiency.</p>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"12px"}}>
-                      {altProducts.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
-                    </div>
-                    <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"10px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>All rates indicative as of early 2026. Premium bonds prize rate is an average — individual returns vary. Gilts and money market funds carry low but non-zero risk. Candid may earn a referral fee.</p>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 
