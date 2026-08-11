@@ -3697,20 +3697,32 @@ function AlternativeInvestments({ age }) {
 // "Mark as complete" is a self-reported, per-item toggle — separate from the
 // module-level "Mark as reviewed" action and does NOT affect the Candid score
 // (see itemStatus/toggleItemComplete in ModuleDeepDive for the persisted schema).
-function ExpandableInvestmentItem({ number, title, headline, completed, onToggleComplete, children }) {
+function ExpandableInvestmentItem({ number, title, headline, tag, completed, onToggleComplete, children }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginBottom:"14px"}}>
       <div style={{opacity: completed ? 0.55 : 1, transition:"opacity 0.2s", background: open ? G : WHITE, border:`1.5px solid ${open ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"12px", overflow:"hidden"}}>
-        <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"16px 18px 12px", background:"transparent", border:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
-          <div style={{minWidth:0}}>
-            <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G, textDecoration: completed ? "line-through" : "none"}}>
-              {number != null && <span style={{fontWeight:800, fontSize:"15px"}}>Optimisation {number}: </span>}
-              {title}
+        <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"16px 18px 12px", background:"transparent", border:"none", display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
+          <div style={{display:"flex", alignItems:"flex-start", gap:"12px", minWidth:0, flex:1}}>
+            {number != null && (
+              <div style={{width:"24px", height:"24px", borderRadius:"50%", background:G, border:"1.5px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:"1px"}}>
+                <span style={{fontSize:"12px", fontWeight:700, color:CREAM}}>{number}</span>
+              </div>
+            )}
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G, textDecoration: completed ? "line-through" : "none"}}>
+                {number != null && <span style={{fontWeight:800, fontSize:"15px"}}>Optimisation {number}: </span>}
+                {title}
+              </div>
+              <div style={{fontSize:"13px", color: open ? "rgba(255,255,255,0.75)" : MUT, marginTop:"3px", lineHeight:1.5}}>{headline}</div>
             </div>
-            <div style={{fontSize:"13px", color: open ? "rgba(255,255,255,0.75)" : MUT, marginTop:"3px", lineHeight:1.5}}>{headline}</div>
           </div>
-          <span style={{fontSize:"18px", color: open ? GOLD : MUT, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s", flexShrink:0}}>›</span>
+          <div style={{display:"flex", alignItems:"center", gap:"8px", flexShrink:0}}>
+            {tag && (
+              <span style={{fontSize:"10px", fontWeight:700, color:tag.color, background:`${tag.color}18`, padding:"3px 9px", borderRadius:"100px", letterSpacing:"0.04em", textTransform:"uppercase", whiteSpace:"nowrap"}}>{tag.label}</span>
+            )}
+            <span style={{fontSize:"18px", color: open ? GOLD : MUT, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s"}}>›</span>
+          </div>
         </button>
         <label style={{display:"flex", alignItems:"center", gap:"7px", padding:"0 18px 14px", cursor:"pointer", userSelect:"none"}}>
           <input type="checkbox" checked={completed} onChange={onToggleComplete} style={{width:"15px", height:"15px", accentColor:GOLD, cursor:"pointer"}}/>
@@ -4233,17 +4245,18 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           if (unwrappedVal > 0) surplusSources.push(`${fmt(unwrappedVal)} of unwrapped investments`);
           const showMoveMsg = m.isaHeadroom > 0 && surplusSources.length > 0;
           const isaHeadline = m.isaHeadroom > 0
-            ? `You have ${fmt(m.isaHeadroom)} of ISA allowance remaining.`
+            ? `You have ${fmt(m.isaHeadroom)} of ISA allowance remaining`
             : "You've used your full £20,000 ISA allowance this tax year.";
           const cgtHeadline = m.crystallisable > 0
-            ? `${fmt(m.crystallisable)} of CGT saveable via crystallisation = ${fmt(m.cgtSaving)} saved.`
+            ? `${fmt(m.cgtSaving)} saved this tax year`
             : "No unrealised gains to crystallise this tax year.";
           return (
             <div className="fu4">
               <ExpandableInvestmentItem
                 number={1}
-                title="Unused ISA allowance"
+                title="Utilise unused ISA allowance"
                 headline={isaHeadline}
+                tag={{ label: "Future opportunity", color: "#2d6b4a" }}
                 completed={!!itemStatus.isaAllowance}
                 onToggleComplete={() => toggleItemComplete("isaAllowance")}
               >
@@ -4319,8 +4332,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
               <ExpandableInvestmentItem
                 number={2}
-                title="CGT allowance crystallisation"
+                title="Crystallise paper gains not shielded by tax"
                 headline={cgtHeadline}
+                tag={{ label: "Today", color: GOLD }}
                 completed={!!itemStatus.cgtCrystallisation}
                 onToggleComplete={() => toggleItemComplete("cgtCrystallisation")}
               >
@@ -4332,9 +4346,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"14px 16px",marginBottom:"12px"}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
                         <span style={{fontSize:"15px"}}>🔄</span>
-                        <span style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>30-day rule</span>
+                        <span style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Bed &amp; breakfasting rule</span>
                       </div>
-                      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>Repurchase inside your ISA immediately, or wait 30 days to buy the same asset back outside it.</p>
+                      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>Repurchase inside your ISA immediately, or wait 30 days before buying the same holding back outside it.</p>
                     </div>
                     <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"14px 16px"}}>
                       <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
