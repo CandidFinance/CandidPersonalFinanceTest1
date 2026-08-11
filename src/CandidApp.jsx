@@ -3683,11 +3683,18 @@ function AlternativeInvestments({ age }) {
   );
 }
 
-// ── Expandable step-through item (Investments module) ─────────────────────────
-// Collapsed: numbered badge + title + one-line headline + category tag.
-// Expanded: arbitrary children, set off from the next item by a bottom divider
-// so it's clear where one optimisation ends and the next begins.
-function ExpandableInvestmentItem({ number, title, headline, tag, children }) {
+// ── Optimisation tile — shared across Investments, Cash, Pension, Student Loan,
+// Mortgage ──────────────────────────────────────────────────────────────────
+// Collapsed: numbered badge + bold "Optimisation N:" prefix + title + one-line
+// headline + category tag. Expanded: arbitrary children, set off from the next
+// item by a bottom divider so it's clear where one optimisation ends and the
+// next begins. Tag colors: green "Future opportunity" (builds value over time)
+// vs gold "Today" (immediate/time-limited impact) — pick per item.
+const OPT_TAG = {
+  future: { label: "Future opportunity", color: "#2d6b4a" },
+  today:  { label: "Today", color: GOLD },
+};
+function OptimisationTile({ number, title, headline, tag, children }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginBottom: open ? "24px" : "14px", paddingBottom: open ? "20px" : 0, borderBottom: open ? "1px solid rgba(22,47,36,0.14)" : "none"}}>
@@ -3716,6 +3723,29 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children }) {
         </button>
       </div>
       {open && <div style={{marginTop:"12px"}}>{children}</div>}
+    </div>
+  );
+}
+
+// ── Small styled callout tile — reused for distinct sub-points inside an
+// expanded optimisation (e.g. a deadline warning, a mechanic explainer) rather
+// than plain paragraph text. tone "gold" = informational/procedural, matching
+// the app's existing actionable-nudge styling; tone "red" = urgency/deadline,
+// matching the app's existing warning styling (e.g. Mortgage's "Fixed rate
+// expiring soon", Student Loan's "Effective 9% income surcharge").
+const CALLOUT_TONE = {
+  gold: { bg: "rgba(196,150,58,0.07)", border: "rgba(196,150,58,0.28)", labelColor: GOLD },
+  red:  { bg: "rgba(192,57,43,0.05)",  border: "rgba(192,57,43,0.22)",  labelColor: "#c0392b" },
+};
+function CalloutTile({ icon, label, tone = "gold", children }) {
+  const t = CALLOUT_TONE[tone] || CALLOUT_TONE.gold;
+  return (
+    <div style={{background:t.bg, border:`1.5px solid ${t.border}`, borderRadius:"12px", padding:"14px 16px", marginBottom:"12px"}}>
+      <div style={{display:"flex", alignItems:"center", gap:"8px", marginBottom:"6px"}}>
+        <span style={{fontSize:"15px"}}>{icon}</span>
+        <span style={{fontSize:"11px", fontWeight:700, color:t.labelColor, letterSpacing:"0.06em", textTransform:"uppercase"}}>{label}</span>
+      </div>
+      <div style={{fontSize:"13px", color:TEXT, lineHeight:1.6}}>{children}</div>
     </div>
   );
 }
@@ -4211,11 +4241,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             : "No unrealised gains to crystallise this tax year.";
           return (
             <div className="fu4">
-              <ExpandableInvestmentItem
+              <OptimisationTile
                 number={1}
                 title="Utilise unused ISA allowance"
                 headline={isaHeadline}
-                tag={{ label: "Future opportunity", color: "#2d6b4a" }}
+                tag={OPT_TAG.future}
               >
                 <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"14px"}}>{products.subheading}</p>
 
@@ -4285,13 +4315,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   {products.products.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
                 </div>
                 {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
-              </ExpandableInvestmentItem>
+              </OptimisationTile>
 
-              <ExpandableInvestmentItem
+              <OptimisationTile
                 number={2}
                 title="Crystallise paper gains not shielded by tax"
                 headline={cgtHeadline}
-                tag={{ label: "Today", color: GOLD }}
+                tag={OPT_TAG.today}
               >
                 {m.crystallisable > 0 ? (() => {
                   const totalGains = +d.unrealisedGains||0;
@@ -4325,7 +4355,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 })() : (
                   <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>You have no unrealised gains recorded outside an ISA or pension this tax year, so there's nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount.</p>
                 )}
-              </ExpandableInvestmentItem>
+              </OptimisationTile>
             </div>
           );
         })()}
