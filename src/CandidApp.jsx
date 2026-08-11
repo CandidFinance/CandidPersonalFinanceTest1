@@ -104,6 +104,15 @@ export function fmt(n) {
   return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Math.abs(n||0));
 }
 
+// UK tax year runs 6 April → 5 April. Used to key self-reported item-completion
+// state so it resets automatically each new tax year (matches ISA/CGT allowances).
+function currentTaxYearLabel(date = new Date()) {
+  const y = date.getFullYear();
+  const afterApril6 = date.getMonth() > 3 || (date.getMonth() === 3 && date.getDate() >= 6);
+  const startYear = afterApril6 ? y : y - 1;
+  return `${startYear}-${String((startYear + 1) % 100).padStart(2,"0")}`;
+}
+
 // Formats a raw numeric value for display inside an input on blur
 // type: "gbp" → £12,345 | "pct" → 5.0% | else raw
 function fmtInput(val, type) {
@@ -3688,6 +3697,33 @@ function AlternativeInvestments({ age }) {
   );
 }
 
+// ── Expandable step-through item (Investments module) ─────────────────────────
+// Collapsed: title + one-line headline. Expanded: arbitrary children.
+// "Mark as complete" is a self-reported, per-item toggle — separate from the
+// module-level "Mark as reviewed" action and does NOT affect the Candid score
+// (see itemStatus/toggleItemComplete in ModuleDeepDive for the persisted schema).
+function ExpandableInvestmentItem({ title, headline, completed, onToggleComplete, children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{marginBottom:"14px"}}>
+      <div style={{opacity: completed ? 0.55 : 1, transition:"opacity 0.2s", background: open ? G : WHITE, border:`1.5px solid ${open ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"12px", overflow:"hidden"}}>
+        <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"16px 18px 12px", background:"transparent", border:"none", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G, textDecoration: completed ? "line-through" : "none"}}>{title}</div>
+            <div style={{fontSize:"13px", color: open ? "rgba(255,255,255,0.75)" : MUT, marginTop:"3px", lineHeight:1.5}}>{headline}</div>
+          </div>
+          <span style={{fontSize:"18px", color: open ? GOLD : MUT, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s", flexShrink:0}}>›</span>
+        </button>
+        <label style={{display:"flex", alignItems:"center", gap:"7px", padding:"0 18px 14px", cursor:"pointer", userSelect:"none"}}>
+          <input type="checkbox" checked={completed} onChange={onToggleComplete} style={{width:"15px", height:"15px", accentColor:GOLD, cursor:"pointer"}}/>
+          <span style={{fontSize:"11px", color: open ? "rgba(255,255,255,0.6)" : MUT}}>Mark as complete — personal tracking only, doesn't affect your Candid score</span>
+        </label>
+      </div>
+      {open && <div style={{marginTop:"12px"}}>{children}</div>}
+    </div>
+  );
+}
+
 function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, openSection, goBack, goToDashboard, onComplete, isComplete, onOpenModule, nextModule }) {
   const [openTip,   setOpenTip]   = useState(null);
   const [expandAlt, setExpandAlt] = useState(false);
@@ -3700,6 +3736,31 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // harmless no-op elsewhere since other modules never exceed the page size).
   const [visibleTileCount, setVisibleTileCount] = useState(CASH_TILE_PAGE_SIZE);
   useEffect(() => { setVisibleTileCount(CASH_TILE_PAGE_SIZE); }, [moduleKey]);
+
+  // Investments module: self-reported "mark as complete" per item (ISA allowance,
+  // CGT crystallisation), keyed to the current UK tax year so it resets 6 April
+  // alongside the allowances themselves. `status: "self_reported"` (vs "verified")
+  // leaves room for a future TrueLayer-backed check to upgrade this without a
+  // schema change. Purely a personal tracker — never feeds the Candid score.
+  const [itemStatus, setItemStatus] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("candid_item_status_v1") || "null");
+      if (saved && saved.taxYear === currentTaxYearLabel()) return saved.items || {};
+    } catch(e) {}
+    return {};
+  });
+  useEffect(() => {
+    try { localStorage.setItem("candid_item_status_v1", JSON.stringify({ taxYear: currentTaxYearLabel(), items: itemStatus })); }
+    catch(e) {}
+  }, [itemStatus]);
+  function toggleItemComplete(key) {
+    setItemStatus(prev => {
+      const next = {...prev};
+      if (next[key]) delete next[key];
+      else next[key] = { status:"self_reported", completedAt: new Date().toISOString() };
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (openSection === "bonusSacrifice") {
@@ -3919,15 +3980,17 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           </div>
         )}
 
-        {/* AI summary */}
-        {!isPensionUnknown && modSummary?.summary && (
+        {/* AI summary — omitted for Investments: its content is now the collapsed
+            headline of the "CGT allowance crystallisation" expandable item below. */}
+        {!isPensionUnknown && modSummary?.summary && moduleKey !== "investments" && (
           <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
             <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75}}>{modSummary.summary}</p>
           </div>
         )}
 
-        {/* Computed metrics with tooltips */}
-        {!isPensionUnknown && modInsights.length > 0 && (
+        {/* Computed metrics with tooltips — omitted for Investments: folded into
+            the two expandable step-through items below. */}
+        {!isPensionUnknown && modInsights.length > 0 && moduleKey !== "investments" && (
           <div className="fu2" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px",marginBottom:"20px"}}>
             {modInsights.map((ins,i) => (
               <div key={i} style={{background:ins.flag ? "rgba(196,150,58,0.08)" : WHITE,borderRadius:"10px",padding:"14px 16px",border:`1px solid ${ins.flag ? "rgba(196,150,58,0.3)" : "rgba(22,47,36,0.09)"}`,position:"relative"}}>
@@ -4157,84 +4220,138 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           </div>
         )}
 
-        {/* Move surplus into S&S ISA — the single place this point is made (the
-            equivalent Cash & Savings runway suggestion was removed to avoid stating it
-            twice), combining surplus cash and unwrapped investments as two possible
-            sources rather than two separate messages. */}
-        {moduleKey === "investments" && m.isaHeadroom > 0 && (m.surplusCash > 5000 || (+d.unwrappedValue||0) > 0) && (() => {
+        {/* ── Investments: two expandable step-through items ──────────────────
+            Replaces the old flat tile stack. "Unused ISA allowance" nests the
+            compound-growth chart and ISA provider comparison; "CGT allowance
+            crystallisation" nests the existing "Action before April 5th" panel.
+            Item-level "mark as complete" (itemStatus/toggleItemComplete) is a
+            self-reported personal tracker only — it does not affect the Candid
+            score. The module-level score-affecting action remains the separate
+            "Mark as reviewed" button at the bottom of this page. */}
+        {moduleKey === "investments" && products && !isPensionUnknown && (() => {
           const unwrappedVal = +d.unwrappedValue||0;
-          const sources = [];
-          if (m.surplusCash > 5000) sources.push(`${fmt(m.surplusCash)} of surplus cash above your ${m.bufferMonths}-month emergency fund`);
-          if (unwrappedVal > 0) sources.push(`${fmt(unwrappedVal)} of unwrapped investments`);
+          const surplusSources = [];
+          if (m.surplusCash > 5000) surplusSources.push(`${fmt(m.surplusCash)} of surplus cash above your ${m.bufferMonths}-month emergency fund`);
+          if (unwrappedVal > 0) surplusSources.push(`${fmt(unwrappedVal)} of unwrapped investments`);
+          const showMoveMsg = m.isaHeadroom > 0 && surplusSources.length > 0;
+          const isaHeadline = m.isaHeadroom > 0
+            ? `You have ${fmt(m.isaHeadroom)} of ISA allowance remaining.`
+            : "You've used your full £20,000 ISA allowance this tax year.";
+          const cgtHeadline = m.crystallisable > 0
+            ? `${fmt(m.crystallisable)} of CGT saveable via crystallisation = ${fmt(m.cgtSaving)} saved.`
+            : "No unrealised gains to crystallise this tax year.";
           return (
-            <div className="fu2" style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                <span style={{fontSize:"16px"}}>💷</span>
-                <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Move this into your S&S ISA</span>
-              </div>
-              <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7}}>
-                You have {sources.join(" and ")} — {fmt(m.isaHeadroom)} of ISA allowance is available to shelter it from tax, permanently. The providers below are where you'd actually do this.
-              </p>
+            <div className="fu4">
+              <ExpandableInvestmentItem
+                title="Unused ISA allowance"
+                headline={isaHeadline}
+                completed={!!itemStatus.isaAllowance}
+                onToggleComplete={() => toggleItemComplete("isaAllowance")}
+              >
+                <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"14px"}}>{products.subheading}</p>
+
+                {showMoveMsg && (
+                  <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+                      <span style={{fontSize:"16px"}}>💷</span>
+                      <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Move this into your S&S ISA</span>
+                    </div>
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7}}>
+                      You have {surplusSources.join(" and ")} — {fmt(m.isaHeadroom)} of ISA allowance is available to shelter it from tax, permanently. The providers below are where you'd actually do this.
+                    </p>
+                  </div>
+                )}
+
+                {/* ISA compound-growth chart — real inline SVG (matches the pension/
+                    student-loan charts elsewhere in this file): actual compound values
+                    plotted at each step, not a straight line. Single lump sum, no
+                    further contributions. */}
+                {m.isaHeadroom > 0 && (() => {
+                  const principal = m.isaHeadroom;
+                  const growthRatePct = 7;
+                  // UK State Pension age (67) — fixed, since we don't capture it as a
+                  // user input (d.retirementAge is a different concept: the user's
+                  // chosen private pension access age, used for pension projections).
+                  const retirementAge = 67;
+                  const currentAge = +d.age || 30;
+                  const years = Math.max(1, retirementAge - currentAge);
+                  const finalValue = principal * Math.pow(1 + growthRatePct/100, years);
+                  const STEPS = Math.min(years, 60);
+                  const points = Array.from({ length: STEPS + 1 }, (_, i) => {
+                    const yr = (years * i) / STEPS;
+                    return { yr, val: principal * Math.pow(1 + growthRatePct/100, yr) };
+                  });
+                  const VW = 640, VH = 200, PL = 18, PR = 18, PT = 48, PB = 30;
+                  const cW = VW - PL - PR, cH = VH - PT - PB;
+                  const maxVal = finalValue * 1.05;
+                  const sx = yr => PL + (yr / years) * cW;
+                  const sy = val => PT + cH - (val / maxVal) * cH;
+                  const linePath = points.map((p, i) => `${i===0?"M":"L"}${sx(p.yr).toFixed(1)},${sy(p.val).toFixed(1)}`).join(" ");
+                  const areaPath = `${linePath} L${sx(years).toFixed(1)},${(PT+cH).toFixed(1)} L${sx(0).toFixed(1)},${(PT+cH).toFixed(1)} Z`;
+                  return (
+                    <div style={{background:"#F4EEE2",borderRadius:"12px",padding:"16px 18px 12px",marginBottom:"16px"}}>
+                      <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible"}}>
+                        <defs>
+                          <linearGradient id="isaGrowthFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#153524" stopOpacity="0.24"/>
+                            <stop offset="100%" stopColor="#153524" stopOpacity="0.02"/>
+                          </linearGradient>
+                        </defs>
+                        <path d={areaPath} fill="url(#isaGrowthFill)"/>
+                        <path d={linePath} fill="none" stroke="#C79A3D" strokeWidth="3" strokeLinecap="round"/>
+                        <text x={VW-PR} y={PT-20} textAnchor="end" fontSize="21" fontWeight="700" fill="#153524" fontFamily={SERIF}>{`~${fmt(Math.round(finalValue))}`}</text>
+                        <text x={VW-PR} y={PT-5} textAnchor="end" fontSize="11" fill="#153524" opacity="0.75">{`at ${growthRatePct}% p.a., tax-free`}</text>
+                        <text x={PL} y={PT+cH+20} fontSize="11" fontWeight="600" fill="#153524" opacity="0.8">{`Today · ${fmt(Math.round(principal))}`}</text>
+                        <text x={VW-PR} y={PT+cH+20} textAnchor="end" fontSize="11" fill="#153524" opacity="0.6">{`${years} years`}</text>
+                      </svg>
+                      <p style={{fontSize:"11px",color:"#153524",opacity:0.65,lineHeight:1.5,marginTop:"2px"}}>
+                        Illustrative only — assumes {growthRatePct}% p.a. nominal growth (not guaranteed) and retirement at {retirementAge}. Real returns could be lower or negative.
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Where to open a Stocks &amp; Shares ISA</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"12px"}}>
+                  {products.products.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
+                </div>
+                {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
+              </ExpandableInvestmentItem>
+
+              <ExpandableInvestmentItem
+                title="CGT allowance crystallisation"
+                headline={cgtHeadline}
+                completed={!!itemStatus.cgtCrystallisation}
+                onToggleComplete={() => toggleItemComplete("cgtCrystallisation")}
+              >
+                {products.cgtSection ? (
+                  <div style={{background:"rgba(22,47,36,0.03)",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"12px",overflow:"hidden"}}>
+                    <div style={{background:G,padding:"12px 18px",display:"flex",alignItems:"center",gap:"8px"}}>
+                      <span style={{fontSize:"14px"}}>⏳</span>
+                      <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Action before April 5th</span>
+                    </div>
+                    <div style={{padding:"16px 18px"}}>
+                      <h4 style={{fontFamily:SERIF,fontSize:"16px",color:G,marginBottom:"10px"}}>{products.cgtSection.heading}</h4>
+                      <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>{products.cgtSection.body}</p>
+                      <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"8px",padding:"12px 14px"}}>
+                        <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"5px"}}>Use it or lose it</div>
+                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65}}>{products.cgtSection.warning}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>You have no unrealised gains recorded outside an ISA or pension this tax year, so there's nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount.</p>
+                )}
+              </ExpandableInvestmentItem>
             </div>
           );
         })()}
 
         {/* Products */}
-        {products && !isPensionUnknown && (
+        {products && !isPensionUnknown && moduleKey !== "investments" && (
           <div className="fu4">
             <div style={{marginBottom:"16px"}}>
               <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>{products.heading}</h3>
-
-              {/* ISA compound-growth chart — real inline SVG (matches the pension/
-                  student-loan charts elsewhere in this file), not an approximation:
-                  actual compound values plotted at each step, not a straight line.
-                  Single lump sum, no further contributions, matching the "left
-                  unused" figure in the heading above. */}
-              {moduleKey === "investments" && m.isaHeadroom > 0 && (() => {
-                const principal = m.isaHeadroom;
-                const growthRatePct = 7;
-                // UK State Pension age (67) — fixed, since we don't capture it as a
-                // user input (d.retirementAge is a different concept: the user's
-                // chosen private pension access age, used for pension projections).
-                const retirementAge = 67;
-                const currentAge = +d.age || 30;
-                const years = Math.max(1, retirementAge - currentAge);
-                const finalValue = principal * Math.pow(1 + growthRatePct/100, years);
-                const STEPS = Math.min(years, 60);
-                const points = Array.from({ length: STEPS + 1 }, (_, i) => {
-                  const yr = (years * i) / STEPS;
-                  return { yr, val: principal * Math.pow(1 + growthRatePct/100, yr) };
-                });
-                const VW = 640, VH = 200, PL = 18, PR = 18, PT = 48, PB = 30;
-                const cW = VW - PL - PR, cH = VH - PT - PB;
-                const maxVal = finalValue * 1.05;
-                const sx = yr => PL + (yr / years) * cW;
-                const sy = val => PT + cH - (val / maxVal) * cH;
-                const linePath = points.map((p, i) => `${i===0?"M":"L"}${sx(p.yr).toFixed(1)},${sy(p.val).toFixed(1)}`).join(" ");
-                const areaPath = `${linePath} L${sx(years).toFixed(1)},${(PT+cH).toFixed(1)} L${sx(0).toFixed(1)},${(PT+cH).toFixed(1)} Z`;
-                return (
-                  <div style={{background:"#F4EEE2",borderRadius:"12px",padding:"16px 18px 12px",marginBottom:"14px"}}>
-                    <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible"}}>
-                      <defs>
-                        <linearGradient id="isaGrowthFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#153524" stopOpacity="0.24"/>
-                          <stop offset="100%" stopColor="#153524" stopOpacity="0.02"/>
-                        </linearGradient>
-                      </defs>
-                      <path d={areaPath} fill="url(#isaGrowthFill)"/>
-                      <path d={linePath} fill="none" stroke="#C79A3D" strokeWidth="3" strokeLinecap="round"/>
-                      <text x={VW-PR} y={PT-20} textAnchor="end" fontSize="21" fontWeight="700" fill="#153524" fontFamily={SERIF}>{`~${fmt(Math.round(finalValue))}`}</text>
-                      <text x={VW-PR} y={PT-5} textAnchor="end" fontSize="11" fill="#153524" opacity="0.75">{`at ${growthRatePct}% p.a., tax-free`}</text>
-                      <text x={PL} y={PT+cH+20} fontSize="11" fontWeight="600" fill="#153524" opacity="0.8">{`Today · ${fmt(Math.round(principal))}`}</text>
-                      <text x={VW-PR} y={PT+cH+20} textAnchor="end" fontSize="11" fill="#153524" opacity="0.6">{`${years} years`}</text>
-                    </svg>
-                    <p style={{fontSize:"11px",color:"#153524",opacity:0.65,lineHeight:1.5,marginTop:"2px"}}>
-                      Illustrative only — assumes {growthRatePct}% p.a. nominal growth (not guaranteed) and retirement at {retirementAge}. Real returns could be lower or negative.
-                    </p>
-                  </div>
-                );
-              })()}
-
               <p style={{fontSize:"14px",color:MUT,lineHeight:1.65}}>{products.subheading}</p>
             </div>
             {/* Cash tiles use a compact single-column list (rate box on the right of each
@@ -4257,24 +4374,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               </button>
             )}
             {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
-
-            {/* CGT crystallisation action panel */}
-            {products.cgtSection && (
-              <div style={{marginTop:"16px",background:"rgba(22,47,36,0.03)",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"12px",overflow:"hidden"}}>
-                <div style={{background:G,padding:"12px 18px",display:"flex",alignItems:"center",gap:"8px"}}>
-                  <span style={{fontSize:"14px"}}>⏳</span>
-                  <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Action before April 5th</span>
-                </div>
-                <div style={{padding:"16px 18px"}}>
-                  <h4 style={{fontFamily:SERIF,fontSize:"16px",color:G,marginBottom:"10px"}}>{products.cgtSection.heading}</h4>
-                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>{products.cgtSection.body}</p>
-                  <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"8px",padding:"12px 14px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"5px"}}>Use it or lose it</div>
-                    <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65}}>{products.cgtSection.warning}</p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Student loan overpayment scenarios */}
             {products.slSection && (
