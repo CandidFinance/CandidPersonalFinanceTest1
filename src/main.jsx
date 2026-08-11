@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, lazy, Suspense } from "react"
 import ReactDOM from "react-dom/client"
 import posthog from "posthog-js"
 import CandidApp from "./CandidApp.jsx"
@@ -14,6 +14,19 @@ if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
     capture_pageleave: true,
     autocapture: false,
   })
+}
+
+// ── Dev tools (test profile loader) — genuinely excluded from prod builds ──────
+// Vite statically replaces import.meta.env.VITE_* at build time. Set
+// VITE_SHOW_DEV_TOOLS=true in .env.local for local dev, and in Vercel's
+// Development/Preview env vars (never Production). When the flag is unset,
+// SHOW_DEV_TOOLS folds to a literal `false`, so the `if` block below —
+// including the dynamic import() — is dead code that esbuild's minifier
+// strips from the production bundle; DevTools.jsx's chunk is never emitted.
+const SHOW_DEV_TOOLS = import.meta.env.VITE_SHOW_DEV_TOOLS === "true"
+let DevToolsPanel = null
+if (SHOW_DEV_TOOLS) {
+  DevToolsPanel = lazy(() => import("./DevTools.jsx"))
 }
 
 const G    = "#162f24"
@@ -371,6 +384,16 @@ function Root() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
+  // Bumped whenever the dev panel loads a preset, forcing CandidApp to remount
+  // (via its `key`) so it re-reads the freshly-written localStorage instead of
+  // keeping its already-initialized `d`/`insights` state.
+  const [devReloadKey, setDevReloadKey] = useState(0);
+  function handleDevPresetLoaded() {
+    setDevReloadKey(k => k + 1);
+    setView("dashboard");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
   return (
     <div>
       {view === "landing" && <LandingPage onStart={handleStart} />}
@@ -399,14 +422,20 @@ function Root() {
 
       {view === "onboarding" && (
         <div id="candid-app" style={{ minHeight: "100vh" }}>
-          <CandidApp initialScreen="onboarding" onGoHome={goHome} />
+          <CandidApp key={devReloadKey} initialScreen="onboarding" onGoHome={goHome} />
         </div>
       )}
 
       {view === "dashboard" && (
         <div id="candid-app" style={{ minHeight: "100vh" }}>
-          <CandidApp initialScreen="dashboard" onGoHome={goHome} />
+          <CandidApp key={devReloadKey} initialScreen="dashboard" onGoHome={goHome} />
         </div>
+      )}
+
+      {SHOW_DEV_TOOLS && DevToolsPanel && (
+        <Suspense fallback={null}>
+          <DevToolsPanel onPresetLoaded={handleDevPresetLoaded} />
+        </Suspense>
       )}
     </div>
   )
