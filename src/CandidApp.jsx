@@ -4208,7 +4208,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
           const currentTaxableInterest = Math.round(m.cash * m.savingsRate / 100);
           const currentPbInterest = Math.round(bondsVal * PB_RATE);
-          const currentTaxCost = Math.round(Math.max(0, currentTaxableInterest - psaLimit) * m.tr);
+          const currentGrossTotal = currentTaxableInterest + currentPbInterest;
+          const currentTaxableAmount = Math.max(0, currentTaxableInterest - psaLimit);
+          const trPct = Math.round(m.tr * 100);
+          const currentTaxCost = Math.round(currentTaxableAmount * m.tr);
           const currentAfterTaxTotal = currentTaxableInterest - currentTaxCost + currentPbInterest;
 
           // The full reallocation pot — cash (already outside any ISA) plus premium
@@ -4292,73 +4295,105 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               <ExpandableInvestmentItem
                 number={optimiseWinNumber}
                 title="Optimise your cash"
-                headline={totalPot <= 0 ? "Add your cash and savings details to see this" : optimisationGain > 50 ? `${fmt(optimisationGain)}/yr more, tax-efficiently` : "Your cash is already well-placed for tax."}
+                headline={totalPot <= 0 ? "Add your cash and savings details to see this" : optimisationGain > 50 ? `You can earn ${fmt(optimisationGain)}/yr more, tax-efficiently` : "Your cash is already well-placed for tax."}
                 tag={{ label:"Today", color:GOLD }}
               >
-                {totalPot > 0 ? (
+                {totalPot > 0 ? (() => {
+                  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT };
+                  const totalRowStyle = { ...rowStyle, paddingTop:"7px", borderTop:"1px dashed rgba(22,47,36,0.18)", fontWeight:700 };
+                  const stepCardStyle = { background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.12)", borderRadius:"12px", padding:"14px 16px", marginBottom:"10px" };
+                  const stepEyebrowStyle = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
+                  const stepWhyStyle = { fontSize:"12px", color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
+                  return (
                   <>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                      You're a {m.taxBandLabel}-rate taxpayer, which gives you {psaLimit > 0 ? `a ${fmt(psaLimit)}/yr Personal Savings Allowance` : "no Personal Savings Allowance"} — interest above that is taxed at your marginal rate. The most tax-efficient order for cash-like savings is almost always: fill your ISA first (always tax-free), then fill ordinary savings up to your allowance, then Premium Bonds for the rest — worked through below for your {fmt(totalPot)}.
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"16px"}}>
+                      Here's the full working for your {fmt(totalPot)} of cash and Premium Bonds — what it earns today, then the tax-efficient order to hold it in instead.
                     </p>
 
-                    <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
-                      <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Your accounts today</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"10px"}}>
+                    {/* ── 1. Today's allocation ─────────────────────────────── */}
+                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>1. Today's allocation</div>
+                    <div style={{...stepCardStyle,padding:"16px 18px",marginBottom:"12px"}}>
+                      <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
                         {displayTiers.map((t,i) => (
-                          <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
+                          <div key={i} style={rowStyle}>
                             <span>{t.isPb ? "Premium Bonds" : `Account ${i+1}`} — {fmt(t.amount)} at {t.rate.toFixed(2)}%{t.isPb ? " (tax-free avg.)" : ""}</span>
                             <span style={{fontWeight:600}}>{fmt(Math.round(t.amount * t.rate / 100))}/yr</span>
                           </div>
                         ))}
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)",fontWeight:700}}>
-                          <span>Total, after tax</span>
-                          <span>{fmt(currentAfterTaxTotal)}/yr</span>
+                        <div style={totalRowStyle}>
+                          <span>Gross interest income</span>
+                          <span>{fmt(currentGrossTotal)}/yr</span>
                         </div>
                       </div>
-                      {currentTaxCost > 0 && (
-                        <div style={{background:"rgba(192,57,43,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                          You're currently paying an estimated <strong>{fmt(currentTaxCost)}/yr</strong> in tax on interest above your {fmt(psaLimit)} Personal Savings Allowance.
-                        </div>
-                      )}
                     </div>
 
-                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>Your optimised allocation</div>
-                    <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
-                      <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"10px"}}>
-                        {step1Isa > 0 && (
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
-                            <span><strong>Step 1</strong> — {fmt(step1Isa)} into a Cash ISA at {isaRateDisplay}</span>
-                            <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span>
-                          </div>
-                        )}
-                        {step2Savings > 0 && (
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
-                            <span><strong>Step 2</strong> — {fmt(step2Savings)} into savings at {nonIsaRateDisplay}, up to your {fmt(psaLimit)} allowance</span>
-                            <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(step2SavingsInterest)}/yr</span>
-                          </div>
-                        )}
-                        {step3Pb > 0 && (
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
-                            <span><strong>Step 3</strong> — {fmt(step3Pb)} in Premium Bonds at ~4.4% (tax-free avg.)</span>
-                            <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span>
-                          </div>
-                        )}
-                        {beyondWrappers > 0 && (
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
-                            <span><strong>Step 4</strong> — {fmt(beyondWrappers)} doesn't fit any tax-efficient cash wrapper — see below</span>
-                            <span style={{fontWeight:600,color:MUT}}>—</span>
-                          </div>
-                        )}
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)",fontWeight:700}}>
-                          <span>Total</span>
-                          <span>{fmt(optimisedTotal)}/yr</span>
+                    {m.cash > 0 && (
+                      <div style={{...stepCardStyle,padding:"16px 18px",marginBottom:"16px",background:"rgba(192,57,43,0.04)",border:"1px solid rgba(192,57,43,0.18)"}}>
+                        <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Tax on that interest</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"12px"}}>
+                          <div style={rowStyle}><span>Taxable interest (outside an ISA, excluding Premium Bonds)</span><span style={{fontWeight:600}}>{fmt(currentTaxableInterest)}</span></div>
+                          <div style={rowStyle}><span>Less: your Personal Savings Allowance</span><span>−{fmt(Math.min(currentTaxableInterest, psaLimit))}</span></div>
+                          <div style={{...rowStyle,paddingTop:"7px",borderTop:"1px dashed rgba(192,57,43,0.25)"}}><span>Taxable amount</span><span style={{fontWeight:600}}>{fmt(currentTaxableAmount)}</span></div>
+                          <div style={{...rowStyle,color:"#c0392b",fontWeight:700}}><span>Tax due at {trPct}%</span><span>{fmt(currentTaxCost)}</span></div>
+                        </div>
+                        <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT}}>
+                          Net interest income, after tax: <strong>{fmt(currentAfterTaxTotal)}/yr</strong>
                         </div>
                       </div>
-                      <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                        {optimisationGain > 0
-                          ? <>That's <strong>{fmt(optimisationGain)}/yr more</strong> than your current {fmt(currentAfterTaxTotal)}/yr after tax{currentTaxCost > 0 ? <> — including the {fmt(currentTaxCost)}/yr you're currently losing to tax</> : ""}, and every penny of it is tax-free or within your allowances.</>
-                          : <>Your cash is already well-placed — there's little to gain from reordering it further right now.</>
-                        }
+                    )}
+
+                    {/* ── 2. Optimised allocation ───────────────────────────── */}
+                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>2. Optimised allocation</div>
+
+                    {step1Isa > 0 && (
+                      <div style={stepCardStyle}>
+                        <div style={stepEyebrowStyle}>Step 1 — Fill your ISA</div>
+                        <div style={rowStyle}>
+                          <span>{fmt(step1Isa)} into a Cash ISA at {isaRateDisplay}</span>
+                          <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span>
+                        </div>
+                        <p style={stepWhyStyle}>Why: interest inside an ISA is completely tax-free, for life, and doesn't touch your Personal Savings Allowance — so it's always the first place to fill.</p>
+                      </div>
+                    )}
+                    {step2Savings > 0 && (
+                      <div style={stepCardStyle}>
+                        <div style={stepEyebrowStyle}>Step 2 — Fill your Personal Savings Allowance</div>
+                        <div style={rowStyle}>
+                          <span>{fmt(step2Savings)} into savings at {nonIsaRateDisplay}</span>
+                          <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step2SavingsInterest)}/yr</span>
+                        </div>
+                        <p style={stepWhyStyle}>Why: interest within your {fmt(psaLimit)} allowance is also effectively tax-free — and {nonIsaRateDisplay} beats the ~4.4% Premium Bonds average, so this comes next.</p>
+                      </div>
+                    )}
+                    {step3Pb > 0 && (
+                      <div style={stepCardStyle}>
+                        <div style={stepEyebrowStyle}>Step 3 — Premium Bonds for the rest</div>
+                        <div style={rowStyle}>
+                          <span>{fmt(step3Pb)} in Premium Bonds at ~4.4% (tax-free avg.)</span>
+                          <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span>
+                        </div>
+                        <p style={stepWhyStyle}>Why: once your allowance is used, ordinary savings interest is taxed at your {trPct}% marginal rate — Premium Bonds aren't, so they're the better home for the rest, up to the £50,000 holding cap.</p>
+                      </div>
+                    )}
+                    {beyondWrappers > 0 && (
+                      <div style={stepCardStyle}>
+                        <div style={stepEyebrowStyle}>Step 4 — Beyond cash</div>
+                        <div style={rowStyle}>
+                          <span>{fmt(beyondWrappers)} doesn't fit any tax-efficient cash wrapper</span>
+                          <span style={{fontWeight:700,color:MUT}}>—</span>
+                        </div>
+                        <p style={stepWhyStyle}>Why: ISA, PSA and Premium Bonds capacity are all used — see "Beyond ISA, PSA and Premium Bonds" below for what to do with this instead.</p>
+                      </div>
+                    )}
+
+                    <div style={{...stepCardStyle,padding:"16px 18px",marginTop:"6px",marginBottom:"16px"}}>
+                      <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
+                        <div style={rowStyle}><span>Optimised interest income</span><span style={{fontWeight:700}}>{fmt(optimisedTotal)}/yr</span></div>
+                        <div style={rowStyle}><span>Today's income, after tax</span><span>{fmt(currentAfterTaxTotal)}/yr</span></div>
+                        <div style={{...totalRowStyle, color: optimisationGain > 0 ? "#2d6b4a" : TEXT}}>
+                          <span>{optimisationGain > 0 ? "You can earn" : "Difference"}</span>
+                          <span>{optimisationGain > 0 ? "+" : ""}{fmt(optimisationGain)}/yr</span>
+                        </div>
                       </div>
                     </div>
 
@@ -4414,7 +4449,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       </div>
                     )}
                   </>
-                ) : (
+                  );
+                })() : (
                   <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>Add your cash savings and any Premium Bonds in your onboarding details to see a personalised, tax-efficient allocation.</p>
                 )}
               </ExpandableInvestmentItem>
