@@ -2233,9 +2233,14 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const s = {};
 
   // Cash — access type + yield gap + emergency buffer
-  // isaHeadroom is by definition ISA-eligible, so this term always uses isaRate
-  // (unlike annualYieldGap/bondsYieldGain below, which cover amounts that may exceed it).
-  const cashImpact = Math.round(m.annualYieldGap + m.isaHeadroom * (isaRate / 100) * isaUrgencyBoost);
+  // m.annualYieldGap already includes the ISA-eligible portion's rate-differential gain
+  // (isaEligiblePortion × (isaRate − currentRate) — see calcMetrics), so adding
+  // isaHeadroom × isaRate again here would double-count the same headroom. cashImpact
+  // is the genuine £/yr figure used for both the label and `amount`; the
+  // approaching-deadline urgency multiplier is kept separate as a sort-priority-only
+  // nudge (cashSortPriority) and must never be shown to the user as a £ figure.
+  const cashImpact = Math.round(m.annualYieldGap);
+  const cashSortPriority = Math.round(m.annualYieldGap + m.isaHeadroom * (isaRate / 100) * isaUrgencyBoost);
   const tooMuchCash = m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
   const genuinelyLowCash = m.emergencyFund === 0 && m.expenses > 0;
   const accessType = d.cashAccessType || "partial";
@@ -2295,7 +2300,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   s.cash = {
     status: tooMuchCash || m.annualYieldGap > 800 ? "critical"
           : m.annualYieldGap > 200 || hasBondOpportunity || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
-    impact: Math.max(cashImpact, hasBondOpportunity ? bondsYieldGain : 0),
+    impact: Math.max(cashSortPriority, hasBondOpportunity ? bondsYieldGain : 0),
     impactLabel: cashImpactLabel,
     amount: cashAmount,
   };
