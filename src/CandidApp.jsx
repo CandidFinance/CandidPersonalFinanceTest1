@@ -2117,7 +2117,6 @@ function ScoreRing({ score, delta = 0 }) {
 
 export const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT, unknown:MUT };
 const SL = { ok:"On track", attention:"Review", critical:"Action needed", na:"N/A", unknown:"Find out" };
-const UG = { immediate:"#c0392b", soon:GOLD, "this tax year":"#2d6b4a" };
 
 // ── Dashboard module tiles — category pill + short context, keyed to MODULE_META ──
 // "Today" = act now for an immediate saving; "Future opportunity" = value that builds
@@ -2183,18 +2182,6 @@ export const MODULE_META = [
   { key:"personalLoan",icon:"💳", title:"Personal loan"   },
   { key:"kids",        icon:"👶", title:"Kids & family"   },
 ];
-
-function priorityModuleKey(title) {
-  const t = (title||"").toLowerCase();
-  if (t.includes("pension") || t.includes("sacrifice") || t.includes("contribution")) return "pension";
-  if (t.includes("isa") || t.includes("invest") || t.includes("cgt") || t.includes("capital gains")) return "investments";
-  if (t.includes("cash") || t.includes("saving") || t.includes("bond") || t.includes("rate")) return "cash";
-  if (t.includes("student")) return "studentLoan";
-  if (t.includes("personal loan") || t.includes("credit")) return "personalLoan";
-  if (t.includes("mortgage") || t.includes("overpay")) return "mortgage";
-  if (t.includes("kid") || t.includes("child") || t.includes("jisa") || t.includes("family")) return "kids";
-  return "cash";
-}
 
 // ── Cash waterfall optimiser: ISA → Personal Savings Allowance → Premium Bonds ──
 // Single source of truth for "what could this cash + Premium Bonds pot earn if
@@ -2579,93 +2566,6 @@ function FeedbackButton() {
   );
 }
 
-function ActionPlanAccordion({ priorities, scenarioMap, currentScore, onOpenModule }) {
-  const [expandedIdx, setExpandedIdx] = useState(null);
-  const [impactIdx, setImpactIdx] = useState(null);
-  return (
-    <div className="fu1" style={{marginBottom:"24px"}}>
-      <h2 style={{fontFamily:SERIF,fontSize:"26px",color:G,marginBottom:"4px",borderLeft:`4px solid ${GOLD}`,paddingLeft:"14px"}}>Your action plan</h2>
-      <p style={{fontSize:"13px",color:MUT,marginBottom:"16px",paddingLeft:"18px"}}>Ranked by urgency — biggest financial wins first.</p>
-      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-        {priorities.map((p, i) => {
-          const urgCol = UG[p.urgency] || MUT;
-          const modKey = priorityModuleKey(p.title + " " + (p.description||""));
-          const modMeta = MODULE_META.find(mm => mm.key === modKey);
-          const scenario = scenarioMap[modKey];
-          const isOpen = expandedIdx === i;
-          const isImpactOpen = impactIdx === i;
-          return (
-            <div key={i} style={{background:WHITE,borderRadius:"12px",border:"1px solid rgba(22,47,36,0.09)",borderLeft:`4px solid ${urgCol}`,overflow:"hidden"}}>
-              {/* Collapsed header — always visible */}
-              <div
-                onClick={() => { setExpandedIdx(isOpen ? null : i); setImpactIdx(null); }}
-                style={{padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}
-              >
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:"10px",fontWeight:700,color:urgCol,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"3px"}}>{p.urgency}</div>
-                  <h3 style={{fontFamily:SERIF,fontSize:"17px",color:G,lineHeight:1.25,margin:0}}>{p.title}</h3>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:"10px",flexShrink:0}}>
-                  {p.impact && (
-                    <div style={{background:GOLD,borderRadius:"7px",padding:"6px 12px",textAlign:"center"}}>
-                      <div style={{fontSize:"17px",fontWeight:800,color:G,fontFamily:SERIF,lineHeight:1}}>{p.impact}</div>
-                      <div style={{fontSize:"9px",color:"rgba(22,47,36,0.65)",fontWeight:600,marginTop:"1px"}}>potential saving</div>
-                    </div>
-                  )}
-                  <span style={{fontSize:"18px",color:MUT,transition:"transform 0.2s",display:"inline-block",transform:isOpen?"rotate(90deg)":"none"}}>›</span>
-                </div>
-              </div>
-              {/* Expanded body */}
-              {isOpen && (
-                <div style={{padding:"0 14px 12px",borderTop:"1px solid rgba(22,47,36,0.07)"}}>
-                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.65,margin:"12px 0 12px"}}>{p.description}</p>
-                  <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                    {scenario && (
-                      <button type="button"
-                        onClick={e=>{e.stopPropagation();setImpactIdx(isImpactOpen?null:i);}}
-                        style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>
-                        {isImpactOpen ? "Hide impact ↑" : "See the impact →"}
-                      </button>
-                    )}
-                    {modMeta && (
-                      <button type="button"
-                        onClick={e=>{e.stopPropagation();onOpenModule(modKey);}}
-                        style={{background:G,border:"none",borderRadius:"7px",padding:"7px 14px",color:WHITE,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>
-                        Go to {modMeta.title} →
-                      </button>
-                    )}
-                  </div>
-                  {isImpactOpen && scenario && (
-                    <div style={{marginTop:"12px",background:"rgba(196,150,58,0.07)",border:`1px solid ${GOLD}`,borderRadius:"10px",padding:"14px 16px",display:"flex",flexWrap:"wrap",gap:"16px",alignItems:"center"}}>
-                      <div style={{flex:1,minWidth:"160px"}}>
-                        <p style={{fontSize:"12px",color:MUT,margin:0,lineHeight:1.5}}>{scenario.description}</p>
-                      </div>
-                      <div style={{display:"flex",gap:"18px",flexWrap:"wrap"}}>
-                        <div style={{textAlign:"center"}}>
-                          <div style={{fontSize:"10px",color:MUT,marginBottom:"2px"}}>Financial impact</div>
-                          <div style={{fontSize:"17px",fontWeight:700,color:GOLD}}>{scenario.impactLabel}</div>
-                        </div>
-                        <div style={{textAlign:"center"}}>
-                          <div style={{fontSize:"10px",color:MUT,marginBottom:"2px"}}>Score boost</div>
-                          <div style={{fontSize:"17px",fontWeight:700,color:"#2d6b4a"}}>+{scenario.scoreBoost} pts</div>
-                        </div>
-                        <div style={{textAlign:"center"}}>
-                          <div style={{fontSize:"10px",color:MUT,marginBottom:"2px"}}>New score</div>
-                          <div style={{fontSize:"17px",fontWeight:700,color:"#2d6b4a"}}>{Math.min(100, currentScore + scenario.scoreBoost)}</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
   const [activeId, setActiveId] = useState(null);
   const active = scenarios.find(s => s.id === activeId);
@@ -2719,6 +2619,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
+  const [scoreTextExpanded, setScoreTextExpanded] = useState(false); // mobile-only collapse for the AI narrative
   const [forecastHorizon, setForecastHorizon] = useState(5);
   const [forecastSurplus, setForecastSurplus] = useState(null); // null = use calculated default
   const [forecastLumpSum, setForecastLumpSum] = useState(null); // null = 0
@@ -2930,82 +2831,58 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           {d.name ? `Hi ${d.name},` : "Hi,"} here's your Candid report.
         </h1>
 
-        {/* Score card */}
-        <div className="fu" style={{background:G,borderRadius:"16px",padding:"20px 28px",display:"flex",alignItems:"center",gap:"24px",marginBottom:"20px",flexWrap:"wrap"}}>
-          <ScoreRing score={displayScore} delta={totalDelta}/>
-          <div style={{flex:1,minWidth:"200px"}}>
-            <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"6px"}}>Your Candid Score</div>
-            <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"8px"}}>{insights.headline}</h2>
-            <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:insights.isFallback?"10px":0}}>{insights.narrative}</p>
-            {insights.isFallback && (
-              <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:0}}>
-                We couldn't generate your personalised analysis just now, so you're seeing a general summary — try regenerating shortly.
-              </p>
-            )}
-          </div>
-          <div style={{flexShrink:0,textAlign:"right",maxWidth:"210px"}}>
-            <p style={{fontSize:"12px",color:"rgba(255,255,255,0.5)",lineHeight:1.5,marginBottom:"8px"}}>Changed your circumstances? Update your inputs for a fresh score.</p>
-            <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
-          </div>
+        {/* Score card — mobile stacks title → ring → (collapsible) body text →
+            update-inputs, all centered except the body text itself; desktop keeps
+            the original ring-left / text-right row layout unchanged. */}
+        <div className="fu" style={{background:G,borderRadius:"16px",padding:"20px 28px",display:"flex",flexDirection:isMobile?"column":"row",alignItems:isMobile?"center":"center",gap:"24px",marginBottom:"20px",flexWrap:"wrap"}}>
+          {isMobile ? (
+            <div style={{width:"100%",textAlign:"center"}}>
+              <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"14px"}}>Your Candid Score</div>
+              <div style={{display:"flex",justifyContent:"center",marginBottom:"16px"}}>
+                <ScoreRing score={displayScore} delta={totalDelta}/>
+              </div>
+              <div style={{textAlign:"left"}}>
+                <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"18px",lineHeight:1.35,margin:0}}>{insights.headline}</h2>
+                {scoreTextExpanded && (
+                  <>
+                    <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginTop:"8px",marginBottom:insights.isFallback?"10px":0}}>{insights.narrative}</p>
+                    {insights.isFallback && (
+                      <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:0}}>
+                        We couldn't generate your personalised analysis just now, so you're seeing a general summary — try regenerating shortly.
+                      </p>
+                    )}
+                  </>
+                )}
+                <button type="button" onClick={() => setScoreTextExpanded(v => !v)} style={{background:"transparent",border:"none",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer",padding:0,marginTop:"10px"}}>
+                  {scoreTextExpanded ? "Show less ↑" : "Show more ↓"}
+                </button>
+              </div>
+              <div style={{textAlign:"center",marginTop:"18px",paddingTop:"16px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>
+                <p style={{fontSize:"12px",color:"rgba(255,255,255,0.5)",lineHeight:1.5,marginBottom:"8px"}}>Changed your circumstances? Update your inputs for a fresh score.</p>
+                <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <ScoreRing score={displayScore} delta={totalDelta}/>
+              <div style={{flex:1,minWidth:"200px"}}>
+                <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"6px"}}>Your Candid Score</div>
+                <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"8px"}}>{insights.headline}</h2>
+                <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:insights.isFallback?"10px":0}}>{insights.narrative}</p>
+                {insights.isFallback && (
+                  <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:0}}>
+                    We couldn't generate your personalised analysis just now, so you're seeing a general summary — try regenerating shortly.
+                  </p>
+                )}
+              </div>
+              <div style={{flexShrink:0,textAlign:"right",maxWidth:"210px"}}>
+                <p style={{fontSize:"12px",color:"rgba(255,255,255,0.5)",lineHeight:1.5,marginBottom:"8px"}}>Changed your circumstances? Update your inputs for a fresh score.</p>
+                <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Action plan — accordion with inline scenarios */}
-        {insights.priorities?.length > 0 && (() => {
-          // Sort priorities: urgency first (immediate→this tax year→soon), then keep relative AI order
-          const urgencyRank = { immediate:0, "this tax year":1, soon:2, when_ready:3 };
-          const sortedPriorities = [...insights.priorities]
-            .filter(p => {
-              const t = ((p.title||"")+" "+(p.description||"")).toLowerCase();
-              // Strip any insurance-related priorities entirely
-              if (t.includes("insur") || t.includes("life cover") || t.includes("income protect") || t.includes("critical illness")) return false;
-              // Never show "start contributions" when already contributing and no missed match
-              if (isPensionContributing(d) && m.missedMatch === 0) {
-                if (t.includes("start pension") || t.includes("start contribution") || t.includes("no pension")) return false;
-              }
-              return true;
-            })
-            .sort((a, b) => {
-              const ra = urgencyRank[a.urgency] ?? 2, rb = urgencyRank[b.urgency] ?? 2;
-              return ra - rb;
-            });
-          if (!sortedPriorities.length) return null;
-
-          // Build scenario lookup by module key
-          const scenarioMap = {};
-          if (m.missedMatch > 0) scenarioMap["pension"] = {
-            impactLabel: `+${fmt(m.missedMatch)}/yr from employer`,
-            scoreBoost: Math.min(12, Math.round(m.missedMatch / 500)),
-            description: `Contribute ${+d.employerMatch||0}% to capture the full employer match.`,
-          };
-          if (m.annualYieldGap > 200 && m.isaHeadroom > 0) {
-            const topIsaRow = topRate(savingsRates, true);
-            const isaRateLabel = topIsaRow ? `${topIsaRow.rate_aer}%` : "top-paying";
-            scenarioMap["cash"] = {
-              impactLabel: `+${fmt(m.annualYieldGap)}/yr in yield`,
-              scoreBoost: Math.min(8, Math.round(m.annualYieldGap / 200)),
-              description: `Move up to ${fmt(Math.min(m.emergencyFund, m.isaHeadroom))} of your ${fmt(m.totalLiquid)} in liquid savings into a ${isaRateLabel} Cash ISA. This is your remaining ISA allowance for this tax year.`,
-            };
-          }
-          if (m.isaHeadroom > 3000) scenarioMap["investments"] = {
-            impactLabel: `${fmt(m.isaHeadroom)} sheltered from tax`,
-            scoreBoost: Math.min(6, Math.round(m.isaHeadroom / 3000)),
-            description: `Up to ${fmt(m.isaHeadroom)} can still be placed in an ISA before April 5th — your remaining allowance for this tax year.`,
-          };
-          if (d.studentLoan !== "none" && !m.willClear && m.annualRepayment > 0) scenarioMap["studentLoan"] = {
-            impactLabel: `Redirect ${fmt(Math.min(2000, m.annualRepayment * 0.5))}/yr`,
-            scoreBoost: 4,
-            description: "Your loan is unlikely to clear before write-off — voluntary overpayments will be lost. Redirect that money to ISA or pension instead.",
-          };
-
-          return (
-            <ActionPlanAccordion
-              priorities={sortedPriorities}
-              scenarioMap={scenarioMap}
-              currentScore={insights.score}
-              onOpenModule={onOpenModule}
-            />
-          );
-        })()}
 
         {/* Premium bonds countdown */}
         {isNearPremiumBondDraw() && (+d.premiumBonds||0) > 0 && (() => {
@@ -3042,26 +2919,44 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           );
         })()}
 
-        {/* Total opportunity — lighter green than the score card, label-above-value template */}
+        {/* Total opportunity — lighter green than the score card, label-above-value
+            template. Mobile stacks title → £ figure → body text, all centered
+            except the body text; desktop keeps the figure-column / text-column
+            row aligned with the score card's ring column above it. */}
         {totalOpp >= 500 && (() => {
           const eq = getEquivalence(totalOpp);
+          const bodyText = (
+            <>
+              <div style={{fontSize:"14px",color:MUT}}>You could be leaving <span style={{fontWeight:700,color:G}}>{fmt(totalOpp)}</span> on the table.</div>
+              {eq && <div style={{fontSize:"12px",color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
+              <div style={{fontSize:"11px",color:MUT,marginTop:"10px",lineHeight:1.6}}>
+                Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
+              </div>
+            </>
+          );
           return (
-            <div className="fu1" style={{background:WHITE,border:`2px solid ${G}`,borderRadius:"14px",padding:"20px 28px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"24px",flexWrap:"wrap"}}>
-              {/* £ figure sits in the same column as the score ring above it — same
-                  fixed width, same centering — while the text column keeps its own
-                  alignment with the score card's headline text. */}
-              <div style={{width:"124px",flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
-                <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:G,lineHeight:1.1}}>{fmt(totalOpp)}</span>
-                <span style={{fontSize:"10px",color:MUT,fontWeight:500,marginTop:"3px"}}>per year</span>
-              </div>
-              <div style={{flex:1,minWidth:"200px"}}>
-                <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
-                <div style={{fontSize:"14px",color:MUT}}>You could be leaving <span style={{fontWeight:700,color:G}}>{fmt(totalOpp)}</span> on the table.</div>
-                {eq && <div style={{fontSize:"12px",color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
-                <div style={{fontSize:"11px",color:MUT,marginTop:"10px",lineHeight:1.6}}>
-                  Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
+            <div className="fu1" style={{background:WHITE,border:`2px solid ${G}`,borderRadius:"14px",padding:"20px 28px",marginBottom:"20px",display:"flex",flexDirection:isMobile?"column":"row",alignItems:"center",gap:"24px",flexWrap:"wrap"}}>
+              {isMobile ? (
+                <div style={{width:"100%",textAlign:"center"}}>
+                  <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"10px"}}>Your total opportunity</div>
+                  <div style={{marginBottom:"16px"}}>
+                    <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:G,lineHeight:1.1}}>{fmt(totalOpp)}</span>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:500,marginTop:"3px"}}>per year</div>
+                  </div>
+                  <div style={{textAlign:"left"}}>{bodyText}</div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div style={{width:"124px",flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
+                    <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:G,lineHeight:1.1}}>{fmt(totalOpp)}</span>
+                    <span style={{fontSize:"10px",color:MUT,fontWeight:500,marginTop:"3px"}}>per year</span>
+                  </div>
+                  <div style={{flex:1,minWidth:"200px"}}>
+                    <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
+                    {bodyText}
+                  </div>
+                </>
+              )}
             </div>
           );
         })()}
