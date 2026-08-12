@@ -3940,56 +3940,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           )}
         </div>
 
-        {/* Cash runway — merges the old separate "Emergency fund" progress tile and the
-            verbose "Cash runway" insight tile into one compact status + progress bar.
-            Thresholds reused as-is from the code that already defined them elsewhere:
-            the 100%-of-target cutoff for "sufficient" (Cash runway tooltip) and the 33%
-            cutoff for "insufficient" (this tile's own pre-merge tierColor). */}
-        {moduleKey === "cash" && (() => {
-          const target = m.emergencyBuffer;
-          const current = m.totalLiquid;
-          // pctRaw is uncapped (unlike the old `pct`, which capped at 100 and made a
-          // 10-month runway against a 6-month target look identical to an 18-month one).
-          const pctRaw = target > 0 ? (current / target) * 100 : 0;
-          const tierColor = pctRaw >= 100 ? "#2d6b4a" : pctRaw >= 33 ? GOLD : "#c0392b";
-          const statusLabel = pctRaw >= 150 ? "More than sufficient" : pctRaw >= 100 ? "Sufficient" : pctRaw >= 33 ? "Borderline" : "Insufficient";
-          // Bar represents a fixed 0–2× target scale so the marker can show exactly
-          // where the user sits, rather than a bar that saturates the moment they clear
-          // the target and hides how far past it they actually are. Positions beyond
-          // 2× target pin the marker at the right edge — the text below still states
-          // the real multiple.
-          const markerPct = target > 0 ? Math.min(100, (pctRaw / 200) * 100) : 0;
-          return (
-            <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px",flexWrap:"wrap",gap:"8px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <span style={{width:"9px",height:"9px",borderRadius:"50%",background:tierColor,flexShrink:0,display:"inline-block"}}/>
-                  <span style={{fontSize:"13px",fontWeight:600,color:"rgba(255,255,255,0.9)"}}>Cash runway — {statusLabel}</span>
-                </div>
-                <span style={{fontSize:"13px",color:"rgba(255,255,255,0.7)"}}>{m.runwayMonths.toFixed(1)} months</span>
-              </div>
-              <div style={{position:"relative",width:"100%",height:"14px",borderRadius:"7px",background:`linear-gradient(90deg, #c0392b 0%, ${GOLD} 33%, #2d6b4a 60%, #1e4d35 100%)`,overflow:"visible"}}>
-                {/* Target tick — always the scale's midpoint, since the scale is fixed at 0–2× target */}
-                <div style={{position:"absolute",left:"50%",top:"-3px",bottom:"-3px",width:"2px",background:"rgba(255,255,255,0.65)",transform:"translateX(-1px)"}}/>
-                {/* Actual-position marker */}
-                <div style={{position:"absolute",left:`${markerPct}%`,top:"-4px",bottom:"-4px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)",transition:"left 0.4s ease"}}/>
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",marginTop:"5px"}}>
-                <span style={{fontSize:"10px",color:"rgba(255,255,255,0.45)"}}>0 mo</span>
-                <span style={{fontSize:"10px",color:"rgba(255,255,255,0.6)",fontWeight:600}}>{m.bufferMonths}mo target</span>
-                <span style={{fontSize:"10px",color:"rgba(255,255,255,0.45)"}}>{m.bufferMonths*2}mo+</span>
-              </div>
-              <div style={{marginTop:"8px",fontSize:"13px",color:"rgba(255,255,255,0.85)"}}>
-                {pctRaw >= 150
-                  ? <span style={{color:"#8fd9b6",fontWeight:600}}>✓ More than sufficient — {fmt(current)} saved, {(pctRaw/100).toFixed(1)}× your {m.bufferMonths}-month target ({fmt(target)})</span>
-                  : pctRaw >= 100
-                    ? <span style={{color:"#8fd9b6",fontWeight:600}}>✓ Fully funded — {fmt(current)} of {fmt(target)} target</span>
-                    : `${fmt(current)} of ${fmt(target)} emergency fund target (${Math.round(pctRaw)}% covered)`}
-              </div>
-            </div>
-          );
-        })()}
-
         {/* Pension: "I don't know" guidance — replaces the normal AI summary */}
         {isPensionUnknown && (
           <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
@@ -4251,6 +4201,17 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const emergencyWinNumber = showEmergencyWin ? ++winCounter : null;
           const optimiseWinNumber = ++winCounter;
 
+          // Cash runway status — shown as a plain (non-numbered) tile below the wins.
+          // pctRaw is uncapped so a 10-month runway against a 6-month target doesn't
+          // look identical to an 18-month one; the bar itself is a fixed 0–2× target
+          // scale with a marker at the real position, same reasoning.
+          const runwayTarget = m.emergencyBuffer;
+          const runwayCurrent = m.totalLiquid;
+          const runwayPctRaw = runwayTarget > 0 ? (runwayCurrent / runwayTarget) * 100 : 0;
+          const runwayTierColor = runwayPctRaw >= 100 ? "#2d6b4a" : runwayPctRaw >= 33 ? GOLD : "#c0392b";
+          const runwayStatusLabel = runwayPctRaw >= 150 ? "More than sufficient" : runwayPctRaw >= 100 ? "Sufficient" : runwayPctRaw >= 33 ? "Borderline" : "Insufficient";
+          const runwayMarkerPct = runwayTarget > 0 ? Math.min(100, (runwayPctRaw / 200) * 100) : 0;
+
           const opportunityCols = [];
           if (showEmergencyWin) opportunityCols.push({ label:"Emergency fund shortfall", value:fmt(m.emergencyShortfall), sub:`to reach your ${m.bufferMonths}-month target` });
           if (optimisationGain > 50) opportunityCols.push({ label:"Tax-efficiency gain available", value:`${fmt(optimisationGain)}/yr`, sub:"by reordering into ISA → PSA → Premium Bonds" });
@@ -4454,6 +4415,35 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>Add your cash savings and any Premium Bonds in your onboarding details to see a personalised, tax-efficient allocation.</p>
                 )}
               </ExpandableInvestmentItem>
+
+              {/* Cash runway status — styled like a collapsed Win tile (white, bordered)
+                  rather than the dark green used at the top of other modules, since this
+                  now sits below the wins as supporting context, not the headline. */}
+              <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"18px 22px",marginBottom:"20px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px",flexWrap:"wrap",gap:"8px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                    <span style={{width:"9px",height:"9px",borderRadius:"50%",background:runwayTierColor,flexShrink:0,display:"inline-block"}}/>
+                    <span style={{fontSize:"13px",fontWeight:600,color:G}}>Cash runway — {runwayStatusLabel}</span>
+                  </div>
+                  <span style={{fontSize:"13px",color:MUT}}>{m.runwayMonths.toFixed(1)} months</span>
+                </div>
+                <div style={{position:"relative",width:"100%",height:"14px",borderRadius:"7px",background:`linear-gradient(90deg, #c0392b 0%, ${GOLD} 33%, #2d6b4a 60%, #1e4d35 100%)`,overflow:"visible"}}>
+                  <div style={{position:"absolute",left:"50%",top:"-3px",bottom:"-3px",width:"2px",background:"rgba(255,255,255,0.65)",transform:"translateX(-1px)"}}/>
+                  <div style={{position:"absolute",left:`${runwayMarkerPct}%`,top:"-4px",bottom:"-4px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)",transition:"left 0.4s ease"}}/>
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:"5px"}}>
+                  <span style={{fontSize:"10px",color:MUT}}>0 mo</span>
+                  <span style={{fontSize:"10px",color:TEXT,fontWeight:600}}>{m.bufferMonths}mo target</span>
+                  <span style={{fontSize:"10px",color:MUT}}>{m.bufferMonths*2}mo+</span>
+                </div>
+                <div style={{marginTop:"8px",fontSize:"13px",color:TEXT}}>
+                  {runwayPctRaw >= 150
+                    ? <span style={{color:"#2d6b4a",fontWeight:600}}>✓ More than sufficient — {fmt(runwayCurrent)} saved, {(runwayPctRaw/100).toFixed(1)}× your {m.bufferMonths}-month target ({fmt(runwayTarget)})</span>
+                    : runwayPctRaw >= 100
+                      ? <span style={{color:"#2d6b4a",fontWeight:600}}>✓ Fully funded — {fmt(runwayCurrent)} of {fmt(runwayTarget)} target</span>
+                      : `${fmt(runwayCurrent)} of ${fmt(runwayTarget)} emergency fund target (${Math.round(runwayPctRaw)}% covered)`}
+                </div>
+              </div>
 
               {showRunwayCallout && (
                 <div className="fu2" style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"18px 20px",marginBottom:"20px"}}>
