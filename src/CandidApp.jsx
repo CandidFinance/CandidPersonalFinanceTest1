@@ -3858,8 +3858,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   const isaProjectionYears = Math.max(1, 67 - (+d.age||30));
   const isaProjectedValue = (m.isaHeadroom||0) * Math.pow(1.07, isaProjectionYears);
   const col = isPensionUnknown ? MUT : (SC[modSummary?.status] || MUT);
-  const surplus = m.surplusCash;
-  const showRunwayCallout = moduleKey === "cash" && m.runwayMonths > m.bufferMonths * 2;
   const bondsVal = m.bonds || 0;
 
   // Premium Bonds have their own dedicated Win tile below when the user holds none;
@@ -4470,40 +4468,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       : `${fmt(runwayCurrent)} of ${fmt(runwayTarget)} emergency fund target (${Math.round(runwayPctRaw)}% covered)`}
                 </div>
               </div>
-
-              {showRunwayCallout && (
-                <div className="fu2" style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"18px 20px",marginBottom:"20px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                    <span style={{fontSize:"16px"}}>💡</span>
-                    <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Your cash is working hard — maybe too hard</span>
-                  </div>
-                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
-                    You have <strong>{m.runwayMonths.toFixed(0)} months</strong> of runway — that's {(m.runwayMonths / m.bufferMonths).toFixed(1)}× your {m.bufferMonths}-month target. The excess ({fmt(surplus)}) goes beyond the ISA and savings moves above — it may be even better used elsewhere:
-                  </p>
-                  <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-                    {(() => {
-                      // Tied to the user's actual input (or a plan-based statutory estimate if
-                      // they didn't specify a rate) via resolveSlRate — never a flat guess. Only
-                      // suggest overpaying if that rate actually beats the best ISA rate available;
-                      // otherwise saving beats overpaying and this tile shouldn't appear at all.
-                      const slRateNum = d.studentLoan !== "none" ? resolveSlRate(d, m.salary) * 100 : 0;
-                      const bestIsaRow = topRate(savingsRates, true);
-                      const slBeatsSavings = !bestIsaRow || slRateNum > +bestIsaRow.rate_aer;
-                      return [
-                        d.hasPension === "yes" && (+d.myContribution||0) < (+d.employerMatch||0) && { icon:"🏦", text:`Top up pension — every £ contributes ${Math.round(m.tr*100)}% tax relief instantly`, target:"pension" },
-                        d.hasMortgage === "yes" && (+d.mortgageRate||0) >= 4 && { icon:"🏠", text:`Overpay mortgage — guaranteed ${d.mortgageRate}% return, risk-free`, target:"mortgage" },
-                        d.studentLoan !== "none" && m.willClear && slBeatsSavings && { icon:"🎓", text:`Student loan — your salary means you'll clear before write-off; overpaying saves interest at ${slRateNum.toFixed(1)}%`, target:"studentLoan" },
-                      ];
-                    })().filter(Boolean).map((s,i) => (
-                      <div key={i} onClick={() => onOpenModule(s.target)} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"10px 12px",background:"rgba(255,255,255,0.6)",borderRadius:"8px",cursor:"pointer",border:"1px solid transparent",transition:"border-color 0.15s"}}>
-                        <span style={{fontSize:"14px",flexShrink:0}}>{s.icon}</span>
-                        <span style={{fontSize:"13px",color:TEXT,lineHeight:1.5,flex:1}}>{s.text}</span>
-                        <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>→</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <NonWinExpandable
                 eyebrow="Other low-risk places for cash"
