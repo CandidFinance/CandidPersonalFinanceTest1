@@ -4179,28 +4179,32 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const step2Savings = savingsWorthIt ? Math.min(afterStep1, psaLimit / nonIsaRateDecimal) : 0;
           const step2SavingsInterest = Math.round(step2Savings * nonIsaRateDecimal);
           let afterStep2 = afterStep1 - step2Savings;
-          // Premium Bonds are capped well below the £50,000 NS&I product limit —
-          // recommending someone hold that much in a lottery-style, no-guaranteed-
-          // return product just because it's tax-free isn't actually good advice.
-          // Instead, cap the TOTAL of Steps 1–3 (ISA + PSA savings + Premium Bonds)
-          // at the user's own emergency-fund target: once that's covered, further
-          // cash is better off invested for growth (Step 4) than parked as more
-          // tax-efficient cash.
-          const pbRunwayCap = Math.max(0, m.emergencyBuffer - step1Isa - step2Savings);
-          const step3Pb = Math.min(afterStep2, 50000, pbRunwayCap);
+          // Once the ISA and PSA are filled, what's left is a genuine choice, not
+          // something the algorithm should silently decide for the user: Step 3 and
+          // Step 4 both describe the SAME leftover amount as alternatives — keep it
+          // liquid and tax-free in Premium Bonds (near-term need, risk-averse) or
+          // invest it instead (no near-term need, maximise long-term growth) — rather
+          // than sequential top-ups where one silently crowds out the other.
+          const discretionaryAmount = afterStep2;
+          const step3Pb = Math.min(discretionaryAmount, 50000); // £50,000 is a hard NS&I product limit, not a preference
           const step3PbInterest = Math.round(step3Pb * PB_RATE);
-          const beyondWrappers = Math.max(0, afterStep2 - step3Pb);
+          const step3UpliftVsCurrent = step3PbInterest - Math.round(step3Pb * m.savingsRate / 100);
+          const beyondPbCap = Math.max(0, discretionaryAmount - step3Pb); // only nonzero above the £50,000 cap
+          // "Optimised interest income" and the top-line gain default to the cash-safe
+          // path (Step 3) — the same-unit, guaranteed comparison. Step 4's long-term
+          // illustration is shown separately since investment returns aren't guaranteed
+          // and shouldn't be folded into a £/yr interest total.
           const optimisedTotal = step1IsaInterest + step2SavingsInterest + step3PbInterest;
-          // The gain comparison must be like-for-like: optimisedTotal only covers the
-          // amount staying as cash (Steps 1–3), so the "today" side of the comparison
-          // can't be the interest on the WHOLE pot — that would silently penalise the
-          // recommendation for no longer earning cash-interest on the money it's
-          // actively telling the user to invest instead (Step 4). Approximate today's
-          // interest on just the kept amount using today's overall blended yield.
           const keptAmount = step1Isa + step2Savings + step3Pb;
           const todayBlendedRate = totalPot > 0 ? (currentTaxableInterest + currentPbInterest) / totalPot : 0;
           const currentInterestOnKeptAmount = Math.round(keptAmount * todayBlendedRate);
           const optimisationGain = optimisedTotal - currentInterestOnKeptAmount;
+
+          // Step 4 growth illustration — same 10yr/7% nominal illustrative assumption
+          // used elsewhere in this file (e.g. the Investments module's ISA growth chart).
+          const growthYears = 10;
+          const investedIllustration = Math.round(discretionaryAmount * Math.pow(1.07, growthYears));
+          const pbIllustration = Math.round(discretionaryAmount * Math.pow(1 + PB_RATE, growthYears));
 
           const nearTaperZone = m.adjustedNetIncome >= 100000 && m.adjustedNetIncome < 125140;
 
@@ -4343,25 +4347,25 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         <p style={stepWhyStyle}>Why: interest within your {fmt(psaLimit)} allowance is also effectively tax-free — and {nonIsaRateDisplay} beats the ~4.4% Premium Bonds average, so this comes next.</p>
                       </div>
                     )}
-                    {step3Pb > 0 && (
-                      <div style={stepCardStyle}>
-                        <div style={stepEyebrowStyle}>Step 3 — Premium Bonds for your runway</div>
-                        <div style={rowStyle}>
-                          <span>{fmt(step3Pb)} in Premium Bonds at ~4.4% (tax-free avg.)</span>
-                          <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span>
+                    {discretionaryAmount > 0 && (
+                      <>
+                        <div style={stepCardStyle}>
+                          <div style={stepEyebrowStyle}>Step 3 — Cash-focused: near-term need, or risk-averse</div>
+                          <div style={rowStyle}>
+                            <span>{fmt(step3Pb)} in Premium Bonds at ~4.4% (tax-free avg.)</span>
+                            <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span>
+                          </div>
+                          <p style={stepWhyStyle}>Why: once your allowance is used, ordinary savings interest is taxed at your {trPct}% marginal rate — Premium Bonds aren't.{step3UpliftVsCurrent > 0 ? ` That's ~${fmt(step3UpliftVsCurrent)}/yr more than your current ${m.savingsRate.toFixed(2)}% blended rate on this amount,` : ""} with no risk of loss and nothing locked in — the right choice for money you might need before you'd want it exposed to markets.{beyondPbCap > 0 ? ` Capped at the £50,000 NS&I product limit — ${fmt(beyondPbCap)} wouldn't fit here.` : ""}</p>
                         </div>
-                        <p style={stepWhyStyle}>Why: once your allowance is used, ordinary savings interest is taxed at your {trPct}% marginal rate — Premium Bonds aren't, so they're the better home for the rest, up to what covers your {fmt(m.emergencyBuffer)} emergency-fund target. Deliberately not the £50,000 product limit — holding that much cash "just because it's tax-free" isn't the goal.</p>
-                      </div>
-                    )}
-                    {beyondWrappers > 0 && (
-                      <div style={stepCardStyle}>
-                        <div style={stepEyebrowStyle}>Step 4 — Invest the rest</div>
-                        <div style={rowStyle}>
-                          <span>{fmt(beyondWrappers)} beyond what you need to hold as cash</span>
-                          <span style={{fontWeight:700,color:MUT}}>—</span>
+                        <div style={stepCardStyle}>
+                          <div style={stepEyebrowStyle}>Step 4 — Growth-focused: no near-term need</div>
+                          <div style={rowStyle}>
+                            <span>{fmt(discretionaryAmount)} invested instead (e.g. a General Investment Account)</span>
+                            <span style={{fontWeight:700,color:MUT}}>not guaranteed</span>
+                          </div>
+                          <p style={stepWhyStyle}>Why: for money you won't touch for several years, long-term capital growth has historically outgrown cash — illustratively, {fmt(discretionaryAmount)} could grow to ~{fmt(investedIllustration)} over {growthYears} years at a typical (not guaranteed) 7% nominal return, versus ~{fmt(pbIllustration)} left in Premium Bonds at ~4.4%. Capital gains are taxed at 18%/24% (with a £3,000 annual exempt amount), not your income tax rate. Real trade-off, not a free upgrade: you could lose money, and it only suits cash you're genuinely not going to need soon.</p>
                         </div>
-                        <p style={stepWhyStyle}>Why: once your ISA, PSA and emergency-fund-worth of Premium Bonds are covered, more cash rarely beats investing for growth over the long term — see "Investing the rest" below.</p>
-                      </div>
+                      </>
                     )}
 
                     <div style={{...stepCardStyle,padding:"16px 18px",marginTop:"6px",marginBottom:"16px"}}>
@@ -4373,9 +4377,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           <span>{optimisationGain > 0 ? "+" : ""}{fmt(optimisationGain)}/yr</span>
                         </div>
                       </div>
-                      {beyondWrappers > 0 && (
+                      {discretionaryAmount > 0 && (
                         <div style={{marginTop:"10px",background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                          Plus <strong>{fmt(beyondWrappers)}</strong> recommended for long-term investing instead of low-yield cash — not counted above, since its return depends on markets, not a fixed rate.
+                          This total assumes the cash-safe route (Step 3) for the {fmt(discretionaryAmount)} beyond your ISA and PSA. Prefer to invest it instead? See Step 4 above.
                         </div>
                       )}
                     </div>
@@ -4403,10 +4407,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     )}
                     <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>Rates change frequently — always confirm the current rate directly with the provider before moving money. Premium Bonds pay no guaranteed return; the ~4.4% is a long-run average, not a promise.</p>
 
-                    {beyondWrappers > 500 && (
+                    {discretionaryAmount > 500 && (
                       <div style={{marginTop:"8px"}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Investing the rest — {fmt(beyondWrappers)}</div>
-                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,marginBottom:"12px"}}>Your ISA, PSA and a healthy Premium Bonds cushion are covered — beyond that, holding still more as cash rarely makes sense. From here, two options are worth weighing up:</p>
+                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Ready to go the Step 4 route? — {fmt(discretionaryAmount)}</div>
+                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,marginBottom:"12px"}}>If you won't need this for several years, here's how to actually put it to work — two options worth weighing up:</p>
                         <div onClick={() => onOpenModule("investments")} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"14px 16px",background:"rgba(22,47,36,0.04)",borderRadius:"10px",cursor:"pointer",marginBottom:"8px"}}>
                           <span style={{fontSize:"16px",flexShrink:0}}>📈</span>
                           <div style={{flex:1}}>
