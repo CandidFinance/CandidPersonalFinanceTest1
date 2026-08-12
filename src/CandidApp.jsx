@@ -83,14 +83,6 @@ button:active{transform:scale(0.98);}
 .fu5{animation:fadeUp 0.45s ease 0.35s forwards;opacity:0;}
 .fu6{animation:fadeUp 0.45s ease 0.42s forwards;opacity:0;}
 .fu7{animation:fadeUp 0.45s ease 0.49s forwards;opacity:0;}
-@media (max-width:640px){
-  /* Win-tile header (ExpandableInvestmentItem): on narrow screens the tag pill
-     otherwise eats most of the row's width, squeezing the title/headline text
-     into a ragged single-word-per-line column. Wrapping the tag+chevron onto
-     their own row below gives the text the tile's full width instead. */
-  .winHeaderBtn{flex-wrap:wrap;}
-  .winHeaderLeft{flex-basis:100%;}
-}
 `;
 
 export const G = "#162f24", GOLD = "#c4963a", CREAM = "#f6f0e6", CDARK = "#ede7db",
@@ -2993,7 +2985,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
               const tileOpacity = reviewed ? +(baseOpacity * 0.75).toFixed(2) : baseOpacity;
               return (
                 <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
-                  style={{background:reviewed?"#f6f6f4":WHITE,border:`1.5px solid ${hasRec ? "rgba(22,47,36,0.14)" : "rgba(22,47,36,0.08)"}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"10px",cursor:"pointer",opacity:tileOpacity,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
+                  style={{background:reviewed?"#f6f6f4":WHITE,border:`1.5px solid ${reviewed ? G : hasRec ? "rgba(22,47,36,0.14)" : "rgba(22,47,36,0.08)"}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"10px",cursor:"pointer",opacity:tileOpacity,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
                   <div style={{display:"flex",alignItems:"flex-start",gap:"12px",minWidth:0,flex:1}}>
                     <div style={{width:"24px",height:"24px",borderRadius:"50%",background:hasRec?G:"rgba(22,47,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
                       {hasRec ? (
@@ -3636,11 +3628,18 @@ function AlternativeInvestments({ age }) {
 // so it's clear where one optimisation ends and the next begins.
 function ExpandableInvestmentItem({ number, title, headline, tag, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
+  // Narrow screens: the tag pill otherwise eats most of the header row's width,
+  // squeezing title/headline into a ragged single-word-per-line column. Wrapping the
+  // tag+chevron onto their own row below gives the text the tile's full width instead.
+  // Done via JS (not a CSS @media rule) because the left column's inline `flex:1` would
+  // always beat a stylesheet's `flex-basis` override — inline style wins regardless of
+  // whether the media query matches.
+  const isNarrow = useWindowWidth() < 640;
   return (
     <div style={{marginBottom: open ? "24px" : "14px", paddingBottom: open ? "20px" : 0, borderBottom: open ? "1px solid rgba(22,47,36,0.14)" : "none"}}>
       <div style={{background: open ? G : WHITE, border:`1.5px solid ${open ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"12px", overflow:"hidden"}}>
-        <button type="button" onClick={() => setOpen(v=>!v)} className="winHeaderBtn" style={{width:"100%", padding:"16px 18px", background:"transparent", border:"none", display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
-          <div className="winHeaderLeft" style={{display:"flex", alignItems:"flex-start", gap:"12px", minWidth:0, flex:1}}>
+        <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"16px 18px", background:"transparent", border:"none", display:"flex", flexWrap: isNarrow ? "wrap" : "nowrap", alignItems:"flex-start", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
+          <div style={{display:"flex", alignItems:"flex-start", gap:"12px", minWidth:0, flex: isNarrow ? "1 1 100%" : 1}}>
             {number != null && (
               <div style={{width:"24px", height:"24px", borderRadius:"50%", background:G, border:"1.5px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:"1px"}}>
                 <span style={{fontSize:"12px", fontWeight:700, color:CREAM}}>{number}</span>
@@ -3820,6 +3819,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
   // ── Bonus sacrifice maths (pension module only) ──────────────────────────────
   const bonus = Math.max(0, +bonusInput||0);
+  // The bonus figure used in the tile's headline and the opportunity-strip copy —
+  // pinned to what the user actually told us during onboarding (d.bonusAmount),
+  // independent of whatever they've since typed into the "model bonus sacrifice"
+  // calculator above (`bonus`/`bonusInput`, which defaults to this but is freely
+  // adjustable for scenario modelling without changing the tile's body text).
+  const statedBonus = Math.max(0, +d.bonusAmount||0);
   // Taxable salary = salary minus ongoing pension sacrifice (salary sacrifice scheme)
   const ongoingSacrifice = (+d.myContribution||0) / 100 * m.salary;
   const taxableSalary = Math.max(0, m.salary - ongoingSacrifice);
@@ -3929,26 +3934,24 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             table (ISA headroom grown to 67, CGT saving available this year) before
             the user drills into the individual win tiles below. */}
         {moduleKey === "investments" && !isPensionUnknown && (m.isaHeadroom > 0 || m.crystallisable > 0) && (() => {
+          // CGT saving listed first — it's the genuine "today" action (crystallise now,
+          // use-it-or-lose-it this tax year). ISA headroom is future growth potential,
+          // not a today opportunity, so it trails in the breakdown even though it's
+          // folded into the same consolidated total below.
           const cols = [];
-          if (m.isaHeadroom > 0) cols.push({
-            label: "Unused ISA allowance", value: fmt(m.isaHeadroom),
-            sub: `→ ~${fmt(Math.round(isaProjectedValue))} tax-free by 67 if invested`,
-          });
           if (m.crystallisable > 0) cols.push({
-            label: "CGT saving available", value: fmt(m.cgtSaving),
-            sub: "if crystallised this tax year",
+            label: "CGT saving available", amount: m.cgtSaving,
           });
+          if (m.isaHeadroom > 0) cols.push({
+            label: "Unused ISA allowance", amount: m.isaHeadroom,
+          });
+          const totalOpp = cols.reduce((s,c) => s + c.amount, 0);
           return (
             <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
               <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
-              <div style={{display:"grid",gridTemplateColumns:`repeat(${cols.length},1fr)`,gap:"14px"}}>
-                {cols.map((c,i) => (
-                  <div key={i}>
-                    <div style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700}}>{c.value}</div>
-                    <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>{c.label}</div>
-                    <div style={{fontSize:"11px",color:"rgba(255,255,255,0.55)",marginTop:"2px"}}>{c.sub}</div>
-                  </div>
-                ))}
+              <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
+              <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>
+                {cols.map(c => `${c.label} (${fmt(c.amount)})`).join(" + ")}
               </div>
               <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below to act on these.</p>
             </div>
@@ -4003,19 +4006,21 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const win2Num = showSacrificeCalc ? ++winCounter : null;
           const win3Num = hasStatedBonus ? ++winCounter : null;
 
-          // ── Opportunity strip ──
+          // ── Opportunity strip — consolidated into one total figure below, with
+          // a breakdown line rather than separate side-by-side £ columns. ──
           const oppCols = [];
           if (!contributing) {
-            oppCols.push({ label:"Tax relief foregone", value: fmt(Math.round(m.salary*0.05*m.tr)), sub:"by not contributing at all" });
+            oppCols.push({ label:"Tax relief foregone", amount: Math.round(m.salary*0.05*m.tr) });
           } else if (m.missedMatch > 0) {
-            oppCols.push({ label:"Missed employer match", value: fmt(m.missedMatch), sub:"free money left unclaimed" });
+            oppCols.push({ label:"Missed employer match", amount: m.missedMatch });
           }
           if (inTaper && taperTotalSaving > 0) {
-            oppCols.push({ label:"Personal Allowance recoverable", value: fmt(taperTotalSaving), sub:"by sacrificing into your pension" });
+            oppCols.push({ label:"Personal Allowance recoverable", amount: taperTotalSaving });
           }
           if (hasStatedBonus) {
-            oppCols.push({ label:"Bonus sacrifice saving", value: fmt(Math.round(bonus*m.tr)), sub:"if sacrificed in full" });
+            oppCols.push({ label:"Bonus sacrifice saving", amount: Math.round(statedBonus*m.tr) });
           }
+          const totalOpp = oppCols.reduce((s,c) => s + c.amount, 0);
 
           // ── Growth trajectory chart data (unchanged maths, now inside the info tile) ──
           const salary = m.salary, potVal = +d.potValue||0;
@@ -4073,14 +4078,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               {oppCols.length > 0 && (
                 <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
                   <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
-                  <div style={{display:"grid",gridTemplateColumns:`repeat(${oppCols.length},1fr)`,gap:"14px"}}>
-                    {oppCols.map((c,i) => (
-                      <div key={i}>
-                        <div style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700}}>{c.value}</div>
-                        <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>{c.label}</div>
-                        <div style={{fontSize:"11px",color:"rgba(255,255,255,0.55)",marginTop:"2px"}}>{c.sub}</div>
-                      </div>
-                    ))}
+                  <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
+                  <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>
+                    {oppCols.map(c => `${c.label} (${fmt(c.amount)})`).join(" + ")}
                   </div>
                   <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below to act on these.</p>
                 </div>
@@ -4214,7 +4214,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   <ExpandableInvestmentItem
                     number={win3Num}
                     title="Model bonus sacrifice"
-                    headline={`Sacrificing your ${fmt(bonus)} bonus could save up to ${fmt(Math.round(bonus*m.tr))} in tax`}
+                    headline={`Sacrificing your ${fmt(statedBonus)} bonus could save up to ${fmt(Math.round(statedBonus*m.tr))} in tax`}
                     tag={{ label:"Today", color:GOLD }}
                     defaultOpen={openSection === "bonusSacrifice"}
                   >
@@ -4552,19 +4552,29 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     {/* ── 1. Today's allocation ─────────────────────────────── */}
                     <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>1. Today's allocation</div>
                     <div style={{...stepCardStyle,padding:"16px 18px",marginBottom:"12px"}}>
-                      <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
+                      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
                         {(() => {
+                          // On mobile, a 10-account list eats the whole screen — show the
+                          // first ~2.5 accounts (the 3rd tile visually fading out) and let
+                          // the user expand to see the rest. Each account is its own
+                          // bordered tile (not a plain text row) so the fade is actually
+                          // visible rather than just fading bare text on a tinted background.
                           const isMobileList = winWidth < 640;
                           const collapseAccts = isMobileList && !showAllAccounts && displayTiers.length > 2;
                           const shownTiers = collapseAccts ? displayTiers.slice(0, 3) : displayTiers;
+                          const acctTileStyle = {
+                            display:"flex", justifyContent:"space-between", alignItems:"center",
+                            background:WHITE, border:"1.5px solid rgba(22,47,36,0.12)", borderRadius:"8px",
+                            padding:"10px 12px", fontSize:"13px", color:TEXT,
+                          };
                           return (
                             <>
                               {shownTiers.map((t,i) => {
                                 const fadeThird = collapseAccts && i === 2;
                                 return (
                                   <div key={i} style={fadeThird
-                                    ? {...rowStyle, WebkitMaskImage:"linear-gradient(to bottom, black 40%, transparent 95%)", maskImage:"linear-gradient(to bottom, black 40%, transparent 95%)"}
-                                    : rowStyle}>
+                                    ? {...acctTileStyle, WebkitMaskImage:"linear-gradient(to bottom, black 35%, transparent 92%)", maskImage:"linear-gradient(to bottom, black 35%, transparent 92%)"}
+                                    : acctTileStyle}>
                                     <span>{t.isPb ? "Premium Bonds" : `Account ${i+1}`} — {fmt(t.amount)} at {t.rate.toFixed(2)}%{t.isPb ? " (tax-free avg.)" : ""}</span>
                                     <span style={{fontWeight:600}}>{fmt(Math.round(t.amount * t.rate / 100))}/yr</span>
                                   </div>
@@ -4783,6 +4793,58 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             <div className="fu4">
               <ExpandableInvestmentItem
                 number={1}
+                title="Crystallise paper gains not shielded by tax"
+                headline={cgtHeadline}
+                tag={{ label: "Today", color: GOLD }}
+              >
+                {m.crystallisable > 0 ? (() => {
+                  const totalGains = +d.unrealisedGains||0;
+                  const cgtRatePct = Math.round(m.cgtRate*100);
+                  const yearsNeeded = Math.ceil(totalGains / 3000);
+                  const taxpayerBand = m.tr !== 0.20 ? "higher/additional-rate" : "basic-rate";
+                  const taxIfWait = Math.round((totalGains - 3000) * m.cgtRate);
+                  return (
+                  <div>
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
+                      You have ~{fmt(totalGains)} of unrealised gain. £3,000 is exempt from CGT every year — realising it now banks {fmt(m.crystallisable)} of gain with £0 tax.{yearsNeeded > 1 && ` At that rate it'd take ${yearsNeeded} tax years to shield it all.`}
+                    </p>
+
+                    {yearsNeeded > 1 && (
+                      <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
+                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Wait and sell it all at once, vs shielding £3,000/yr</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"12px"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}><span>Total unrealised gain</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:MUT}}><span>Less: one year's CGT exemption</span><span>−{fmt(3000)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)"}}><span>Taxable gain</span><span style={{fontWeight:600}}>{fmt(totalGains-3000)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:"#c0392b",fontWeight:700}}><span>Tax due at {cgtRatePct}%</span><span>{fmt(taxIfWait)}</span></div>
+                        </div>
+                        <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                          Shield {fmt(3000)} a year instead — spread across {yearsNeeded} tax years — and the same {fmt(totalGains)} of gain costs <strong>£0</strong> in total: a saving of <strong>{fmt(taxIfWait)}</strong> versus leaving it all until you sell.
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+                      <MiniExpandTile icon="🔄" label="Bed &amp; breakfasting" color={GOLD} summary="Repurchase inside an ISA immediately, or wait 30 days outside it.">
+                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
+                          HMRC's "30-day rule" matches a repurchase of the same holding within 30 days against the shares you just bought back — not your original, cheaper ones — which cancels out the gain you were trying to bank. Buying back inside an ISA or pension sidesteps the rule entirely, since that's a different tax wrapper, so you can crystallise and reinvest immediately there. Outside a wrapper, you either wait the full 30 days before repurchasing the same holding, or buy a different (but similarly-exposed) fund instead.
+                        </p>
+                      </MiniExpandTile>
+                      <MiniExpandTile icon="⏳" label="Use it or lose it" color="#c0392b" summary="This year's £3,000 exemption doesn't carry over — unused, it's gone on April 5th.">
+                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
+                          The £3,000 annual exempt amount is flat — every taxpayer gets the same allowance regardless of income, and it can't be carried forward once the tax year ends. What income does change is the rate charged on any gain above it: basic-rate taxpayers pay 18%, higher and additional-rate taxpayers pay 24%. You're a {taxpayerBand} taxpayer, so gains above your exemption are taxed at {cgtRatePct}%.
+                        </p>
+                      </MiniExpandTile>
+                    </div>
+                  </div>
+                  );
+                })() : (
+                  <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>You have no unrealised gains recorded outside an ISA or pension this tax year, so there's nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount.</p>
+                )}
+              </ExpandableInvestmentItem>
+
+              <ExpandableInvestmentItem
+                number={2}
                 title="Utilise unused ISA allowance"
                 headline={isaHeadline}
                 tag={{ label: "Future opportunity", color: "#2d6b4a" }}
@@ -4855,58 +4917,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   {products.products.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
                 </div>
                 {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
-              </ExpandableInvestmentItem>
-
-              <ExpandableInvestmentItem
-                number={2}
-                title="Crystallise paper gains not shielded by tax"
-                headline={cgtHeadline}
-                tag={{ label: "Today", color: GOLD }}
-              >
-                {m.crystallisable > 0 ? (() => {
-                  const totalGains = +d.unrealisedGains||0;
-                  const cgtRatePct = Math.round(m.cgtRate*100);
-                  const yearsNeeded = Math.ceil(totalGains / 3000);
-                  const taxpayerBand = m.tr !== 0.20 ? "higher/additional-rate" : "basic-rate";
-                  const taxIfWait = Math.round((totalGains - 3000) * m.cgtRate);
-                  return (
-                  <div>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                      You have ~{fmt(totalGains)} of unrealised gain. £3,000 is exempt from CGT every year — realising it now banks {fmt(m.crystallisable)} of gain with £0 tax.{yearsNeeded > 1 && ` At that rate it'd take ${yearsNeeded} tax years to shield it all.`}
-                    </p>
-
-                    {yearsNeeded > 1 && (
-                      <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Wait and sell it all at once, vs shielding £3,000/yr</div>
-                        <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"12px"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}><span>Total unrealised gain</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:MUT}}><span>Less: one year's CGT exemption</span><span>−{fmt(3000)}</span></div>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)"}}><span>Taxable gain</span><span style={{fontWeight:600}}>{fmt(totalGains-3000)}</span></div>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:"#c0392b",fontWeight:700}}><span>Tax due at {cgtRatePct}%</span><span>{fmt(taxIfWait)}</span></div>
-                        </div>
-                        <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                          Shield {fmt(3000)} a year instead — spread across {yearsNeeded} tax years — and the same {fmt(totalGains)} of gain costs <strong>£0</strong> in total: a saving of <strong>{fmt(taxIfWait)}</strong> versus leaving it all until you sell.
-                        </div>
-                      </div>
-                    )}
-
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
-                      <MiniExpandTile icon="🔄" label="Bed &amp; breakfasting" color={GOLD} summary="Repurchase inside an ISA immediately, or wait 30 days outside it.">
-                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
-                          HMRC's "30-day rule" matches a repurchase of the same holding within 30 days against the shares you just bought back — not your original, cheaper ones — which cancels out the gain you were trying to bank. Buying back inside an ISA or pension sidesteps the rule entirely, since that's a different tax wrapper, so you can crystallise and reinvest immediately there. Outside a wrapper, you either wait the full 30 days before repurchasing the same holding, or buy a different (but similarly-exposed) fund instead.
-                        </p>
-                      </MiniExpandTile>
-                      <MiniExpandTile icon="⏳" label="Use it or lose it" color="#c0392b" summary="This year's £3,000 exemption doesn't carry over — unused, it's gone on April 5th.">
-                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
-                          The £3,000 annual exempt amount is flat — every taxpayer gets the same allowance regardless of income, and it can't be carried forward once the tax year ends. What income does change is the rate charged on any gain above it: basic-rate taxpayers pay 18%, higher and additional-rate taxpayers pay 24%. You're a {taxpayerBand} taxpayer, so gains above your exemption are taxed at {cgtRatePct}%.
-                        </p>
-                      </MiniExpandTile>
-                    </div>
-                  </div>
-                  );
-                })() : (
-                  <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>You have no unrealised gains recorded outside an ISA or pension this tax year, so there's nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount.</p>
-                )}
               </ExpandableInvestmentItem>
             </div>
           );
