@@ -2217,6 +2217,75 @@ function priorityModuleKey(title) {
   return "cash";
 }
 
+// ── Cash waterfall optimiser: ISA → Personal Savings Allowance → Premium Bonds ──
+// Single source of truth for "what could this cash + Premium Bonds pot earn if
+// optimally allocated, vs what it earns today" — shared by the Cash & Savings
+// module's "Optimise your cash" win and computeModuleStatuses below, so the
+// Dashboard and the module page never show two different numbers for the same
+// underlying opportunity. isaRatePct/nonIsaRatePct are percentage numbers (e.g.
+// 5.1) or null/undefined, in which case the same pre-data-load fallbacks apply.
+export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
+  const bondsVal = m.bonds || 0;
+  const psaLimit = m.taxBandLabel === "basic" ? 1000 : m.taxBandLabel === "higher" ? 500 : 0;
+  // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
+  const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
+  const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
+  const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
+  const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
+  // NS&I's long-run prize-fund average — the same figure used everywhere else in
+  // this file for Premium Bonds' effective tax-free return.
+  const PB_RATE = 0.044;
+
+  const currentTaxableInterest = Math.round(m.cash * m.savingsRate / 100);
+  const currentPbInterest = Math.round(bondsVal * PB_RATE);
+  const currentGrossTotal = currentTaxableInterest + currentPbInterest;
+  const currentTaxableAmount = Math.max(0, currentTaxableInterest - psaLimit);
+  const trPct = Math.round(m.tr * 100);
+  const currentTaxCost = Math.round(currentTaxableAmount * m.tr);
+  const currentAfterTaxTotal = currentTaxableInterest - currentTaxCost + currentPbInterest;
+
+  // The full reallocation pot — cash (already outside any ISA) plus premium bonds.
+  // Deliberately the WHOLE amount, not just the surplus above the buffer: ISAs and
+  // Premium Bonds are both easy/near-instant access, so there's no liquidity reason
+  // to exclude the buffer portion from this.
+  const totalPot = m.cash + bondsVal;
+  const step1Isa = Math.min(totalPot, m.isaHeadroom);
+  const step1IsaInterest = Math.round(step1Isa * isaRateDecimal);
+  const afterStep1 = totalPot - step1Isa;
+  // Only worth filling the PSA with ordinary savings if the best available non-ISA
+  // rate actually beats the Premium Bonds average — otherwise the "tax-free"
+  // comparison is a wash and Premium Bonds are simply better.
+  const savingsWorthIt = nonIsaRateDecimal > PB_RATE;
+  const step2Savings = savingsWorthIt ? Math.min(afterStep1, psaLimit / nonIsaRateDecimal) : 0;
+  const step2SavingsInterest = Math.round(step2Savings * nonIsaRateDecimal);
+  const afterStep2 = afterStep1 - step2Savings;
+  // Once the ISA and PSA are filled, what's left is a genuine choice (Step 3 vs
+  // Step 4) rather than something this function should silently decide.
+  const discretionaryAmount = afterStep2;
+  const step3Pb = Math.min(discretionaryAmount, 50000); // £50,000 is a hard NS&I product limit, not a preference
+  const step3PbInterest = Math.round(step3Pb * PB_RATE);
+  const step3UpliftVsCurrent = step3PbInterest - Math.round(step3Pb * m.savingsRate / 100);
+  const beyondPbCap = Math.max(0, discretionaryAmount - step3Pb); // only nonzero above the £50,000 cap
+
+  // "Optimised interest income" and the top-line gain default to the cash-safe path
+  // (Step 3) — the same-unit, guaranteed comparison. Step 4's long-term illustration
+  // is a separate, non-guaranteed figure and isn't folded into this £/yr total.
+  const optimisedTotal = step1IsaInterest + step2SavingsInterest + step3PbInterest;
+  const keptAmount = step1Isa + step2Savings + step3Pb;
+  const todayBlendedRate = totalPot > 0 ? (currentTaxableInterest + currentPbInterest) / totalPot : 0;
+  const currentInterestOnKeptAmount = Math.round(keptAmount * todayBlendedRate);
+  const optimisationGain = optimisedTotal - currentInterestOnKeptAmount;
+
+  return {
+    psaLimit, isaRateDecimal, isaRateDisplay, nonIsaRateDecimal, nonIsaRateDisplay, PB_RATE,
+    currentTaxableInterest, currentPbInterest, currentGrossTotal, currentTaxableAmount, trPct, currentTaxCost, currentAfterTaxTotal,
+    totalPot, step1Isa, step1IsaInterest, afterStep1, savingsWorthIt,
+    step2Savings, step2SavingsInterest, afterStep2, discretionaryAmount,
+    step3Pb, step3PbInterest, step3UpliftVsCurrent, beyondPbCap,
+    optimisedTotal, keptAmount, todayBlendedRate, currentInterestOnKeptAmount, optimisationGain,
+  };
+}
+
 // ── Local module status computation ──────────────────────────────────────────
 // Computes status + £ impact for all 8 modules from user data alone.
 // AI response takes precedence for narrative summary; this drives sorting + visibility.
@@ -2232,15 +2301,17 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
 
   const s = {};
 
-  // Cash — access type + yield gap + emergency buffer
-  // m.annualYieldGap already includes the ISA-eligible portion's rate-differential gain
-  // (isaEligiblePortion × (isaRate − currentRate) — see calcMetrics), so adding
-  // isaHeadroom × isaRate again here would double-count the same headroom. cashImpact
-  // is the genuine £/yr figure used for both the label and `amount`; the
-  // approaching-deadline urgency multiplier is kept separate as a sort-priority-only
-  // nudge (cashSortPriority) and must never be shown to the user as a £ figure.
-  const cashImpact = Math.round(m.annualYieldGap);
-  const cashSortPriority = Math.round(m.annualYieldGap + m.isaHeadroom * (isaRate / 100) * isaUrgencyBoost);
+  // Cash — access type + emergency buffer + the ISA→PSA→Premium Bonds waterfall
+  // (calcCashOptimisation), the same calculation the Cash & Savings module's
+  // "Optimise your cash" win uses — so the Dashboard shows the identical £/yr figure
+  // rather than a cruder approximation. This also supersedes the old separate
+  // Premium-Bonds-only calc: the optimiser already reallocates cash + bonds together.
+  const cashOpt = calcCashOptimisation(m, isaRate, nonIsaRate);
+  const cashImpact = Math.max(0, Math.round(cashOpt.optimisationGain));
+  // Approaching-deadline urgency is a sort-priority-only nudge, kept separate from
+  // the £/yr figures shown to the user (see pension's +99999 sentinel below for the
+  // same pattern).
+  const cashSortPriority = cashImpact + Math.round(m.isaHeadroom * (isaRate / 100) * (isaUrgencyBoost - 1));
   const tooMuchCash = m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
   const genuinelyLowCash = m.emergencyFund === 0 && m.expenses > 0;
   const accessType = d.cashAccessType || "partial";
@@ -2252,40 +2323,20 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   } else if (accessType === "partial") {
     accessLabel = accessOk ? "Some cash may not be immediately accessible" : null;
   }
-  // Premium bonds: surplus above emergency buffer could earn more in Cash ISA
-  const bondsHeld = +d.premiumBonds||0;
-  const bondsSurplus = Math.max(0, bondsHeld - m.emergencyBuffer);
-  // Blended, not flat: only isaHeadroom worth of the surplus could actually go into
-  // an ISA — the rest would realistically land in a non-ISA account instead. The
-  // non-ISA portion is floored at £0, same reasoning as annualYieldGap above — if
-  // the best non-ISA rate doesn't beat NS&I's average, there's nothing better to
-  // move that excess into right now.
-  const bondsIsaPortion = Math.min(bondsSurplus, m.isaHeadroom);
-  const bondsNonIsaPortion = Math.max(0, bondsSurplus - m.isaHeadroom);
-  const bondsIsaPortionGain = bondsIsaPortion * (isaRate / 100 - 0.044);
-  const bondsNonIsaPortionGain = bondsNonIsaPortion * (nonIsaRate / 100 - 0.044);
-  const bondsExcessNotWorthMoving = bondsNonIsaPortionGain < 0;
-  const bondsYieldGain = Math.round(bondsIsaPortionGain + Math.max(0, bondsNonIsaPortionGain));
-  // What to actually recommend moving — capped to the ISA-eligible portion when the
-  // excess has nowhere better to go, same as calcMetrics' cashMoveAmount.
-  const bondsMoveAmount = bondsExcessNotWorthMoving ? bondsIsaPortion : bondsSurplus;
-  const hasBondOpportunity = bondsSurplus > 1000 && bondsYieldGain > 50;
 
   let cashImpactLabel;
   if (tooMuchCash) {
     // emergencyExcess is a principal (the £ sitting above the buffer), not a £/yr
     // figure — never label it "/yr" or use it as the amount. The actual annual
-    // benefit is the same yield-gap calc used below, just called out alongside
-    // the excess for context.
+    // benefit is the same optimisation-gain figure used below, just called out
+    // alongside the excess for context.
     cashImpactLabel = cashImpact > 0
-      ? `${fmt(cashImpact)}/yr in yield gap — ${fmt(Math.round(m.emergencyExcess))} of it sits above your buffer`
+      ? `${fmt(cashImpact)}/yr in tax-efficiency gain available — ${fmt(Math.round(m.emergencyExcess))} of it sits above your buffer`
       : `${fmt(Math.round(m.emergencyExcess))} sits above your buffer, earning below its potential`;
-  } else if (hasBondOpportunity) {
-    cashImpactLabel = `${fmt(bondsYieldGain)}/yr by switching surplus bonds to ${m.isaHeadroom > 0 ? "Cash ISA" : "a best-buy savings account"}`;
   } else if (accessLabel) {
     cashImpactLabel = accessLabel;
   } else if (cashImpact > 0) {
-    cashImpactLabel = `${fmt(cashImpact)}/yr in yield gap vs best-buy rate`;
+    cashImpactLabel = `${fmt(cashImpact)}/yr in tax-efficiency gain available`;
   } else {
     cashImpactLabel = null;
   }
@@ -2294,13 +2345,11 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // where impact includes a +99999 sentinel that must never be summed or displayed).
   // Note: tooMuchCash intentionally falls through to cashImpact here too — emergencyExcess
   // is a principal, not an annual figure, and must never be used as the £/yr amount.
-  const cashAmount = hasBondOpportunity ? bondsYieldGain
-    : cashImpact > 0 ? cashImpact
-    : 0; // accessLabel-only attention (or a too-much-cash pile already at best rate) has no £ figure
+  const cashAmount = cashImpact > 0 ? cashImpact : 0; // accessLabel-only attention has no £ figure
   s.cash = {
-    status: tooMuchCash || m.annualYieldGap > 800 ? "critical"
-          : m.annualYieldGap > 200 || hasBondOpportunity || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
-    impact: Math.max(cashSortPriority, hasBondOpportunity ? bondsYieldGain : 0),
+    status: tooMuchCash || cashImpact > 800 ? "critical"
+          : cashImpact > 200 || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
+    impact: cashSortPriority,
     impactLabel: cashImpactLabel,
     amount: cashAmount,
   };
@@ -4080,15 +4129,14 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             a conditional "Build your emergency fund" win when the buffer isn't met
             yet. */}
         {moduleKey === "cash" && !isPensionUnknown && (() => {
-          const psaLimit = m.taxBandLabel==="basic"?1000:m.taxBandLabel==="higher"?500:0;
-          // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
-          const isaRateDecimal = isaRatePct != null ? +isaRatePct/100 : 0.049;
-          const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
-          const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct/100 : 0.045;
-          const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
-          // NS&I's long-run prize-fund average — the same figure used everywhere else
-          // in this file for Premium Bonds' effective tax-free return.
-          const PB_RATE = 0.044;
+          const {
+            psaLimit, isaRateDisplay, nonIsaRateDisplay, PB_RATE,
+            currentTaxableInterest, currentPbInterest, currentGrossTotal, currentTaxableAmount, trPct, currentTaxCost, currentAfterTaxTotal,
+            totalPot, step1Isa, step1IsaInterest,
+            step2Savings, step2SavingsInterest, discretionaryAmount,
+            step3Pb, step3PbInterest, step3UpliftVsCurrent, beyondPbCap,
+            optimisedTotal, keptAmount, currentInterestOnKeptAmount, optimisationGain,
+          } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct);
 
           const displayTiers = [
             ...((Array.isArray(d.cashTiers) && d.cashTiers.some(t => +t.amount > 0))
@@ -4096,50 +4144,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               : (m.cash > 0 ? [{ amount:m.cash, rate:m.savingsRate, isPb:false }] : [])),
             ...(bondsVal > 0 ? [{ amount:bondsVal, rate:PB_RATE*100, isPb:true }] : []),
           ];
-
-          const currentTaxableInterest = Math.round(m.cash * m.savingsRate / 100);
-          const currentPbInterest = Math.round(bondsVal * PB_RATE);
-          const currentGrossTotal = currentTaxableInterest + currentPbInterest;
-          const currentTaxableAmount = Math.max(0, currentTaxableInterest - psaLimit);
-          const trPct = Math.round(m.tr * 100);
-          const currentTaxCost = Math.round(currentTaxableAmount * m.tr);
-          const currentAfterTaxTotal = currentTaxableInterest - currentTaxCost + currentPbInterest;
-
-          // The full reallocation pot — cash (already outside any ISA) plus premium
-          // bonds. Deliberately the WHOLE amount, not just the surplus above the
-          // buffer: ISAs and Premium Bonds are both easy/near-instant access, so
-          // there's no liquidity reason to exclude the buffer portion from this.
-          const totalPot = m.cash + bondsVal;
-          const step1Isa = Math.min(totalPot, m.isaHeadroom);
-          const step1IsaInterest = Math.round(step1Isa * isaRateDecimal);
-          let afterStep1 = totalPot - step1Isa;
-          // Only worth filling the PSA with ordinary savings if the best available
-          // non-ISA rate actually beats the Premium Bonds average — otherwise the
-          // "tax-free" comparison is a wash and Premium Bonds are simply better.
-          const savingsWorthIt = nonIsaRateDecimal > PB_RATE;
-          const step2Savings = savingsWorthIt ? Math.min(afterStep1, psaLimit / nonIsaRateDecimal) : 0;
-          const step2SavingsInterest = Math.round(step2Savings * nonIsaRateDecimal);
-          let afterStep2 = afterStep1 - step2Savings;
-          // Once the ISA and PSA are filled, what's left is a genuine choice, not
-          // something the algorithm should silently decide for the user: Step 3 and
-          // Step 4 both describe the SAME leftover amount as alternatives — keep it
-          // liquid and tax-free in Premium Bonds (near-term need, risk-averse) or
-          // invest it instead (no near-term need, maximise long-term growth) — rather
-          // than sequential top-ups where one silently crowds out the other.
-          const discretionaryAmount = afterStep2;
-          const step3Pb = Math.min(discretionaryAmount, 50000); // £50,000 is a hard NS&I product limit, not a preference
-          const step3PbInterest = Math.round(step3Pb * PB_RATE);
-          const step3UpliftVsCurrent = step3PbInterest - Math.round(step3Pb * m.savingsRate / 100);
-          const beyondPbCap = Math.max(0, discretionaryAmount - step3Pb); // only nonzero above the £50,000 cap
-          // "Optimised interest income" and the top-line gain default to the cash-safe
-          // path (Step 3) — the same-unit, guaranteed comparison. Step 4's long-term
-          // illustration is shown separately since investment returns aren't guaranteed
-          // and shouldn't be folded into a £/yr interest total.
-          const optimisedTotal = step1IsaInterest + step2SavingsInterest + step3PbInterest;
-          const keptAmount = step1Isa + step2Savings + step3Pb;
-          const todayBlendedRate = totalPot > 0 ? (currentTaxableInterest + currentPbInterest) / totalPot : 0;
-          const currentInterestOnKeptAmount = Math.round(keptAmount * todayBlendedRate);
-          const optimisationGain = optimisedTotal - currentInterestOnKeptAmount;
 
           // Step 4 growth illustration — same 10yr/7% nominal illustrative assumption
           // used elsewhere in this file (e.g. the Investments module's ISA growth chart).
