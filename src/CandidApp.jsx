@@ -2135,6 +2135,51 @@ export const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT, un
 const SL = { ok:"On track", attention:"Review", critical:"Action needed", na:"N/A", unknown:"Find out" };
 const UG = { immediate:"#c0392b", soon:GOLD, "this tax year":"#2d6b4a" };
 
+// ── Dashboard module tiles — category pill + short context, keyed to MODULE_META ──
+// "Today" = act now for an immediate saving; "Future opportunity" = value that builds
+// over a longer horizon (growth, compounding, tax-free wrappers).
+const MODULE_TAG = {
+  cash:         { label:"Today",             color:GOLD },
+  investments:  { label:"Future opportunity", color:"#2d6b4a" },
+  pension:      { label:"Future opportunity", color:"#2d6b4a" },
+  studentLoan:  { label:"Today",             color:GOLD },
+  mortgage:     { label:"Today",             color:GOLD },
+  personalLoan: { label:"Today",             color:GOLD },
+  kids:         { label:"Future opportunity", color:"#2d6b4a" },
+};
+
+function TagPill({ label, color }) {
+  return (
+    <span style={{fontSize:"10px",fontWeight:700,color,background:`${color}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{label}</span>
+  );
+}
+
+// Short "alongside" context for a module's headline £ figure — deliberately not just
+// impactLabel verbatim, since several modules' impactLabel leads with a different £
+// figure than mm.amount (e.g. investments' ISA headroom vs. the tax saving shown).
+function moduleContext(mm, d, m) {
+  switch (mm.key) {
+    case "cash":
+      return mm.impactLabel ? mm.impactLabel.replace(/^~?£[\d,]+(?:\.\d+)?(?:\/yr)?\s*/, "") : null;
+    case "investments":
+      return "ISA allowance + CGT tax saving";
+    case "pension":
+      if (!isPensionContributing(d)) return "no pension — tax relief foregone";
+      if (m.missedMatch > 0) return "missed employer match";
+      return "bonus sacrifice saving";
+    case "studentLoan":
+      return "interest saved by overpaying before write-off";
+    case "mortgage":
+      return mm.impactLabel || null;
+    case "personalLoan":
+      return mm.impactLabel ? mm.impactLabel.replace(/^£[\d,]+(?:\.\d+)?\s*/, "") : null;
+    case "kids":
+      return "JISA growth potential by 18";
+    default:
+      return null;
+  }
+}
+
 // ── Your Forecast — per-option line colours (chart + legend + table dots) ─────
 const FORECAST_COLORS = {
   "Mortgage overpayment": "#c0392b",
@@ -2565,7 +2610,6 @@ function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
 function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
-  const [showAllModules, setShowAllModules] = useState(false);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
   const [forecastHorizon, setForecastHorizon] = useState(5);
   const [forecastSurplus, setForecastSurplus] = useState(null); // null = use calculated default
@@ -2603,22 +2647,15 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
   const allModules = MODULE_META.map(mm => getModuleSummary(mm, d, m, localStatuses, insights));
 
   const activeModules = allModules.filter(mm => mm.status !== "na");
-  const sortedModules = [...activeModules].sort((a,b) => {
-    const aDone = completedModules.includes(a.key) ? 1 : 0;
-    const bDone = completedModules.includes(b.key) ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone; // reviewed sink to bottom
-    const statDiff = (statusOrder[a.status]||3) - (statusOrder[b.status]||3);
-    if (statDiff !== 0) return statDiff;
-    return b.impact - a.impact;
-  });
 
-  const unreviewedModules = sortedModules.filter(mm => !completedModules.includes(mm.key));
-  const reviewedModules   = sortedModules.filter(mm =>  completedModules.includes(mm.key));
+  // Module breakdown list — descending by the clean £/yr `amount` figure (not the
+  // sort-priority `impact`, which carries a +99999 sentinel for an uncontributed
+  // pension). Modules with nothing actionable (amount === 0) sink to the bottom.
+  const modulesWithRec = [...activeModules.filter(mm => mm.amount > 0)].sort((a,b) => b.amount - a.amount);
+  const modulesNoRec   = activeModules.filter(mm => mm.amount === 0);
+  const moduleList     = [...modulesWithRec, ...modulesNoRec];
 
-  const SHOW_DEFAULT = 3;
-  const visibleUnreviewed = unreviewedModules.slice(0, SHOW_DEFAULT);
-  const hiddenUnreviewed  = unreviewedModules.slice(SHOW_DEFAULT);
-  const hiddenCount = hiddenUnreviewed.length;
+  const totalOpp = modulesWithRec.filter(mm => !mm.amountIsLumpSum).reduce((sum, mm) => sum + mm.amount, 0);
 
   // ── Your Forecast — recalculates live as horizon/surplus controls change ────
   const forecast = calcForecast(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
@@ -2853,17 +2890,21 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
         </h1>
 
         {/* Score card */}
-        <div className="fu" style={{background:G,borderRadius:"16px",padding:"28px 32px",display:"flex",alignItems:"center",gap:"28px",marginBottom:"28px",flexWrap:"wrap"}}>
+        <div className="fu" style={{background:G,borderRadius:"16px",padding:"20px 28px",display:"flex",alignItems:"center",gap:"24px",marginBottom:"20px",flexWrap:"wrap"}}>
           <ScoreRing score={displayScore} delta={totalDelta}/>
           <div style={{flex:1,minWidth:"200px"}}>
-            <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"8px"}}>Your Candid Score</div>
-            <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"10px"}}>{insights.headline}</h2>
-            <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:"16px"}}>{insights.narrative}</p>
+            <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"6px"}}>Your Candid Score</div>
+            <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"8px"}}>{insights.headline}</h2>
+            <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:insights.isFallback?"10px":0}}>{insights.narrative}</p>
             {insights.isFallback && (
-              <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",marginBottom:"16px"}}>
+              <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:0}}>
                 We couldn't generate your personalised analysis just now, so you're seeing a general summary — try regenerating shortly.
               </p>
             )}
+          </div>
+          <div style={{flexShrink:0,textAlign:"right",maxWidth:"210px"}}>
+            <p style={{fontSize:"12px",color:"rgba(255,255,255,0.5)",lineHeight:1.5,marginBottom:"8px"}}>Changed your circumstances? Update your inputs for a fresh score.</p>
+            <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
           </div>
         </div>
 
@@ -3081,39 +3122,23 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
   </div>
 )}
 
-        {/* Total opportunity banner */}
-        {(() => {
-          const totalOpp = activeModules.reduce((sum, mm) => {
-            const raw = mm.impact || 0;
-            // Exclude pension sentinel value (99999 + tax relief) used for sorting
-            const capped = Math.min(raw, 99998);
-            return sum + (capped > 0 ? capped : 0);
-          }, 0);
-          if (totalOpp < 500) return null;
+        {/* Total opportunity — lighter green than the score card, label-above-value template */}
+        {totalOpp >= 500 && (() => {
           const eq = getEquivalence(totalOpp);
           return (
-            <div className="fu1" style={{background:G,borderRadius:"14px",padding:"20px 24px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"20px",flexWrap:"wrap"}}>
-              <div style={{flex:1,minWidth:"200px"}}>
-                <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"6px"}}>Your total opportunity</div>
-                <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
-                  <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:WHITE}}>{fmt(totalOpp)}</span>
-                  <span style={{fontSize:"14px",color:"rgba(255,255,255,0.55)"}}>you could be leaving on the table</span>
-                </div>
-                {eq && <div style={{fontSize:"12px",color:GOLD,marginTop:"6px"}}>{eq}</div>}
+            <div className="fu1" style={{background:"#2d6b4a",borderRadius:"14px",padding:"22px 26px",marginBottom:"20px"}}>
+              <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
+              <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
+                <span style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:WHITE}}>{fmt(totalOpp)}</span>
+                <span style={{fontSize:"14px",color:"rgba(255,255,255,0.65)"}}>you could be leaving on the table</span>
               </div>
-              <div style={{fontSize:"12px",color:"rgba(255,255,255,0.4)",maxWidth:"220px",lineHeight:1.6}}>
+              {eq && <div style={{fontSize:"12px",color:GOLD,marginTop:"6px"}}>{eq}</div>}
+              <div style={{fontSize:"11px",color:"rgba(255,255,255,0.5)",marginTop:"10px",lineHeight:1.6}}>
                 Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
               </div>
             </div>
           );
         })()}
-
-
-        {/* Edit inputs banner */}
-        <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.25)",borderRadius:"10px",padding:"13px 16px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px"}}>
-          <p style={{fontSize:"13px",color:G,lineHeight:1.5,margin:0}}>Changed your circumstances? Update your inputs for a fresh score.</p>
-          <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer",flexShrink:0}}>Update inputs</button>
-        </div>
 
         {/* Your Forecast */}
         <div className="fu1" style={{background:WHITE,borderRadius:"16px",padding:isMobile?"18px":"24px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"24px"}}>
@@ -3252,106 +3277,49 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           </p>
         </div>
 
-        {/* Module breakdown — sorted, collapsible */}
+        {/* Module breakdown — full-width, stacked, sorted by £ opportunity descending */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
-          <span style={{fontSize:"12px",color:MUT}}>{completedModules.filter(k => activeModules.some(mm => mm.key === k)).length} of {activeModules.length} reviewed</span>
+          <span style={{fontSize:"12px",color:MUT}}>{modulesWithRec.length} need action · {modulesNoRec.length} on track</span>
         </div>
 
-        {/* Unreviewed modules — top 3 always visible */}
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:"16px",marginBottom:"10px"}}>
-          {visibleUnreviewed.map((mm,i) => {
-            const col = SC[mm.status] || MUT;
+        <div style={{marginBottom:"24px"}}>
+          {moduleList.map((mm, i) => {
+            const reviewed = completedModules.includes(mm.key);
+            if (mm.amount > 0) {
+              const tag = MODULE_TAG[mm.key];
+              const context = moduleContext(mm, d, m);
+              return (
+                <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
+                  style={{background:WHITE,borderRadius:"12px",padding:"18px 22px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"10px",cursor:"pointer",position:"relative"}}>
+                  {tag && <div style={{position:"absolute",top:"16px",right:"20px"}}><TagPill label={tag.label} color={tag.color}/></div>}
+                  <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"8px",paddingRight:"110px"}}>
+                    <span style={{fontSize:"14px"}}>{mm.icon}</span>{mm.title}
+                    {reviewed && <svg width="11" height="9" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#2d6b4a" strokeWidth="2" strokeLinecap="round"/></svg>}
+                  </div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
+                    <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:G}}>{fmt(mm.amount)}{mm.amountIsLumpSum ? " by 18" : "/yr"}</span>
+                    {context && <span style={{fontSize:"13px",color:MUT}}>{context}</span>}
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
-                style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1px solid rgba(22,47,36,0.09)`,cursor:"pointer",borderTop:`3px solid ${col}`,display:"flex",flexDirection:"column"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                  <span style={{fontSize:"16px"}}>{mm.icon}</span>
-                  <span style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</span>
+                style={{background:WHITE,opacity:0.55,borderRadius:"12px",padding:"14px 22px",border:"1px solid rgba(22,47,36,0.06)",marginBottom:"10px",cursor:"pointer",display:"flex",alignItems:"center",gap:"12px"}}>
+                <div style={{width:"20px",height:"20px",background:"#2d6b4a",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke={WHITE} strokeWidth="1.8" strokeLinecap="round"/></svg>
                 </div>
-                <span style={{fontSize:"10px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginBottom:"8px"}}>{SL[mm.status]}</span>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginBottom:"6px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{mm.summary}</p>
-                <div style={{marginTop:"auto",paddingTop:"8px"}}>
-                  {mm.impactLabel && (
-                    <div style={{fontSize:"11px",color:G,fontWeight:600,background:"rgba(22,47,36,0.05)",borderRadius:"5px",padding:"4px 8px",marginBottom:"4px"}}>{mm.impactLabel}</div>
-                  )}
-                  {mm.impact > 0 && (() => {
-                    const eq = getEquivalence(mm.impact);
-                    return eq ? (
-                      <div style={{fontSize:"10.5px",color:MUT,background:"rgba(196,150,58,0.07)",borderRadius:"5px",padding:"4px 8px",marginBottom:"8px",lineHeight:1.35}}>{eq}</div>
-                    ) : null;
-                  })()}
-                  <p style={{fontSize:"12px",color:G,fontWeight:500}}>View details →</p>
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"2px"}}>
+                    <span style={{fontSize:"14px"}}>{mm.icon}</span>{mm.title}
+                  </div>
+                  <div style={{fontSize:"13px",color:MUT}}>{mm.impactLabel || "On track — no action needed"}</div>
                 </div>
               </div>
             );
           })}
         </div>
-
-        {/* Show more — grid appears first, button stays at bottom */}
-        {hiddenCount > 0 && (
-          <>
-            {showAllModules && (
-              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:"16px",marginBottom:"10px"}}>
-                {hiddenUnreviewed.map((mm) => {
-                  const col = SC[mm.status] || MUT;
-                  return (
-                    <div key={mm.key} onClick={() => onOpenModule(mm.key)}
-                      style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1px solid rgba(22,47,36,0.09)`,cursor:"pointer",borderTop:`3px solid ${col}`,display:"flex",flexDirection:"column"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                        <span style={{fontSize:"16px"}}>{mm.icon}</span>
-                        <span style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</span>
-                      </div>
-                      <span style={{fontSize:"10px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginBottom:"8px"}}>{SL[mm.status]}</span>
-                      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginBottom:"6px",overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{mm.summary}</p>
-                      <div style={{marginTop:"auto",paddingTop:"8px"}}>
-                        {mm.impactLabel && (
-                          <div style={{fontSize:"11px",color:G,fontWeight:600,background:"rgba(22,47,36,0.05)",borderRadius:"5px",padding:"4px 8px",marginBottom:"4px"}}>{mm.impactLabel}</div>
-                        )}
-                        {mm.impact > 0 && (() => {
-                          const eq = getEquivalence(mm.impact);
-                          return eq ? (
-                            <div style={{fontSize:"10.5px",color:MUT,background:"rgba(196,150,58,0.07)",borderRadius:"5px",padding:"4px 8px",marginBottom:"8px",lineHeight:1.35}}>{eq}</div>
-                          ) : null;
-                        })()}
-                        <p style={{fontSize:"12px",color:G,fontWeight:500}}>View details →</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <button type="button" onClick={() => setShowAllModules(v=>!v)}
-              style={{width:"100%",padding:"12px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"10px",color:G,fontSize:"14px",fontWeight:500,cursor:"pointer",marginBottom:"10px",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
-              <span style={{transform:showAllModules?"rotate(90deg)":"none",transition:"transform 0.2s",display:"inline-block",fontSize:"16px"}}>›</span>
-              {showAllModules ? "Show fewer modules" : `Show ${hiddenCount} more module${hiddenCount!==1?"s":""}`}
-            </button>
-          </>
-        )}
-
-        {/* Reviewed modules — dimmed, at bottom */}
-        {reviewedModules.length > 0 && (
-          <div style={{marginBottom:"24px"}}>
-            <div style={{fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px",display:"flex",alignItems:"center",gap:"6px"}}>
-              <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#2d6b4a" strokeWidth="2" strokeLinecap="round"/></svg>
-              Reviewed
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"8px"}}>
-              {reviewedModules.map(mm => (
-                <div key={mm.key} onClick={() => onOpenModule(mm.key)} style={{background:WHITE,borderRadius:"12px",padding:"14px 16px",border:`1.5px solid ${GOLD}`,cursor:"pointer",display:"flex",alignItems:"center",gap:"10px",transition:"all 0.15s"}}>
-                  <div style={{width:"22px",height:"22px",background:"#2d6b4a",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke={WHITE} strokeWidth="1.8" strokeLinecap="round"/></svg>
-                  </div>
-                  <span style={{fontSize:"16px"}}>{mm.icon}</span>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:600,fontSize:"13px",color:TEXT}}>{mm.title}</div>
-                    <div style={{fontSize:"11px",color:GOLD,fontWeight:600}}>{mm.title}: Optimised ✓</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>
           Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.{" "}
