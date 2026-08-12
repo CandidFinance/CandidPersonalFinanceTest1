@@ -2947,12 +2947,13 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
               {/* £ figure sits in the same column as the score ring above it — same
                   fixed width, same centering — while the text column keeps its own
                   alignment with the score card's headline text. */}
-              <div style={{width:"124px",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
-                <span style={{fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:G,lineHeight:1.15}}>{fmt(totalOpp)}</span>
+              <div style={{width:"124px",flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
+                <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:G,lineHeight:1.1}}>{fmt(totalOpp)}</span>
+                <span style={{fontSize:"10px",color:MUT,fontWeight:500,marginTop:"3px"}}>per year</span>
               </div>
               <div style={{flex:1,minWidth:"200px"}}>
-                <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
-                <div style={{fontSize:"14px",color:MUT}}>you could be leaving on the table</div>
+                <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
+                <div style={{fontSize:"14px",color:MUT}}>You could be leaving <span style={{fontWeight:700,color:G}}>{fmt(totalOpp)}</span> on the table.</div>
                 {eq && <div style={{fontSize:"12px",color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
                 <div style={{fontSize:"11px",color:MUT,marginTop:"10px",lineHeight:1.6}}>
                   Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
