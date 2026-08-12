@@ -2145,7 +2145,9 @@ function moduleContext(mm, d, m) {
     case "cash":
       return mm.impactLabel ? mm.impactLabel.replace(/^~?£[\d,]+(?:\.\d+)?(?:\/yr)?\s*/, "") : null;
     case "investments":
-      return "ISA allowance + CGT tax saving";
+      // Only shown when mm.amount > 0, i.e. there's CGT saving to report (see
+      // computeModuleStatuses — ISA headroom is no longer part of that figure).
+      return "CGT tax saving available";
     case "pension":
       if (!isPensionContributing(d)) return "no pension — tax relief foregone";
       if (m.missedMatch > 0) return "missed employer match";
@@ -2303,6 +2305,25 @@ export function calcStudentLoanScenario(d, m) {
   };
 }
 
+// ── Pension Personal Allowance taper — single source of truth for the £100k–
+// £125,140 60% marginal-rate zone maths, shared by computeModuleStatuses
+// (Dashboard figure) and the module's own opportunity strip/Win tile, so the
+// two can't disagree (same pattern as calcStudentLoanScenario above).
+// NB: taperSacrificeNeeded/taperNiSaving are only meaningful when inTaper is
+// true — outside the taper zone they're repurposed to describe "how far below
+// £100k you are" for messaging, so taperTotalSaving must always be gated on
+// inTaper before being treated as a real £/yr saving.
+export function calcPensionTaperSaving(m) {
+  const taperStart = 100000, taperEnd = 125140;
+  const ani = m.adjustedNetIncome;
+  const inTaper = ani > taperStart && ani < taperEnd;
+  const taperSacrificeNeeded = inTaper ? Math.ceil((ani - taperStart) / 2) : Math.max(0, taperStart - ani);
+  const taperNiSaving = Math.round(taperSacrificeNeeded * 0.02);
+  const taperTaxSaving = inTaper ? Math.round(taperSacrificeNeeded * 0.60) : 0;
+  const taperTotalSaving = taperNiSaving + taperTaxSaving;
+  return { taperStart, taperEnd, ani, inTaper, taperSacrificeNeeded, taperNiSaving, taperTaxSaving, taperTotalSaving };
+}
+
 // ── Local module status computation ──────────────────────────────────────────
 // Computes status + £ impact for all 8 modules from user data alone.
 // AI response takes precedence for narrative summary; this drives sorting + visibility.
@@ -2371,30 +2392,51 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     amount: cashAmount,
   };
 
-  // Investments — ISA headroom × tax saving proxy + CGT saving
-  const isaImpact = Math.round(m.isaHeadroom * 0.07 * m.tr * isaUrgencyBoost + m.cgtSaving);
+  // Investments — CGT saving is a real, guaranteed, this-tax-year £/yr figure.
+  // ISA headroom is not a gain — it's unused capacity that only becomes a gain if
+  // invested and if it grows — so unlike Cash/Pension/Student loan, it's excluded
+  // from `amount` (the £ figure shown to the user) entirely. It still feeds `impact`
+  // (sort priority only, weighted by the same tax-year-end urgency multiplier as
+  // Cash's cashSortPriority) and status/impactLabel, so a large unused allowance
+  // still surfaces on the dashboard even with no CGT saving to report.
+  const isaSortWeight = Math.round(m.isaHeadroom * 0.07 * m.tr * isaUrgencyBoost);
   s.investments = {
     status: (m.isaHeadroom > 10000 && daysToTaxEnd < 60) ? "critical"
           : m.isaHeadroom > 2000 || m.cgtSaving > 0 ? "attention" : "ok",
-    impact: isaImpact,
-    impactLabel: isaImpact > 0 ? `${fmt(m.isaHeadroom)} ISA headroom` : null,
-    amount: isaImpact > 0 ? isaImpact : 0, // the projected tax saving, not the headroom itself
+    impact: isaSortWeight + m.cgtSaving,
+    impactLabel: m.cgtSaving > 0 && m.isaHeadroom > 0
+      ? `${fmt(m.cgtSaving)} CGT saving + ${fmt(m.isaHeadroom)} ISA headroom`
+      : m.cgtSaving > 0
+        ? `${fmt(m.cgtSaving)} CGT saving available`
+        : m.isaHeadroom > 0
+          ? `${fmt(m.isaHeadroom)} ISA headroom unused`
+          : null,
+    amount: m.cgtSaving > 0 ? m.cgtSaving : 0,
   };
 
-// Pension — missed match + contribution check
+// Pension — missed match + contribution check + Personal Allowance taper +
+// bonus sacrifice, summed together (via calcPensionTaperSaving, the same
+// shared taper calc the module's own opportunity strip uses) so this figure
+// can't silently drift from the in-module "Your opportunity right now" total.
 const contributing = isPensionContributing(d);
 const bonusSacrificeOpportunity = (+d.bonusAmount||0) * m.tr;
+const pensionTaper = calcPensionTaperSaving(m);
+const pensionTaperAmount = pensionTaper.inTaper ? pensionTaper.taperTotalSaving : 0;
+// "Not contributing" and "missed employer match" are mutually exclusive (the
+// latter only applies once you're contributing) — taper and bonus sacrifice
+// are independent opportunities that can stack on top of either.
+const pensionPrimaryAmount = !contributing ? Math.round(m.salary * 0.05 * m.tr) : m.missedMatch;
+const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount + bonusSacrificeOpportunity);
 const pensionImpact = !contributing
-  ? Math.round(m.salary * 0.05 * m.tr + m.missedMatch + 99999) // not contributing = highest priority sentinel
-  : Math.round(m.missedMatch + bonusSacrificeOpportunity);
-// Clean £/yr figure mirroring impactLabel below, without the sentinel baked into pensionImpact
-const pensionAmount = !contributing
-  ? Math.round(m.salary * 0.05 * m.tr)
-  : m.missedMatch > 0
-    ? m.missedMatch
-    : bonusSacrificeOpportunity > 0
-      ? Math.round(bonusSacrificeOpportunity)
-      : 0;
+  ? pensionAmount + 99999 // not contributing = highest priority sentinel
+  : pensionAmount;
+const pensionLabelParts = [
+  !contributing
+    ? `No pension — ${fmt(pensionPrimaryAmount)}/yr tax relief foregone`
+    : m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr missed employer match` : null,
+  pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr Personal Allowance recovery` : null,
+  bonusSacrificeOpportunity > 0 ? `up to ${fmt(Math.round(bonusSacrificeOpportunity))} bonus sacrifice saving` : null,
+].filter(Boolean);
 
 s.pension = m.pensionStatus === "unknown" ? {
   // User told us they don't know their pension situation — neutral/informational,
@@ -2407,13 +2449,7 @@ s.pension = m.pensionStatus === "unknown" ? {
   // Only "critical" when genuinely missing match or not contributing at all
   status: !contributing ? "critical" : m.missedMatch > 0 ? "critical" : "attention",
   impact: pensionImpact,
-  impactLabel: !contributing
-    ? `No pension — ${fmt(Math.round(m.salary * 0.05 * m.tr))}/yr tax relief foregone`
-    : m.missedMatch > 0
-      ? `${fmt(m.missedMatch)}/yr in missed employer match`
-      : bonusSacrificeOpportunity > 0
-        ? `Up to ${fmt(Math.round(bonusSacrificeOpportunity))} bonus sacrifice saving`
-        : null,
+  impactLabel: pensionLabelParts.join(" + ") || null,
   amount: pensionAmount,
 };
 
@@ -3870,14 +3906,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // Every £2 of adjusted net income above £100,000 withdraws £1 of Personal
   // Allowance, up to the full withdrawal at £125,140 — an effective 60% marginal
   // rate across that band. Pension sacrifice reduces adjusted net income, so it
-  // can restore some or all of the allowance.
-  const taperStart = 100000, taperEnd = 125140;
-  const ani = m.adjustedNetIncome;
-  const inTaper = ani > taperStart && ani < taperEnd;
-  const taperSacrificeNeeded = inTaper ? Math.ceil((ani - taperStart) / 2) : Math.max(0, taperStart - ani);
-  const taperNiSaving = Math.round(taperSacrificeNeeded * 0.02);
-  const taperTaxSaving = inTaper ? Math.round(taperSacrificeNeeded * 0.60) : 0;
-  const taperTotalSaving = taperNiSaving + taperTaxSaving;
+  // can restore some or all of the allowance. calcPensionTaperSaving is the same
+  // shared calc computeModuleStatuses uses for the Dashboard's pension figure.
+  const { taperStart, taperEnd, ani, inTaper, taperSacrificeNeeded, taperNiSaving, taperTaxSaving, taperTotalSaving } = calcPensionTaperSaving(m);
 
   return (
     <PageWrap>
@@ -3931,28 +3962,31 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
         )}
 
         {/* Investments: top-of-page opportunity summary — quantifies what's on the
-            table (ISA headroom grown to 67, CGT saving available this year) before
-            the user drills into the individual win tiles below. */}
+            table before the user drills into the individual win tiles below.
+            The £ total is statuses.investments.amount (CGT saving only) — the SAME
+            figure the dashboard's module-breakdown tile shows, not a fresh sum here.
+            ISA headroom is deliberately NOT folded into that total: it's unused
+            capacity, not a gain — it only becomes one if invested and if it grows,
+            unlike CGT saving which is real and guaranteed this tax year. It's still
+            surfaced below as context, just not as part of the headline £ figure. */}
         {moduleKey === "investments" && !isPensionUnknown && (m.isaHeadroom > 0 || m.crystallisable > 0) && (() => {
-          // CGT saving listed first — it's the genuine "today" action (crystallise now,
-          // use-it-or-lose-it this tax year). ISA headroom is future growth potential,
-          // not a today opportunity, so it trails in the breakdown even though it's
-          // folded into the same consolidated total below.
-          const cols = [];
-          if (m.crystallisable > 0) cols.push({
-            label: "CGT saving available", amount: m.cgtSaving,
-          });
-          if (m.isaHeadroom > 0) cols.push({
-            label: "Unused ISA allowance", amount: m.isaHeadroom,
-          });
-          const totalOpp = cols.reduce((s,c) => s + c.amount, 0);
+          const totalOpp = statuses.investments.amount;
           return (
             <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
               <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
-              <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
-              <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>
-                {cols.map(c => `${c.label} (${fmt(c.amount)})`).join(" + ")}
-              </div>
+              {totalOpp > 0 ? (
+                <>
+                  <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
+                  <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>CGT saving available this tax year</div>
+                </>
+              ) : (
+                <div style={{fontSize:"14px",color:"rgba(255,255,255,0.85)",fontWeight:600}}>No CGT saving to bank this tax year</div>
+              )}
+              {m.isaHeadroom > 0 && (
+                <div style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"10px"}}>
+                  Plus {fmt(m.isaHeadroom)} of unused ISA allowance — not a guaranteed gain, but investing it shelters future growth from tax.
+                </div>
+              )}
               <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below to act on these.</p>
             </div>
           );
@@ -4007,7 +4041,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const win3Num = hasStatedBonus ? ++winCounter : null;
 
           // ── Opportunity strip — consolidated into one total figure below, with
-          // a breakdown line rather than separate side-by-side £ columns. ──
+          // a breakdown line rather than separate side-by-side £ columns. The total
+          // itself is statuses.pension.amount (the same figure computeModuleStatuses
+          // gives the Dashboard's module-breakdown tile) rather than a fresh sum here
+          // — oppCols below is built with identical logic purely to label the
+          // breakdown text, but the displayed total can't drift from the Dashboard's. ──
           const oppCols = [];
           if (!contributing) {
             oppCols.push({ label:"Tax relief foregone", amount: Math.round(m.salary*0.05*m.tr) });
@@ -4020,7 +4058,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           if (hasStatedBonus) {
             oppCols.push({ label:"Bonus sacrifice saving", amount: Math.round(statedBonus*m.tr) });
           }
-          const totalOpp = oppCols.reduce((s,c) => s + c.amount, 0);
+          const totalOpp = statuses.pension.amount;
 
           // ── Growth trajectory chart data (unchanged maths, now inside the info tile) ──
           const salary = m.salary, potVal = +d.potValue||0;
