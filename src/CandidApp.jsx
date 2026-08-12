@@ -83,6 +83,14 @@ button:active{transform:scale(0.98);}
 .fu5{animation:fadeUp 0.45s ease 0.35s forwards;opacity:0;}
 .fu6{animation:fadeUp 0.45s ease 0.42s forwards;opacity:0;}
 .fu7{animation:fadeUp 0.45s ease 0.49s forwards;opacity:0;}
+@media (max-width:640px){
+  /* Win-tile header (ExpandableInvestmentItem): on narrow screens the tag pill
+     otherwise eats most of the row's width, squeezing the title/headline text
+     into a ragged single-word-per-line column. Wrapping the tag+chevron onto
+     their own row below gives the text the tile's full width instead. */
+  .winHeaderBtn{flex-wrap:wrap;}
+  .winHeaderLeft{flex-basis:100%;}
+}
 `;
 
 export const G = "#162f24", GOLD = "#c4963a", CREAM = "#f6f0e6", CDARK = "#ede7db",
@@ -3485,8 +3493,8 @@ function ProductCard({ p, onInternalLink }) {
   }
 
   return (
-    <div style={{background:WHITE,borderRadius:"12px",padding:"18px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,display:"flex",flexDirection:"column"}}>
-      <div style={{display:"flex",alignItems:"flex-start",gap:"10px",marginBottom:"8px"}}>
+    <div style={{background:WHITE,borderRadius:"12px",padding:"14px 16px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,display:"flex",flexDirection:"column"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
         <div style={{width:"36px",height:"36px",background:p.highlight ? G : "rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           <span style={{fontSize:"18px"}}>{p.appIcon||"💳"}</span>
         </div>
@@ -3499,16 +3507,16 @@ function ProductCard({ p, onInternalLink }) {
             </span>
           )}
         </div>
+        <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
+          style={{flexShrink:0,padding:"7px 12px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"12px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap"}}>
+          {p.internalLink ? p.cta : "🔓 Open"}
+        </button>
       </div>
-      {p.rate && <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginBottom:"6px"}}>{p.rate}</div>}
-      <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
-        style={{width:"100%",padding:"9px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",marginBottom:"10px"}}>
-        {p.cta}
-      </button>
-      {p.feature && <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,marginBottom:"12px",flex:1}}>{p.feature}</p>}
+      {p.rate && <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700,marginTop:"8px"}}>{p.rate}</div>}
+      {p.feature && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"6px"}}>{p.feature}</p>}
       {!p.internalLink && (
-        <div style={{marginTop:"8px",fontSize:"11px",color:"rgba(22,47,36,0.4)",textAlign:"center",fontStyle:"italic"}}>
-          Demo: {p.demoNote || `Would open ${p.name} — not yet a live link in this preview`}
+        <div style={{marginTop:"6px",fontSize:"11px",color:"rgba(22,47,36,0.4)",fontStyle:"italic"}}>
+          Demo
         </div>
       )}
     </div>
@@ -3631,8 +3639,8 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children, defa
   return (
     <div style={{marginBottom: open ? "24px" : "14px", paddingBottom: open ? "20px" : 0, borderBottom: open ? "1px solid rgba(22,47,36,0.14)" : "none"}}>
       <div style={{background: open ? G : WHITE, border:`1.5px solid ${open ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"12px", overflow:"hidden"}}>
-        <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"16px 18px", background:"transparent", border:"none", display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
-          <div style={{display:"flex", alignItems:"flex-start", gap:"12px", minWidth:0, flex:1}}>
+        <button type="button" onClick={() => setOpen(v=>!v)} className="winHeaderBtn" style={{width:"100%", padding:"16px 18px", background:"transparent", border:"none", display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"12px", cursor:"pointer", textAlign:"left"}}>
+          <div className="winHeaderLeft" style={{display:"flex", alignItems:"flex-start", gap:"12px", minWidth:0, flex:1}}>
             {number != null && (
               <div style={{width:"24px", height:"24px", borderRadius:"50%", background:G, border:"1.5px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:"1px"}}>
                 <span style={{fontSize:"12px", fontWeight:700, color:CREAM}}>{number}</span>
@@ -3654,7 +3662,14 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children, defa
           </div>
         </button>
       </div>
-      {open && <div style={{marginTop:"12px"}}>{children}</div>}
+      {open && (
+        <div style={{marginTop:"12px"}}>
+          {children}
+          <button type="button" onClick={() => setOpen(false)} style={{width:"100%", marginTop:"14px", padding:"10px", background:"transparent", border:"1.5px solid rgba(22,47,36,0.15)", borderRadius:"8px", color:MUT, fontSize:"12px", fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px"}}>
+            <span style={{fontSize:"11px"}}>▲</span> Collapse
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -3693,6 +3708,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // harmless no-op elsewhere since other modules never exceed the page size).
   const [visibleTileCount, setVisibleTileCount] = useState(CASH_TILE_PAGE_SIZE);
   useEffect(() => { setVisibleTileCount(CASH_TILE_PAGE_SIZE); }, [moduleKey]);
+  // Cash's "today's allocation" account list — collapsed to ~2.5 rows on mobile so a
+  // 10-account list doesn't eat the whole screen; expands on click. Called unconditionally
+  // here (not inside the moduleKey==="cash" block) per the Rules of Hooks.
+  const [showAllAccounts, setShowAllAccounts] = useState(false);
+  const winWidth = useWindowWidth();
+  useEffect(() => { setShowAllAccounts(false); }, [moduleKey]);
 
   // The bonus-sacrifice Win opens itself via ExpandableInvestmentItem's defaultOpen
   // (see below) — this just handles the scroll-into-view for the deep link.
@@ -4532,12 +4553,31 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>1. Today's allocation</div>
                     <div style={{...stepCardStyle,padding:"16px 18px",marginBottom:"12px"}}>
                       <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
-                        {displayTiers.map((t,i) => (
-                          <div key={i} style={rowStyle}>
-                            <span>{t.isPb ? "Premium Bonds" : `Account ${i+1}`} — {fmt(t.amount)} at {t.rate.toFixed(2)}%{t.isPb ? " (tax-free avg.)" : ""}</span>
-                            <span style={{fontWeight:600}}>{fmt(Math.round(t.amount * t.rate / 100))}/yr</span>
-                          </div>
-                        ))}
+                        {(() => {
+                          const isMobileList = winWidth < 640;
+                          const collapseAccts = isMobileList && !showAllAccounts && displayTiers.length > 2;
+                          const shownTiers = collapseAccts ? displayTiers.slice(0, 3) : displayTiers;
+                          return (
+                            <>
+                              {shownTiers.map((t,i) => {
+                                const fadeThird = collapseAccts && i === 2;
+                                return (
+                                  <div key={i} style={fadeThird
+                                    ? {...rowStyle, WebkitMaskImage:"linear-gradient(to bottom, black 40%, transparent 95%)", maskImage:"linear-gradient(to bottom, black 40%, transparent 95%)"}
+                                    : rowStyle}>
+                                    <span>{t.isPb ? "Premium Bonds" : `Account ${i+1}`} — {fmt(t.amount)} at {t.rate.toFixed(2)}%{t.isPb ? " (tax-free avg.)" : ""}</span>
+                                    <span style={{fontWeight:600}}>{fmt(Math.round(t.amount * t.rate / 100))}/yr</span>
+                                  </div>
+                                );
+                              })}
+                              {collapseAccts && (
+                                <button type="button" onClick={() => setShowAllAccounts(true)} style={{background:"transparent",border:"none",padding:"2px 0",color:GOLD,fontSize:"12px",fontWeight:600,cursor:"pointer",textAlign:"left"}}>
+                                  Show all {displayTiers.length} accounts ↓
+                                </button>
+                              )}
+                            </>
+                          );
+                        })()}
                         <div style={totalRowStyle}>
                           <span>Gross interest income</span>
                           <span>{fmt(currentGrossTotal)}/yr</span>
@@ -4831,12 +4871,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   const taxIfWait = Math.round((totalGains - 3000) * m.cgtRate);
                   return (
                   <div>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
-                      You have ~{fmt(totalGains)} of unrealised gain. £3,000 is exempt from CGT every year — realising it now banks {fmt(m.crystallisable)} of gain with £0 tax.
-                    </p>
-                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,marginBottom:"14px"}}>
-                      Every tax year you're entitled to shield up to £3,000 of capital gains from tax completely — but it's a "use it or lose it" allowance that resets each 6 April and can't be carried forward. To use it, you sell (crystallise) shares or funds held outside an ISA or pension that have gains attached; any gain above £3,000 in a single tax year is taxed at your {cgtRatePct}% CGT rate.
-                      {yearsNeeded > 1 && ` With ${fmt(totalGains)} of unrealised, unshielded gains in total, it would take ${yearsNeeded} tax years of this allowance to crystallise all of it tax-free.`}
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
+                      You have ~{fmt(totalGains)} of unrealised gain. £3,000 is exempt from CGT every year — realising it now banks {fmt(m.crystallisable)} of gain with £0 tax.{yearsNeeded > 1 && ` At that rate it'd take ${yearsNeeded} tax years to shield it all.`}
                     </p>
 
                     {yearsNeeded > 1 && (
@@ -4969,14 +5005,24 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 )}
               </div>
 
-              {worthOverpaying && (
+              {/* Shown whenever the loan is on track to clear, not just when overpaying
+                  beats cash — a user who's on track still wants to see what overpaying
+                  various amounts would do, even if (per Step 3 below) it's not their
+                  optimal move right now. */}
+              {sl.willClear && (
                 <ExpandableInvestmentItem
                   number={1}
-                  title={sl.balanceGrowing ? "Your loan balance is growing" : "Overpay your student loan"}
+                  title={sl.balanceGrowing
+                    ? "Your loan balance is growing"
+                    : worthOverpaying
+                      ? "Overpay your student loan"
+                      : "What overpaying would do (not optimal for you)"}
                   headline={sl.balanceGrowing
                     ? `Growing by ${fmt(sl.netAnnualChange)}/yr — overpaying could still save ${fmt(sl.overpayAnnualBenefit)}/yr in interest`
-                    : `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit vs keeping the cash`}
-                  tag={{ label:"Today", color:GOLD }}
+                    : worthOverpaying
+                      ? `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit vs keeping the cash`
+                      : `Your ${sl.cashRate}% savings rate beats your ${sl.slRatePct}% loan rate — saving wins here`}
+                  tag={worthOverpaying ? { label:"Today", color:GOLD } : { label:"Not optimal", color:"#c0392b" }}
                 >
                   {(() => {
                     const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT };
@@ -5024,18 +5070,29 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         </div>
 
                         {/* Step 3 — does repaying actually beat leaving it as cash */}
-                        <div style={{...stepCardStyle, background:"rgba(45,107,74,0.06)", border:"1px solid rgba(45,107,74,0.22)"}}>
-                          <div style={{...stepEyebrowStyle, color:"#2d6b4a"}}>Step 3 — Does repaying beat cash?</div>
-                          <div style={rowStyle}><span>Loan rate {sl.slRatePct}% vs your cash rate {sl.cashRate}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>Yes, by {sl.effectiveBenefit}%</span></div>
-                          <p style={stepWhyStyle}>Every £1 put toward the loan instead of left as cash earns an extra {sl.effectiveBenefit}% a year. That's where the {fmt(sl.overpayAnnualBenefit)}/yr figure above comes from — the {sl.effectiveBenefit}% differential applied to your full {fmt(m.loanBal)} balance.</p>
+                        <div style={worthOverpaying
+                          ? {...stepCardStyle, background:"rgba(45,107,74,0.06)", border:"1px solid rgba(45,107,74,0.22)"}
+                          : {...stepCardStyle, background:"rgba(192,57,43,0.05)", border:"1px solid rgba(192,57,43,0.2)"}}>
+                          <div style={{...stepEyebrowStyle, color: worthOverpaying ? "#2d6b4a" : "#c0392b"}}>Step 3 — Does repaying beat cash?</div>
+                          {worthOverpaying ? (
+                            <>
+                              <div style={rowStyle}><span>Loan rate {sl.slRatePct}% vs your cash rate {sl.cashRate}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>Yes, by {sl.effectiveBenefit}%</span></div>
+                              <p style={stepWhyStyle}>Every £1 put toward the loan instead of left as cash earns an extra {sl.effectiveBenefit}% a year. That's where the {fmt(sl.overpayAnnualBenefit)}/yr figure above comes from — the {sl.effectiveBenefit}% differential applied to your full {fmt(m.loanBal)} balance.</p>
+                            </>
+                          ) : (
+                            <>
+                              <div style={rowStyle}><span>Loan rate {sl.slRatePct}% vs your cash rate {sl.cashRate}%</span><span style={{fontWeight:700,color:"#c0392b"}}>No, cash wins by {Math.abs(sl.effectiveBenefit)}%</span></div>
+                              <p style={stepWhyStyle}>Your cash rate beats your loan rate — every £1 left as cash (or in an ISA) earns {Math.abs(sl.effectiveBenefit)}% more a year than putting it toward this loan instead. Given your details, overpaying isn't the optimal move right now — but the scenarios below still show what it would do if you chose to anyway.</p>
+                            </>
+                          )}
                         </div>
 
                         {sl.scenarios.length > 0 && (
                     <div style={{marginBottom:"12px"}}>
                       <div style={stepEyebrowStyle}>
-                        Step 4 — What overpaying could save you
+                        {worthOverpaying ? "Step 4 — What overpaying could save you" : "Step 4 — What overpaying would still do"}
                       </div>
-                      <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,marginBottom:"10px"}}>If you put some of that spare cash toward the loan today:</p>
+                      <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,marginBottom:"10px"}}>{worthOverpaying ? "If you put some of that spare cash toward the loan today:" : "Not recommended given your rates, but for reference — if you put spare cash toward the loan today:"}</p>
                       <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px",display:"flex",gap:"16px",flexWrap:"wrap",alignItems:"center"}}>
                         <div style={{flex:"0 0 auto"}}>
                           <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment</div>
@@ -5509,6 +5566,10 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
   const pdfModalFired = useRef(false);
   const supaRowId = useRef(null);
   const prevScoreRef = useRef(null);
+  // Modules visited via the "Next" chain since the user last picked one directly from
+  // the dashboard — lets nextMod below cycle through every outstanding module once per
+  // lap instead of always re-offering whichever two rank highest by status/impact.
+  const visitedInChain = useRef([]);
 
   async function supaUpdate(patch) {
     if (!supaRowId.current || !SUPA_URL || !SUPA_KEY) return;
@@ -5620,6 +5681,11 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
     setActiveSection(section || null);
     setPrevScreen(from || screen);
     setScreen("moduleDeepDive");
+    if (from === "moduleDeepDive") {
+      if (!visitedInChain.current.includes(key)) visitedInChain.current = [...visitedInChain.current, key];
+    } else {
+      visitedInChain.current = [key];
+    }
     posthog.capture("module_opened", { module_key: key, from });
     setTimeout(() => {
       const appEl = document.getElementById("candid-app");
@@ -5969,10 +6035,16 @@ Rules:
       const sd = (statusOrder[a.status]||3) - (statusOrder[b.status]||3);
       return sd !== 0 ? sd : b.impact - a.impact;
     });
-    // Find the next module: highest-priority unreviewed module that isn't the current one.
+    // Find the next module: highest-priority unreviewed module that isn't the current one
+    // and hasn't already had a turn in this "Next" chain — otherwise, whichever two
+    // modules rank highest by status/impact just bounce back and forth forever (only
+    // the currently-open module is excluded, so #2 keeps re-offering #1 and vice versa).
+    // Once every outstanding module has had a turn, the chain restarts.
     // Do NOT slice from currentIdx — after marking reviewed the current module moves to the
     // bottom of sortedMods, which would make slice return empty and lose the button.
-    const nextMod = sortedMods.find(mm => mm.key !== activeModule && !completedModules.includes(mm.key)) || null;
+    const unreviewed = sortedMods.filter(mm => mm.key !== activeModule && !completedModules.includes(mm.key));
+    const freshThisLap = unreviewed.filter(mm => !visitedInChain.current.includes(mm.key));
+    const nextMod = (freshThisLap[0] || unreviewed[0]) || null;
     return (
       <>
         <ModuleDeepDive moduleKey={activeModule} insights={insights} d={d} m={m} statuses={statuses} savingsRates={savingsRates}
