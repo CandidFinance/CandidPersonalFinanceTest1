@@ -5017,6 +5017,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const sl = products.slSection;
           const worthOverpaying = sl.willClear && sl.effectiveBenefit > 0;
 
+          const surplusCash = m.surplusCash || 0;
+
           return (
             <>
               {worthOverpaying && (
@@ -5031,6 +5033,47 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </div>
               )}
 
+              {/* ── Your loan trajectory — promoted to sit directly under the
+                  opportunity strip, non-numbered info tile styled like Cash's
+                  runway / Pension's growth-trajectory tile. ── */}
+              <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"18px 22px",marginBottom:"20px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
+                  <span style={{width:"9px",height:"9px",borderRadius:"50%",background:col,flexShrink:0,display:"inline-block"}}/>
+                  <span style={{fontSize:"13px",fontWeight:600,color:G}}>Your loan trajectory</span>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:"10px",marginBottom:"14px"}}>
+                  <div>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Current balance</div>
+                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(m.loanBal)}</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Interest rate</div>
+                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.slRatePct}%</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Annual interest</div>
+                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(sl.annualInterest)}/yr</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Annual repayments</div>
+                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(sl.annualRep)}/yr</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{sl.clearYr ? "Clears in" : "Written off after"}</div>
+                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs`}</div>
+                  </div>
+                </div>
+                {sl.belowThreshold ? (
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your salary is below the repayment threshold, so no deductions are being made yet. Interest still accrues at {sl.slRatePct}% (~{fmt(sl.annualInterest)}/yr) — deductions start automatically once your salary crosses {fmt(sl.threshold)}.</p>
+                ) : !sl.willClear ? (
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your loan is projected to be written off before you'd clear it — overpaying mostly reduces what gets written off, not what you repay. Redirect any spare cash to your pension or ISA instead.</p>
+                ) : sl.effectiveBenefit <= 0 ? (
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>You're on track to clear this loan in ~{sl.clearYr} years through regular repayments alone. Your savings rate ({sl.cashRate}%) beats your loan rate ({sl.slRatePct}%), so saving beats overpaying here.</p>
+                ) : (
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>See the win below for what overpaying could save you.</p>
+                )}
+              </div>
+
               {worthOverpaying && (
                 <ExpandableInvestmentItem
                   number={1}
@@ -5040,33 +5083,64 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     : `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit vs keeping the cash`}
                   tag={{ label:"Today", color:GOLD }}
                 >
-                  {sl.balanceGrowing && (
-                    <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"12px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                        <span style={{fontSize:"16px"}}>🚨</span>
-                        <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Effective 9% income surcharge</span>
-                      </div>
-                      <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
-                        Your loan balance is growing faster than you repay it. Every £1 of income above the threshold ({fmt(sl.threshold)}) is taxed an extra 9% — and your balance compounds upward. This continues until you either reach the <strong>inflection point</strong> or the loan is written off.
-                      </p>
-                      <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
-                        <div>
-                          <div style={{fontSize:"11px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"3px"}}>Inflection point salary</div>
-                          <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(sl.inflectionSalary)}</div>
-                          <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>where repayments = interest</div>
-                        </div>
-                        <div style={{fontSize:"13px",color:MUT,lineHeight:1.6,flex:1,minWidth:"160px"}}>
-                          At this salary, 9% of income above the threshold exactly matches your annual interest charge. Above this point, every pay rise reduces your balance. Below it, every year adds to it.
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {(() => {
+                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT };
+                    const stepCardStyle = { background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.12)", borderRadius:"12px", padding:"14px 16px", marginBottom:"10px" };
+                    const stepEyebrowStyle = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
+                    const stepWhyStyle = { fontSize:"12px", color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
+                    return (
+                      <>
+                        {sl.balanceGrowing && (
+                          <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"12px"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+                              <span style={{fontSize:"16px"}}>🚨</span>
+                              <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Effective 9% income surcharge</span>
+                            </div>
+                            <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
+                              Your loan balance is growing faster than you repay it. Every £1 of income above the threshold ({fmt(sl.threshold)}) is taxed an extra 9% — and your balance compounds upward. This continues until you either reach the <strong>inflection point</strong> or the loan is written off.
+                            </p>
+                            <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
+                              <div>
+                                <div style={{fontSize:"11px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"3px"}}>Inflection point salary</div>
+                                <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(sl.inflectionSalary)}</div>
+                                <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>where repayments = interest</div>
+                              </div>
+                              <div style={{fontSize:"13px",color:MUT,lineHeight:1.6,flex:1,minWidth:"160px"}}>
+                                At this salary, 9% of income above the threshold exactly matches your annual interest charge. Above this point, every pay rise reduces your balance. Below it, every year adds to it.
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
-                  {sl.scenarios.length > 0 && (
+                        {/* Step 1 — the loan itself (full detail is in the trajectory tile above) */}
+                        <div style={stepCardStyle}>
+                          <div style={stepEyebrowStyle}>Step 1 — Your student loan</div>
+                          <div style={rowStyle}><span>Outstanding balance at {sl.slRatePct}% interest</span><span style={{fontWeight:700,color:G}}>{fmt(m.loanBal)}</span></div>
+                        </div>
+
+                        {/* Step 2 — do you have spare cash to work with */}
+                        <div style={stepCardStyle}>
+                          <div style={stepEyebrowStyle}>Step 2 — Your spare cash</div>
+                          {surplusCash > 0 ? (
+                            <div style={rowStyle}><span>Held above your {m.bufferMonths}-month emergency buffer</span><span style={{fontWeight:700,color:G}}>{fmt(surplusCash)}</span></div>
+                          ) : (
+                            <p style={{fontSize:"13px",color:MUT,margin:0}}>You don't currently hold cash above your emergency buffer — the comparison below still applies to any spare cash you build up or hold elsewhere.</p>
+                          )}
+                        </div>
+
+                        {/* Step 3 — does repaying actually beat leaving it as cash */}
+                        <div style={{...stepCardStyle, background:"rgba(45,107,74,0.06)", border:"1px solid rgba(45,107,74,0.22)"}}>
+                          <div style={{...stepEyebrowStyle, color:"#2d6b4a"}}>Step 3 — Does repaying beat cash?</div>
+                          <div style={rowStyle}><span>Loan rate {sl.slRatePct}% vs your cash rate {sl.cashRate}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>Yes, by {sl.effectiveBenefit}%</span></div>
+                          <p style={stepWhyStyle}>Every £1 put toward the loan instead of left as cash earns an extra {sl.effectiveBenefit}% a year. That's where the {fmt(sl.overpayAnnualBenefit)}/yr figure above comes from — the {sl.effectiveBenefit}% differential applied to your full {fmt(m.loanBal)} balance.</p>
+                        </div>
+
+                        {sl.scenarios.length > 0 && (
                     <div style={{marginBottom:"12px"}}>
-                      <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"12px"}}>
-                        What if you overpaid today?
+                      <div style={stepEyebrowStyle}>
+                        Step 4 — What overpaying could save you
                       </div>
+                      <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,marginBottom:"10px"}}>If you put some of that spare cash toward the loan today:</p>
                       <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px",display:"flex",gap:"16px",flexWrap:"wrap",alignItems:"center"}}>
                         <div style={{flex:"0 0 auto"}}>
                           <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment</div>
@@ -5181,64 +5255,33 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         );
                       })()}
                     </div>
-                  )}
+                        )}
+                      </>
+                    );
+                  })()}
                 </ExpandableInvestmentItem>
               )}
 
-              {/* ── Your loan trajectory — non-numbered info tile, styled like
-                  Cash's runway / Pension's growth-trajectory tile: supporting
-                  context, plus a quiet note for the non-actionable scenarios. ── */}
-              <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"18px 22px",marginBottom:"20px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
-                  <span style={{width:"9px",height:"9px",borderRadius:"50%",background:col,flexShrink:0,display:"inline-block"}}/>
-                  <span style={{fontSize:"13px",fontWeight:600,color:G}}>Your loan trajectory</span>
+              {/* Cash comparison — always shown alongside the trajectory tile above,
+                  regardless of which scenario the loan is in. */}
+              {sl.cashSavings > 5000 && (
+                <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"20px"}}>
+                  <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>vs holding cash</div>
+                  <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:0}}>
+                    You hold {fmt(sl.cashSavings)} in cash earning ~{sl.cashRate}%. Your loan accrues at ~{sl.slRatePct}%.
+                    {sl.effectiveBenefit > 0
+                      ? ` Overpaying has an effective advantage of ${sl.effectiveBenefit}% over keeping that cash — but only if you will actually clear the loan before write-off.`
+                      : ` The loan will be written off before you'd clear it, so the effective benefit of overpaying is negative. Keep the cash earning ${sl.cashRate}%.`}
+                  </p>
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:"10px",marginBottom:"14px"}}>
-                  <div>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Current balance</div>
-                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(m.loanBal)}</div>
-                  </div>
-                  <div>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Interest rate</div>
-                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.slRatePct}%</div>
-                  </div>
-                  <div>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Annual interest</div>
-                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(sl.annualInterest)}/yr</div>
-                  </div>
-                  <div>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{sl.clearYr ? "Clears in" : "Written off after"}</div>
-                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs`}</div>
-                  </div>
-                </div>
-                {sl.belowThreshold ? (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your salary is below the repayment threshold, so no deductions are being made yet. Interest still accrues at {sl.slRatePct}% (~{fmt(sl.annualInterest)}/yr) — deductions start automatically once your salary crosses {fmt(sl.threshold)}.</p>
-                ) : !sl.willClear ? (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your loan is projected to be written off before you'd clear it — overpaying mostly reduces what gets written off, not what you repay. Redirect any spare cash to your pension or ISA instead.</p>
-                ) : sl.effectiveBenefit <= 0 ? (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>You're on track to clear this loan in ~{sl.clearYr} years through regular repayments alone. Your savings rate ({sl.cashRate}%) beats your loan rate ({sl.slRatePct}%), so saving beats overpaying here.</p>
-                ) : (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>See the win above for what overpaying could save you.</p>
-                )}
-                {sl.cashSavings > 5000 && (
-                  <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginTop:"12px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>vs holding cash</div>
-                    <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:0}}>
-                      You hold {fmt(sl.cashSavings)} in cash earning ~{sl.cashRate}%. Your loan accrues at ~{sl.slRatePct}%.
-                      {sl.effectiveBenefit > 0
-                        ? ` Overpaying has an effective advantage of ${sl.effectiveBenefit}% over keeping that cash — but only if you will actually clear the loan before write-off.`
-                        : ` The loan will be written off before you'd clear it, so the effective benefit of overpaying is negative. Keep the cash earning ${sl.cashRate}%.`}
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Provider cards — always shown, regardless of scenario */}
               {products.products?.length > 0 && (
                 <div className="fu4" style={{marginBottom:"20px"}}>
                   <div style={{marginBottom:"16px"}}>
-                    <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>{products.heading}</h3>
-                    <p style={{fontSize:"14px",color:MUT,lineHeight:1.65}}>{products.subheading}</p>
+                    <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>Other places for this money</h3>
+                    <p style={{fontSize:"14px",color:MUT,lineHeight:1.65}}>Alternatives worth comparing against overpaying, plus how to check your official balance.</p>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"14px"}}>
                     {products.products.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
