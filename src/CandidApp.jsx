@@ -2656,9 +2656,15 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
   // Module breakdown list — descending by the clean £/yr `amount` figure (not the
   // sort-priority `impact`, which carries a +99999 sentinel for an uncontributed
   // pension). Modules with nothing actionable (amount === 0) sink to the bottom.
-  const modulesWithRec = [...activeModules.filter(mm => mm.amount > 0)].sort((a,b) => b.amount - a.amount);
-  const modulesNoRec   = activeModules.filter(mm => mm.amount === 0);
-  const moduleList     = [...modulesWithRec, ...modulesNoRec];
+  // Kids & Family is excluded from the ranking and always placed last — its `amount`
+  // is a lump sum by age 18, not a £/yr figure, so it isn't comparable to the others.
+  const rankedModules = activeModules.filter(mm => mm.key !== "kids");
+  const kidsModule     = activeModules.find(mm => mm.key === "kids") || null;
+  const modulesWithRec = rankedModules.filter(mm => mm.amount > 0).sort((a,b) => b.amount - a.amount);
+  const modulesNoRec   = rankedModules.filter(mm => mm.amount === 0);
+  const moduleList     = [...modulesWithRec, ...modulesNoRec, ...(kidsModule ? [kidsModule] : [])];
+  const needActionCount = modulesWithRec.length + (kidsModule && kidsModule.amount > 0 ? 1 : 0);
+  const onTrackCount    = modulesNoRec.length + (kidsModule && kidsModule.amount === 0 ? 1 : 0);
 
   const totalOpp = modulesWithRec.filter(mm => !mm.amountIsLumpSum).reduce((sum, mm) => sum + mm.amount, 0);
 
@@ -2938,15 +2944,15 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           const eq = getEquivalence(totalOpp);
           return (
             <div className="fu1" style={{background:WHITE,border:`2px solid ${G}`,borderRadius:"14px",padding:"20px 28px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"24px",flexWrap:"wrap"}}>
-              {/* Spacer matches the score card's ring width + gap so this tile's text
-                  lines up with the score card's headline text directly above it. */}
-              {!isMobile && <div style={{width:"124px",flexShrink:0}} aria-hidden="true"/>}
+              {/* £ figure sits in the same column as the score ring above it — same
+                  fixed width, same centering — while the text column keeps its own
+                  alignment with the score card's headline text. */}
+              <div style={{width:"124px",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
+                <span style={{fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:G,lineHeight:1.15}}>{fmt(totalOpp)}</span>
+              </div>
               <div style={{flex:1,minWidth:"200px"}}>
                 <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
-                <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
-                  <span style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:G}}>{fmt(totalOpp)}</span>
-                  <span style={{fontSize:"14px",color:MUT}}>you could be leaving on the table</span>
-                </div>
+                <div style={{fontSize:"14px",color:MUT}}>you could be leaving on the table</div>
                 {eq && <div style={{fontSize:"12px",color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
                 <div style={{fontSize:"11px",color:MUT,marginTop:"10px",lineHeight:1.6}}>
                   Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
@@ -2961,7 +2967,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
             module title leads, the £ figure is a supporting line underneath it. */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
-          <span style={{fontSize:"12px",color:MUT}}>{modulesWithRec.length} need action · {modulesNoRec.length} on track</span>
+          <span style={{fontSize:"12px",color:MUT}}>{needActionCount} need action · {onTrackCount} on track</span>
         </div>
 
         <div style={{marginBottom:"24px"}}>
