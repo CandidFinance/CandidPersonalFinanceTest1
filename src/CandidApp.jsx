@@ -5262,33 +5262,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </ExpandableInvestmentItem>
               )}
 
-              {/* Cash comparison — always shown alongside the trajectory tile above,
-                  regardless of which scenario the loan is in. */}
-              {sl.cashSavings > 5000 && (
-                <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"20px"}}>
-                  <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>vs holding cash</div>
-                  <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:0}}>
-                    You hold {fmt(sl.cashSavings)} in cash earning ~{sl.cashRate}%. Your loan accrues at ~{sl.slRatePct}%.
-                    {sl.effectiveBenefit > 0
-                      ? ` Overpaying has an effective advantage of ${sl.effectiveBenefit}% over keeping that cash — but only if you will actually clear the loan before write-off.`
-                      : ` The loan will be written off before you'd clear it, so the effective benefit of overpaying is negative. Keep the cash earning ${sl.cashRate}%.`}
-                  </p>
-                </div>
-              )}
-
-              {/* Provider cards — always shown, regardless of scenario */}
-              {products.products?.length > 0 && (
-                <div className="fu4" style={{marginBottom:"20px"}}>
-                  <div style={{marginBottom:"16px"}}>
-                    <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>Other places for this money</h3>
-                    <p style={{fontSize:"14px",color:MUT,lineHeight:1.65}}>Alternatives worth comparing against overpaying, plus how to check your official balance.</p>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"14px"}}>
-                    {products.products.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
-                  </div>
-                  {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
-                </div>
-              )}
             </>
           );
         })()}
