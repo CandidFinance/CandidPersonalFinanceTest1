@@ -1133,16 +1133,8 @@ function getModuleProducts(key, d, m, savingsRates) {
         disclaimer:"Pension tax relief figures are illustrative. Annual allowance is £60,000 (2025/26). Lifetime allowance was abolished April 2024. Always confirm tax relief with your pension provider. Candid may earn a referral fee."
       };
     case "studentLoan": {
-      const slInterestRate = resolveSlRate(d, m.salary);
-      const slRatePct = Math.round(slInterestRate * 1000) / 10;
-      const writeOffYr = d.studentLoan==="plan2" ? 30 : d.studentLoan==="plan5" ? 40 : 25;
-      const threshold = d.studentLoan==="plan2" ? 27295 : d.studentLoan==="plan5" ? 25000 : 24990;
-      const annualInterest = Math.round(m.loanBal * slInterestRate);
-      const annualRep = m.annualRepayment;
-      const balanceGrowing = annualInterest > annualRep;
-      const inflectionSalary = Math.round(threshold + (m.loanBal * slInterestRate) / 0.09);
-      const cashRate = +d.savingsRate || 4.2;
-      const effectiveBenefit = slInterestRate * 100 - cashRate; // benefit of overpaying vs holding cash (if clearing)
+      const sl = calcStudentLoanScenario(d, m);
+      const { writeOffYr, slInterestRate, slRatePct, annualInterest, annualRep, balanceGrowing, netAnnualChange, inflectionSalary, cashRate, effectiveBenefit, willClear, overpayAnnualBenefit } = sl;
       // Project balance trajectory for each overpayment scenario
       function projectLoan(extraOneOff) {
         let bal = Math.max(0, m.loanBal - extraOneOff);
@@ -1162,44 +1154,34 @@ function getModuleProducts(key, d, m, savingsRates) {
       const overpayAmounts = [5000, 10000, 20000].filter(x => x < m.loanBal);
       const scenarios = overpayAmounts.map(amt => ({ amt, ...projectLoan(amt) }));
       const baseProjection = projectLoan(0);
-      // Ratio table — only meaningful if loan will clear
-      const ratioAmounts = [1000, 2000, 5000, 10000, 20000, Math.round(m.loanBal)].filter((x,i,a) => x <= m.loanBal && a.indexOf(x)===i);
-      const ratioTable = m.willClear ? ratioAmounts.map(amt => {
-        const proj = projectLoan(amt);
-        const basePaid = baseProjection.clearYr ? baseProjection.totalPaid : baseProjection.totalPaid;
-        const interestSaved = Math.max(0, basePaid - proj.totalPaid);
-        const totalBenefit = amt + interestSaved;
-        const ratio = totalBenefit / amt;
-        return { amt, interestSaved, totalBenefit, ratio };
-      }) : null;
       return {
         // Must agree with effectiveBenefit's sign — willClear alone doesn't mean
         // overpaying is worth it; if the loan rate is below what savings could earn,
         // saving wins, and the heading needs to lead with that, not the opposite.
         heading: balanceGrowing
           ? "⚠️ Your loan balance is growing — not shrinking"
-          : m.willClear
+          : willClear
           ? (effectiveBenefit > 0 ? "You will clear this loan — overpaying could save interest" : "You will clear this loan — but saving beats overpaying here")
           : "Your loan will be written off — do not overpay",
         subheading: balanceGrowing
-          ? `At ${slRatePct}% interest, your balance grows by ${fmt(annualInterest - annualRep)}/yr net. Your repayments (${fmt(annualRep)}/yr) are not keeping up with interest. This is an effective ${slRatePct}% surcharge on your income above the threshold — for as long as your balance keeps growing.`
-          : m.willClear
+          ? `At ${slRatePct}% interest, your balance grows by ${fmt(netAnnualChange)}/yr net. Your repayments (${fmt(annualRep)}/yr) are not keeping up with interest. This is an effective ${slRatePct}% surcharge on your income above the threshold — for as long as your balance keeps growing.`
+          : willClear
           ? (effectiveBenefit > 0
-              ? `Your repayments are outstripping interest. You'll clear the loan in ~${baseProjection.clearYr} years. Overpaying saves interest at ${slRatePct}% — compare that to your savings rate (${cashRate}%). Net benefit of overpaying vs saving: +${Math.round(effectiveBenefit*10)/10}%.`
+              ? `Your repayments are outstripping interest. You'll clear the loan in ~${baseProjection.clearYr} years. Overpaying saves interest at ${slRatePct}% — compare that to your savings rate (${cashRate}%). Net benefit of overpaying vs saving: +${effectiveBenefit}%.`
               : `Your savings rate (${cashRate}%) beats your ${slRatePct}% loan rate, so you're better off saving than overpaying here. You'll clear the loan in ~${baseProjection.clearYr} years through regular repayments alone — no need to divert extra cash to it.`)
           : `At ${slRatePct}% interest, overpaying this loan mostly reduces what gets written off — not what you repay. The better use of spare cash is almost certainly your pension or ISA.`,
         products: [
-          { name:"Your pension", type:"Alternative use of funds", rate:`1:${pensionReturnRatio(d,m).toFixed(2)} return`, badge:"Best alternative", feature:`A pension contribution gives an immediate 1:${pensionReturnRatio(d,m).toFixed(2)} return via tax${d.pensionType==="sacrifice"?" and NI":""} relief. ${pensionReturnLabel(d,m)}. Even when the loan balance is growing, this outperforms the ${slRatePct}% loan rate for most people.`, cta:"Go to Pension", highlight:!m.willClear, internalLink:"pension" },
-          { name:"Cash ISA", type:"Alternative use of funds", rate:`Up to ${topRate(savingsRates, true)?.rate_aer ?? "5"}% AER`, badge:"Tax-free", feature:`Your savings rate is ${cashRate}%. Net benefit of overpaying vs saving: ${effectiveBenefit > 0 ? `${Math.round(effectiveBenefit*10)/10}% in favour of overpaying` : "saving wins — keep cash in ISA"}.`, cta:"Go to Savings", highlight:false, internalLink:"cash" },
+          { name:"Your pension", type:"Alternative use of funds", rate:`1:${pensionReturnRatio(d,m).toFixed(2)} return`, badge:"Best alternative", feature:`A pension contribution gives an immediate 1:${pensionReturnRatio(d,m).toFixed(2)} return via tax${d.pensionType==="sacrifice"?" and NI":""} relief. ${pensionReturnLabel(d,m)}. Even when the loan balance is growing, this outperforms the ${slRatePct}% loan rate for most people.`, cta:"Go to Pension", highlight:!willClear, internalLink:"pension" },
+          { name:"Cash ISA", type:"Alternative use of funds", rate:`Up to ${topRate(savingsRates, true)?.rate_aer ?? "5"}% AER`, badge:"Tax-free", feature:`Your savings rate is ${cashRate}%. Net benefit of overpaying vs saving: ${effectiveBenefit > 0 ? `${effectiveBenefit}% in favour of overpaying` : "saving wins — keep cash in ISA"}.`, cta:"Go to Savings", highlight:false, internalLink:"cash" },
           { name:"Student Finance", type:"Official balance check", rate:"", badge:"Free", feature:"Verify your exact balance, interest rate and repayment history at studentfinance.service.gov.uk.", cta:"Check balance", highlight:false },
         ],
         disclaimer:"Interest rates are estimates based on current RPI and plan thresholds. Actual rates vary — check your SLC online account. This is guidance only. Consider speaking to an IFA before making large overpayments.",
         slSection: {
-          balanceGrowing, inflectionSalary, slRatePct, scenarios,
+          balanceGrowing, netAnnualChange, inflectionSalary, slRatePct, scenarios,
           baseProjection, cashRate, writeOffYr, annualRep, annualInterest,
-          effectiveBenefit: Math.round(effectiveBenefit * 10) / 10,
+          effectiveBenefit, overpayAnnualBenefit,
           cashSavings: m.cash + m.bonds,
-          ratioTable, willClear: m.willClear,
+          willClear, belowThreshold: sl.belowThreshold, clearYr: sl.clearYr, threshold: sl.threshold,
         }
       };
     }
@@ -2170,7 +2152,7 @@ function moduleContext(mm, d, m) {
       if (m.missedMatch > 0) return "missed employer match";
       return "bonus sacrifice saving";
     case "studentLoan":
-      return "interest saved by overpaying before write-off";
+      return mm.impactLabel ? mm.impactLabel.replace(/^£[\d,]+(?:\.\d+)?(?:\/yr)?,?\s*/, "") : null;
     case "mortgage":
       return mm.impactLabel || null;
     case "personalLoan":
@@ -2280,6 +2262,57 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
     step2Savings, step2SavingsInterest, afterStep2, discretionaryAmount,
     step3Pb, step3PbInterest, step3UpliftVsCurrent, beyondPbCap,
     optimisedTotal, keptAmount, todayBlendedRate, currentInterestOnKeptAmount, optimisationGain,
+  };
+}
+
+// ── Student loan plan constants — single source for write-off year + repayment
+// threshold, previously duplicated independently in getModuleInsights,
+// getModuleProducts, and the marginal-return chart memo.
+function studentLoanPlanConstants(studentLoanType) {
+  const writeOffYr = studentLoanType==="plan2" ? 30 : studentLoanType==="plan5" ? 40 : 25;
+  const threshold = studentLoanType==="plan2" ? 27295 : studentLoanType==="plan5" ? 25000 : 24990;
+  return { writeOffYr, threshold };
+}
+
+// ── Student loan core scenario — single source of truth for "is this loan
+// growing, will it clear before write-off, and is overpaying actually worth
+// it" — shared by computeModuleStatuses (Dashboard figure) and the module's
+// own Win/info tile, so the two can't disagree (same pattern as
+// calcCashOptimisation above).
+export function calcStudentLoanScenario(d, m) {
+  const { writeOffYr, threshold } = studentLoanPlanConstants(d.studentLoan);
+  const slInterestRate = resolveSlRate(d, m.salary);
+  const slRatePct = Math.round(slInterestRate * 1000) / 10;
+  const annualInterest = Math.round(m.loanBal * slInterestRate);
+  const annualRep = m.annualRepayment;
+  const belowThreshold = d.studentLoan !== "none" && annualRep === 0;
+  const netAnnualChange = annualInterest - annualRep; // positive = balance GROWING
+  const balanceGrowing = netAnnualChange > 0;
+  // Inflection point: salary at which repayments equal interest accrual
+  const inflectionSalary = Math.round(threshold + (m.loanBal * slInterestRate) / 0.09);
+  const salaryGapToInflection = Math.max(0, inflectionSalary - m.salary);
+
+  let projBal = m.loanBal, writeOffBal = 0, clearYr = null;
+  for (let yr = 1; yr <= writeOffYr; yr++) {
+    projBal = projBal * (1 + slInterestRate) - annualRep;
+    if (projBal <= 0 && !clearYr) { clearYr = yr; break; }
+    if (yr === writeOffYr) writeOffBal = Math.max(0, projBal);
+  }
+  const willClear = clearYr !== null;
+  const totalRepaidProjected = clearYr ? Math.round(annualRep * clearYr) : Math.round(annualRep * writeOffYr);
+
+  const cashRate = +d.savingsRate || 4.2;
+  const effectiveBenefit = Math.round((slInterestRate*100 - cashRate) * 10) / 10; // % — overpaying vs holding cash
+  // A genuine £/yr figure: the rate differential applied to the current balance
+  // — same shape as Cash's annualYieldGap (rate gap × principal) — rather than a
+  // one-off lump sum, so it stays comparable to every other module's £/yr amount.
+  const overpayAnnualBenefit = (willClear && effectiveBenefit > 0) ? Math.round(m.loanBal * effectiveBenefit / 100) : 0;
+
+  return {
+    writeOffYr, threshold, slInterestRate, slRatePct, annualInterest, annualRep,
+    belowThreshold, netAnnualChange, balanceGrowing, inflectionSalary, salaryGapToInflection,
+    clearYr, writeOffBal: Math.round(writeOffBal), willClear, totalRepaidProjected,
+    cashRate, effectiveBenefit, overpayAnnualBenefit,
   };
 }
 
@@ -2397,18 +2430,30 @@ s.pension = m.pensionStatus === "unknown" ? {
   amount: pensionAmount,
 };
 
-  // Student loan
-  const slBalance = m.loanBal;
-  const belowThreshold = d.studentLoan !== "none" && m.annualRepayment === 0;
-  const slImpact = m.willClear ? Math.round(slBalance * 0.075 * 0.1) : 0;
+  // Student loan — calcStudentLoanScenario is the single source of truth, shared
+  // with the module's own Win/info tile (see there for the full scenario logic).
+  // Overpaying only genuinely matters when the loan will actually clear before
+  // write-off AND beats the user's cash rate — that's the only case with a
+  // non-zero £/yr amount; everything else (written off regardless, or clears
+  // but saving beats overpaying, or below threshold) has nothing actionable.
+  const sl = calcStudentLoanScenario(d, m);
+  const slWorthOverpaying = sl.willClear && sl.effectiveBenefit > 0;
+  const slAmount = slWorthOverpaying ? sl.overpayAnnualBenefit : 0;
   s.studentLoan = {
-    status: d.studentLoan === "none" ? "na" : "attention",
-    impact: slImpact,
-    impactLabel: belowThreshold
+    status: d.studentLoan === "none" ? "na"
+          : slWorthOverpaying ? (sl.balanceGrowing ? "critical" : "attention")
+          : sl.belowThreshold ? "attention"
+          : "ok",
+    impact: slAmount,
+    impactLabel: sl.belowThreshold
       ? "Below repayment threshold — no deductions currently"
-      : slBalance > 0 ? `${fmt(slBalance)} outstanding` : null,
-    belowThreshold,
-    amount: slImpact, // 0 (no card) unless the loan will actually clear before write-off
+      : slWorthOverpaying
+        ? `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit from overpaying vs your cash rate`
+        : sl.balanceGrowing
+          ? `${fmt(Math.round(sl.netAnnualChange))}/yr, balance growing — but will be written off regardless`
+          : null,
+    belowThreshold: sl.belowThreshold,
+    amount: slAmount,
   };
 
   // Mortgage
@@ -3830,12 +3875,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
         break;
       }
     }
-    const trPct = Math.round(m.tr * 100);
     const yTicks = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5].filter(r => r >= yMin && r <= yMax + 0.05);
     const xTicks = [0, 0.25, 0.5, 0.75, 1].map(f => m.loanBal * f);
     const crossX = crossAmt !== null ? sx(crossAmt) : null;
     const crossY = sy(pensionReturn);
-    return { writeOffYr, pensionReturn, mortRate, mortReturn, data, yMax, yMin, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, crossAmt, crossX, crossY, trPct, yTicks, xTicks };
+    return { writeOffYr, pensionReturn, mortRate, mortReturn, data, yMax, yMin, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, crossAmt, crossX, crossY, yTicks, xTicks };
   }, [products.slSection, m.loanBal, m.salary, m.tr, d.studentLoan, d.salaryTrajectory, d.pensionType, d.hasMortgage, d.mortgageRate]);
 
   const modSummary = insights?.modules?.[moduleKey];
@@ -3957,9 +4001,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           </div>
         )}
 
-        {/* AI summary — omitted for Investments, Cash, and Pension: their content is
-            now the collapsed headlines of the Win tiles below. */}
-        {!isPensionUnknown && modSummary?.summary && moduleKey !== "investments" && moduleKey !== "cash" && moduleKey !== "pension" && (
+        {/* AI summary — omitted for Investments, Cash, Pension, and Student loan:
+            their content is now the collapsed headlines of the Win tiles below. */}
+        {!isPensionUnknown && modSummary?.summary && moduleKey !== "investments" && moduleKey !== "cash" && moduleKey !== "pension" && moduleKey !== "studentLoan" && (
           <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
             <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75}}>{modSummary.summary}</p>
           </div>
@@ -3995,9 +4039,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           );
         })()}
 
-        {/* Computed metrics with tooltips — omitted for Investments, Cash, and
-            Pension: folded into their Win tiles below. */}
-        {!isPensionUnknown && modInsights.length > 0 && moduleKey !== "investments" && moduleKey !== "cash" && moduleKey !== "pension" && (
+        {/* Computed metrics with tooltips — omitted for Investments, Cash, Pension,
+            and Student loan: folded into their Win tiles below. */}
+        {!isPensionUnknown && modInsights.length > 0 && moduleKey !== "investments" && moduleKey !== "cash" && moduleKey !== "pension" && moduleKey !== "studentLoan" && (
           <div className="fu2" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"10px",marginBottom:"20px"}}>
             {modInsights.map((ins,i) => (
               <div key={i} style={{background:ins.flag ? "rgba(196,150,58,0.08)" : WHITE,borderRadius:"10px",padding:"14px 16px",border:`1px solid ${ins.flag ? "rgba(196,150,58,0.3)" : "rgba(22,47,36,0.09)"}`,position:"relative"}}>
@@ -4937,8 +4981,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           );
         })()}
 
-        {/* Products — omitted for Investments, Cash, and Pension: folded into their Win tiles. */}
-        {products && !isPensionUnknown && moduleKey !== "investments" && moduleKey !== "cash" && moduleKey !== "pension" && (
+        {/* Products — omitted for Investments, Cash, Pension, and Student loan: folded into their Win tiles. */}
+        {products && !isPensionUnknown && moduleKey !== "investments" && moduleKey !== "cash" && moduleKey !== "pension" && moduleKey !== "studentLoan" && (
           <div className="fu4">
             <div style={{marginBottom:"16px"}}>
               <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>{products.heading}</h3>
@@ -4959,190 +5003,252 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               </button>
             )}
             {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
+          </div>
+        )}
 
-            {/* Student loan overpayment scenarios */}
-            {products.slSection && (
-              <div style={{marginTop:"16px"}}>
-                {/* Inflection point warning */}
-                {products.slSection.balanceGrowing && (
-                  <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"12px"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                      <span style={{fontSize:"16px"}}>🚨</span>
-                      <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Effective 9% income surcharge</span>
-                    </div>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
-                      Your loan balance is growing faster than you repay it. Every £1 of income above the threshold (£{products.slSection.balanceGrowing ? "27,295" : "—"}) is taxed an extra 9% — and your balance compounds upward. This continues until you either reach the <strong>inflection point</strong> or the loan is written off.
-                    </p>
-                    <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
-                      <div>
-                        <div style={{fontSize:"11px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"3px"}}>Inflection point salary</div>
-                        <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(products.slSection.inflectionSalary)}</div>
-                        <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>where repayments = interest</div>
-                      </div>
-                      <div style={{fontSize:"13px",color:MUT,lineHeight:1.6,flex:1,minWidth:"160px"}}>
-                        At this salary, 9% of income above the threshold exactly matches your annual interest charge. Above this point, every pay rise reduces your balance. Below it, every year adds to it.
-                      </div>
-                    </div>
+        {/* ── Student loan: opportunity strip + win + trajectory info tile ──
+            A student loan is genuinely one decision ("should I overpay?"), not
+            several independent wins — same reasoning as Cash's single multi-step
+            "Optimise your cash" win. Overpaying is only a real Win when the loan
+            will actually clear before write-off AND beats the user's cash rate;
+            every other case (written off regardless, clears but saving already
+            wins, or below threshold) is a quiet note in the info tile instead. */}
+        {moduleKey === "studentLoan" && !isPensionUnknown && d.studentLoan !== "none" && products?.slSection && (() => {
+          const sl = products.slSection;
+          const worthOverpaying = sl.willClear && sl.effectiveBenefit > 0;
+
+          return (
+            <>
+              {worthOverpaying && (
+                <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
+                  <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
+                  <div>
+                    <div style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
+                    <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>Effective benefit from overpaying</div>
+                    <div style={{fontSize:"11px",color:"rgba(255,255,255,0.55)",marginTop:"2px"}}>vs keeping that money as cash</div>
                   </div>
-                )}
+                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the win below to act on this.</p>
+                </div>
+              )}
 
-                {/* Overpayment scenario cards */}
-                {products.slSection.scenarios.length > 0 && (
-                  <div style={{marginBottom:"12px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"12px"}}>
-                      What if you overpaid today?
-                    </div>
-                    {/* Baseline */}
-                    <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px",display:"flex",gap:"16px",flexWrap:"wrap",alignItems:"center"}}>
-                      <div style={{flex:"0 0 auto"}}>
-                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment</div>
-                        <div style={{fontFamily:SERIF,fontSize:"17px",color:TEXT,fontWeight:600}}>
-                          {products.slSection.baseProjection.clearYr
-                            ? `Clears in ${products.slSection.baseProjection.clearYr} yrs`
-                            : `${fmt(products.slSection.baseProjection.writeOffBal)} written off`}
+              {worthOverpaying && (
+                <ExpandableInvestmentItem
+                  number={1}
+                  title={sl.balanceGrowing ? "Your loan balance is growing" : "Overpay your student loan"}
+                  headline={sl.balanceGrowing
+                    ? `Growing by ${fmt(sl.netAnnualChange)}/yr — overpaying could still save ${fmt(sl.overpayAnnualBenefit)}/yr in interest`
+                    : `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit vs keeping the cash`}
+                  tag={{ label:"Today", color:GOLD }}
+                >
+                  {sl.balanceGrowing && (
+                    <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"12px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+                        <span style={{fontSize:"16px"}}>🚨</span>
+                        <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Effective 9% income surcharge</span>
+                      </div>
+                      <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
+                        Your loan balance is growing faster than you repay it. Every £1 of income above the threshold ({fmt(sl.threshold)}) is taxed an extra 9% — and your balance compounds upward. This continues until you either reach the <strong>inflection point</strong> or the loan is written off.
+                      </p>
+                      <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
+                        <div>
+                          <div style={{fontSize:"11px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"3px"}}>Inflection point salary</div>
+                          <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(sl.inflectionSalary)}</div>
+                          <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>where repayments = interest</div>
+                        </div>
+                        <div style={{fontSize:"13px",color:MUT,lineHeight:1.6,flex:1,minWidth:"160px"}}>
+                          At this salary, 9% of income above the threshold exactly matches your annual interest charge. Above this point, every pay rise reduces your balance. Below it, every year adds to it.
                         </div>
                       </div>
-                      <div style={{flex:1,minWidth:"140px",fontSize:"12px",color:MUT,lineHeight:1.6}}>
-                        Total repaid: {fmt(products.slSection.baseProjection.totalPaid)} over {products.slSection.writeOffYr} years. Interest accruing: {fmt(products.slSection.annualInterest)}/yr.
-                      </div>
                     </div>
-                    {products.slSection.scenarios.map((s,i) => {
-                      const reaches = s.crossesInflection;
-                      const clears = !!s.clearYr;
-                      const bg = clears ? "rgba(45,107,74,0.06)" : reaches ? "rgba(196,150,58,0.06)" : WHITE;
-                      const bdr = clears ? "rgba(45,107,74,0.22)" : reaches ? "rgba(196,150,58,0.3)" : "rgba(22,47,36,0.09)";
-                      const savedVsBase = products.slSection.baseProjection.totalPaid - s.totalPaid;
-                      return (
-                        <div key={i} style={{background:bg,border:`1.5px solid ${bdr}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"8px"}}>
-                            <div>
-                              <div style={{fontSize:"10px",fontWeight:700,color:clears?"#2d6b4a":reaches?GOLD:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>
-                                {clears ? "✓ Clears the loan" : reaches ? "✓ Reaches inflection point" : `Overpay ${fmt(s.amt)} today`}
-                              </div>
-                              <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>
-                                {clears ? `Clears in ${s.clearYr} yrs (vs ${products.slSection.baseProjection.clearYr||products.slSection.writeOffYr})` : `${fmt(s.writeOffBal)} written off`}
-                              </div>
-                            </div>
-                            <div style={{textAlign:"right",flexShrink:0}}>
-                              <div style={{fontSize:"10px",color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Overpayment</div>
-                              <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>{fmt(s.amt)}</div>
-                            </div>
-                          </div>
-                          <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:MUT,lineHeight:1.6}}>
-                            <span>Total repaid: {fmt(s.totalPaid)}</span>
-                            {savedVsBase > 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Saves: {fmt(savedVsBase)} vs doing nothing</span>}
-                            {!clears && s.newNetChange <= 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Balance now shrinking by {fmt(-s.newNetChange)}/yr</span>}
-                            {!clears && s.newNetChange > 0 && <span style={{color:GOLD}}>Balance still growing by {fmt(s.newNetChange)}/yr</span>}
-                          </div>
-                          {reaches && !clears && (
-                            <div style={{marginTop:"8px",fontSize:"12px",color:"#1e4030",background:"rgba(45,107,74,0.06)",borderRadius:"6px",padding:"8px 10px",lineHeight:1.5}}>
-                              This overpayment brings you to the inflection point — your balance will now start shrinking with every repayment. This is the most impactful outcome possible without clearing the loan entirely.
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  )}
 
-                    {/* Personalised marginal return curve — only when loan will clear */}
-                    {loanCurve && (() => {
-                      const { writeOffYr, pensionReturn, mortRate, mortReturn, data, yMax, yMin, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, crossAmt, crossX, crossY, trPct, yTicks, xTicks } = loanCurve;
-                      return (
-                        <div style={{marginTop:"16px",marginBottom:"16px"}}>
-                          <div style={{fontSize:"12px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Return per £1 overpaid — where the maths tips</div>
-                          <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible"}}>
-                            <rect x={PL} y={PT} width={cW} height={cH} fill="rgba(22,47,36,0.03)" rx="4"/>
-                            {yTicks.map(r => (
-                              <g key={r}>
-                                <line x1={PL} x2={VW-PR} y1={sy(r)} y2={sy(r)} stroke="rgba(22,47,36,0.09)" strokeWidth="1.5"/>
-                                <text x={PL-10} y={sy(r)+5} fontSize="16" fontWeight="700" fill={MUT} textAnchor="end">{r.toFixed(2)}</text>
-                              </g>
-                            ))}
-                            {/* Pension return reference */}
-                            <line x1={PL} x2={VW-PR} y1={sy(pensionReturn)} y2={sy(pensionReturn)} stroke="#d4b97a" strokeWidth="2.5" strokeDasharray="10,5"/>
-                            {/* Below the line when a crossover bubble is present (bubble only ever sits above crossY) to avoid the two overlapping */}
-                            <text x={VW-PR-8} y={sy(pensionReturn) + (crossX !== null ? 20 : -10)} fontSize="14" fontWeight="700" fill="#d4b97a" textAnchor="end">Pension {d.pensionType==="sacrifice"?"(salary sacrifice)":d.pensionType==="relief"?"(relief at source)":"return"} {pensionReturn.toFixed(2)}×</text>
-                            {/* Mortgage reference */}
-                            {sy(mortReturn) > PT + 20 && sy(mortReturn) < VH-PB - 20 && (
-                              <>
-                                <line x1={PL} x2={VW-PR} y1={sy(mortReturn)} y2={sy(mortReturn)} stroke={MUT} strokeWidth="1.5" strokeDasharray="8,5" opacity="0.55"/>
-                                <text x={VW-PR-8} y={sy(mortReturn)-8} fontSize="13" fill={MUT} textAnchor="end" opacity="0.7">Mortgage {mortRate}%</text>
-                              </>
+                  {sl.scenarios.length > 0 && (
+                    <div style={{marginBottom:"12px"}}>
+                      <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"12px"}}>
+                        What if you overpaid today?
+                      </div>
+                      <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px",display:"flex",gap:"16px",flexWrap:"wrap",alignItems:"center"}}>
+                        <div style={{flex:"0 0 auto"}}>
+                          <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment</div>
+                          <div style={{fontFamily:SERIF,fontSize:"17px",color:TEXT,fontWeight:600}}>
+                            {sl.baseProjection.clearYr
+                              ? `Clears in ${sl.baseProjection.clearYr} yrs`
+                              : `${fmt(sl.baseProjection.writeOffBal)} written off`}
+                          </div>
+                        </div>
+                        <div style={{flex:1,minWidth:"140px",fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                          Total repaid: {fmt(sl.baseProjection.totalPaid)} over {sl.writeOffYr} years. Interest accruing: {fmt(sl.annualInterest)}/yr.
+                        </div>
+                      </div>
+                      {sl.scenarios.map((s,i) => {
+                        const reaches = s.crossesInflection;
+                        const clears = !!s.clearYr;
+                        const bg = clears ? "rgba(45,107,74,0.06)" : reaches ? "rgba(196,150,58,0.06)" : WHITE;
+                        const bdr = clears ? "rgba(45,107,74,0.22)" : reaches ? "rgba(196,150,58,0.3)" : "rgba(22,47,36,0.09)";
+                        const savedVsBase = sl.baseProjection.totalPaid - s.totalPaid;
+                        return (
+                          <div key={i} style={{background:bg,border:`1.5px solid ${bdr}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"8px"}}>
+                              <div>
+                                <div style={{fontSize:"10px",fontWeight:700,color:clears?"#2d6b4a":reaches?GOLD:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>
+                                  {clears ? "✓ Clears the loan" : reaches ? "✓ Reaches inflection point" : `Overpay ${fmt(s.amt)} today`}
+                                </div>
+                                <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>
+                                  {clears ? `Clears in ${s.clearYr} yrs (vs ${sl.baseProjection.clearYr||sl.writeOffYr})` : `${fmt(s.writeOffBal)} written off`}
+                                </div>
+                              </div>
+                              <div style={{textAlign:"right",flexShrink:0}}>
+                                <div style={{fontSize:"10px",color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Overpayment</div>
+                                <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>{fmt(s.amt)}</div>
+                              </div>
+                            </div>
+                            <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                              <span>Total repaid: {fmt(s.totalPaid)}</span>
+                              {savedVsBase > 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Saves: {fmt(savedVsBase)} vs doing nothing</span>}
+                              {!clears && s.newNetChange <= 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Balance now shrinking by {fmt(-s.newNetChange)}/yr</span>}
+                              {!clears && s.newNetChange > 0 && <span style={{color:GOLD}}>Balance still growing by {fmt(s.newNetChange)}/yr</span>}
+                            </div>
+                            {reaches && !clears && (
+                              <div style={{marginTop:"8px",fontSize:"12px",color:"#1e4030",background:"rgba(45,107,74,0.06)",borderRadius:"6px",padding:"8px 10px",lineHeight:1.5}}>
+                                This overpayment brings you to the inflection point — your balance will now start shrinking with every repayment. This is the most impactful outcome possible without clearing the loan entirely.
+                              </div>
                             )}
-                            {/* Loan curve */}
-                            <path d={path} fill="none" stroke={GOLD} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
-                            {/* Crossover: drop line + glow + dot */}
-                            {crossX !== null && (
-                              <>
-                                <line x1={crossX} x2={crossX} y1={PT} y2={VH-PB} stroke={GOLD} strokeWidth="1.5" strokeDasharray="6,4" opacity="0.45"/>
-                                <circle cx={crossX} cy={crossY} r="14" fill={GOLD} opacity="0.22"/>
-                                <circle cx={crossX} cy={crossY} r="8" fill={GOLD}/>
-                              </>
-                            )}
-                            {/* X-axis */}
-                            <line x1={PL} x2={VW-PR} y1={VH-PB} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="3"/>
-                            {xTicks.map((amt,i) => (
-                              <text key={i} x={sx(amt)} y={VH-PB+22} fontSize="16" fontWeight="700" fill={MUT} textAnchor="middle">
-                                {i===0?"£0":i===4?fmt(amt):"£"+Math.round(amt/1000)+"k"}
-                              </text>
-                            ))}
-                            <text x={VW/2} y={VH-6} fontSize="15" fill={MUT} textAnchor="middle" opacity="0.7">Overpayment amount →</text>
-                            {/* Y-axis */}
-                            <line x1={PL} x2={PL} y1={PT} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="3"/>
-                            {/* Speech bubble at crossover */}
-                            {crossX !== null && (() => {
-                              const bx = Math.min(crossX - 10, VW - PR - 270);
-                              const by = crossY - 74;
-                              return (
-                                <g>
-                                  <rect x={bx} y={by} width={258} height={56} rx="8" fill={G}/>
-                                  <polygon points={`${crossX-8},${crossY-18} ${crossX},${crossY-4} ${crossX+8},${crossY-18}`} fill={G}/>
-                                  <text x={bx+14} y={by+24} fontSize="14" fontWeight="700" fill={WHITE}>Beyond {fmt(Math.round(crossAmt/1000)*1000)}: pension wins</text>
-                                  <text x={bx+14} y={by+44} fontSize="13" fill="rgba(255,255,255,0.75)">Your {pensionReturn.toFixed(2)}× return beats the loan rate</text>
+                          </div>
+                        );
+                      })}
+
+                      {loanCurve && (() => {
+                        const { pensionReturn, mortRate, mortReturn, data, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, crossAmt, crossX, crossY, yTicks, xTicks } = loanCurve;
+                        return (
+                          <div style={{marginTop:"16px",marginBottom:"16px"}}>
+                            <div style={{fontSize:"12px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Return per £1 overpaid — where the maths tips</div>
+                            <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible"}}>
+                              <rect x={PL} y={PT} width={cW} height={cH} fill="rgba(22,47,36,0.03)" rx="4"/>
+                              {yTicks.map(r => (
+                                <g key={r}>
+                                  <line x1={PL} x2={VW-PR} y1={sy(r)} y2={sy(r)} stroke="rgba(22,47,36,0.09)" strokeWidth="1.5"/>
+                                  <text x={PL-10} y={sy(r)+5} fontSize="16" fontWeight="700" fill={MUT} textAnchor="end">{r.toFixed(2)}</text>
                                 </g>
-                              );
+                              ))}
+                              <line x1={PL} x2={VW-PR} y1={sy(pensionReturn)} y2={sy(pensionReturn)} stroke="#d4b97a" strokeWidth="2.5" strokeDasharray="10,5"/>
+                              <text x={VW-PR-8} y={sy(pensionReturn) + (crossX !== null ? 20 : -10)} fontSize="14" fontWeight="700" fill="#d4b97a" textAnchor="end">Pension {d.pensionType==="sacrifice"?"(salary sacrifice)":d.pensionType==="relief"?"(relief at source)":"return"} {pensionReturn.toFixed(2)}×</text>
+                              {sy(mortReturn) > PT + 20 && sy(mortReturn) < VH-PB - 20 && (
+                                <>
+                                  <line x1={PL} x2={VW-PR} y1={sy(mortReturn)} y2={sy(mortReturn)} stroke={MUT} strokeWidth="1.5" strokeDasharray="8,5" opacity="0.55"/>
+                                  <text x={VW-PR-8} y={sy(mortReturn)-8} fontSize="13" fill={MUT} textAnchor="end" opacity="0.7">Mortgage {mortRate}%</text>
+                                </>
+                              )}
+                              <path d={path} fill="none" stroke={GOLD} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                              {crossX !== null && (
+                                <>
+                                  <line x1={crossX} x2={crossX} y1={PT} y2={VH-PB} stroke={GOLD} strokeWidth="1.5" strokeDasharray="6,4" opacity="0.45"/>
+                                  <circle cx={crossX} cy={crossY} r="14" fill={GOLD} opacity="0.22"/>
+                                  <circle cx={crossX} cy={crossY} r="8" fill={GOLD}/>
+                                </>
+                              )}
+                              <line x1={PL} x2={VW-PR} y1={VH-PB} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="3"/>
+                              {xTicks.map((amt,i) => (
+                                <text key={i} x={sx(amt)} y={VH-PB+22} fontSize="16" fontWeight="700" fill={MUT} textAnchor="middle">
+                                  {i===0?"£0":i===4?fmt(amt):"£"+Math.round(amt/1000)+"k"}
+                                </text>
+                              ))}
+                              <text x={VW/2} y={VH-6} fontSize="15" fill={MUT} textAnchor="middle" opacity="0.7">Overpayment amount →</text>
+                              <line x1={PL} x2={PL} y1={PT} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="3"/>
+                              {crossX !== null && (() => {
+                                const bx = Math.min(crossX - 10, VW - PR - 270);
+                                const by = crossY - 74;
+                                return (
+                                  <g>
+                                    <rect x={bx} y={by} width={258} height={56} rx="8" fill={G}/>
+                                    <polygon points={`${crossX-8},${crossY-18} ${crossX},${crossY-4} ${crossX+8},${crossY-18}`} fill={G}/>
+                                    <text x={bx+14} y={by+24} fontSize="14" fontWeight="700" fill={WHITE}>Beyond {fmt(Math.round(crossAmt/1000)*1000)}: pension wins</text>
+                                    <text x={bx+14} y={by+44} fontSize="13" fill="rgba(255,255,255,0.75)">Your {pensionReturn.toFixed(2)}× return beats the loan rate</text>
+                                  </g>
+                                );
+                              })()}
+                            </svg>
+                            {crossAmt === null && (() => {
+                              const lastRatio = data[data.length - 1]?.ratio ?? 1;
+                              if (data[0].ratio < pensionReturn) {
+                                return <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>Every £1 works harder in your pension than on your loan — your {pensionReturn.toFixed(2)}× pension return ({pensionReturnLabel(d,m)}) exceeds the loan marginal return at all overpayment levels.</div>;
+                              }
+                              if (lastRatio > pensionReturn) {
+                                return <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>Overpaying your loan may beat your pension at current contribution levels — your loan marginal return exceeds your {pensionReturn.toFixed(2)}× pension return throughout. Consider clearing the loan before maximising pension contributions.</div>;
+                              }
+                              return null;
                             })()}
-                          </svg>
-                          {crossAmt === null && (() => {
-                            const lastRatio = data[data.length - 1]?.ratio ?? 1;
-                            if (data[0].ratio < pensionReturn) {
-                              return <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>Every £1 works harder in your pension than on your loan — your {pensionReturn.toFixed(2)}× pension return ({pensionReturnLabel(d,m)}) exceeds the loan marginal return at all overpayment levels.</div>;
-                            }
-                            if (lastRatio > pensionReturn) {
-                              return <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>Overpaying your loan may beat your pension at current contribution levels — your loan marginal return exceeds your {pensionReturn.toFixed(2)}× pension return throughout. Consider clearing the loan before maximising pension contributions.</div>;
-                            }
-                            return null;
-                          })()}
-                        </div>
-                      );
-                    })()}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </ExpandableInvestmentItem>
+              )}
 
-                    {!products.slSection.willClear && (
-                      <div style={{background:"rgba(196,150,58,0.07)",border:`1px solid ${GOLD}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"12px"}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Overpaying is almost certainly not worth it</div>
-                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:0}}>Your loan is projected to be written off before you can clear it. Voluntary overpayments reduce the amount written off — but you never see that money again. Redirect any spare cash to your pension (free tax relief) or ISA (tax-free growth) instead.</p>
-                      </div>
-                    )}
-
-                    {/* Cash comparison callout */}
-                    {products.slSection.cashSavings > 5000 && (
-                      <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginTop:"4px"}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>vs holding cash</div>
-                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                          You hold {fmt(products.slSection.cashSavings)} in cash earning ~{products.slSection.cashRate}%. Your loan accrues at ~{products.slSection.slRatePct}%.
-                          {products.slSection.effectiveBenefit > 0
-                            ? ` Overpaying has an effective advantage of ${products.slSection.effectiveBenefit}% over keeping that cash — but only if you will actually clear the loan before write-off.`
-                            : ` The loan will be written off before you'd clear it, so the effective benefit of overpaying is negative. Keep the cash earning ${products.slSection.cashRate}%.`
-                          }
-                        </p>
-                      </div>
-                    )}
+              {/* ── Your loan trajectory — non-numbered info tile, styled like
+                  Cash's runway / Pension's growth-trajectory tile: supporting
+                  context, plus a quiet note for the non-actionable scenarios. ── */}
+              <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"18px 22px",marginBottom:"20px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
+                  <span style={{width:"9px",height:"9px",borderRadius:"50%",background:col,flexShrink:0,display:"inline-block"}}/>
+                  <span style={{fontSize:"13px",fontWeight:600,color:G}}>Your loan trajectory</span>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:"10px",marginBottom:"14px"}}>
+                  <div>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Current balance</div>
+                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(m.loanBal)}</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Interest rate</div>
+                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.slRatePct}%</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Annual interest</div>
+                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(sl.annualInterest)}/yr</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{sl.clearYr ? "Clears in" : "Written off after"}</div>
+                    <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs`}</div>
+                  </div>
+                </div>
+                {sl.belowThreshold ? (
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your salary is below the repayment threshold, so no deductions are being made yet. Interest still accrues at {sl.slRatePct}% (~{fmt(sl.annualInterest)}/yr) — deductions start automatically once your salary crosses {fmt(sl.threshold)}.</p>
+                ) : !sl.willClear ? (
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your loan is projected to be written off before you'd clear it — overpaying mostly reduces what gets written off, not what you repay. Redirect any spare cash to your pension or ISA instead.</p>
+                ) : sl.effectiveBenefit <= 0 ? (
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>You're on track to clear this loan in ~{sl.clearYr} years through regular repayments alone. Your savings rate ({sl.cashRate}%) beats your loan rate ({sl.slRatePct}%), so saving beats overpaying here.</p>
+                ) : (
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>See the win above for what overpaying could save you.</p>
+                )}
+                {sl.cashSavings > 5000 && (
+                  <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginTop:"12px"}}>
+                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>vs holding cash</div>
+                    <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:0}}>
+                      You hold {fmt(sl.cashSavings)} in cash earning ~{sl.cashRate}%. Your loan accrues at ~{sl.slRatePct}%.
+                      {sl.effectiveBenefit > 0
+                        ? ` Overpaying has an effective advantage of ${sl.effectiveBenefit}% over keeping that cash — but only if you will actually clear the loan before write-off.`
+                        : ` The loan will be written off before you'd clear it, so the effective benefit of overpaying is negative. Keep the cash earning ${sl.cashRate}%.`}
+                    </p>
                   </div>
                 )}
               </div>
-            )}
 
-          </div>
-        )}
+              {/* Provider cards — always shown, regardless of scenario */}
+              {products.products?.length > 0 && (
+                <div className="fu4" style={{marginBottom:"20px"}}>
+                  <div style={{marginBottom:"16px"}}>
+                    <h3 style={{fontFamily:SERIF,fontSize:"20px",color:G,marginBottom:"6px"}}>{products.heading}</h3>
+                    <p style={{fontSize:"14px",color:MUT,lineHeight:1.65}}>{products.subheading}</p>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px",marginBottom:"14px"}}>
+                    {products.products.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
+                  </div>
+                  {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* ── Alternative investments (investments module) ── */}
         {moduleKey === "investments" && (
