@@ -1320,9 +1320,6 @@ function getCrossModuleLinks(key, d, m) {
   if (key === "cash" && d.hasPension !== "yes") {
     links.push({ icon:"🏦", text:"You have no pension — the tax relief on contributions will likely outperform any savings rate.", label:"Go to Pension", target:"pension" });
   }
-  if (key === "pension" && (+d.bonusAmount||0) > 0) {
-    links.push({ icon:"💰", text:`You receive a bonus of ~${fmt(+d.bonusAmount)}. Sacrificing some or all into your pension before it's paid saves both income tax and National Insurance.`, label:"Model bonus sacrifice", target:"pension", section:"bonusSacrifice" });
-  }
   if (key === "studentLoan" && d.hasPension !== "yes") {
     links.push({ icon:"🏦", text:"Instead of overpaying your loan, redirecting that money into a pension gives an immediate return via tax relief — almost certainly a better use of the funds.", label:"Start a pension", target:"pension" });
   }
@@ -4037,10 +4034,14 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             ? `Every £${100-trPct} you put in becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
             : `${fmt(m.missedMatch)}/yr in employer contributions you're not claiming`;
 
+          // Only a numbered, actionable Win when the user told us during onboarding
+          // they expect a bonus — otherwise it's just background info, not a "win".
+          const hasStatedBonus = (+d.bonusAmount||0) > 0;
+
           let winCounter = 0;
           const win1Num = showMatchWin ? ++winCounter : null;
           const win2Num = showSacrificeCalc ? ++winCounter : null;
-          const win3Num = bonus > 0 ? ++winCounter : null;
+          const win3Num = hasStatedBonus ? ++winCounter : null;
 
           // ── Opportunity strip ──
           const oppCols = [];
@@ -4052,7 +4053,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           if (inTaper && taperTotalSaving > 0) {
             oppCols.push({ label:"Personal Allowance recoverable", value: fmt(taperTotalSaving), sub:"by sacrificing into your pension" });
           }
-          if (bonus > 0) {
+          if (hasStatedBonus) {
             oppCols.push({ label:"Bonus sacrifice saving", value: fmt(Math.round(bonus*m.tr)), sub:"if sacrificed in full" });
           }
 
@@ -4070,11 +4071,20 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const hasMissedMatch = m.missedMatch > 0;
           const hasBonus = (+d.bonusAmount||0) > 0;
           const showOptimised = hasMissedMatch || hasBonus;
+
+          // "What if you contributed more?" — generalises the old static 1% nudge
+          // chip into an adjustable +1/+2/+3/+5% stepper. Computed before `bars` so
+          // the chart itself can show a live bar for the selected percentage.
+          const extraGrowth = Math.round(salary * extraPct/100 * ((Math.pow(1.06, years) - 1) / 0.06));
+          const extraNetCostMonthly = Math.round(salary * extraPct/100 / 12 * (1 - m.tr));
+          const withExtraPot = Math.round(currentPot) + extraGrowth;
+
           const bars = [
             { value: potVal, label: "Now", color: "rgba(196,150,58,0.4)", textCol: G },
             { value: currentPot, label: `At retirement\n(age ${retireAge})`, color: GOLD, textCol: G },
             ...(hasMissedMatch ? [{ value: optimisedPot, label: `Optimised\n(match cap)`, color: "#2d6b4a", textCol: WHITE }] : []),
             ...(hasBonus ? [{ value: withBonusPot, label: "With bonus\nsacrifice", color: "rgba(45,107,74,0.7)", textCol: WHITE }] : []),
+            { value: withExtraPot, label: `With +${extraPct}%\ncontribution`, color: "#8a4fae", textCol: WHITE },
           ];
           const maxVal = Math.max(...bars.map(b => b.value)) * 1.15;
           const VW = 680, VH = 300, PL = 20, PR = 20, PT = 44, PB = 72;
@@ -4095,11 +4105,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           }
           const yearsSaved = retireAge - earlyRetire;
           const onTrackEarly = yearsSaved > 0 && contributing;
-
-          // "What if you contributed more?" — generalises the old static 1% nudge
-          // chip into an adjustable +1/+2/+3/+5% stepper.
-          const extraGrowth = Math.round(salary * extraPct/100 * ((Math.pow(1.06, years) - 1) / 0.06));
-          const extraNetCostMonthly = Math.round(salary * extraPct/100 / 12 * (1 - m.tr));
 
           const showTrajectory = d.hasPension === "yes" && (potVal > 0 || myPct > 0);
 
@@ -4123,14 +4128,71 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
               {showMatchWin && (
                 <ExpandableInvestmentItem number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tag={{ label:"Today", color:GOLD }}>
-                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                    {!contributing
-                      ? `You're not currently contributing to a pension. Every £${100-trPct} you put in becomes £100 in your pension thanks to ${trPct}% tax relief${empCapPct > 0 ? ` — and your employer will match up to ${empCapPct}% of your salary on top, completely free` : ""}.`
-                      : `Your employer matches up to ${empCapPct}% of your salary (${fmt(empCapPct/100*m.salary)}/yr). You're contributing ${myPct}% (${fmt(myPct/100*m.salary)}/yr) — the ${fmt(m.missedMatch)}/yr gap is money your employer would pay that you aren't claiming.`}
-                  </p>
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7}}>
-                    Adding 1% of salary costs just {fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo in take-home pay after {trPct}% tax relief — see the growth trajectory below for what closing this gap does to your pot.
-                  </p>
+                  {(() => {
+                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT };
+                    const totalRowStyle = { ...rowStyle, paddingTop:"7px", borderTop:"1px dashed rgba(22,47,36,0.18)", fontWeight:700 };
+                    const stepCardStyle = { background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.12)", borderRadius:"12px", padding:"14px 16px", marginBottom:"10px" };
+                    const stepEyebrowStyle = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
+                    const stepWhyStyle = { fontSize:"12px", color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
+
+                    const perOnePctValue = Math.round(m.salary/100);
+                    const myContribAnnual = Math.round(myPct/100 * m.salary);
+                    const currentMatchReceived = Math.round(Math.min(myPct, empCapPct)/100 * m.salary);
+                    const fullMatchAvailable = Math.round(empCapPct/100 * m.salary);
+                    const effectiveSalaryNow = m.salary + currentMatchReceived;
+                    const effectiveSalaryFullMatch = m.salary + fullMatchAvailable;
+
+                    return (
+                      <>
+                        <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
+                          Here's how your contribution and your employer's match add up to your effective pay from this job — and what's still on the table.
+                        </p>
+
+                        <div style={stepCardStyle}>
+                          <div style={stepEyebrowStyle}>Step 1 — Your contribution</div>
+                          <div style={rowStyle}>
+                            <span>{myPct > 0 ? `${myPct}% of salary, from your pay` : "Not contributing yet"}</span>
+                            <span style={{fontWeight:700,color:G}}>{fmt(myContribAnnual)}/yr</span>
+                          </div>
+                          <p style={stepWhyStyle}>Every 1% of salary you contribute is worth {fmt(perOnePctValue)}/yr — before tax relief is even added on top.</p>
+                        </div>
+
+                        <div style={{...stepCardStyle, background: m.missedMatch>0 ? "rgba(196,150,58,0.07)" : "rgba(45,107,74,0.06)", border:`1px solid ${m.missedMatch>0 ? "rgba(196,150,58,0.28)" : "rgba(45,107,74,0.22)"}`}}>
+                          <div style={{...stepEyebrowStyle, color: m.missedMatch>0 ? GOLD : "#2d6b4a"}}>Step 2 — Employer match {m.missedMatch>0 ? "(not fully claimed)" : "(fully claimed ✓)"}</div>
+                          <div style={rowStyle}>
+                            <span>Matched up to {empCapPct}% of salary</span>
+                            <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(currentMatchReceived)}/yr</span>
+                          </div>
+                          {m.missedMatch > 0 && (
+                            <div style={{...rowStyle,color:"#c0392b",marginTop:"4px"}}>
+                              <span>Left on the table</span>
+                              <span style={{fontWeight:700}}>{fmt(Math.round(m.missedMatch))}/yr</span>
+                            </div>
+                          )}
+                          <p style={stepWhyStyle}>Every 1% you're not yet contributing (up to {empCapPct}%) is another {fmt(perOnePctValue)}/yr of free employer money left unclaimed.</p>
+                        </div>
+
+                        <div style={{...stepCardStyle, marginBottom:"14px"}}>
+                          <div style={stepEyebrowStyle}>Your effective pay from this job</div>
+                          <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                            <div style={rowStyle}><span>Salary before pension</span><span>{fmt(m.salary)}</span></div>
+                            <div style={rowStyle}><span>+ Employer match (today)</span><span style={{color:"#2d6b4a",fontWeight:600}}>{fmt(currentMatchReceived)}</span></div>
+                            <div style={totalRowStyle}><span>Effective total pay today</span><span>{fmt(effectiveSalaryNow)}</span></div>
+                            {m.missedMatch > 0 && (
+                              <div style={{...rowStyle,marginTop:"4px",color:GOLD,fontWeight:700}}>
+                                <span>If you claimed the full match</span>
+                                <span>{fmt(effectiveSalaryFullMatch)} <span style={{fontWeight:400,color:MUT}}>(+{fmt(fullMatchAvailable-currentMatchReceived)})</span></span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                          Adding 1% of salary costs just {fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo in take-home pay after {trPct}% tax relief — see the growth trajectory below for what closing this gap does to your pot.
+                        </p>
+                      </>
+                    );
+                  })()}
                   {d.hasPension !== "yes" && products?.products?.length > 0 && (
                     <>
                       <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",margin:"18px 0 10px"}}>Where to start a pension</div>
@@ -4187,7 +4249,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </ExpandableInvestmentItem>
               )}
 
-              {bonus > 0 && (
+              {hasStatedBonus ? (
                 <div id="bonus-sacrifice-panel">
                   <ExpandableInvestmentItem
                     number={win3Num}
@@ -4196,107 +4258,114 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     tag={{ label:"Today", color:GOLD }}
                     defaultOpen={openSection === "bonusSacrifice"}
                   >
-                    <p style={{fontSize:"14px",color:MUT,lineHeight:1.7,marginBottom:"20px"}}>
+                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"12px"}}>
                       Sacrificing your bonus before it hits your payslip means you never pay tax, NI{bonusSlRate > 0 ? ", or student loan repayments" : ""} on that money. It goes into your pension gross, grows free of tax, and is only taxed when you draw it — typically at a lower rate in retirement.
                     </p>
-                    <div style={{marginBottom:"20px"}}>
-                      <label style={{...LBL,marginBottom:"6px"}}>Bonus amount to model (£)</label>
-                      <input type="number" style={{...INP,fontSize:"18px",fontWeight:600,fontFamily:SERIF}}
+                    <div style={{marginBottom:"12px"}}>
+                      <label style={{...LBL,marginBottom:"5px"}}>Bonus amount to model (£)</label>
+                      <input type="number" style={{...INP,fontSize:"16px",fontWeight:600,fontFamily:SERIF,padding:"8px 12px",marginTop:"4px"}}
                         value={bonusInput} onChange={e => setBonusInput(Math.max(0,+e.target.value))} placeholder="e.g. 10,000"/>
                     </div>
                     {(crossesTaper || crossesAR) && (
-                      <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:"10px",padding:"12px 16px",marginBottom:"16px",display:"flex",gap:"10px",alignItems:"flex-start"}}>
-                        <span style={{fontSize:"15px",flexShrink:0}}>⚠️</span>
+                      <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:"8px",padding:"8px 10px",marginBottom:"10px",display:"flex",gap:"8px",alignItems:"flex-start"}}>
+                        <span style={{fontSize:"13px",flexShrink:0}}>⚠️</span>
                         <div>
-                          <div style={{fontSize:"13px",fontWeight:600,color:"#c0392b",marginBottom:"3px"}}>
+                          <div style={{fontSize:"12px",fontWeight:600,color:"#c0392b",marginBottom:"2px"}}>
                             {crossesTaper && !crossesAR ? "Your bonus crosses the 60% taper zone (£100k–£125,140)" : "Your bonus spans the 40% → 60% taper → 45% rate bands"}
                           </div>
-                          <div style={{fontSize:"12px",color:MUT,lineHeight:1.5}}>Between £100,000 and £125,140 your personal allowance is progressively withdrawn — creating an effective 60% marginal rate. Sacrificing the portion of your bonus that lands here is especially valuable. The rate shown is the average across the full bonus.</div>
+                          <div style={{fontSize:"11px",color:MUT,lineHeight:1.45}}>Between £100,000 and £125,140 your personal allowance is progressively withdrawn — creating an effective 60% marginal rate. Sacrificing the portion of your bonus that lands here is especially valuable. The rate shown is the average across the full bonus.</div>
                         </div>
                       </div>
                     )}
-                    <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"16px 18px",marginBottom:"20px"}}>
-                      <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"12px"}}>For every £1 of your bonus — with no sacrifice</div>
-                      <div style={{display:"grid",gridTemplateColumns:`repeat(${bonusSlRate > 0 ? 4 : 3},1fr)`,gap:"8px"}}>
-                        <div style={{textAlign:"center",padding:"10px 6px",background:"rgba(192,57,43,0.06)",borderRadius:"8px"}}>
-                          <div style={{fontFamily:SERIF,fontSize:"22px",color:"#c0392b",fontWeight:700}}>{fullTaxPct}p</div>
-                          <div style={{fontSize:"10px",color:MUT,marginTop:"3px",lineHeight:1.3}}>income tax<br/>({fullTaxPct}% eff.)</div>
+                    <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 12px",marginBottom:"12px"}}>
+                      <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>For every £1 of your bonus — with no sacrifice</div>
+                      <div style={{display:"grid",gridTemplateColumns:`repeat(${bonusSlRate > 0 ? 4 : 3},1fr)`,gap:"6px"}}>
+                        <div style={{textAlign:"center",padding:"7px 6px",background:"rgba(192,57,43,0.06)",borderRadius:"7px"}}>
+                          <div style={{fontFamily:SERIF,fontSize:"18px",color:"#c0392b",fontWeight:700}}>{fullTaxPct}p</div>
+                          <div style={{fontSize:"9px",color:MUT,marginTop:"2px",lineHeight:1.25}}>income tax<br/>({fullTaxPct}% eff.)</div>
                         </div>
-                        <div style={{textAlign:"center",padding:"10px 6px",background:"rgba(196,150,58,0.08)",borderRadius:"8px"}}>
-                          <div style={{fontFamily:SERIF,fontSize:"22px",color:GOLD,fontWeight:700}}>{fullNIPct}p</div>
-                          <div style={{fontSize:"10px",color:MUT,marginTop:"3px",lineHeight:1.3}}>NI<br/>({fullNIPct}%)</div>
+                        <div style={{textAlign:"center",padding:"7px 6px",background:"rgba(196,150,58,0.08)",borderRadius:"7px"}}>
+                          <div style={{fontFamily:SERIF,fontSize:"18px",color:GOLD,fontWeight:700}}>{fullNIPct}p</div>
+                          <div style={{fontSize:"9px",color:MUT,marginTop:"2px",lineHeight:1.25}}>NI<br/>({fullNIPct}%)</div>
                         </div>
                         {bonusSlRate > 0 && (
-                          <div style={{textAlign:"center",padding:"10px 6px",background:"rgba(22,47,36,0.06)",borderRadius:"8px"}}>
-                            <div style={{fontFamily:SERIF,fontSize:"22px",color:"#1e4030",fontWeight:700}}>{fullSLPct}p</div>
-                            <div style={{fontSize:"10px",color:MUT,marginTop:"3px",lineHeight:1.3}}>student<br/>loan (9%)</div>
-                            {loanBal > 0 && <div style={{marginTop:"4px",fontSize:"9px",color:"#2d6b4a",fontWeight:600,lineHeight:1.3}}>{m.willClear ? "clears faster" : "likely written off"}</div>}
+                          <div style={{textAlign:"center",padding:"7px 6px",background:"rgba(22,47,36,0.06)",borderRadius:"7px"}}>
+                            <div style={{fontFamily:SERIF,fontSize:"18px",color:"#1e4030",fontWeight:700}}>{fullSLPct}p</div>
+                            <div style={{fontSize:"9px",color:MUT,marginTop:"2px",lineHeight:1.25}}>student<br/>loan (9%)</div>
+                            {loanBal > 0 && <div style={{marginTop:"3px",fontSize:"8px",color:"#2d6b4a",fontWeight:600,lineHeight:1.25}}>{m.willClear ? "clears faster" : "likely written off"}</div>}
                           </div>
                         )}
-                        <div style={{textAlign:"center",padding:"10px 6px",background:"rgba(45,107,74,0.08)",borderRadius:"8px"}}>
-                          <div style={{fontFamily:SERIF,fontSize:"22px",color:"#2d6b4a",fontWeight:700}}>{fullKeepPct}p</div>
-                          <div style={{fontSize:"10px",color:MUT,marginTop:"3px",lineHeight:1.3}}>you keep</div>
+                        <div style={{textAlign:"center",padding:"7px 6px",background:"rgba(45,107,74,0.08)",borderRadius:"7px"}}>
+                          <div style={{fontFamily:SERIF,fontSize:"18px",color:"#2d6b4a",fontWeight:700}}>{fullKeepPct}p</div>
+                          <div style={{fontSize:"9px",color:MUT,marginTop:"2px",lineHeight:1.25}}>you keep</div>
                         </div>
                       </div>
                       {bonusSlRate > 0 && loanBal > 0 && (
-                        <div style={{marginTop:"10px",padding:"8px 10px",background:"rgba(22,47,36,0.04)",borderRadius:"6px",fontSize:"11px",color:MUT,lineHeight:1.6}}>
+                        <div style={{marginTop:"8px",padding:"6px 8px",background:"rgba(22,47,36,0.04)",borderRadius:"5px",fontSize:"10px",color:MUT,lineHeight:1.5}}>
                           {m.willClear
                             ? `📌 The ${fmt(slRepaymentFromBonus)} student loan deduction from this bonus brings your clear date forward, saving roughly ${fmt(slInterestSaved)} in interest.`
                             : `📌 Your loan is unlikely to clear before write-off. The ${fmt(slRepaymentFromBonus)} that would be deducted from this bonus would almost certainly be written off anyway — sacrificing avoids it entirely.`}
                         </div>
                       )}
                     </div>
-                    <div style={{marginBottom:"20px"}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
+                    <div style={{marginBottom:"12px"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"6px"}}>
                         <label style={LBL}>How much to sacrifice?</label>
-                        <span style={{fontFamily:SERIF,fontSize:"18px",fontWeight:700,color:G}}>{sacrificePct}%</span>
+                        <span style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{sacrificePct}%</span>
                       </div>
-                      <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
+                      <div style={{display:"flex",gap:"6px",marginBottom:"8px"}}>
                         {[0,25,50,75,100].map(pct => (
-                          <button key={pct} type="button" onClick={() => setSacrificePct(pct)} style={{flex:1,padding:"9px 4px",background:sacrificePct===pct?G:"transparent",border:`1.5px solid ${sacrificePct===pct?G:"rgba(22,47,36,0.2)"}`,borderRadius:"8px",color:sacrificePct===pct?WHITE:G,fontSize:"13px",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>{pct}%</button>
+                          <button key={pct} type="button" onClick={() => setSacrificePct(pct)} style={{flex:1,padding:"6px 4px",background:sacrificePct===pct?G:"transparent",border:`1.5px solid ${sacrificePct===pct?G:"rgba(22,47,36,0.2)"}`,borderRadius:"7px",color:sacrificePct===pct?WHITE:G,fontSize:"12px",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>{pct}%</button>
                         ))}
                       </div>
                       <input type="range" min="0" max="100" step="1" value={sacrificePct} onChange={e => setSacrificePct(+e.target.value)} style={{width:"100%",accentColor:G}}/>
                     </div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"16px"}}>
-                      <div style={{background:"rgba(45,107,74,0.06)",border:"1px solid rgba(45,107,74,0.22)",borderRadius:"10px",padding:"14px 16px"}}>
-                        <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"10px"}}>You receive</div>
-                        <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700,marginBottom:"8px"}}>{fmt(totalReceived)}</div>
-                        <div style={{fontSize:"12px",color:MUT,display:"flex",flexDirection:"column",gap:"3px"}}>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"10px"}}>
+                      <div style={{background:"rgba(45,107,74,0.06)",border:"1px solid rgba(45,107,74,0.22)",borderRadius:"8px",padding:"10px 12px"}}>
+                        <div style={{fontSize:"9px",fontWeight:700,color:"#2d6b4a",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"6px"}}>You receive</div>
+                        <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700,marginBottom:"5px"}}>{fmt(totalReceived)}</div>
+                        <div style={{fontSize:"11px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
                           {sacrificedAmt > 0 && <span style={{color:"#2d6b4a",fontWeight:500}}>Pension: {fmt(sacrificedAmt)}</span>}
                           {takeHomeCash > 0 && <span>Cash: {fmt(takeHomeCash)}</span>}
-                          {employerNISave > 0 && <span style={{color:"#2d6b4a",marginTop:"4px"}}>+ {fmt(employerNISave)} employer NI saved*</span>}
+                          {employerNISave > 0 && <span style={{color:"#2d6b4a",marginTop:"3px"}}>+ {fmt(employerNISave)} employer NI saved*</span>}
                         </div>
                       </div>
-                      <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"10px",padding:"14px 16px"}}>
-                        <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"10px"}}>Paid to HMRC{bonusSlRate>0?" + SLC":""}</div>
-                        <div style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,marginBottom:"8px"}}>{sacrificePct===100?fmt(0):fmt(totalDeducted)}</div>
-                        <div style={{fontSize:"12px",color:MUT,display:"flex",flexDirection:"column",gap:"3px"}}>
+                      <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"8px",padding:"10px 12px"}}>
+                        <div style={{fontSize:"9px",fontWeight:700,color:"#c0392b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"6px"}}>Paid to HMRC{bonusSlRate>0?" + SLC":""}</div>
+                        <div style={{fontFamily:SERIF,fontSize:"17px",color:TEXT,fontWeight:700,marginBottom:"5px"}}>{sacrificePct===100?fmt(0):fmt(totalDeducted)}</div>
+                        <div style={{fontSize:"11px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
                           {sacrificePct===100
                             ? <span style={{color:"#2d6b4a",fontWeight:600}}>Nothing — full sacrifice 🎉</span>
                             : <>{taxOnCash>0&&<span>Tax: {fmt(taxOnCash)} ({Math.round(bonusTaxDetail.effectiveRate*100)}% eff.)</span>}{niOnCash>0&&<span>NI: {fmt(niOnCash)}</span>}{slOnCash>0&&<span>Student loan: {fmt(slOnCash)}</span>}</>}
                         </div>
                       </div>
                     </div>
-                    <div style={{background:G,borderRadius:"10px",padding:"16px 18px",marginBottom:"12px"}}>
-                      <div style={{fontSize:"11px",fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"12px"}}>If sacrificed today — value at retirement (age {retireAge})</div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px"}}>
+                    <div style={{background:G,borderRadius:"8px",padding:"10px 12px",marginBottom:"8px"}}>
+                      <div style={{fontSize:"10px",fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"8px"}}>If sacrificed today — value at retirement (age {retireAge})</div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>
                         {[100,50,0].map(pct => {
                           const active = sacrificePct === pct;
                           return (
-                            <div key={pct} onClick={() => setSacrificePct(pct)} style={{textAlign:"center",padding:"12px 8px",borderRadius:"8px",background:active?"rgba(196,150,58,0.18)":"rgba(255,255,255,0.05)",cursor:"pointer",border:`1px solid ${active?"rgba(196,150,58,0.4)":"transparent"}`,transition:"all 0.2s"}}>
-                              <div style={{fontSize:"11px",color:active?GOLD:"rgba(255,255,255,0.5)",marginBottom:"6px",fontWeight:active?700:400}}>{pct}% sacrificed</div>
-                              <div style={{fontFamily:SERIF,fontSize:"clamp(14px,3vw,20px)",color:active?GOLD:WHITE,fontWeight:700,marginBottom:"2px"}}>{fmt(bonusFVpartial(pct))}</div>
-                              <div style={{fontSize:"9px",color:"rgba(255,255,255,0.35)"}}>in {years} yrs at 6%</div>
+                            <div key={pct} onClick={() => setSacrificePct(pct)} style={{textAlign:"center",padding:"8px 6px",borderRadius:"7px",background:active?"rgba(196,150,58,0.18)":"rgba(255,255,255,0.05)",cursor:"pointer",border:`1px solid ${active?"rgba(196,150,58,0.4)":"transparent"}`,transition:"all 0.2s"}}>
+                              <div style={{fontSize:"10px",color:active?GOLD:"rgba(255,255,255,0.5)",marginBottom:"4px",fontWeight:active?700:400}}>{pct}% sacrificed</div>
+                              <div style={{fontFamily:SERIF,fontSize:"clamp(13px,3vw,18px)",color:active?GOLD:WHITE,fontWeight:700,marginBottom:"1px"}}>{fmt(bonusFVpartial(pct))}</div>
+                              <div style={{fontSize:"8px",color:"rgba(255,255,255,0.35)"}}>in {years} yrs at 6%</div>
                             </div>
                           );
                         })}
                       </div>
                     </div>
-                    <p style={{fontSize:"11px",color:MUT,lineHeight:1.6}}>
+                    <p style={{fontSize:"10.5px",color:MUT,lineHeight:1.5}}>
                       Tax rate shown is the effective average across the bonus — it may exceed your salary tax band if total income crosses the £100k personal allowance taper or £125,140 additional rate threshold. * Employer NI of 13.8% on sacrificed amount — some employers pass this on. Future values assume 6% p.a. growth, undrawn until retirement.
                     </p>
                   </ExpandableInvestmentItem>
+                </div>
+              ) : (
+                <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
+                  <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px"}}>💰 Getting a bonus? Sacrifice it before it's paid</div>
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,margin:0}}>
+                    Sacrificing a bonus into your pension before it hits your payslip means you never pay tax or NI on that money — it goes in gross, grows tax-free, and is only taxed (typically at a lower rate) when you draw it in retirement. If you're expecting one this year, update your inputs to model it here.
+                  </p>
                 </div>
               )}
 
