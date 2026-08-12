@@ -2811,79 +2811,6 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           );
         })()}
 
-        {/* Biggest win this week */}
-        {(() => {
-          const pensionFullyMatched = isPensionContributing(d) && m.missedMatch === 0 && !(+d.bonusAmount > 0);
-          const topModule = activeModules
-            .filter(mm => {
-                  if (completedModules.includes(mm.key)) return false;
-              if (mm.key === "pension" && (pensionFullyMatched || m.pensionStatus === "unknown")) return false;
-              return true;
-            })
-            .sort((a,b) => b.impact - a.impact)[0];
-          if (!topModule) return null;
-          const topIsaRateRow = topRate(savingsRates, true);
-          const topNonIsaRateRow = topRate(savingsRates, false);
-          const isaRateLabel = topIsaRateRow ? `${topIsaRateRow.rate_aer}%` : "top-paying";
-          const nonIsaRateLabel = topNonIsaRateRow ? `${topNonIsaRateRow.rate_aer}%` : "top-paying";
-
-          // Builds the "move £X into a Y% Cash ISA[, and £Z into a W% savings account]"
-          // clause for a given £ amount — the single source of truth for how much of it
-          // actually fits in "a Cash ISA" specifically, so no sentence overstates that
-          // by naming a single vehicle for an amount that exceeds the remaining headroom.
-          function describeCashMove(amount) {
-            const split = splitByIsaHeadroom(amount, m.isaHeadroom, topNonIsaRateRow ? +topNonIsaRateRow.rate_aer : null, +m.savingsRate);
-            if (split.fitsEntirelyInIsa) {
-              return `a ${isaRateLabel} Cash ISA`;
-            }
-            if (split.nonIsaWorthMoving) {
-              return `a ${isaRateLabel} Cash ISA (${fmt(split.isaPortion)}) and a ${nonIsaRateLabel} savings account (${fmt(split.nonIsaPortion)})`;
-            }
-            return `a ${isaRateLabel} Cash ISA (${fmt(split.isaPortion)}, your remaining allowance — the rest doesn't currently beat your savings rate anywhere else)`;
-          }
-
-          const directives = {
-            pension: !isPensionContributing(d)
-              ? `Start a pension today — every £${100-Math.round(m.tr*100)} you put in becomes £100 with ${Math.round(m.tr*100)}% tax relief.`
-              : m.missedMatch > 0
-                ? `Increase your pension to ${+d.employerMatch||0}% to capture your employer match — ${fmt(m.missedMatch)}/yr in free money.`
-                : (+d.bonusAmount||0) > 0
-                  ? `Sacrifice your bonus into your pension — saves up to ${fmt(Math.round((+d.bonusAmount||0)*m.tr))} in tax this year.`
-                  : `Boost your pension by 1% — costs only ${fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo after ${Math.round(m.tr*100)}% tax relief.`,
-            cash: m.emergencyFund > 0 && m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2
-              ? `You're holding ${fmt(Math.round(m.emergencyExcess))} above your ${m.bufferMonths}-month buffer — move it into ${describeCashMove(Math.round(m.emergencyExcess))}.`
-              : m.annualYieldGap > 0
-                // describeCashMove is the single source of truth for how much of this
-                // actually fits "a Cash ISA" — never state a single-vehicle amount that
-                // exceeds the remaining headroom. m.cash, not m.emergencyFund (cash +
-                // bonds) — annualYieldGap is cash-only now; bonds get their own
-                // separate directive via bondsYieldGain in the Premium Bonds panel.
-                ? `Move your cash into ${describeCashMove(Math.round(m.cash))} — earns you ${fmt(Math.round(m.annualYieldGap))} more per year.`
-                : `Review your savings rate — best-buy accounts are paying ${topIsaRateRow ? topIsaRateRow.rate_aer+"%" : "market-leading"} AER right now.`,
-            investments: `Use your remaining ${fmt(m.isaHeadroom)} ISA allowance before April 5th — shelters your gains from tax permanently.`,
-            studentLoan: "Review your student loan strategy — your salary trajectory determines whether overpaying beats investing.",
-            mortgage: d.daysToFixExpiry !== null && d.daysToFixExpiry < 180
-              ? `Your mortgage fix expires in ${Math.round(d.daysToFixExpiry/30)} months — lock a new rate now before rolling onto SVR.`
-              : "Review your mortgage — overpaying at your rate may beat savings.",
-            kids: "Open a Junior ISA for your child — up to £9,000/yr grows completely tax-free until they turn 18.",
-            inheritance: "Review your estate planning — IHT threshold is £325,000 and every year without a plan can cost your estate.",
-            personalLoan: `Pay down your personal loan at ${+d.personalLoanRate||0}% — a guaranteed ${+d.personalLoanRate||0}% return, better than any savings account.`,
-          };
-          const text = directives[topModule.key] || `Review your ${topModule.title.toLowerCase()} — there's money to unlock here.`;
-          return (
-            <div className="fu" style={{background:G,borderLeft:`6px solid ${GOLD}`,borderRadius:"14px",padding:"20px 24px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap"}}>
-              <div style={{flex:1,minWidth:"200px"}}>
-                <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your biggest win this week</div>
-                <p style={{fontSize:"18px",color:WHITE,fontWeight:500,lineHeight:1.5,margin:0}}>{text}</p>
-              </div>
-              <button type="button" onClick={() => onOpenModule(topModule.key)}
-                style={{background:GOLD,border:"none",borderRadius:"10px",padding:"13px 22px",color:G,fontSize:"14px",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-                Do this now →
-              </button>
-            </div>
-          );
-        })()}
-
         {/* Greeting */}
         <h1 style={{fontFamily:SERIF,fontSize:"clamp(22px,4vw,28px)",color:G,fontWeight:700,marginBottom:"20px",lineHeight:1.2}}>
           {d.name ? `Hi ${d.name},` : "Hi,"} here's your Candid report.
@@ -3001,144 +2928,74 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           );
         })()}
 
-        {/* Net worth summary */}
-{(assetItems.length > 0 || liabilityItems.length > 0) && (
-  <div
-    className="fu1"
-    onClick={() => setNetWorthExpanded(v => !v)}
-    style={{
-      background: WHITE,
-      borderRadius: "12px",
-      padding: "14px 18px",
-      border: "1px solid rgba(22,47,36,0.09)",
-      marginBottom: "16px",
-      cursor: "pointer",
-    }}
-  >
-    {/* Collapsed row: title + net worth + assets/liabilities + toggle — all on one line */}
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",flexWrap:"wrap"}}>
-      <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
-        <span style={{fontFamily:SERIF,fontSize:"14px",color:G,fontWeight:600}}>Net worth</span>
-        <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:netWorthPositive?"#2d6b4a":"#c0392b",lineHeight:1}}>{fmt(Math.abs(m.netWorth))}</span>
-        <span style={{fontSize:"11px",color:MUT}}>{netWorthPositive?"net positive":"net negative"}</span>
-      </div>
-      <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
-        <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase"}}>Assets {fmt(m.totalAssets)}</div>
-        <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase"}}>Liabilities {fmt(m.totalLiabilities)}</div>
-        <span style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>{netWorthExpanded?"↑":"↓"}</span>
-      </div>
-    </div>
-        
-    {/* Detailed breakdown (toggle) */}
-    {netWorthExpanded && (
-      <>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-          <div>
-            {assetItems.map((a, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: a.bold ? "6px 0 5px" : "4px 0",
-                  borderBottom: `1px solid rgba(22,47,36,${a.bold ? 0.1 : 0.05})`,
-                  borderTop: a.bold ? "1px solid rgba(22,47,36,0.08)" : undefined,
-                  marginLeft: a.sub ? "10px" : undefined
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: a.bold ? "13px" : "12.5px",
-                    color: a.bold ? G : MUT,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    fontWeight: a.bold ? 700 : 400
-                  }}
-                >
-                  {!a.sub && !a.bold && <span>{a.icon}</span>}
-                  {a.sub && <span style={{ fontSize: "10px", color: "rgba(22,47,36,0.3)" }}>└</span>}
-                  {a.label}
-                </span>
-                <span
-                  style={{
-                    fontSize: a.bold ? "13px" : "12.5px",
-                    fontWeight: a.bold ? 700 : 600,
-                    color: a.bold ? G : TEXT
-                  }}
-                >
-                  {fmt(a.value)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div>
-            {liabilityItems.length > 0 ? (
-              liabilityItems.map((l, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "5px 0",
-                    borderBottom: "1px solid rgba(22,47,36,0.05)"
-                  }}
-                >
-                  <span style={{ fontSize: "13px", color: MUT, display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span>{l.icon}</span>
-                    {l.label}
-                  </span>
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#c0392b" }}>
-                    {fmt(l.value)}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div style={{ fontSize: "13px", color: MUT, padding: "5px 0" }}>
-                No liabilities recorded 🎉
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: "12px",
-            paddingTop: "12px",
-            borderTop: "1px solid rgba(22,47,36,0.08)",
-            fontSize: "11px",
-            color: MUT,
-            lineHeight: 1.5
-          }}
-        >
-          Note: Pension pot shown at current value, not projected. Property is excluded — connect your accounts via
-          Open Banking (coming soon) for a complete picture.
-        </div>
-      </>
-    )}
-  </div>
-)}
-
         {/* Total opportunity — lighter green than the score card, label-above-value template */}
         {totalOpp >= 500 && (() => {
           const eq = getEquivalence(totalOpp);
           return (
-            <div className="fu1" style={{background:"#2d6b4a",borderRadius:"14px",padding:"22px 26px",marginBottom:"20px"}}>
-              <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
+            <div className="fu1" style={{background:WHITE,border:`2px solid ${G}`,borderRadius:"14px",padding:"22px 26px",marginBottom:"20px"}}>
+              <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
               <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
-                <span style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:WHITE}}>{fmt(totalOpp)}</span>
-                <span style={{fontSize:"14px",color:"rgba(255,255,255,0.65)"}}>you could be leaving on the table</span>
+                <span style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:G}}>{fmt(totalOpp)}</span>
+                <span style={{fontSize:"14px",color:MUT}}>you could be leaving on the table</span>
               </div>
-              {eq && <div style={{fontSize:"12px",color:GOLD,marginTop:"6px"}}>{eq}</div>}
-              <div style={{fontSize:"11px",color:"rgba(255,255,255,0.5)",marginTop:"10px",lineHeight:1.6}}>
+              {eq && <div style={{fontSize:"12px",color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
+              <div style={{fontSize:"11px",color:MUT,marginTop:"10px",lineHeight:1.6}}>
                 Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
               </div>
             </div>
           );
         })()}
+
+        {/* Module breakdown — full-width, stacked, sorted by £ opportunity descending.
+            Tile format mirrors the numbered "Win N" cards inside each module: the
+            module title leads, the £ figure is a supporting line underneath it. */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
+          <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
+          <span style={{fontSize:"12px",color:MUT}}>{modulesWithRec.length} need action · {modulesNoRec.length} on track</span>
+        </div>
+
+        <div style={{marginBottom:"24px"}}>
+          {(() => {
+            let winNumber = 0;
+            return moduleList.map((mm, i) => {
+              const reviewed = completedModules.includes(mm.key);
+              const hasRec = mm.amount > 0;
+              if (hasRec) winNumber++;
+              const tag = hasRec ? MODULE_TAG[mm.key] : null;
+              const context = hasRec ? moduleContext(mm, d, m) : null;
+              return (
+                <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
+                  style={{background:WHITE,border:`1.5px solid ${hasRec ? "rgba(22,47,36,0.14)" : "rgba(22,47,36,0.08)"}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"10px",cursor:"pointer",opacity:hasRec?1:0.6,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
+                  <div style={{display:"flex",alignItems:"flex-start",gap:"12px",minWidth:0,flex:1}}>
+                    <div style={{width:"24px",height:"24px",borderRadius:"50%",background:hasRec?G:"rgba(22,47,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
+                      {hasRec ? (
+                        <span style={{fontSize:"12px",fontWeight:700,color:CREAM}}>{winNumber}</span>
+                      ) : (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke={WHITE} strokeWidth="1.8" strokeLinecap="round"/></svg>
+                      )}
+                    </div>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:"16px",fontWeight:700,color:G,lineHeight:1.3}}>{mm.icon} {mm.title}</div>
+                      {hasRec ? (
+                        <div style={{fontSize:"14px",color:TEXT,marginTop:"4px",lineHeight:1.4}}>
+                          <span style={{fontWeight:700,color:G}}>{fmt(mm.amount)}{mm.amountIsLumpSum ? " by 18" : "/yr"}</span>
+                          {context && <span style={{color:MUT}}> — {context}</span>}
+                        </div>
+                      ) : (
+                        <div style={{fontSize:"13px",color:MUT,marginTop:"4px",lineHeight:1.4}}>{mm.impactLabel || "On track — no action needed"}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
+                    {tag && <TagPill label={tag.label} color={tag.color}/>}
+                    {hasRec && reviewed && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#2d6b4a" strokeWidth="2" strokeLinecap="round"/></svg>}
+                    {hasRec && <span style={{fontSize:"18px",color:MUT}}>›</span>}
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </div>
 
         {/* Your Forecast */}
         <div className="fu1" style={{background:WHITE,borderRadius:"16px",padding:isMobile?"18px":"24px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"24px"}}>
@@ -3277,49 +3134,126 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           </p>
         </div>
 
-        {/* Module breakdown — full-width, stacked, sorted by £ opportunity descending */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
-          <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
-          <span style={{fontSize:"12px",color:MUT}}>{modulesWithRec.length} need action · {modulesNoRec.length} on track</span>
-        </div>
-
-        <div style={{marginBottom:"24px"}}>
-          {moduleList.map((mm, i) => {
-            const reviewed = completedModules.includes(mm.key);
-            if (mm.amount > 0) {
-              const tag = MODULE_TAG[mm.key];
-              const context = moduleContext(mm, d, m);
-              return (
-                <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
-                  style={{background:WHITE,borderRadius:"12px",padding:"18px 22px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"10px",cursor:"pointer",position:"relative"}}>
-                  {tag && <div style={{position:"absolute",top:"16px",right:"20px"}}><TagPill label={tag.label} color={tag.color}/></div>}
-                  <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"8px",paddingRight:"110px"}}>
-                    <span style={{fontSize:"14px"}}>{mm.icon}</span>{mm.title}
-                    {reviewed && <svg width="11" height="9" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#2d6b4a" strokeWidth="2" strokeLinecap="round"/></svg>}
-                  </div>
-                  <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
-                    <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:G}}>{fmt(mm.amount)}{mm.amountIsLumpSum ? " by 18" : "/yr"}</span>
-                    {context && <span style={{fontSize:"13px",color:MUT}}>{context}</span>}
-                  </div>
-                </div>
-              );
-            }
-            return (
-              <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
-                style={{background:WHITE,opacity:0.55,borderRadius:"12px",padding:"14px 22px",border:"1px solid rgba(22,47,36,0.06)",marginBottom:"10px",cursor:"pointer",display:"flex",alignItems:"center",gap:"12px"}}>
-                <div style={{width:"20px",height:"20px",background:"#2d6b4a",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke={WHITE} strokeWidth="1.8" strokeLinecap="round"/></svg>
-                </div>
-                <div>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"2px"}}>
-                    <span style={{fontSize:"14px"}}>{mm.icon}</span>{mm.title}
-                  </div>
-                  <div style={{fontSize:"13px",color:MUT}}>{mm.impactLabel || "On track — no action needed"}</div>
-                </div>
+        {/* Net worth summary — relegated to the bottom of the dashboard */}
+        {(assetItems.length > 0 || liabilityItems.length > 0) && (
+          <div
+            className="fu1"
+            onClick={() => setNetWorthExpanded(v => !v)}
+            style={{
+              background: WHITE,
+              borderRadius: "12px",
+              padding: "14px 18px",
+              border: "1px solid rgba(22,47,36,0.09)",
+              marginBottom: "16px",
+              cursor: "pointer",
+            }}
+          >
+            {/* Collapsed row: title + net worth + assets/liabilities + toggle — all on one line */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",flexWrap:"wrap"}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
+                <span style={{fontFamily:SERIF,fontSize:"14px",color:G,fontWeight:600}}>Net worth</span>
+                <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:netWorthPositive?"#2d6b4a":"#c0392b",lineHeight:1}}>{fmt(Math.abs(m.netWorth))}</span>
+                <span style={{fontSize:"11px",color:MUT}}>{netWorthPositive?"net positive":"net negative"}</span>
               </div>
-            );
-          })}
-        </div>
+              <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
+                <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase"}}>Assets {fmt(m.totalAssets)}</div>
+                <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase"}}>Liabilities {fmt(m.totalLiabilities)}</div>
+                <span style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>{netWorthExpanded?"↑":"↓"}</span>
+              </div>
+            </div>
+
+            {/* Detailed breakdown (toggle) */}
+            {netWorthExpanded && (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div>
+                    {assetItems.map((a, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: a.bold ? "6px 0 5px" : "4px 0",
+                          borderBottom: `1px solid rgba(22,47,36,${a.bold ? 0.1 : 0.05})`,
+                          borderTop: a.bold ? "1px solid rgba(22,47,36,0.08)" : undefined,
+                          marginLeft: a.sub ? "10px" : undefined
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: a.bold ? "13px" : "12.5px",
+                            color: a.bold ? G : MUT,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontWeight: a.bold ? 700 : 400
+                          }}
+                        >
+                          {!a.sub && !a.bold && <span>{a.icon}</span>}
+                          {a.sub && <span style={{ fontSize: "10px", color: "rgba(22,47,36,0.3)" }}>└</span>}
+                          {a.label}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: a.bold ? "13px" : "12.5px",
+                            fontWeight: a.bold ? 700 : 600,
+                            color: a.bold ? G : TEXT
+                          }}
+                        >
+                          {fmt(a.value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    {liabilityItems.length > 0 ? (
+                      liabilityItems.map((l, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "5px 0",
+                            borderBottom: "1px solid rgba(22,47,36,0.05)"
+                          }}
+                        >
+                          <span style={{ fontSize: "13px", color: MUT, display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span>{l.icon}</span>
+                            {l.label}
+                          </span>
+                          <span style={{ fontSize: "13px", fontWeight: 600, color: "#c0392b" }}>
+                            {fmt(l.value)}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: "13px", color: MUT, padding: "5px 0" }}>
+                        No liabilities recorded 🎉
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "12px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid rgba(22,47,36,0.08)",
+                    fontSize: "11px",
+                    color: MUT,
+                    lineHeight: 1.5
+                  }}
+                >
+                  Note: Pension pot shown at current value, not projected. Property is excluded — connect your accounts via
+                  Open Banking (coming soon) for a complete picture.
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>
           Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.{" "}
