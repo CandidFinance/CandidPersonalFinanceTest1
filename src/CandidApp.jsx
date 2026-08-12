@@ -412,8 +412,13 @@ export function calcMetrics(d, marketRates = {}) {
   const hasMortgage = d.hasMortgage === "yes";
   const propertyEquity = hasMortgage ? (+d.propertyEquity || 0) : (d.ownsOutright ? (+d.outrightPropertyValue || 0) : 0);
   const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal + propertyEquity;
-  const totalLiabilities = loanBal + (hasMortgage ? (+d.mortgageBalance||0) : 0) + (d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0);
-  const netWorth = totalAssets - totalLiabilities;
+  const mortgageBalance = hasMortgage ? (+d.mortgageBalance||0) : 0;
+  const totalLiabilities = loanBal + mortgageBalance + (d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0);
+  // Net worth excludes the mortgage — propertyEquity above is already net of it (it's
+  // the equity stake the user enters, not the gross property value), so subtracting
+  // mortgageBalance again here would double-count the same debt. Mortgage still shows
+  // in totalLiabilities and the liabilities breakdown, just not in this figure.
+  const netWorth = totalAssets - (totalLiabilities - mortgageBalance);
   const propertyValue = hasMortgage ? (propertyEquity + (+d.mortgageBalance || 0)) : 0;
   const ltv = hasMortgage && propertyValue > 0 ? Math.round((+d.mortgageBalance / propertyValue) * 100) : null;
   // Pension: user has told us they don't know their pension situation —
@@ -2635,7 +2640,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
     { label:"Property equity", value: m.propertyEquity||0, icon:"🏠" },
   ].filter(a => a.value > 0);
   const liabilityItems = [
-    { label:"Mortgage", value: d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0, icon:"🏠" },
+    { label:"Mortgage", value: d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0, icon:"🏠", excludedFromNetWorth:true },
     { label:"Student loan", value: m.loanBal||0, icon:"🎓" },
     { label:"Personal loan", value: d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0, icon:"💳" },
   ].filter(l => l.value > 0);
@@ -2932,15 +2937,20 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
         {totalOpp >= 500 && (() => {
           const eq = getEquivalence(totalOpp);
           return (
-            <div className="fu1" style={{background:WHITE,border:`2px solid ${G}`,borderRadius:"14px",padding:"22px 26px",marginBottom:"20px"}}>
-              <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
-              <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
-                <span style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:G}}>{fmt(totalOpp)}</span>
-                <span style={{fontSize:"14px",color:MUT}}>you could be leaving on the table</span>
-              </div>
-              {eq && <div style={{fontSize:"12px",color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
-              <div style={{fontSize:"11px",color:MUT,marginTop:"10px",lineHeight:1.6}}>
-                Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
+            <div className="fu1" style={{background:WHITE,border:`2px solid ${G}`,borderRadius:"14px",padding:"20px 28px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"24px",flexWrap:"wrap"}}>
+              {/* Spacer matches the score card's ring width + gap so this tile's text
+                  lines up with the score card's headline text directly above it. */}
+              {!isMobile && <div style={{width:"124px",flexShrink:0}} aria-hidden="true"/>}
+              <div style={{flex:1,minWidth:"200px"}}>
+                <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
+                <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
+                  <span style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:G}}>{fmt(totalOpp)}</span>
+                  <span style={{fontSize:"14px",color:MUT}}>you could be leaving on the table</span>
+                </div>
+                {eq && <div style={{fontSize:"12px",color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
+                <div style={{fontSize:"11px",color:MUT,marginTop:"10px",lineHeight:1.6}}>
+                  Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
+                </div>
               </div>
             </div>
           );
@@ -2963,9 +2973,14 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
               if (hasRec) winNumber++;
               const tag = hasRec ? MODULE_TAG[mm.key] : null;
               const context = hasRec ? moduleContext(mm, d, m) : null;
+              // Reviewed tiles grey out a little on top of the base (no-recommendation)
+              // dimming — kept as a separate multiplier so the two states stack rather
+              // than fight each other.
+              const baseOpacity = hasRec ? 1 : 0.6;
+              const tileOpacity = reviewed ? +(baseOpacity * 0.75).toFixed(2) : baseOpacity;
               return (
                 <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
-                  style={{background:WHITE,border:`1.5px solid ${hasRec ? "rgba(22,47,36,0.14)" : "rgba(22,47,36,0.08)"}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"10px",cursor:"pointer",opacity:hasRec?1:0.6,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
+                  style={{background:reviewed?"#f6f6f4":WHITE,border:`1.5px solid ${hasRec ? "rgba(22,47,36,0.14)" : "rgba(22,47,36,0.08)"}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"10px",cursor:"pointer",opacity:tileOpacity,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
                   <div style={{display:"flex",alignItems:"flex-start",gap:"12px",minWidth:0,flex:1}}>
                     <div style={{width:"24px",height:"24px",borderRadius:"50%",background:hasRec?G:"rgba(22,47,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
                       {hasRec ? (
@@ -2974,8 +2989,10 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                         <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke={WHITE} strokeWidth="1.8" strokeLinecap="round"/></svg>
                       )}
                     </div>
+                    {/* Icon trails the title (rather than leading it) so the title and the
+                        body line below both start flush at the same left edge. */}
                     <div style={{minWidth:0}}>
-                      <div style={{fontSize:"16px",fontWeight:700,color:G,lineHeight:1.3}}>{mm.icon} {mm.title}</div>
+                      <div style={{fontSize:"16px",fontWeight:700,color:G,lineHeight:1.3}}>{mm.title} <span style={{fontSize:"14px"}}>{mm.icon}</span></div>
                       {hasRec ? (
                         <div style={{fontSize:"14px",color:TEXT,marginTop:"4px",lineHeight:1.4}}>
                           <span style={{fontWeight:700,color:G}}>{fmt(mm.amount)}{mm.amountIsLumpSum ? " by 18" : "/yr"}</span>
@@ -2986,10 +3003,11 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                       )}
                     </div>
                   </div>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
+                  {/* Tag pill always occupies the top slot; the reviewed tick sits below
+                      it in the same column so its appearance never shifts the tag. */}
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"6px",flexShrink:0}}>
                     {tag && <TagPill label={tag.label} color={tag.color}/>}
                     {hasRec && reviewed && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#2d6b4a" strokeWidth="2" strokeLinecap="round"/></svg>}
-                    {hasRec && <span style={{fontSize:"18px",color:MUT}}>›</span>}
                   </div>
                 </div>
               );
@@ -3223,6 +3241,9 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                           <span style={{ fontSize: "13px", color: MUT, display: "flex", alignItems: "center", gap: "6px" }}>
                             <span>{l.icon}</span>
                             {l.label}
+                            {l.excludedFromNetWorth && (
+                              <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.12)",padding:"1.5px 6px",borderRadius:"100px",textTransform:"uppercase",letterSpacing:"0.03em",whiteSpace:"nowrap"}}>Excl. net worth</span>
+                            )}
                           </span>
                           <span style={{ fontSize: "13px", fontWeight: 600, color: "#c0392b" }}>
                             {fmt(l.value)}
@@ -3248,7 +3269,8 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                   }}
                 >
                   Note: Pension pot shown at current value, not projected. Property is excluded — connect your accounts via
-                  Open Banking (coming soon) for a complete picture.
+                  Open Banking (coming soon) for a complete picture. Mortgage debt isn't subtracted from the net worth figure
+                  above (your property equity is already net of it) but is still included in total liabilities.
                 </div>
               </>
             )}
