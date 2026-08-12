@@ -2268,7 +2268,13 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
 
   let cashImpactLabel;
   if (tooMuchCash) {
-    cashImpactLabel = `${fmt(Math.round(m.emergencyExcess))}/yr earning below potential above buffer`;
+    // emergencyExcess is a principal (the £ sitting above the buffer), not a £/yr
+    // figure — never label it "/yr" or use it as the amount. The actual annual
+    // benefit is the same yield-gap calc used below, just called out alongside
+    // the excess for context.
+    cashImpactLabel = cashImpact > 0
+      ? `${fmt(cashImpact)}/yr in yield gap — ${fmt(Math.round(m.emergencyExcess))} of it sits above your buffer`
+      : `${fmt(Math.round(m.emergencyExcess))} sits above your buffer, earning below its potential`;
   } else if (hasBondOpportunity) {
     cashImpactLabel = `${fmt(bondsYieldGain)}/yr by switching surplus bonds to ${m.isaHeadroom > 0 ? "Cash ISA" : "a best-buy savings account"}`;
   } else if (accessLabel) {
@@ -2281,10 +2287,11 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // amount: a clean, always-£/yr figure for consumers (e.g. the PDF report) that need a
   // real monetary saving rather than `impact` (a sort-priority score — see pension below,
   // where impact includes a +99999 sentinel that must never be summed or displayed).
-  const cashAmount = tooMuchCash ? Math.round(m.emergencyExcess)
-    : hasBondOpportunity ? bondsYieldGain
+  // Note: tooMuchCash intentionally falls through to cashImpact here too — emergencyExcess
+  // is a principal, not an annual figure, and must never be used as the £/yr amount.
+  const cashAmount = hasBondOpportunity ? bondsYieldGain
     : cashImpact > 0 ? cashImpact
-    : 0; // accessLabel-only attention has no £ figure
+    : 0; // accessLabel-only attention (or a too-much-cash pile already at best rate) has no £ figure
   s.cash = {
     status: tooMuchCash || m.annualYieldGap > 800 ? "critical"
           : m.annualYieldGap > 200 || hasBondOpportunity || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
