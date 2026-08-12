@@ -4181,56 +4181,76 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           </div>
         )}
 
-        {/* ── Cash & Savings: Win tiles — mirrors the Investments module's structure.
-            Consolidates what used to be four scattered flat tiles (the runway-surplus
-            callout, the premium-bonds-surplus callout, the ISA product grid, and the
-            "other cash-like options" expandable) into three collapsible Win tiles plus
-            one non-win explainer. */}
+        {/* ── Cash & Savings: Win tiles. Deliberately NOT a straight copy of the
+            Investments pattern — the wins here are genuinely interlinked (ISA, PSA,
+            and Premium Bonds all draw from the same pot), so instead of three
+            separate wins covering ISA / rate-switching / Premium Bonds, there's one
+            multi-step "Optimise your cash" win that walks the whole allocation, plus
+            a conditional "Build your emergency fund" win when the buffer isn't met
+            yet. */}
         {moduleKey === "cash" && !isPensionUnknown && (() => {
           const psaLimit = m.taxBandLabel==="basic"?1000:m.taxBandLabel==="higher"?500:0;
-          const bondsSurplusAmt = Math.max(0, bondsVal - m.emergencyBuffer);
           // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
           const isaRateDecimal = isaRatePct != null ? +isaRatePct/100 : 0.049;
           const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
           const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct/100 : 0.045;
           const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
-          const bondsIsaPortion = Math.min(bondsSurplusAmt, m.isaHeadroom);
-          const bondsNonIsaPortion = Math.max(0, bondsSurplusAmt - m.isaHeadroom);
-          const bondsNonIsaGain = bondsNonIsaPortion * (nonIsaRateDecimal - 0.044);
-          const bondsExcessNotWorthMoving = bondsNonIsaGain < 0;
-          const bondsAnnualGain = Math.round(bondsIsaPortion * (isaRateDecimal - 0.044) + Math.max(0, bondsNonIsaGain));
-          const bondsFitsEntirelyInIsa = bondsNonIsaPortion <= 0;
-          const hasBondsOpportunity = bondsSurplusAmt >= 1000 && bondsAnnualGain > 0;
+          // NS&I's long-run prize-fund average — the same figure used everywhere else
+          // in this file for Premium Bonds' effective tax-free return.
+          const PB_RATE = 0.044;
 
-          const cashSplit = splitByIsaHeadroom(surplus, m.isaHeadroom, nonIsaRatePct, m.savingsRate);
+          const displayTiers = [
+            ...((Array.isArray(d.cashTiers) && d.cashTiers.some(t => +t.amount > 0))
+              ? d.cashTiers.filter(t => +t.amount > 0).map(t => ({ amount:+t.amount||0, rate:+t.rate||0, isPb:false }))
+              : (m.cash > 0 ? [{ amount:m.cash, rate:m.savingsRate, isPb:false }] : [])),
+            ...(bondsVal > 0 ? [{ amount:bondsVal, rate:PB_RATE*100, isPb:true }] : []),
+          ];
 
-          const currentInterest = Math.round(m.cash * m.savingsRate / 100);
-          const potentialInterest = currentInterest + Math.round(m.annualYieldGap);
-          const bestBlendedRate = m.cash > 0 ? (m.savingsRate + m.annualYieldGap / m.cash * 100) : m.savingsRate;
+          const currentTaxableInterest = Math.round(m.cash * m.savingsRate / 100);
+          const currentPbInterest = Math.round(bondsVal * PB_RATE);
+          const currentTaxCost = Math.round(Math.max(0, currentTaxableInterest - psaLimit) * m.tr);
+          const currentAfterTaxTotal = currentTaxableInterest - currentTaxCost + currentPbInterest;
 
-          // Step-out for Win 2: what each pot earns today, then the ISA/non-ISA split
-          // of the WHOLE cash balance (not just the surplus — that's Win 1's job).
-          const displayTiers = (Array.isArray(d.cashTiers) && d.cashTiers.some(t => +t.amount > 0))
-            ? d.cashTiers.filter(t => +t.amount > 0)
-            : (m.cash > 0 ? [{ amount: m.cash, rate: m.savingsRate }] : []);
-          const wholeCashSplit = splitByIsaHeadroom(m.cash, m.isaHeadroom, nonIsaRatePct, m.savingsRate);
-          const isaPortionInterest = Math.round(wholeCashSplit.isaPortion * isaRateDecimal);
-          const nonIsaPortionRateUsed = wholeCashSplit.nonIsaWorthMoving ? nonIsaRateDecimal : m.savingsRate/100;
-          const nonIsaPortionInterest = Math.round(wholeCashSplit.nonIsaPortion * nonIsaPortionRateUsed);
-          const splitTotalInterest = isaPortionInterest + nonIsaPortionInterest;
-          const splitGain = splitTotalInterest - currentInterest;
+          // The full reallocation pot — cash (already outside any ISA) plus premium
+          // bonds. Deliberately the WHOLE amount, not just the surplus above the
+          // buffer: ISAs and Premium Bonds are both easy/near-instant access, so
+          // there's no liquidity reason to exclude the buffer portion from this.
+          const totalPot = m.cash + bondsVal;
+          const step1Isa = Math.min(totalPot, m.isaHeadroom);
+          const step1IsaInterest = Math.round(step1Isa * isaRateDecimal);
+          let afterStep1 = totalPot - step1Isa;
+          // Only worth filling the PSA with ordinary savings if the best available
+          // non-ISA rate actually beats the Premium Bonds average — otherwise the
+          // "tax-free" comparison is a wash and Premium Bonds are simply better.
+          const savingsWorthIt = nonIsaRateDecimal > PB_RATE;
+          const step2Savings = savingsWorthIt ? Math.min(afterStep1, psaLimit / nonIsaRateDecimal) : 0;
+          const step2SavingsInterest = Math.round(step2Savings * nonIsaRateDecimal);
+          let afterStep2 = afterStep1 - step2Savings;
+          const step3Pb = Math.min(afterStep2, 50000);
+          const step3PbInterest = Math.round(step3Pb * PB_RATE);
+          const beyondWrappers = Math.max(0, afterStep2 - step3Pb);
+          const optimisedTotal = step1IsaInterest + step2SavingsInterest + step3PbInterest;
+          const optimisationGain = optimisedTotal - currentAfterTaxTotal;
 
-          // A separate, genuinely different list from Win 1's Cash ISA grid below —
-          // non-ISA rows, for the buffer amount rather than the ISA-eligible surplus.
+          const nearTaperZone = m.adjustedNetIncome >= 100000 && m.adjustedNetIncome < 125140;
+
+          // A separate, genuinely different list from the Cash ISA grid below — non-ISA
+          // rows, for the portion of the pot that doesn't fit in the ISA.
           const nonIsaProducts = (savingsRates||[])
             .filter(r => r.is_isa === false)
             .sort((a,b) => +b.rate_aer - +a.rate_aer)
             .slice(0, 4)
             .map((r,i) => ({ name:r.provider_name, type:r.account_type, rate:`${r.rate_aer}% AER`, badge:i===0?"Highest rate":"", highlight:i===0, cta:"View account", appIcon:"🏦", productUrl:r.product_url }));
 
+          const showEmergencyWin = m.emergencyShortfall > 0;
+          const monthsToCloseGap = m.monthlySurplus > 0 ? Math.ceil(m.emergencyShortfall / m.monthlySurplus) : null;
+          let winCounter = 0;
+          const emergencyWinNumber = showEmergencyWin ? ++winCounter : null;
+          const optimiseWinNumber = ++winCounter;
+
           const opportunityCols = [];
-          if (m.annualYieldGap > 50) opportunityCols.push({ label:"Yield gap on your cash", value:`${fmt(Math.round(m.annualYieldGap))}/yr`, sub:"by switching to the best available rate" });
-          if (hasBondsOpportunity) opportunityCols.push({ label:"Premium bonds surplus opportunity", value:`${fmt(bondsAnnualGain)}/yr`, sub:"moving surplus bonds into an ISA" });
+          if (showEmergencyWin) opportunityCols.push({ label:"Emergency fund shortfall", value:fmt(m.emergencyShortfall), sub:`to reach your ${m.bufferMonths}-month target` });
+          if (optimisationGain > 50) opportunityCols.push({ label:"Tax-efficiency gain available", value:`${fmt(optimisationGain)}/yr`, sub:"by reordering into ISA → PSA → Premium Bonds" });
 
           return (
             <div className="fu4">
@@ -4250,178 +4270,154 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </div>
               )}
 
-              <ExpandableInvestmentItem
-                number={1}
-                title="Move cash above your buffer into an ISA"
-                headline={m.isaHeadroom > 0 ? `${fmt(m.isaHeadroom)} of ISA allowance remaining` : "Your ISA allowance is fully used this tax year."}
-                tag={{ label:"Future opportunity", color:"#2d6b4a" }}
-              >
-                <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                  Interest earned inside a Cash ISA is completely free of tax, for life. Outside one, interest above your Personal Savings Allowance — {psaLimit > 0 ? `${fmt(psaLimit)}/yr for a ${m.taxBandLabel}-rate taxpayer` : "£0, since additional-rate taxpayers get none"} — is taxed at your marginal rate. Every £ you shelter also uses up your £20,000-a-year ISA allowance, which resets each 6 April and can't be carried forward — so it's worth using deliberately, not leaving idle.
-                </p>
-
-                {surplus > 0 && (
-                  <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                      <span style={{fontSize:"16px"}}>💷</span>
-                      <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Move your surplus cash</span>
-                    </div>
-                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7}}>
-                      You're holding {fmt(surplus)} above your {m.bufferMonths}-month buffer.{" "}
-                      {cashSplit.fitsEntirelyInIsa
-                        ? `All of it fits within your ${fmt(m.isaHeadroom)} of remaining ISA allowance this tax year.`
-                        : cashSplit.nonIsaWorthMoving
-                          ? `${fmt(cashSplit.isaPortion)} fits within your remaining ISA allowance; the other ${fmt(cashSplit.nonIsaPortion)} is still worth moving to a top non-ISA account — see Win 2 below.`
-                          : `${fmt(cashSplit.isaPortion)} fits within your remaining ISA allowance; the other ${fmt(cashSplit.nonIsaPortion)} doesn't currently beat your existing rate anywhere else, so it's fine left as-is for now.`
-                      }
-                    </p>
-                  </div>
-                )}
-
-                {bondsVal > 0 && hasBondsOpportunity && (
-                  <div style={{background:"rgba(196,150,58,0.06)",border:`1px solid ${GOLD}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
-                      <span style={{fontSize:"16px"}}>💰</span>
-                      <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Your premium bonds surplus</span>
-                    </div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"12px"}}>
-                      <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
-                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Bonds surplus</div>
-                        <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700}}>{fmt(bondsSurplusAmt)}</div>
-                        <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>above buffer</div>
-                      </div>
-                      <div style={{background:"rgba(255,255,255,0.7)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
-                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Prize draw equiv.</div>
-                        <div style={{fontFamily:SERIF,fontSize:"17px",color:GOLD,fontWeight:700}}>~4.4%</div>
-                        <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax-free avg.</div>
-                      </div>
-                      <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",textAlign:"center"}}>
-                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Best Cash ISA</div>
-                        <div style={{fontFamily:SERIF,fontSize:"17px",color:"#2d6b4a",fontWeight:700}}>{isaRateDisplay}</div>
-                        <div style={{fontSize:"10px",color:"#2d6b4a",marginTop:"2px"}}>guaranteed</div>
-                      </div>
-                    </div>
-                    <div style={{background:"rgba(45,107,74,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
-                      {bondsFitsEntirelyInIsa
-                        ? <>Moving {fmt(bondsSurplusAmt)} of surplus bonds to a {isaRateDisplay} Cash ISA would earn <strong>{fmt(bondsAnnualGain)}/yr more</strong> — a guaranteed return vs the bond prize draw average.</>
-                        : bondsExcessNotWorthMoving
-                          ? <>Only {fmt(bondsIsaPortion)} fits your remaining ISA allowance — moving that would earn <strong>{fmt(bondsAnnualGain)}/yr more</strong>. The rest doesn't currently beat the bond average anywhere else.</>
-                          : <>Splitting it — {fmt(bondsIsaPortion)} into a {isaRateDisplay} Cash ISA and {fmt(bondsNonIsaPortion)} into a {nonIsaRateDisplay} non-ISA account — would earn <strong>{fmt(bondsAnnualGain)}/yr more</strong> combined.</>
-                      } Premium bonds are penalty-free to withdraw; this is a personal risk decision between a guaranteed return and the chance of tax-free prizes.
-                    </div>
-                  </div>
-                )}
-
-                <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>{products.heading}</div>
-                <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
-                  {products.products.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
-                </div>
-                {products.disclaimer && <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>{products.disclaimer}</p>}
-              </ExpandableInvestmentItem>
-
-              <ExpandableInvestmentItem
-                number={2}
-                title="Move your buffer into a higher-earning account"
-                headline={m.annualYieldGap > 50 ? `${fmt(Math.round(m.annualYieldGap))}/yr more available at today's best rate` : "You're already earning a competitive rate."}
-                tag={{ label:"Today", color:GOLD }}
-              >
-                <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                  A single headline rate rarely tells the whole story — what you actually earn is a blend across every account you hold. Here's that worked through step by step, so you can check it yourself.
-                </p>
-
-                {displayTiers.length > 0 && (
-                  <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Your accounts today</div>
-                    <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"10px"}}>
-                      {displayTiers.map((t,i) => (
-                        <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
-                          <span>Account {i+1} — {fmt(+t.amount||0)} at {(+t.rate||0).toFixed(2)}%</span>
-                          <span style={{fontWeight:600}}>{fmt(Math.round((+t.amount||0) * (+t.rate||0) / 100))}/yr</span>
-                        </div>
-                      ))}
-                      <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)",fontWeight:700}}>
-                        <span>Total — {fmt(m.cash)} blended at {m.savingsRate.toFixed(2)}%</span>
-                        <span>{fmt(currentInterest)}/yr</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>Step 1 — move it all to the single best rate</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"16px"}}>
-                  <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px"}}>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>Now — {m.savingsRate.toFixed(2)}%</div>
-                    <div style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700}}>{fmt(currentInterest)}/yr</div>
-                  </div>
-                  <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"10px",padding:"14px 16px"}}>
-                    <div style={{fontSize:"10px",color:"#2d6b4a",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>At the best available rate — {bestBlendedRate.toFixed(2)}%</div>
-                    <div style={{fontFamily:SERIF,fontSize:"20px",color:"#2d6b4a",fontWeight:700}}>{fmt(potentialInterest)}/yr</div>
-                  </div>
-                </div>
-                {m.annualYieldGap > 50 && (
-                  <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"16px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                    Switching closes the gap: <strong>{fmt(Math.round(m.annualYieldGap))}/yr more</strong>, guaranteed — not a market forecast.
-                  </div>
-                )}
-
-                <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>Step 2 — split between an ISA and a normal account</div>
-                <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
-                  <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"10px"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
-                      <span>{fmt(wholeCashSplit.isaPortion)} into a Cash ISA at {isaRateDisplay}</span>
-                      <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(isaPortionInterest)}/yr</span>
-                    </div>
-                    {wholeCashSplit.nonIsaPortion > 0 && (
-                      <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
-                        <span>{fmt(wholeCashSplit.nonIsaPortion)} {wholeCashSplit.nonIsaWorthMoving ? `into a non-ISA account at ${nonIsaRateDisplay}` : "left where it is — already competitive"}</span>
-                        <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(nonIsaPortionInterest)}/yr</span>
-                      </div>
-                    )}
-                    <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)",fontWeight:700}}>
-                      <span>Combined total</span>
-                      <span>{fmt(splitTotalInterest)}/yr</span>
-                    </div>
-                  </div>
-                  <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                    {splitGain > 0
-                      ? <>That's <strong>{fmt(splitGain)}/yr more</strong> than your current {fmt(currentInterest)}/yr — and the ISA portion is tax-free for life, on top of the extra interest.</>
-                      : <>You're already close to optimal here — the gain from splitting like this is minimal.</>
-                    }
-                  </div>
-                </div>
-
-                {nonIsaProducts.length > 0 && (
-                  <>
-                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Best non-ISA easy-access accounts</div>
-                    <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
-                      {nonIsaProducts.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
-                    </div>
-                  </>
-                )}
-                <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>Rates change frequently — always confirm the current rate directly with the provider before moving money. Any portion above your ISA allowance may be taxable interest.</p>
-              </ExpandableInvestmentItem>
-
-              {bondsVal === 0 && (
+              {showEmergencyWin && (
                 <ExpandableInvestmentItem
-                  number={3}
-                  title="Consider Premium Bonds"
-                  headline="A tax-free, lottery-style alternative to a savings account"
-                  tag={{ label:"Worth exploring", color:MUT }}
+                  number={emergencyWinNumber}
+                  title="Build your emergency fund"
+                  headline={`${fmt(m.emergencyShortfall)} more needed to reach your ${m.bufferMonths}-month target`}
+                  tag={{ label:"Priority", color:"#c0392b" }}
                 >
                   <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
-                    Premium Bonds (via NS&amp;I, backed directly by HM Treasury) don't pay interest — instead, every £1 bond is entered into a monthly prize draw, with prizes from £25 up to £1 million. Nothing is guaranteed in any given month, but averaged out, the prize fund currently pays out the equivalent of <strong>~4.4% a year, entirely tax-free</strong>.
+                    You currently hold {fmt(m.totalLiquid)} against a {fmt(m.emergencyBuffer)} target ({m.bufferMonths} months of expenses) — a {fmt(m.emergencyShortfall)} gap. This comes before any tax-efficiency optimisation below: a real buffer protects you from having to sell investments or borrow at a bad time.
                   </p>
-                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
-                    That tax-free status matters most if you're a {m.taxBandLabel}-rate taxpayer: your Personal Savings Allowance is {psaLimit > 0 ? `${fmt(psaLimit)}/yr` : "£0 — every penny of ordinary savings interest is taxable for you"}, so a normal savings account's interest above that is taxed at your marginal rate, while Premium Bonds winnings never are.
-                  </p>
-                  <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"12px"}}>
-                    <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:0}}>Minimum £25, maximum £50,000 holding. Fully accessible — cash out penalty-free any time, typically within a few working days. The trade-off is no guaranteed return: you could win nothing at all in a given year.</p>
-                  </div>
-                  {surplus > 0 && (
-                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.7}}>Some savers use part of their surplus above their emergency buffer — up to the £50,000 max — as a tax-free alternative or complement to a Cash ISA, especially once their ISA allowance is used elsewhere.</p>
+                  {monthsToCloseGap && (
+                    <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                      At your current surplus of ~{fmt(Math.round(m.monthlySurplus))}/month, putting all of it aside would close this gap in <strong>~{monthsToCloseGap} month{monthsToCloseGap===1?"":"s"}</strong>.
+                    </div>
                   )}
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7}}>Keep it somewhere instant-access while you build it up — see "Optimise your cash" below for the best rate available right now on whatever you're building it in.</p>
                 </ExpandableInvestmentItem>
               )}
+
+              <ExpandableInvestmentItem
+                number={optimiseWinNumber}
+                title="Optimise your cash"
+                headline={totalPot <= 0 ? "Add your cash and savings details to see this" : optimisationGain > 50 ? `${fmt(optimisationGain)}/yr more, tax-efficiently` : "Your cash is already well-placed for tax."}
+                tag={{ label:"Today", color:GOLD }}
+              >
+                {totalPot > 0 ? (
+                  <>
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
+                      You're a {m.taxBandLabel}-rate taxpayer, which gives you {psaLimit > 0 ? `a ${fmt(psaLimit)}/yr Personal Savings Allowance` : "no Personal Savings Allowance"} — interest above that is taxed at your marginal rate. The most tax-efficient order for cash-like savings is almost always: fill your ISA first (always tax-free), then fill ordinary savings up to your allowance, then Premium Bonds for the rest — worked through below for your {fmt(totalPot)}.
+                    </p>
+
+                    <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
+                      <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Your accounts today</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"10px"}}>
+                        {displayTiers.map((t,i) => (
+                          <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
+                            <span>{t.isPb ? "Premium Bonds" : `Account ${i+1}`} — {fmt(t.amount)} at {t.rate.toFixed(2)}%{t.isPb ? " (tax-free avg.)" : ""}</span>
+                            <span style={{fontWeight:600}}>{fmt(Math.round(t.amount * t.rate / 100))}/yr</span>
+                          </div>
+                        ))}
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)",fontWeight:700}}>
+                          <span>Total, after tax</span>
+                          <span>{fmt(currentAfterTaxTotal)}/yr</span>
+                        </div>
+                      </div>
+                      {currentTaxCost > 0 && (
+                        <div style={{background:"rgba(192,57,43,0.06)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                          You're currently paying an estimated <strong>{fmt(currentTaxCost)}/yr</strong> in tax on interest above your {fmt(psaLimit)} Personal Savings Allowance.
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>Your optimised allocation</div>
+                    <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
+                      <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"10px"}}>
+                        {step1Isa > 0 && (
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
+                            <span><strong>Step 1</strong> — {fmt(step1Isa)} into a Cash ISA at {isaRateDisplay}</span>
+                            <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span>
+                          </div>
+                        )}
+                        {step2Savings > 0 && (
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
+                            <span><strong>Step 2</strong> — {fmt(step2Savings)} into savings at {nonIsaRateDisplay}, up to your {fmt(psaLimit)} allowance</span>
+                            <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(step2SavingsInterest)}/yr</span>
+                          </div>
+                        )}
+                        {step3Pb > 0 && (
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
+                            <span><strong>Step 3</strong> — {fmt(step3Pb)} in Premium Bonds at ~4.4% (tax-free avg.)</span>
+                            <span style={{fontWeight:600,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span>
+                          </div>
+                        )}
+                        {beyondWrappers > 0 && (
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}>
+                            <span><strong>Step 4</strong> — {fmt(beyondWrappers)} doesn't fit any tax-efficient cash wrapper — see below</span>
+                            <span style={{fontWeight:600,color:MUT}}>—</span>
+                          </div>
+                        )}
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)",fontWeight:700}}>
+                          <span>Total</span>
+                          <span>{fmt(optimisedTotal)}/yr</span>
+                        </div>
+                      </div>
+                      <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                        {optimisationGain > 0
+                          ? <>That's <strong>{fmt(optimisationGain)}/yr more</strong> than your current {fmt(currentAfterTaxTotal)}/yr after tax{currentTaxCost > 0 ? <> — including the {fmt(currentTaxCost)}/yr you're currently losing to tax</> : ""}, and every penny of it is tax-free or within your allowances.</>
+                          : <>Your cash is already well-placed — there's little to gain from reordering it further right now.</>
+                        }
+                      </div>
+                    </div>
+
+                    {step1Isa > 0 && products.products.length > 0 && (
+                      <>
+                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>{products.heading}</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
+                          {products.products.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
+                        </div>
+                      </>
+                    )}
+                    {step2Savings > 0 && nonIsaProducts.length > 0 && (
+                      <>
+                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Best non-ISA easy-access accounts</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
+                          {nonIsaProducts.map((p,i) => <ProductCard key={i} p={p} onInternalLink={onOpenModule}/>)}
+                        </div>
+                      </>
+                    )}
+                    {step3Pb > 0 && bondsVal === 0 && (
+                      <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
+                        <strong>New to Premium Bonds?</strong> They're via NS&amp;I, backed directly by HM Treasury, and don't pay interest — instead every £1 bond is entered into a monthly prize draw, with prizes from £25 up to £1 million. Nothing is guaranteed in any single month, but averaged out, the prize fund pays the equivalent of ~4.4% a year, entirely tax-free. Minimum £25, maximum £50,000 holding, and penalty-free to cash out any time.
+                      </div>
+                    )}
+                    <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>Rates change frequently — always confirm the current rate directly with the provider before moving money. Premium Bonds pay no guaranteed return; the ~4.4% is a long-run average, not a promise.</p>
+
+                    {beyondWrappers > 500 && (
+                      <div style={{marginTop:"8px"}}>
+                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Beyond ISA, PSA and Premium Bonds — {fmt(beyondWrappers)} left over</div>
+                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,marginBottom:"12px"}}>Once all three cash wrappers are full, holding still more as cash rarely makes sense — from here, two options are worth weighing up:</p>
+                        <div onClick={() => onOpenModule("investments")} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"14px 16px",background:"rgba(22,47,36,0.04)",borderRadius:"10px",cursor:"pointer",marginBottom:"8px"}}>
+                          <span style={{fontSize:"16px",flexShrink:0}}>📈</span>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>Invest it (a General Investment Account)</div>
+                            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>Over the long term, capital growth taxed at CGT rates (18%/24%, with a £3,000 annual exempt amount) often comes out ahead of interest taxed at your full {Math.round(m.tr*100)}% marginal rate — and equities have historically outgrown cash over long periods. But this is genuinely higher risk: you could lose money, and it only suits cash you won't need for several years. Consider your objectives and time horizon before moving anything.</p>
+                          </div>
+                          <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>Investments →</span>
+                        </div>
+                        <div onClick={() => onOpenModule("pension")} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"14px 16px",background:"rgba(22,47,36,0.04)",borderRadius:"10px",cursor:"pointer"}}>
+                          <span style={{fontSize:"16px",flexShrink:0}}>🏦</span>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>Contribute to your pension</div>
+                            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>
+                              A pension contribution gets tax relief at your marginal rate — {Math.round(m.tr*100)}% for a {m.taxBandLabel}-rate taxpayer — though if it's not made via salary sacrifice or net pay, you may need to claim the higher-rate portion back via self-assessment.
+                              {nearTaperZone
+                                ? ` This matters even more for you: between £100,000 and £125,140 of adjusted net income you lose £1 of your tax-free Personal Allowance for every £2 earned — an effective 60% marginal rate in that band. A pension contribution that brings your adjusted net income back under £100,000 restores it.`
+                                : ` If your income ever moves into the £100,000–£125,140 band, this becomes especially powerful — the Personal Allowance taper there creates an effective 60% marginal rate, which a pension contribution can undo.`
+                              }
+                            </p>
+                          </div>
+                          <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>Pension →</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>Add your cash savings and any Premium Bonds in your onboarding details to see a personalised, tax-efficient allocation.</p>
+                )}
+              </ExpandableInvestmentItem>
 
               {showRunwayCallout && (
                 <div className="fu2" style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"18px 20px",marginBottom:"20px"}}>
