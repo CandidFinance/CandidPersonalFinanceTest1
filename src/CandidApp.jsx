@@ -2149,9 +2149,12 @@ function moduleContext(mm, d, m) {
       // computeModuleStatuses — ISA headroom is no longer part of that figure).
       return "CGT tax saving available";
     case "pension":
+      // Only shown when mm.amount > 0 — bonus sacrifice saving is potential upside
+      // (see computeModuleStatuses) and is never part of that figure, so the only
+      // way to reach this last line is a Personal Allowance taper opportunity.
       if (!isPensionContributing(d)) return "no pension — tax relief foregone";
       if (m.missedMatch > 0) return "missed employer match";
-      return "bonus sacrifice saving";
+      return "Personal Allowance recovery";
     case "studentLoan":
       return mm.impactLabel ? mm.impactLabel.replace(/^£[\d,]+(?:\.\d+)?(?:\/yr)?,?\s*/, "") : null;
     case "mortgage":
@@ -2414,28 +2417,33 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     amount: m.cgtSaving > 0 ? m.cgtSaving : 0,
   };
 
-// Pension — missed match + contribution check + Personal Allowance taper +
-// bonus sacrifice, summed together (via calcPensionTaperSaving, the same
-// shared taper calc the module's own opportunity strip uses) so this figure
-// can't silently drift from the in-module "Your opportunity right now" total.
+// Pension — missed match + contribution check + Personal Allowance taper are
+// DEFINITIVE (based on current, confirmed salary/contributions, via
+// calcPensionTaperSaving, the same shared taper calc the module's own
+// opportunity strip uses). Bonus sacrifice saving is POTENTIAL upside — it
+// depends on actually receiving the stated bonus, which may not have landed
+// yet — so it's kept out of `amount` (mirrors Investments excluding ISA
+// headroom from its definitive total) and exposed separately as
+// `potentialAmount` for the module's own "+ up to £X" signal.
 const contributing = isPensionContributing(d);
 const bonusSacrificeOpportunity = (+d.bonusAmount||0) * m.tr;
 const pensionTaper = calcPensionTaperSaving(m);
 const pensionTaperAmount = pensionTaper.inTaper ? pensionTaper.taperTotalSaving : 0;
 // "Not contributing" and "missed employer match" are mutually exclusive (the
-// latter only applies once you're contributing) — taper and bonus sacrifice
-// are independent opportunities that can stack on top of either.
+// latter only applies once you're contributing) — taper is an independent
+// opportunity that can stack on top of either.
 const pensionPrimaryAmount = !contributing ? Math.round(m.salary * 0.05 * m.tr) : m.missedMatch;
-const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount + bonusSacrificeOpportunity);
-const pensionImpact = !contributing
-  ? pensionAmount + 99999 // not contributing = highest priority sentinel
-  : pensionAmount;
+const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount); // definitive only
+const pensionPotentialAmount = Math.round(bonusSacrificeOpportunity); // potential — not in amount
+// Sort priority still weighs the potential upside too, so a large bonus-sacrifice
+// opportunity isn't buried in the module ordering just because it's not "definitive".
+const pensionImpact = (!contributing ? pensionAmount + 99999 : pensionAmount) + pensionPotentialAmount;
 const pensionLabelParts = [
   !contributing
     ? `No pension — ${fmt(pensionPrimaryAmount)}/yr tax relief foregone`
     : m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr missed employer match` : null,
   pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr Personal Allowance recovery` : null,
-  bonusSacrificeOpportunity > 0 ? `up to ${fmt(Math.round(bonusSacrificeOpportunity))} bonus sacrifice saving` : null,
+  pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} bonus sacrifice saving` : null,
 ].filter(Boolean);
 
 s.pension = m.pensionStatus === "unknown" ? {
@@ -2445,12 +2453,14 @@ s.pension = m.pensionStatus === "unknown" ? {
   impact: 0,
   impactLabel: null,
   amount: 0,
+  potentialAmount: 0,
 } : {
   // Only "critical" when genuinely missing match or not contributing at all
   status: !contributing ? "critical" : m.missedMatch > 0 ? "critical" : "attention",
   impact: pensionImpact,
   impactLabel: pensionLabelParts.join(" + ") || null,
   amount: pensionAmount,
+  potentialAmount: pensionPotentialAmount,
 };
 
   // Student loan — calcStudentLoanScenario is the single source of truth, shared
@@ -4040,25 +4050,26 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const win2Num = showSacrificeCalc ? ++winCounter : null;
           const win3Num = hasStatedBonus ? ++winCounter : null;
 
-          // ── Opportunity strip — consolidated into one total figure below, with
-          // a breakdown line rather than separate side-by-side £ columns. The total
-          // itself is statuses.pension.amount (the same figure computeModuleStatuses
-          // gives the Dashboard's module-breakdown tile) rather than a fresh sum here
-          // — oppCols below is built with identical logic purely to label the
-          // breakdown text, but the displayed total can't drift from the Dashboard's. ──
-          const oppCols = [];
+          // ── Opportunity strip — definitive £/yr total (missed match/tax relief
+          // foregone + Personal Allowance taper recovery) as the headline, with
+          // bonus sacrifice saving broken out as a separate "potential upside" line
+          // rather than folded into the total: unlike missed match/taper (based on
+          // your current, confirmed salary), the bonus figure depends on actually
+          // receiving the stated bonus — same principle as Investments excluding
+          // ISA headroom from its definitive total. The definitive total is
+          // statuses.pension.amount (the same figure the Dashboard's module-
+          // breakdown tile shows), not a fresh sum here, so the two can't drift. ──
+          const definitiveCols = [];
           if (!contributing) {
-            oppCols.push({ label:"Tax relief foregone", amount: Math.round(m.salary*0.05*m.tr) });
+            definitiveCols.push({ label:"Tax relief foregone", amount: Math.round(m.salary*0.05*m.tr) });
           } else if (m.missedMatch > 0) {
-            oppCols.push({ label:"Missed employer match", amount: m.missedMatch });
+            definitiveCols.push({ label:"Missed employer match", amount: m.missedMatch });
           }
           if (inTaper && taperTotalSaving > 0) {
-            oppCols.push({ label:"Personal Allowance recoverable", amount: taperTotalSaving });
-          }
-          if (hasStatedBonus) {
-            oppCols.push({ label:"Bonus sacrifice saving", amount: Math.round(statedBonus*m.tr) });
+            definitiveCols.push({ label:"Personal Allowance recoverable", amount: taperTotalSaving });
           }
           const totalOpp = statuses.pension.amount;
+          const bonusPotential = hasStatedBonus ? Math.round(statedBonus*m.tr) : 0;
 
           // ── Growth trajectory chart data (unchanged maths, now inside the info tile) ──
           const salary = m.salary, potVal = +d.potValue||0;
@@ -4113,13 +4124,24 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
           return (
             <>
-              {oppCols.length > 0 && (
+              {(definitiveCols.length > 0 || bonusPotential > 0) && (
                 <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
                   <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
-                  <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
-                  <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>
-                    {oppCols.map(c => `${c.label} (${fmt(c.amount)})`).join(" + ")}
-                  </div>
+                  {totalOpp > 0 ? (
+                    <>
+                      <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
+                      <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>
+                        {definitiveCols.map(c => `${c.label} (${fmt(c.amount)})`).join(" + ")}
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{fontSize:"14px",color:"rgba(255,255,255,0.85)",fontWeight:600}}>No confirmed opportunity right now</div>
+                  )}
+                  {bonusPotential > 0 && (
+                    <div style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"10px"}}>
+                      + up to {fmt(bonusPotential)}/yr more if you sacrifice your {fmt(statedBonus)} bonus once it lands
+                    </div>
+                  )}
                   <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below to act on these.</p>
                 </div>
               )}
