@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from "react"
 import ReactDOM from "react-dom/client"
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import posthog from "posthog-js"
 import CandidApp from "./CandidApp.jsx"
 
@@ -10,7 +11,10 @@ if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
   posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
     api_host: "https://eu.i.posthog.com",
     person_profiles: "identified_only",
-    capture_pageview: true,
+    // "history_change" (rather than the default one-shot `true`) tracks each
+    // client-side route change as its own pageview now that Homepage/Assessment/
+    // Dashboard/Modules are real routes instead of one static page.
+    capture_pageview: "history_change",
     capture_pageleave: true,
     autocapture: false,
   })
@@ -355,16 +359,18 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
   );
 }
 
-// ── Root ──────────────────────────────────────────────────────────────────────
-function Root() {
+// ── Home route (landing page, or "welcome back" for a returning user) ─────────
+function Home() {
+  const navigate = useNavigate();
+
+  // A TrueLayer bank-connect redirect always lands here with ?truelayer=... (the
+  // API callback redirects to the site root, not into the app). Forward straight
+  // into the assessment's Cash & savings step (route 5) with the query string
+  // intact, so CandidApp's own mount effect — unchanged — can still read and
+  // process it there instead of it being stranded on a route that never mounts it.
+  const trueLayerParam = new URLSearchParams(window.location.search).get('truelayer');
+
   const [view, setView] = useState(() => {
-    // A TrueLayer bank-connect redirect lands here with ?truelayer=... — CandidApp
-    // only mounts (and only then can its own effect read that param, fetch the
-    // session data, and jump to Cash & savings) once view is "onboarding"/"dashboard".
-    // Without this check, a mid-onboarding user (inputs saved, no insights yet)
-    // would fall through to the landing view below and CandidApp would never mount
-    // until they manually clicked back in.
-    if (new URLSearchParams(window.location.search).get('truelayer')) return 'onboarding';
     try {
       const hasSavedInputs = !!localStorage.getItem('candid_inputs');
       const hasSavedInsights = !!localStorage.getItem('candid_insights');
@@ -375,70 +381,98 @@ function Root() {
 
   function handleStart() {
     posthog.capture("app_started")
-    setView("onboarding")
+    navigate("/assessment/1")
     window.scrollTo({ top: 0, behavior: "instant" })
   }
 
-  function goHome() {
-    setView("landing");
-    window.scrollTo({ top: 0, behavior: "instant" });
+  if (trueLayerParam) {
+    return <Navigate to={`/assessment/5${window.location.search}`} replace />;
   }
 
-  // Bumped whenever the dev panel loads a preset, forcing CandidApp to remount
-  // (via its `key`) so it re-reads the freshly-written localStorage instead of
-  // keeping its already-initialized `d`/`insights` state.
+  if (view === "welcome_back") {
+    return (
+      <WelcomeBack
+        name={(() => { try { const s = localStorage.getItem('candid_inputs'); return s ? JSON.parse(s).name || "" : ""; } catch(e) { return ""; } })()}
+        insightsDate={(() => { try { return localStorage.getItem('candid_insights_date'); } catch(e) { return null; } })()}
+        onViewReport={() => { navigate("/dashboard"); window.scrollTo({ top:0, behavior:"instant" }); }}
+        onUpdateInputs={() => {
+          try { localStorage.removeItem('candid_insights'); localStorage.removeItem('candid_insights_date'); } catch(e) {}
+          navigate("/assessment/1");
+          window.scrollTo({ top:0, behavior:"instant" });
+        }}
+        onStartFresh={() => {
+          try {
+            localStorage.removeItem('candid_inputs');
+            localStorage.removeItem('candid_insights');
+            localStorage.removeItem('candid_insights_date');
+          } catch(e) {}
+          setView("landing");
+          window.scrollTo({ top:0, behavior:"instant" });
+        }}
+      />
+    );
+  }
+
+  return <LandingPage onStart={handleStart} />;
+}
+
+// Wraps CandidApp with the scroll-target id its own "jump to top on module
+// open" logic looks for (document.getElementById("candid-app")).
+function CandidAppLayout() {
+  return (
+    <div id="candid-app" style={{ minHeight: "100vh" }}>
+      <CandidApp />
+    </div>
+  );
+}
+
+// ── Routes ────────────────────────────────────────────────────────────────────
+function AppRoutes() {
+  const navigate = useNavigate();
+
+  // Bumped whenever the dev panel loads a preset, forcing CandidAppLayout (and
+  // the CandidApp instance inside it) to remount via its `key` so it re-reads
+  // the freshly-written localStorage instead of keeping its already-initialized
+  // `d`/`insights` state.
   const [devReloadKey, setDevReloadKey] = useState(0);
   function handleDevPresetLoaded() {
     setDevReloadKey(k => k + 1);
-    setView("dashboard");
+    navigate("/dashboard");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
   return (
-    <div>
-      {view === "landing" && <LandingPage onStart={handleStart} />}
-
-      {view === "welcome_back" && (
-        <WelcomeBack
-          name={(() => { try { const s = localStorage.getItem('candid_inputs'); return s ? JSON.parse(s).name || "" : ""; } catch(e) { return ""; } })()}
-          insightsDate={(() => { try { return localStorage.getItem('candid_insights_date'); } catch(e) { return null; } })()}
-          onViewReport={() => { setView("dashboard"); window.scrollTo({ top:0, behavior:"instant" }); }}
-          onUpdateInputs={() => {
-            try { localStorage.removeItem('candid_insights'); localStorage.removeItem('candid_insights_date'); } catch(e) {}
-            setView("onboarding");
-            window.scrollTo({ top:0, behavior:"instant" });
-          }}
-          onStartFresh={() => {
-            try {
-              localStorage.removeItem('candid_inputs');
-              localStorage.removeItem('candid_insights');
-              localStorage.removeItem('candid_insights_date');
-            } catch(e) {}
-            setView("landing");
-            window.scrollTo({ top:0, behavior:"instant" });
-          }}
-        />
-      )}
-
-      {view === "onboarding" && (
-        <div id="candid-app" style={{ minHeight: "100vh" }}>
-          <CandidApp key={devReloadKey} initialScreen="onboarding" onGoHome={goHome} />
-        </div>
-      )}
-
-      {view === "dashboard" && (
-        <div id="candid-app" style={{ minHeight: "100vh" }}>
-          <CandidApp key={devReloadKey} initialScreen="dashboard" onGoHome={goHome} />
-        </div>
-      )}
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
+            holds — d, insights, completedModules, one-shot modal refs, etc.)
+            stays mounted across navigation between all three of these paths,
+            branching on the URL internally the same way it used to branch on
+            local `screen` state. */}
+        <Route element={<CandidAppLayout key={devReloadKey} />}>
+          <Route path="/assessment/:step" />
+          <Route path="/dashboard" />
+          <Route path="/module/:moduleKey" />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       {SHOW_DEV_TOOLS && DevToolsPanel && (
         <Suspense fallback={null}>
           <DevToolsPanel onPresetLoaded={handleDevPresetLoaded} />
         </Suspense>
       )}
-    </div>
-  )
+    </>
+  );
+}
+
+function Root() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Root />)

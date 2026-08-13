@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
 
 // ── Supabase client — module level, no package needed ─────────────────────────
@@ -5615,17 +5616,22 @@ function loadSavedInsights() {
   return null;
 }
 
-export default function Candid({ onGoHome = () => {}, initialScreen = "onboarding" }) {
-  const [screen,           setScreen]           = useState(initialScreen);
-  const [step,             setStep]             = useState(0);
+export default function AppShell() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
+  const pathname = location.pathname;
+  const activeModule = params.moduleKey || null;
+  const activeSection = location.state?.section || null;
+
+  // Replaces the old `screen === "loading"` branch — a transient overlay shown
+  // while generateDashboard() awaits Claude, not a real route/history stop.
+  const [generating,       setGenerating]       = useState(false);
   const [d,                setD]                = useState(loadInitialData);
   const [insights,         setInsights]         = useState(loadSavedInsights);
   const [prevInsights,     setPrevInsights]     = useState(null);
   const [whatChangedOpen,  setWhatChangedOpen]  = useState(false);
-  const [activeModule,     setActiveModule]     = useState(null);
-  const [activeSection,    setActiveSection]    = useState(null);
   const [completedModules, setCompletedModules] = useState([]);
-  const [prevScreen,       setPrevScreen]       = useState("dashboard");
   const [feedbackOpen,    setFeedbackOpen]    = useState(false);
   const [pdfModalOpen,    setPdfModalOpen]    = useState(false);
   const [showScorePulse,  setShowScorePulse]  = useState(false);
@@ -5691,8 +5697,8 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
             cashTiers: parsed.cashTiers?.length ? parsed.cashTiers : p.cashTiers,
             monthlyExpenses: parsed.monthlyExpenses != null ? String(parsed.monthlyExpenses) : p.monthlyExpenses,
           }));
-          setScreen("onboarding");
-          setStep(4);
+          // Home already forwarded this mount to /assessment/5 (Cash & savings)
+          // before CandidApp/AppShell ever rendered — no navigation needed here.
           posthog.capture("truelayer_connected", { accounts: parsed.accountsConnected ?? null });
         })
         .catch(e => { if (import.meta.env.DEV) console.warn("[Candid] Failed to fetch TrueLayer session data:", e); });
@@ -5719,21 +5725,21 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
 
   // One-shot PDF-email-capture trigger: 5s after the report/dashboard finishes rendering
   useEffect(() => {
-    if (screen !== "dashboard" || pdfModalFired.current) return;
+    if (pathname !== "/dashboard" || pdfModalFired.current) return;
     const t5 = setTimeout(() => {
       if (!pdfModalFired.current) { pdfModalFired.current = true; setPdfModalOpen(true); posthog.capture("pdf_modal_shown"); }
     }, 5000);
     return () => clearTimeout(t5);
-  }, [screen]);
+  }, [pathname]);
 
   // One-shot feedback trigger: 90s after dashboard loads OR 3s after all modules reviewed
   useEffect(() => {
-    if (screen !== "dashboard" || feedbackFired.current) return;
+    if (pathname !== "/dashboard" || feedbackFired.current) return;
     const t90 = setTimeout(() => {
       if (!feedbackFired.current) { feedbackFired.current = true; setFeedbackOpen(true); posthog.capture("feedback_modal_shown", { trigger: "timer" }); }
     }, 90 * 1000);
     return () => clearTimeout(t90);
-  }, [screen]);
+  }, [pathname]);
 
   useEffect(() => {
     if (feedbackFired.current || !insights) return;
@@ -5746,17 +5752,15 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
     }
   }, [completedModules]);
 
-  function openModule(key, from, section) {
-    setActiveModule(key);
-    setActiveSection(section || null);
-    setPrevScreen(from || screen);
-    setScreen("moduleDeepDive");
-    if (from === "moduleDeepDive") {
+  function openModule(key, section) {
+    const cameFromModule = pathname.startsWith("/module/");
+    if (cameFromModule) {
       if (!visitedInChain.current.includes(key)) visitedInChain.current = [...visitedInChain.current, key];
     } else {
       visitedInChain.current = [key];
     }
-    posthog.capture("module_opened", { module_key: key, from });
+    posthog.capture("module_opened", { module_key: key, from: cameFromModule ? "moduleDeepDive" : "dashboard" });
+    navigate(`/module/${key}`, section ? { state: { section } } : undefined);
     setTimeout(() => {
       const appEl = document.getElementById("candid-app");
       if (appEl) appEl.scrollIntoView({ behavior: "instant", block: "start" });
@@ -5811,7 +5815,7 @@ export default function Candid({ onGoHome = () => {}, initialScreen = "onboardin
     // TEMPORARY diagnostic — unconditional. Remove once root-caused.
     console.log("[Candid][DIAG] generateDashboard() entered");
     if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
-    setScreen("loading");
+    setGenerating(true);
 
     // ── Reuse the metrics/statuses already computed for this render — no need to recalculate ──
     const metrics = m;
@@ -6041,43 +6045,57 @@ Rules:
         fallback_served: "static_generic_fallback",
       });
     }
-    finally { setScreen("dashboard"); }
+    finally { setGenerating(false); navigate("/dashboard"); }
   }
 
   function resetAll() {
-    onGoHome();
+    navigate("/");
   }
 
   function clearSavedData() {
     localStorage.removeItem('candid_inputs');
     setD(BLANK_DATA);
     setInsights(null);
-    setStep(0);
-    setScreen("onboarding");
+    navigate("/assessment/1");
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   // ── Router ──
-  if (screen === "onboarding") return (
-    <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
-      onBack={() => step>0 ? setStep(s=>s-1) : onGoHome()}
-      onBackToDashboard={() => setScreen("dashboard")}
-      onStepClick={i => setStep(i)}
-      onClearData={clearSavedData}
-      onContinue={() => {
-        posthog.capture("onboarding_step_completed", { step: step + 1, step_name: STEPS[step] });
-        step<STEPS.length-1 ? setStep(s=>s+1) : generateDashboard();
-      }}
-    />
-  );
+  // Transient overlay while generateDashboard() awaits Claude — not a real route.
+  if (generating) return <LoadingScreen name={d.name} msgs={["Analysing your cash position...","Calculating pension tax relief...","Reviewing ISA headroom...","Modelling your student loan...","Building your Candid report..."]}/>;
 
-  if (screen === "loading") return <LoadingScreen name={d.name} msgs={["Analysing your cash position...","Calculating pension tax relief...","Reviewing ISA headroom...","Modelling your student loan...","Building your Candid report..."]}/>;
+  // Deep-link guard: /dashboard and /module/:key only render meaningfully once an
+  // assessment has produced a report — bounce home rather than show a broken or
+  // empty page for a stale bookmark, shared link, or a bare reload with no data.
+  if ((pathname === "/dashboard" || pathname.startsWith("/module/")) && !insights) {
+    return <Navigate to="/" replace />;
+  }
 
-  if (screen === "dashboard") return (
+  if (pathname.startsWith("/assessment/")) {
+    const stepNum = parseInt(params.step, 10);
+    if (!Number.isInteger(stepNum) || stepNum < 1 || stepNum > STEPS.length) {
+      return <Navigate to="/assessment/1" replace />;
+    }
+    const step = stepNum - 1;
+    return (
+      <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
+        onBack={() => step>0 ? navigate(`/assessment/${step}`) : navigate("/")}
+        onBackToDashboard={() => navigate("/dashboard")}
+        onStepClick={i => navigate(`/assessment/${i+1}`)}
+        onClearData={clearSavedData}
+        onContinue={() => {
+          posthog.capture("onboarding_step_completed", { step: step + 1, step_name: STEPS[step] });
+          step<STEPS.length-1 ? navigate(`/assessment/${step+2}`) : generateDashboard();
+        }}
+      />
+    );
+  }
+
+  if (pathname === "/dashboard") return (
     <>
       <Dashboard insights={insights} d={d} m={m} statuses={statuses} savingsRates={savingsRates} onReset={resetAll} completedModules={completedModules}
-        onOpenModule={key => openModule(key, "dashboard")}
-        onEditInputs={() => { setStep(0); setScreen("onboarding"); }}
+        onOpenModule={key => openModule(key)}
+        onEditInputs={() => navigate("/assessment/1")}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
         showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
         prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
@@ -6086,7 +6104,10 @@ Rules:
     </>
   );
 
-  if (screen === "moduleDeepDive") {
+  if (pathname.startsWith("/module/")) {
+    if (!activeModule || !MODULE_META.some(mm => mm.key === activeModule)) {
+      return <Navigate to="/dashboard" replace />;
+    }
     const localStatuses = statuses;
     const statusOrder = { critical:0, attention:1, ok:2, na:3 };
     const allMods = MODULE_META.map(mm => {
@@ -6119,16 +6140,16 @@ Rules:
       <>
         <ModuleDeepDive moduleKey={activeModule} insights={insights} d={d} m={m} statuses={statuses} savingsRates={savingsRates}
           openSection={activeSection}
-          goBack={() => setScreen("dashboard")}
-          goToDashboard={() => setScreen("dashboard")}
+          goBack={() => navigate("/dashboard")}
+          goToDashboard={() => navigate("/dashboard")}
           onComplete={() => markModuleComplete(activeModule)}
           isComplete={completedModules.includes(activeModule)}
-          onOpenModule={(key, section) => openModule(key, "moduleDeepDive", section)}
+          onOpenModule={(key, section) => openModule(key, section)}
           nextModule={nextMod}/>
         {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
       </>
     );
   }
 
-  return null;
+  return <Navigate to="/" replace />;
 }
