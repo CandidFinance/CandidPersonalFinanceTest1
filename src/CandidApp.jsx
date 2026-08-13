@@ -5972,6 +5972,11 @@ Rules:
       // ── Supabase insert — reuse pre-computed statuses ──
       const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
       const totalOpp = totalOppForSummary;
+      // Written once, ever, by main.jsx's getAcquisition()/handleStart() — read back
+      // here rather than re-derived, so the ORIGINAL first-touch source (not whatever
+      // UTM params happen to be in the URL right now) lands on the report row.
+      let acquisition = {};
+      try { acquisition = JSON.parse(localStorage.getItem('candid_acquisition') || '{}'); } catch(e) {}
       // test table requires columns: email (text), name (text), interests (text) — all nullable
       if (import.meta.env.DEV) {
         console.log("[Candid] Supabase insert starting — score:", result.score, "session:", posthog.get_distinct_id?.());
@@ -6020,11 +6025,23 @@ Rules:
         critical_modules: criticals,
         modules_completed: 0,
         feedback_submitted: false,
+        acquisition_source: acquisition.source || "direct",
+        acquisition_medium: acquisition.medium || null,
+        acquisition_campaign: acquisition.campaign || null,
+        first_visit_at: acquisition.first_visit_at || null,
+        assessment_started_at: localStorage.getItem('candid_assessment_started_at') || null,
+        returned: false,
       });
       if (import.meta.env.DEV) {
         console.log("[Candid] Supabase insert complete — rowId:", rowId, "SUPA_URL set:", !!SUPA_URL, "SUPA_KEY set:", !!SUPA_KEY);
       }
-      if (rowId) supaRowId.current = rowId;
+      if (rowId) {
+        supaRowId.current = rowId;
+        // Mirrored to localStorage (not just the in-memory ref) so a later
+        // "welcome back" visit — a fresh AppShell mount — can still PATCH
+        // `returned` onto the same row.
+        try { localStorage.setItem('candid_report_row_id', rowId); } catch(e) {}
+      }
     }
     catch(e) {
       // TEMPORARY diagnostic — unconditional, full error + stack. Remove once root-caused.
@@ -6054,6 +6071,9 @@ Rules:
 
   function clearSavedData() {
     localStorage.removeItem('candid_inputs');
+    // A genuine restart gets a fresh assessment_started_at — normal step-by-step
+    // navigation never calls clearSavedData, so that marker is untouched there.
+    localStorage.removeItem('candid_assessment_started_at');
     setD(BLANK_DATA);
     setInsights(null);
     navigate("/assessment/1");

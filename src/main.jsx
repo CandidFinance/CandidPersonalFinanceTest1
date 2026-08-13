@@ -1,10 +1,41 @@
-import { useState, lazy, Suspense } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import ReactDOM from "react-dom/client"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import posthog from "posthog-js"
 import CandidApp from "./CandidApp.jsx"
 
 console.log("SUPABASE URL:", import.meta.env.VITE_SUPABASE_URL)
+
+const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+// ── Acquisition attribution — captured once per browser, ever ─────────────────
+// PostHog's own native first-touch mechanism ($initial_utm_source etc.) never
+// actually activates in this app: it's gated behind person profile creation,
+// which requires either person_profiles:"always" or an identify()/
+// createPersonProfile() call, and neither happens here. Rather than take on
+// that (it would turn every anonymous visitor into a billed PostHog "person"),
+// this rolls a small first-party equivalent — same read-once/write-once
+// localStorage pattern as candid_inputs/candid_insights below — and pins it
+// as a super property so it rides every event without touching PostHog's
+// own per-event (session-scoped) utm_source, which keeps reporting each
+// visit's current touch untouched alongside it.
+function getAcquisition() {
+  try {
+    const existing = localStorage.getItem('candid_acquisition')
+    if (existing) return JSON.parse(existing)
+  } catch (e) {}
+  const p = new URLSearchParams(window.location.search)
+  const record = {
+    source: p.get('utm_source') || 'direct',
+    medium: p.get('utm_medium') || null,
+    campaign: p.get('utm_campaign') || null,
+    first_visit_at: new Date().toISOString(),
+  }
+  try { localStorage.setItem('candid_acquisition', JSON.stringify(record)) } catch (e) {}
+  return record
+}
+const acquisition = getAcquisition()
 
 // ── Analytics — runs once at module load, production only ─────────────────────
 if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
@@ -19,6 +50,11 @@ if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
     autocapture: false,
   })
 }
+posthog.register({
+  acquisition_source: acquisition.source,
+  acquisition_medium: acquisition.medium,
+  acquisition_campaign: acquisition.campaign,
+})
 
 // ── Dev tools (test profile loader) — genuinely excluded from prod builds ──────
 // Vite statically replaces import.meta.env.VITE_* at build time. Set
@@ -379,8 +415,33 @@ function Home() {
     return 'landing';
   });
 
+  // Fires once per mount, only if this mount landed straight into welcome_back
+  // (i.e. this is a later visit, not a fresh one) — flips the `returned` flag
+  // on the report row this browser generated last, via the same row id
+  // CandidApp mirrors to localStorage alongside candid_insights.
+  useEffect(() => {
+    if (trueLayerParam || view !== "welcome_back") return;
+    posthog.capture("user_returned");
+    try {
+      const rowId = localStorage.getItem('candid_report_row_id');
+      if (rowId && SUPA_URL && SUPA_KEY) {
+        fetch(`${SUPA_URL}/rest/v1/test?id=eq.${rowId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, Prefer: "return=minimal" },
+          body: JSON.stringify({ returned: true }),
+        }).catch(() => {});
+      }
+    } catch (e) {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-once, not re-fired on later `view` changes within this mount
+  }, []);
+
   function handleStart() {
     posthog.capture("app_started")
+    try {
+      if (!localStorage.getItem('candid_assessment_started_at')) {
+        localStorage.setItem('candid_assessment_started_at', new Date().toISOString());
+      }
+    } catch (e) {}
     navigate("/assessment/1")
     window.scrollTo({ top: 0, behavior: "instant" })
   }
