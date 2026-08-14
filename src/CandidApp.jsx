@@ -1335,7 +1335,7 @@ function Field({ label:lb, hint, children }) {
   );
 }
 
-function Toggle({ value, onChange, options }) {
+export function Toggle({ value, onChange, options }) {
   return (
     <div style={{display:"flex",gap:"8px",marginTop:"6px",flexWrap:"wrap"}}>
       {options.map(o => (
@@ -1367,7 +1367,7 @@ function Checkbox({ checked, onChange, label }) {
   );
 }
 
-function NavBar({ right, center }) {
+export function NavBar({ right, center }) {
   return (
     <div style={{background:G,padding:"18px 32px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
       <span style={{fontFamily:SERIF,color:GOLD,fontSize:"22px",fontWeight:700}}>Candid.</span>
@@ -1467,7 +1467,7 @@ function GhostBtn({ onClick, children }) {
   );
 }
 
-function PageWrap({ children }) {
+export function PageWrap({ children }) {
   return (
     <div style={{minHeight:"100vh",background:CREAM,fontFamily:SANS,display:"flex",flexDirection:"column"}}>
       <style>{FONTS}</style>
@@ -1476,7 +1476,7 @@ function PageWrap({ children }) {
   );
 }
 
-function ContentWrap({ children, maxWidth="580px" }) {
+export function ContentWrap({ children, maxWidth="580px" }) {
   return (
     <div style={{maxWidth,margin:"0 auto",padding:"44px 24px 80px",width:"100%"}}>
       {children}
@@ -3344,22 +3344,83 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
 }
 
 // ── Global feedback modal (rendered at router level, works across all screens) ──
-function FeedbackModal({ onDismiss, onFeedbackLinkClick }) {
+// Lightweight in-app feedback — three questions, no external hand-off, so
+// feedback_completed (unlike the old Tally link-out) is something we can
+// actually observe. Free-text answers go only to Supabase via onSubmit;
+// posthog only ever sees the categorical answers + whether text was left,
+// since typed answers could incidentally contain financial specifics.
+function FeedbackModal({ onDismiss, onSubmit }) {
+  const [knew, setKnew] = useState(null);
+  const [usefulText, setUsefulText] = useState("");
+  const [wouldChange, setWouldChange] = useState(null);
+  const [changeText, setChangeText] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => { posthog.capture("feedback_started"); }, []);
+
+  const canSubmit = !!knew && usefulText.trim().length > 0 && !!wouldChange;
+  const showChangeFollowUp = wouldChange === "yes" || wouldChange === "maybe";
+
+  function handleSubmit() {
+    if (!canSubmit) return;
+    posthog.capture("feedback_completed", {
+      knew_something: knew,
+      would_change: wouldChange,
+      has_useful_text: usefulText.trim().length > 0,
+      has_change_details: changeText.trim().length > 0,
+    });
+    onSubmit?.({ knew, usefulText: usefulText.trim(), wouldChange, changeText: changeText.trim() || null });
+    setSubmitted(true);
+  }
+
+  const textareaStyle = {
+    width:"100%", padding:"11px 14px", border:"1.5px solid rgba(22,47,36,0.18)", borderRadius:"8px",
+    fontSize:"14px", fontFamily:SANS, color:TEXT, resize:"vertical", minHeight:"64px", marginTop:"6px",
+  };
+
   return createPortal(
-    <div onClick={onDismiss} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+    <div onClick={submitted ? undefined : onDismiss} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",overflowY:"auto"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
         <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
           <span style={{fontSize:"20px"}}>💬</span>
           <div>
-            <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>How was your Candid report?</div>
-            <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>60 seconds — helps us build this right</div>
+            <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{submitted ? "Thanks for that" : "How was your Candid report?"}</div>
+            <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>{submitted ? "Really helps us build this right" : "3 quick questions — helps us build this right"}</div>
           </div>
           <button onClick={onDismiss} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:"20px",color:"rgba(22,47,36,0.4)",cursor:"pointer",lineHeight:1}}>×</button>
         </div>
         <div style={{padding:"24px"}}>
-          <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"20px"}}>Five quick questions — completely anonymous unless you choose to leave your email.</p>
-          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" onClick={() => { posthog.capture("feedback_started"); onFeedbackLinkClick?.(); }} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
-          <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>Close — I'll use the tab</button>
+          {submitted ? (
+            <>
+              <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"20px"}}>
+                Thanks — this helps us keep improving Candid's guidance. Just a reminder: Candid is here to help you understand your options, not to give regulated financial advice.
+              </p>
+              <button type="button" onClick={onDismiss} style={{display:"block",width:"100%",background:G,border:"none",borderRadius:"10px",padding:"13px",fontSize:"14px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS}}>Close</button>
+            </>
+          ) : (
+            <>
+              <div style={{marginBottom:"18px"}}>
+                <label style={LBL}>Did Candid show you anything you didn't already know?</label>
+                <Toggle value={knew} onChange={setKnew} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"},{value:"not_sure",label:"Not sure"}]}/>
+              </div>
+              <div style={{marginBottom:"18px"}}>
+                <label style={LBL}>What was the most useful thing it showed you?</label>
+                <textarea value={usefulText} onChange={e=>setUsefulText(e.target.value)} placeholder="Whatever stood out most..." style={textareaStyle}/>
+              </div>
+              <div style={{marginBottom: showChangeFollowUp ? "10px" : "22px"}}>
+                <label style={LBL}>Did Candid make you want to do anything differently with your finances?</label>
+                <Toggle value={wouldChange} onChange={setWouldChange} options={[{value:"yes",label:"Yes"},{value:"maybe",label:"Maybe"},{value:"no",label:"No"}]}/>
+              </div>
+              {showChangeFollowUp && (
+                <div style={{marginBottom:"22px"}}>
+                  <label style={{fontSize:"12px",color:MUT,display:"block"}}>What are you thinking of doing? <em>(optional)</em></label>
+                  <textarea value={changeText} onChange={e=>setChangeText(e.target.value)} placeholder="No pressure — only if you want to share" style={{...textareaStyle, minHeight:"52px"}}/>
+                </div>
+              )}
+              <button type="button" onClick={handleSubmit} disabled={!canSubmit} style={{display:"block",width:"100%",background:canSubmit?G:"rgba(22,47,36,0.25)",border:"none",borderRadius:"10px",padding:"14px",fontSize:"15px",fontWeight:600,color:WHITE,cursor:canSubmit?"pointer":"not-allowed",fontFamily:SANS,marginBottom:"10px"}}>Submit feedback</button>
+              <button type="button" onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"none",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS,padding:"6px"}}>Maybe later</button>
+            </>
+          )}
         </div>
       </div>
     </div>,
@@ -5693,6 +5754,16 @@ export default function AppShell() {
     } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Supabase update failed:", e); }
   }
 
+  function submitFeedback({ knew, usefulText, wouldChange, changeText }) {
+    supaUpdate({
+      feedback_submitted: true,
+      post_feedback_knew_something: knew,
+      post_feedback_useful_text: usefulText || null,
+      post_feedback_would_change: wouldChange,
+      post_feedback_change_details: changeText || null,
+    });
+  }
+
   const set = (k, v) => setD(p => ({...p, [k]:v}));
 
   useEffect(() => {
@@ -6073,6 +6144,7 @@ Rules:
         first_visit_at: acquisition.first_visit_at || null,
         assessment_started_at: localStorage.getItem('candid_assessment_started_at') || null,
         returned: false,
+        confidence_score: (() => { const v = localStorage.getItem('candid_confidence_score'); return v ? parseInt(v, 10) : null; })(),
       });
       if (import.meta.env.DEV) {
         console.log("[Candid] Supabase insert complete — rowId:", rowId, "SUPA_URL set:", !!SUPA_URL, "SUPA_KEY set:", !!SUPA_KEY);
@@ -6118,12 +6190,14 @@ Rules:
       reason: "cleared_data",
     });
     localStorage.removeItem('candid_inputs');
-    // A genuine restart gets a fresh assessment_started_at — normal step-by-step
-    // navigation never calls clearSavedData, so that marker is untouched there.
+    // A genuine restart gets a fresh assessment_started_at and confidence_score —
+    // normal step-by-step navigation never calls clearSavedData, so those markers
+    // are untouched there.
     localStorage.removeItem('candid_assessment_started_at');
+    localStorage.removeItem('candid_confidence_score');
     setD(BLANK_DATA);
     setInsights(null);
-    navigate("/assessment/1");
+    navigate("/welcome");
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
@@ -6148,8 +6222,8 @@ Rules:
       <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
         onBack={() => {
           if (step > 0) { navigate(`/assessment/${step}`); return; }
-          posthog.capture("assessment_abandoned", { step: step + 1, step_name: STEPS[step], reason: "back_to_home" });
-          navigate("/");
+          posthog.capture("assessment_abandoned", { step: step + 1, step_name: STEPS[step], reason: "back_to_welcome" });
+          navigate("/welcome");
         }}
         onBackToDashboard={() => navigate("/dashboard")}
         onStepClick={i => navigate(`/assessment/${i+1}`)}
@@ -6174,7 +6248,7 @@ Rules:
         showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
         prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
       {pdfModalOpen && <PdfReportModal email={d.email} insights={insights} d={d} onDismiss={() => setPdfModalOpen(false)} />}
-      {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} onFeedbackLinkClick={() => supaUpdate({ feedback_submitted: true })} />}
+      {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} onSubmit={submitFeedback} />}
     </>
   );
 
@@ -6220,7 +6294,7 @@ Rules:
           isComplete={completedModules.includes(activeModule)}
           onOpenModule={(key, section) => openModule(key, section)}
           nextModule={nextMod}/>
-        {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} onFeedbackLinkClick={() => supaUpdate({ feedback_submitted: true })} />}
+        {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} onSubmit={submitFeedback} />}
       </>
     );
   }

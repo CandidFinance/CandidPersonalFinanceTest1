@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react"
 import ReactDOM from "react-dom/client"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import posthog from "posthog-js"
-import CandidApp from "./CandidApp.jsx"
+import CandidApp, { PageWrap, NavBar, ContentWrap, Toggle } from "./CandidApp.jsx"
 
 console.log("SUPABASE URL:", import.meta.env.VITE_SUPABASE_URL)
 
@@ -395,6 +395,65 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
   );
 }
 
+// ── Pre-assessment confidence check ────────────────────────────────────────────
+// Deliberately not one of CandidApp's 8 onboarding STEPS — this is a single,
+// separate, low-stakes question shown once before the real assessment begins,
+// so it doesn't read as part of "the test" and doesn't shift the step numbers
+// the assessment_question_* analytics events already reference.
+const CONFIDENCE_LABELS = { 1: "Not confident", 5: "Very confident" };
+
+function ConfidenceCheck() {
+  const navigate = useNavigate();
+  const [score, setScore] = useState(() => {
+    try {
+      const saved = localStorage.getItem('candid_confidence_score');
+      return saved ? parseInt(saved, 10) : null;
+    } catch (e) { return null; }
+  });
+
+  function handleContinue() {
+    try { localStorage.setItem('candid_confidence_score', String(score)); } catch (e) {}
+    navigate("/assessment/1");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
+  return (
+    <PageWrap>
+      <NavBar right={<button type="button" onClick={() => navigate("/")} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.2)",borderRadius:"6px",padding:"6px 14px",color:"rgba(255,255,255,0.6)",fontSize:"12px",cursor:"pointer"}}>← Back</button>}/>
+      <ContentWrap maxWidth="480px">
+        <div style={{textAlign:"center", marginTop:"32px"}}>
+          <div style={{fontFamily:SERIF, fontSize:"clamp(22px,4vw,26px)", fontWeight:700, color:G, marginBottom:"12px"}}>
+            Quick one before we start
+          </div>
+          <p style={{fontSize:"14px", color:MUT, lineHeight:1.65, marginBottom:"36px", maxWidth:"380px", margin:"0 auto 36px"}}>
+            How confident are you managing your finances? There's no wrong answer here — it just helps us tailor what we show you.
+          </p>
+          <div style={{display:"flex", justifyContent:"center", gap:"10px", marginBottom:"10px", flexWrap:"wrap"}}>
+            {[1,2,3,4,5].map(n => (
+              <button key={n} type="button" onClick={() => setScore(n)} style={{
+                width:"52px", height:"52px", borderRadius:"50%",
+                border:`1.5px solid ${score===n ? G : "rgba(22,47,36,0.18)"}`,
+                background: score===n ? G : WHITE,
+                color: score===n ? WHITE : "#1a1a1a",
+                fontSize:"18px", fontWeight:700, cursor:"pointer",
+                fontFamily:SANS, transition:"all 0.15s",
+              }}>{n}</button>
+            ))}
+          </div>
+          <div style={{display:"flex", justifyContent:"space-between", fontSize:"11px", color:MUT, marginBottom:"40px"}}>
+            <span>{CONFIDENCE_LABELS[1]}</span><span>{CONFIDENCE_LABELS[5]}</span>
+          </div>
+          <button type="button" onClick={handleContinue} disabled={!score} style={{
+            width:"100%", padding:"14px", background:score?G:"rgba(22,47,36,0.25)", border:"none",
+            borderRadius:"8px", fontSize:"15px", fontWeight:600, color:WHITE,
+            cursor:score?"pointer":"not-allowed", fontFamily:SANS,
+          }}>Continue →</button>
+        </div>
+      </ContentWrap>
+    </PageWrap>
+  );
+}
+
 // ── Home route (landing page, or "welcome back" for a returning user) ─────────
 function Home() {
   const navigate = useNavigate();
@@ -450,7 +509,7 @@ function Home() {
         localStorage.setItem('candid_assessment_started_at', new Date().toISOString());
       }
     } catch (e) {}
-    navigate("/assessment/1")
+    navigate("/welcome")
     window.scrollTo({ top: 0, behavior: "instant" })
   }
 
@@ -515,6 +574,7 @@ function AppRoutes() {
     <>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/welcome" element={<ConfidenceCheck />} />
         {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
             holds — d, insights, completedModules, one-shot modal refs, etc.)
             stays mounted across navigation between all three of these paths,
