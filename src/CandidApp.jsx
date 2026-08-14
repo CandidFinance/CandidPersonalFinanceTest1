@@ -1488,7 +1488,10 @@ function ContentWrap({ children, maxWidth="580px" }) {
 const STEPS = ["Name","Email","Interests","About you","Cash & savings","Investments","Pension","Debt"];
 
 function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue, onStepClick, onClearData }) {
-  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [step]);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    posthog.capture("assessment_question_viewed", { step: step + 1, step_name: steps[step] });
+  }, [step]);
   return (
     <PageWrap>
       <NavBar center={`Step ${step+1} of ${steps.length} — ${steps[step]}`}
@@ -3341,7 +3344,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
 }
 
 // ── Global feedback modal (rendered at router level, works across all screens) ──
-function FeedbackModal({ onDismiss }) {
+function FeedbackModal({ onDismiss, onFeedbackLinkClick }) {
   return createPortal(
     <div onClick={onDismiss} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
@@ -3355,7 +3358,7 @@ function FeedbackModal({ onDismiss }) {
         </div>
         <div style={{padding:"24px"}}>
           <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"20px"}}>Five quick questions — completely anonymous unless you choose to leave your email.</p>
-          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" onClick={() => { posthog.capture("feedback_submitted"); supaUpdate({ feedback_submitted: true }); }} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
+          <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" onClick={() => { posthog.capture("feedback_started"); onFeedbackLinkClick?.(); }} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px"}}>Share my feedback →</a>
           <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>Close — I'll use the tab</button>
         </div>
       </div>
@@ -5623,6 +5626,7 @@ export default function AppShell() {
   const pathname = location.pathname;
   const activeModule = params.moduleKey || null;
   const activeSection = location.state?.section || null;
+  const assessmentStepNum = pathname.startsWith("/assessment/") ? parseInt(params.step, 10) : null;
 
   // Replaces the old `screen === "loading"` branch — a transient overlay shown
   // while generateDashboard() awaits Claude, not a real route/history stop.
@@ -5646,6 +5650,37 @@ export default function AppShell() {
   // the dashboard — lets nextMod below cycle through every outstanding module once per
   // lap instead of always re-offering whichever two rank highest by status/impact.
   const visitedInChain = useRef([]);
+
+  // ── assessment_abandoned — fires on real tab/page close mid-assessment ──────
+  // Refs (not state) because the pagehide listener is registered once and reads
+  // whatever the latest values were at unload time, not whatever they were when
+  // the listener was attached.
+  const pathnameRef = useRef(pathname);
+  const assessmentStepRef = useRef(assessmentStepNum);
+  const assessmentCompletedRef = useRef(false);
+  pathnameRef.current = pathname;
+  assessmentStepRef.current = assessmentStepNum;
+  useEffect(() => {
+    function handlePageHide() {
+      if (pathnameRef.current?.startsWith("/assessment/") && !assessmentCompletedRef.current) {
+        const stepN = assessmentStepRef.current;
+        // sendBeacon transport — same one PostHog's own $pageleave uses — so this
+        // has a real chance of actually reaching the server as the page unloads.
+        posthog.capture("assessment_abandoned", {
+          step: Number.isInteger(stepN) ? stepN : null,
+          step_name: Number.isInteger(stepN) ? (STEPS[stepN - 1] || null) : null,
+          reason: "page_unload",
+        }, { transport: "sendBeacon" });
+      }
+    }
+    // capture: true — runs before PostHog's own pagehide listener (registered in
+    // the default bubble phase during posthog.init()), so this fires and queues
+    // its sendBeacon call before PostHog's internal unload handler tears down/
+    // flushes its request queue. Registered afterwards (bubble phase), this event
+    // was landing too late and silently never reaching PostHog — confirmed live.
+    window.addEventListener("pagehide", handlePageHide, { capture: true });
+    return () => window.removeEventListener("pagehide", handlePageHide, { capture: true });
+  }, []);
 
   async function supaUpdate(patch) {
     if (!supaRowId.current || !SUPA_URL || !SUPA_KEY) return;
@@ -5722,6 +5757,13 @@ export default function AppShell() {
   }, [savingsRates]);
   const m = useMemo(() => calcMetrics(d, marketRates), [d, marketRates]);
   const statuses = useMemo(() => computeModuleStatuses(d, m, marketRates), [d, m, marketRates]);
+
+  // Fires each time the dashboard route is entered — including revisits after
+  // browsing into a module and back, or a later "welcome back" session.
+  useEffect(() => {
+    if (pathname !== "/dashboard") return;
+    posthog.capture("report_viewed");
+  }, [pathname]);
 
   // One-shot PDF-email-capture trigger: 5s after the report/dashboard finishes rendering
   useEffect(() => {
@@ -6070,6 +6112,11 @@ Rules:
   }
 
   function clearSavedData() {
+    posthog.capture("assessment_abandoned", {
+      step: Number.isInteger(assessmentStepNum) ? assessmentStepNum : null,
+      step_name: Number.isInteger(assessmentStepNum) ? (STEPS[assessmentStepNum - 1] || null) : null,
+      reason: "cleared_data",
+    });
     localStorage.removeItem('candid_inputs');
     // A genuine restart gets a fresh assessment_started_at — normal step-by-step
     // navigation never calls clearSavedData, so that marker is untouched there.
@@ -6099,13 +6146,20 @@ Rules:
     const step = stepNum - 1;
     return (
       <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
-        onBack={() => step>0 ? navigate(`/assessment/${step}`) : navigate("/")}
+        onBack={() => {
+          if (step > 0) { navigate(`/assessment/${step}`); return; }
+          posthog.capture("assessment_abandoned", { step: step + 1, step_name: STEPS[step], reason: "back_to_home" });
+          navigate("/");
+        }}
         onBackToDashboard={() => navigate("/dashboard")}
         onStepClick={i => navigate(`/assessment/${i+1}`)}
         onClearData={clearSavedData}
         onContinue={() => {
-          posthog.capture("onboarding_step_completed", { step: step + 1, step_name: STEPS[step] });
-          step<STEPS.length-1 ? navigate(`/assessment/${step+2}`) : generateDashboard();
+          posthog.capture("assessment_question_completed", { step: step + 1, step_name: STEPS[step] });
+          if (step < STEPS.length - 1) { navigate(`/assessment/${step+2}`); return; }
+          assessmentCompletedRef.current = true;
+          posthog.capture("assessment_completed");
+          generateDashboard();
         }}
       />
     );
@@ -6120,7 +6174,7 @@ Rules:
         showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
         prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
       {pdfModalOpen && <PdfReportModal email={d.email} insights={insights} d={d} onDismiss={() => setPdfModalOpen(false)} />}
-      {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
+      {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} onFeedbackLinkClick={() => supaUpdate({ feedback_submitted: true })} />}
     </>
   );
 
@@ -6166,7 +6220,7 @@ Rules:
           isComplete={completedModules.includes(activeModule)}
           onOpenModule={(key, section) => openModule(key, section)}
           nextModule={nextMod}/>
-        {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} />}
+        {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} onFeedbackLinkClick={() => supaUpdate({ feedback_submitted: true })} />}
       </>
     );
   }

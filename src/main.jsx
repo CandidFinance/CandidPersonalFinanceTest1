@@ -435,8 +435,16 @@ function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-once, not re-fired on later `view` changes within this mount
   }, []);
 
+  // Fires once per mount, only for a genuine fresh landing (not welcome-back,
+  // not a TrueLayer bounce-through).
+  useEffect(() => {
+    if (trueLayerParam || view !== "landing") return;
+    posthog.capture("landing_page_viewed");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-once
+  }, []);
+
   function handleStart() {
-    posthog.capture("app_started")
+    posthog.capture("assessment_started")
     try {
       if (!localStorage.getItem('candid_assessment_started_at')) {
         localStorage.setItem('candid_assessment_started_at', new Date().toISOString());
@@ -468,6 +476,7 @@ function Home() {
             localStorage.removeItem('candid_insights_date');
           } catch(e) {}
           setView("landing");
+          posthog.capture("landing_page_viewed");
           window.scrollTo({ top:0, behavior:"instant" });
         }}
       />
