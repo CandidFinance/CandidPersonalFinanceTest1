@@ -21,17 +21,23 @@ const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 function getAcquisition() {
   try {
     const existing = localStorage.getItem('candid_acquisition')
-    if (existing) return JSON.parse(existing)
+    if (existing) return { ...JSON.parse(existing), fresh: false }
   } catch (e) {}
   const p = new URLSearchParams(window.location.search)
+  // A ?ref=<id> referral link is treated as equivalent to a
+  // utm_source=referral&utm_medium=referral link, with the referring user's
+  // own id (their posthog distinct_id, reused rather than minting a new one —
+  // see ReferralCTA in CandidApp.jsx) carried alongside as referred_by.
+  const ref = p.get('ref')
   const record = {
-    source: p.get('utm_source') || 'direct',
-    medium: p.get('utm_medium') || null,
+    source: ref ? 'referral' : (p.get('utm_source') || 'direct'),
+    medium: ref ? 'referral' : (p.get('utm_medium') || null),
     campaign: p.get('utm_campaign') || null,
+    referred_by: ref || null,
     first_visit_at: new Date().toISOString(),
   }
   try { localStorage.setItem('candid_acquisition', JSON.stringify(record)) } catch (e) {}
-  return record
+  return { ...record, fresh: true }
 }
 const acquisition = getAcquisition()
 
@@ -63,7 +69,14 @@ posthog.register({
   acquisition_source: acquisition.source,
   acquisition_medium: acquisition.medium,
   acquisition_campaign: acquisition.campaign,
+  referred_by: acquisition.referred_by,
 })
+// Fires once ever per browser — the same read-once/write-once guarantee
+// getAcquisition() already gives acquisition.fresh — so this can't double-fire
+// on a later visit even if the ?ref= param is still sitting in the URL/history.
+if (acquisition.fresh && acquisition.source === 'referral') {
+  posthog.capture('referral_started', { referred_by: acquisition.referred_by })
+}
 
 // ── Dev tools (test profile loader) — genuinely excluded from prod builds ──────
 // Vite statically replaces import.meta.env.VITE_* at build time. Set

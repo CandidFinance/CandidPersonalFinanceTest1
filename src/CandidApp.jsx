@@ -3267,6 +3267,8 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           </div>
         )}
 
+        <ReferralCTA />
+
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>
           Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.{" "}
           <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy Policy</a>
@@ -3275,6 +3277,47 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
         </p>
       </ContentWrap>
     </PageWrap>
+  );
+}
+
+// ── Referral CTA — inline card on the report itself (not a modal, not gated
+// behind a timer like FeedbackModal, and rendered separately from it so it
+// reads as its own thing rather than another feedback question). The link
+// reuses this browser's existing posthog distinct_id as the ?ref= id — same
+// identifier the Phase 2 attribution work already treats as the de facto
+// session id, so there's no second id system to keep in sync. Deliberately
+// no reward/incentive copy anywhere here — this measures organic willingness
+// to recommend, not paid referrals.
+function ReferralCTA() {
+  const [copied, setCopied] = useState(false);
+  const refId = posthog.get_distinct_id?.() || null;
+  const link = refId ? `${window.location.origin}/?ref=${refId}` : null;
+
+  async function handleCopy() {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch (e) {
+      return;
+    }
+    posthog.capture("referral_link_created");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  if (!link) return null;
+
+  return (
+    <div style={{background:WHITE,border:`1.5px solid ${GOLD}`,borderRadius:"12px",padding:"18px 20px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
+      <span style={{fontSize:"22px"}}>🤝</span>
+      <div style={{flex:"1 1 240px"}}>
+        <div style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G}}>Know someone who'd get value from this?</div>
+        <div style={{fontSize:"12.5px",color:MUT,marginTop:"2px"}}>Send them your link and they can run their own numbers in a few minutes.</div>
+      </div>
+      <button type="button" onClick={handleCopy} style={{background:copied?"#2d6b4a":G,border:"none",borderRadius:"8px",padding:"11px 18px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,whiteSpace:"nowrap",minWidth:"96px"}}>
+        {copied ? "Copied!" : "Copy link"}
+      </button>
+    </div>
   );
 }
 
@@ -6194,6 +6237,7 @@ Rules:
         acquisition_source: acquisition.source || "direct",
         acquisition_medium: acquisition.medium || null,
         acquisition_campaign: acquisition.campaign || null,
+        referred_by: acquisition.referred_by || null,
         first_visit_at: acquisition.first_visit_at || null,
         assessment_started_at: localStorage.getItem('candid_assessment_started_at') || null,
         returned: false,
