@@ -4122,6 +4122,35 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
           const showTrajectory = d.hasPension === "yes" && (potVal > 0 || myPct > 0);
 
+          // ── Lump Sum Allowance inflection point ──────────────────────────────
+          // £1,073,100 is the pot size at which the standard 25% tax-free
+          // withdrawal entitlement (25% × pot) equals the £268,275 Lump Sum
+          // Allowance cap introduced when the old Lifetime Allowance was abolished
+          // (April 2024). Below this pot size, 25% tax-free applies in full;
+          // above it, the tax-free portion stays fixed at £268,275 while further
+          // growth is otherwise unrestricted (no LTA-style cap exists any more) —
+          // it just doesn't add to the tax-free amount. This is about the
+          // composition of a withdrawal, not a limit on contributing or growing
+          // the pot, so it's framed as context alongside the trajectory chart,
+          // not as a numbered Win.
+          // Monthly contributions/growth (not the annual formula used by the
+          // rest of this tile) since pension contributions are actually deducted
+          // from monthly salary — reuses the same fvSingle/fvAnnuity helpers as
+          // the mortgage/loan projections elsewhere in the file.
+          const LSA_INFLECTION_POT = 1073100;
+          const alreadyPastLsa = potVal >= LSA_INFLECTION_POT;
+          let lsaCrossYearsLeft = null;
+          if (showTrajectory && !alreadyPastLsa) {
+            const monthlyContrib = annualContrib / 12;
+            const totalMonths = years * 12;
+            for (let testMonths = 1; testMonths <= totalMonths; testMonths++) {
+              const pot = fvSingle(potVal, 6, testMonths) + fvAnnuity(monthlyContrib, 6, testMonths);
+              if (pot >= LSA_INFLECTION_POT) { lsaCrossYearsLeft = Math.round(testMonths / 12); break; }
+            }
+          }
+          const lsaCrossAge = lsaCrossYearsLeft != null ? age + lsaCrossYearsLeft : null;
+          const showLsaFlag = showTrajectory && (alreadyPastLsa || lsaCrossAge != null);
+
           return (
             <>
               {(definitiveCols.length > 0 || bonusPotential > 0) && (
@@ -4472,6 +4501,37 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       An extra <strong>{extraPct}%</strong> of salary costs just <strong>{fmt(extraNetCostMonthly)}/mo</strong> after tax relief, and could add roughly <strong>{fmt(extraGrowth)}</strong> to your pot by retirement — <strong>{fmt(Math.round(m.projectedPot) + extraGrowth)}</strong> total.
                     </p>
                   </div>
+
+                  {showLsaFlag && (
+                    <div style={{marginTop:"12px",borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 8px 8px 0",padding:"14px 16px"}}>
+                      <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Worth knowing</div>
+                      {alreadyPastLsa ? (
+                        <>
+                          <p style={{fontSize:"13px",color:G,lineHeight:1.65,margin:"0 0 8px",fontWeight:600}}>
+                            Your pension pot is already above {fmt(LSA_INFLECTION_POT)}
+                          </p>
+                          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                            The standard 25% tax-free withdrawal applies up to this pot size. Above it, the tax-free portion of any withdrawal stays fixed at £268,275 rather than scaling with your pot — the rest is taxed as income when you take it out.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p style={{fontSize:"13px",color:G,lineHeight:1.65,margin:"0 0 8px",fontWeight:600}}>
+                            Your pot is projected to pass {fmt(LSA_INFLECTION_POT)} around age {lsaCrossAge} {lsaCrossYearsLeft > 0 ? `(in ~${lsaCrossYearsLeft} year${lsaCrossYearsLeft!==1?"s":""})` : "(within the next year)"}
+                          </p>
+                          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                            Below this pot size, the standard 25% tax-free withdrawal applies in full. Above it, the tax-free portion of any withdrawal stays fixed at £268,275 rather than continuing to scale with your pot — the rest is taxed as income when you take it out.
+                          </p>
+                        </>
+                      )}
+                      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                        This doesn't make contributing less worthwhile — you still get tax relief going in and tax-deferred growth throughout, no matter how large the pot gets. It just means the tax-free-cash upside specifically levels off at the margin, which is worth factoring into how you plan withdrawals later.
+                      </p>
+                      <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,margin:0,paddingTop:"8px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
+                        Based on this projection only: 6% p.a. growth, your current contribution rate held flat, contributions and growth compounded monthly, and no allowance for salary changes or other pots. Illustrative, not a forecast — we're not modelling the optimal contribution level here, just flagging that this threshold is in view.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </>

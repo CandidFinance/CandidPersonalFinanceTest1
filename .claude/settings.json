@@ -141,7 +141,12 @@
       "Bash(git status *)",
       "Bash(xxd)",
       "Bash(echo \"exit=$?\")",
-      "Bash(node --check api/generate-report-pdf.js)"
+      "Bash(node --check api/generate-report-pdf.js)",
+      "Bash(node \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\3f00daa2-9cb8-4035-ac42-a5684e31b916\\\\scratchpad\\\\test_lsa.mjs\")",
+      "Bash(rm -f \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\3f00daa2-9cb8-4035-ac42-a5684e31b916\\\\scratchpad\\\\test_lsa.mjs\" /tmp/_candidapp_check*.js)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
     ]
   }
 }
