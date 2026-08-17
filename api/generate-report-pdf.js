@@ -3,6 +3,8 @@ import path from "path";
 import os from "os";
 import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 import ReportPdf from "../src/pdf/ReportPdf.jsx";
 import { calcMetrics, computeModuleStatuses, topRate } from "../src/CandidApp.jsx";
 
@@ -13,30 +15,31 @@ const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_EMAIL_SOURCES = new Set(["new", "prefilled", "edited"]);
 
-// ── Layer 3: in-memory per-IP rate limit (same pattern as api/claude.js) ──────
-const RATE_LIMIT = 10;
-const RATE_WINDOW_MS = 60 * 1000;
-const requestLog = new Map(); // ip -> timestamps[]
-let sweepCounter = 0;
+// ── Layer 3: durable rate limiting (Upstash Redis, same pattern as api/claude.js) ──
+// Previously an in-memory Map, which reset on every cold start and wasn't
+// shared across concurrent serverless instances — effectively no limit at all
+// under real load. This endpoint renders a PDF and hits Supabase per call, so
+// it's worth protecting the same way as the Claude proxy.
+const IP_LIMIT = 10;
+const IP_WINDOW = "60 s";
+const SESSION_LIMIT = 10;
+const SESSION_WINDOW = "1 d";
 
-function sweepStaleEntries() {
-  if (++sweepCounter % 100 !== 0) return;
-  const now = Date.now();
-  for (const [ip, timestamps] of requestLog) {
-    const fresh = timestamps.filter(t => now - t < RATE_WINDOW_MS);
-    if (fresh.length === 0) requestLog.delete(ip);
-    else requestLog.set(ip, fresh);
-  }
-}
+const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+  : null;
 
-function isRateLimited(ip) {
-  sweepStaleEntries();
-  const now = Date.now();
-  const timestamps = (requestLog.get(ip) || []).filter(t => now - t < RATE_WINDOW_MS);
-  timestamps.push(now);
-  requestLog.set(ip, timestamps);
-  return timestamps.length > RATE_LIMIT;
-}
+const ipLimiter = redis && new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(IP_LIMIT, IP_WINDOW),
+  prefix: "ratelimit:generate-report-pdf:ip",
+});
+
+const sessionLimiter = redis && new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(SESSION_LIMIT, SESSION_WINDOW),
+  prefix: "ratelimit:generate-report-pdf:session",
+});
 
 function getClientIp(req) {
   const forwarded = req.headers["x-forwarded-for"];
@@ -117,11 +120,39 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid request" });
   }
 
-  if (isRateLimited(getClientIp(req))) {
-    return res.status(429).json({ error: "Too many requests" });
+  if (!redis) {
+    // Fails closed: missing config should never silently disable rate
+    // limiting in production.
+    console.error("[generate-report-pdf] UPSTASH_REDIS_REST_URL/TOKEN not configured — refusing to serve without rate limiting");
+    return res.status(503).json({ error: "Service temporarily unavailable" });
+  }
+
+  const ip = getClientIp(req);
+  try {
+    const { success } = await ipLimiter.limit(ip);
+    if (!success) {
+      return res.status(429).json({ error: "Too many requests", reason: "ip_limit" });
+    }
+  } catch (e) {
+    // A transient Upstash/network error here shouldn't block report generation
+    // for everyone — log it and let the request through unlimited for this
+    // one call, rather than failing closed on an infra blip.
+    console.error("[generate-report-pdf] IP rate-limit check failed, allowing request through:", e?.message);
   }
 
   const { d, insights, email, email_source, marketing_opt_in, session_id, candid_score } = req.body;
+
+  if (session_id) {
+    try {
+      const { success } = await sessionLimiter.limit(session_id);
+      if (!success) {
+        return res.status(429).json({ error: "Too many requests", reason: "session_limit" });
+      }
+    } catch (e) {
+      console.error("[generate-report-pdf] Session rate-limit check failed, allowing request through:", e?.message);
+    }
+  }
+
   const trimmedEmail = email.trim();
 
   let requestId = null;

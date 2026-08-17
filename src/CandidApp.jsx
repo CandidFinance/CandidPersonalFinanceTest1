@@ -1369,14 +1369,6 @@ export function NavBar({ right, center }) {
   );
 }
 
-function ProgressBar({ pct }) {
-  return (
-    <div style={{height:"3px",background:CDARK,flexShrink:0}}>
-      <div style={{height:"3px",background:GOLD,width:`${pct}%`,transition:"width 0.4s ease"}}/>
-    </div>
-  );
-}
-
 // Tracks window width via a resize listener — shared breakpoint pattern for
 // switching between mobile and desktop/tablet layouts.
 function useWindowWidth() {
@@ -2605,55 +2597,6 @@ function FeedbackButton() {
       )}
     </>,
     document.body
-  );
-}
-
-function ScenarioPanel({ scenarios, currentScore, onEditInputs }) {
-  const [activeId, setActiveId] = useState(null);
-  const active = scenarios.find(s => s.id === activeId);
-  return (
-    <div style={{marginBottom:"24px"}}>
-      <h3 style={{fontFamily:SERIF,fontSize:"18px",color:G,marginBottom:"12px"}}>What if you made one change?</h3>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"10px"}}>
-        {scenarios.map(sc => (
-          <div key={sc.id}
-            onClick={() => setActiveId(activeId === sc.id ? null : sc.id)}
-            style={{background:WHITE,border:activeId===sc.id?`1.5px solid ${GOLD}`:"1px solid rgba(22,47,36,0.1)",borderRadius:"10px",padding:"14px",cursor:"pointer",transition:"border 0.15s"}}>
-            <p style={{fontSize:"13px",fontWeight:600,color:G,margin:"0 0 4px"}}>{sc.label}</p>
-            <p style={{fontSize:"12px",color:MUT,margin:"0 0 8px",lineHeight:1.45}}>{sc.description}</p>
-            <span style={{fontSize:"11px",fontWeight:700,color:GOLD}}>See the impact →</span>
-          </div>
-        ))}
-      </div>
-      {active && (
-        <div style={{marginTop:"12px",background:"rgba(196,150,58,0.07)",border:`1.5px solid ${GOLD}`,borderRadius:"10px",padding:"16px 18px",display:"flex",flexWrap:"wrap",alignItems:"center",gap:"16px"}}>
-          <div style={{flex:1,minWidth:"180px"}}>
-            <p style={{fontSize:"13px",fontWeight:700,color:G,margin:"0 0 4px"}}>{active.label}</p>
-            <p style={{fontSize:"12px",color:MUT,margin:0,lineHeight:1.5}}>{active.description}</p>
-          </div>
-          <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap"}}>
-            <div style={{textAlign:"center"}}>
-              <div style={{fontSize:"11px",color:MUT,marginBottom:"2px"}}>Financial impact</div>
-              <div style={{fontSize:"18px",fontWeight:700,color:GOLD}}>{active.impactLabel}</div>
-            </div>
-            <div style={{textAlign:"center"}}>
-              <div style={{fontSize:"11px",color:MUT,marginBottom:"2px"}}>Score boost</div>
-              <div style={{fontSize:"18px",fontWeight:700,color:"#2d6b4a"}}>+{active.scoreBoost} pts</div>
-            </div>
-            <div style={{textAlign:"center"}}>
-              <div style={{fontSize:"11px",color:MUT,marginBottom:"2px"}}>New score</div>
-              <div style={{fontSize:"18px",fontWeight:700,color:"#2d6b4a"}}>{Math.min(100, currentScore + active.scoreBoost)}</div>
-            </div>
-          </div>
-          <button onClick={onEditInputs}
-            style={{background:GOLD,border:"none",borderRadius:"8px",padding:"9px 18px",color:G,fontSize:"13px",fontWeight:700,cursor:"pointer",flexShrink:0}}>
-            Apply this change
-          </button>
-          <button onClick={() => setActiveId(null)}
-            style={{background:"transparent",border:"none",fontSize:"16px",color:MUT,cursor:"pointer",padding:"4px"}}>×</button>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -5880,9 +5823,6 @@ export default function AppShell() {
   }
 
   async function callClaude(prompt, maxTokens=1200) {
-  // TEMPORARY diagnostic — unconditional (not DEV-gated) so it shows in production.
-  // Remove once the empty-Vercel-log mystery is root-caused.
-  console.log("[Candid][DIAG] callClaude() entered — about to fetch /api/claude", { promptLength: prompt.length, maxTokens });
   const timeout = new Promise((_,reject) => setTimeout(() => reject(new Error("timeout")), 28000));
   const call = fetch("/api/claude", {
     method:"POST",
@@ -5890,9 +5830,7 @@ export default function AppShell() {
     body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:maxTokens,messages:[{role:"user",content:prompt}],session_id:posthog.get_distinct_id?.()||null})
   });
   const res = await Promise.race([call, timeout]);
-  console.log("[Candid][DIAG] fetch /api/claude responded — status:", res.status);
   const json = await res.json();
-  console.log("[Candid][DIAG] response JSON keys:", Object.keys(json), json.error ? { error: json.error } : {});
   if (res.status === 429) {
     const err = new Error("rate_limited");
     err.isRateLimit = true;
@@ -5903,14 +5841,12 @@ export default function AppShell() {
   try {
     return JSON.parse(raw);
   } catch (e) {
-    console.error("[Candid][DIAG] Claude returned malformed JSON — falling back. Raw text:", raw);
+    if (import.meta.env.DEV) console.error("[Candid] Claude returned malformed JSON — falling back. Raw text:", raw);
     throw new Error("Claude response was truncated or malformed");
   }
 }
 
   async function generateDashboard() {
-    // TEMPORARY diagnostic — unconditional. Remove once root-caused.
-    console.log("[Candid][DIAG] generateDashboard() entered");
     if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
     setGenerating(true);
 
@@ -5918,7 +5854,6 @@ export default function AppShell() {
     const metrics = m;
     const isaPrev = (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0);
     const totalOppForSummary = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
-    console.log("[Candid][DIAG] metrics/statuses in scope:", { hasMetrics: !!metrics, hasStatuses: !!statuses, isaPrev, totalOppForSummary });
 
     const financialSummary = {
       name: d.name || "User",
@@ -6065,7 +6000,6 @@ Rules:
       headline: "You've generated a few reports in quick succession — please try again shortly.",
       narrative: `${d.name?d.name.split(" ")[0]:""}, to keep this fair for everyone we cap how often a report can be regenerated in a short space of time. Your inputs are saved — just wait a little while and hit "Regenerate my report" again.`,
     };
-    console.log("[Candid][DIAG] financialSummary/prompt/fallback built OK — about to call callClaude()");
     try {
       const result = await callClaude(prompt, 1400);
       setInsights(result);
@@ -6151,8 +6085,7 @@ Rules:
       }
     }
     catch(e) {
-      // TEMPORARY diagnostic — unconditional, full error + stack. Remove once root-caused.
-      console.error("[Candid][DIAG] generateDashboard() caught an error — falling back:", e?.message, "\nstack:", e?.stack, "\nfull error object:", e);
+      if (import.meta.env.DEV) console.error("[Candid] generateDashboard() caught an error — falling back:", e?.message, "\nstack:", e?.stack, "\nfull error object:", e);
       const isRateLimit = !!e?.isRateLimit;
       const insightsToUse = isRateLimit ? rateLimitedFallback : fallback;
       setInsights(insightsToUse);

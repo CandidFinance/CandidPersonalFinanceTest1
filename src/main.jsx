@@ -2,9 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react"
 import ReactDOM from "react-dom/client"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import posthog from "posthog-js"
-import CandidApp, { PageWrap, NavBar, ContentWrap, Toggle } from "./CandidApp.jsx"
-
-console.log("SUPABASE URL:", import.meta.env.VITE_SUPABASE_URL)
+import CandidApp, { PageWrap, NavBar, ContentWrap } from "./CandidApp.jsx"
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -36,6 +34,17 @@ function getAcquisition() {
   return record
 }
 const acquisition = getAcquisition()
+
+// ── localStorage failure visibility ────────────────────────────────────────
+// These catches only ever fire on a genuine thrown error (storage blocked/
+// disabled, quota exceeded, corrupted JSON) — every call site already guards
+// the merely-missing-key case with a ternary/if before touching the catch.
+// Unconditional console.error (not DEV-gated, unlike reportSupabaseFailure in
+// CandidApp.jsx) since these were previously silent in every environment.
+function reportStorageFailure(context, e) {
+  console.error(`[Candid] localStorage failed — ${context}:`, e?.message || e);
+  posthog.capture("local_storage_failed", { context, error_message: e?.message || String(e) });
+}
 
 // ── Analytics — runs once at module load, production only ─────────────────────
 if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
@@ -408,11 +417,11 @@ function ConfidenceCheck() {
     try {
       const saved = localStorage.getItem('candid_confidence_score');
       return saved ? parseInt(saved, 10) : null;
-    } catch (e) { return null; }
+    } catch (e) { reportStorageFailure("confidence_check_load", e); return null; }
   });
 
   function handleContinue() {
-    try { localStorage.setItem('candid_confidence_score', String(score)); } catch (e) {}
+    try { localStorage.setItem('candid_confidence_score', String(score)); } catch (e) { reportStorageFailure("confidence_check_save", e); }
     navigate("/assessment/1");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
@@ -454,6 +463,101 @@ function ConfidenceCheck() {
   );
 }
 
+// ── Internal feedback admin (password-gated server-side, see api/feedback.js) ─
+// No persistence of the password across reloads by design — this shows real
+// users' free-text opinions, so the convenience of "stay logged in" isn't
+// worth it for a page opened rarely by one person.
+function FeedbackAdmin() {
+  const [password, setPassword] = useState("");
+  const [rows, setRows] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/feedback", { headers: { "x-admin-password": password } });
+      if (res.status === 401) { setError("Wrong password"); setLoading(false); return; }
+      if (res.status === 429) { setError("Too many attempts — try again shortly"); setLoading(false); return; }
+      if (!res.ok) { setError("Something went wrong fetching feedback"); setLoading(false); return; }
+      const data = await res.json();
+      setRows(data.rows);
+    } catch (e) {
+      setError("Network error");
+    }
+    setLoading(false);
+  }
+
+  const cellStyle = { padding: "10px 14px", borderBottom: "1px solid rgba(22,47,36,0.1)", fontSize: "13px", color: "#1a1a1a", verticalAlign: "top", textAlign: "left" };
+  const headStyle = { ...cellStyle, fontWeight: 700, color: G, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", borderBottom: `2px solid ${G}`, whiteSpace: "nowrap" };
+
+  if (!rows) {
+    return (
+      <div style={{ minHeight: "100vh", background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, padding: "24px" }}>
+        <form onSubmit={handleSubmit} style={{ background: WHITE, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "340px", boxShadow: "0 8px 32px rgba(0,0,0,0.1)" }}>
+          <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, marginBottom: "18px" }}>Feedback admin</div>
+          <input
+            type="password"
+            autoFocus
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="Password"
+            style={{ width: "100%", padding: "10px 12px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "14px", fontFamily: SANS, marginBottom: "12px" }}
+          />
+          <button type="submit" disabled={loading || !password} style={{ width: "100%", padding: "11px", background: (loading || !password) ? "rgba(22,47,36,0.25)" : G, border: "none", borderRadius: "8px", color: WHITE, fontSize: "14px", fontWeight: 600, cursor: (loading || !password) ? "not-allowed" : "pointer", fontFamily: SANS }}>
+            {loading ? "Checking…" : "View feedback"}
+          </button>
+          {error && <div style={{ color: "#b3261e", fontSize: "13px", marginTop: "10px" }}>{error}</div>}
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: CREAM, fontFamily: SANS, padding: "32px 24px" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ fontFamily: SERIF, fontSize: "22px", fontWeight: 700, color: G, marginBottom: "4px" }}>Feedback ({rows.length})</div>
+        <div style={{ fontSize: "12px", color: MUT, marginBottom: "20px" }}>Most recent first</div>
+        {rows.length === 0 ? (
+          <div style={{ color: MUT, fontSize: "14px" }}>No feedback submitted yet.</div>
+        ) : (
+          <div style={{ overflowX: "auto", background: WHITE, borderRadius: "10px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={headStyle}>When</th>
+                  <th style={headStyle}>Session</th>
+                  <th style={headStyle}>Confidence</th>
+                  <th style={headStyle}>Q1: Knew something new?</th>
+                  <th style={{ ...headStyle, minWidth: "220px" }}>Q2: Most useful thing</th>
+                  <th style={{ ...headStyle, minWidth: "220px" }}>Q3: Would change anything?</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => (
+                  <tr key={r.id}>
+                    <td style={cellStyle}>{new Date(r.created_at).toLocaleString("en-GB")}</td>
+                    <td style={{ ...cellStyle, fontFamily: "monospace", fontSize: "11px", color: MUT }}>{r.session_id || "—"}</td>
+                    <td style={cellStyle}>{r.confidence_score ?? "—"}</td>
+                    <td style={cellStyle}>{r.post_feedback_knew_something || "—"}</td>
+                    <td style={{ ...cellStyle, whiteSpace: "pre-wrap" }}>{r.post_feedback_useful_text || "—"}</td>
+                    <td style={{ ...cellStyle, whiteSpace: "pre-wrap" }}>
+                      {r.post_feedback_would_change || "—"}
+                      {r.post_feedback_change_details ? ` — ${r.post_feedback_change_details}` : ""}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Home route (landing page, or "welcome back" for a returning user) ─────────
 function Home() {
   const navigate = useNavigate();
@@ -470,7 +574,7 @@ function Home() {
       const hasSavedInputs = !!localStorage.getItem('candid_inputs');
       const hasSavedInsights = !!localStorage.getItem('candid_insights');
       if (hasSavedInputs && hasSavedInsights) return 'welcome_back';
-    } catch(e) {}
+    } catch(e) { reportStorageFailure("home_initial_view", e); }
     return 'landing';
   });
 
@@ -490,7 +594,7 @@ function Home() {
           body: JSON.stringify({ returned: true }),
         }).catch(() => {});
       }
-    } catch (e) {}
+    } catch (e) { reportStorageFailure("welcome_back_mark_returned", e); }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-once, not re-fired on later `view` changes within this mount
   }, []);
 
@@ -508,7 +612,7 @@ function Home() {
       if (!localStorage.getItem('candid_assessment_started_at')) {
         localStorage.setItem('candid_assessment_started_at', new Date().toISOString());
       }
-    } catch (e) {}
+    } catch (e) { reportStorageFailure("assessment_started_at", e); }
     navigate("/welcome")
     window.scrollTo({ top: 0, behavior: "instant" })
   }
@@ -520,11 +624,11 @@ function Home() {
   if (view === "welcome_back") {
     return (
       <WelcomeBack
-        name={(() => { try { const s = localStorage.getItem('candid_inputs'); return s ? JSON.parse(s).name || "" : ""; } catch(e) { return ""; } })()}
-        insightsDate={(() => { try { return localStorage.getItem('candid_insights_date'); } catch(e) { return null; } })()}
+        name={(() => { try { const s = localStorage.getItem('candid_inputs'); return s ? JSON.parse(s).name || "" : ""; } catch(e) { reportStorageFailure("welcome_back_name", e); return ""; } })()}
+        insightsDate={(() => { try { return localStorage.getItem('candid_insights_date'); } catch(e) { reportStorageFailure("welcome_back_insights_date", e); return null; } })()}
         onViewReport={() => { navigate("/dashboard"); window.scrollTo({ top:0, behavior:"instant" }); }}
         onUpdateInputs={() => {
-          try { localStorage.removeItem('candid_insights'); localStorage.removeItem('candid_insights_date'); } catch(e) {}
+          try { localStorage.removeItem('candid_insights'); localStorage.removeItem('candid_insights_date'); } catch(e) { reportStorageFailure("update_inputs_clear", e); }
           navigate("/assessment/1");
           window.scrollTo({ top:0, behavior:"instant" });
         }}
@@ -533,7 +637,7 @@ function Home() {
             localStorage.removeItem('candid_inputs');
             localStorage.removeItem('candid_insights');
             localStorage.removeItem('candid_insights_date');
-          } catch(e) {}
+          } catch(e) { reportStorageFailure("start_fresh_clear", e); }
           setView("landing");
           posthog.capture("landing_page_viewed");
           window.scrollTo({ top:0, behavior:"instant" });
@@ -575,6 +679,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/welcome" element={<ConfidenceCheck />} />
+        <Route path="/admin/feedback" element={<FeedbackAdmin />} />
         {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
             holds — d, insights, completedModules, one-shot modal refs, etc.)
             stays mounted across navigation between all three of these paths,

@@ -120,7 +120,28 @@
       "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-investments-final.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
       "Bash(node_modules/.bin/esbuild.cmd src/CandidApp.jsx --bundle --platform=browser --format=esm --outfile=/tmp/candid-isachart-check.js --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
       "Bash(node_modules/.bin/esbuild.cmd \"C:/Users/harvp/AppData/Local/Temp/claude/c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1/c210abb6-8941-4a4b-9122-b50db9855167/scratchpad/test-isa-growth-chart.mjs\" --bundle --platform=node --format=esm --outfile=.test-isa-growth-chart.mjs --external:react --external:react-dom --external:posthog-js --external:@react-pdf/renderer --loader:.png=file)",
-      "Bash(node .test-isa-growth-chart.mjs)"
+      "Bash(node .test-isa-growth-chart.mjs)",
+      "Bash(curl -s http://localhost:5186/ -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(node shot11.mjs)",
+      "Bash(node shot10.mjs)",
+      "Bash(curl -s -o /tmp/candid_transform7.txt -w \"%{http_code}\\\\n\" \"http://localhost:5174/src/CandidApp.jsx?t=$\\(date +%s\\)\")",
+      "Bash(curl -s -o /tmp/candid_pension2.txt -w \"%{http_code}\\\\n\" \"http://localhost:5174/src/CandidApp.jsx?t=$\\(date +%s\\)\")",
+      "Bash(grep -n \"// Pension — missed match\" src/CandidApp.jsx)",
+      "Bash(grep -n \"// Investments — ISA headroom\" -A10 src/CandidApp.jsx)",
+      "Bash(tasklist)",
+      "Bash(wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /Value)",
+      "Bash(node netcheck2.js)",
+      "mcp__claude_ai_PostHog__exec",
+      "Bash(node drive.js)",
+      "Bash(node \"C:\\\\Users\\\\harvp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-harvp-OneDrive-01--Candid-CandidPersonalFinanceTest1\\\\6c6f0e80-e20c-409e-8e04-683c9ae74589\\\\scratchpad\\\\local-api-server.mjs\")",
+      "Bash(curl -s -i -H \"Origin: http://localhost:5173\" http://127.0.0.1:3902/api/feedback -H \"x-admin-password: definitely-wrong\")",
+      "Bash(curl -s -i http://127.0.0.1:3902/api/feedback -H \"x-admin-password: whatever\")",
+      "Bash(npx --no-install eslint --version)",
+      "Bash(git rm *)",
+      "Bash(git status *)",
+      "Bash(xxd)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(node --check api/generate-report-pdf.js)"
     ]
   }
 }
