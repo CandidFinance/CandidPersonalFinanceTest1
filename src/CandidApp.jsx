@@ -895,8 +895,6 @@ function getModuleInsights(key, d, m, savingsRates) {
       const annualInterest = monthlyInterest * 12;
       const savRate = +d.savingsRate||4.2;
       const overpayBenefit = (rate - savRate).toFixed(1);
-      const fixExpiry = d.fixExpiry||"";
-      const fixUrgency = fixExpiry === "under6m" || fixExpiry === "6to12m";
       // Rough LTV assuming property value from balance (very rough — user could provide)
       // Amortisation: months to clear at current payment
       let mos = 0, remaining = bal;
@@ -914,8 +912,6 @@ function getModuleInsights(key, d, m, savingsRates) {
           tooltip:`Every £1 overpaid saves ${rate}% in interest — guaranteed, risk-free. Your cash earns ${savRate}%. Net advantage of overpaying: ${+overpayBenefit > 0 ? `+${overpayBenefit}% in favour of overpaying` : `${overpayBenefit}% — investing likely wins at your rate`}. At rates above ~4.5%, overpaying typically beats investing in after-tax terms.` },
         { label:"Years remaining at current payment", value: yearsLeft ? `~${yearsLeft} years` : "—", flag: false,
           tooltip: totalInterestRemaining ? `At ${fmt(mo)}/month, you'll clear the mortgage in ~${yearsLeft} years and pay ~${fmt(totalInterestRemaining)} in total interest. Each £10,000 lump sum overpayment today saves approximately ${fmt(Math.round(10000 * rate/100 * yearsLeft * 0.5))} in interest over the remaining term.` : "Enter your monthly payment to see full amortisation." },
-        { label:"Fix expiry", value: fixExpiry === "" ? "Not set" : fixExpiry === "variable" ? "Already variable" : fixExpiry.replace("under6m","< 6 months").replace("6to12m","6–12 months").replace("1to2y","1–2 years").replace("2yplus","2+ years"), flag: fixUrgency,
-          tooltip: fixUrgency ? `Your fixed rate expires soon. Lenders typically allow you to lock a new rate 6 months before expiry — meaning you should be exploring your options now. A 0.5% rate difference on ${fmt(bal)} saves ${fmt(Math.round(bal*0.005))} per year. Get whole-of-market advice from a fee-free broker.` : `When your fix expires, your lender's standard variable rate (SVR) typically jumps to 7-8%+. Start exploring 6 months before expiry to avoid rolling onto the SVR.` },
         ...(m.ltv !== null ? [{
           label: "Loan to value",
           value: `${m.ltv}%`,
@@ -1191,8 +1187,6 @@ function getModuleProducts(key, d, m, savingsRates) {
       const bal     = +d.mortgageBalance||0;
       const mo      = +d.monthlyMortgage||0;
       const savRate = +d.savingsRate||4.2;
-      const fixExpiry = d.fixExpiry||"";
-      const fixUrgent = fixExpiry === "under6m" || fixExpiry === "6to12m";
       const overpayBenefit = +(rate - savRate).toFixed(1);
       // Overpayment scenario: how much interest does a £10k lump sum save?
       let baseMos = 0, baseRemain = bal;
@@ -1202,20 +1196,18 @@ function getModuleProducts(key, d, m, savingsRates) {
       const monthsSaved   = Math.max(0, baseMos - newMos);
       const interestSaved10k = Math.max(0, (baseMos - newMos) * mo - 10000);
       return {
-        heading: fixUrgent ? "⚠️ Your fixed rate expires soon — act now" : rate >= 4.5 ? "Your rate is high — overpaying likely beats saving" : "Your mortgage looks manageable — stay disciplined",
-        subheading: fixUrgent
-          ? `Your fixed rate expires in ${fixExpiry === "under6m" ? "under 6 months" : "6–12 months"}. Rolling onto your lender's standard variable rate (SVR) — typically 7-8%+ — could cost you ${fmt(Math.round(bal * 0.025 / 12))}/month extra. Lock a new rate now.`
-          : rate >= 4.5
+        heading: rate >= 4.5 ? "Your rate is high — overpaying likely beats saving" : "Your mortgage looks manageable — stay disciplined",
+        subheading: rate >= 4.5
           ? `At ${rate}%, overpaying gives a guaranteed ${rate}% return — net advantage vs your savings rate (${savRate}%): +${overpayBenefit}%. A £10,000 lump sum today saves ~${fmt(interestSaved10k)} in interest and cuts ${monthsSaved} months off your term.`
           : `At ${rate}%, the maths marginally favours investing surplus cash over overpaying — your ISA can earn more in expected returns. But overpaying is risk-free; investing isn't. Worth doing both.`,
         products: [
-          { name:"L&C Mortgages",   type:"Fee-free whole-of-market broker", rate:"All lenders", badge:"Largest UK broker", feature:"No broker fee. Access to every major lender. Particularly strong for remortgaging — will model your current deal vs market.", cta:"Explore remortgage", highlight:fixUrgent, appIcon:"🏠", demoNote:"Would open L&C remortgage flow" },
-          { name:"Habito",          type:"Fee-free digital broker",          rate:"90+ lenders", badge:"Fastest",          feature:"Whole-of-market in minutes online. Strong for employed borrowers in straightforward situations.", cta:"Get quotes", highlight:!fixUrgent && rate >= 4.5, appIcon:"💻", demoNote:"Would open Habito quote tool" },
+          { name:"L&C Mortgages",   type:"Fee-free whole-of-market broker", rate:"All lenders", badge:"Largest UK broker", feature:"No broker fee. Access to every major lender. Particularly strong for remortgaging — will model your current deal vs market.", cta:"Explore remortgage", highlight:false, appIcon:"🏠", demoNote:"Would open L&C remortgage flow" },
+          { name:"Habito",          type:"Fee-free digital broker",          rate:"90+ lenders", badge:"Fastest",          feature:"Whole-of-market in minutes online. Strong for employed borrowers in straightforward situations.", cta:"Get quotes", highlight:rate >= 4.5, appIcon:"💻", demoNote:"Would open Habito quote tool" },
           { name:"Mojo Mortgages",  type:"Fee-free broker",                  rate:"Whole of market", badge:"Award-winning", feature:"Human advisers + digital tools. Good for more complex cases.", cta:"Get advice", highlight:false, appIcon:"📱", demoNote:"Would open Mojo Mortgages" },
           { name:"Sprive",          type:"Mortgage overpayment app",          rate:`Saves at ${rate}%`, badge:"Overpayment", feature:"Round-up and automate overpayments. Tracks how many years you're shaving off your term in real time.", cta:"Try Sprive", highlight:false, appIcon:"⚡", demoNote:"Would open Sprive app" },
         ],
         disclaimer:"Mortgage products are subject to status and valuation. Your home may be repossessed if you do not keep up repayments. Brokers shown earn commission from lenders — no cost to you. Candid may earn a referral fee.",
-        mortgageSection: { bal, rate, mo, monthsSaved, interestSaved10k, fixUrgent, fixExpiry, savRate, overpayBenefit }
+        mortgageSection: { bal, rate, mo, monthsSaved, interestSaved10k, savRate, overpayBenefit }
       };
     }
     default:
@@ -5448,7 +5440,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
         {/* ── Mortgage: overpayment scenarios + remortgage timing + Take Me There ── */}
         {moduleKey === "mortgage" && products?.mortgageSection && (() => {
-          const { bal, rate, mo, monthsSaved, interestSaved10k, fixUrgent, fixExpiry, savRate, overpayBenefit } = products.mortgageSection;
+          const { bal, rate, mo, monthsSaved, interestSaved10k, savRate, overpayBenefit } = products.mortgageSection;
           const isVariable = d.mortgageType === "variable";
           const fixedSavings = isVariable && rate > 4.2 ? Math.round(bal * (rate - 4.2) / 100 / 12) : 0;
           const scenarios = [5000, 10000, 25000].filter(x => x < bal);
@@ -5466,20 +5458,6 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   </p>
                   <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
                     A fee-free broker can search the whole market and confirm whether fixing now makes sense for your situation — no obligation.
-                  </div>
-                </div>
-              )}
-              {fixUrgent && (
-                <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                    <span style={{fontSize:"16px"}}>🚨</span>
-                    <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Fixed rate expiring soon</span>
-                  </div>
-                  <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
-                    Your fixed rate expires {fixExpiry === "under6m" ? "within 6 months" : "in 6–12 months"}. After expiry you roll onto your lender's Standard Variable Rate (SVR) — typically 7–8%+, costing you <strong>{fmt(Math.round(bal * 0.025 / 12))}/month more</strong> than a competitive fixed deal. Start the process now.
-                  </p>
-                  <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
-                    Most lenders allow you to lock a new rate up to 6 months before your current deal ends — without paying early repayment charges. A fee-free broker searches the whole market in one go.
                   </div>
                 </div>
               )}
@@ -5515,7 +5493,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               )}
               <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"12px",padding:"16px 18px"}}>
                 <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Take me there</div>
-                <TakeMeThere app="L&C Mortgages" icon="🏠" message={fixUrgent ? "Find my best remortgage deal now" : "Compare mortgage overpayment options"} demoNote="Would open L&C whole-of-market comparison"/>
+                <TakeMeThere app="L&C Mortgages" icon="🏠" message="Compare mortgage overpayment options" demoNote="Would open L&C whole-of-market comparison"/>
                 <TakeMeThere app="Sprive" icon="⚡" message="Set up automatic mortgage overpayments" demoNote="Would open Sprive app to connect your mortgage"/>
               </div>
             </div>
