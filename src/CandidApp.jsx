@@ -4151,6 +4151,54 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const lsaCrossAge = lsaCrossYearsLeft != null ? age + lsaCrossYearsLeft : null;
           const showLsaFlag = showTrajectory && (alreadyPastLsa || lsaCrossAge != null);
 
+          // ── Annual Allowance taper (high earners) ────────────────────────────
+          // Separate from the LSA check above: this is about how much can go IN
+          // each year, not how the pot comes OUT. Only affects a small population
+          // (threshold income > £200k AND adjusted income > £260k, both required),
+          // so it's a flag on eligibility + an approximate reduced allowance, not
+          // an exact remaining-allowance calculation — carry-forward from the
+          // prior 3 tax years isn't something we capture, so we can't compute
+          // that precisely; we just point the user at it.
+          //
+          // Threshold/adjusted income depend on how contributions are made:
+          //  - sacrifice: HMRC's anti-avoidance rule adds the sacrificed amount
+          //    back for the threshold-income test, so gross income is used
+          //    completely unreduced.
+          //  - relief: Candid's "Relief at source / net pay" option is RAS in
+          //    practice — its own copy says the provider claims relief from
+          //    HMRC, and the surplus-cash comparison above already models it
+          //    with a ×1.25 gross-up (line ~647). The % contribution entered is
+          //    the net cash paid, so it must be grossed up by ÷0.80 (basic-rate
+          //    relief) before subtracting — the raw cash figure understates the
+          //    true relieved contribution.
+          //  - unknown (blank): falls back to a raw, ungrossed subtraction — the
+          //    more conservative assumption, so an unknown contribution method
+          //    doesn't manufacture a false alarm.
+          // Adjusted income = threshold income + the same (correctly-grossed)
+          // employee contribution added back + the employer's actual
+          // contribution (min of the two rates — see the LSA build for why
+          // that's used instead of the growth-trajectory chart's more
+          // optimistic "employer always pays the full cap" assumption).
+          const baseGrossIncome = salary + (+d.bonusAmount||0) + (+d.otherIncome||0) + (+d.dividendIncome||0);
+          const personalContributionCash = salary * myPct / 100;
+          const employerContribCashAA = Math.min(myPct, empCapPct) / 100 * salary;
+          let thresholdIncome;
+          if (d.pensionType === "sacrifice") {
+            thresholdIncome = baseGrossIncome;
+          } else if (d.pensionType === "relief") {
+            thresholdIncome = baseGrossIncome - (personalContributionCash / 0.80);
+          } else {
+            thresholdIncome = baseGrossIncome - personalContributionCash;
+          }
+          const employeeContribForAdjusted = d.pensionType === "relief" ? personalContributionCash / 0.80 : personalContributionCash;
+          const adjustedIncome = thresholdIncome + employeeContribForAdjusted + employerContribCashAA;
+          const AA_THRESHOLD_INCOME_LIMIT = 200000, AA_ADJUSTED_INCOME_LIMIT = 260000;
+          const inAATaper = d.hasPension === "yes" && thresholdIncome > AA_THRESHOLD_INCOME_LIMIT && adjustedIncome > AA_ADJUSTED_INCOME_LIMIT;
+          // Rounds DOWN (not to-nearest) so a just-tapered result never rounds back up
+          // to exactly £60,000 — which would read as "reduced to £60,000", a
+          // contradiction of the very message announcing the reduction.
+          const approxAA = inAATaper ? Math.max(10000, Math.floor((60000 - Math.max(0, adjustedIncome - AA_ADJUSTED_INCOME_LIMIT) / 2) / 1000) * 1000) : 60000;
+
           return (
             <>
               {(definitiveCols.length > 0 || bonusPotential > 0) && (
@@ -4296,6 +4344,24 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     This is separate from your Personal Savings Allowance, which isn't affected by the £100k taper itself — it only falls to £0 once income crosses £125,140 (additional rate). You're currently in the {m.taxBandLabel}-rate band.
                   </p>
                 </ExpandableInvestmentItem>
+              )}
+
+              {inAATaper && (
+                <div className="fu2" style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 8px 8px 0",padding:"14px 16px",marginBottom:"20px"}}>
+                  <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Worth knowing</div>
+                  <p style={{fontSize:"13px",color:G,lineHeight:1.65,margin:"0 0 8px",fontWeight:600}}>
+                    Your Annual Allowance may be reduced to approximately {fmt(approxAA)} this tax year (down from the standard £60,000)
+                  </p>
+                  <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                    Once your adjusted income — broadly, your total income plus all pension contributions, yours and your employer's — passes £260,000, the amount you and your employer can pay into your pension each year before a tax charge applies starts shrinking: £1 less for every £2 above that threshold, down to a minimum of £10,000. Based on your stated income and contribution rate, this looks like it may apply to you.
+                  </p>
+                  <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                    Unused allowance from the previous 3 tax years (carry-forward) can increase what you can actually contribute without a charge — but working that out precisely needs your contribution and allowance-usage history from those years, which we don't have. Check your pension provider's annual allowance statements, your HMRC personal tax account, or a financial adviser for an exact figure, especially before making a large contribution.
+                  </p>
+                  <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,margin:0,paddingTop:"8px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
+                    Estimated from your stated salary, bonus, other income, and contribution rates — not a substitute for a precise calculation, and it doesn't account for any income we haven't asked about.
+                  </p>
+                </div>
               )}
 
               {hasStatedBonus ? (
