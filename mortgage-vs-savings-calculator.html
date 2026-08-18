@@ -151,6 +151,36 @@
     }
   </script>
 
+  <!-- ── Prefill from a returning visit / carry inputs into the main app ────
+       Reads/writes the same "candid_inputs" localStorage shape the main app
+       (src/CandidApp.jsx) uses, so numbers entered here are still there if the
+       visitor clicks through to the full assessment. Only the fields with a
+       clean 1:1 match are carried over (balance, rate, fix expiry) — term,
+       surplus and the alt savings rate aren't direct equivalents of any single
+       assessment field, so they're left for the user to answer properly there. -->
+  <script>
+    var CANDID_INPUTS_KEY = 'candid_inputs';
+    function loadCandidInputs() {
+      try { return JSON.parse(localStorage.getItem(CANDID_INPUTS_KEY) || '{}'); } catch (e) { return {}; }
+    }
+    function saveCandidInputs(patch) {
+      try {
+        var existing = loadCandidInputs();
+        localStorage.setItem(CANDID_INPUTS_KEY, JSON.stringify(Object.assign(existing, patch)));
+      } catch (e) {}
+    }
+
+    (function prefillFromSavedInputs() {
+      var saved = loadCandidInputs();
+      if (saved.mortgageBalance) document.getElementById('balance').value = saved.mortgageBalance;
+      if (saved.mortgageRate) document.getElementById('rate').value = saved.mortgageRate;
+      if (saved.fixExpiryMonth && saved.fixExpiryYear) {
+        var mm = String(saved.fixExpiryMonth).padStart(2, '0');
+        document.getElementById('fixExpiry').value = saved.fixExpiryYear + '-' + mm + '-01';
+      }
+    })();
+  </script>
+
   <!-- ── Calculator logic ──────────────────────────────────────────────
        Mirrors simulateAmortisation() / fvAnnuity() / the "Mortgage overpayment"
        branch of calcForecast(), and the PSA-by-tax-band table from
@@ -218,6 +248,17 @@
       var taxBand = document.getElementById('taxBand').value;
       var resultEl = document.getElementById('result');
       var bridgeEl = document.getElementById('bridge');
+
+      if (balance > 0) {
+        var patch = { hasMortgage: 'yes', mortgageType: 'fixed', mortgageBalance: balance };
+        if (rate > 0) patch.mortgageRate = rate;
+        if (fixExpiry) {
+          var parts = fixExpiry.split('-');
+          patch.fixExpiryMonth = String(+parts[1]);
+          patch.fixExpiryYear = parts[0];
+        }
+        saveCandidInputs(patch);
+      }
 
       if (balance <= 0 || termYears <= 0 || !fixExpiry) {
         resultEl.innerHTML = '<p style="color:#8a8a8a;margin:0;">Enter your mortgage balance, term and fix expiry date above to see your result.</p>';
@@ -295,7 +336,10 @@
 
     // Default the fix-expiry field to two years from today so the calculator
     // shows a real result immediately, without hardcoding a date that goes stale.
+    // Only when prefillFromSavedInputs (which runs first) hasn't already set it
+    // from a returning visit's saved data — otherwise this would clobber it.
     (function setDefaultExpiry() {
+      if (document.getElementById('fixExpiry').value) return;
       var d = new Date();
       d.setFullYear(d.getFullYear() + 2);
       document.getElementById('fixExpiry').value = d.toISOString().slice(0, 10);

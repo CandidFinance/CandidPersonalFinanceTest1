@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="Earning near £100,000? Find out if you're in the 60% tax trap and exactly how much pension sacrifice recovers your Personal Allowance. Free UK calculator, instant answer."/>
-  <meta property="og:title" content="The £100,000 Tax Trap Calculator — Am I Paying 60% Tax?"/>
-  <meta property="og:description" content="Between £100,000 and £125,140 you lose your Personal Allowance at an effective 60% marginal rate. Free UK calculator shows exactly how much pension sacrifice gets you out of it."/>
+  <meta name="description" content="Earning near £100,000 with young kids? Find out if you're in the 60% tax trap AND losing Tax-Free Childcare or 30 free hours — and the exact pension sacrifice that fixes both. Free UK calculator."/>
+  <meta property="og:title" content="The £100,000 Tax Trap & Childcare Cliff Calculator"/>
+  <meta property="og:description" content="Between £100,000 and £125,140 you lose your Personal Allowance at an effective 60% marginal rate — and if you have children under 5, crossing £100,000 at all can cost you thousands in childcare support too. Free UK calculator, instant answer."/>
   <meta property="og:type" content="website"/>
-  <title>The £100,000 Tax Trap Calculator — Am I Paying 60% Tax? (UK) | Candid</title>
+  <title>The £100,000 Tax Trap & Childcare Cliff Calculator (UK) | Candid</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
@@ -20,20 +20,22 @@
     p { color: #4a4a4a; font-size: 15px; line-height: 1.7; }
     a { color: #162F24; }
     label { display:block; font-size: 12px; font-weight: 700; color: rgba(246,240,230,0.75); letter-spacing:0.04em; text-transform:uppercase; margin-bottom: 6px; }
-    input {
+    input, select {
       width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
       background: #0f2018; color: #f6f0e6; font-size: 15px; font-family: 'DM Sans', sans-serif;
     }
-    input:focus { outline: 2px solid #C4963A; }
+    input:focus, select:focus { outline: 2px solid #C4963A; }
     .field { margin-bottom: 16px; }
     table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(22,47,36,0.12); }
     th { color: #162F24; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
     td { color: #4a4a4a; }
-    .statgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px; }
-    .stat { }
-    .stat .v { font-family:'Playfair Display',Georgia,serif; font-size:20px; color:#162F24; font-weight:700; }
+    .statgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; margin-top:16px; }
+    .stat .v { font-family:'Playfair Display',Georgia,serif; font-size:19px; color:#162F24; font-weight:700; }
     .stat .l { font-size:11px; color:#8a8a8a; margin-top:2px; }
+    .highlight { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; background:rgba(196,150,58,0.08); border:1px solid rgba(196,150,58,0.28); border-radius:10px; padding:14px 16px; }
+    .highlight .v { font-family:'Playfair Display',Georgia,serif; font-size:19px; color:#162F24; font-weight:700; }
+    .highlight .l { font-size:11px; color:#8a8a8a; margin-top:2px; }
   </style>
 </head>
 <body>
@@ -43,8 +45,8 @@
   </nav>
 
   <div style="max-width:860px;margin:0 auto;padding:48px 24px 24px;">
-    <h1>The £100,000 tax trap: are you paying a 60% marginal rate?</h1>
-    <p style="margin-top:14px;">Between £100,000 and £125,140 of adjusted net income, you lose £1 of tax-free Personal Allowance for every £2 you earn — creating an effective 60% tax rate on that band. Enter your numbers below for an instant, UK-specific answer.</p>
+    <h1>The £100,000 tax trap &amp; childcare cliff: what crossing the line really costs</h1>
+    <p style="margin-top:14px;">Between £100,000 and £125,140 of adjusted net income, you lose Personal Allowance at an effective 60% marginal rate. If you have a child under 5, crossing £100,000 at all can also wipe out Tax-Free Childcare and your 30 free hours — for the whole year, not just the fringe pound. Enter your numbers below for an instant, UK-specific answer.</p>
 
     <!-- ── Calculator ─────────────────────────────────────────────────── -->
     <div style="background:#162F24;border-radius:14px;padding:26px 24px;margin-top:28px;">
@@ -54,13 +56,28 @@
           <input type="number" id="salary" value="95000" min="0" step="500"/>
         </div>
         <div class="field">
-          <label for="bonus">Bonus / other taxable income</label>
+          <label for="bonus">Annual bonus estimate</label>
           <input type="number" id="bonus" value="8000" min="0" step="500"/>
+        </div>
+        <div class="field">
+          <label for="pensionPct">Employee pension contribution (% of salary)</label>
+          <input type="number" id="pensionPct" value="0" min="0" max="100" step="1"/>
+        </div>
+        <div class="field">
+          <label for="kids">Children under 5</label>
+          <input type="number" id="kids" value="0" min="0" max="10" step="1"/>
         </div>
       </div>
       <div class="field" style="margin-bottom:0;">
-        <label for="pensionPct">Current pension contribution (% of salary, any type)</label>
-        <input type="number" id="pensionPct" value="0" min="0" max="100" step="1"/>
+        <label for="loanPlan">Student loan plan</label>
+        <select id="loanPlan">
+          <option value="none" selected>No student loan</option>
+          <option value="plan1">Plan 1 — pre-2012 (Eng/Wales) or NI</option>
+          <option value="plan2">Plan 2 — England/Wales, 2012–2023</option>
+          <option value="plan4">Plan 4 — Scotland</option>
+          <option value="plan5">Plan 5 — England, 2023 onwards</option>
+          <option value="postgrad">Postgraduate Loan</option>
+        </select>
       </div>
     </div>
 
@@ -68,13 +85,13 @@
     <div id="result" style="background:#ffffff;border:2px solid #162F24;border-radius:14px;padding:24px;margin-top:18px;"></div>
 
     <p style="font-size:12px;color:#8a8a8a;margin-top:10px;line-height:1.6;">
-      This is a simplified estimate for education purposes, not regulated financial advice. It assumes salary sacrifice — if you contribute via a personal pension (relief at source) instead, you get the tax saving but not the National Insurance saving shown below. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
+      This is a simplified estimate for education purposes, not regulated financial advice. It assumes salary sacrifice (a personal pension/relief-at-source contribution gets the tax saving but not the National Insurance or student loan saving shown below), that your salary is above your student loan's repayment threshold (true for almost everyone in this income band), and it uses illustrative average childcare values — Tax-Free Childcare tops up to £2,000/child/yr (children under 11), and the 30 hours offer is commonly cited as worth up to £7,500/child/yr, though the real figure varies by location, provider and hours actually used. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
     </p>
 
     <!-- ── Bridge to full tool ───────────────────────────────────────── -->
     <div id="bridge" style="display:none;background:#f6f0e6;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
-      <div style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">There's more to this than the taper</div>
-      <p style="margin-top:0;">This only checks your Personal Allowance taper. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, carrying student loan or mortgage debt that might beat pension sacrifice, or how close you are to the Annual Allowance limit on pension contributions. Candid checks your whole picture, free, in about 5 minutes.</p>
+      <div id="bridgeLabel" style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;"></div>
+      <p id="bridgeText" style="margin-top:0;"></p>
       <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#f6f0e6;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture, free →</a>
     </div>
 
@@ -88,17 +105,20 @@
       <tr><td>£120,000</td><td>£2,570</td><td>60%</td></tr>
       <tr><td>£125,140+</td><td>£0</td><td>45%</td></tr>
     </table>
-    <p style="font-size:12px;color:#8a8a8a;">Every extra £1 earned in the £100,000–£125,140 band is taxed at 40%, and also strips away 50p of allowance that would otherwise have been tax-free — 40% of that 50p is a further 20% effective tax. 40% + 20% = 60%. Above £125,140 the allowance is already gone, so the rate drops back to the flat 45% additional rate.</p>
+    <p style="font-size:12px;color:#8a8a8a;">Every extra £1 earned in the £100,000–£125,140 band is taxed at 40%, and also strips away 50p of allowance that would otherwise have been tax-free — 40% of that 50p is a further 20% effective tax. 40% + 20% = 60%. Above £125,140 the allowance is already gone, so the rate drops back to the flat 45% additional rate. Add 2% employee National Insurance, plus 6–9% if you're still repaying a student loan, and the true marginal rate in this band is often 62–71%.</p>
+
+    <h2>The childcare cliff: a spike that can exceed 100%</h2>
+    <p>Tax-Free Childcare and the 30 free hours offer both use the same test: if either parent's adjusted net income goes even £1 over £100,000, the household loses the <em>entire</em> entitlement for the whole year — it isn't tapered like the Personal Allowance. For a family with a child under 5 using the full 30 hours, that single pound can cost several thousand pounds in support, on top of the 60% tax rate on income in that band. That's what people mean by an effective marginal rate that "exceeds 100%" right at the threshold: the tax system takes 60p of that last pound, and the childcare system takes thousands more.</p>
 
     <h2>Why bonuses are the most common trigger</h2>
-    <p>Most people who fall into this band don't plan to — a bonus, a pay rise, or investment/dividend income pushes their adjusted net income over £100,000 without their base salary changing. Because it's based on total income for the tax year, a one-off bonus in an otherwise sub-£100k salary can be enough to trigger it.</p>
+    <p>Most people who fall into this band don't plan to — a bonus, a pay rise, or investment/dividend income pushes their adjusted net income over £100,000 without their base salary changing. Because it's based on total income for the tax year, a one-off bonus in an otherwise sub-£100k salary can be enough to trigger both the tax trap and the childcare cliff at once.</p>
 
     <h2>How to get out of it: salary sacrifice</h2>
-    <p>Because the taper is based on <em>adjusted</em> net income, pension contributions taken before tax reduce it directly. Sacrificing enough to bring your adjusted net income back to £100,000 restores your full Personal Allowance — which is why the effective relief on pension contributions in this band is around 60%, roughly double the relief available outside it.</p>
+    <p>Because both the taper and the childcare cliff are based on <em>adjusted</em> net income, pension contributions taken before tax reduce it directly. Sacrificing enough to bring your adjusted net income back to £100,000 restores your full Personal Allowance <em>and</em> your full childcare entitlement — the same pound of sacrifice fixes both at once, which is why the effective relief in this band is so much higher than pension contributions get anywhere else.</p>
 
     <h2>Related calculators</h2>
     <p>
-      <a href="/student-loan-calculator.html">Should I pay off my Plan 2 or Plan 5 student loan early?</a> — if you're weighing pension sacrifice against student loan overpayment, this checks the loan side of that comparison. ·
+      <a href="/student-loan-calculator.html">Should I pay off my student loan early?</a> — if you're weighing pension sacrifice against loan overpayment, this checks the loan side of that comparison. ·
       <a href="/mortgage-vs-savings-calculator.html">Mortgage overpayment vs high-yield savings</a> — if a mortgage fix is ending, this runs the same kind of comparison for that spare cash.
     </p>
   </div>
@@ -124,16 +144,53 @@
     }
   </script>
 
+  <!-- ── Prefill from a returning visit / carry inputs into the main app ────
+       Same "candid_inputs" localStorage shape as the main app (src/CandidApp.jsx)
+       and the other calculators. Only carries fields the main app actually has:
+       salary, bonusAmount, myContribution — plus studentLoan when it's a plan
+       the main app's own select supports (Plan 1/2/5; it doesn't model Plan 4
+       or Postgraduate yet). "Children under 5" has no direct match in the main
+       app's kids fields (numKids/kidsAges aren't age-filtered the same way), so
+       it's only used to set hasKids/numKids as a starting point, not kidsAges. -->
+  <script>
+    var CANDID_INPUTS_KEY = 'candid_inputs';
+    var PLANS_KNOWN_TO_MAIN_APP = { plan1: true, plan2: true, plan5: true };
+
+    function loadCandidInputs() {
+      try { return JSON.parse(localStorage.getItem(CANDID_INPUTS_KEY) || '{}'); } catch (e) { return {}; }
+    }
+    function saveCandidInputs(patch) {
+      try {
+        var existing = loadCandidInputs();
+        localStorage.setItem(CANDID_INPUTS_KEY, JSON.stringify(Object.assign(existing, patch)));
+      } catch (e) {}
+    }
+
+    (function prefillFromSavedInputs() {
+      var saved = loadCandidInputs();
+      if (saved.salary) document.getElementById('salary').value = saved.salary;
+      if (saved.bonusAmount) document.getElementById('bonus').value = saved.bonusAmount;
+      if (saved.myContribution) document.getElementById('pensionPct').value = saved.myContribution;
+      if (saved.numKids) document.getElementById('kids').value = saved.numKids;
+      if (saved.studentLoan && saved.studentLoan !== 'none') document.getElementById('loanPlan').value = saved.studentLoan;
+    })();
+  </script>
+
   <!-- ── Calculator logic ──────────────────────────────────────────────
-       Mirrors calcPensionTaperSaving() in src/CandidApp.jsx (taperStart=100000,
-       taperEnd=125140, sacrifice-needed = (ani-100000)/2, tax saving = 60% of
-       sacrifice, NI saving = 2% of sacrifice). Kept as a plain duplicate — this
-       page is static HTML, not part of the React build — so if the Personal
-       Allowance / taper thresholds change, update TAPER_START/TAPER_END here too.
-       The "already past £125,140" state below is calculator-specific messaging,
-       not present in the in-app version. -->
+       Personal Allowance taper mirrors calcPensionTaperSaving() in
+       src/CandidApp.jsx (taperStart=100000, taperEnd=125140, sacrifice needed =
+       the full ani-100000 gap 1-for-1, tax saving = 60% of sacrifice inside the
+       band or 45% above it, NI saving = 2%). Student loan rates mirror
+       PLAN_CONSTANTS in student-loan-calculator.html. The childcare-cliff maths
+       (CHILDCARE_TFC_PER_CHILD / CHILDCARE_30HRS_PER_CHILD) and the combined
+       take-home-vs-pension-growth framing are specific to this page — there's
+       no in-app equivalent yet. -->
   <script>
     var TAPER_START = 100000, TAPER_END = 125140;
+    var CHILDCARE_TFC_PER_CHILD = 2000;   // Tax-Free Childcare top-up, per child under 11
+    var CHILDCARE_30HRS_PER_CHILD = 7500; // commonly-cited average value of the 30 free hours, ages 9mo-school age
+    var STUDENT_LOAN_RATE = { none: 0, plan1: 0.09, plan2: 0.09, plan4: 0.09, plan5: 0.09, postgrad: 0.06 };
+    var STUDENT_LOAN_LABEL = { none: '', plan1: ' plus 9% Plan 1 student loan repayments', plan2: ' plus 9% Plan 2 student loan repayments', plan4: ' plus 9% Plan 4 student loan repayments', plan5: ' plus 9% Plan 5 student loan repayments', postgrad: ' plus 6% Postgraduate Loan repayments' };
 
     function fmt(n) {
       return '£' + Math.round(n).toLocaleString('en-GB');
@@ -143,8 +200,15 @@
       var salary = +document.getElementById('salary').value || 0;
       var bonus = +document.getElementById('bonus').value || 0;
       var pensionPct = +document.getElementById('pensionPct').value || 0;
+      var kids = +document.getElementById('kids').value || 0;
+      var loanPlan = document.getElementById('loanPlan').value;
       var resultEl = document.getElementById('result');
       var bridgeEl = document.getElementById('bridge');
+
+      var patch = { salary: salary || undefined, bonusAmount: bonus || undefined, myContribution: pensionPct || undefined, numKids: kids || undefined };
+      if (kids > 0) patch.hasKids = 'yes';
+      if (PLANS_KNOWN_TO_MAIN_APP[loanPlan]) patch.studentLoan = loanPlan;
+      saveCandidInputs(patch);
 
       if (salary <= 0) {
         resultEl.innerHTML = '<p style="color:#8a8a8a;margin:0;">Enter your salary above to see your result.</p>';
@@ -154,37 +218,68 @@
 
       var pensionSacrifice = salary * pensionPct / 100;
       var ani = salary + bonus - pensionSacrifice;
-      var html;
+      var loanRate = STUDENT_LOAN_RATE[loanPlan];
+      var loanLabel = STUDENT_LOAN_LABEL[loanPlan];
+      var childcareAtStake = kids * (CHILDCARE_TFC_PER_CHILD + CHILDCARE_30HRS_PER_CHILD);
+      var html, bridgeLabel, bridgeText;
 
       if (ani < TAPER_START) {
         var gap = TAPER_START - ani;
         html =
-          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#2d6b4a;font-weight:700;line-height:1.3;">You\'re ' + fmt(gap) + ' below the £100,000 threshold — no taper yet.</div>' +
-          '<p style="margin-top:12px;">Your adjusted net income (salary + bonus, minus pension contributions) is ' + fmt(ani) + '. Once it crosses £100,000, you start losing Personal Allowance at an effective 60% marginal rate — up to £125,140, where it\'s gone completely. A bonus or pay rise can tip you over this without much warning.</p>';
-      } else if (ani < TAPER_END) {
-        var sacrificeNeeded = Math.ceil((ani - TAPER_START) / 2);
+          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#2d6b4a;font-weight:700;line-height:1.3;">You\'re ' + fmt(gap) + ' below the £100,000 threshold — no trap yet.</div>' +
+          '<p style="margin-top:12px;">Your adjusted net income (salary + bonus, minus pension contributions) is ' + fmt(ani) + '. Once it crosses £100,000, you start losing Personal Allowance at an effective 60% marginal rate — up to £125,140, where it\'s gone completely.' +
+          (kids > 0 ? ' With ' + kids + ' child' + (kids === 1 ? '' : 'ren') + ' under 5, crossing £100,000 at all — even by £1 — would also wipe out Tax-Free Childcare and your 30 free hours for the whole year, worth roughly ' + fmt(childcareAtStake) + '/yr. That\'s the real danger zone: a bonus or pay rise can tip you over both cliffs without much warning.' : ' A bonus or pay rise can tip you over this without much warning.') +
+          '</p>';
+        bridgeLabel = "There's more to this than the taper";
+        bridgeText = "This only checks your Personal Allowance taper and childcare entitlement. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, or how close you are to the Annual Allowance limit on pension contributions. Candid checks your whole picture, free, in about 5 minutes.";
+      } else {
+        var inBand = ani < TAPER_END;
+        var sacrificeNeeded = Math.ceil(ani - TAPER_START);
         var niSaving = Math.round(sacrificeNeeded * 0.02);
-        var taxSaving = Math.round(sacrificeNeeded * 0.60);
-        var totalSaving = niSaving + taxSaving;
+        var taxSaving = Math.round(sacrificeNeeded * (inBand ? 0.60 : 0.45));
+        var loanSaving = Math.round(sacrificeNeeded * loanRate);
+        var taxNiLoanSaving = taxSaving + niSaving + loanSaving;
+        var childcareRecovered = kids > 0 ? childcareAtStake : 0;
+        var totalValue = taxNiLoanSaving + childcareRecovered;
+        var netCostToTakeHome = sacrificeNeeded - totalValue;
+
+        var trapHeadline = inBand ? "You're in the 60%+ tax trap" : "Your Personal Allowance is already fully gone";
+        if (kids > 0) trapHeadline += inBand ? ' — and losing your childcare support.' : ', but the childcare cliff already cost you.';
+        else trapHeadline += '.';
+
+        var bandExplain = inBand
+          ? 'Your adjusted net income is ' + fmt(ani) + ' — inside the £100,000–£125,140 taper band, an effective 60% tax rate' + loanLabel + '.'
+          : 'Your adjusted net income is ' + fmt(ani) + ' — past the £125,140 taper ceiling, so the Personal Allowance is already gone and everything above it is taxed at the flat 45% additional rate' + loanLabel + '.';
+        var childcareExplain = kids > 0
+          ? ' Because your income is already over £100,000, you\'ve lost Tax-Free Childcare and the 30 free hours entirely for ' + kids + ' child' + (kids === 1 ? '' : 'ren') + ' — worth roughly ' + fmt(childcareAtStake) + '/yr.'
+          : '';
+        var sacrificeExplain = ' Sacrificing ' + fmt(sacrificeNeeded) + ' into your pension would bring you back to exactly £100,000, restoring your full Personal Allowance' + (kids > 0 ? ' and your full childcare entitlement' : '') + '.';
+
         html =
-          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#c0392b;font-weight:700;line-height:1.3;">You\'re in the 60% tax trap.</div>' +
-          '<p style="margin-top:12px;">Your adjusted net income is ' + fmt(ani) + ' — inside the £100,000–£125,140 taper band. Sacrificing ' + fmt(sacrificeNeeded) + ' into your pension would bring you back to £100,000 and restore your full Personal Allowance.</p>' +
+          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#c0392b;font-weight:700;line-height:1.3;">' + trapHeadline + '</div>' +
+          '<p style="margin-top:12px;">' + bandExplain + childcareExplain + sacrificeExplain + '</p>' +
           '<div class="statgrid">' +
             '<div class="stat"><div class="v">' + fmt(sacrificeNeeded) + '</div><div class="l">Sacrifice needed</div></div>' +
-            '<div class="stat"><div class="v">' + fmt(taxSaving) + '</div><div class="l">Tax saved (60%)</div></div>' +
-            '<div class="stat"><div class="v">' + fmt(totalSaving) + '</div><div class="l">Total saved incl. NI</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(taxNiLoanSaving) + '</div><div class="l">Tax + NI' + (loanRate > 0 ? ' + loan' : '') + ' saved</div></div>' +
+            (kids > 0 ? '<div class="stat"><div class="v">' + fmt(childcareRecovered) + '</div><div class="l">Childcare recovered</div></div>' : '') +
+            '<div class="stat"><div class="v">' + fmt(totalValue) + '</div><div class="l">Total value if you sacrifice</div></div>' +
+          '</div>' +
+          '<div class="highlight">' +
+            '<div><div class="v">' + (netCostToTakeHome <= 0 ? '+' + fmt(Math.abs(netCostToTakeHome)) : '-' + fmt(netCostToTakeHome)) + '/yr</div><div class="l">' + (netCostToTakeHome <= 0 ? 'Your take-home pay actually rises by' : 'True cost to your take-home pay') + '</div></div>' +
+            '<div><div class="v">' + fmt(sacrificeNeeded) + '</div><div class="l">Added to your pension pot</div></div>' +
           '</div>';
-      } else {
-        html =
-          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#162F24;font-weight:700;line-height:1.3;">Your Personal Allowance is already fully gone.</div>' +
-          '<p style="margin-top:12px;">Your adjusted net income is ' + fmt(ani) + ' — past the £125,140 taper ceiling, so there\'s no allowance left to recover. Everything above £125,140 is taxed at the flat 45% additional rate. Pension sacrifice from here still avoids 45% income tax and 2% employee NI immediately — but without the extra Personal-Allowance-recovery bonus you\'d get in the £100k–£125,140 band.</p>';
+
+        bridgeLabel = "You saved " + fmt(totalValue) + " by optimising your tax threshold";
+        bridgeText = "Map this newly recovered cash across your remaining financial gaps — employer pension match, ISA allowance, debt, and more. Candid checks your whole picture, free, in about 5 minutes.";
       }
 
       resultEl.innerHTML = html;
+      document.getElementById('bridgeLabel').textContent = bridgeLabel;
+      document.getElementById('bridgeText').textContent = bridgeText;
       bridgeEl.style.display = 'block';
     }
 
-    ['salary','bonus','pensionPct'].forEach(function(id) {
+    ['salary','bonus','pensionPct','kids','loanPlan'].forEach(function(id) {
       document.getElementById(id).addEventListener('input', calculate);
       document.getElementById(id).addEventListener('change', calculate);
     });

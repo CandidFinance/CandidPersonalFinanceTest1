@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="Should you overpay your Plan 2 or Plan 5 student loan? Free UK calculator — enter your salary, balance and savings rate for an instant answer, factoring in write-off."/>
-  <meta property="og:title" content="Should I Pay Off My Student Loan Early? Plan 2 & Plan 5 Calculator"/>
-  <meta property="og:description" content="Free UK calculator — most Plan 2/5 borrowers never clear their loan before write-off, which changes the maths on overpaying. See your number in 30 seconds."/>
+  <meta name="description" content="Should you overpay your student loan? Free UK calculator for Plan 1, 2, 4, 5 and Postgraduate loans — instantly shows whether overpaying saves money or just hands cash to the government that would've been written off anyway."/>
+  <meta property="og:title" content="Should I Pay Off My Student Loan Early? UK Calculator (All Plans)"/>
+  <meta property="og:description" content="Free UK calculator — most borrowers never clear their loan before write-off, which changes the maths on overpaying completely. See your number in 30 seconds."/>
   <meta property="og:type" content="website"/>
-  <title>Should I Pay Off My Student Loan Early? Plan 2 & Plan 5 Calculator (UK) | Candid</title>
+  <title>Should I Pay Off My Student Loan Early? UK Calculator — Plan 1, 2, 4, 5 & Postgraduate | Candid</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
@@ -30,6 +30,9 @@
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(22,47,36,0.12); }
     th { color: #162F24; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
     td { color: #4a4a4a; }
+    .statgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px; }
+    .stat .v { font-family:'Playfair Display',Georgia,serif; font-size:19px; color:#162F24; font-weight:700; }
+    .stat .l { font-size:11px; color:#8a8a8a; margin-top:2px; }
   </style>
 </head>
 <body>
@@ -39,8 +42,8 @@
   </nav>
 
   <div style="max-width:860px;margin:0 auto;padding:48px 24px 24px;">
-    <h1>Should you pay off your Plan 2 or Plan 5 student loan early?</h1>
-    <p style="margin-top:14px;">Most Plan 2 and Plan 5 borrowers never clear their loan before it's written off — which changes the maths on overpaying completely. Enter your numbers below for an instant, UK-specific answer.</p>
+    <h1>Should you pay off your student loan early?</h1>
+    <p style="margin-top:14px;">Most UK student loan borrowers never clear their balance before it's automatically written off — which changes the maths on overpaying completely. Enter your numbers below for an instant, plan-specific answer.</p>
 
     <!-- ── Calculator ─────────────────────────────────────────────────── -->
     <div style="background:#162F24;border-radius:14px;padding:26px 24px;margin-top:28px;">
@@ -50,20 +53,22 @@
           <input type="number" id="salary" value="35000" min="0" step="500"/>
         </div>
         <div class="field">
+          <label for="plan">Loan plan</label>
+          <select id="plan">
+            <option value="plan2" selected>Plan 2 — England/Wales, 2012–2023</option>
+            <option value="plan4">Plan 4 — Scotland</option>
+            <option value="plan5">Plan 5 — England, 2023 onwards</option>
+            <option value="plan1">Plan 1 — pre-2012 (Eng/Wales) or NI</option>
+            <option value="postgrad">Postgraduate Loan — Master's/Doctoral</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="loanBal">Current loan balance</label>
           <input type="number" id="loanBal" value="25000" min="0" step="500"/>
         </div>
         <div class="field">
-          <label for="plan">Loan plan</label>
-          <select id="plan">
-            <option value="plan2" selected>Plan 2 — England/Wales, 2012–2023</option>
-            <option value="plan5">Plan 5 — England, 2023 onwards</option>
-            <option value="plan1">Plan 1 — pre-2012 / Scotland &amp; NI</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="cashRate">Your savings/cash rate (%)</label>
-          <input type="number" id="cashRate" value="4.2" min="0" step="0.1"/>
+          <label for="surplus">Available monthly surplus cash</label>
+          <input type="number" id="surplus" value="150" min="0" step="10"/>
         </div>
       </div>
       <div class="field" style="margin-bottom:0;">
@@ -76,33 +81,35 @@
     <div id="result" style="background:#ffffff;border:2px solid #162F24;border-radius:14px;padding:24px;margin-top:18px;"></div>
 
     <p style="font-size:12px;color:#8a8a8a;margin-top:10px;line-height:1.6;">
-      This is a simplified estimate for education purposes, not regulated financial advice. It assumes a flat salary and a fixed interest rate over time — the real SLC calculation compounds monthly and your salary will likely change. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
+      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your salary grows at a steady 2%/yr and your loan's interest rate stays flat — the real SLC calculation compounds monthly and both will vary in practice. If you have more than one loan (e.g. an undergraduate plan plus a Postgraduate Loan running alongside it), this only models one at a time. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
     </p>
 
     <!-- ── Bridge to full tool ───────────────────────────────────────── -->
     <div id="bridge" style="display:none;background:#f6f0e6;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
-      <div style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">There's more to this than your loan</div>
-      <p style="margin-top:0;">This only compares your student loan against cash. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, paying down higher-interest debt, or approaching the £100,000 tax trap — any of which could beat both options above. Candid checks your whole picture, free, in about 5 minutes.</p>
+      <div id="bridgeLabel" style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;"></div>
+      <p id="bridgeText" style="margin-top:0;"></p>
       <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#f6f0e6;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture, free →</a>
     </div>
 
     <!-- ── Explainer content (static, for search + trust) ──────────────── -->
-    <h2>Plan 2 vs Plan 5 vs Plan 1: the key differences</h2>
+    <h2>Every plan's rates, thresholds and write-off, side by side</h2>
     <p>The plan you're on determines your interest rate, your repayment threshold, and — critically — how long until any remaining balance is wiped clean regardless of what you've repaid.</p>
     <table>
-      <tr><th>Plan</th><th>2024/25 interest rate</th><th>Repay above</th><th>Written off after</th></tr>
-      <tr><td>Plan 2 (2012–2023 starters)</td><td>3.1%–6.1%, based on income</td><td>£27,295/yr</td><td>30 years</td></tr>
-      <tr><td>Plan 5 (2023 onwards)</td><td>7.3% flat</td><td>£25,000/yr</td><td>40 years</td></tr>
-      <tr><td>Plan 1 (pre-2012 / Scotland &amp; NI)</td><td>6.25% (2024/25 floor)</td><td>£24,990/yr</td><td>25 years</td></tr>
+      <tr><th>Plan</th><th>2024/25 interest rate</th><th>Repay above</th><th>Repayment rate</th><th>Written off after</th></tr>
+      <tr><td>Plan 1 (pre-2012 / NI)</td><td>6.25% (2024/25 floor)</td><td>£24,990/yr</td><td>9%</td><td>25 years</td></tr>
+      <tr><td>Plan 2 (2012–2023 starters)</td><td>3.1%–6.1%, based on income</td><td>£27,295/yr</td><td>9%</td><td>30 years</td></tr>
+      <tr><td>Plan 4 (Scotland)</td><td>6.25% (2024/25 floor)</td><td>£31,395/yr</td><td>9%</td><td>30 years</td></tr>
+      <tr><td>Plan 5 (2023 onwards)</td><td>7.3% flat</td><td>£25,000/yr</td><td>9%</td><td>40 years</td></tr>
+      <tr><td>Postgraduate Loan</td><td>7.3% flat</td><td>£21,000/yr</td><td>6%</td><td>30 years</td></tr>
     </table>
     <p style="font-size:12px;color:#8a8a8a;">Rates and thresholds are reviewed annually — check <a href="https://www.gov.uk/repaying-your-student-loan" target="_blank" rel="noopener">gov.uk</a> for the current year if you're close to a decision. If you know your exact rate, enter it above to override the plan default.</p>
 
     <h2>Why write-off changes the maths</h2>
-    <p>If your projected balance is heading to zero at write-off anyway — because your income is high enough that repayments are outpacing interest — then overpaying genuinely saves you money: it clears the loan sooner and cuts the interest you'd otherwise pay.</p>
-    <p>But if your balance is stable or growing (interest is outpacing your repayments), the loan is on track to be forgiven regardless of what you do. In that case, every extra pound you put toward it just reduces the amount that gets written off — it isn't "saved," because you were never going to pay it anyway. That pound is worth more left in savings, a pension, or an ISA.</p>
+    <p>If your projected balance is heading to zero at write-off anyway — because your income growth is outpacing interest — then overpaying genuinely saves you money: it clears the loan sooner and cuts the interest you'd otherwise pay.</p>
+    <p>But if your balance is stable or growing (interest is outpacing your repayments), the loan is on track to be forgiven regardless of what you do. In that case, every extra pound you put toward it just reduces the amount that gets written off — it isn't "saved," because you were never going to pay it anyway. Worse, if overpaying is enough to tip you from "written off" into "cleared in full," you've actually turned free debt forgiveness into a debt you paid for entirely yourself.</p>
 
     <h2>When overpaying does make sense</h2>
-    <p>Overpaying is worth considering when both of these are true: you're on track to clear the loan before write-off, and your loan's interest rate is higher than the return you'd get leaving that money elsewhere (cash savings, an ISA, or an employer pension match you haven't maxed). The calculator above checks the first condition and compares against your cash rate for the second — but a full financial picture usually finds a better home for spare cash than either option.</p>
+    <p>Overpaying is worth it when you're already on track to clear the loan before write-off — in that case it's simply cheap, guaranteed debt reduction. The calculator above checks exactly that, using your salary, plan, balance and a projected 2%/yr salary growth rate.</p>
 
     <h2>Related calculators</h2>
     <p>
@@ -132,82 +139,176 @@
     }
   </script>
 
-  <!-- ── Calculator logic ──────────────────────────────────────────────
-       Mirrors resolveSlRate() / studentLoanPlanConstants() / calcStudentLoanScenario()
-       in src/CandidApp.jsx. Kept as a plain duplicate (this page is static HTML,
-       not part of the React build) — if those defaults change in CandidApp.jsx
-       (e.g. the annual SLC rate update each September), update PLAN_CONSTANTS
-       and resolveSlRate below to match. -->
+  <!-- ── Prefill from a returning visit / carry inputs into the main app ────
+       Reads/writes the same "candid_inputs" localStorage shape the main app
+       (src/CandidApp.jsx) and DevTools.jsx use, so numbers entered here are
+       still there if the visitor clicks through to the full assessment — and
+       vice versa, a returning visitor with saved inputs gets this calculator
+       pre-filled too. Only touches the 4 fields this page has (salary, plan,
+       loan balance, salary sacrifice %); never marks the assessment complete
+       or writes synthetic insights — that would misrepresent a calculator
+       visit as a finished Candid report. -->
   <script>
+    var CANDID_INPUTS_KEY = 'candid_inputs';
+    // The main app's assessment (src/CandidApp.jsx) only offers Plan 1/2/5 in its
+    // studentLoan select — Plan 4 and Postgraduate aren't modelled there yet. Only
+    // write studentLoan back when it's a value the main app actually understands;
+    // otherwise leave it alone rather than feeding it a plan it'll silently
+    // mis-resolve (its own fallback treats anything unrecognised as Plan 1 rates).
+    var PLANS_KNOWN_TO_MAIN_APP = { plan1: true, plan2: true, plan5: true };
+
+    function loadCandidInputs() {
+      try { return JSON.parse(localStorage.getItem(CANDID_INPUTS_KEY) || '{}'); } catch (e) { return {}; }
+    }
+    function saveCandidInputs(patch) {
+      try {
+        var existing = loadCandidInputs();
+        localStorage.setItem(CANDID_INPUTS_KEY, JSON.stringify(Object.assign(existing, patch)));
+      } catch (e) {}
+    }
+
+    (function prefillFromSavedInputs() {
+      var saved = loadCandidInputs();
+      if (saved.salary) document.getElementById('salary').value = saved.salary;
+      if (saved.studentLoan && saved.studentLoan !== 'none') document.getElementById('plan').value = saved.studentLoan;
+      if (saved.loanBalance) document.getElementById('loanBal').value = saved.loanBalance;
+      if (saved.studentLoanRate) document.getElementById('exactRate').value = saved.studentLoanRate;
+    })();
+  </script>
+
+  <!-- ── Calculator logic ──────────────────────────────────────────────
+       Mirrors simulateLoan() in src/CandidApp.jsx (monthly compounding, salary
+       growing 2%/yr, repayment = max(0,(salary-threshold))*repayRate/12, extra
+       overpayment on top). Kept as a plain duplicate — this page is static
+       HTML, not part of the React build — so if plan rates/thresholds change
+       (the annual SLC update each September), update PLAN_CONSTANTS below.
+       CandidApp.jsx currently only models Plan 1/2/5 — Plan 4 and Postgraduate
+       are additions specific to this page. -->
+  <script>
+    var GROWTH_RATE = 0.02; // 2%/yr, matches CandidApp.jsx's "stable" salary trajectory default
     var PLAN_CONSTANTS = {
-      plan2: { writeOffYr: 30, threshold: 27295 },
-      plan5: { writeOffYr: 40, threshold: 25000 },
-      plan1: { writeOffYr: 25, threshold: 24990 },
+      plan1:    { writeOffYr: 25, threshold: 24990, repayRate: 0.09 },
+      plan2:    { writeOffYr: 30, threshold: 27295, repayRate: 0.09 },
+      plan4:    { writeOffYr: 30, threshold: 31395, repayRate: 0.09 },
+      plan5:    { writeOffYr: 40, threshold: 25000, repayRate: 0.09 },
+      postgrad: { writeOffYr: 30, threshold: 21000, repayRate: 0.06 },
     };
 
     function resolveSlRate(plan, salary, exactRatePct) {
       if (exactRatePct > 0) return exactRatePct / 100;
       if (plan === 'plan2') return salary > 49130 ? 0.061 : 0.031;
-      if (plan === 'plan5') return 0.073;
-      return 0.0625; // plan1
+      if (plan === 'plan5' || plan === 'postgrad') return 0.073;
+      return 0.0625; // plan1, plan4
     }
 
     function fmt(n) {
       return '£' + Math.round(n).toLocaleString('en-GB');
     }
 
+    function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRate, repaymentThreshold, repaymentRate, maxYears, extraMonthly) {
+      var balance = openingBalance;
+      var salary = annualSalary;
+      var totalInterest = 0, totalPaid = 0, monthsToClear = null;
+      var monthlyRate = interestRate / 12;
+      for (var month = 0; month < maxYears * 12; month++) {
+        if (balance <= 0) break;
+        var interest = balance * monthlyRate;
+        balance += interest;
+        totalInterest += interest;
+        var annualRepayment = Math.max(0, (salary - repaymentThreshold) * repaymentRate);
+        var monthlyRepayment = annualRepayment / 12 + extraMonthly;
+        var payment = Math.min(monthlyRepayment, balance);
+        balance -= payment;
+        totalPaid += payment;
+        if (balance <= 0 && monthsToClear === null) monthsToClear = month + 1;
+        if ((month + 1) % 12 === 0) salary *= (1 + salaryGrowthRate);
+      }
+      return { totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid), cleared: balance <= 0, monthsToClear: monthsToClear };
+    }
+
     function calculate() {
       var salary = +document.getElementById('salary').value || 0;
-      var loanBal = +document.getElementById('loanBal').value || 0;
       var plan = document.getElementById('plan').value;
-      var cashRatePct = +document.getElementById('cashRate').value || 0;
+      var loanBal = +document.getElementById('loanBal').value || 0;
+      var surplus = +document.getElementById('surplus').value || 0;
       var exactRatePct = +document.getElementById('exactRate').value || 0;
       var resultEl = document.getElementById('result');
       var bridgeEl = document.getElementById('bridge');
+
+      var patch = { salary: salary || undefined, loanBalance: loanBal || undefined };
+      if (PLANS_KNOWN_TO_MAIN_APP[plan]) patch.studentLoan = plan;
+      if (exactRatePct > 0) patch.studentLoanRate = exactRatePct;
+      saveCandidInputs(patch);
 
       if (salary <= 0 || loanBal <= 0) {
         resultEl.innerHTML = '<p style="color:#8a8a8a;margin:0;">Enter your salary and loan balance above to see your result.</p>';
         bridgeEl.style.display = 'none';
         return;
       }
+      if (surplus <= 0) {
+        resultEl.innerHTML = '<p style="color:#8a8a8a;margin:0;">Enter how much spare cash you could put toward overpaying each month to see your result.</p>';
+        bridgeEl.style.display = 'none';
+        return;
+      }
 
-      var constants = PLAN_CONSTANTS[plan];
+      var c = PLAN_CONSTANTS[plan];
       var rate = resolveSlRate(plan, salary, exactRatePct);
-      var slRatePct = Math.round(rate * 1000) / 10;
-      var annualRep = Math.max(0, (salary - constants.threshold)) * 0.09;
-      var annualInterest = loanBal * rate;
+      var baseline = simulateLoan(loanBal, salary, GROWTH_RATE, rate, c.threshold, c.repayRate, c.writeOffYr, 0);
+      var over = simulateLoan(loanBal, salary, GROWTH_RATE, rate, c.threshold, c.repayRate, c.writeOffYr, surplus);
 
-      var projBal = loanBal, clearYr = null;
-      for (var yr = 1; yr <= constants.writeOffYr; yr++) {
-        projBal = projBal * (1 + rate) - annualRep;
-        if (projBal <= 0 && clearYr === null) { clearYr = yr; break; }
-      }
-      var willClear = clearYr !== null;
-      var effectiveBenefit = Math.round((slRatePct - cashRatePct) * 10) / 10;
-      var overpayAnnualBenefit = (willClear && effectiveBenefit > 0) ? Math.round(loanBal * effectiveBenefit / 100) : 0;
+      var html, bridgeLabel, bridgeText;
+      var BRIDGE_BAD = "Instead of overpaying a loan that gets written off, see how that cash performs across your ISAs, Pension, and Savings.";
 
-      var headline, body, color;
-      if (!willClear) {
-        color = '#c0392b';
-        headline = "Your loan is on track to be written off after " + constants.writeOffYr + " years — overpaying probably isn't worth it.";
-        body = "At your salary, about " + fmt(annualInterest) + "/yr in interest is accruing against roughly " + fmt(annualRep) + "/yr you're repaying — the balance isn't shrinking. Every extra £1 you overpay just reduces the amount that gets forgiven at write-off; it doesn't save you money, because you were never on track to pay it all off anyway. That cash is very likely worth more left in savings, an ISA, or a pension.";
-      } else if (effectiveBenefit <= 0) {
-        color = '#c0392b';
-        headline = "You're on track to clear this loan — but cash beats overpaying right now.";
-        body = "You're projected to clear the loan in around " + clearYr + " years. Your loan rate (" + slRatePct + "%) is at or below your cash/savings rate (" + cashRatePct + "%), so leaving the money as cash earns you " + (Math.abs(effectiveBenefit)) + " percentage points a year more than putting it toward the loan early.";
+      if (!baseline.cleared && !over.cleared) {
+        // State 1: written off either way — overpaying buys nothing.
+        var extraPaid1 = over.totalPaid - baseline.totalPaid;
+        html =
+          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#c0392b;font-weight:700;line-height:1.3;">Overpaying would cost you an extra ' + fmt(extraPaid1) + ' for zero benefit.</div>' +
+          '<p style="margin-top:12px;">This loan is projected to be written off after ' + c.writeOffYr + ' years regardless of whether you overpay — your balance never actually clears either way. Every pound of that ' + fmt(extraPaid1) + ' would simply be handed over early instead of being forgiven.</p>' +
+          '<div class="statgrid">' +
+            '<div class="stat"><div class="v">' + fmt(extraPaid1) + '</div><div class="l">Wasted by overpaying</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(baseline.totalPaid) + '</div><div class="l">Repaid without overpaying</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(over.totalPaid) + '</div><div class="l">Repaid if you overpay</div></div>' +
+          '</div>';
+        bridgeLabel = "You're handing cash to the government that would've been forgiven";
+        bridgeText = BRIDGE_BAD;
+      } else if (!baseline.cleared && over.cleared) {
+        // State 2: overpaying tips you from forgiveness into full repayment.
+        var extraPaid2 = over.totalPaid - baseline.totalPaid;
+        html =
+          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#c0392b;font-weight:700;line-height:1.3;">Overpaying clears this loan in full instead of leaving it to be written off.</div>' +
+          '<p style="margin-top:12px;">Without overpaying, this loan is projected to still have a balance left when it\'s written off after ' + c.writeOffYr + ' years. Overpaying is enough to clear it entirely instead — which sounds responsible, but it means paying ' + fmt(extraPaid2) + ' more in total to fully repay debt that would otherwise have been partly forgiven for free.</p>' +
+          '<div class="statgrid">' +
+            '<div class="stat"><div class="v">' + fmt(extraPaid2) + '</div><div class="l">Extra cost of clearing in full</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(baseline.totalPaid) + '</div><div class="l">Repaid if written off</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(over.totalPaid) + '</div><div class="l">Repaid if cleared in full</div></div>' +
+          '</div>';
+        bridgeLabel = "You're giving up free debt forgiveness";
+        bridgeText = BRIDGE_BAD;
       } else {
-        color = '#2d6b4a';
-        headline = "Overpaying could save you roughly " + fmt(overpayAnnualBenefit) + "/yr in interest.";
-        body = "You're on track to clear the loan in around " + clearYr + " years, so overpaying genuinely reduces what you pay overall — it isn't money that would've been written off. Your loan rate (" + slRatePct + "%) is " + effectiveBenefit + " percentage points above your cash rate (" + cashRatePct + "%), which is where this figure comes from.";
+        // State 3: on track to clear regardless — overpaying saves real interest.
+        var interestSaved = baseline.totalInterest - over.totalInterest;
+        var monthsEarlier = (baseline.monthsToClear || c.writeOffYr * 12) - (over.monthsToClear || 0);
+        var yearsEarlier = Math.round(monthsEarlier / 12 * 10) / 10;
+        html =
+          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#2d6b4a;font-weight:700;line-height:1.3;">Overpaying saves you roughly ' + fmt(interestSaved) + ' in interest.</div>' +
+          '<p style="margin-top:12px;">You\'re on track to clear this loan even without overpaying — so every pound you add now genuinely reduces what you pay overall, clearing it about ' + yearsEarlier + ' years sooner and cutting the total interest charged.</p>' +
+          '<div class="statgrid">' +
+            '<div class="stat"><div class="v">' + fmt(interestSaved) + '</div><div class="l">Interest saved</div></div>' +
+            '<div class="stat"><div class="v">' + yearsEarlier + ' yrs</div><div class="l">Cleared sooner</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(over.totalPaid) + '</div><div class="l">Total repaid if you overpay</div></div>' +
+          '</div>';
+        bridgeLabel = "There's more to this than your loan";
+        bridgeText = "This only checks your student loan. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, or approaching the £100,000 tax trap — any of which could be a better home for that same monthly amount. Candid checks your whole picture, free, in about 5 minutes.";
       }
 
-      resultEl.innerHTML =
-        '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:' + color + ';font-weight:700;line-height:1.3;">' + headline + '</div>' +
-        '<p style="margin-top:12px;">' + body + '</p>';
+      resultEl.innerHTML = html;
+      document.getElementById('bridgeLabel').textContent = bridgeLabel;
+      document.getElementById('bridgeText').textContent = bridgeText;
       bridgeEl.style.display = 'block';
     }
 
-    ['salary','loanBal','plan','cashRate','exactRate'].forEach(function(id) {
+    ['salary','plan','loanBal','surplus','exactRate'].forEach(function(id) {
       document.getElementById(id).addEventListener('input', calculate);
       document.getElementById(id).addEventListener('change', calculate);
     });
