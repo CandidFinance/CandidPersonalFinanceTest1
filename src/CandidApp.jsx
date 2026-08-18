@@ -2308,7 +2308,15 @@ export function calcPensionTaperSaving(m) {
   const taperStart = 100000, taperEnd = 125140;
   const ani = m.adjustedNetIncome;
   const inTaper = ani > taperStart && ani < taperEnd;
-  const taperSacrificeNeeded = inTaper ? Math.ceil((ani - taperStart) / 2) : Math.max(0, taperStart - ani);
+  // Sacrifice needed to fully recover the Personal Allowance is the FULL gap back to
+  // £100,000, 1-for-1 — not half of it. Every £1 sacrificed while ANI is still above
+  // £100,000 saves 40% tax directly AND restores 50p of Personal Allowance (itself
+  // taxed at 40%, i.e. a further 20%), for a genuine 60% effective saving on that £1
+  // — but reaching that saving on the WHOLE gap requires sacrificing the whole gap,
+  // not half of it. (Previously halved here, which underclaimed "recovers your full
+  // Personal Allowance" by 2x — sacrificing half the gap only recovers half the
+  // withdrawn allowance.)
+  const taperSacrificeNeeded = inTaper ? Math.ceil(ani - taperStart) : Math.max(0, taperStart - ani);
   const taperNiSaving = Math.round(taperSacrificeNeeded * 0.02);
   const taperTaxSaving = inTaper ? Math.round(taperSacrificeNeeded * 0.60) : 0;
   const taperTotalSaving = taperNiSaving + taperTaxSaving;
