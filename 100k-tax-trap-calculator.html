@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Earning near £100,000? Find out if you're in the 60% tax trap and exactly how much pension sacrifice recovers your Personal Allowance. Free UK calculator, instant answer."/>
+  <meta property="og:title" content="The £100,000 Tax Trap Calculator — Am I Paying 60% Tax?"/>
+  <meta property="og:description" content="Between £100,000 and £125,140 you lose your Personal Allowance at an effective 60% marginal rate. Free UK calculator shows exactly how much pension sacrifice gets you out of it."/>
+  <meta property="og:type" content="website"/>
+  <title>The £100,000 Tax Trap Calculator — Am I Paying 60% Tax? (UK) | Candid</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', Arial, sans-serif; background: #f6f0e6; color: #1a1a1a; }
+    h1 { font-family: 'Playfair Display', Georgia, serif; color: #162F24; font-size: 30px; line-height: 1.25; }
+    h2 { font-family: 'Playfair Display', Georgia, serif; color: #162F24; font-size: 20px; margin-top: 36px; margin-bottom: 10px; }
+    p { color: #4a4a4a; font-size: 15px; line-height: 1.7; }
+    a { color: #162F24; }
+    label { display:block; font-size: 12px; font-weight: 700; color: rgba(246,240,230,0.75); letter-spacing:0.04em; text-transform:uppercase; margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
+      background: #0f2018; color: #f6f0e6; font-size: 15px; font-family: 'DM Sans', sans-serif;
+    }
+    input:focus { outline: 2px solid #C4963A; }
+    .field { margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(22,47,36,0.12); }
+    th { color: #162F24; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { color: #4a4a4a; }
+    .statgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px; }
+    .stat { }
+    .stat .v { font-family:'Playfair Display',Georgia,serif; font-size:20px; color:#162F24; font-weight:700; }
+    .stat .l { font-size:11px; color:#8a8a8a; margin-top:2px; }
+  </style>
+</head>
+<body>
+  <nav style="background:#162F24;padding:0 32px;height:58px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;color:#C4963A;">Candid.</span>
+    <a href="/" style="font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.6);text-decoration:none;">← Back to Candid</a>
+  </nav>
+
+  <div style="max-width:860px;margin:0 auto;padding:48px 24px 24px;">
+    <h1>The £100,000 tax trap: are you paying a 60% marginal rate?</h1>
+    <p style="margin-top:14px;">Between £100,000 and £125,140 of adjusted net income, you lose £1 of tax-free Personal Allowance for every £2 you earn — creating an effective 60% tax rate on that band. Enter your numbers below for an instant, UK-specific answer.</p>
+
+    <!-- ── Calculator ─────────────────────────────────────────────────── -->
+    <div style="background:#162F24;border-radius:14px;padding:26px 24px;margin-top:28px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="field">
+          <label for="salary">Gross annual salary</label>
+          <input type="number" id="salary" value="95000" min="0" step="500"/>
+        </div>
+        <div class="field">
+          <label for="bonus">Bonus / other taxable income</label>
+          <input type="number" id="bonus" value="8000" min="0" step="500"/>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="pensionPct">Current pension contribution (% of salary, any type)</label>
+        <input type="number" id="pensionPct" value="0" min="0" max="100" step="1"/>
+      </div>
+    </div>
+
+    <!-- ── Result ─────────────────────────────────────────────────────── -->
+    <div id="result" style="background:#ffffff;border:2px solid #162F24;border-radius:14px;padding:24px;margin-top:18px;"></div>
+
+    <p style="font-size:12px;color:#8a8a8a;margin-top:10px;line-height:1.6;">
+      This is a simplified estimate for education purposes, not regulated financial advice. It assumes salary sacrifice — if you contribute via a personal pension (relief at source) instead, you get the tax saving but not the National Insurance saving shown below. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
+    </p>
+
+    <!-- ── Bridge to full tool ───────────────────────────────────────── -->
+    <div id="bridge" style="display:none;background:#f6f0e6;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
+      <div style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">There's more to this than the taper</div>
+      <p style="margin-top:0;">This only checks your Personal Allowance taper. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, carrying student loan or mortgage debt that might beat pension sacrifice, or how close you are to the Annual Allowance limit on pension contributions. Candid checks your whole picture, free, in about 5 minutes.</p>
+      <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#f6f0e6;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture, free →</a>
+    </div>
+
+    <!-- ── Explainer content (static, for search + trust) ──────────────── -->
+    <h2>How the £100k taper actually works</h2>
+    <p>The Personal Allowance is the first £12,570 you earn tax-free each year. Once your <strong>adjusted net income</strong> (broadly: salary plus bonus and other income, minus pension contributions) passes £100,000, that allowance is withdrawn at £1 for every £2 earned above it — so it's gone completely by £125,140.</p>
+    <table>
+      <tr><th>Adjusted net income</th><th>Personal Allowance left</th><th>Effective marginal rate</th></tr>
+      <tr><td>£100,000</td><td>£12,570 (full)</td><td>40%</td></tr>
+      <tr><td>£110,000</td><td>£7,570</td><td>60%</td></tr>
+      <tr><td>£120,000</td><td>£2,570</td><td>60%</td></tr>
+      <tr><td>£125,140+</td><td>£0</td><td>45%</td></tr>
+    </table>
+    <p style="font-size:12px;color:#8a8a8a;">Every extra £1 earned in the £100,000–£125,140 band is taxed at 40%, and also strips away 50p of allowance that would otherwise have been tax-free — 40% of that 50p is a further 20% effective tax. 40% + 20% = 60%. Above £125,140 the allowance is already gone, so the rate drops back to the flat 45% additional rate.</p>
+
+    <h2>Why bonuses are the most common trigger</h2>
+    <p>Most people who fall into this band don't plan to — a bonus, a pay rise, or investment/dividend income pushes their adjusted net income over £100,000 without their base salary changing. Because it's based on total income for the tax year, a one-off bonus in an otherwise sub-£100k salary can be enough to trigger it.</p>
+
+    <h2>How to get out of it: salary sacrifice</h2>
+    <p>Because the taper is based on <em>adjusted</em> net income, pension contributions taken before tax reduce it directly. Sacrificing enough to bring your adjusted net income back to £100,000 restores your full Personal Allowance — which is why the effective relief on pension contributions in this band is around 60%, roughly double the relief available outside it.</p>
+
+    <h2>Related calculators</h2>
+    <p><a href="/student-loan-calculator.html">Should I pay off my Plan 2 or Plan 5 student loan early?</a> — if you're weighing pension sacrifice against student loan overpayment, this checks the loan side of that comparison.</p>
+  </div>
+
+  <footer style="background:#162F24;padding:28px 32px;text-align:center;margin-top:40px;">
+    <span style="font-size:11px;color:rgba(255,255,255,0.5);">
+      © 2026 Candid Finance Ltd. Not regulated by the FCA — educational tool, not financial advice. ·
+      <a href="/privacy.html" style="color:rgba(255,255,255,0.5);">Privacy</a> ·
+      <a href="/terms.html" style="color:rgba(255,255,255,0.5);">Terms</a>
+    </span>
+  </footer>
+
+  <!-- Cookie consent — same banner/copy as the main app -->
+  <script>
+    if (!localStorage.getItem('cookieAccepted')) {
+      document.addEventListener('DOMContentLoaded', function() {
+        var banner = document.createElement('div');
+        banner.id = 'cookie-banner';
+        banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#162F24;color:rgba(255,255,255,0.8);font-family:sans-serif;font-size:13px;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;z-index:99999;flex-wrap:wrap;';
+        banner.innerHTML = '<span>We use cookies and anonymised analytics to improve Candid. <a href="/privacy.html" target="_blank" style="color:#C4963A;text-decoration:none;">Privacy Policy</a></span><button onclick="localStorage.setItem(\'cookieAccepted\',\'1\');document.getElementById(\'cookie-banner\').remove();" style="background:#C4963A;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;color:#162F24;cursor:pointer;white-space:nowrap;flex-shrink:0;">Got it</button>';
+        document.body.appendChild(banner);
+      });
+    }
+  </script>
+
+  <!-- ── Calculator logic ──────────────────────────────────────────────
+       Mirrors calcPensionTaperSaving() in src/CandidApp.jsx (taperStart=100000,
+       taperEnd=125140, sacrifice-needed = (ani-100000)/2, tax saving = 60% of
+       sacrifice, NI saving = 2% of sacrifice). Kept as a plain duplicate — this
+       page is static HTML, not part of the React build — so if the Personal
+       Allowance / taper thresholds change, update TAPER_START/TAPER_END here too.
+       The "already past £125,140" state below is calculator-specific messaging,
+       not present in the in-app version. -->
+  <script>
+    var TAPER_START = 100000, TAPER_END = 125140;
+
+    function fmt(n) {
+      return '£' + Math.round(n).toLocaleString('en-GB');
+    }
+
+    function calculate() {
+      var salary = +document.getElementById('salary').value || 0;
+      var bonus = +document.getElementById('bonus').value || 0;
+      var pensionPct = +document.getElementById('pensionPct').value || 0;
+      var resultEl = document.getElementById('result');
+      var bridgeEl = document.getElementById('bridge');
+
+      if (salary <= 0) {
+        resultEl.innerHTML = '<p style="color:#8a8a8a;margin:0;">Enter your salary above to see your result.</p>';
+        bridgeEl.style.display = 'none';
+        return;
+      }
+
+      var pensionSacrifice = salary * pensionPct / 100;
+      var ani = salary + bonus - pensionSacrifice;
+      var html;
+
+      if (ani < TAPER_START) {
+        var gap = TAPER_START - ani;
+        html =
+          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#2d6b4a;font-weight:700;line-height:1.3;">You\'re ' + fmt(gap) + ' below the £100,000 threshold — no taper yet.</div>' +
+          '<p style="margin-top:12px;">Your adjusted net income (salary + bonus, minus pension contributions) is ' + fmt(ani) + '. Once it crosses £100,000, you start losing Personal Allowance at an effective 60% marginal rate — up to £125,140, where it\'s gone completely. A bonus or pay rise can tip you over this without much warning.</p>';
+      } else if (ani < TAPER_END) {
+        var sacrificeNeeded = Math.ceil((ani - TAPER_START) / 2);
+        var niSaving = Math.round(sacrificeNeeded * 0.02);
+        var taxSaving = Math.round(sacrificeNeeded * 0.60);
+        var totalSaving = niSaving + taxSaving;
+        html =
+          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#c0392b;font-weight:700;line-height:1.3;">You\'re in the 60% tax trap.</div>' +
+          '<p style="margin-top:12px;">Your adjusted net income is ' + fmt(ani) + ' — inside the £100,000–£125,140 taper band. Sacrificing ' + fmt(sacrificeNeeded) + ' into your pension would bring you back to £100,000 and restore your full Personal Allowance.</p>' +
+          '<div class="statgrid">' +
+            '<div class="stat"><div class="v">' + fmt(sacrificeNeeded) + '</div><div class="l">Sacrifice needed</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(taxSaving) + '</div><div class="l">Tax saved (60%)</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(totalSaving) + '</div><div class="l">Total saved incl. NI</div></div>' +
+          '</div>';
+      } else {
+        html =
+          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#162F24;font-weight:700;line-height:1.3;">Your Personal Allowance is already fully gone.</div>' +
+          '<p style="margin-top:12px;">Your adjusted net income is ' + fmt(ani) + ' — past the £125,140 taper ceiling, so there\'s no allowance left to recover. Everything above £125,140 is taxed at the flat 45% additional rate. Pension sacrifice from here still avoids 45% income tax and 2% employee NI immediately — but without the extra Personal-Allowance-recovery bonus you\'d get in the £100k–£125,140 band.</p>';
+      }
+
+      resultEl.innerHTML = html;
+      bridgeEl.style.display = 'block';
+    }
+
+    ['salary','bonus','pensionPct'].forEach(function(id) {
+      document.getElementById(id).addEventListener('input', calculate);
+      document.getElementById(id).addEventListener('change', calculate);
+    });
+    calculate();
+  </script>
+</body>
+</html>
