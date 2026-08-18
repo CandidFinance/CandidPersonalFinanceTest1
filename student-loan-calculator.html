@@ -84,10 +84,18 @@
           <label for="surplus">Available monthly surplus cash</label>
           <input type="number" id="surplus" value="150" min="0" step="10"/>
         </div>
+        <div class="field">
+          <label for="growth">Projected salary growth</label>
+          <select id="growth">
+            <option value="stable" selected>Stable (~2% p.a.)</option>
+            <option value="moderate">Steady growth (~5% p.a.)</option>
+            <option value="high">Rapid growth (~15% p.a.)</option>
+          </select>
+        </div>
       </div>
       <div class="field" style="margin-bottom:0;">
         <label for="exactRate">Know your exact loan interest rate? (optional, %)</label>
-        <input type="number" id="exactRate" placeholder="Leave blank to use the 2024/25 default for your plan" min="0" step="0.1"/>
+        <input type="number" id="exactRate" placeholder="Leave blank to use the plan default for your income" min="0" step="0.1"/>
       </div>
     </div>
 
@@ -95,7 +103,7 @@
     <div id="result" style="background:#ffffff;border:2px solid #162F24;border-radius:14px;padding:24px;margin-top:18px;"></div>
 
     <p style="font-size:12px;color:#8a8a8a;margin-top:10px;line-height:1.6;">
-      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your salary grows at a steady 2%/yr and your loan's interest rate stays flat — the real SLC calculation compounds monthly and both will vary in practice. If you have more than one loan (e.g. an undergraduate plan plus a Postgraduate Loan running alongside it), this only models one at a time. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
+      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your salary grows at the selected rate every year and your loan's interest rate stays flat at today's figure — the real SLC calculation compounds monthly, and if you're on Plan 2, your rate will actually track your income up or down as it changes over time rather than staying fixed. If you have more than one loan (e.g. an undergraduate plan plus a Postgraduate Loan running alongside it), this only models one at a time. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
     </p>
 
     <!-- ── Bridge to full tool ───────────────────────────────────────── -->
@@ -109,21 +117,21 @@
     <h2>Every plan's rates, thresholds and write-off, side by side</h2>
     <p>The plan you're on determines your interest rate, your repayment threshold, and — critically — how long until any remaining balance is wiped clean regardless of what you've repaid.</p>
     <table>
-      <tr><th>Plan</th><th>2024/25 interest rate</th><th>Repay above</th><th>Repayment rate</th><th>Written off after</th></tr>
-      <tr><td>Plan 1 (pre-2012 / NI)</td><td>6.25% (2024/25 floor)</td><td>£24,990/yr</td><td>9%</td><td>25 years</td></tr>
-      <tr><td>Plan 2 (2012–2023 starters)</td><td>3.1%–6.1%, based on income</td><td>£27,295/yr</td><td>9%</td><td>30 years</td></tr>
-      <tr><td>Plan 4 (Scotland)</td><td>6.25% (2024/25 floor)</td><td>£31,395/yr</td><td>9%</td><td>30 years</td></tr>
+      <tr><th>Plan</th><th>Interest rate</th><th>Repay above</th><th>Repayment rate</th><th>Written off after</th></tr>
+      <tr><td>Plan 1 (pre-2012 / NI)</td><td>6.25% (current floor)</td><td>£24,990/yr</td><td>9%</td><td>25 years</td></tr>
+      <tr><td>Plan 2 (2012–2023 starters)</td><td>3.2%–6.2%, ramped by income</td><td>£27,295/yr</td><td>9%</td><td>30 years</td></tr>
+      <tr><td>Plan 4 (Scotland)</td><td>6.25% (current floor)</td><td>£31,395/yr</td><td>9%</td><td>30 years</td></tr>
       <tr><td>Plan 5 (2023 onwards)</td><td>7.3% flat</td><td>£25,000/yr</td><td>9%</td><td>40 years</td></tr>
       <tr><td>Postgraduate Loan</td><td>7.3% flat</td><td>£21,000/yr</td><td>6%</td><td>30 years</td></tr>
     </table>
-    <p style="font-size:12px;color:#8a8a8a;">Rates and thresholds are reviewed annually — check <a href="https://www.gov.uk/repaying-your-student-loan" target="_blank" rel="noopener">gov.uk</a> for the current year if you're close to a decision. If you know your exact rate, enter it above to override the plan default.</p>
+    <p style="font-size:12px;color:#8a8a8a;">Plan 2's rate isn't a single figure — it ramps <strong>linearly</strong> between RPI (3.2%) and RPI+3% (6.2%) as your income rises from £29,385 to £52,885; below £29,385 you pay 3.2%, above £52,885 you pay 6.2%, and in between it's a straight-line scale, not a step. Rates and thresholds are reviewed annually — check <a href="https://www.gov.uk/repaying-your-student-loan" target="_blank" rel="noopener">gov.uk</a> for the current year if you're close to a decision. If you know your exact rate, enter it above to override the plan default.</p>
 
     <h2>Why write-off changes the maths</h2>
     <p>If your projected balance is heading to zero at write-off anyway — because your income growth is outpacing interest — then overpaying genuinely saves you money: it clears the loan sooner and cuts the interest you'd otherwise pay.</p>
     <p>But if your balance is stable or growing (interest is outpacing your repayments), the loan is on track to be forgiven regardless of what you do. In that case, every extra pound you put toward it just reduces the amount that gets written off — it isn't "saved," because you were never going to pay it anyway. Worse, if overpaying is enough to tip you from "written off" into "cleared in full," you've actually turned free debt forgiveness into a debt you paid for entirely yourself.</p>
 
     <h2>When overpaying does make sense</h2>
-    <p>Overpaying is worth it when you're already on track to clear the loan before write-off — in that case it's simply cheap, guaranteed debt reduction. The calculator above checks exactly that, using your salary, plan, balance and a projected 2%/yr salary growth rate.</p>
+    <p>Overpaying is worth it when you're already on track to clear the loan before write-off — in that case it's simply cheap, guaranteed debt reduction. The calculator above checks exactly that, using your salary, plan, balance and your chosen salary growth projection.</p>
 
     <h2>Related calculators</h2>
     <p>
@@ -187,19 +195,24 @@
       if (saved.studentLoan && saved.studentLoan !== 'none') document.getElementById('plan').value = saved.studentLoan;
       if (saved.loanBalance) document.getElementById('loanBal').value = saved.loanBalance;
       if (saved.studentLoanRate) document.getElementById('exactRate').value = saved.studentLoanRate;
+      if (saved.salaryTrajectory) document.getElementById('growth').value = saved.salaryTrajectory;
     })();
   </script>
 
   <!-- ── Calculator logic ──────────────────────────────────────────────
-       Mirrors simulateLoan() in src/CandidApp.jsx (monthly compounding, salary
-       growing 2%/yr, repayment = max(0,(salary-threshold))*repayRate/12, extra
+       Mirrors simulateLoan() / resolveSlRate() in src/CandidApp.jsx (monthly
+       compounding, repayment = max(0,(salary-threshold))*repayRate/12, extra
        overpayment on top). Kept as a plain duplicate — this page is static
        HTML, not part of the React build — so if plan rates/thresholds change
        (the annual SLC update each September), update PLAN_CONSTANTS below.
        CandidApp.jsx currently only models Plan 1/2/5 — Plan 4 and Postgraduate
-       are additions specific to this page. -->
+       are additions specific to this page.
+       Plan 2's rate ramps LINEARLY between PLAN2_INCOME_LOWER/_UPPER, per
+       gov.uk's "How interest is calculated - Plan 2" — not a single cliff at
+       one salary figure, which is what this used to do (and got the salary
+       figure wrong on top of using the wrong mechanism). -->
   <script>
-    var GROWTH_RATE = 0.02; // 2%/yr, matches CandidApp.jsx's "stable" salary trajectory default
+    var GROWTH_RATES = { stable: 0.02, moderate: 0.05, high: 0.15 }; // matches CandidApp.jsx's salaryTrajectory options
     var PLAN_CONSTANTS = {
       plan1:    { writeOffYr: 25, threshold: 24990, repayRate: 0.09 },
       plan2:    { writeOffYr: 30, threshold: 27295, repayRate: 0.09 },
@@ -207,10 +220,17 @@
       plan5:    { writeOffYr: 40, threshold: 25000, repayRate: 0.09 },
       postgrad: { writeOffYr: 30, threshold: 21000, repayRate: 0.06 },
     };
+    var PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
+    var PLAN2_RATE_LOWER = 0.032, PLAN2_RATE_UPPER = 0.062;
 
     function resolveSlRate(plan, salary, exactRatePct) {
       if (exactRatePct > 0) return exactRatePct / 100;
-      if (plan === 'plan2') return salary > 49130 ? 0.061 : 0.031;
+      if (plan === 'plan2') {
+        if (salary <= PLAN2_INCOME_LOWER) return PLAN2_RATE_LOWER;
+        if (salary >= PLAN2_INCOME_UPPER) return PLAN2_RATE_UPPER;
+        var frac = (salary - PLAN2_INCOME_LOWER) / (PLAN2_INCOME_UPPER - PLAN2_INCOME_LOWER);
+        return PLAN2_RATE_LOWER + frac * (PLAN2_RATE_UPPER - PLAN2_RATE_LOWER);
+      }
       if (plan === 'plan5' || plan === 'postgrad') return 0.073;
       return 0.0625; // plan1, plan4
     }
@@ -246,10 +266,12 @@
       var loanBal = +document.getElementById('loanBal').value || 0;
       var surplus = +document.getElementById('surplus').value || 0;
       var exactRatePct = +document.getElementById('exactRate').value || 0;
+      var growthKey = document.getElementById('growth').value;
+      var growthRate = GROWTH_RATES[growthKey];
       var resultEl = document.getElementById('result');
       var bridgeEl = document.getElementById('bridge');
 
-      var patch = { salary: salary || undefined, loanBalance: loanBal || undefined };
+      var patch = { salary: salary || undefined, loanBalance: loanBal || undefined, salaryTrajectory: growthKey };
       if (PLANS_KNOWN_TO_MAIN_APP[plan]) patch.studentLoan = plan;
       if (exactRatePct > 0) patch.studentLoanRate = exactRatePct;
       saveCandidInputs(patch);
@@ -267,8 +289,8 @@
 
       var c = PLAN_CONSTANTS[plan];
       var rate = resolveSlRate(plan, salary, exactRatePct);
-      var baseline = simulateLoan(loanBal, salary, GROWTH_RATE, rate, c.threshold, c.repayRate, c.writeOffYr, 0);
-      var over = simulateLoan(loanBal, salary, GROWTH_RATE, rate, c.threshold, c.repayRate, c.writeOffYr, surplus);
+      var baseline = simulateLoan(loanBal, salary, growthRate, rate, c.threshold, c.repayRate, c.writeOffYr, 0);
+      var over = simulateLoan(loanBal, salary, growthRate, rate, c.threshold, c.repayRate, c.writeOffYr, surplus);
 
       var html, bridgeLabel, bridgeText;
       var BRIDGE_BAD = "Instead of overpaying a loan that gets written off, see how that cash performs across your ISAs, Pension, and Savings.";
@@ -322,7 +344,7 @@
       bridgeEl.style.display = 'block';
     }
 
-    ['salary','plan','loanBal','surplus','exactRate'].forEach(function(id) {
+    ['salary','plan','loanBal','surplus','growth','exactRate'].forEach(function(id) {
       document.getElementById(id).addEventListener('input', calculate);
       document.getElementById(id).addEventListener('change', calculate);
     });

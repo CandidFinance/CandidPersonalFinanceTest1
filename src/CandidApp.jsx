@@ -480,12 +480,23 @@ const CASH_RATE_HIGH    = 0.050; // best available, a ceiling not a guarantee
 // Resolves the effective student loan interest rate for a given user.
 // Uses d.studentLoanRate (user-entered, %) if supplied, otherwise falls back to
 // statutory defaults. Update defaults each September when SLC publishes annual rates.
-// Plan 2: RPI+0%→+3% banded (2024/25 rates; RPI 3.1% → 3.1%–6.1%)
+// Plan 2: RPI to RPI+3%, ramped LINEARLY between two income thresholds (per
+// gov.uk's "How interest is calculated - Plan 2") — not a single cliff. Was
+// previously a step function (>£49,130 ? 6.1% : 3.1%), which both used the
+// wrong mechanism and an income figure that didn't correspond to either real
+// threshold. PLAN2_RATE_LOWER/_UPPER below are the current published values.
 // Plan 5: Prevailing market rate (2024/25: 7.3%)
 // Plan 1: Lower of RPI or BoE base+1% (2024/25 floor: 6.25%)
+const PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
+const PLAN2_RATE_LOWER = 0.032, PLAN2_RATE_UPPER = 0.062;
 function resolveSlRate(d, grossSalary) {
   if (+d.studentLoanRate > 0) return +d.studentLoanRate / 100;
-  if (d.studentLoan === "plan2") return grossSalary > 49130 ? 0.061 : 0.031;
+  if (d.studentLoan === "plan2") {
+    if (grossSalary <= PLAN2_INCOME_LOWER) return PLAN2_RATE_LOWER;
+    if (grossSalary >= PLAN2_INCOME_UPPER) return PLAN2_RATE_UPPER;
+    const frac = (grossSalary - PLAN2_INCOME_LOWER) / (PLAN2_INCOME_UPPER - PLAN2_INCOME_LOWER);
+    return PLAN2_RATE_LOWER + frac * (PLAN2_RATE_UPPER - PLAN2_RATE_LOWER);
+  }
   if (d.studentLoan === "plan5") return 0.073;
   return 0.0625; // plan1 fallback
 }
