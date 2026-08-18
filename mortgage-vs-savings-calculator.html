@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Mortgage overpayment vs high-yield savings or a Cash ISA — which wins before your fix ends? Free UK calculator, accounts for the Personal Savings Allowance, instant answer."/>
+  <meta property="og:title" content="Mortgage Overpayment vs High-Yield Savings Calculator"/>
+  <meta property="og:description" content="Free UK calculator — compare overpaying your mortgage against holding the cash in savings or a Cash ISA until your fix ends, tax accounted for."/>
+  <meta property="og:type" content="website"/>
+  <title>Mortgage Overpayment vs High-Yield Savings Calculator (UK) | Candid</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', Arial, sans-serif; background: #f6f0e6; color: #1a1a1a; }
+    h1 { font-family: 'Playfair Display', Georgia, serif; color: #162F24; font-size: 30px; line-height: 1.25; }
+    h2 { font-family: 'Playfair Display', Georgia, serif; color: #162F24; font-size: 20px; margin-top: 36px; margin-bottom: 10px; }
+    p { color: #4a4a4a; font-size: 15px; line-height: 1.7; }
+    a { color: #162F24; }
+    label { display:block; font-size: 12px; font-weight: 700; color: rgba(246,240,230,0.75); letter-spacing:0.04em; text-transform:uppercase; margin-bottom: 6px; }
+    input, select {
+      width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
+      background: #0f2018; color: #f6f0e6; font-size: 15px; font-family: 'DM Sans', sans-serif;
+    }
+    input:focus, select:focus { outline: 2px solid #C4963A; }
+    .field { margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(22,47,36,0.12); }
+    th { color: #162F24; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { color: #4a4a4a; }
+    .statgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px; }
+    .stat .v { font-family:'Playfair Display',Georgia,serif; font-size:19px; color:#162F24; font-weight:700; }
+    .stat .l { font-size:11px; color:#8a8a8a; margin-top:2px; }
+    .radiorow { display:flex; gap:10px; }
+    .radiorow label.opt { flex:1; display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0; font-weight:500; color:#f6f0e6; font-size:14px; background:#0f2018; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:10px 12px; cursor:pointer; }
+    .radiorow input[type="radio"] { width:auto; }
+  </style>
+</head>
+<body>
+  <nav style="background:#162F24;padding:0 32px;height:58px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;color:#C4963A;">Candid.</span>
+    <a href="/" style="font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.6);text-decoration:none;">← Back to Candid</a>
+  </nav>
+
+  <div style="max-width:860px;margin:0 auto;padding:48px 24px 24px;">
+    <h1>Mortgage overpayment vs. high-yield savings: which wins before your fix ends?</h1>
+    <p style="margin-top:14px;">When a fixed rate is about to expire, spare cash has two obvious homes — pay down the mortgage now, or hold it in savings/a Cash ISA and see what it earns. The right answer depends on your rate, your tax band, and how long you've actually got left on the fix. Enter your numbers for an instant, UK-specific answer.</p>
+
+    <!-- ── Calculator ─────────────────────────────────────────────────── -->
+    <div style="background:#162F24;border-radius:14px;padding:26px 24px;margin-top:28px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="field">
+          <label for="balance">Outstanding mortgage balance</label>
+          <input type="number" id="balance" value="240000" min="0" step="1000"/>
+        </div>
+        <div class="field">
+          <label for="term">Remaining mortgage term (years)</label>
+          <input type="number" id="term" value="22" min="1" step="1"/>
+        </div>
+        <div class="field">
+          <label for="rate">Current mortgage rate (%)</label>
+          <input type="number" id="rate" value="5.4" min="0" step="0.1"/>
+        </div>
+        <div class="field">
+          <label for="fixExpiry">Fixed-rate deal expiry date</label>
+          <input type="date" id="fixExpiry"/>
+        </div>
+        <div class="field">
+          <label for="surplus">Spare cash available (per month)</label>
+          <input type="number" id="surplus" value="300" min="0" step="25"/>
+        </div>
+        <div class="field">
+          <label for="altRate">Best alternative savings/ISA rate (%)</label>
+          <input type="number" id="altRate" value="4.5" min="0" step="0.1"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>If you saved instead, where would it go?</label>
+        <div class="radiorow">
+          <label class="opt"><input type="radio" name="accountType" value="isa" checked/> Cash ISA (tax-free)</label>
+          <label class="opt"><input type="radio" name="accountType" value="standard"/> Standard savings account</label>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="taxBand">Your income tax band (only matters for a standard account)</label>
+        <select id="taxBand">
+          <option value="basic">Basic rate (Personal Savings Allowance: £1,000)</option>
+          <option value="higher">Higher rate (Personal Savings Allowance: £500)</option>
+          <option value="additional">Additional rate (Personal Savings Allowance: £0)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ── Result ─────────────────────────────────────────────────────── -->
+    <div id="result" style="background:#ffffff;border:2px solid #162F24;border-radius:14px;padding:24px;margin-top:18px;"></div>
+
+    <p style="font-size:12px;color:#8a8a8a;margin-top:10px;line-height:1.6;">
+      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your mortgage rate and savings rate both stay flat until your fix ends, taxes it as a single lump sum over the period rather than tax-year by tax-year, and doesn't check the £20,000 annual ISA allowance. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
+    </p>
+
+    <!-- ── Bridge to full tool ───────────────────────────────────────── -->
+    <div id="bridge" style="display:none;background:#f6f0e6;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
+      <div style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Your mortgage fix is only part of the equation</div>
+      <p style="margin-top:0;">See how your overpayments compare against pension match gaps and ISA allowances in your full report. Candid checks your whole picture, free, in about 5 minutes.</p>
+      <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#f6f0e6;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture, free →</a>
+    </div>
+
+    <!-- ── Explainer content (static, for search + trust) ──────────────── -->
+    <h2>How this comparison works</h2>
+    <p>Both strategies put the same monthly amount to work — the only question is where. <strong>Overpaying</strong> reduces your mortgage balance early, which cuts the interest that accrues on it for the rest of your fix (and, if it clears your loan early, frees up your full monthly payment to be saved for whatever's left of the period). <strong>Saving</strong> leaves the mortgage on its normal schedule and instead compounds that same monthly amount in a savings account or Cash ISA. The calculator runs both scenarios over the time left on your fix and compares the two outcomes in pounds.</p>
+
+    <h2>Why the Personal Savings Allowance matters</h2>
+    <p>Interest from a standard (non-ISA) savings account counts as taxable income. Your Personal Savings Allowance (PSA) lets you earn some of it tax-free each year — above that, it's taxed at your marginal rate. A Cash ISA is tax-free regardless of amount, which is why it's usually the fairer comparison against mortgage overpayment for higher earners.</p>
+    <table>
+      <tr><th>Tax band</th><th>Personal Savings Allowance</th><th>Tax on interest above it</th></tr>
+      <tr><td>Basic rate</td><td>£1,000/yr</td><td>20%</td></tr>
+      <tr><td>Higher rate</td><td>£500/yr</td><td>40%</td></tr>
+      <tr><td>Additional rate</td><td>£0</td><td>45% (on all of it)</td></tr>
+    </table>
+
+    <h2>When overpaying tends to win, and when saving does</h2>
+    <p>As a rule of thumb: overpaying tends to come out ahead when your mortgage rate is meaningfully higher than the after-tax return you'd get from saving instead — which is common for additional-rate taxpayers in a standard savings account, since 45% tax can wipe out much of the headline rate. Saving tends to win when you have access to a Cash ISA at a rate close to your mortgage rate, since none of that return is lost to tax, and you keep the cash accessible rather than locked into your home. Early Repayment Charges on many fixed mortgages are a separate reason to prefer saving until the fix actually ends — check your mortgage terms before overpaying beyond any penalty-free allowance.</p>
+
+    <h2>Related calculators</h2>
+    <p>
+      <a href="/student-loan-calculator.html">Should I pay off my Plan 2 or Plan 5 student loan early?</a> ·
+      <a href="/100k-tax-trap-calculator.html">The £100,000 tax trap calculator</a>
+    </p>
+  </div>
+
+  <footer style="background:#162F24;padding:28px 32px;text-align:center;margin-top:40px;">
+    <span style="font-size:11px;color:rgba(255,255,255,0.5);">
+      © 2026 Candid Finance Ltd. Not regulated by the FCA — educational tool, not financial advice. ·
+      <a href="/privacy.html" style="color:rgba(255,255,255,0.5);">Privacy</a> ·
+      <a href="/terms.html" style="color:rgba(255,255,255,0.5);">Terms</a>
+    </span>
+  </footer>
+
+  <!-- Cookie consent — same banner/copy as the main app -->
+  <script>
+    if (!localStorage.getItem('cookieAccepted')) {
+      document.addEventListener('DOMContentLoaded', function() {
+        var banner = document.createElement('div');
+        banner.id = 'cookie-banner';
+        banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#162F24;color:rgba(255,255,255,0.8);font-family:sans-serif;font-size:13px;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;z-index:99999;flex-wrap:wrap;';
+        banner.innerHTML = '<span>We use cookies and anonymised analytics to improve Candid. <a href="/privacy.html" target="_blank" style="color:#C4963A;text-decoration:none;">Privacy Policy</a></span><button onclick="localStorage.setItem(\'cookieAccepted\',\'1\');document.getElementById(\'cookie-banner\').remove();" style="background:#C4963A;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;color:#162F24;cursor:pointer;white-space:nowrap;flex-shrink:0;">Got it</button>';
+        document.body.appendChild(banner);
+      });
+    }
+  </script>
+
+  <!-- ── Calculator logic ──────────────────────────────────────────────
+       Mirrors simulateAmortisation() / fvAnnuity() / the "Mortgage overpayment"
+       branch of calcForecast(), and the PSA-by-tax-band table from
+       calcCashOptimisation(), all in src/CandidApp.jsx. Kept as a plain
+       duplicate — this page is static HTML, not part of the React build — so
+       if PSA thresholds or tax rates change, update PSA_BY_BAND/TAX_RATE_BY_BAND
+       below to match. Unlike the in-app forecast (which models low/central/high
+       rate bands), this shows a single central estimate to keep the 4-6 field
+       calculator quick to fill in. -->
+  <script>
+    var PSA_BY_BAND = { basic: 1000, higher: 500, additional: 0 };
+    var TAX_RATE_BY_BAND = { basic: 0.20, higher: 0.40, additional: 0.45 };
+
+    function fmt(n) {
+      return '£' + Math.round(n).toLocaleString('en-GB');
+    }
+
+    // Standard fixed-payment amortisation schedule that fully repays `balance`
+    // over `termYears` at `annualRatePct` — used to derive the regular monthly
+    // payment when the user only gives us balance/rate/term (not a stated payment).
+    function standardPayment(balance, annualRatePct, termYears) {
+      var n = termYears * 12;
+      var r = annualRatePct / 100 / 12;
+      if (r === 0) return balance / n;
+      return balance * r / (1 - Math.pow(1 + r, -n));
+    }
+
+    function simulateAmortisation(balance, annualRatePct, monthlyPayment, maxMonths) {
+      var r = annualRatePct / 100 / 12;
+      var bal = balance, totalInterest = 0, monthsToClear = null;
+      for (var month = 1; month <= maxMonths; month++) {
+        if (bal <= 0) break;
+        var interest = bal * r;
+        totalInterest += interest;
+        bal += interest;
+        var payment = Math.min(monthlyPayment, bal);
+        bal -= payment;
+        if (bal <= 0 && monthsToClear === null) monthsToClear = month;
+      }
+      return { totalInterest: totalInterest, monthsToClear: monthsToClear, endBalance: Math.max(0, bal) };
+    }
+
+    function fvAnnuity(pmt, annualRatePct, months) {
+      if (months <= 0 || pmt <= 0) return 0;
+      var r = annualRatePct / 100 / 12;
+      if (r === 0) return pmt * months;
+      return pmt * ((Math.pow(1 + r, months) - 1) / r);
+    }
+
+    function monthsUntil(dateStr) {
+      if (!dateStr) return null;
+      var target = new Date(dateStr);
+      var today = new Date();
+      return (target.getFullYear() - today.getFullYear()) * 12 + (target.getMonth() - today.getMonth());
+    }
+
+    function calculate() {
+      var balance = +document.getElementById('balance').value || 0;
+      var termYears = +document.getElementById('term').value || 0;
+      var rate = +document.getElementById('rate').value || 0;
+      var fixExpiry = document.getElementById('fixExpiry').value;
+      var surplus = +document.getElementById('surplus').value || 0;
+      var altRate = +document.getElementById('altRate').value || 0;
+      var accountType = document.querySelector('input[name="accountType"]:checked').value;
+      var taxBand = document.getElementById('taxBand').value;
+      var resultEl = document.getElementById('result');
+      var bridgeEl = document.getElementById('bridge');
+
+      if (balance <= 0 || termYears <= 0 || !fixExpiry) {
+        resultEl.innerHTML = '<p style="color:#8a8a8a;margin:0;">Enter your mortgage balance, term and fix expiry date above to see your result.</p>';
+        bridgeEl.style.display = 'none';
+        return;
+      }
+
+      var horizonMonths = monthsUntil(fixExpiry);
+      if (horizonMonths <= 0) {
+        resultEl.innerHTML = '<p style="color:#8a8a8a;margin:0;">Your fix expiry date needs to be in the future to run this comparison.</p>';
+        bridgeEl.style.display = 'none';
+        return;
+      }
+      horizonMonths = Math.min(horizonMonths, termYears * 12);
+
+      var pmt = standardPayment(balance, rate, termYears);
+      var base = simulateAmortisation(balance, rate, pmt, horizonMonths);
+      var over = simulateAmortisation(balance, rate, pmt + surplus, horizonMonths);
+      var totalContributed = surplus * horizonMonths;
+      // Both scenarios commit the same £/month, so "value" here is the extra benefit
+      // over that common baseline — not a full pot. Ordinarily (no early payoff) this
+      // reduces to plain interest saved: base.endBalance - over.endBalance is exactly
+      // interestSaved + totalContributed (more of the surplus went to principal, plus
+      // less interest accrued), so subtracting totalContributed cancels the principal
+      // and leaves the true interest saving. If the loan clears early, the freed-up
+      // full payment (principal + interest) for the remaining months is added, and
+      // the still-outstanding baseline balance (debt the "save" strategy still owes,
+      // that "overpay" no longer does) has to be credited back in — otherwise clearing
+      // early looks far more valuable than it really is, since the freed cashflow's
+      // future value would be counted without netting off the debt it replaced.
+      var mortgageValue = (base.endBalance - over.endBalance) - totalContributed;
+      if (over.monthsToClear !== null && over.monthsToClear < horizonMonths) {
+        mortgageValue += fvAnnuity(pmt + surplus, altRate, horizonMonths - over.monthsToClear);
+      }
+      mortgageValue = Math.round(mortgageValue);
+
+      var savingsFV = fvAnnuity(surplus, altRate, horizonMonths);
+      var grossInterest = Math.max(0, savingsFV - totalContributed);
+      var isIsa = accountType === 'isa';
+      var psaLimit = PSA_BY_BAND[taxBand];
+      var taxRate = TAX_RATE_BY_BAND[taxBand];
+      var taxCost = isIsa ? 0 : Math.max(0, grossInterest - psaLimit) * taxRate;
+      var savingsValue = Math.round(grossInterest - taxCost);
+
+      var diff = mortgageValue - savingsValue;
+      var years = Math.round(horizonMonths / 12 * 10) / 10;
+      var accountLabel = isIsa ? 'Cash ISA' : 'standard savings account';
+
+      var headline, color;
+      if (diff > 0) {
+        color = '#2d6b4a';
+        headline = 'Overpaying your mortgage wins by ' + fmt(Math.abs(diff)) + ' over your remaining fix.';
+      } else if (diff < 0) {
+        color = '#2d6b4a';
+        headline = 'Holding the cash in a ' + accountLabel + ' wins by ' + fmt(Math.abs(diff)) + ' over your remaining fix.';
+      } else {
+        color = '#162F24';
+        headline = "It's essentially a tie over your remaining fix.";
+      }
+
+      var html =
+        '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:' + color + ';font-weight:700;line-height:1.3;">' + headline + '</div>' +
+        '<p style="margin-top:12px;">Comparing the same ' + fmt(surplus) + '/month over the ' + years + ' years left on your fix, at ' + rate + '% mortgage vs ' + altRate + '% in a ' + accountLabel + '.' +
+        (over.monthsToClear !== null && over.monthsToClear < horizonMonths ? ' Overpaying clears your mortgage entirely within the fix, after which the freed-up payment is assumed to be saved for the rest of the period.' : '') +
+        '</p>' +
+        '<div class="statgrid">' +
+          '<div class="stat"><div class="v">' + fmt(mortgageValue) + '</div><div class="l">Value of overpaying</div></div>' +
+          '<div class="stat"><div class="v">' + fmt(savingsValue) + '</div><div class="l">Value of saving instead</div></div>' +
+          '<div class="stat"><div class="v">' + fmt(Math.abs(diff)) + '</div><div class="l">Difference</div></div>' +
+        '</div>';
+
+      resultEl.innerHTML = html;
+      bridgeEl.style.display = 'block';
+    }
+
+    // Default the fix-expiry field to two years from today so the calculator
+    // shows a real result immediately, without hardcoding a date that goes stale.
+    (function setDefaultExpiry() {
+      var d = new Date();
+      d.setFullYear(d.getFullYear() + 2);
+      document.getElementById('fixExpiry').value = d.toISOString().slice(0, 10);
+    })();
+
+    ['balance','term','rate','fixExpiry','surplus','altRate','taxBand'].forEach(function(id) {
+      document.getElementById(id).addEventListener('input', calculate);
+      document.getElementById(id).addEventListener('change', calculate);
+    });
+    document.querySelectorAll('input[name="accountType"]').forEach(function(el) {
+      el.addEventListener('change', calculate);
+    });
+    calculate();
+  </script>
+</body>
+</html>
