@@ -317,6 +317,60 @@ function LandingPage({ onStart }) {
         </div>
       </div>
 
+      {/* ── SECTION 4.5: FREE CALCULATORS ── standalone tools that don't need
+          the full assessment, each also a dedicated landing page in its own
+          right (student-loan-calculator.html etc.) — linked here so both
+          users and search crawlers have a path in from the homepage. */}
+      <div style={{ background: WHITE, padding: "88px 24px" }}>
+        <div style={{ maxWidth: "960px", margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "56px" }}>
+            <SectionLabel>Free calculators</SectionLabel>
+            <h2 style={{
+              fontFamily: SERIF, fontSize: "clamp(26px,4vw,34px)",
+              color: G, fontWeight: 700, lineHeight: 1.2,
+            }}>
+              Answer one question in 30 seconds.
+            </h2>
+          </div>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: "28px",
+          }}>
+            {[
+              {
+                href: "/student-loan-calculator.html", icon: "🎓",
+                title: "Student loan overpayment calculator",
+                body: "Plan 1, 2, 4, 5 & Postgraduate — find out if overpaying saves you money or just hands cash to the government that would've been written off.",
+              },
+              {
+                href: "/100k-tax-trap-calculator.html", icon: "💷",
+                title: "£100,000 tax trap & childcare cliff calculator",
+                body: "Check the 60% marginal-rate zone and the childcare cliff, and see the exact pension sacrifice that fixes both at once.",
+              },
+              {
+                href: "/mortgage-vs-savings-calculator.html", icon: "🏠",
+                title: "Mortgage overpayment vs high-yield savings",
+                body: "When your fix ends, compare paying down the mortgage against a savings account or Cash ISA — tax accounted for.",
+              },
+            ].map(tool => (
+              <a key={tool.href} href={tool.href} style={{
+                background: CREAM, borderRadius: "14px", padding: "32px 28px",
+                borderTop: `4px solid ${GOLD}`, textDecoration: "none", display: "block",
+              }}>
+                <div style={{ fontSize: "28px", marginBottom: "16px" }}>{tool.icon}</div>
+                <div style={{
+                  fontFamily: SERIF, fontSize: "18px", color: G,
+                  fontWeight: 600, marginBottom: "10px",
+                }}>{tool.title}</div>
+                <div style={{ fontSize: "14px", color: MUT, lineHeight: 1.7 }}>{tool.body}</div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── SECTION 5: FINAL CTA ── */}
       <div style={{
         background: CREAM, padding: "96px 24px",
@@ -351,6 +405,9 @@ function LandingPage({ onStart }) {
           display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap",
         }}>
           <span>© 2026 Candid Finance</span>
+          <a href="/student-loan-calculator.html" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Student Loan Calculator</a>
+          <a href="/100k-tax-trap-calculator.html" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>£100k Tax Trap Calculator</a>
+          <a href="/mortgage-vs-savings-calculator.html" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Mortgage vs Savings Calculator</a>
           <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Privacy Policy</a>
           <a href="/terms.html"   target="_blank" rel="noreferrer" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Terms of Service</a>
         </div>
