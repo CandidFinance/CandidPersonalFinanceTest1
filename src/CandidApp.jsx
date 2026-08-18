@@ -2609,6 +2609,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
   const [forecastSurplus, setForecastSurplus] = useState(null); // null = use calculated default
   const [forecastLumpSum, setForecastLumpSum] = useState(null); // null = 0
   const [forecastTip, setForecastTip] = useState(null); // label of active assumption panel, or null
+  const [breakdownSort, setBreakdownSort] = useState("amount"); // "amount" | "category" — user-controlled order for the Module breakdown list below
   const isMobile = useWindowWidth() < 768;
       if (!insights) return null;
 
@@ -2642,14 +2643,29 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
 
   const activeModules = allModules.filter(mm => mm.status !== "na");
 
-  // Module breakdown list — descending by the clean £/yr `amount` figure (not the
-  // sort-priority `impact`, which carries a +99999 sentinel for an uncontributed
-  // pension). Modules with nothing actionable (amount === 0) sink to the bottom.
-  // Kids & Family is excluded from the ranking and always placed last — its `amount`
-  // is a lump sum by age 18, not a £/yr figure, so it isn't comparable to the others.
+  // Module breakdown list — user-controlled order (breakdownSort), defaulting to
+  // descending by the clean £/yr `amount` figure (not the sort-priority `impact`,
+  // which carries a +99999 sentinel for an uncontributed pension). This ordering is
+  // a mathematical ranking, not an implied recommendation — see the toggle + micro-
+  // copy rendered above the list, which exists specifically so the default £-gap
+  // order isn't read as a priority call the app is making on the user's behalf.
+  // Modules with nothing actionable (amount === 0) sink to the bottom regardless of
+  // sort mode. Kids & Family is excluded from the ranking and always placed last —
+  // its `amount` is a lump sum by age 18, not a £/yr figure, so it isn't comparable
+  // to the others under either sort mode.
   const rankedModules = activeModules.filter(mm => mm.key !== "kids");
   const kidsModule     = activeModules.find(mm => mm.key === "kids") || null;
-  const modulesWithRec = rankedModules.filter(mm => mm.amount > 0).sort((a,b) => b.amount - a.amount);
+  const modulesActionable = rankedModules.filter(mm => mm.amount > 0);
+  // "Category" groups Today-actionable items ahead of Future-opportunity items
+  // (the same Today/Future split already shown via each tile's TagPill), with
+  // largest £ gap as the tie-breaker within each group.
+  const CATEGORY_ORDER = { "Today": 0, "Future opportunity": 1 };
+  const modulesWithRec = breakdownSort === "category"
+    ? [...modulesActionable].sort((a,b) => {
+        const catDiff = (CATEGORY_ORDER[MODULE_TAG[a.key]?.label] ?? 2) - (CATEGORY_ORDER[MODULE_TAG[b.key]?.label] ?? 2);
+        return catDiff !== 0 ? catDiff : b.amount - a.amount;
+      })
+    : [...modulesActionable].sort((a,b) => b.amount - a.amount);
   const modulesNoRec   = rankedModules.filter(mm => mm.amount === 0);
   const moduleList     = [...modulesWithRec, ...modulesNoRec, ...(kidsModule ? [kidsModule] : [])];
   const needActionCount = modulesWithRec.length + (kidsModule && kidsModule.amount > 0 ? 1 : 0);
@@ -2949,10 +2965,36 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
         {/* Module breakdown — full-width, stacked, sorted by £ opportunity descending.
             Tile format mirrors the numbered "Win N" cards inside each module: the
             module title leads, the £ figure is a supporting line underneath it. */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
           <span style={{fontSize:"12px",color:MUT}}>{needActionCount} need action · {onTrackCount} on track</span>
         </div>
+
+        {/* Sort control + micro-copy — the list below is a mathematical ranking of
+            £ gaps, not a personal recommendation of what to do first, so the order
+            is user-controlled and explicitly labelled as such rather than presented
+            as a single implied priority. */}
+        {modulesWithRec.length > 1 && (
+          <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"16px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
+              <span style={{fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.04em",textTransform:"uppercase"}}>Sort by:</span>
+              {[
+                { key:"amount", label:"Largest £ gap" },
+                { key:"category", label:"Category" },
+              ].map(opt => (
+                <button key={opt.key} type="button" onClick={() => setBreakdownSort(opt.key)}
+                  style={{background:breakdownSort===opt.key?G:"transparent",color:breakdownSort===opt.key?CREAM:G,border:`1.5px solid ${G}`,borderRadius:"100px",padding:"5px 12px",fontSize:"12px",fontWeight:700,cursor:"pointer"}}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:0}}>
+              {breakdownSort === "category"
+                ? "Grouped by category (today's actions, then future opportunities), largest £ gap first within each group. This is a mathematical calculation, not a recommended order of priority."
+                : "Items ordered strictly by total £ difference. This is a mathematical calculation, not a recommended order of priority."}
+            </p>
+          </div>
+        )}
 
         <div style={{marginBottom:"24px"}}>
           {(() => {
