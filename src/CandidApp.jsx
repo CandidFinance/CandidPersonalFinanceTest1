@@ -4187,30 +4187,31 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           )}
         </div>
 
-        {/* Pension: "I don't know" guidance — replaces the normal AI summary */}
+        {/* Pension: "I don't know" guidance — replaces the normal AI summary.
+            Plain text, not a card: this is general reading, not a discrete
+            interactive component (see CLAUDE.md's Surface Variety rule). */}
         {isPensionUnknown && (
-          <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
-            <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75,marginBottom:"12px"}}>
+          <div className="fu1" style={{marginBottom:"24px"}}>
+            <p style={{fontSize:"15px",color:TEXT,lineHeight:1.75,marginBottom:"12px"}}>
               Not knowing your pension situation isn't a failure — it's incredibly common, and it's costing you the ability to plan. Here's how to find out in about 10 minutes:
             </p>
-            <ol style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75,paddingLeft:"20px",marginBottom:"12px"}}>
+            <ol style={{fontSize:"15px",color:TEXT,lineHeight:1.75,paddingLeft:"20px",marginBottom:"12px"}}>
               <li>Check your payslip for pension deductions</li>
               <li>Ask your employer's HR or payroll team which scheme you're in and what they contribute</li>
               <li>Search gov.uk/find-pension-contact-details for any pensions from previous employers</li>
               <li>Check for a State Pension forecast at gov.uk/check-state-pension</li>
             </ol>
-            <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75}}>
+            <p style={{fontSize:"15px",color:MUT,lineHeight:1.75}}>
               Once you know these details, come back and update this section — it's likely one of your biggest opportunities.
             </p>
           </div>
         )}
 
         {/* AI summary — omitted for Investments, Cash, Pension, and Student loan:
-            their content is now the collapsed headlines of the Win tiles below. */}
+            their content is now the collapsed headlines of the Win tiles below.
+            Plain paragraph, not a card — general reading, not interactive. */}
         {!isPensionUnknown && modSummary?.summary && moduleKey !== "investments" && moduleKey !== "cash" && moduleKey !== "pension" && moduleKey !== "studentLoan" && (
-          <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
-            <p style={{fontSize:"15px",color:"rgba(255,255,255,0.85)",lineHeight:1.75}}>{modSummary.summary}</p>
-          </div>
+          <p className="fu1" style={{fontSize:"15px",color:TEXT,lineHeight:1.75,marginBottom:"24px"}}>{modSummary.summary}</p>
         )}
 
         {/* Investments: top-of-page opportunity summary — quantifies what's on the
@@ -4468,7 +4469,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               {showMatchWin && (
                 <ExpandableInvestmentItem number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tag={{ label:"Today", color:GOLD }}>
                   {(() => {
-                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT };
+                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, fontFamily:SERIF };
                     const totalRowStyle = { ...rowStyle, paddingTop:"7px", borderTop:"1px dashed rgba(22,47,36,0.18)", fontWeight:700 };
                     const stepCardStyle = { background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.12)", borderRadius:"12px", padding:"14px 16px", marginBottom:"10px" };
                     const stepEyebrowStyle = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
@@ -4719,7 +4720,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   </ExpandableInvestmentItem>
                 </div>
               ) : (
-                <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
+                <div style={{borderTop:"1px solid rgba(22,47,36,0.1)",paddingTop:"16px",marginBottom:"20px"}}>
                   <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px",display:"flex",alignItems:"center",gap:"6px"}}><Banknote size={15}/>Getting a bonus? Sacrifice it before it's paid</div>
                   <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,margin:0}}>
                     Sacrificing a bonus into your pension before it hits your payslip means you never pay tax or NI on that money — it goes in gross, grows tax-free, and is only taxed (typically at a lower rate) when you draw it in retirement. If you're expecting one this year, update your inputs to model it here.
@@ -4967,7 +4968,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 tag={{ label:"Today", color:GOLD }}
               >
                 {totalPot > 0 ? (() => {
-                  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT };
+                  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, fontFamily:SERIF };
                   const totalRowStyle = { ...rowStyle, paddingTop:"7px", borderTop:"1px dashed rgba(22,47,36,0.18)", fontWeight:700 };
                   const stepCardStyle = { background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.12)", borderRadius:"12px", padding:"14px 16px", marginBottom:"10px" };
                   const stepEyebrowStyle = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
@@ -5281,7 +5282,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"14px",display:products.subheadingUrgent?"flex":undefined,alignItems:products.subheadingUrgent?"flex-start":undefined,gap:products.subheadingUrgent?"5px":undefined}}>{products.subheadingUrgent && <AlertTriangle size={14} style={{flexShrink:0,marginTop:"2px"}}/>}<span>{products.subheading}</span></p>
 
                 {showMoveMsg && (
-                  <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
+                  <div style={{borderLeft:`3px solid ${GOLD}`,paddingLeft:"14px",marginBottom:"16px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
                       <PoundSterling size={16} color={GOLD}/>
                       <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Move this into your S&S ISA</span>
@@ -5464,7 +5465,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   tag={worthOverpaying ? { label:"Today", color:GOLD } : { label:"Not optimal", color:"#c0392b" }}
                 >
                   {(() => {
-                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT };
+                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, fontFamily:SERIF };
                     const stepCardStyle = { background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.12)", borderRadius:"12px", padding:"14px 16px", marginBottom:"10px" };
                     const stepEyebrowStyle = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
                     const stepWhyStyle = { fontSize:"12px", color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
