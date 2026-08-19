@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import posthog from "posthog-js"
 import CandidApp, { PageWrap, NavBar, ContentWrap } from "./CandidApp.jsx"
+import { ClipboardList, Target, Search, GraduationCap, PoundSterling, Home as HomeIcon } from "lucide-react"
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -239,15 +240,15 @@ function LandingPage({ onStart }) {
           }}>
             {[
               {
-                icon: "📋", title: "Tell us about your finances",
+                icon: ClipboardList, title: "Tell us about your finances",
                 body: "Salary, savings, pension, debts. Takes about 5 minutes. Approximate figures are fine — you can refine later.",
               },
               {
-                icon: "🎯", title: "Get your Candid score",
+                icon: Target, title: "Get your Candid score",
                 body: "A personalised 0–100 financial health score showing where you stand and what matters most.",
               },
               {
-                icon: "🔍", title: "Explore your modules",
+                icon: Search, title: "Explore your modules",
                 body: "Deep-dive into each area of your finances with specific actions and their £ impact, calculated from your actual inputs.",
               },
             ].map(step => (
@@ -255,7 +256,7 @@ function LandingPage({ onStart }) {
                 background: CREAM, borderRadius: "14px", padding: "32px 28px",
                 borderTop: `4px solid ${GOLD}`,
               }}>
-                <div style={{ fontSize: "28px", marginBottom: "16px" }}>{step.icon}</div>
+                <div style={{ marginBottom: "16px" }}><step.icon size={28} color={G}/></div>
                 <div style={{
                   fontFamily: SERIF, fontSize: "18px", color: G,
                   fontWeight: 600, marginBottom: "10px",
@@ -340,17 +341,17 @@ function LandingPage({ onStart }) {
           }}>
             {[
               {
-                href: "/student-loan-calculator.html", icon: "🎓",
+                href: "/student-loan-calculator.html", icon: GraduationCap,
                 title: "Student loan overpayment calculator",
                 body: "Plan 1, 2, 4, 5 & Postgraduate — find out if overpaying saves you money or just hands cash to the government that would've been written off.",
               },
               {
-                href: "/100k-tax-trap-calculator.html", icon: "💷",
+                href: "/100k-tax-trap-calculator.html", icon: PoundSterling,
                 title: "£100,000 tax trap & childcare cliff calculator",
                 body: "Check the 60% marginal-rate zone and the childcare cliff, and see the exact pension sacrifice that fixes both at once.",
               },
               {
-                href: "/mortgage-vs-savings-calculator.html", icon: "🏠",
+                href: "/mortgage-vs-savings-calculator.html", icon: HomeIcon,
                 title: "Mortgage overpayment vs high-yield savings",
                 body: "When your fix ends, compare paying down the mortgage against a savings account or Cash ISA — tax accounted for.",
               },
@@ -359,7 +360,7 @@ function LandingPage({ onStart }) {
                 background: CREAM, borderRadius: "14px", padding: "32px 28px",
                 borderTop: `4px solid ${GOLD}`, textDecoration: "none", display: "block",
               }}>
-                <div style={{ fontSize: "28px", marginBottom: "16px" }}>{tool.icon}</div>
+                <div style={{ marginBottom: "16px" }}><tool.icon size={28} color={G}/></div>
                 <div style={{
                   fontFamily: SERIF, fontSize: "18px", color: G,
                   fontWeight: 600, marginBottom: "10px",

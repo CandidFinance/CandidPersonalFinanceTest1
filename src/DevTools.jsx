@@ -5,6 +5,7 @@
 // Production). See main.jsx for the gating; see README/DEV_TOOLS notes for how
 // we confirmed this chunk is absent from a real production build.
 import { useState } from "react";
+import { Wrench } from "lucide-react";
 import { calcMetrics, computeModuleStatuses, MODULE_META, sanitizeForMvp } from "./CandidApp.jsx";
 
 const CUSTOM_PRESETS_KEY = "candid_dev_custom_presets";
@@ -203,8 +204,9 @@ export default function DevToolsPanel({ onPresetLoaded }) {
         background: GOLD, color: G, border: "none", borderRadius: "8px",
         padding: "8px 14px", fontWeight: 700, fontSize: "12px", cursor: "pointer",
         fontFamily: "'DM Sans',sans-serif", boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+        display: "flex", alignItems: "center", gap: "6px",
       }}>
-        🛠 DEV TOOLS
+        <Wrench size={13}/> DEV TOOLS
       </button>
     );
   }
@@ -217,8 +219,8 @@ export default function DevToolsPanel({ onPresetLoaded }) {
       boxShadow: "0 4px 24px rgba(0,0,0,0.4)", border: "1px solid rgba(196,150,58,0.5)",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-        <span style={{ fontWeight: 700, color: GOLD, fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-          🛠 Dev tools — test profiles
+        <span style={{ fontWeight: 700, color: GOLD, fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "5px" }}>
+          <Wrench size={12}/> Dev tools — test profiles
         </span>
         <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "rgba(246,240,230,0.6)", cursor: "pointer", fontSize: "16px", lineHeight: 1 }}>×</button>
       </div>

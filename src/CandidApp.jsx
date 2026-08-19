@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
+import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home } from "lucide-react";
 
 // ── Supabase client — module level, no package needed ─────────────────────────
 const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
@@ -228,58 +229,58 @@ function getEquivalence(amount) {
   // Tier 1 — under £500: weekly/monthly treats
   if (n < 100) {
     const pints = Math.round(n / 6.5);
-    return `That's ${pints} pints 🍺`;
+    return `That's ${pints} pints`;
   }
   if (n < 250) {
     const coffees = Math.round(n / 4.5);
-    return `That's ${coffees} flat whites ☕`;
+    return `That's ${coffees} flat whites`;
   }
   if (n < 500) {
     const dinners = Math.round(n / 80);
-    if (dinners >= 2) return `That's ${dinners} proper date nights 🍽️`;
+    if (dinners >= 2) return `That's ${dinners} proper date nights`;
     const subs = Math.round(n / 25);
-    return `That's ${subs} months of your subscription stack 📱`;
+    return `That's ${subs} months of your subscription stack`;
   }
 
   // Tier 2 — £500–£5,000: experiences
   if (n < 800) {
     const pints = Math.round(n / 6.5);
-    return `A pint every Friday for ${Math.round(pints / 52)} year${Math.round(pints/52)!==1?"s":""} 🍺`;
+    return `A pint every Friday for ${Math.round(pints / 52)} year${Math.round(pints/52)!==1?"s":""}`;
   }
   if (n < 1500) {
     const trips = Math.round(n / 120);
-    if (trips >= 3) return `That's ${trips} Eurostar weekends in Paris 🚅`;
+    if (trips >= 3) return `That's ${trips} Eurostar weekends in Paris`;
     const months = Math.round(n / 175);
-    return `That's ${months} months of rent on a great room 🏠`;
+    return `That's ${months} months of rent on a great room`;
   }
   if (n < 3000) {
     const festivals = Math.round(n / 375);
-    if (festivals >= 2) return `That's ${festivals} Glastonbury tickets 🎪`;
-    return `That's a ski week in the Alps ⛷️`;
+    if (festivals >= 2) return `That's ${festivals} Glastonbury tickets`;
+    return `That's a ski week in the Alps`;
   }
   if (n < 5000) {
     const flights = Math.round(n / 150);
-    return `That's ${flights} return flights — go somewhere 🛫`;
+    return `That's ${flights} return flights — go somewhere`;
   }
 
   // Tier 3 — £5,000–£25,000: lifestyle
   if (n < 8000) {
     const months = Math.round(n / 2000);
-    return `That's ${months} months of London rent 🏙️`;
+    return `That's ${months} months of London rent`;
   }
   if (n < 15000) {
     const years = +(n / 4200).toFixed(1);
-    return `That's ${years} years of car lease payments 🚗`;
+    return `That's ${years} years of car lease payments`;
   }
   if (n < 25000) {
-    return `That's a serious deposit top-up on your first home 🔑`;
+    return `That's a serious deposit top-up on your first home`;
   }
 
   // Tier 4 — £25,000+: life-stage
   if (n < 60000) {
-    return `At 6% growth over 30 years, that's ~${fmt(Math.round(n * 5.74))} at retirement 📈`;
+    return `At 6% growth over 30 years, that's ~${fmt(Math.round(n * 5.74))} at retirement`;
   }
-  return `At 6% growth over 30 years, that's ~${fmt(Math.round(n * 5.74))} at retirement — retire earlier 🏖️`;
+  return `At 6% growth over 30 years, that's ~${fmt(Math.round(n * 5.74))} at retirement — retire earlier`;
 }
 
 // Full marginal income tax calculation (UK 2025/26)
@@ -779,7 +780,7 @@ function getModuleInsights(key, d, m, savingsRates) {
       return [
         {
           label:"ISA allowance remaining", value: fmt(m.isaHeadroom), flag: m.isaHeadroom > 2000,
-          tooltip:`🔒 ISA = tax-free for life. Every £ inside an ISA grows completely free of income tax, dividend tax, and CGT — forever. Your ${fmt(m.isaHeadroom)} of remaining allowance expires on 5 April and CANNOT be carried forward. Example: £12,000/yr invested inside an ISA for 10 years at 7% grows to ~${fmt(isaCompoundEx)} with zero tax due on gains or income, ever. Outside an ISA, you'd owe tax on every dividend and every gain above £3,000.`
+          tooltip:`ISA = tax-free for life. Every £ inside an ISA grows completely free of income tax, dividend tax, and CGT — forever. Your ${fmt(m.isaHeadroom)} of remaining allowance expires on 5 April and CANNOT be carried forward. Example: £12,000/yr invested inside an ISA for 10 years at 7% grows to ~${fmt(isaCompoundEx)} with zero tax due on gains or income, ever. Outside an ISA, you'd owe tax on every dividend and every gain above £3,000.`
         },
         {
           // Merges the old "Unwrapped investments" and "Crystallisable CGT gain" tiles —
@@ -880,7 +881,7 @@ function getModuleInsights(key, d, m, savingsRates) {
           tooltip:`At ~${Math.round(slInterestRate*1000)/10}% p.a., your loan is growing by ${fmt(annualInterest)} per year in interest. Your mandatory repayment is ${fmt(annualRep)}/yr. Net: your balance is ${balanceGrowing ? `GROWING by ${fmt(netAnnualChange)}/yr — the interest is outrunning your repayments` : `shrinking by ${fmt(-netAnnualChange)}/yr — you are ahead of interest`}.`
         },
         {
-          label: balanceGrowing ? "⚠️ Balance growing — not shrinking" : "Annual balance reduction",
+          label: balanceGrowing ? "Balance growing — not shrinking" : "Annual balance reduction",
           value: balanceGrowing ? `+${fmt(netAnnualChange)}/yr` : fmt(-netAnnualChange)+"/yr",
           flag: true,
           tooltip: balanceGrowing
@@ -1081,7 +1082,7 @@ function getModuleProducts(key, d, m, savingsRates) {
           badge: i === 0 ? "Highest rate" : "",
           highlight: i === 0,
           cta: "View account",
-          appIcon: "🏦",
+          appIcon: Landmark,
           productUrl: r.product_url,
         })),
         disclaimer: `Rates correct as of ${dateLabel} — always confirm current rates directly with the provider before applying.`,
@@ -1095,7 +1096,7 @@ function getModuleProducts(key, d, m, savingsRates) {
         return Math.ceil((taxEnd - now) / (1000*60*60*24));
       })();
       const urgencyMsg = daysToTaxYearEnd < 30
-        ? `⚠️ ${daysToTaxYearEnd} days left. After April 5th, your allowance is permanently gone.`
+        ? `${daysToTaxYearEnd} days left. After April 5th, your allowance is permanently gone.`
         : daysToTaxYearEnd < 90
         ? `${daysToTaxYearEnd} days until your allowance expires on April 5th.`
         : `Your allowance expires on April 5th — ${daysToTaxYearEnd} days away.`;
@@ -1118,6 +1119,7 @@ function getModuleProducts(key, d, m, savingsRates) {
         subheading: m.isaHeadroom > 0
           ? `${urgencyMsg} Entirely free of income tax, dividend tax, and CGT, for life. Here's where you could actually do this:`
           : `You've used your full £20,000 ISA allowance this tax year. New allowance opens on April 6th. If you have unwrapped investments, consider a Bed & ISA strategy next tax year.`,
+        subheadingUrgent: m.isaHeadroom > 0 && daysToTaxYearEnd < 30,
         products: [
           { name:"Vanguard",      type:"S&S ISA", rate:"0.15%/yr", badge:"Lowest cost",       feature:"Index fund specialist. Best for low-cost, long-term investors. No dealing fees on funds.", cta:"Open S&S ISA", highlight:true },
           { name:"Hargreaves Lansdown", type:"S&S ISA", rate:"0.45%/yr", badge:"Widest range",feature:"15,000+ funds, shares, ETFs. Best platform for active investors and fund switchers.", cta:"Open S&S ISA", highlight:false },
@@ -1167,7 +1169,7 @@ function getModuleProducts(key, d, m, savingsRates) {
         // overpaying is worth it; if the loan rate is below what savings could earn,
         // saving wins, and the heading needs to lead with that, not the opposite.
         heading: balanceGrowing
-          ? "⚠️ Your loan balance is growing — not shrinking"
+          ? "Your loan balance is growing — not shrinking"
           : willClear
           ? (effectiveBenefit > 0 ? "You will clear this loan — overpaying could save interest" : "You will clear this loan — but saving beats overpaying here")
           : "Your loan will be written off — do not overpay",
@@ -1212,10 +1214,10 @@ function getModuleProducts(key, d, m, savingsRates) {
           ? `At ${rate}%, overpaying gives a guaranteed ${rate}% return — net advantage vs your savings rate (${savRate}%): +${overpayBenefit}%. A £10,000 lump sum today saves ~${fmt(interestSaved10k)} in interest and cuts ${monthsSaved} months off your term.`
           : `At ${rate}%, the maths marginally favours investing surplus cash over overpaying — your ISA can earn more in expected returns. But overpaying is risk-free; investing isn't. Worth doing both.`,
         products: [
-          { name:"L&C Mortgages",   type:"Fee-free whole-of-market broker", rate:"All lenders", badge:"Largest UK broker", feature:"No broker fee. Access to every major lender. Particularly strong for remortgaging — will model your current deal vs market.", cta:"Explore remortgage", highlight:false, appIcon:"🏠", demoNote:"Would open L&C remortgage flow" },
-          { name:"Habito",          type:"Fee-free digital broker",          rate:"90+ lenders", badge:"Fastest",          feature:"Whole-of-market in minutes online. Strong for employed borrowers in straightforward situations.", cta:"Get quotes", highlight:rate >= 4.5, appIcon:"💻", demoNote:"Would open Habito quote tool" },
-          { name:"Mojo Mortgages",  type:"Fee-free broker",                  rate:"Whole of market", badge:"Award-winning", feature:"Human advisers + digital tools. Good for more complex cases.", cta:"Get advice", highlight:false, appIcon:"📱", demoNote:"Would open Mojo Mortgages" },
-          { name:"Sprive",          type:"Mortgage overpayment app",          rate:`Saves at ${rate}%`, badge:"Overpayment", feature:"Round-up and automate overpayments. Tracks how many years you're shaving off your term in real time.", cta:"Try Sprive", highlight:false, appIcon:"⚡", demoNote:"Would open Sprive app" },
+          { name:"L&C Mortgages",   type:"Fee-free whole-of-market broker", rate:"All lenders", badge:"Largest UK broker", feature:"No broker fee. Access to every major lender. Particularly strong for remortgaging — will model your current deal vs market.", cta:"Explore remortgage", highlight:false, appIcon:Home, demoNote:"Would open L&C remortgage flow" },
+          { name:"Habito",          type:"Fee-free digital broker",          rate:"90+ lenders", badge:"Fastest",          feature:"Whole-of-market in minutes online. Strong for employed borrowers in straightforward situations.", cta:"Get quotes", highlight:rate >= 4.5, appIcon:Laptop, demoNote:"Would open Habito quote tool" },
+          { name:"Mojo Mortgages",  type:"Fee-free broker",                  rate:"Whole of market", badge:"Award-winning", feature:"Human advisers + digital tools. Good for more complex cases.", cta:"Get advice", highlight:false, appIcon:Smartphone, demoNote:"Would open Mojo Mortgages" },
+          { name:"Sprive",          type:"Mortgage overpayment app",          rate:`Saves at ${rate}%`, badge:"Overpayment", feature:"Round-up and automate overpayments. Tracks how many years you're shaving off your term in real time.", cta:"Try Sprive", highlight:false, appIcon:Zap, demoNote:"Would open Sprive app" },
         ],
         disclaimer:"Mortgage products are subject to status and valuation. Your home may be repossessed if you do not keep up repayments. Brokers shown earn commission from lenders — no cost to you. Candid may earn a referral fee.",
         mortgageSection: { bal, rate, mo, monthsSaved, interestSaved10k, savRate, overpayBenefit }
@@ -1241,10 +1243,10 @@ function getModuleProductsExtended(key, d, m) {
           ? `At ${rate}%, this loan is almost certainly your highest-priority debt. Every £ used to overpay gives a guaranteed ${rate}% return — better than any savings account, and risk-free. The only thing to weigh against it is pension tax relief.`
           : `At ${rate}%, the case for overpaying depends on your alternatives. Compare against your savings rate, ISA returns, and especially pension tax relief before paying down.`,
         products: [
-          { name:"Your pension first",     type:"Priority check", rate:Math.round(m.tr*100)+"% instant return", badge:"Check this first", feature:`Pension tax relief gives an immediate ${Math.round(m.tr*100)}% return. If you haven't maxed employer match, do that before any debt overpayment.`, cta:"Go to Pension", highlight:rate < 15, internalLink:"pension", appIcon:"🏦" },
-          { name:"Pay off loan early",     type:"Overpayment",    rate:rate+"% guaranteed",        badge:rate>8?"Best return":"Good return", feature:`Overpaying by even £100/month saves ${fmt(interest5yr)} in interest. Check your loan agreement — most allow 10% overpayment per year penalty-free.`, cta:"Contact your lender", highlight:rate > 8, appIcon:"💳", demoNote:"Would open lender app" },
-          { name:"Consolidation loan",     type:"Refinancing",    rate:"From 5.9% AER",            badge:"Lower your rate", feature:"If your credit score has improved since taking the loan, you may qualify for a lower rate. Saves interest without locking up savings.", cta:"Compare rates", highlight:false, appIcon:"🔄", demoNote:"Would open comparison site" },
-          { name:"0% balance transfer",    type:"If eligible",    rate:"0% for up to 30 months",  badge:"If eligible", feature:"Some lenders offer personal loan refinancing via 0% credit facilities. Only relevant if your balance is manageable within the 0% window.", cta:"Check eligibility", highlight:false, appIcon:"🏛️", demoNote:"Would open MoneySupermarket" },
+          { name:"Your pension first",     type:"Priority check", rate:Math.round(m.tr*100)+"% instant return", badge:"Check this first", feature:`Pension tax relief gives an immediate ${Math.round(m.tr*100)}% return. If you haven't maxed employer match, do that before any debt overpayment.`, cta:"Go to Pension", highlight:rate < 15, internalLink:"pension", appIcon:Landmark },
+          { name:"Pay off loan early",     type:"Overpayment",    rate:rate+"% guaranteed",        badge:rate>8?"Best return":"Good return", feature:`Overpaying by even £100/month saves ${fmt(interest5yr)} in interest. Check your loan agreement — most allow 10% overpayment per year penalty-free.`, cta:"Contact your lender", highlight:rate > 8, appIcon:CreditCard, demoNote:"Would open lender app" },
+          { name:"Consolidation loan",     type:"Refinancing",    rate:"From 5.9% AER",            badge:"Lower your rate", feature:"If your credit score has improved since taking the loan, you may qualify for a lower rate. Saves interest without locking up savings.", cta:"Compare rates", highlight:false, appIcon:RefreshCw, demoNote:"Would open comparison site" },
+          { name:"0% balance transfer",    type:"If eligible",    rate:"0% for up to 30 months",  badge:"If eligible", feature:"Some lenders offer personal loan refinancing via 0% credit facilities. Only relevant if your balance is manageable within the 0% window.", cta:"Check eligibility", highlight:false, appIcon:Building2, demoNote:"Would open MoneySupermarket" },
         ],
         disclaimer:"Overpayment terms vary by lender. Check your loan agreement before making extra payments — early repayment charges may apply on some products. Candid may earn a referral fee.",
         overpaySection: { bal, rate, mo, mos }
@@ -1262,10 +1264,10 @@ function getModuleProductsExtended(key, d, m) {
         heading:"Building your child's financial future",
         subheading:`A Junior ISA gives every £ you invest a tax-free runway until your child turns 18. With ${runway} years of compound growth at 7%, even small monthly contributions become meaningful. The earlier you start, the more time does the heavy lifting.`,
         products: [
-          { name:"Hargreaves Lansdown JISA", type:"Junior S&S ISA", rate:"0.45%/yr", badge:"Most popular",   feature:"Easy to manage alongside your own HL accounts. Wide fund choice. Max £9,000/yr.", cta:"Open Junior ISA", highlight:true, appIcon:"📱", demoNote:"Would open HL app" },
-          { name:"Vanguard JISA",             type:"Junior S&S ISA", rate:"0.15%/yr", badge:"Lowest cost",    feature:"Index fund focus. Extremely low charges. Best for low-cost long-term growth.", cta:"Open Junior ISA", highlight:false, appIcon:"📱", demoNote:"Would open Vanguard app" },
-          { name:"OneFamily JISA",            type:"Junior S&S ISA", rate:"0.0%/yr",  badge:"No platform fee", feature:"JISA specialist. No platform fee. Popular for grandparent contributions.", cta:"Open Junior ISA", highlight:false, appIcon:"🌐", demoNote:"Would open OneFamily site" },
-          { name:"Child pension (SIPP)",      type:"Child SIPP",     rate:"Tax relief on contributions", badge:"Little-known gem", feature:`You can contribute £${childPensionNet} net/yr — HMRC tops it up to £${childPensionGross}. At 7% growth to age 65, that single year's contribution could be worth ~${fmt(childPensionFV)}.`, cta:"Open Child SIPP", highlight:false, appIcon:"🏦", demoNote:"Would open PensionBee" },
+          { name:"Hargreaves Lansdown JISA", type:"Junior S&S ISA", rate:"0.45%/yr", badge:"Most popular",   feature:"Easy to manage alongside your own HL accounts. Wide fund choice. Max £9,000/yr.", cta:"Open Junior ISA", highlight:true, appIcon:Smartphone, demoNote:"Would open HL app" },
+          { name:"Vanguard JISA",             type:"Junior S&S ISA", rate:"0.15%/yr", badge:"Lowest cost",    feature:"Index fund focus. Extremely low charges. Best for low-cost long-term growth.", cta:"Open Junior ISA", highlight:false, appIcon:Smartphone, demoNote:"Would open Vanguard app" },
+          { name:"OneFamily JISA",            type:"Junior S&S ISA", rate:"0.0%/yr",  badge:"No platform fee", feature:"JISA specialist. No platform fee. Popular for grandparent contributions.", cta:"Open Junior ISA", highlight:false, appIcon:Globe, demoNote:"Would open OneFamily site" },
+          { name:"Child pension (SIPP)",      type:"Child SIPP",     rate:"Tax relief on contributions", badge:"Little-known gem", feature:`You can contribute £${childPensionNet} net/yr — HMRC tops it up to £${childPensionGross}. At 7% growth to age 65, that single year's contribution could be worth ~${fmt(childPensionFV)}.`, cta:"Open Child SIPP", highlight:false, appIcon:Landmark, demoNote:"Would open PensionBee" },
         ],
         disclaimer:`JISA allowance is £9,000 per tax year (2025/26). Money is locked until the child turns 18. Investments can fall as well as rise. Child SIPP contributions count toward the £3,600 annual pension allowance for non-earners. Candid may earn a referral fee.`,
         kidsSection: { monthly50, monthly100, runway, childPensionFV }
@@ -1283,10 +1285,10 @@ function getModuleProductsExtended(key, d, m) {
           ? `At 40% on the taxable portion, HMRC could receive ${fmt(ihtBill)} from your estate. Proactive planning — gifting, trusts, pension use, and will structuring — can dramatically reduce or eliminate this. Every year of inaction is a missed opportunity.`
           : `No immediate IHT exposure on current figures. But estate values change — property growth, pension drawdown, and inheritance itself can push you into IHT territory. Planning now is always easier than planning later.`,
         products: [
-          { name:"Farewill",            type:"Will writing",           rate:"From £90",           badge:"Fastest UK will", feature:"Online will in 15 minutes. Solicitor-checked. The most important document most people delay indefinitely.", cta:"Write a will", highlight:d.hasWill !== "yes", appIcon:"📄", demoNote:"Would open Farewill will-writing flow" },
-          { name:"IFA / estate planner",type:"Independent advice",     rate:"One-off or ongoing", badge:"Most impactful",  feature:"A specialist IFA can model your full estate, identify gifting opportunities, and set up trusts. For estates over £500k this advice typically pays for itself many times over.", cta:"Find an IFA", highlight:ihtBill > 0, appIcon:"👔", demoNote:"Would open VouchedFor IFA search" },
-          { name:"Whole-of-life policy", type:"IHT insurance",         rate:"Covers IHT bill",    badge:"Pays the bill",  feature:"A whole-of-life policy written in trust pays out on death specifically to cover the IHT liability — preserving the estate intact for your beneficiaries. Premiums depend on age and health.", cta:"Get a quote", highlight:false, appIcon:"🛡️", demoNote:"Would open Cavendish Online" },
-          { name:"Lifetime ISA (LISA)",  type:"For under-40s",         rate:"25% bonus",          badge:"Bonus if eligible", feature:"If you're under 40, a Lifetime ISA gives a 25% government bonus on up to £4,000/yr — outside your estate from day one. Useful for estate planning alongside retirement saving.", cta:"Open a LISA", highlight:false, appIcon:"💰", demoNote:"Would open Moneybox LISA" },
+          { name:"Farewill",            type:"Will writing",           rate:"From £90",           badge:"Fastest UK will", feature:"Online will in 15 minutes. Solicitor-checked. The most important document most people delay indefinitely.", cta:"Write a will", highlight:d.hasWill !== "yes", appIcon:FileText, demoNote:"Would open Farewill will-writing flow" },
+          { name:"IFA / estate planner",type:"Independent advice",     rate:"One-off or ongoing", badge:"Most impactful",  feature:"A specialist IFA can model your full estate, identify gifting opportunities, and set up trusts. For estates over £500k this advice typically pays for itself many times over.", cta:"Find an IFA", highlight:ihtBill > 0, appIcon:Briefcase, demoNote:"Would open VouchedFor IFA search" },
+          { name:"Whole-of-life policy", type:"IHT insurance",         rate:"Covers IHT bill",    badge:"Pays the bill",  feature:"A whole-of-life policy written in trust pays out on death specifically to cover the IHT liability — preserving the estate intact for your beneficiaries. Premiums depend on age and health.", cta:"Get a quote", highlight:false, appIcon:Shield, demoNote:"Would open Cavendish Online" },
+          { name:"Lifetime ISA (LISA)",  type:"For under-40s",         rate:"25% bonus",          badge:"Bonus if eligible", feature:"If you're under 40, a Lifetime ISA gives a 25% government bonus on up to £4,000/yr — outside your estate from day one. Useful for estate planning alongside retirement saving.", cta:"Open a LISA", highlight:false, appIcon:Banknote, demoNote:"Would open Moneybox LISA" },
         ],
         disclaimer:"IHT rules are complex and subject to change — the figures above are illustrative. Trusts, gifts, and insurance should be set up with professional advice. Candid may earn a referral fee.",
         inheritanceSection: { estate, ihtBill, ihtThreshold, taxable,
@@ -1304,25 +1306,25 @@ function getModuleProductsExtended(key, d, m) {
 function getCrossModuleLinks(key, d, m) {
   const links = [];
   if (key === "cash" && d.hasPension !== "yes") {
-    links.push({ icon:"🏦", text:"You have no pension — the tax relief on contributions will likely outperform any savings rate.", label:"Go to Pension", target:"pension" });
+    links.push({ icon:Landmark, text:"You have no pension — the tax relief on contributions will likely outperform any savings rate.", label:"Go to Pension", target:"pension" });
   }
   if (key === "studentLoan" && d.hasPension !== "yes") {
-    links.push({ icon:"🏦", text:"Instead of overpaying your loan, redirecting that money into a pension gives an immediate return via tax relief — almost certainly a better use of the funds.", label:"Start a pension", target:"pension" });
+    links.push({ icon:Landmark, text:"Instead of overpaying your loan, redirecting that money into a pension gives an immediate return via tax relief — almost certainly a better use of the funds.", label:"Start a pension", target:"pension" });
   }
   if (key === "personalLoan" && d.hasPension === "yes" && m.missedMatch > 0) {
-    links.push({ icon:"🏦", text:`You're missing ${fmt(m.missedMatch)}/yr of employer pension match. That's free money — clear this before overpaying your loan.`, label:"Fix pension match first", target:"pension" });
+    links.push({ icon:Landmark, text:`You're missing ${fmt(m.missedMatch)}/yr of employer pension match. That's free money — clear this before overpaying your loan.`, label:"Fix pension match first", target:"pension" });
   }
   if (key === "personalLoan" && m.emergencyFund > +d.personalLoanBalance * 1.5) {
-    links.push({ icon:"💷", text:`You have ${fmt(m.emergencyFund)} in accessible cash — potentially enough to clear this loan entirely. Weigh the guaranteed ${d.personalLoanRate}% return of clearing vs keeping cash liquid.`, label:"Review cash position", target:"cash" });
+    links.push({ icon:PoundSterling, text:`You have ${fmt(m.emergencyFund)} in accessible cash — potentially enough to clear this loan entirely. Weigh the guaranteed ${d.personalLoanRate}% return of clearing vs keeping cash liquid.`, label:"Review cash position", target:"cash" });
   }
   if (key === "kids" && m.isaHeadroom > 5000) {
-    links.push({ icon:"📈", text:"Maximise your own ISA before the kids' JISAs — your tax-free allowance is larger and the principle applies equally.", label:"Review your ISA", target:"investments" });
+    links.push({ icon:TrendingUp, text:"Maximise your own ISA before the kids' JISAs — your tax-free allowance is larger and the principle applies equally.", label:"Review your ISA", target:"investments" });
   }
   if (key === "kids" && d.hasPension !== "yes") {
-    links.push({ icon:"🏦", text:"Sorting your own pension before a child's JISA will give you more money to pass on in the long run.", label:"Set up your pension first", target:"pension" });
+    links.push({ icon:Landmark, text:"Sorting your own pension before a child's JISA will give you more money to pass on in the long run.", label:"Set up your pension first", target:"pension" });
   }
   if (key === "mortgage" && m.isaHeadroom > 5000) {
-    links.push({ icon:"📈", text:`Before overpaying your mortgage, consider whether maxing your ISA (${fmt(m.isaHeadroom)} remaining) is a better use of the same cash.`, label:"Review in Investments", target:"investments" });
+    links.push({ icon:TrendingUp, text:`Before overpaying your mortgage, consider whether maxing your ISA (${fmt(m.isaHeadroom)} remaining) is a better use of the same cash.`, label:"Review in Investments", target:"investments" });
   }
   return links;
 }
@@ -1534,8 +1536,8 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
             </button>
           </p>
         )}
-        <p style={{marginTop:"18px",textAlign:"center",fontSize:"11px",color:MUT,lineHeight:1.6}}>
-          🔒 Your data is never sold or shared. Candid is guidance, not advice.
+        <p style={{marginTop:"18px",textAlign:"center",fontSize:"11px",color:MUT,lineHeight:1.6,display:"flex",alignItems:"center",justifyContent:"center",gap:"5px"}}>
+          <Lock size={12}/>Your data is never sold or shared. Candid is guidance, not advice.
         </p>
         {onClearData && (
           <p style={{textAlign:"center",marginTop:"6px"}}>
@@ -1551,7 +1553,7 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
 
 function Warn({ msg }) {
   if (!msg) return null;
-  return <p style={{fontSize:"12px",color:"#c4963a",marginTop:"4px",lineHeight:1.5}}>⚠️ {msg}</p>;
+  return <p style={{fontSize:"12px",color:"#c4963a",marginTop:"4px",lineHeight:1.5,display:"flex",alignItems:"flex-start",gap:"5px"}}><AlertTriangle size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>{msg}</span></p>;
 }
 
 // Hard caps — silently clamp value, no message shown
@@ -1607,10 +1609,10 @@ function InfoTooltip({ text }) {
 // The 4 active MVP modules a user can pick from on the "Focus" step. Keys match
 // MODULE_META so d.selectedModules can be used directly by computeModuleStatuses.
 const MODULE_SELECT_TILES = [
-  { key:"cash",        emoji:"💷", label:"Savings"       },
-  { key:"investments", emoji:"📈", label:"Investments"   },
-  { key:"pension",     emoji:"👵", label:"Pensions"      },
-  { key:"studentLoan", emoji:"🎓", label:"Student Loans" },
+  { key:"cash",        emoji:PoundSterling, label:"Savings"       },
+  { key:"investments", emoji:TrendingUp,    label:"Investments"   },
+  { key:"pension",     emoji:Landmark,      label:"Pensions"      },
+  { key:"studentLoan", emoji:GraduationCap, label:"Student Loans" },
 ];
 
 function OnboardingStep({ stepId, d, set }) {
@@ -1655,7 +1657,7 @@ function OnboardingStep({ stepId, d, set }) {
           available width rather than auto-fill's 3-then-1 orphan row at this
           container's max width. */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"12px"}}>
-        {MODULE_SELECT_TILES.map(({ key, emoji, label }) => {
+        {MODULE_SELECT_TILES.map(({ key, emoji: Emoji, label }) => {
           const selected = (d.selectedModules || []).includes(key);
           return (
             <button
@@ -1675,7 +1677,7 @@ function OnboardingStep({ stepId, d, set }) {
                 transform: selected ? "scale(1.03)" : "scale(1)",
               }}
             >
-              <span style={{fontSize:"28px",opacity: selected ? 1 : 0.6}}>{emoji}</span>
+              <span style={{opacity: selected ? 1 : 0.6,display:"flex"}}><Emoji size={28}/></span>
               <span style={{fontSize:"13px",fontWeight:600,fontFamily:SANS}}>{label}</span>
             </button>
           );
@@ -1756,7 +1758,7 @@ function OnboardingStep({ stepId, d, set }) {
         padding:"13px 16px",color:G,fontSize:"13px",fontWeight:600,cursor:"pointer",
         marginBottom:"24px",fontFamily:SANS,
       }}>
-        <span style={{fontSize:"17px"}}>🏦</span>
+        <Landmark size={17}/>
         <span>Connect your bank (Sandbox) — auto-fill your cash balances</span>
       </button>
       <Field label="Emergency fund target">
@@ -1818,8 +1820,8 @@ function OnboardingStep({ stepId, d, set }) {
           <Field label="Balance from previous years (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",capField("isaPrevCash",v))} placeholder="0"/></Field>
         </div>
         {isaThisYearOver && (
-          <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700}}>
-            ⚠️ Total this year across all ISA types: {fmt(isaThisYearTotal)} — exceeds the £20,000 annual ISA allowance.
+          <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+            <AlertTriangle size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaThisYearTotal)} — exceeds the £20,000 annual ISA allowance.</span>
           </div>
         )}
         <Warn msg={+d.isaPrevCash > 200000 ? "Large ISA balance — double-check" : null}/>
@@ -1846,8 +1848,8 @@ function OnboardingStep({ stepId, d, set }) {
               <Field label="Other ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearOther||""} onChange={v=>set("isaThisYearOther",capField("isaThisYearOther",v))} placeholder="0"/></Field>
             </div>
             {isaThisYearOver && (
-              <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700}}>
-                ⚠️ Total this year across all ISA types: {fmt(isaThisYearTotal)} — exceeds the £20,000 annual ISA allowance.
+              <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+                <AlertTriangle size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaThisYearTotal)} — exceeds the £20,000 annual ISA allowance.</span>
               </div>
             )}
           </div>
@@ -2234,13 +2236,13 @@ const FORECAST_COLORS = {
 };
 
 export const MODULE_META = [
-  { key:"cash",        icon:"💷", title:"Cash & savings"  },
-  { key:"investments", icon:"📈", title:"Investments"     },
-  { key:"pension",     icon:"🏦", title:"Pension"         },
-  { key:"studentLoan", icon:"🎓", title:"Student loan"    },
-  { key:"mortgage",    icon:"🏠", title:"Mortgage"        },
-  { key:"personalLoan",icon:"💳", title:"Personal loan"   },
-  { key:"kids",        icon:"👶", title:"Kids & family"   },
+  { key:"cash",        icon:PoundSterling, title:"Cash & savings"  },
+  { key:"investments", icon:TrendingUp,    title:"Investments"     },
+  { key:"pension",     icon:Landmark,      title:"Pension"         },
+  { key:"studentLoan", icon:GraduationCap, title:"Student loan"    },
+  { key:"mortgage",    icon:Home,          title:"Mortgage"        },
+  { key:"personalLoan",icon:CreditCard,    title:"Personal loan"   },
+  { key:"kids",        icon:Baby,          title:"Kids & family"   },
 ];
 
 // ── MVP scope ──────────────────────────────────────────────────────────────
@@ -2670,7 +2672,7 @@ function FeedbackButton() {
           alignItems:"center", gap:"8px", cursor:"pointer", zIndex:5000,
           boxShadow:"-3px 3px 12px rgba(0,0,0,0.18)",
         }}>
-          <span style={{fontSize:"16px"}}>💬</span>
+          <MessageCircle size={16}/>
           <span style={{fontSize:"9px",fontWeight:700,color:GOLD2,letterSpacing:"0.1em",textTransform:"uppercase",writingMode:"vertical-rl",transform:"rotate(180deg)"}}>Feedback</span>
         </button>
       )}
@@ -2685,7 +2687,7 @@ function FeedbackButton() {
             overflow:"hidden", boxShadow:"0 24px 64px rgba(0,0,0,0.25)",
           }}>
             <div style={{background:GOLD2,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
-              <span style={{fontSize:"20px"}}>💬</span>
+              <MessageCircle size={20} color={G2}/>
               <div>
                 <div style={{fontFamily:SERIF2,fontSize:"16px",fontWeight:700,color:G2}}>How was your Candid report?</div>
                 <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>60 seconds — helps us build this right</div>
@@ -2734,20 +2736,20 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
   const isaPrev = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
   const totalIsa    = isaThisYear + isaPrev;
   const assetItems = [
-    { label:"Cash & savings", value: m.cash + m.bonds, icon:"💷" },
+    { label:"Cash & savings", value: m.cash + m.bonds, icon:PoundSterling },
     ...(totalIsa > 0 ? [
-      { label:`ISA — this tax year${d.isaType ? ` (${d.isaType==="cash"?"Cash":d.isaType==="ss"?"S&S":d.isaType==="both"?"Cash + S&S":"—"})` : ""}`, value: isaThisYear, icon:"📈", sub:true },
-      ...(isaPrev > 0 ? [{ label:"ISA — previous years", value: isaPrev, icon:"📈", sub:true }] : []),
-      { label:"ISA total", value: totalIsa, icon:"📈", bold:true },
+      { label:`ISA — this tax year${d.isaType ? ` (${d.isaType==="cash"?"Cash":d.isaType==="ss"?"S&S":d.isaType==="both"?"Cash + S&S":"—"})` : ""}`, value: isaThisYear, icon:TrendingUp, sub:true },
+      ...(isaPrev > 0 ? [{ label:"ISA — previous years", value: isaPrev, icon:TrendingUp, sub:true }] : []),
+      { label:"ISA total", value: totalIsa, icon:TrendingUp, bold:true },
     ] : []),
-    { label:"Unwrapped investments", value: +d.unwrappedValue||0, icon:"📊" },
-    { label:"Pension pot", value: +d.potValue||0, icon:"🏦" },
-    { label:"Property equity", value: m.propertyEquity||0, icon:"🏠" },
+    { label:"Unwrapped investments", value: +d.unwrappedValue||0, icon:BarChart3 },
+    { label:"Pension pot", value: +d.potValue||0, icon:Landmark },
+    { label:"Property equity", value: m.propertyEquity||0, icon:Home },
   ].filter(a => a.value > 0);
   const liabilityItems = [
-    { label:"Mortgage", value: d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0, icon:"🏠", excludedFromNetWorth:true },
-    { label:"Student loan", value: m.loanBal||0, icon:"🎓" },
-    { label:"Personal loan", value: d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0, icon:"💳" },
+    { label:"Mortgage", value: d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0, icon:Home, excludedFromNetWorth:true },
+    { label:"Student loan", value: m.loanBal||0, icon:GraduationCap },
+    { label:"Personal loan", value: d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0, icon:CreditCard },
   ].filter(l => l.value > 0);
 
   // Build merged module data: local computation provides status/impact, AI provides summary
@@ -2881,14 +2883,14 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
     <PageWrap>
       <FeedbackButton />
       <NavBar right={<div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-        <button onClick={onEditInputs} style={{background:GOLD,border:"none",borderRadius:"8px",padding:"9px 18px",color:G,fontSize:"13px",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:"6px"}}>✏️ Edit inputs</button>
+        <button onClick={onEditInputs} style={{background:GOLD,border:"none",borderRadius:"8px",padding:"9px 18px",color:G,fontSize:"13px",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:"6px"}}><Pencil size={14}/>Edit inputs</button>
         <GhostBtn onClick={onReset}>Start over</GhostBtn>
       </div>}/>
       <ContentWrap maxWidth="780px">
         {/* Score improvement banner (on regeneration) */}
         {prevScoreRef?.current !== null && insights.score > (prevScoreRef?.current||0) && whatChangedOpen && (
           <div style={{background:"rgba(45,107,74,0.1)",border:"1px solid rgba(45,107,74,0.3)",borderRadius:"10px",padding:"12px 18px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"12px"}}>
-            <span style={{fontSize:"20px"}}>📈</span>
+            <TrendingUp size={20} color="#2D6B4A"/>
             <div>
               <div style={{fontSize:"13px",fontWeight:700,color:"#2D6B4A"}}>Your score improved by +{insights.score - (prevScoreRef?.current||0)} points</div>
               <div style={{fontSize:"12px",color:MUT}}>Your recent changes moved your Candid score from {prevScoreRef?.current} to {insights.score}</div>
@@ -2933,7 +2935,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           if (days > 90) return null;
           return (
             <div style={{borderLeft:`4px solid ${GOLD}`,background:"rgba(196,150,58,0.07)",borderRadius:"0 8px 8px 0",padding:"13px 16px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"12px"}}>
-              <span style={{fontSize:"20px"}}>📅</span>
+              <Calendar size={20} color={GOLD}/>
               <div>
                 <div style={{fontSize:"12px",fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"2px"}}>Tax year ends in {days} day{days!==1?"s":""}</div>
                 <p style={{fontSize:"13px",color:G,margin:0}}>ISA allowance ({fmt(m.isaHeadroom)} remaining) and other tax reliefs reset on April 6th — use them or lose them.</p>
@@ -3018,7 +3020,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           const daysUntil = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
           return (
             <div className="fu1" style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"14px 18px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"14px"}}>
-              <span style={{fontSize:"24px",flexShrink:0}}>🏆</span>
+              <Trophy size={24} color={GOLD} style={{flexShrink:0}}/>
               <div style={{flex:1}}>
                 <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>
                   {isDrawDay ? "It's Premium Bond draw day!" : `${daysUntil} day${daysUntil!==1?"s":""} until the next Premium Bond draw`}
@@ -3122,24 +3124,26 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
               const context = hasRec ? moduleContext(mm, d, m) : null;
               // Reviewed tiles grey out a little on top of the base (no-recommendation)
               // dimming — kept as a separate multiplier so the two states stack rather
-              // than fight each other.
+              // than fight each other. Opacity is the only "reviewed" signal on the tile
+              // itself; the checkmark below is the other — background/border no longer
+              // change on review so we don't stack a third and fourth signal on top.
               const baseOpacity = hasRec ? 1 : 0.6;
               const tileOpacity = reviewed ? +(baseOpacity * 0.75).toFixed(2) : baseOpacity;
               return (
                 <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
-                  style={{background:reviewed?"#f6f6f4":WHITE,border:`1.5px solid ${reviewed ? G : hasRec ? "rgba(22,47,36,0.14)" : "rgba(22,47,36,0.08)"}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"10px",cursor:"pointer",opacity:tileOpacity,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
+                  style={{background:WHITE,border:`1.5px solid ${hasRec ? "rgba(22,47,36,0.14)" : "rgba(22,47,36,0.08)"}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"10px",cursor:"pointer",opacity:tileOpacity,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
                   <div style={{display:"flex",alignItems:"flex-start",gap:"12px",minWidth:0,flex:1}}>
                     <div style={{width:"24px",height:"24px",borderRadius:"50%",background:hasRec?G:"rgba(22,47,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
                       {hasRec ? (
                         <span style={{fontSize:"12px",fontWeight:700,color:CREAM}}>{winNumber}</span>
                       ) : (
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke={WHITE} strokeWidth="1.8" strokeLinecap="round"/></svg>
+                        <Check size={11} color={WHITE} strokeWidth={2.5}/>
                       )}
                     </div>
                     {/* Icon trails the title (rather than leading it) so the title and the
                         body line below both start flush at the same left edge. */}
                     <div style={{minWidth:0}}>
-                      <div style={{fontSize:"16px",fontWeight:700,color:G,lineHeight:1.3}}>{mm.title} <span style={{fontSize:"14px"}}>{mm.icon}</span></div>
+                      <div style={{fontSize:"16px",fontWeight:700,color:G,lineHeight:1.3,display:"flex",alignItems:"center",gap:"6px"}}>{mm.title} {mm.icon && <mm.icon size={14}/>}</div>
                       {hasRec ? (
                         <div style={{fontSize:"14px",color:TEXT,marginTop:"4px",lineHeight:1.4}}>
                           <span style={{fontWeight:700,color:G}}>{fmt(mm.amount)}{mm.amountIsLumpSum ? " by 18" : "/yr"}</span>
@@ -3154,7 +3158,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                       it in the same column so its appearance never shifts the tag. */}
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"6px",flexShrink:0}}>
                     {tag && <TagPill label={tag.label} color={tag.color}/>}
-                    {hasRec && reviewed && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#2d6b4a" strokeWidth="2" strokeLinecap="round"/></svg>}
+                    {hasRec && reviewed && <Check size={14} color="#2d6b4a" strokeWidth={2.5}/>}
                   </div>
                 </div>
               );
@@ -3172,14 +3176,17 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
             <div className="fu1" style={{background:"rgba(22,47,36,0.03)",border:"1px dashed rgba(22,47,36,0.2)",borderRadius:"14px",padding:"16px 18px",marginBottom:"24px"}}>
               <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>Want a fuller picture?</div>
               <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
-                {missing.map(t => (
-                  <button key={t.key} type="button" onClick={() => onAddModule(t.key)} style={{
-                    display:"flex",alignItems:"center",gap:"6px",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",
-                    borderRadius:"100px",padding:"7px 14px",fontSize:"12.5px",fontWeight:600,color:G,cursor:"pointer",
-                  }}>
-                    <span>{t.emoji}</span><span>+ Add {t.label}</span>
-                  </button>
-                ))}
+                {missing.map(t => {
+                  const TileIcon = t.emoji;
+                  return (
+                    <button key={t.key} type="button" onClick={() => onAddModule(t.key)} style={{
+                      display:"flex",alignItems:"center",gap:"6px",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",
+                      borderRadius:"100px",padding:"7px 14px",fontSize:"12.5px",fontWeight:600,color:G,cursor:"pointer",
+                    }}>
+                      <TileIcon size={14}/><span>+ Add {t.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
@@ -3378,7 +3385,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                             fontWeight: a.bold ? 700 : 400
                           }}
                         >
-                          {!a.sub && !a.bold && <span>{a.icon}</span>}
+                          {!a.sub && !a.bold && a.icon && <a.icon size={13}/>}
                           {a.sub && <span style={{ fontSize: "10px", color: "rgba(22,47,36,0.3)" }}>└</span>}
                           {a.label}
                         </span>
@@ -3409,7 +3416,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                           }}
                         >
                           <span style={{ fontSize: "13px", color: MUT, display: "flex", alignItems: "center", gap: "6px" }}>
-                            <span>{l.icon}</span>
+                            {l.icon && <l.icon size={13}/>}
                             {l.label}
                             {l.excludedFromNetWorth && (
                               <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.12)",padding:"1.5px 6px",borderRadius:"100px",textTransform:"uppercase",letterSpacing:"0.03em",whiteSpace:"nowrap"}}>Excl. net worth</span>
@@ -3421,8 +3428,8 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                         </div>
                       ))
                     ) : (
-                      <div style={{ fontSize: "13px", color: MUT, padding: "5px 0" }}>
-                        No liabilities recorded 🎉
+                      <div style={{ fontSize: "13px", color: MUT, padding: "5px 0", display: "flex", alignItems: "center", gap: "5px" }}>
+                        No liabilities recorded <PartyPopper size={14}/>
                       </div>
                     )}
                   </div>
@@ -3494,7 +3501,7 @@ function ReferralCTA() {
 
   return (
     <div style={{background:WHITE,border:`1.5px solid ${GOLD}`,borderRadius:"12px",padding:"18px 20px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
-      <span style={{fontSize:"22px"}}>🤝</span>
+      <Handshake size={22} color={G}/>
       <div style={{flex:"1 1 240px"}}>
         <div style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G}}>Know someone who'd get value from this?</div>
         <div style={{fontSize:"12.5px",color:MUT,marginTop:"2px"}}>Send them your link and they can run their own numbers in a few minutes.</div>
@@ -3545,7 +3552,7 @@ function FeedbackModal({ onDismiss, onSubmit }) {
     <div onClick={submitted ? undefined : onDismiss} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",overflowY:"auto"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
         <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
-          <span style={{fontSize:"20px"}}>💬</span>
+          <MessageCircle size={20} color={G}/>
           <div>
             <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{submitted ? "Thanks for that" : "How was your Candid report?"}</div>
             <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>{submitted ? "Really helps us build this right" : "3 quick questions — helps us build this right"}</div>
@@ -3660,7 +3667,7 @@ function PdfReportModal({ email, insights, d, onDismiss }) {
           {phase === "form" ? (
             <>
               <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
-                <span style={{fontSize:"20px"}}>📄</span>
+                <FileText size={20} color={G}/>
                 <div>
                   <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>Get your full report as a PDF</div>
                   <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>Keep it, share it, come back to it anytime</div>
@@ -3689,7 +3696,7 @@ function PdfReportModal({ email, insights, d, onDismiss }) {
             </>
           ) : (
             <div style={{padding:"38px 24px",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
-              <span style={{fontSize:"28px",marginBottom:"12px"}}>📬</span>
+              <Mail size={28} color={G} style={{marginBottom:"12px"}}/>
               <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G}}>Report on its way — check your emails →</div>
             </div>
           )}
@@ -3703,7 +3710,7 @@ function PdfReportModal({ email, insights, d, onDismiss }) {
 // ── Module deep-dive ──────────────────────────────────────────────────────────
 // ── Take Me There demo CTA ────────────────────────────────────────────────────
 // ── Starter affiliate link (demo state) ───────────────────────────────────────
-function TakeMeThere({ app, icon, message, demoNote }) {
+function TakeMeThere({ app, icon: Icon, message, demoNote }) {
   const [tapped, setTapped] = useState(false);
   return (
     <div style={{marginTop:"8px"}}>
@@ -3714,9 +3721,9 @@ function TakeMeThere({ app, icon, message, demoNote }) {
         borderRadius:"10px", display:"flex", alignItems:"center", gap:"12px",
         cursor: tapped ? "default" : "pointer", transition:"all 0.2s"
       }}>
-        <span style={{fontSize:"20px",flexShrink:0}}>{icon}</span>
+        <span style={{flexShrink:0,display:"flex"}}>{Icon && <Icon size={20}/>}</span>
         <div style={{flex:1,textAlign:"left"}}>
-          <div style={{fontSize:"13px",fontWeight:700,color:tapped?G:WHITE,marginBottom:"2px"}}>{tapped ? `↗ Opening ${app}…` : message}</div>
+          <div style={{fontSize:"13px",fontWeight:700,color:tapped?G:WHITE,marginBottom:"2px",display:"flex",alignItems:"center",gap:"5px"}}>{tapped && <ArrowUpRight size={13}/>}<span>{tapped ? `Opening ${app}…` : message}</span></div>
           <div style={{fontSize:"11px",color:tapped?"rgba(22,47,36,0.5)":"rgba(255,255,255,0.5)"}}>{tapped ? demoNote : `Tap to open ${app}`}</div>
         </div>
         {!tapped && <span style={{fontSize:"14px",color:GOLD,flexShrink:0}}>→</span>}
@@ -3727,6 +3734,8 @@ function TakeMeThere({ app, icon, message, demoNote }) {
 
 function ProductCard({ p, onInternalLink }) {
   const superlative = p.badge && ["Highest rate","Best buy","Top pick","Lowest cost","Largest UK broker","Easiest consolidation","Best alternative","Best return"].includes(p.badge);
+  const AppIconA = p.appIcon || Landmark;
+  const AppIconB = p.appIcon || CreditCard;
 
   // Real outbound links (savings_rates rows) get a compact horizontal row — rate in a
   // box on the right — instead of the taller stacked layout below, since these lists
@@ -3739,20 +3748,20 @@ function ProductCard({ p, onInternalLink }) {
         display:"flex",alignItems:"center",gap:"12px",textDecoration:"none",color:"inherit",cursor:"pointer",
       }}>
         <div style={{width:"32px",height:"32px",background:p.highlight ? G : "rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <span style={{fontSize:"16px"}}>{p.appIcon||"🏦"}</span>
+          <AppIconA size={16} color={p.highlight ? WHITE : G}/>
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:600,fontSize:"14px",color:TEXT,lineHeight:1.3}}>{p.name}</div>
           <div style={{fontSize:"12px",color:MUT}}>{p.type}</div>
           {p.badge && (
-            <span style={{display:"inline-block",marginTop:"4px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"3px 9px":"2px 7px",borderRadius:"100px",letterSpacing:"0.04em"}}>
-              {superlative ? `⭐ ${p.badge}` : p.badge}
+            <span style={{display:"inline-flex",alignItems:"center",gap:"3px",marginTop:"4px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"3px 9px":"2px 7px",borderRadius:"100px",letterSpacing:"0.04em"}}>
+              {superlative && <Star size={10}/>}{p.badge}
             </span>
           )}
         </div>
         <div style={{textAlign:"center",flexShrink:0,background:p.highlight?G:"rgba(22,47,36,0.05)",borderRadius:"8px",padding:"8px 14px",minWidth:"76px"}}>
           <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:p.highlight?WHITE:G,whiteSpace:"nowrap"}}>{p.rate}</div>
-          <div style={{fontSize:"9px",color:p.highlight?"rgba(255,255,255,0.7)":MUT,marginTop:"1px"}}>{p.cta} ↗</div>
+          <div style={{fontSize:"9px",color:p.highlight?"rgba(255,255,255,0.7)":MUT,marginTop:"1px",display:"flex",alignItems:"center",justifyContent:"center",gap:"2px"}}>{p.cta}<ArrowUpRight size={10}/></div>
         </div>
       </a>
     );
@@ -3762,20 +3771,20 @@ function ProductCard({ p, onInternalLink }) {
     <div style={{background:WHITE,borderRadius:"12px",padding:"14px 16px",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,display:"flex",flexDirection:"column"}}>
       <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
         <div style={{width:"36px",height:"36px",background:p.highlight ? G : "rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <span style={{fontSize:"18px"}}>{p.appIcon||"💳"}</span>
+          <AppIconB size={18} color={p.highlight ? WHITE : G}/>
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:600,fontSize:"14px",color:TEXT,lineHeight:1.3}}>{p.name}</div>
           <div style={{fontSize:"12px",color:MUT}}>{p.type}</div>
           {p.badge && (
-            <span style={{display:"inline-block",marginTop:"5px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"4px 10px":"3px 8px",borderRadius:"100px",letterSpacing:"0.04em"}}>
-              {superlative ? `⭐ ${p.badge}` : p.badge}
+            <span style={{display:"inline-flex",alignItems:"center",gap:"3px",marginTop:"5px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"4px 10px":"3px 8px",borderRadius:"100px",letterSpacing:"0.04em"}}>
+              {superlative && <Star size={10}/>}{p.badge}
             </span>
           )}
         </div>
         <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
-          style={{flexShrink:0,padding:"7px 12px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"12px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap"}}>
-          {p.internalLink ? p.cta : "🔓 Open"}
+          style={{flexShrink:0,padding:"7px 12px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"12px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:"4px"}}>
+          {p.internalLink ? p.cta : <><Unlock size={12}/>Open</>}
         </button>
       </div>
       {p.rate && <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700,marginTop:"8px"}}>{p.rate}</div>}
@@ -3816,7 +3825,9 @@ function AlternativeInvestments({ age }) {
   const eyebrow = youngUser
     ? "Higher-risk & alternative investments"
     : "Alternatives & passion assets";
-  const label = youngUser ? "Beyond the basics 🚀" : "Advanced investing 📈";
+  const label = youngUser
+    ? <span style={{display:"flex",alignItems:"center",gap:"5px"}}>Beyond the basics <Rocket size={13}/></span>
+    : <span style={{display:"flex",alignItems:"center",gap:"5px"}}>Advanced investing <TrendingUp size={13}/></span>;
   const subLabel = youngUser
     ? "Higher-risk, higher-potential. For when your ISA and pension are sorted."
     : "Growth-oriented strategies worth understanding — even if you'd advise caution.";
@@ -3824,27 +3835,27 @@ function AlternativeInvestments({ age }) {
     { icon:"₿", name:"Crypto (Bitcoin / Ethereum)", type:"Digital assets", risk:"Very high",
       desc:"Bitcoin and Ethereum are the most liquid. No FSCS protection. Extreme volatility — down 70%+ drawdowns are normal. Best treated as a small allocation (1-5%) in a diversified portfolio. Hold via a regulated UK exchange.",
       platforms:["Coinbase","Kraken","Gemini"], demoApp:"Coinbase" },
-    { icon:"🚀", name:"EIS / SEIS (Venture tax relief)", type:"Enterprise Investment Scheme", risk:"High",
+    { icon:Rocket, name:"EIS / SEIS (Venture tax relief)", type:"Enterprise Investment Scheme", risk:"High",
       desc:"Invest in early-stage UK companies and get 30-50% income tax relief upfront, plus loss relief. SEIS gives 50% relief on up to £200,000/yr invested. Returns are high-variance but the tax relief dramatically changes the risk/reward profile.",
       platforms:["Seedrs","Crowdcube","SyndicateRoom"], demoApp:"Seedrs" },
-    { icon:"🏗️", name:"Private equity / LTAF", type:"Long-term asset funds", risk:"High",
+    { icon:Construction, name:"Private equity / LTAF", type:"Long-term asset funds", risk:"High",
       desc:"Long-Term Asset Funds (LTAFs) are a newer UK vehicle allowing retail access to PE-style returns. Illiquid — 90-180 day notice periods typical. Returns historically outperform public markets over 10+ year horizons.",
       platforms:["Schroders","Aviva","Aegon (pension)"], demoApp:"Schroders LTAF" },
-    { icon:"🏘️", name:"Property / REITs", type:"Real estate investment trusts", risk:"Medium-high",
+    { icon:Building, name:"Property / REITs", type:"Real estate investment trusts", risk:"Medium-high",
       desc:"REITs give property exposure without buying bricks-and-mortar. Tradeable on the LSE, ISA-eligible, and dividend-paying. FTSE NAREIT index historically returns ~9% p.a. long-term. Avoids stamp duty, mortgage complexity.",
       platforms:["British Land","Segro","LXi REIT"], demoApp:"HL (REIT search)" },
   ];
   const alternatives = [
-    { icon:"🎨", name:"Art", type:"Collectible asset", risk:"Variable",
+    { icon:Palette, name:"Art", type:"Collectible asset", risk:"Variable",
       desc:"Blue-chip art (Basquiat, Hirst) has outperformed equities over 25-year horizons. Low liquidity, high transaction costs, requires authentication/storage. Platforms now offer fractional ownership from £50.",
       platforms:["Masterworks","ArtMoney"], gate:"Best for: diversified net worth £500k+" },
-    { icon:"🍷", name:"Fine wine", type:"Collectible asset", risk:"Variable",
+    { icon:Wine, name:"Fine wine", type:"Collectible asset", risk:"Variable",
       desc:"Bordeaux, Burgundy, and Champagne have strong 20-year track records. Liquid at auction (Christie's, Sotheby's). Storage and insurance required. Cult wines (Pétrus, DRC) can appreciate 15%+ p.a. in bull markets.",
       platforms:["Cult Wines","Vinovest","Wine Owners"], gate:"Best for: genuine interest + £50k+ to allocate" },
-    { icon:"⌚", name:"Watches & jewellery", type:"Collectible asset", risk:"High",
+    { icon:Watch, name:"Watches & jewellery", type:"Collectible asset", risk:"High",
       desc:"Rolex Submariner, Patek Philippe Nautilus — certain references have outperformed equities. Market is volatile post-2022 correction. Requires expertise to avoid fakes and market timing risk.",
       platforms:["Watches of Switzerland","Chrono24","WatchBox"], gate:"Best for: passion investment, not core portfolio" },
-    { icon:"🚗", name:"Classic cars", type:"Collectible asset", risk:"High",
+    { icon:Car, name:"Classic cars", type:"Collectible asset", risk:"High",
       desc:"The Hagerty Blue Chip index has returned ~12% p.a. over 10 years. Storage, insurance, and maintenance costs are substantial. Niche expertise required. More liquid than art via specialist auctions.",
       platforms:["RM Sotheby's","Bonhams","Historics"], gate:"Best for: genuine enthusiasm + deep pockets" },
   ];
@@ -3859,7 +3870,7 @@ function AlternativeInvestments({ age }) {
           <div key={i} style={{background:WHITE,borderRadius:"10px",padding:"16px",border:"1px solid rgba(22,47,36,0.09)"}}>
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px",marginBottom:"8px"}}>
               <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                <span style={{fontSize:"22px"}}>{h.icon}</span>
+                <span style={{fontSize:"22px",display:"flex",alignItems:"center"}}>{typeof h.icon === "string" ? h.icon : <h.icon size={22}/>}</span>
                 <div>
                   <div style={{fontWeight:600,fontSize:"14px",color:TEXT}}>{h.name}</div>
                   <div style={{fontSize:"11px",color:MUT}}>{h.type}</div>
@@ -3881,7 +3892,7 @@ function AlternativeInvestments({ age }) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"10px",marginBottom:"12px"}}>
         {alternatives.map((a,i) => (
           <div key={i} style={{background:WHITE,borderRadius:"10px",padding:"14px 16px",border:"1px solid rgba(22,47,36,0.09)"}}>
-            <div style={{fontSize:"22px",marginBottom:"8px"}}>{a.icon}</div>
+            <div style={{marginBottom:"8px"}}>{a.icon && <a.icon size={22}/>}</div>
             <div style={{fontWeight:600,fontSize:"14px",color:TEXT,marginBottom:"3px"}}>{a.name}</div>
             <div style={{fontSize:"11px",color:MUT,marginBottom:"8px"}}>{a.type}</div>
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginBottom:"8px"}}>{a.desc}</p>
@@ -3951,14 +3962,14 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children, defa
 // one-liner) so two can sit side by side without dead space; click reveals the
 // fuller mechanics in `children`. Used for the CGT "Bed & breakfasting rule"
 // and "Use it or lose it" callouts. ─────────────────────────────────────────
-function MiniExpandTile({ icon, label, color, summary, children }) {
+function MiniExpandTile({ icon:Icon, label, color, summary, children }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{background:`${color}0D`, border:`1.5px solid ${color}38`, borderRadius:"10px", overflow:"hidden"}}>
       <button type="button" onClick={() => setOpen(v=>!v)} style={{width:"100%", padding:"10px 12px", background:"transparent", border:"none", cursor:"pointer", textAlign:"left", display:"flex", flexDirection:"column", gap:"2px"}}>
         <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:"6px"}}>
           <div style={{display:"flex", alignItems:"center", gap:"6px", minWidth:0}}>
-            <span style={{fontSize:"13px"}}>{icon}</span>
+            <Icon size={13} color={color}/>
             <span style={{fontSize:"10px", fontWeight:700, color, letterSpacing:"0.05em", textTransform:"uppercase", whiteSpace:"nowrap"}}>{label}</span>
           </div>
           <span style={{fontSize:"14px", color, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s", flexShrink:0}}>›</span>
@@ -4167,7 +4178,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           </div>
           {isComplete && (
             <div style={{display:"flex",alignItems:"center",gap:"6px",background:"rgba(45,107,74,0.1)",borderRadius:"100px",padding:"6px 14px"}}>
-              <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="#2d6b4a" strokeWidth="2" strokeLinecap="round"/></svg>
+              <Check size={13} color="#2d6b4a" strokeWidth={2.5}/>
               <span style={{fontSize:"12px",fontWeight:600,color:"#2d6b4a"}}>Reviewed</span>
             </div>
           )}
@@ -4611,7 +4622,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     </div>
                     {(crossesTaper || crossesAR) && (
                       <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:"8px",padding:"8px 10px",marginBottom:"10px",display:"flex",gap:"8px",alignItems:"flex-start"}}>
-                        <span style={{fontSize:"13px",flexShrink:0}}>⚠️</span>
+                        <AlertTriangle size={13} style={{flexShrink:0}}/>
                         <div>
                           <div style={{fontSize:"12px",fontWeight:600,color:"#c0392b",marginBottom:"2px"}}>
                             {crossesTaper && !crossesAR ? "Your bonus crosses the 60% taper zone (£100k–£125,140)" : "Your bonus spans the 40% → 60% taper → 45% rate bands"}
@@ -4644,10 +4655,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         </div>
                       </div>
                       {bonusSlRate > 0 && loanBal > 0 && (
-                        <div style={{marginTop:"8px",padding:"6px 8px",background:"rgba(22,47,36,0.04)",borderRadius:"5px",fontSize:"10px",color:MUT,lineHeight:1.5}}>
-                          {m.willClear
-                            ? `📌 The ${fmt(slRepaymentFromBonus)} student loan deduction from this bonus brings your clear date forward, saving roughly ${fmt(slInterestSaved)} in interest.`
-                            : `📌 Your loan is unlikely to clear before write-off. The ${fmt(slRepaymentFromBonus)} that would be deducted from this bonus would almost certainly be written off anyway — sacrificing avoids it entirely.`}
+                        <div style={{marginTop:"8px",padding:"6px 8px",background:"rgba(22,47,36,0.04)",borderRadius:"5px",fontSize:"10px",color:MUT,lineHeight:1.5,display:"flex",alignItems:"flex-start",gap:"4px"}}>
+                          <Pin size={10} style={{flexShrink:0,marginTop:"2px"}}/>
+                          <span>{m.willClear
+                            ? `The ${fmt(slRepaymentFromBonus)} student loan deduction from this bonus brings your clear date forward, saving roughly ${fmt(slInterestSaved)} in interest.`
+                            : `Your loan is unlikely to clear before write-off. The ${fmt(slRepaymentFromBonus)} that would be deducted from this bonus would almost certainly be written off anyway — sacrificing avoids it entirely.`}</span>
                         </div>
                       )}
                     </div>
@@ -4678,7 +4690,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         <div style={{fontFamily:SERIF,fontSize:"17px",color:TEXT,fontWeight:700,marginBottom:"5px"}}>{sacrificePct===100?fmt(0):fmt(totalDeducted)}</div>
                         <div style={{fontSize:"11px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
                           {sacrificePct===100
-                            ? <span style={{color:"#2d6b4a",fontWeight:600}}>Nothing — full sacrifice 🎉</span>
+                            ? <span style={{color:"#2d6b4a",fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}>Nothing — full sacrifice <PartyPopper size={12}/></span>
                             : <>{taxOnCash>0&&<span>Tax: {fmt(taxOnCash)} ({Math.round(bonusTaxDetail.effectiveRate*100)}% eff.)</span>}{niOnCash>0&&<span>NI: {fmt(niOnCash)}</span>}{slOnCash>0&&<span>Student loan: {fmt(slOnCash)}</span>}</>}
                         </div>
                       </div>
@@ -4705,7 +4717,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </div>
               ) : (
                 <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"20px"}}>
-                  <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px"}}>💰 Getting a bonus? Sacrifice it before it's paid</div>
+                  <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px",display:"flex",alignItems:"center",gap:"6px"}}><Banknote size={15}/>Getting a bonus? Sacrifice it before it's paid</div>
                   <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,margin:0}}>
                     Sacrificing a bonus into your pension before it hits your payslip means you never pay tax or NI on that money — it goes in gross, grows tax-free, and is only taxed (typically at a lower rate) when you draw it in retirement. If you're expecting one this year, update your inputs to model it here.
                   </p>
@@ -4837,7 +4849,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           <div className="fu3" style={{marginBottom:"28px",display:"flex",flexDirection:"column",gap:"10px"}}>
             {crossLinks.map((link,i) => (
               <div key={i} onClick={() => onOpenModule(link.target, link.section)} style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 18px",border:"1px solid rgba(22,47,36,0.1)",cursor:"pointer",display:"flex",alignItems:"center",gap:"14px"}}>
-                <span style={{fontSize:"20px",flexShrink:0}}>{link.icon}</span>
+                <span style={{flexShrink:0,display:"flex"}}>{link.icon && <link.icon size={20}/>}</span>
                 <div style={{flex:1}}>
                   <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6}}>{link.text}</p>
                 </div>
@@ -4885,7 +4897,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             .filter(r => r.is_isa === false)
             .sort((a,b) => +b.rate_aer - +a.rate_aer)
             .slice(0, 4)
-            .map((r,i) => ({ name:r.provider_name, type:r.account_type, rate:`${r.rate_aer}% AER`, badge:i===0?"Highest rate":"", highlight:i===0, cta:"View account", appIcon:"🏦", productUrl:r.product_url }));
+            .map((r,i) => ({ name:r.provider_name, type:r.account_type, rate:`${r.rate_aer}% AER`, badge:i===0?"Highest rate":"", highlight:i===0, cta:"View account", appIcon:Landmark, productUrl:r.product_url }));
 
           const showEmergencyWin = m.emergencyShortfall > 0;
           const monthsToCloseGap = m.monthlySurplus > 0 ? Math.ceil(m.emergencyShortfall / m.monthlySurplus) : null;
@@ -5112,7 +5124,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Ready to go the Step 4 route? — {fmt(discretionaryAmount)}</div>
                         <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,marginBottom:"12px"}}>If you won't need this for several years, here's how to actually put it to work — two options worth weighing up:</p>
                         <div onClick={() => onOpenModule("investments")} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"14px 16px",background:"rgba(22,47,36,0.04)",borderRadius:"10px",cursor:"pointer",marginBottom:"8px"}}>
-                          <span style={{fontSize:"16px",flexShrink:0}}>📈</span>
+                          <TrendingUp size={16} style={{flexShrink:0}} color={G}/>
                           <div style={{flex:1}}>
                             <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>Invest it (a General Investment Account)</div>
                             <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>Over the long term, capital growth taxed at CGT rates (18%/24%, with a £3,000 annual exempt amount) often comes out ahead of interest taxed at your full {Math.round(m.tr*100)}% marginal rate — and equities have historically outgrown cash over long periods. But this is genuinely higher risk: you could lose money, and it only suits cash you won't need for several years. Consider your objectives and time horizon before moving anything.</p>
@@ -5120,7 +5132,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>Investments →</span>
                         </div>
                         <div onClick={() => onOpenModule("pension")} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"14px 16px",background:"rgba(22,47,36,0.04)",borderRadius:"10px",cursor:"pointer"}}>
-                          <span style={{fontSize:"16px",flexShrink:0}}>🏦</span>
+                          <Landmark size={16} style={{flexShrink:0}} color={G}/>
                           <div style={{flex:1}}>
                             <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>Contribute to your pension</div>
                             <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>
@@ -5239,12 +5251,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     )}
 
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
-                      <MiniExpandTile icon="🔄" label="Bed &amp; breakfasting" color={GOLD} summary="Repurchase inside an ISA immediately, or wait 30 days outside it.">
+                      <MiniExpandTile icon={RefreshCw} label="Bed &amp; breakfasting" color={GOLD} summary="Repurchase inside an ISA immediately, or wait 30 days outside it.">
                         <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
                           HMRC's "30-day rule" matches a repurchase of the same holding within 30 days against the shares you just bought back — not your original, cheaper ones — which cancels out the gain you were trying to bank. Buying back inside an ISA or pension sidesteps the rule entirely, since that's a different tax wrapper, so you can crystallise and reinvest immediately there. Outside a wrapper, you either wait the full 30 days before repurchasing the same holding, or buy a different (but similarly-exposed) fund instead.
                         </p>
                       </MiniExpandTile>
-                      <MiniExpandTile icon="⏳" label="Use it or lose it" color="#c0392b" summary="This year's £3,000 exemption doesn't carry over — unused, it's gone on April 5th.">
+                      <MiniExpandTile icon={Hourglass} label="Use it or lose it" color="#c0392b" summary="This year's £3,000 exemption doesn't carry over — unused, it's gone on April 5th.">
                         <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
                           The £3,000 annual exempt amount is flat — every taxpayer gets the same allowance regardless of income, and it can't be carried forward once the tax year ends. What income does change is the rate charged on any gain above it: basic-rate taxpayers pay 18%, higher and additional-rate taxpayers pay 24%. You're a {taxpayerBand} taxpayer, so gains above your exemption are taxed at {cgtRatePct}%.
                         </p>
@@ -5263,12 +5275,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 headline={isaHeadline}
                 tag={{ label: "Future opportunity", color: "#2d6b4a" }}
               >
-                <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"14px"}}>{products.subheading}</p>
+                <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"14px",display:products.subheadingUrgent?"flex":undefined,alignItems:products.subheadingUrgent?"flex-start":undefined,gap:products.subheadingUrgent?"5px":undefined}}>{products.subheadingUrgent && <AlertTriangle size={14} style={{flexShrink:0,marginTop:"2px"}}/>}<span>{products.subheading}</span></p>
 
                 {showMoveMsg && (
                   <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"16px 18px",marginBottom:"16px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                      <span style={{fontSize:"16px"}}>💷</span>
+                      <PoundSterling size={16} color={GOLD}/>
                       <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Move this into your S&S ISA</span>
                     </div>
                     <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7}}>
@@ -5458,7 +5470,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         {sl.balanceGrowing && (
                           <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"12px"}}>
                             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                              <span style={{fontSize:"16px"}}>🚨</span>
+                              <AlertOctagon size={16} color="#c0392b"/>
                               <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Effective 9% income surcharge</span>
                             </div>
                             <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
@@ -5675,8 +5687,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
         {moduleKey === "kids" && (
           <div style={{marginTop:"16px",background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"12px",padding:"16px 18px"}}>
             <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Take me there</div>
-            <TakeMeThere app="Hargreaves Lansdown" icon="📱" message="Open a Junior ISA for my child" demoNote="Would open HL Junior ISA application"/>
-            <TakeMeThere app="PensionBee" icon="🏦" message="Set up a child pension (SIPP)" demoNote="Would open PensionBee child SIPP setup"/>
+            <TakeMeThere app="Hargreaves Lansdown" icon={Smartphone} message="Open a Junior ISA for my child" demoNote="Would open HL Junior ISA application"/>
+            <TakeMeThere app="PensionBee" icon={Landmark} message="Set up a child pension (SIPP)" demoNote="Would open PensionBee child SIPP setup"/>
           </div>
         )}
 
@@ -5723,12 +5735,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 );
               })}
               <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"12px 14px",marginTop:"4px"}}>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>
-                  💡 Compare: clearing the loan gives a guaranteed {rate}% return. Your pension gets {Math.round(m.tr*100)}% tax relief. Pension wins first — then throw spare cash at this loan.
+                <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+                  <Lightbulb size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>Compare: clearing the loan gives a guaranteed {rate}% return. Your pension gets {Math.round(m.tr*100)}% tax relief. Pension wins first — then throw spare cash at this loan.</span>
                 </p>
               </div>
               <div style={{marginTop:"12px"}}>
-                <TakeMeThere app="your loan provider" icon="💳" message="Contact my lender about overpayment options" demoNote="Would open lender app or website — most allow 10%/yr penalty-free"/>
+                <TakeMeThere app="your loan provider" icon={CreditCard} message="Contact my lender about overpayment options" demoNote="Would open lender app or website — most allow 10%/yr penalty-free"/>
               </div>
             </div>
           );
@@ -5746,7 +5758,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               {isVariable && (
                 <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                    <span style={{fontSize:"16px"}}>⚠️</span>
+                    <AlertTriangle size={16} color="#c0392b"/>
                     <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>You're on a variable rate — already exposed to rate movements</span>
                   </div>
                   <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
@@ -5790,8 +5802,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               )}
               <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"12px",padding:"16px 18px"}}>
                 <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Take me there</div>
-                <TakeMeThere app="L&C Mortgages" icon="🏠" message="Compare mortgage overpayment options" demoNote="Would open L&C whole-of-market comparison"/>
-                <TakeMeThere app="Sprive" icon="⚡" message="Set up automatic mortgage overpayments" demoNote="Would open Sprive app to connect your mortgage"/>
+                <TakeMeThere app="L&C Mortgages" icon={Home} message="Compare mortgage overpayment options" demoNote="Would open L&C whole-of-market comparison"/>
+                <TakeMeThere app="Sprive" icon={Zap} message="Set up automatic mortgage overpayments" demoNote="Would open Sprive app to connect your mortgage"/>
               </div>
             </div>
           );
@@ -5803,7 +5815,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             {products.inheritanceSection.ihtBill > 0 && (
               <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.18)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                  <span style={{fontSize:"16px"}}>📋</span>
+                  <ClipboardList size={16} color="#c0392b"/>
                   <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>IHT bill breakdown</span>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"12px"}}>
@@ -5831,13 +5843,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 <span style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase"}}>Key planning levers</span>
               </div>
               {[
-                { icon:"🎁", title:"Annual gifting (£3,000/yr + carry forward)", body:"Use your annual exemption every year. After 7 years, any gift falls completely outside your estate. Start the clock as early as possible." },
-                { icon:"🏛️", title:"The 7-year rule", body:products.inheritanceSection.sevenYrRule },
-                { icon:"🏦", title:"Leave pensions undrawn", body:products.inheritanceSection.pensionNote },
-                { icon:"📄", title:"Write — or update — your will", body:`Without a will, intestacy rules dictate who inherits. A will also lets you direct assets to the most tax-efficient beneficiaries and minimise probate complexity. ${d.hasWill === "yes" ? "You have a will in place — review it if more than 5 years old or after any major life change." : "You don't have a will — this is your highest-priority action."}` },
+                { icon:Gift, title:"Annual gifting (£3,000/yr + carry forward)", body:"Use your annual exemption every year. After 7 years, any gift falls completely outside your estate. Start the clock as early as possible." },
+                { icon:Building2, title:"The 7-year rule", body:products.inheritanceSection.sevenYrRule },
+                { icon:Landmark, title:"Leave pensions undrawn", body:products.inheritanceSection.pensionNote },
+                { icon:FileText, title:"Write — or update — your will", body:`Without a will, intestacy rules dictate who inherits. A will also lets you direct assets to the most tax-efficient beneficiaries and minimise probate complexity. ${d.hasWill === "yes" ? "You have a will in place — review it if more than 5 years old or after any major life change." : "You don't have a will — this is your highest-priority action."}` },
               ].map((item, i) => (
                 <div key={i} style={{padding:"14px 18px",borderBottom:i<3?"1px solid rgba(22,47,36,0.07)":"none",display:"flex",gap:"12px",alignItems:"flex-start"}}>
-                  <span style={{fontSize:"18px",flexShrink:0}}>{item.icon}</span>
+                  <item.icon size={18} style={{flexShrink:0}} color={G}/>
                   <div>
                     <div style={{fontWeight:600,fontSize:"13px",color:TEXT,marginBottom:"4px"}}>{item.title}</div>
                     <p style={{fontSize:"13px",color:MUT,lineHeight:1.6}}>{item.body}</p>
@@ -5847,8 +5859,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             </div>
             <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"12px",padding:"16px 18px"}}>
               <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Take me there</div>
-              <TakeMeThere app="Farewill" icon="📄" message={d.hasWill === "yes" ? "Review and update my will" : "Write my will — takes 15 minutes"} demoNote="Would open Farewill will-writing flow"/>
-              <TakeMeThere app="VouchedFor" icon="👔" message="Find a specialist estate planning IFA" demoNote="Would open VouchedFor IFA search filtered to estate planning"/>
+              <TakeMeThere app="Farewill" icon={FileText} message={d.hasWill === "yes" ? "Review and update my will" : "Write my will — takes 15 minutes"} demoNote="Would open Farewill will-writing flow"/>
+              <TakeMeThere app="VouchedFor" icon={Briefcase} message="Find a specialist estate planning IFA" demoNote="Would open VouchedFor IFA search filtered to estate planning"/>
             </div>
           </div>
         )}
@@ -5860,8 +5872,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               const localDelta = moduleScoreDelta(statuses[moduleKey]?.status);
               return (
                 <div style={{position:"relative",pointerEvents:"none",height:0}}>
-                  <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",fontSize:"20px",animation:"coinFloat 0.9s ease-out forwards"}}>🪙</span>
-                  <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",fontSize:"20px",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}>🪙</span>
+                  <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={20} color={GOLD}/></span>
+                  <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={20} color={GOLD}/></span>
                   {localDelta > 0 && (
                     <span style={{position:"absolute",top:"-12px",right:"calc(50% - 60px)",background:"#2D6B4A",color:WHITE,borderRadius:"100px",padding:"3px 10px",fontSize:"13px",fontWeight:700,animation:"coinFloat 0.9s ease-out 0.05s forwards",whiteSpace:"nowrap"}}>+{localDelta} pts</span>
                   )}
@@ -5892,9 +5904,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 animation: animating ? "btnGold 0.4s ease-out" : "none",
               }}>
               {isComplete ? (
-                <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/></svg>{meta?.title}: Optimised ✓</>
+                <><Check size={16} color={GOLD} strokeWidth={2.2}/>{meta?.title}: Optimised</>
               ) : (
-                <><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 6L5 10L13 1" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round"/></svg>Mark as reviewed</>
+                <><Check size={16} color={GOLD} strokeWidth={2.2}/>Mark as reviewed</>
               )}
             </button>
           </div>
