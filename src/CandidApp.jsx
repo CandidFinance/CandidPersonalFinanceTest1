@@ -4168,7 +4168,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
         {/* Header */}
         <div className="fu" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"16px",marginBottom:"24px",flexWrap:"wrap"}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-            <span style={{fontSize:"32px"}}>{meta?.icon}</span>
+            {meta?.icon && <meta.icon size={32} color={G}/>}
             <div>
               <h2 style={{fontFamily:SERIF,fontSize:"26px",color:G,lineHeight:1.2}}>{meta?.title}</h2>
               {(isPensionUnknown || modSummary?.status) && (
@@ -5916,7 +5916,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             </button>
             {nextModule && (
               <button type="button" onClick={() => onOpenModule(nextModule.key)} style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"10px",color:WHITE,fontSize:"14px",fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
-                <span style={{fontSize:"15px"}}>{nextModule.icon}</span>
+                <nextModule.icon size={15}/>
                 <span>Next: {nextModule.title} →</span>
               </button>
             )}
