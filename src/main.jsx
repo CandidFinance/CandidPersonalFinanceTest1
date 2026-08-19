@@ -1,7 +1,8 @@
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react"
 import ReactDOM from "react-dom/client"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import posthog from "posthog-js"
+import { motion, MotionConfig, useReducedMotion, useInView, animate } from "framer-motion"
 import CandidApp, { PageWrap, NavBar, ContentWrap } from "./CandidApp.jsx"
 import { ClipboardList, Target, Search, GraduationCap, PoundSterling, Home as HomeIcon } from "lucide-react"
 
@@ -100,15 +101,96 @@ const MUT  = "#6b6b6b"
 const SERIF= "'Playfair Display', serif"
 const SANS = "'DM Sans', sans-serif"
 
+// ── Landing page motion primitives ─────────────────────────────────────────────
+// A steep-deceleration curve (fast start, long soft settle) reads as more
+// considered than the default ease-in-out — used for every entrance/hover
+// animation on the landing page. prefers-reduced-motion is handled globally
+// via <MotionConfig reducedMotion="user"> in Root(), which auto-disables all
+// variant/whileHover/whileInView animation; the one exception is the imperative
+// count-up in CountUpStat, which checks useReducedMotion() itself below.
+const EASE = [0.16, 1, 0.3, 1];
+
+const heroStagger = { hidden: {}, visible: { transition: { staggerChildren: 0.07 } } };
+const heroItem = {
+  hidden: { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE } },
+};
+
+// Entrance for a tile at position `i` in a staggered row/grid. MotionConfig's
+// reducedMotion="user" (set on <Root>) only strips transform-based motion
+// (x/y/scale/rotate) — it leaves opacity fades running — so an explicit
+// reduceMotion flag is threaded through here to skip the fade too and render
+// the tile straight into its final state, per "instant states, no animation".
+function tileEntrance(i, reduceMotion, delayStep = 0.07) {
+  if (reduceMotion) return { initial: false };
+  return {
+    initial: { opacity: 0, y: 14 },
+    whileInView: { opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE, delay: i * delayStep } },
+    viewport: { once: true, margin: "-60px" },
+  };
+}
+
+// Subtle lift + soft shadow on hover, for interactive cards/tiles.
+const tileHover = {
+  whileHover: { y: -4, boxShadow: "0 16px 36px rgba(22,47,36,0.14)", transition: { duration: 0.2, ease: EASE } },
+};
+
+// Parses a display string like "£4,200" or "6.5m" into its numeric target
+// plus the surrounding prefix/suffix, so CountUpStat can animate the number
+// while preserving currency symbols, unit suffixes, decimals and thousands commas.
+function parseStatValue(str) {
+  const match = String(str).match(/^([^\d]*)([\d,.]+)([^\d]*)$/);
+  if (!match) return { prefix: "", target: 0, suffix: String(str), decimals: 0, hasComma: false };
+  const [, prefix, numStr, suffix] = match;
+  const hasComma = numStr.includes(",");
+  const cleanNum = numStr.replace(/,/g, "");
+  const decimals = cleanNum.includes(".") ? cleanNum.split(".")[1].length : 0;
+  return { prefix, target: parseFloat(cleanNum), suffix, decimals, hasComma };
+}
+
+function formatStatNumber(value, { decimals, hasComma }) {
+  const fixed = value.toFixed(decimals);
+  if (!hasComma) return fixed;
+  const [intPart, decPart] = fixed.split(".");
+  const withCommas = Number(intPart).toLocaleString("en-GB");
+  return decPart ? `${withCommas}.${decPart}` : withCommas;
+}
+
+// Counts up from 0 to the target value once the stat scrolls into view.
+// Instant (no animation) when the user has prefers-reduced-motion enabled.
+function CountUpStat({ value }) {
+  const parsed = useMemo(() => parseStatValue(value), [value]);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const reduceMotion = useReducedMotion();
+  const [display, setDisplay] = useState(reduceMotion ? parsed.target : 0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    if (reduceMotion) { setDisplay(parsed.target); return; }
+    const controls = animate(0, parsed.target, {
+      duration: 0.9,
+      ease: EASE,
+      onUpdate: setDisplay,
+    });
+    return () => controls.stop();
+  }, [isInView, parsed.target, reduceMotion]);
+
+  return <span ref={ref}>{parsed.prefix}{formatStatNumber(display, parsed)}{parsed.suffix}</span>;
+}
+
 // ── Shared CTA button ─────────────────────────────────────────────────────────
 function CtaButton({ onClick, dark }) {
   return (
-    <button onClick={onClick} style={{
-      background: GOLD, border: "none", borderRadius: "10px",
-      padding: "18px 44px", fontSize: "17px", fontWeight: 700,
-      color: G, cursor: "pointer", fontFamily: SANS,
-      display: "inline-block",
-    }}>Get my free Candid report →</button>
+    <motion.button
+      onClick={onClick}
+      whileHover={{ scale: 1.03, boxShadow: "0 10px 24px rgba(196,150,58,0.35)", transition: { duration: 0.2, ease: EASE } }}
+      style={{
+        background: GOLD, border: "none", borderRadius: "10px",
+        padding: "18px 44px", fontSize: "17px", fontWeight: 700,
+        color: G, cursor: "pointer", fontFamily: SANS,
+        display: "inline-block", boxShadow: "0 0px 0px rgba(196,150,58,0)",
+      }}>Get my free Candid report →</motion.button>
   )
 }
 
@@ -136,6 +218,7 @@ function SectionLabel({ children }) {
 
 // ── Landing page ──────────────────────────────────────────────────────────────
 function LandingPage({ onStart }) {
+  const reduceMotion = useReducedMotion();
   return (
     <div style={{ fontFamily: SANS }}>
       <NavBar center="Home"/>
@@ -156,26 +239,31 @@ function LandingPage({ onStart }) {
           backgroundSize: "64px 64px",
         }}/>
 
-        <div style={{ position: "relative", zIndex: 1, maxWidth: "640px" }}>
+        <motion.div
+          variants={heroStagger} initial={reduceMotion ? "visible" : "hidden"} animate="visible"
+          style={{ position: "relative", zIndex: 1, maxWidth: "640px" }}
+        >
           {/* Wordmark */}
-          <div style={{
+          <motion.div variants={heroItem} style={{
             fontFamily: SERIF, fontSize: "clamp(52px,8vw,72px)", fontWeight: 700,
             color: GOLD, lineHeight: 1, marginBottom: "18px", letterSpacing: "-0.01em",
           }}>
             Candid.
-          </div>
+          </motion.div>
 
           {/* Tagline */}
-          <div style={{
+          <motion.div variants={heroItem} style={{
             fontSize: "18px", color: `${CREAM}99`, fontStyle: "italic",
             marginBottom: "52px", letterSpacing: "0.01em",
           }}>
             Personal finance, honestly.
-          </div>
+          </motion.div>
 
-          <CtaButton onClick={onStart}/>
-          <TrustLine light/>
-        </div>
+          <motion.div variants={heroItem}>
+            <CtaButton onClick={onStart}/>
+            <TrustLine light/>
+          </motion.div>
+        </motion.div>
       </div>
 
       {/* ── SECTION 2: PROBLEM STATEMENT ── */}
@@ -203,19 +291,19 @@ function LandingPage({ onStart }) {
               { n: "£4,200", label: "avg annual pension tax relief unclaimed" },
               { n: "£680",   label: "left on the table in savings yield gaps" },
               { n: "6.5m",   label: "higher-rate taxpayers in the UK" },
-            ].map(chip => (
-              <div key={chip.n} style={{
+            ].map((chip, i) => (
+              <motion.div key={chip.n} {...tileEntrance(i, reduceMotion)} style={{
                 background: G, borderRadius: "12px", padding: "20px 24px",
                 textAlign: "center", minWidth: "160px", flex: "1 1 160px", maxWidth: "220px",
               }}>
                 <div style={{
                   fontFamily: SERIF, fontSize: "28px", fontWeight: 700,
                   color: GOLD, lineHeight: 1, marginBottom: "8px",
-                }}>{chip.n}</div>
+                }}><CountUpStat value={chip.n}/></div>
                 <div style={{
                   fontSize: "13px", color: `${CREAM}99`, lineHeight: 1.4,
                 }}>{chip.label}</div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -252,10 +340,10 @@ function LandingPage({ onStart }) {
                 icon: Search, title: "Explore your modules",
                 body: "Deep-dive into each area of your finances with specific actions and their £ impact, calculated from your actual inputs.",
               },
-            ].map(step => (
-              <div key={step.title} style={{
+            ].map((step, i) => (
+              <motion.div key={step.title} {...tileEntrance(i, reduceMotion)} {...tileHover} style={{
                 background: CREAM, borderRadius: "14px", padding: "32px 28px",
-                borderTop: `4px solid ${GOLD}`,
+                borderTop: `4px solid ${GOLD}`, boxShadow: "0 0px 0px rgba(22,47,36,0)",
               }}>
                 <div style={{ marginBottom: "16px" }}><step.icon size={28} color={G}/></div>
                 <div style={{
@@ -263,7 +351,7 @@ function LandingPage({ onStart }) {
                   fontWeight: 600, marginBottom: "10px",
                 }}>{step.title}</div>
                 <div style={{ fontSize: "14px", color: MUT, lineHeight: 1.7 }}>{step.body}</div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -290,13 +378,13 @@ function LandingPage({ onStart }) {
               "ISA & investments",
               "Student loan strategy",
               "Mortgage & debt",
-            ].map(area => (
-              <div key={area} style={{
+            ].map((area, i) => (
+              <motion.div key={area} {...tileEntrance(i, reduceMotion, 0.06)} style={{
                 background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.15)",
                 borderRadius: "100px", padding: "10px 20px",
                 fontSize: "14px", color: WHITE, fontWeight: 500,
-              }}>{area}</div>
+              }}>{area}</motion.div>
             ))}
           </div>
 
@@ -356,10 +444,11 @@ function LandingPage({ onStart }) {
                 title: "Mortgage overpayment vs high-yield savings",
                 body: "When your fix ends, compare paying down the mortgage against a savings account or Cash ISA — tax accounted for.",
               },
-            ].map(tool => (
-              <a key={tool.href} href={tool.href} style={{
+            ].map((tool, i) => (
+              <motion.a key={tool.href} href={tool.href} {...tileEntrance(i, reduceMotion)} {...tileHover} style={{
                 background: CREAM, borderRadius: "14px", padding: "32px 28px",
                 borderTop: `4px solid ${GOLD}`, textDecoration: "none", display: "block",
+                boxShadow: "0 0px 0px rgba(22,47,36,0)",
               }}>
                 <div style={{ marginBottom: "16px" }}><tool.icon size={28} color={G}/></div>
                 <div style={{
@@ -367,7 +456,7 @@ function LandingPage({ onStart }) {
                   fontWeight: 600, marginBottom: "10px",
                 }}>{tool.title}</div>
                 <div style={{ fontSize: "14px", color: MUT, lineHeight: 1.7 }}>{tool.body}</div>
-              </a>
+              </motion.a>
             ))}
           </div>
         </div>
@@ -785,9 +874,11 @@ function AppRoutes() {
 
 function Root() {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </MotionConfig>
   );
 }
 
