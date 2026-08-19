@@ -14,6 +14,7 @@ const CUSTOM_PRESETS_KEY = "candid_dev_custom_presets";
 // override that happens to merge cleanly.
 const baseProfile = {
   name: "", email: "", interests: [],
+  selectedModules: [],
   age: "32", salary: "55000", otherIncome: "0", dividendIncome: "0", bonusAmount: "0", salaryTrajectory: "stable",
   monthlyExpenses: "1800", higherBuffer: "no",
   cashSavings: "10000", savingsRate: "2.5", premiumBonds: "0", cashAccessType: "yes",
@@ -41,6 +42,7 @@ const BUILT_IN_PRESETS = [
     description: "Realistic full financial picture — every active MVP module (cash, investments, pension, student loan) has a live recommendation. Mortgage/personal loan/kids left at defaults — those modules are hidden for MVP, see HIDE_MVP_MODULES in CandidApp.jsx.",
     data: {
       ...baseProfile,
+      selectedModules: ["cash","investments","pension","studentLoan"],
       name: "Alex Full", email: "alex.full@example.com",
       age: "34", salary: "72000", otherIncome: "2000", dividendIncome: "500", bonusAmount: "5000", salaryTrajectory: "moderate",
       monthlyExpenses: "2200",
@@ -58,6 +60,7 @@ const BUILT_IN_PRESETS = [
     description: "£0 ISA headroom remaining this tax year — tests the cash-vehicle substitution logic (surplus cash routes to non-ISA recommendations instead of ISA).",
     data: {
       ...baseProfile,
+      selectedModules: ["cash","investments","pension"],
       name: "Jamie MaxedISA", email: "jamie.maxed@example.com",
       age: "29", salary: "48000",
       cashSavings: "12000", savingsRate: "2.8", cashTiers: [{ amount: "12000", rate: "2.8" }],
@@ -73,6 +76,7 @@ const BUILT_IN_PRESETS = [
     description: "Cash balance well above ISA headroom — tests the blended ISA-eligible / non-ISA yield-gap calculation and the surplus-cash callout.",
     data: {
       ...baseProfile,
+      selectedModules: ["cash","investments","pension"],
       name: "Sam LargeSurplus", email: "sam.surplus@example.com",
       age: "40", salary: "95000",
       monthlyExpenses: "1600",
@@ -87,9 +91,10 @@ const BUILT_IN_PRESETS = [
   {
     id: "freshMinimal",
     name: "Fresh / minimal",
-    description: "Mostly empty/zero state — no investments, pension, mortgage, loan, or kids data. Tests zero-recommendation edge cases.",
+    description: "Mostly empty/zero state — only Savings selected, no investments, pension, mortgage, loan, or kids data. Tests zero-recommendation edge cases.",
     data: {
       ...baseProfile,
+      selectedModules: ["cash"],
       name: "", email: "",
       age: "24", salary: "26000",
       monthlyExpenses: "1200",

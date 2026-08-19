@@ -1392,8 +1392,9 @@ function useWindowWidth() {
   return width;
 }
 
-const STEP_SHORT_LABELS = ["Name","Email","Interests","Income","Savings","Invest.","Pension","Debt"];
-const STEP_MOBILE_LABELS = ["Name","Email","Int.","Inc.","Sav.","Inv.","Pension","Debt"];
+// Step labels now live on each step's own definition (see ALL_STEP_DEFS) rather
+// than these separate positional arrays — indices used to line up 1:1 with a
+// fixed STEPS array, which no longer holds true once steps are selection-dependent.
 
 function StepProgress({ step, steps, onStepClick, isEditMode }) {
   const windowWidth = useWindowWidth();
@@ -1410,12 +1411,12 @@ function StepProgress({ step, steps, onStepClick, isEditMode }) {
     <div style={{background:WHITE,borderBottom:`1px solid ${CDARK}`,padding:"20px 24px",flexShrink:0,overflow:"hidden"}}>
       <div style={{maxWidth:"580px",margin:"0 auto",display:"flex",alignItems:"center"}}>
         {visibleIndices.map((i, idx) => {
-          const label = steps[i];
+          const label = steps[i].label;
           const done = i < step;
           const current = i === step;
           const size = current ? 34 : 28;
           const clickable = (isEditMode || done) && !!onStepClick && i !== step;
-          const shortLabel = (isNarrow ? STEP_MOBILE_LABELS[i] : STEP_SHORT_LABELS[i]) || label;
+          const shortLabel = (isNarrow ? steps[i].mobileLabel : steps[i].shortLabel) || label;
           const isLastVisible = idx === visibleIndices.length - 1;
           return (
             <div key={i} style={{display:"flex",alignItems:"center",flex: !isLastVisible ? 1 : 0}}>
@@ -1480,31 +1481,53 @@ export function ContentWrap({ children, maxWidth="580px" }) {
 }
 
 // ── Full onboarding ───────────────────────────────────────────────────────────
-const STEPS = ["Name","Email","Interests","About you","Cash & savings","Investments","Pension","Debt"];
+// Steps are selection-dependent: the "modules"/"name"/"email"/"about" steps are
+// always asked; each MVP module's own step only appears once its `moduleKey` is
+// in d.selectedModules. getActiveSteps(d) is the single source of truth for step
+// order/count everywhere (routing, StepProgress, PostHog labels) — nothing else
+// should assume a fixed step count or fixed index-to-content mapping.
+const ALL_STEP_DEFS = [
+  { id:"modules",     label:"Focus",           shortLabel:"Focus",       mobileLabel:"Focus", always:true },
+  { id:"name",        label:"Name",            shortLabel:"Name",        mobileLabel:"Name",  always:true },
+  { id:"email",       label:"Email",           shortLabel:"Email",       mobileLabel:"Email", always:true },
+  { id:"about",       label:"About you",       shortLabel:"Income",      mobileLabel:"Inc.",  always:true },
+  { id:"cash",        label:"Cash & savings",  shortLabel:"Savings",     mobileLabel:"Sav.",  moduleKey:"cash" },
+  { id:"investments", label:"Investments",     shortLabel:"Invest.",     mobileLabel:"Inv.",  moduleKey:"investments" },
+  { id:"pension",     label:"Pension",         shortLabel:"Pension",     mobileLabel:"Pension", moduleKey:"pension" },
+  { id:"studentLoan", label:"Student loan",    shortLabel:"Student loan", mobileLabel:"Loan", moduleKey:"studentLoan" },
+];
+function getActiveSteps(d) {
+  const selected = new Set(d.selectedModules || []);
+  return ALL_STEP_DEFS.filter(s => s.always || selected.has(s.moduleKey));
+}
 
 function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue, onStepClick, onClearData }) {
+  const stepId = steps[step].id;
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
-    posthog.capture("assessment_question_viewed", { step: step + 1, step_name: steps[step] });
+    posthog.capture("assessment_question_viewed", { step: step + 1, step_name: steps[step].label });
   }, [step]);
+  const noModulesSelected = stepId === "modules" && !(d.selectedModules||[]).length;
+  const noName = stepId === "name" && !d.name.trim();
+  const continueDisabled = noModulesSelected || noName;
   return (
     <PageWrap>
-      <NavBar center={`Step ${step+1} of ${steps.length} — ${steps[step]}`}
+      <NavBar center={`Step ${step+1} of ${steps.length} — ${steps[step].label}`}
         right={insights ? <GhostBtn onClick={onBackToDashboard}>← Back to report</GhostBtn> : null}/>
       <StepProgress step={step} steps={steps} onStepClick={onStepClick} isEditMode={!!insights}/>
       <ContentWrap>
-        <OnboardingStep step={step} d={d} set={set}/>
+        <OnboardingStep stepId={stepId} d={d} set={set}/>
         <div style={{display:"flex",gap:"10px",marginTop:"40px"}}>
           <button onClick={onBack} style={{flex:1,padding:"13px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.22)",borderRadius:"8px",fontSize:"15px",color:TEXT,fontWeight:500}}>← Back</button>
           <button
             onClick={onContinue}
-            disabled={step === 0 && !d.name.trim()}
-            style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"8px",fontSize:"15px",fontWeight:600,color:WHITE,opacity:(step===0 && !d.name.trim()) ? 0.45 : 1,cursor:(step===0 && !d.name.trim()) ? "not-allowed" : "pointer"}}
+            disabled={continueDisabled}
+            style={{flex:2,padding:"13px",background:G,border:"none",borderRadius:"8px",fontSize:"15px",fontWeight:600,color:WHITE,opacity:continueDisabled ? 0.45 : 1,cursor:continueDisabled ? "not-allowed" : "pointer"}}
           >
             {step===steps.length-1 ? (insights ? "Regenerate my report →" : "Generate my Candid report →") : "Continue →"}
           </button>
         </div>
-        {step === 1 && (
+        {stepId === "email" && (
           <p style={{textAlign:"center",marginTop:"14px"}}>
             <button type="button" onClick={onContinue} style={{background:"none",border:"none",fontSize:"13px",color:MUT,cursor:"pointer",textDecoration:"underline",padding:0}}>
               Skip
@@ -1581,20 +1604,25 @@ function InfoTooltip({ text }) {
   );
 }
 
-function OnboardingStep({ step, d, set }) {
+// The 4 active MVP modules a user can pick from on the "Focus" step. Keys match
+// MODULE_META so d.selectedModules can be used directly by computeModuleStatuses.
+const MODULE_SELECT_TILES = [
+  { key:"cash",        emoji:"💷", label:"Savings"       },
+  { key:"investments", emoji:"📈", label:"Investments"   },
+  { key:"pension",     emoji:"👵", label:"Pensions"      },
+  { key:"studentLoan", emoji:"🎓", label:"Student Loans" },
+];
+
+function OnboardingStep({ stepId, d, set }) {
   const g2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"};
   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
-  const INTEREST_TILES = [
-    { key:"savings",      emoji:"💷", label:"Savings"      },
-    { key:"investments",  emoji:"📈", label:"Investments"  },
-    { key:"pensions",     emoji:"👵", label:"Pensions"     },
-    // Mortgages tile hidden for MVP — see HIDE_MVP_MODULES. Not deleted so it
-    // reappears automatically once mortgages are back in scope.
-    ...(HIDE_MVP_MODULES ? [] : [{ key:"mortgages", emoji:"🏠", label:"Mortgages" }]),
-    { key:"studentLoans", emoji:"🎓", label:"Student Loans"},
-    { key:"tax",          emoji:"🧾", label:"Tax"          },
-  ];
-  if (step === 0) return (
+  // Combined-ISA-allowance total — the £20,000 annual limit is one shared pot
+  // across all ISA types, regardless of which onboarding step collects each type
+  // (Cash ISA lives in Cash & Savings; S&S/LISA/Other live in Investments), so
+  // both steps compute the same total off the shared `d` and warn identically.
+  const isaThisYearTotal = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0);
+  const isaThisYearOver = isaThisYearTotal > 20000;
+  if (stepId === "name") return (
     <div style={{textAlign:"center",paddingTop:"20px"}}>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"12px"}}>What should we call you?</h2>
       <input
@@ -1606,7 +1634,7 @@ function OnboardingStep({ step, d, set }) {
       />
     </div>
   );
-  if (step === 1) return (
+  if (stepId === "email") return (
     <div style={{textAlign:"center",paddingTop:"20px"}}>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Where shall we send a backup version of your report?</h2>
       <p style={{fontSize:"13px",color:MUT,marginBottom:"24px",lineHeight:1.5}}>Optional — so you can refer back to it anytime.</p>
@@ -1619,20 +1647,20 @@ function OnboardingStep({ step, d, set }) {
       />
     </div>
   );
-  if (step === 2) return (
+  if (stepId === "modules") return (
     <div>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px",textAlign:"center"}}>What would you most like to understand?</h2>
-      <p style={{fontSize:"13px",color:MUT,marginBottom:"28px",lineHeight:1.5,textAlign:"center"}}>Pick any that apply — we'll tailor your guidance.</p>
+      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px",textAlign:"center"}}>What do you want Candid to look at?</h2>
+      <p style={{fontSize:"13px",color:MUT,marginBottom:"28px",lineHeight:1.5,textAlign:"center"}}>Pick at least one — we'll only ask what's needed for these. You can always add more later from your dashboard.</p>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"12px"}}>
-        {INTEREST_TILES.map(({ key, emoji, label }) => {
-          const selected = (d.interests || []).includes(key);
+        {MODULE_SELECT_TILES.map(({ key, emoji, label }) => {
+          const selected = (d.selectedModules || []).includes(key);
           return (
             <button
               key={key}
               type="button"
-              onClick={() => set("interests", selected
-                ? (d.interests || []).filter(k => k !== key)
-                : [...(d.interests || []), key]
+              onClick={() => set("selectedModules", selected
+                ? (d.selectedModules || []).filter(k => k !== key)
+                : [...(d.selectedModules || []), key]
               )}
               style={{
                 display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
@@ -1652,7 +1680,7 @@ function OnboardingStep({ step, d, set }) {
       </div>
     </div>
   );
-  if (step === 3) return (
+  if (stepId === "about") return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Tell us about you</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We use your income to work out your tax band, savings potential, and which optimisations matter most for you.</p>
@@ -1704,9 +1732,18 @@ function OnboardingStep({ step, d, set }) {
           </Field>
         </div>
       )}
+      {/* Monthly expenses lives here, not in Cash & Savings, because it drives
+          monthlySurplus (calcMetrics) — the baseline for "Your Forecast", which
+          renders regardless of which modules are selected. Asking it only when
+          Savings is selected would badly overstate the forecast for every other
+          selected module whenever Savings isn't picked. */}
+      <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport">
+        <FmtInput fmtType="gbp" value={d.monthlyExpenses} onChange={v=>set("monthlyExpenses",capField("monthlyExpenses",v))} placeholder="e.g. 2,500"/>
+        <Warn msg={+d.monthlyExpenses > 0 && +d.monthlyExpenses < 300 ? "Expenses seem very low — double-check" : +d.monthlyExpenses > (+d.salary||0)/12*0.95 && +d.salary > 0 ? "Expenses exceed almost all income" : null}/>
+      </Field>
     </div>
   );
-  if (step === 4) return (
+  if (stepId === "cash") return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Cash & savings</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"20px",lineHeight:1.5}}>Helps us identify yield gaps and whether your cash is working as hard as it should be.</p>
@@ -1719,16 +1756,10 @@ function OnboardingStep({ step, d, set }) {
         <span style={{fontSize:"17px"}}>🏦</span>
         <span>Connect your bank (Sandbox) — auto-fill your cash balances</span>
       </button>
-      <div style={g2}>
-        <Field label="Monthly essential expenses (£)" hint="Rent, bills, food, transport">
-        <FmtInput fmtType="gbp" value={d.monthlyExpenses} onChange={v=>set("monthlyExpenses",capField("monthlyExpenses",v))} placeholder="e.g. 2,500"/>
-        <Warn msg={+d.monthlyExpenses > 0 && +d.monthlyExpenses < 300 ? "Expenses seem very low — double-check" : +d.monthlyExpenses > (+d.salary||0)/12*0.95 && +d.salary > 0 ? "Expenses exceed almost all income" : null}/>
+      <Field label="Emergency fund target">
+        <Toggle value={d.higherBuffer||"no"} onChange={v=>set("higherBuffer",v)} options={[{value:"no",label:"6 months"},{value:"yes",label:"9 months"}]}/>
+        <p style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>9 months if self-employed or variable income</p>
       </Field>
-        <Field label="Emergency fund target">
-          <Toggle value={d.higherBuffer||"no"} onChange={v=>set("higherBuffer",v)} options={[{value:"no",label:"6 months"},{value:"yes",label:"9 months"}]}/>
-          <p style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>9 months if self-employed or variable income</p>
-        </Field>
-      </div>
       <Field label="Cash savings accounts" hint="Add each account separately for an accurate blended rate">
         {(d.cashTiers||[{amount:"",rate:""}]).map((tier,i) => (
           <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 1fr auto",gap:"8px",marginBottom:"8px",alignItems:"flex-end"}}>
@@ -1772,9 +1803,27 @@ function OnboardingStep({ step, d, set }) {
            "Instant-access cash can be withdrawn same day if needed."}
         </p>
       </Field>
+      {/* Cash ISA lives here (not Investments) so the Cash module's own ISA-
+          headroom-dependent calc (calcCashOptimisation) is accurate even when
+          Investments isn't selected. Shares the same £20,000 combined-allowance
+          total as the Investments step's S&S/LISA/Other fields — see
+          isaThisYearTotal/isaThisYearOver above. */}
+      <div style={{marginTop:"20px",marginBottom:"8px"}}>
+        <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>Cash ISA <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(counts toward your £20,000 annual ISA allowance)</span></div>
+        <div style={g2}>
+          <Field label="Contributed this tax year (£)"><FmtInput fmtType="gbp" value={d.isaThisYearCash} onChange={v=>set("isaThisYearCash",capField("isaThisYearCash",v))} placeholder="0"/></Field>
+          <Field label="Balance from previous years (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",capField("isaPrevCash",v))} placeholder="0"/></Field>
+        </div>
+        {isaThisYearOver && (
+          <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700}}>
+            ⚠️ Total this year across all ISA types: {fmt(isaThisYearTotal)} — exceeds the £20,000 annual ISA allowance.
+          </div>
+        )}
+        <Warn msg={+d.isaPrevCash > 200000 ? "Large ISA balance — double-check" : null}/>
+      </div>
     </div>
   );
-  if (step === 5) return (
+  if (stepId === "investments") return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Investments</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We'll check whether your investments are sheltered efficiently and whether any CGT opportunities exist.</p>
@@ -1783,35 +1832,29 @@ function OnboardingStep({ step, d, set }) {
       </Field>
       {d.hasInvestments === "yes" && (
         <div>
-          {/* ISA this tax year — 4 granular fields */}
-          {(() => {
-            const total = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0);
-            const over = total > 20000;
-            return (
-              <div style={{marginBottom:"20px"}}>
-                <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>ISA contributions this tax year <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(April 6 – April 5, £20,000 limit)</span></div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
-                  <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearCash} onChange={v=>set("isaThisYearCash",capField("isaThisYearCash",v))} placeholder="0"/></Field>
-                  <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",capField("isaThisYearSS",v))} placeholder="0"/></Field>
-                  <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",capField("isaThisYearLISA",v))} placeholder="0"/></Field>
-                  <Field label="Other ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearOther||""} onChange={v=>set("isaThisYearOther",capField("isaThisYearOther",v))} placeholder="0"/></Field>
-                </div>
-                {over && (
-                  <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700}}>
-                    ⚠️ Total this year: {fmt(total)} — exceeds the £20,000 annual ISA allowance.
-                  </div>
-                )}
+          {/* ISA this tax year — S&S/LISA/Other; Cash ISA lives in Cash & Savings.
+              isaThisYearTotal/isaThisYearOver (computed above) still sum all 4
+              fields, so the warning here reflects the true combined allowance. */}
+          <div style={{marginBottom:"20px"}}>
+            <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>ISA contributions this tax year <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(April 6 – April 5, £20,000 limit shared with any Cash ISA)</span></div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
+              <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",capField("isaThisYearSS",v))} placeholder="0"/></Field>
+              <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",capField("isaThisYearLISA",v))} placeholder="0"/></Field>
+              <Field label="Other ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearOther||""} onChange={v=>set("isaThisYearOther",capField("isaThisYearOther",v))} placeholder="0"/></Field>
+            </div>
+            {isaThisYearOver && (
+              <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700}}>
+                ⚠️ Total this year across all ISA types: {fmt(isaThisYearTotal)} — exceeds the £20,000 annual ISA allowance.
               </div>
-            );
-          })()}
-          {/* ISA previous years — 4 granular fields */}
+            )}
+          </div>
+          {/* ISA previous years — S&S/LISA/Other; Cash ISA balance lives in Cash & Savings. */}
           {(() => {
-            const total = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0);
+            const total = (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0);
             return (
               <div style={{marginBottom:"20px"}}>
                 <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>ISA balance from previous years <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(accumulated before this tax year)</span></div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
-                  <Field label="Cash ISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",capField("isaPrevCash",v))} placeholder="0"/></Field>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
                   <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevSS} onChange={v=>set("isaPrevSS",capField("isaPrevSS",v))} placeholder="0"/></Field>
                   <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevLISA} onChange={v=>set("isaPrevLISA",capField("isaPrevLISA",v))} placeholder="0"/></Field>
                   <Field label="Other (£)"><FmtInput fmtType="gbp" value={d.isaPrevOther} onChange={v=>set("isaPrevOther",capField("isaPrevOther",v))} placeholder="0"/></Field>
@@ -1833,7 +1876,7 @@ function OnboardingStep({ step, d, set }) {
       )}
     </div>
   );
-  if (step === 6) return (
+  if (stepId === "pension") return (
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Pension</h2>
       <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>The single biggest optimisation for most people in your income bracket. Takes 60 seconds to fill in.</p>
@@ -1908,10 +1951,10 @@ function OnboardingStep({ step, d, set }) {
       )}
     </div>
   );
-  if (step === 7) return (
+  if (stepId === "studentLoan") return (
     <div>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Debt</h2>
-      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>Understanding your debt profile lets us prioritise what to pay down first and in what order.</p>
+      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Student loan</h2>
+      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>Understanding your loan lets us work out whether overpaying is actually worth it for you.</p>
       <Field label="Student loan">
         <select style={INP} value={d.studentLoan} onChange={e => set("studentLoan",e.target.value)}>
           <option value="none">No student loan</option>
@@ -2558,6 +2601,22 @@ s.pension = m.pensionStatus === "unknown" ? {
     amountIsLumpSum: true, // projected total by age 18, not a £/yr figure — exclude from /yr sums
   };
 
+  // Modules the user didn't pick on the "Focus" onboarding step read as not
+  // applicable everywhere (Dashboard tiles, the AI prompt, the PDF report),
+  // overriding whatever the blocks above computed from blank/default data.
+  // This is what makes it safe to leave e.g. Pension unselected — without this,
+  // isPensionContributing(d) reading the blank default would otherwise mark it
+  // "critical" (with a +99999 sort sentinel) purely because it was never asked.
+  const selectedModules = new Set(d.selectedModules || []);
+  for (const key of ["cash", "investments", "pension"]) {
+    if (!selectedModules.has(key)) {
+      s[key] = { status: "na", impact: 0, impactLabel: null, amount: 0 };
+    }
+  }
+  if (!selectedModules.has("studentLoan")) {
+    s.studentLoan = { status: "na", impact: 0, impactLabel: null, belowThreshold: false, amount: 0 };
+  }
+
   return s;
 }
 
@@ -2567,8 +2626,14 @@ s.pension = m.pensionStatus === "unknown" ? {
 export function getModuleSummary(mm, d, m, statuses, insights) {
   const local = statuses[mm.key] || { status:"na", impact:0 };
   const aiMod = insights?.modules?.[mm.key];
-  // Pension + personalLoan: always trust local status — AI stale data causes false positives
-  const status = (mm.key === "pension" || mm.key === "personalLoan")
+  // A local "na" is authoritative and must never be overridden by the AI (or its
+  // offline fallback, which has no awareness of module selection at all) — this
+  // is what's now hidden-for-MVP, opted out of module selection, or otherwise
+  // genuinely not applicable, regardless of what a stale/generic AI status says.
+  // Pension + personalLoan additionally always trust local even when it's NOT
+  // "na" — a separate, pre-existing guard against stale AI data on those two.
+  const status = local.status === "na" ? "na"
+    : (mm.key === "pension" || mm.key === "personalLoan")
     ? local.status
     : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
   const rawSummary = aiMod?.summary || (local.status !== "na" ? `Review your ${mm.title.toLowerCase()} situation.` : "N/A");
@@ -2647,7 +2712,7 @@ function FeedbackButton() {
   );
 }
 
-function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
+function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModule, onAddModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
@@ -3093,6 +3158,29 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
             });
           })()}
         </div>
+
+        {/* Add a module — for any of the 4 active MVP modules the user didn't pick
+            on the "Focus" onboarding step. Low-key by design (unlike the ranked
+            breakdown above, these carry no £ figure — nothing was ever asked). */}
+        {(() => {
+          const missing = MODULE_SELECT_TILES.filter(t => !(d.selectedModules||[]).includes(t.key));
+          if (!missing.length) return null;
+          return (
+            <div className="fu1" style={{background:"rgba(22,47,36,0.03)",border:"1px dashed rgba(22,47,36,0.2)",borderRadius:"14px",padding:"16px 18px",marginBottom:"24px"}}>
+              <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>Want a fuller picture?</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+                {missing.map(t => (
+                  <button key={t.key} type="button" onClick={() => onAddModule(t.key)} style={{
+                    display:"flex",alignItems:"center",gap:"6px",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",
+                    borderRadius:"100px",padding:"7px 14px",fontSize:"12.5px",fontWeight:600,color:G,cursor:"pointer",
+                  }}>
+                    <span>{t.emoji}</span><span>+ Add {t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Your Forecast */}
         <div className="fu1" style={{background:WHITE,borderRadius:"16px",padding:isMobile?"18px":"24px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"24px"}}>
@@ -5827,6 +5915,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 // ── Main app ──────────────────────────────────────────────────────────────────
 const BLANK_DATA = {
   name:"", email:"", interests:[],
+  // Which of the 4 active MVP modules (cash, investments, pension, studentLoan —
+  // matching MODULE_META keys) the user picked on the "Focus" onboarding step.
+  // Drives which subsequent steps are shown (getActiveSteps) and which modules
+  // computeModuleStatuses treats as applicable.
+  selectedModules:[],
   age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"stable",
   monthlyExpenses:"", higherBuffer:"no",
   cashSavings:"", savingsRate:"", premiumBonds:"", cashAccessType:"",
@@ -5908,9 +6001,17 @@ export default function AppShell() {
   // the listener was attached.
   const pathnameRef = useRef(pathname);
   const assessmentStepRef = useRef(assessmentStepNum);
+  const assessmentStepLabelRef = useRef(null);
   const assessmentCompletedRef = useRef(false);
   pathnameRef.current = pathname;
   assessmentStepRef.current = assessmentStepNum;
+  // getActiveSteps(d) is selection-dependent, so — unlike the old fixed STEPS
+  // array — the label for a given step number can only be resolved per-render,
+  // not read directly inside the pagehide handler below (which runs outside
+  // React's render cycle via a stale closure).
+  assessmentStepLabelRef.current = Number.isInteger(assessmentStepNum)
+    ? getActiveSteps(d)[assessmentStepNum - 1]?.label ?? null
+    : null;
   useEffect(() => {
     function handlePageHide() {
       if (pathnameRef.current?.startsWith("/assessment/") && !assessmentCompletedRef.current) {
@@ -5919,7 +6020,7 @@ export default function AppShell() {
         // has a real chance of actually reaching the server as the page unloads.
         posthog.capture("assessment_abandoned", {
           step: Number.isInteger(stepN) ? stepN : null,
-          step_name: Number.isInteger(stepN) ? (STEPS[stepN - 1] || null) : null,
+          step_name: assessmentStepLabelRef.current,
           reason: "page_unload",
         }, { transport: "sendBeacon" });
       }
@@ -6388,10 +6489,23 @@ Rules:
     navigate("/");
   }
 
+  // "Add this module" — brings a deselected MVP module back into scope from the
+  // Dashboard without repeating the whole onboarding walk. Adds the key to
+  // selectedModules, then jumps straight to that module's own step; the existing
+  // edit-mode chrome (StepProgress jump-to-step, "Regenerate my report") already
+  // works unmodified once `insights` exists, so no new onboarding UI is needed.
+  function addModule(key) {
+    const nextSelected = [...(d.selectedModules||[]), key];
+    set("selectedModules", nextSelected);
+    const steps = getActiveSteps({ selectedModules: nextSelected });
+    const idx = steps.findIndex(s => s.moduleKey === key);
+    if (idx >= 0) navigate(`/assessment/${idx + 1}`);
+  }
+
   function clearSavedData() {
     posthog.capture("assessment_abandoned", {
       step: Number.isInteger(assessmentStepNum) ? assessmentStepNum : null,
-      step_name: Number.isInteger(assessmentStepNum) ? (STEPS[assessmentStepNum - 1] || null) : null,
+      step_name: assessmentStepLabelRef.current,
       reason: "cleared_data",
     });
     localStorage.removeItem('candid_inputs');
@@ -6418,24 +6532,29 @@ Rules:
   }
 
   if (pathname.startsWith("/assessment/")) {
+    // getActiveSteps(d) reflects the CURRENT d.selectedModules — including a
+    // selection just made on the "Focus" step itself, since `set()` already
+    // updated state before this render runs — so forward/back navigation always
+    // lines up with whatever steps are actually active for this user right now.
+    const activeSteps = getActiveSteps(d);
     const stepNum = parseInt(params.step, 10);
-    if (!Number.isInteger(stepNum) || stepNum < 1 || stepNum > STEPS.length) {
+    if (!Number.isInteger(stepNum) || stepNum < 1 || stepNum > activeSteps.length) {
       return <Navigate to="/assessment/1" replace />;
     }
     const step = stepNum - 1;
     return (
-      <OnboardingScreen step={step} steps={STEPS} d={d} set={set} insights={insights}
+      <OnboardingScreen step={step} steps={activeSteps} d={d} set={set} insights={insights}
         onBack={() => {
           if (step > 0) { navigate(`/assessment/${step}`); return; }
-          posthog.capture("assessment_abandoned", { step: step + 1, step_name: STEPS[step], reason: "back_to_welcome" });
+          posthog.capture("assessment_abandoned", { step: step + 1, step_name: activeSteps[step].label, reason: "back_to_welcome" });
           navigate("/welcome");
         }}
         onBackToDashboard={() => navigate("/dashboard")}
         onStepClick={i => navigate(`/assessment/${i+1}`)}
         onClearData={clearSavedData}
         onContinue={() => {
-          posthog.capture("assessment_question_completed", { step: step + 1, step_name: STEPS[step] });
-          if (step < STEPS.length - 1) { navigate(`/assessment/${step+2}`); return; }
+          posthog.capture("assessment_question_completed", { step: step + 1, step_name: activeSteps[step].label });
+          if (step < activeSteps.length - 1) { navigate(`/assessment/${step+2}`); return; }
           assessmentCompletedRef.current = true;
           posthog.capture("assessment_completed");
           generateDashboard();
@@ -6448,6 +6567,7 @@ Rules:
     <>
       <Dashboard insights={insights} d={d} m={m} statuses={statuses} savingsRates={savingsRates} onReset={resetAll} completedModules={completedModules}
         onOpenModule={key => openModule(key)}
+        onAddModule={addModule}
         onEditInputs={() => navigate("/assessment/1")}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
         showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
@@ -6466,8 +6586,10 @@ Rules:
     const allMods = MODULE_META.map(mm => {
       const local = localStatuses[mm.key] || { status:"na", impact:0 };
       const aiMod = insights?.modules?.[mm.key];
-      // Use same logic as Dashboard — local always wins for pension/personalLoan
-      const status = (mm.key === "pension" || mm.key === "personalLoan")
+      // Use same logic as getModuleSummary/Dashboard — local "na" always wins
+      // (see getModuleSummary for why), pension/personalLoan trust local always.
+      const status = local.status === "na" ? "na"
+        : (mm.key === "pension" || mm.key === "personalLoan")
         ? local.status
         : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
       return { ...mm, status, impact: local.impact||0 };
