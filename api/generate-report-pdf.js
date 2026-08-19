@@ -6,7 +6,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import ReportPdf from "../src/pdf/ReportPdf.jsx";
-import { calcMetrics, computeModuleStatuses, topRate } from "../src/CandidApp.jsx";
+import { calcMetrics, computeModuleStatuses, topRate, sanitizeForMvp } from "../src/CandidApp.jsx";
 
 // ── Layer 1: only our own site (or local dev) may call this route ────────────
 const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
@@ -171,9 +171,13 @@ export default async function handler(req, res) {
   let pdfPath;
   try {
     const marketRates = await getMarketRates();
-    const m = calcMetrics(d, marketRates);
-    const statuses = computeModuleStatuses(d, m, marketRates);
-    const buffer = await renderToBuffer(createElement(ReportPdf, { d, m, statuses, insights }));
+    // Defence in depth: the client already sends a sanitized `d` (AppShell hides
+    // Mortgages/Personal Loans/Children before this request is built), but this
+    // route re-sanitizes rather than trusting the client payload.
+    const dMvp = sanitizeForMvp(d);
+    const m = calcMetrics(dMvp, marketRates);
+    const statuses = computeModuleStatuses(dMvp, m, marketRates);
+    const buffer = await renderToBuffer(createElement(ReportPdf, { d: dMvp, m, statuses, insights }));
     pdfPath = path.join(os.tmpdir(), `candid-report-${requestId || Date.now()}.pdf`);
     fs.writeFileSync(pdfPath, buffer);
     console.log(`[generate-report-pdf] PDF generated for ${trimmedEmail} at ${pdfPath}`);

@@ -1588,7 +1588,9 @@ function OnboardingStep({ step, d, set }) {
     { key:"savings",      emoji:"💷", label:"Savings"      },
     { key:"investments",  emoji:"📈", label:"Investments"  },
     { key:"pensions",     emoji:"👵", label:"Pensions"     },
-    { key:"mortgages",    emoji:"🏠", label:"Mortgages"    },
+    // Mortgages tile hidden for MVP — see HIDE_MVP_MODULES. Not deleted so it
+    // reappears automatically once mortgages are back in scope.
+    ...(HIDE_MVP_MODULES ? [] : [{ key:"mortgages", emoji:"🏠", label:"Mortgages" }]),
     { key:"studentLoans", emoji:"🎓", label:"Student Loans"},
     { key:"tax",          emoji:"🧾", label:"Tax"          },
   ];
@@ -1929,6 +1931,9 @@ function OnboardingStep({ step, d, set }) {
           </Field>
         </>
       )}
+      {/* Mortgage question + fields hidden for MVP — see HIDE_MVP_MODULES.
+          Logic and fields kept intact for a quick re-enable. */}
+      {!HIDE_MVP_MODULES && (<>
       <Field label="Do you have a mortgage?">
         <Toggle value={d.ownsOutright ? "outright" : (d.hasMortgage || "no")} onChange={v => {
           if (v === "outright") { set("ownsOutright", true); }
@@ -2001,6 +2006,10 @@ function OnboardingStep({ step, d, set }) {
           </Field>
         </div>
       )}
+      </>)}
+      {/* Personal loan question + fields hidden for MVP — see HIDE_MVP_MODULES.
+          Logic and fields kept intact for a quick re-enable. */}
+      {!HIDE_MVP_MODULES && (<>
       <Field label="Do you have a personal loan?">
         <Toggle value={d.hasPersonalLoan} onChange={v => set("hasPersonalLoan",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"}]}/>
       </Field>
@@ -2041,6 +2050,7 @@ function OnboardingStep({ step, d, set }) {
           </Field>
         </div>
       )}
+      </>)}
 
     </div>
   );
@@ -2186,6 +2196,24 @@ export const MODULE_META = [
   { key:"personalLoan",icon:"💳", title:"Personal loan"   },
   { key:"kids",        icon:"👶", title:"Kids & family"   },
 ];
+
+// ── MVP scope ──────────────────────────────────────────────────────────────
+// Candid's active MVP surface is Savings, Investments, Pensions & Student
+// Loans. Mortgages, Personal Loans and Children remain fully built — onboarding
+// fields, calcMetrics/computeModuleStatuses logic, module deep-dive pages, dev
+// presets — nothing below is deleted. HIDE_MVP_MODULES just makes them read as
+// "not applicable" everywhere `d` is consumed (Dashboard, the AI prompt, the
+// PDF report, Supabase writes, module routing) without mutating or overwriting
+// any data a user already has stored locally from before this narrowing.
+// To re-enable a module: flip this back to false — onboarding fields, dashboard
+// tiles and routing all reappear at once, no other code changes needed.
+export const HIDE_MVP_MODULES = true;
+export const HIDDEN_MVP_MODULE_KEYS = ["mortgage", "personalLoan", "kids"];
+
+export function sanitizeForMvp(d) {
+  if (!HIDE_MVP_MODULES) return d;
+  return { ...d, hasMortgage: "no", ownsOutright: false, hasPersonalLoan: "no", hasKids: "no" };
+}
 
 // ── Cash waterfall optimiser: ISA → Personal Savings Allowance → Premium Bonds ──
 // Single source of truth for "what could this cash + Premium Bonds pot earn if
@@ -3336,6 +3364,11 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           {" · "}
           <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms of Service</a>
         </p>
+        {HIDE_MVP_MODULES && (
+          <p style={{fontSize:"11px",color:MUT,textAlign:"center",marginTop:"14px"}}>
+            Coming soon: Mortgages · Personal loans · Children & family
+          </p>
+        )}
       </ContentWrap>
     </PageWrap>
   );
@@ -5843,7 +5876,13 @@ export default function AppShell() {
   // Replaces the old `screen === "loading"` branch — a transient overlay shown
   // while generateDashboard() awaits Claude, not a real route/history stop.
   const [generating,       setGenerating]       = useState(false);
-  const [d,                setD]                = useState(loadInitialData);
+  // rawD is the true persisted state — never mutated by the MVP hide, so any
+  // mortgage/personal-loan/kids answers a user already saved before the MVP
+  // narrowing stay intact in localStorage. `d` below is the sanitized view
+  // every other consumer in this component reads instead — see
+  // sanitizeForMvp/HIDE_MVP_MODULES.
+  const [rawD,             setRawD]             = useState(loadInitialData);
+  const d = useMemo(() => sanitizeForMvp(rawD), [rawD]);
   const [insights,         setInsights]         = useState(loadSavedInsights);
   const [prevInsights,     setPrevInsights]     = useState(null);
   const [whatChangedOpen,  setWhatChangedOpen]  = useState(false);
@@ -5915,12 +5954,12 @@ export default function AppShell() {
     });
   }
 
-  const set = (k, v) => setD(p => ({...p, [k]:v}));
+  const set = (k, v) => setRawD(p => ({...p, [k]:v}));
 
   useEffect(() => {
-    try { localStorage.setItem('candid_inputs', JSON.stringify(d)); }
+    try { localStorage.setItem('candid_inputs', JSON.stringify(rawD)); }
     catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist inputs to localStorage:", e); }
-  }, [d]);
+  }, [rawD]);
 
   // ── Savings rates — fetched once here (not per-component) since both Dashboard's
   // copy and ModuleDeepDive's Cash tiles need it. null = still loading.
@@ -5948,7 +5987,7 @@ export default function AppShell() {
       fetch("/api/truelayer/session-data")
         .then(res => (res.ok ? res.json() : Promise.reject(new Error(`status ${res.status}`))))
         .then(parsed => {
-          setD(p => ({
+          setRawD(p => ({
             ...p,
             cashSavings: parsed.cashSavings != null ? String(parsed.cashSavings) : p.cashSavings,
             cashTiers: parsed.cashTiers?.length ? parsed.cashTiers : p.cashTiers,
@@ -6361,7 +6400,7 @@ Rules:
     // are untouched there.
     localStorage.removeItem('candid_assessment_started_at');
     localStorage.removeItem('candid_confidence_score');
-    setD(BLANK_DATA);
+    setRawD(BLANK_DATA);
     setInsights(null);
     navigate("/welcome");
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -6419,7 +6458,7 @@ Rules:
   );
 
   if (pathname.startsWith("/module/")) {
-    if (!activeModule || !MODULE_META.some(mm => mm.key === activeModule)) {
+    if (!activeModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(activeModule)) || !MODULE_META.some(mm => mm.key === activeModule)) {
       return <Navigate to="/dashboard" replace />;
     }
     const localStatuses = statuses;

@@ -5,7 +5,7 @@
 // Production). See main.jsx for the gating; see README/DEV_TOOLS notes for how
 // we confirmed this chunk is absent from a real production build.
 import { useState } from "react";
-import { calcMetrics, computeModuleStatuses, MODULE_META } from "./CandidApp.jsx";
+import { calcMetrics, computeModuleStatuses, MODULE_META, sanitizeForMvp } from "./CandidApp.jsx";
 
 const CUSTOM_PRESETS_KEY = "candid_dev_custom_presets";
 
@@ -38,7 +38,7 @@ const BUILT_IN_PRESETS = [
   {
     id: "full",
     name: "Full user",
-    description: "Realistic full financial picture — every module (cash, investments, pension, student loan, mortgage, personal loan, kids) has a live recommendation.",
+    description: "Realistic full financial picture — every active MVP module (cash, investments, pension, student loan) has a live recommendation. Mortgage/personal loan/kids left at defaults — those modules are hidden for MVP, see HIDE_MVP_MODULES in CandidApp.jsx.",
     data: {
       ...baseProfile,
       name: "Alex Full", email: "alex.full@example.com",
@@ -50,10 +50,6 @@ const BUILT_IN_PRESETS = [
       isaThisYearSS: "5000", isaPrevSS: "15000",
       myContribution: "3", employerMatch: "5", potValue: "55000", potValue2: "8000", niYears: "12",
       studentLoan: "plan2", loanBalance: "22000",
-      hasMortgage: "yes", mortgageBalance: "240000", mortgageRate: "5.4", monthlyMortgage: "1350",
-      fixExpiryMonth: "12", fixExpiryYear: "2026", mortgageProvider: "Halifax", propertyEquity: "90000",
-      hasPersonalLoan: "yes", personalLoanBalance: "4000", personalLoanRate: "8", personalLoanMonthly: "200", personalLoanTermRemaining: "24",
-      hasKids: "yes", numKids: "1", kidsAges: "5", hasJISA: "no",
     },
   },
   {
@@ -119,8 +115,12 @@ function persistCustomPresets(list) {
 // logic — only the prose summaries and score are placeholder/derived, clearly
 // labelled as such via isDevPreset/the [DEV] prefix.
 function buildSyntheticInsights(data) {
-  const m = calcMetrics(data, {});
-  const statuses = computeModuleStatuses(data, m, {});
+  // Sanitized the same way AppShell sanitizes real user data, so a preset's
+  // synthetic score/statuses match what the actual app would show for the
+  // same inputs (mortgage/personal loan/kids read as "na" while MVP-hidden).
+  const dMvp = sanitizeForMvp(data);
+  const m = calcMetrics(dMvp, {});
+  const statuses = computeModuleStatuses(dMvp, m, {});
   const modules = {};
   let score = 100;
   MODULE_META.forEach(({ key, title }) => {
