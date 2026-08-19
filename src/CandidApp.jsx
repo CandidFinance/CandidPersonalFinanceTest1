@@ -1372,12 +1372,15 @@ function Checkbox({ checked, onChange, label }) {
   );
 }
 
+// Grid (not flex space-between) so the page label stays centred whether or
+// not `right` is present — with only 2 flex children, space-between shoves
+// a lone `center` all the way to the far edge instead of the middle.
 export function NavBar({ right, center }) {
   return (
-    <div style={{background:G,padding:"18px 32px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-      <span style={{fontFamily:SERIF,color:GOLD,fontSize:"22px",fontWeight:700}}>Candid.</span>
-      {center && <span style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:500}}>{center}</span>}
-      {right}
+    <div style={{background:G,padding:"18px 32px",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px",flexShrink:0}}>
+      <span style={{fontFamily:SERIF,color:GOLD,fontSize:"22px",fontWeight:700,justifySelf:"start"}}>Candid.</span>
+      {center ? <span style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</span> : <span/>}
+      <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>
     </div>
   );
 }
@@ -2882,7 +2885,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
   return (
     <PageWrap>
       <FeedbackButton />
-      <NavBar right={<div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+      <NavBar center="Dashboard" right={<div style={{display:"flex",gap:"8px",alignItems:"center"}}>
         <button onClick={onEditInputs} style={{background:GOLD,border:"none",borderRadius:"8px",padding:"9px 18px",color:G,fontSize:"13px",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:"6px"}}><Pencil size={14}/>Edit inputs</button>
         <GhostBtn onClick={onReset}>Start over</GhostBtn>
       </div>}/>

@@ -138,11 +138,12 @@ function SectionLabel({ children }) {
 function LandingPage({ onStart }) {
   return (
     <div style={{ fontFamily: SANS }}>
+      <NavBar center="Home"/>
 
       {/* ── SECTION 1: HERO ── */}
       <div style={{
         background: G,
-        minHeight: "100vh",
+        minHeight: "calc(100vh - 76px)",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         textAlign: "center", padding: "60px 24px",
@@ -424,52 +425,55 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
     ? new Date(insightsDate).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })
     : null;
   return (
-    <div style={{
-      minHeight:"100vh", background:G,
-      display:"flex", flexDirection:"column",
-      alignItems:"center", justifyContent:"center",
-      padding:"40px 24px", textAlign:"center", fontFamily:SANS,
-    }}>
+    <div style={{ minHeight:"100vh", background:G, display:"flex", flexDirection:"column" }}>
+      <NavBar center="Welcome back"/>
       <div style={{
-        fontFamily:SERIF, fontSize:"clamp(52px,10vw,72px)", fontWeight:700,
-        color:GOLD, lineHeight:1, marginBottom:"12px", letterSpacing:"-1px",
+        flex:1,
+        display:"flex", flexDirection:"column",
+        alignItems:"center", justifyContent:"center",
+        padding:"40px 24px", textAlign:"center", fontFamily:SANS,
       }}>
-        {name || "Welcome"}
-      </div>
-      <div style={{
-        fontSize:"20px", color:"rgba(246,240,230,0.7)",
-        marginBottom:"48px", fontFamily:SERIF, fontStyle:"italic",
-      }}>
-        Welcome back.
-      </div>
-      <div style={{display:"flex", flexDirection:"column", gap:"14px", width:"100%", maxWidth:"320px"}}>
-        <button onClick={onViewReport} style={{
-          background:GOLD, color:G, border:"none",
-          borderRadius:"10px", padding:"18px 32px",
-          fontSize:"17px", fontWeight:700, cursor:"pointer", fontFamily:SANS,
+        <div style={{
+          fontFamily:SERIF, fontSize:"clamp(52px,10vw,72px)", fontWeight:700,
+          color:GOLD, lineHeight:1, marginBottom:"12px", letterSpacing:"-1px",
         }}>
-          My Candid report →
-        </button>
-        {date && (
-          <div style={{fontSize:"11px", color:"rgba(246,240,230,0.35)", marginTop:"-8px"}}>
-            Last generated {date}
-          </div>
-        )}
-        <button onClick={onUpdateInputs} style={{
-          background:"transparent", color:GOLD,
-          border:"1.5px solid rgba(196,150,58,0.4)",
-          borderRadius:"10px", padding:"16px 32px",
-          fontSize:"17px", fontWeight:600, cursor:"pointer", fontFamily:SANS,
+          {name || "Welcome"}
+        </div>
+        <div style={{
+          fontSize:"20px", color:"rgba(246,240,230,0.7)",
+          marginBottom:"48px", fontFamily:SERIF, fontStyle:"italic",
         }}>
-          Something's changed
-        </button>
-        <button onClick={onStartFresh} style={{
-          background:"none", border:"none",
-          color:"rgba(246,240,230,0.3)", fontSize:"13px",
-          cursor:"pointer", marginTop:"8px", fontFamily:SANS,
-        }}>
-          Start fresh
-        </button>
+          Welcome back.
+        </div>
+        <div style={{display:"flex", flexDirection:"column", gap:"14px", width:"100%", maxWidth:"320px"}}>
+          <button onClick={onViewReport} style={{
+            background:GOLD, color:G, border:"none",
+            borderRadius:"10px", padding:"18px 32px",
+            fontSize:"17px", fontWeight:700, cursor:"pointer", fontFamily:SANS,
+          }}>
+            My Candid report →
+          </button>
+          {date && (
+            <div style={{fontSize:"11px", color:"rgba(246,240,230,0.35)", marginTop:"-8px"}}>
+              Last generated {date}
+            </div>
+          )}
+          <button onClick={onUpdateInputs} style={{
+            background:"transparent", color:GOLD,
+            border:"1.5px solid rgba(196,150,58,0.4)",
+            borderRadius:"10px", padding:"16px 32px",
+            fontSize:"17px", fontWeight:600, cursor:"pointer", fontFamily:SANS,
+          }}>
+            Something's changed
+          </button>
+          <button onClick={onStartFresh} style={{
+            background:"none", border:"none",
+            color:"rgba(246,240,230,0.3)", fontSize:"13px",
+            cursor:"pointer", marginTop:"8px", fontFamily:SANS,
+          }}>
+            Start fresh
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -499,7 +503,7 @@ function ConfidenceCheck() {
 
   return (
     <PageWrap>
-      <NavBar right={<button type="button" onClick={() => navigate("/")} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.2)",borderRadius:"6px",padding:"6px 14px",color:"rgba(255,255,255,0.6)",fontSize:"12px",cursor:"pointer"}}>← Back</button>}/>
+      <NavBar center="Before you start" right={<button type="button" onClick={() => navigate("/")} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.2)",borderRadius:"6px",padding:"6px 14px",color:"rgba(255,255,255,0.6)",fontSize:"12px",cursor:"pointer"}}>← Back</button>}/>
       <ContentWrap maxWidth="480px">
         <div style={{textAlign:"center", marginTop:"32px"}}>
           <div style={{fontFamily:SERIF, fontSize:"clamp(22px,4vw,26px)", fontWeight:700, color:G, marginBottom:"12px"}}>
@@ -566,64 +570,70 @@ function FeedbackAdmin() {
 
   if (!rows) {
     return (
-      <div style={{ minHeight: "100vh", background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, padding: "24px" }}>
-        <form onSubmit={handleSubmit} style={{ background: WHITE, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "340px", boxShadow: "0 8px 32px rgba(0,0,0,0.1)" }}>
-          <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, marginBottom: "18px" }}>Feedback admin</div>
-          <input
-            type="password"
-            autoFocus
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Password"
-            style={{ width: "100%", padding: "10px 12px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "14px", fontFamily: SANS, marginBottom: "12px" }}
-          />
-          <button type="submit" disabled={loading || !password} style={{ width: "100%", padding: "11px", background: (loading || !password) ? "rgba(22,47,36,0.25)" : G, border: "none", borderRadius: "8px", color: WHITE, fontSize: "14px", fontWeight: 600, cursor: (loading || !password) ? "not-allowed" : "pointer", fontFamily: SANS }}>
-            {loading ? "Checking…" : "View feedback"}
-          </button>
-          {error && <div style={{ color: "#b3261e", fontSize: "13px", marginTop: "10px" }}>{error}</div>}
-        </form>
+      <div style={{ minHeight: "100vh", background: CREAM, display: "flex", flexDirection: "column" }}>
+        <NavBar center="Feedback admin"/>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, padding: "24px" }}>
+          <form onSubmit={handleSubmit} style={{ background: WHITE, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "340px", boxShadow: "0 8px 32px rgba(0,0,0,0.1)" }}>
+            <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, marginBottom: "18px" }}>Feedback admin</div>
+            <input
+              type="password"
+              autoFocus
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              style={{ width: "100%", padding: "10px 12px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "14px", fontFamily: SANS, marginBottom: "12px" }}
+            />
+            <button type="submit" disabled={loading || !password} style={{ width: "100%", padding: "11px", background: (loading || !password) ? "rgba(22,47,36,0.25)" : G, border: "none", borderRadius: "8px", color: WHITE, fontSize: "14px", fontWeight: 600, cursor: (loading || !password) ? "not-allowed" : "pointer", fontFamily: SANS }}>
+              {loading ? "Checking…" : "View feedback"}
+            </button>
+            {error && <div style={{ color: "#b3261e", fontSize: "13px", marginTop: "10px" }}>{error}</div>}
+          </form>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: CREAM, fontFamily: SANS, padding: "32px 24px" }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        <div style={{ fontFamily: SERIF, fontSize: "22px", fontWeight: 700, color: G, marginBottom: "4px" }}>Feedback ({rows.length})</div>
-        <div style={{ fontSize: "12px", color: MUT, marginBottom: "20px" }}>Most recent first</div>
-        {rows.length === 0 ? (
-          <div style={{ color: MUT, fontSize: "14px" }}>No feedback submitted yet.</div>
-        ) : (
-          <div style={{ overflowX: "auto", background: WHITE, borderRadius: "10px" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={headStyle}>When</th>
-                  <th style={headStyle}>Session</th>
-                  <th style={headStyle}>Confidence</th>
-                  <th style={headStyle}>Q1: Knew something new?</th>
-                  <th style={{ ...headStyle, minWidth: "220px" }}>Q2: Most useful thing</th>
-                  <th style={{ ...headStyle, minWidth: "220px" }}>Q3: Would change anything?</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(r => (
-                  <tr key={r.id}>
-                    <td style={cellStyle}>{new Date(r.created_at).toLocaleString("en-GB")}</td>
-                    <td style={{ ...cellStyle, fontFamily: "monospace", fontSize: "11px", color: MUT }}>{r.session_id || "—"}</td>
-                    <td style={cellStyle}>{r.confidence_score ?? "—"}</td>
-                    <td style={cellStyle}>{r.post_feedback_knew_something || "—"}</td>
-                    <td style={{ ...cellStyle, whiteSpace: "pre-wrap" }}>{r.post_feedback_useful_text || "—"}</td>
-                    <td style={{ ...cellStyle, whiteSpace: "pre-wrap" }}>
-                      {r.post_feedback_would_change || "—"}
-                      {r.post_feedback_change_details ? ` — ${r.post_feedback_change_details}` : ""}
-                    </td>
+    <div style={{ minHeight: "100vh", background: CREAM, display: "flex", flexDirection: "column" }}>
+      <NavBar center="Feedback admin"/>
+      <div style={{ fontFamily: SANS, padding: "32px 24px" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <div style={{ fontFamily: SERIF, fontSize: "22px", fontWeight: 700, color: G, marginBottom: "4px" }}>Feedback ({rows.length})</div>
+          <div style={{ fontSize: "12px", color: MUT, marginBottom: "20px" }}>Most recent first</div>
+          {rows.length === 0 ? (
+            <div style={{ color: MUT, fontSize: "14px" }}>No feedback submitted yet.</div>
+          ) : (
+            <div style={{ overflowX: "auto", background: WHITE, borderRadius: "10px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={headStyle}>When</th>
+                    <th style={headStyle}>Session</th>
+                    <th style={headStyle}>Confidence</th>
+                    <th style={headStyle}>Q1: Knew something new?</th>
+                    <th style={{ ...headStyle, minWidth: "220px" }}>Q2: Most useful thing</th>
+                    <th style={{ ...headStyle, minWidth: "220px" }}>Q3: Would change anything?</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {rows.map(r => (
+                    <tr key={r.id}>
+                      <td style={cellStyle}>{new Date(r.created_at).toLocaleString("en-GB")}</td>
+                      <td style={{ ...cellStyle, fontFamily: "monospace", fontSize: "11px", color: MUT }}>{r.session_id || "—"}</td>
+                      <td style={cellStyle}>{r.confidence_score ?? "—"}</td>
+                      <td style={cellStyle}>{r.post_feedback_knew_something || "—"}</td>
+                      <td style={{ ...cellStyle, whiteSpace: "pre-wrap" }}>{r.post_feedback_useful_text || "—"}</td>
+                      <td style={{ ...cellStyle, whiteSpace: "pre-wrap" }}>
+                        {r.post_feedback_would_change || "—"}
+                        {r.post_feedback_change_details ? ` — ${r.post_feedback_change_details}` : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
