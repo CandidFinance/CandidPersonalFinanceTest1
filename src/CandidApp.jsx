@@ -1651,7 +1651,10 @@ function OnboardingStep({ stepId, d, set }) {
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px",textAlign:"center"}}>What do you want Candid to look at?</h2>
       <p style={{fontSize:"13px",color:MUT,marginBottom:"28px",lineHeight:1.5,textAlign:"center"}}>Pick at least one — we'll only ask what's needed for these. You can always add more later from your dashboard.</p>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"12px"}}>
+      {/* Fixed 2-column grid — 4 tiles specifically, so a proper 2x2 that fills the
+          available width rather than auto-fill's 3-then-1 orphan row at this
+          container's max width. */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"12px"}}>
         {MODULE_SELECT_TILES.map(({ key, emoji, label }) => {
           const selected = (d.selectedModules || []).includes(key);
           return (
