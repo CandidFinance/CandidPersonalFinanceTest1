@@ -15,3 +15,5 @@ node_modules/
 
 # Local PDF-generation test output
 verify-report*.pdf
+.vercel
+.env*

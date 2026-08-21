@@ -6152,6 +6152,17 @@ export default function AppShell() {
     }
   }, []);
 
+  // ── Return from TrueLayer hosted payment page — runs once on mount ───────────
+  // There's no data to merge here (the payment's own state lives with TrueLayer,
+  // not in a cookie like the bank-connect flow) — this just confirms the return
+  // landed and cleans the query string, matching the pattern above.
+  useEffect(() => {
+    const paymentStatus = new URLSearchParams(window.location.search).get("truelayer_payment");
+    if (!paymentStatus) return;
+    window.history.replaceState({}, "", window.location.pathname);
+    posthog.capture("truelayer_payment_returned", { status: paymentStatus });
+  }, []);
+
   // Resolved once here from the already-fetched savings_rates and threaded into both
   // functions as plain numbers — calcMetrics/computeModuleStatuses stay synchronous.
   // rate_aer comes back from PostgREST as a string (numeric columns are stringified

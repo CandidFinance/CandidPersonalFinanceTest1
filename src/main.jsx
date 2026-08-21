@@ -733,11 +733,16 @@ function Home() {
   const navigate = useNavigate();
 
   // A TrueLayer bank-connect redirect always lands here with ?truelayer=... (the
-  // API callback redirects to the site root, not into the app). Forward straight
-  // into the assessment's Cash & savings step (route 5) with the query string
-  // intact, so CandidApp's own mount effect — unchanged — can still read and
-  // process it there instead of it being stranded on a route that never mounts it.
-  const trueLayerParam = new URLSearchParams(window.location.search).get('truelayer');
+  // API callback redirects to the site root, not into the app), and a TrueLayer
+  // payment-staging redirect lands here with ?truelayer_payment=... (TrueLayer's
+  // hosted payment page redirects straight to return_uri, no server hop). Both
+  // forward into the assessment's Cash & savings step (route 5) with the query
+  // string intact, so CandidApp's own mount effects can read and process them
+  // there instead of being stranded on a route that never mounts them.
+  const search = new URLSearchParams(window.location.search);
+  const trueLayerParam = search.get('truelayer');
+  const trueLayerPaymentParam = search.get('truelayer_payment');
+  const isTrueLayerBounce = trueLayerParam || trueLayerPaymentParam;
 
   const [view, setView] = useState(() => {
     try {
@@ -753,7 +758,7 @@ function Home() {
   // on the report row this browser generated last, via the same row id
   // CandidApp mirrors to localStorage alongside candid_insights.
   useEffect(() => {
-    if (trueLayerParam || view !== "welcome_back") return;
+    if (isTrueLayerBounce || view !== "welcome_back") return;
     posthog.capture("user_returned");
     try {
       const rowId = localStorage.getItem('candid_report_row_id');
@@ -771,7 +776,7 @@ function Home() {
   // Fires once per mount, only for a genuine fresh landing (not welcome-back,
   // not a TrueLayer bounce-through).
   useEffect(() => {
-    if (trueLayerParam || view !== "landing") return;
+    if (isTrueLayerBounce || view !== "landing") return;
     posthog.capture("landing_page_viewed");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-once
   }, []);
@@ -787,7 +792,7 @@ function Home() {
     window.scrollTo({ top: 0, behavior: "instant" })
   }
 
-  if (trueLayerParam) {
+  if (isTrueLayerBounce) {
     return <Navigate to={`/assessment/5${window.location.search}`} replace />;
   }
 
