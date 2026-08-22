@@ -1152,9 +1152,14 @@ function getModuleProducts(key, d, m, savingsRates) {
         let clearYr = null;
         let writeOffBal = 0;
         for (let yr = 1; yr <= writeOffYr; yr++) {
-          bal = bal * (1 + slInterestRate) - annualRep;
-          if (bal <= 0 && !clearYr) { clearYr = yr; totalPaid += annualRep * yr; break; }
-          if (yr === writeOffYr) { writeOffBal = Math.max(0, bal); totalPaid += annualRep * writeOffYr; }
+          bal = bal * (1 + slInterestRate);
+          // Cap the final year's repayment at what's actually left to clear — see
+          // note in calcStudentLoanScenario for why this matters.
+          const payment = Math.min(annualRep, bal);
+          bal -= payment;
+          totalPaid += payment;
+          if (bal <= 0 && !clearYr) { clearYr = yr; break; }
+          if (yr === writeOffYr) { writeOffBal = Math.max(0, bal); }
         }
         const newInterestYr1 = Math.round(Math.max(0, m.loanBal - extraOneOff) * slInterestRate);
         const newNetChange = newInterestYr1 - annualRep;
@@ -2391,14 +2396,20 @@ export function calcStudentLoanScenario(d, m) {
   const inflectionSalary = Math.round(threshold + (m.loanBal * slInterestRate) / 0.09);
   const salaryGapToInflection = Math.max(0, inflectionSalary - m.salary);
 
-  let projBal = m.loanBal, writeOffBal = 0, clearYr = null;
+  let projBal = m.loanBal, writeOffBal = 0, clearYr = null, totalRepaidProjected = 0;
   for (let yr = 1; yr <= writeOffYr; yr++) {
-    projBal = projBal * (1 + slInterestRate) - annualRep;
+    projBal = projBal * (1 + slInterestRate);
+    // Cap the final year's repayment at what's actually left to clear — otherwise
+    // a loan that pays off partway through its final year books a full year's
+    // repayment against a balance that no longer exists, overstating total repaid.
+    const payment = Math.min(annualRep, projBal);
+    projBal -= payment;
+    totalRepaidProjected += payment;
     if (projBal <= 0 && !clearYr) { clearYr = yr; break; }
     if (yr === writeOffYr) writeOffBal = Math.max(0, projBal);
   }
   const willClear = clearYr !== null;
-  const totalRepaidProjected = clearYr ? Math.round(annualRep * clearYr) : Math.round(annualRep * writeOffYr);
+  totalRepaidProjected = Math.round(totalRepaidProjected);
 
   const cashRate = +d.savingsRate || 4.2;
   const effectiveBenefit = Math.round((slInterestRate*100 - cashRate) * 10) / 10; // % — overpaying vs holding cash
