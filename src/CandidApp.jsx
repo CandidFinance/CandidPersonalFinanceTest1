@@ -1380,10 +1380,15 @@ function Checkbox({ checked, onChange, label }) {
 // Grid (not flex space-between) so the page label stays centred whether or
 // not `right` is present — with only 2 flex children, space-between shoves
 // a lone `center` all the way to the far edge instead of the middle.
-export function NavBar({ right, center }) {
+export function NavBar({ right, center, onLogoClick }) {
+  const wordmarkStyle = {fontFamily:SERIF,color:GOLD,fontSize:"22px",fontWeight:700,justifySelf:"start"};
   return (
     <div style={{background:G,padding:"18px 32px",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px",flexShrink:0}}>
-      <span style={{fontFamily:SERIF,color:GOLD,fontSize:"22px",fontWeight:700,justifySelf:"start"}}>Candid.</span>
+      {onLogoClick ? (
+        <button type="button" onClick={onLogoClick} aria-label="Back to Dashboard" style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
+      ) : (
+        <span style={wordmarkStyle}>Candid.</span>
+      )}
       {center ? <span style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</span> : <span/>}
       <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>
     </div>
@@ -1523,6 +1528,7 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
   return (
     <PageWrap>
       <NavBar center={`Step ${step+1} of ${steps.length} — ${steps[step].label}`}
+        onLogoClick={insights ? onBackToDashboard : undefined}
         right={insights ? <GhostBtn onClick={onBackToDashboard}>← Back to report</GhostBtn> : null}/>
       <StepProgress step={step} steps={steps} onStepClick={onStepClick} isEditMode={!!insights}/>
       <ContentWrap>
@@ -2993,8 +2999,10 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
         </h1>
 
         {/* Score card — mobile stacks title → ring → (collapsible) body text →
-            update-inputs, all centered except the body text itself; desktop keeps
-            the original ring-left / text-right row layout unchanged. */}
+            update-inputs, all centered except the body text itself; desktop is
+            ring-left / text-right, with the update-inputs button sitting under
+            the body text in that same right-hand column rather than a separate
+            third column. */}
         <div className="fu" style={{background:G,borderRadius:"16px",padding:"20px 28px",display:"flex",flexDirection:isMobile?"column":"row",alignItems:isMobile?"center":"center",gap:"24px",marginBottom:"20px",flexWrap:"wrap"}}>
           {isMobile ? (
             <div style={{width:"100%",textAlign:"center"}}>
@@ -3018,8 +3026,7 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
                   {scoreTextExpanded ? "Show less ↑" : "Show more ↓"}
                 </button>
               </div>
-              <div style={{textAlign:"center",marginTop:"18px",paddingTop:"16px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>
-                <p style={{fontSize:"12px",color:"rgba(255,255,255,0.5)",lineHeight:1.5,marginBottom:"8px"}}>Changed your circumstances? Update your inputs for a fresh score.</p>
+              <div style={{textAlign:"center",marginTop:"18px"}}>
                 <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
               </div>
             </div>
@@ -3029,15 +3036,12 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
               <div style={{flex:1,minWidth:"200px"}}>
                 <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"6px"}}>Your Candid Score</div>
                 <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"8px"}}>{insights.headline}</h2>
-                <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:insights.isFallback?"10px":0}}>{insights.narrative}</p>
+                <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:insights.isFallback?"10px":"14px"}}>{insights.narrative}</p>
                 {insights.isFallback && (
-                  <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:0}}>
+                  <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:"0 0 14px"}}>
                     We couldn't generate your personalised analysis just now, so you're seeing a general summary — try regenerating shortly.
                   </p>
                 )}
-              </div>
-              <div style={{flexShrink:0,textAlign:"right",maxWidth:"210px"}}>
-                <p style={{fontSize:"12px",color:"rgba(255,255,255,0.5)",lineHeight:1.5,marginBottom:"8px"}}>Changed your circumstances? Update your inputs for a fresh score.</p>
                 <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
               </div>
             </>
@@ -4029,6 +4033,15 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   const [bonusInput,setBonusInput]= useState(+d.bonusAmount||"");
   const [sacrificePct, setSacrificePct] = useState(100);
   const [extraPct, setExtraPct] = useState(1); // pension "what if you contributed more" stepper
+  // Annual Allowance carry-forward calculator — the 3 prior tax years, most
+  // recent first. Defaults assume an existing pension holder had a scheme
+  // running (the common case); years default to £0 contributed, i.e. the
+  // full £60,000 unused, until the user tells us otherwise.
+  const [cfYears, setCfYears] = useState([
+    { label:"2025/26", hadScheme:true, contribution:"" },
+    { label:"2024/25", hadScheme:true, contribution:"" },
+    { label:"2023/24", hadScheme:true, contribution:"" },
+  ]);
   const [showCoins, setShowCoins] = useState(false);
   const [animating, setAnimating] = useState(false);
   // Tile pagination (currently only Cash & savings has enough rows for this to matter —
@@ -4205,7 +4218,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   return (
     <PageWrap>
       <FeedbackButton />
-      <NavBar center={meta?.title} right={<GhostBtn onClick={goBack}>← Back</GhostBtn>}/>
+      <NavBar center={meta?.title} onLogoClick={goToDashboard} right={<GhostBtn onClick={goBack}>← Back</GhostBtn>}/>
       <ContentWrap maxWidth="680px">
 
         {/* Header */}
@@ -4482,6 +4495,41 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           // contradiction of the very message announcing the reduction.
           const approxAA = inAATaper ? Math.max(10000, Math.floor((60000 - Math.max(0, adjustedIncome - AA_ADJUSTED_INCOME_LIMIT) / 2) / 1000) * 1000) : 60000;
 
+          // ── Annual Allowance carry-forward (high earners / income spikes) ────
+          // A member of a UK-registered pension scheme in a given tax year can
+          // carry forward that year's unused Annual Allowance (a flat £60,000
+          // for 2023/24 onwards — the rate hasn't changed since the current
+          // regime started, so no per-year lookup is needed) for up to 3 years,
+          // stacked on top of the current year's (possibly tapered, see
+          // approxAA above) allowance. A year with no scheme in place has
+          // nothing to carry forward, even if nothing would have been
+          // contributed anyway. Shown for anyone whose current-year earnings
+          // put a large one-off contribution within reach — not gated on
+          // inAATaper, since carry forward is just as relevant to someone with
+          // a big bonus or business sale who never crosses the taper at all.
+          const CF_STANDARD_AA = 60000;
+          const cfBreakdown = cfYears.map(y => {
+            const contributed = y.hadScheme ? Math.max(0, +y.contribution || 0) : 0;
+            const unused = y.hadScheme ? Math.max(0, CF_STANDARD_AA - contributed) : 0;
+            return { ...y, contributed, unused };
+          });
+          const cfTotalUnused = cfBreakdown.reduce((s,y) => s + y.unused, 0);
+          // "Relevant UK earnings" for the 100%-of-earnings cap is broadly
+          // employment/self-employment income — approximated here as salary +
+          // bonus, excluding dividends and other unearned income.
+          const cfRelevantEarnings = Math.round(salary + (+d.bonusAmount||0));
+          const cfTheoreticalMax = approxAA + cfTotalUnused;
+          const cfMaxContributable = Math.max(0, Math.min(cfTheoreticalMax, cfRelevantEarnings));
+          const cfEarningsCapped = cfTheoreticalMax > cfRelevantEarnings;
+          const showCarryForward = d.hasPension === "yes" && cfRelevantEarnings >= 100000;
+          // How far threshold income would need to fall to escape the taper
+          // entirely by sacrifice alone — used to decide whether VCT/EIS is
+          // worth surfacing as a realistic alternative rather than a sacrifice
+          // most people could just make.
+          const thresholdIncomeSacrificeToEscape = inAATaper ? Math.max(0, thresholdIncome - AA_THRESHOLD_INCOME_LIMIT) : 0;
+          const showVctEis = inAATaper && (approxAA <= 20000 || thresholdIncomeSacrificeToEscape > salary * 0.3);
+          const win4Num = showCarryForward ? ++winCounter : null;
+
           return (
             <>
               {(definitiveCols.length > 0 || bonusPotential > 0) && (
@@ -4639,13 +4687,79 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     Once your adjusted income — broadly, your total income plus all pension contributions, yours and your employer's — passes £260,000, the amount you and your employer can pay into your pension each year before a tax charge applies starts shrinking: £1 less for every £2 above that threshold, down to a minimum of £10,000. Based on your stated income and contribution rate, this looks like it may apply to you.
                   </p>
                   <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
-                    Unused allowance from the previous 3 tax years (carry-forward) can increase what you can actually contribute without a charge — but working that out precisely needs your contribution and allowance-usage history from those years, which we don't have. Check your pension provider's annual allowance statements, your HMRC personal tax account, or a financial adviser for an exact figure, especially before making a large contribution.
+                    {showCarryForward
+                      ? `Unused allowance from the previous 3 tax years (carry-forward) can increase what you can actually contribute without a charge — use the carry-forward calculator below to work out roughly how much. This still needs confirming against your pension provider's annual allowance statements or your HMRC personal tax account before you rely on it.`
+                      : `Unused allowance from the previous 3 tax years (carry-forward) can increase what you can actually contribute without a charge — but working that out precisely needs your contribution and allowance-usage history from those years, which we don't have. Check your pension provider's annual allowance statements, your HMRC personal tax account, or a financial adviser for an exact figure, especially before making a large contribution.`}
                   </p>
                   <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,margin:0,paddingTop:"8px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
                     Estimated from your stated salary, bonus, other income, and contribution rates — not a substitute for a precise calculation, and it doesn't account for any income we haven't asked about.
                   </p>
                 </div>
               )}
+
+              {showCarryForward && (() => {
+                const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, fontFamily:SERIF };
+                const totalRowStyle = { ...rowStyle, paddingTop:"7px", borderTop:"1px dashed rgba(22,47,36,0.18)", fontWeight:700 };
+                return (
+                  <ExpandableInvestmentItem
+                    number={win4Num}
+                    title="Carry forward unused allowance"
+                    headline={cfTotalUnused > 0
+                      ? `Up to ${fmt(cfMaxContributable)} could go into your pension this tax year using carry forward`
+                      : `Fill in your last 3 tax years below to see how much you could inject in one go`}
+                    tag={{ label:"Today", color:GOLD }}
+                  >
+                    <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
+                      If you've had a pension scheme open in earlier tax years but didn't use the full £60,000 allowance, you can carry the unused part forward for up to 3 years — on top of this year's allowance. This is the standard route for sheltering a large bonus, a business sale, or any other one-off windfall from tax. You still can't contribute more than 100% of this year's earnings ({fmt(cfRelevantEarnings)}), and you must have been a member of a UK-registered scheme in a year to carry forward its allowance — even if you contributed nothing that year.
+                    </p>
+                    {cfBreakdown.map((y, i) => (
+                      <div key={y.label} style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px",marginBottom:"8px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+                          <div style={{fontSize:"12px",fontWeight:700,color:G}}>{y.label}</div>
+                          <Toggle value={y.hadScheme ? "yes" : "no"} onChange={v => setCfYears(prev => prev.map((yy,idx) => idx===i ? {...yy, hadScheme: v==="yes"} : yy))} options={[
+                            {value:"yes",label:"Had a scheme"},
+                            {value:"no",label:"No scheme"},
+                          ]}/>
+                        </div>
+                        {y.hadScheme && (
+                          <div style={{marginTop:"8px",display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+                            <label style={{fontSize:"12px",color:MUT,flexShrink:0}}>Contributed that year (£)</label>
+                            <input type="number" style={{...INP,maxWidth:"140px",padding:"6px 10px",fontSize:"13px"}}
+                              value={y.contribution} onChange={e => { const v = e.target.value; setCfYears(prev => prev.map((yy,idx) => idx===i ? {...yy, contribution: v} : yy)); }} placeholder="0"/>
+                            <span style={{fontSize:"12px",color:"#2d6b4a",fontWeight:600}}>{fmt(y.unused)} unused</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"12px 14px",marginTop:"4px",marginBottom:"12px"}}>
+                      <div style={rowStyle}><span>This year's allowance{inAATaper ? " (tapered)" : ""}</span><span>{fmt(approxAA)}</span></div>
+                      <div style={rowStyle}><span>+ Unused from last 3 years</span><span>{fmt(cfTotalUnused)}</span></div>
+                      <div style={totalRowStyle}><span>Theoretical maximum</span><span>{fmt(cfTheoreticalMax)}</span></div>
+                      {cfEarningsCapped && (
+                        <div style={{...rowStyle,color:"#c0392b",marginTop:"4px"}}>
+                          <span>Capped at 100% of earnings ({fmt(cfRelevantEarnings)})</span>
+                          <span style={{fontWeight:700}}>{fmt(cfMaxContributable)}</span>
+                        </div>
+                      )}
+                    </div>
+                    {showVctEis && (
+                      <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px 16px",marginBottom:"4px"}}>
+                        <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>If pension contributions alone can't fix this</div>
+                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 12px"}}>
+                          Even with carry forward, bringing your Threshold Income below £200,000 by pension contributions alone may not be realistic at your income. Venture Capital Trusts (VCTs) and the Enterprise Investment Scheme (EIS) are the usual alternative — both give 30% upfront income tax relief on top of (not instead of) your pension, though with far more investment risk and illiquidity than a pension.
+                        </p>
+                        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px"}}>
+                          <ProductCard p={{ name:"Venture Capital Trust (VCT)", type:"30% income tax relief", rate:"Up to £200,000/yr", badge:"5-yr minimum hold", feature:"30% relief on new share issues up to £200,000 per tax year, tax-free dividends, and no CGT on disposal — but relief is clawed back if sold within 5 years, and the underlying companies are high-risk.", cta:"Learn more", highlight:false, appIcon:TrendingUp }} onInternalLink={onOpenModule}/>
+                          <ProductCard p={{ name:"Enterprise Investment Scheme (EIS)", type:"30% income tax relief", rate:"Up to £1,000,000/yr", badge:"3-yr minimum hold", feature:"30% relief up to £1,000,000/yr (£2,000,000 if the excess is in knowledge-intensive companies), plus CGT deferral and Business Relief from inheritance tax after 2 years — high-risk, illiquid, and relief is clawed back if sold within 3 years.", cta:"Learn more", highlight:false, appIcon:Rocket }} onInternalLink={onOpenModule}/>
+                        </div>
+                        <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,margin:"12px 0 0",paddingTop:"10px",borderTop:"1px solid rgba(196,150,58,0.25)"}}>
+                          VCTs and EIS are high-risk investments in small, often unlisted companies — capital is at risk and can fall to zero. This is guidance only; speak to an FCA-regulated adviser before investing, particularly at these amounts.
+                        </p>
+                      </div>
+                    )}
+                  </ExpandableInvestmentItem>
+                );
+              })()}
 
               {hasStatedBonus ? (
                 <div id="bonus-sacrifice-panel">
