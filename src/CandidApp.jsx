@@ -4344,7 +4344,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           let winCounter = 0;
           const win1Num = showMatchWin ? ++winCounter : null;
           const win2Num = showSacrificeCalc ? ++winCounter : null;
-          const win3Num = hasStatedBonus ? ++winCounter : null;
+          // win3Num/win4Num (carry forward, then bonus sacrifice) are assigned
+          // further down, once showCarryForward is known — numbered in the same
+          // order they're rendered in, not the order their booleans are computed.
 
           // ── Opportunity strip — definitive £/yr total (missed match/tax relief
           // foregone + Personal Allowance taper recovery) as the headline, with
@@ -4528,7 +4530,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           // most people could just make.
           const thresholdIncomeSacrificeToEscape = inAATaper ? Math.max(0, thresholdIncome - AA_THRESHOLD_INCOME_LIMIT) : 0;
           const showVctEis = inAATaper && (approxAA <= 20000 || thresholdIncomeSacrificeToEscape > salary * 0.3);
-          const win4Num = showCarryForward ? ++winCounter : null;
+          const win3Num = showCarryForward ? ++winCounter : null;
+          const win4Num = hasStatedBonus ? ++winCounter : null;
 
           return (
             <>
@@ -4702,7 +4705,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 const totalRowStyle = { ...rowStyle, paddingTop:"7px", borderTop:"1px dashed rgba(22,47,36,0.18)", fontWeight:700 };
                 return (
                   <ExpandableInvestmentItem
-                    number={win4Num}
+                    number={win3Num}
                     title="Carry forward unused allowance"
                     headline={cfTotalUnused > 0
                       ? `Up to ${fmt(cfMaxContributable)} could go into your pension this tax year using carry forward`
@@ -4764,7 +4767,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               {hasStatedBonus ? (
                 <div id="bonus-sacrifice-panel">
                   <ExpandableInvestmentItem
-                    number={win3Num}
+                    number={win4Num}
                     title="Model bonus sacrifice"
                     headline={`Sacrificing your ${fmt(statedBonus)} bonus could save up to ${fmt(Math.round(statedBonus*m.tr))} in tax`}
                     tag={{ label:"Today", color:GOLD }}
