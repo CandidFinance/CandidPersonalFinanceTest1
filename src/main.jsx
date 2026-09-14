@@ -863,6 +863,9 @@ function AppRoutes() {
         <Route element={<CandidAppLayout key={devReloadKey} />}>
           <Route path="/assessment/:step" />
           <Route path="/dashboard" />
+          <Route path="/modules" />
+          <Route path="/forecast" />
+          <Route path="/chat" />
           <Route path="/module/:moduleKey" />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

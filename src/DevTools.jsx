@@ -247,7 +247,7 @@ export default function DevToolsPanel({ onPresetLoaded }) {
         width: "100%", padding: "8px", background: GOLD, color: G, border: "none",
         borderRadius: "6px", fontWeight: 700, fontSize: "12px", cursor: "pointer", marginBottom: "8px",
       }}>
-        Load → Dashboard
+        Load → Home
       </button>
 
       {isCustomSelected && (

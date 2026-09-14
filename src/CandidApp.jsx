@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
-import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home } from "lucide-react";
+import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart } from "lucide-react";
 
 // ── Supabase client — module level, no package needed ─────────────────────────
 const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
@@ -1389,7 +1389,7 @@ export function NavBar({ right, center, onLogoClick }) {
       ) : (
         <span style={wordmarkStyle}>Candid.</span>
       )}
-      {center ? <span style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</span> : <span/>}
+      {center ? <div style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
       <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>
     </div>
   );
@@ -1492,6 +1492,86 @@ export function ContentWrap({ children, maxWidth="580px" }) {
     <div style={{maxWidth,margin:"0 auto",padding:"44px 24px 80px",width:"100%"}}>
       {children}
     </div>
+  );
+}
+
+// ── Report navigation — Home / Modules / Forecast / Chat ───────────────────────
+// Single source of truth for the 4 top-level report destinations, shared by both
+// the mobile bottom tab bar and the desktop header nav so there's one nav-item
+// list, not two independently maintained ones. Breakpoint matches the isMobile
+// convention already used throughout this file (useWindowWidth() < 768).
+const NAV_ITEMS = [
+  { key:"home",     label:"Home",     path:"/dashboard", icon:Home },
+  { key:"modules",  label:"Modules",  path:"/modules",   icon:LayoutGrid },
+  { key:"forecast", label:"Forecast", path:"/forecast",  icon:LineChart },
+  { key:"chat",     label:"Chat",     path:"/chat",      icon:MessageCircle },
+];
+
+// Bottom tab bar — mobile only. Fixed position; screens using it rely on
+// ContentWrap's existing 80px bottom padding to clear it.
+function BottomTabBar({ active }) {
+  const navigate = useNavigate();
+  return createPortal(
+    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:G,borderTop:"1px solid rgba(255,255,255,0.12)",display:"flex",zIndex:4000,paddingBottom:"env(safe-area-inset-bottom)"}}>
+      {NAV_ITEMS.map(item => {
+        const isActive = item.key === active;
+        return (
+          <button key={item.key} type="button" onClick={() => navigate(item.path)} style={{
+            flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"4px",
+            background:"transparent", border:"none", padding:"10px 4px 8px", cursor:"pointer",
+          }}>
+            <item.icon size={20} color={isActive ? GOLD : "rgba(255,255,255,0.55)"} strokeWidth={isActive ? 2.4 : 2}/>
+            <span style={{fontSize:"10px",fontWeight:isActive?700:500,color:isActive ? GOLD : "rgba(255,255,255,0.55)"}}>{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>,
+    document.body
+  );
+}
+
+// Desktop nav row — rendered inside NavBar's `center` slot in place of a plain
+// page-label string, so the header itself becomes the nav on wide viewports.
+function DesktopNavLinks({ active }) {
+  const navigate = useNavigate();
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:"28px"}}>
+      {NAV_ITEMS.map(item => {
+        const isActive = item.key === active;
+        return (
+          <button key={item.key} type="button" onClick={() => navigate(item.path)} style={{
+            display:"flex", alignItems:"center", gap:"6px", background:"transparent", border:"none",
+            cursor:"pointer", padding:"4px 0", color: isActive ? GOLD : "rgba(255,255,255,0.55)",
+            fontSize:"13px", fontWeight: isActive ? 700 : 500, borderBottom: isActive ? `2px solid ${GOLD}` : "2px solid transparent",
+          }}>
+            <item.icon size={14}/>
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Shared header+nav for all 4 report screens: on mobile, NavBar keeps its plain
+// wordmark + current-page-label form (persistent header per the design language
+// rules) and a fixed BottomTabBar is added below the content; on desktop, NavBar's
+// center slot becomes the nav itself instead of a separate bar. Both pull from the
+// same NAV_ITEMS list, so there's one nav system that responds to viewport, not
+// two unrelated implementations. `right` is Home-only (Edit inputs / Start over) —
+// Modules/Forecast/Chat leave it empty.
+function ReportNav({ active, right }) {
+  const navigate = useNavigate();
+  const isMobile = useWindowWidth() < 768;
+  return (
+    <>
+      <NavBar
+        center={isMobile ? NAV_ITEMS.find(i => i.key === active)?.label : <DesktopNavLinks active={active}/>}
+        onLogoClick={() => navigate("/dashboard")}
+        right={right}
+      />
+      {isMobile && <BottomTabBar active={active}/>}
+    </>
   );
 }
 
@@ -2706,6 +2786,45 @@ export function getModuleSummary(mm, d, m, statuses, insights) {
   return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum };
 }
 
+// Shared £-ranking for the module breakdown — single source of truth for both
+// the Modules screen's full list and Home's "biggest win" teaser, so the two
+// can never drift into separate sort implementations.
+function getModuleBreakdown(d, m, statuses, insights, sortMode = "amount") {
+  const allModules = MODULE_META.map(mm => getModuleSummary(mm, d, m, statuses, insights));
+  const activeModules = allModules.filter(mm => mm.status !== "na");
+
+  // Descending by the clean £/yr `amount` figure (not the sort-priority `impact`,
+  // which carries a +99999 sentinel for an uncontributed pension) by default, or
+  // grouped by category first when sortMode === "category". This ordering is a
+  // mathematical ranking, not an implied recommendation — see the toggle + micro-
+  // copy on the Modules screen, which exists specifically so the default £-gap
+  // order isn't read as a priority call the app is making on the user's behalf.
+  // Modules with nothing actionable (amount === 0) sink to the bottom regardless
+  // of sort mode. Kids & Family is excluded from the ranking and always placed
+  // last — its `amount` is a lump sum by age 18, not a £/yr figure, so it isn't
+  // comparable to the others under either sort mode.
+  const rankedModules = activeModules.filter(mm => mm.key !== "kids");
+  const kidsModule     = activeModules.find(mm => mm.key === "kids") || null;
+  const modulesActionable = rankedModules.filter(mm => mm.amount > 0);
+  // "Category" groups Today-actionable items ahead of Future-opportunity items
+  // (the same Today/Future split already shown via each tile's TagPill), with
+  // largest £ gap as the tie-breaker within each group.
+  const CATEGORY_ORDER = { "Today": 0, "Future opportunity": 1 };
+  const modulesWithRec = sortMode === "category"
+    ? [...modulesActionable].sort((a,b) => {
+        const catDiff = (CATEGORY_ORDER[MODULE_TAG[a.key]?.label] ?? 2) - (CATEGORY_ORDER[MODULE_TAG[b.key]?.label] ?? 2);
+        return catDiff !== 0 ? catDiff : b.amount - a.amount;
+      })
+    : [...modulesActionable].sort((a,b) => b.amount - a.amount);
+  const modulesNoRec   = rankedModules.filter(mm => mm.amount === 0);
+  const moduleList     = [...modulesWithRec, ...modulesNoRec, ...(kidsModule ? [kidsModule] : [])];
+  const needActionCount = modulesWithRec.length + (kidsModule && kidsModule.amount > 0 ? 1 : 0);
+  const onTrackCount    = modulesNoRec.length + (kidsModule && kidsModule.amount === 0 ? 1 : 0);
+  const totalOpp = modulesWithRec.filter(mm => !mm.amountIsLumpSum).reduce((sum, mm) => sum + mm.amount, 0);
+
+  return { moduleList, modulesWithRec, modulesNoRec, kidsModule, needActionCount, onTrackCount, totalOpp };
+}
+
 function FeedbackButton() {
   const [open, setOpen] = useState(false);
   const G2 = "#162f24", GOLD2 = "#c4963a", WHITE2 = "#ffffff", MUT2 = "#6b6b6b";
@@ -2766,16 +2885,12 @@ function FeedbackButton() {
   );
 }
 
-function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModule, onAddModule, completedModules, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, showScorePulse, lastScoreDelta, lastCompletedModule, prevScoreRef, scoreDeltas }) {
+function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, prevScoreRef, scoreDeltas }) {
+  const navigate = useNavigate();
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
   const [scoreTextExpanded, setScoreTextExpanded] = useState(false); // mobile-only collapse for the AI narrative
-  const [forecastHorizon, setForecastHorizon] = useState(5);
-  const [forecastSurplus, setForecastSurplus] = useState(null); // null = use calculated default
-  const [forecastLumpSum, setForecastLumpSum] = useState(null); // null = 0
-  const [forecastTip, setForecastTip] = useState(null); // label of active assumption panel, or null
-  const [breakdownSort, setBreakdownSort] = useState("amount"); // "amount" | "category" — user-controlled order for the Module breakdown list below
   const isMobile = useWindowWidth() < 768;
       if (!insights) return null;
 
@@ -2801,137 +2916,16 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
     { label:"Personal loan", value: d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0, icon:CreditCard },
   ].filter(l => l.value > 0);
 
-  // Build merged module data: local computation provides status/impact, AI provides summary
-  const localStatuses = statuses;
-  const statusOrder = { critical:0, attention:1, ok:2, na:3 };
-
-  const allModules = MODULE_META.map(mm => getModuleSummary(mm, d, m, localStatuses, insights));
-
-  const activeModules = allModules.filter(mm => mm.status !== "na");
-
-  // Module breakdown list — user-controlled order (breakdownSort), defaulting to
-  // descending by the clean £/yr `amount` figure (not the sort-priority `impact`,
-  // which carries a +99999 sentinel for an uncontributed pension). This ordering is
-  // a mathematical ranking, not an implied recommendation — see the toggle + micro-
-  // copy rendered above the list, which exists specifically so the default £-gap
-  // order isn't read as a priority call the app is making on the user's behalf.
-  // Modules with nothing actionable (amount === 0) sink to the bottom regardless of
-  // sort mode. Kids & Family is excluded from the ranking and always placed last —
-  // its `amount` is a lump sum by age 18, not a £/yr figure, so it isn't comparable
-  // to the others under either sort mode.
-  const rankedModules = activeModules.filter(mm => mm.key !== "kids");
-  const kidsModule     = activeModules.find(mm => mm.key === "kids") || null;
-  const modulesActionable = rankedModules.filter(mm => mm.amount > 0);
-  // "Category" groups Today-actionable items ahead of Future-opportunity items
-  // (the same Today/Future split already shown via each tile's TagPill), with
-  // largest £ gap as the tie-breaker within each group.
-  const CATEGORY_ORDER = { "Today": 0, "Future opportunity": 1 };
-  const modulesWithRec = breakdownSort === "category"
-    ? [...modulesActionable].sort((a,b) => {
-        const catDiff = (CATEGORY_ORDER[MODULE_TAG[a.key]?.label] ?? 2) - (CATEGORY_ORDER[MODULE_TAG[b.key]?.label] ?? 2);
-        return catDiff !== 0 ? catDiff : b.amount - a.amount;
-      })
-    : [...modulesActionable].sort((a,b) => b.amount - a.amount);
-  const modulesNoRec   = rankedModules.filter(mm => mm.amount === 0);
-  const moduleList     = [...modulesWithRec, ...modulesNoRec, ...(kidsModule ? [kidsModule] : [])];
-  const needActionCount = modulesWithRec.length + (kidsModule && kidsModule.amount > 0 ? 1 : 0);
-  const onTrackCount    = modulesNoRec.length + (kidsModule && kidsModule.amount === 0 ? 1 : 0);
-
-  const totalOpp = modulesWithRec.filter(mm => !mm.amountIsLumpSum).reduce((sum, mm) => sum + mm.amount, 0);
-
-  // ── Your Forecast — recalculates live as horizon/surplus controls change ────
-  const forecast = calcForecast(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
-  const forecastSeries = calcForecastSeries(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
-  const forecastSlRatePct = Math.round(resolveSlRate(d, m.salary) * 1000) / 10;
-  const FORECAST_ASSUMPTIONS = {
-    "Mortgage overpayment": {
-      lines: [
-        `Interest saved by overpaying at your current mortgage rate.`,
-        `If cleared early, freed-up payments earn ${(CASH_RATE_CENTRAL*100).toFixed(1)}% in savings for the remaining period.`,
-        `Low / High shift the mortgage rate ±0.5%.`,
-      ],
-      rates: {
-        low: `${Math.max(0, (+d.mortgageRate||0) - 0.5).toFixed(1)}%`,
-        central: `${(+d.mortgageRate||0).toFixed(1)}%`,
-        high: `${((+d.mortgageRate||0) + 0.5).toFixed(1)}%`,
-      },
-    },
-    "Student loan overpayment": {
-      lines: [
-        `Cumulative interest saved vs making no extra repayments.`,
-        `Interest rate: ${forecastSlRatePct}% p.a. (${+d.studentLoanRate > 0 ? "your entered rate" : "SLC 2024/25 default"}).`,
-        `Low / High reflect salary growth uncertainty — not a rate variation.`,
-        `Benefit is zero if the loan is written off regardless of overpayment.`,
-      ],
-      rates: {
-        low: `${forecastSlRatePct}%`,
-        central: `${forecastSlRatePct}%`,
-        high: `${forecastSlRatePct}%`,
-      },
-    },
-    "Stocks & Shares ISA": {
-      lines: [
-        `Globally diversified index fund, returns compound monthly.`,
-        `Tax-free inside an ISA.`,
-        `Past performance is not a reliable guide to future returns.`,
-      ],
-      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
-    },
-    "Cash savings": {
-      lines: [
-        `Easy-access savings account or Cash ISA.`,
-        `UK market defaults (Sep 2024). Your entered rate used as central if provided, with a ±1.5% spread.`,
-      ],
-      rates: {
-        low: `${(CASH_RATE_LOW*100).toFixed(1)}% p.a.`,
-        central: `${(CASH_RATE_CENTRAL*100).toFixed(1)}% p.a.`,
-        high: `${(CASH_RATE_HIGH*100).toFixed(1)}% p.a.`,
-      },
-    },
-    "Pension (salary sacrifice)": {
-      lines: [
-        `Surplus paid before tax and NI — HMRC effectively tops it up immediately.`,
-        `Uplift reflects your marginal tax rate plus the employer NI saving passed through.`,
-        `Excludes employer contributions on the extra amount.`,
-      ],
-      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
-    },
-    "Pension (relief at source)": {
-      lines: [
-        `Every £1 you contribute becomes £1.25 in the pension (20% HMRC basic-rate top-up).`,
-        `Higher-rate relief via self-assessment not modelled — conservative estimate.`,
-      ],
-      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
-    },
-  };
-  const forecastChart = (() => {
-    const { years, series } = forecastSeries;
-    const allValues = series.flatMap(s => s.values);
-    const yMax = Math.max(1, ...allValues);
-    const horizonYrs = years[years.length - 1] || 1;
-    const VW = 680, VH = 280, PL = 60, PR = 16, PT = 16, PB = 32;
-    const cW = VW - PL - PR, cH = VH - PT - PB;
-    const sx = yr => PL + (yr / horizonYrs) * cW;
-    const sy = v => PT + cH - (v / yMax) * cH;
-    const paths = series.map(s => {
-      const endIdx = s.termYear != null ? s.termYear : s.values.length - 1;
-      const d = s.values.slice(0, endIdx + 1).map((v, i) => `${i===0?"M":"L"}${sx(years[i]).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
-      const termDot = s.termYear != null ? {
-        x: +sx(s.termYear).toFixed(1),
-        y: +sy(s.values[s.termYear]).toFixed(1),
-        label: s.termLabel,
-      } : null;
-      return { label: s.label, d, termDot };
-    });
-    const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => yMax * f);
-    const xTicks = [...new Set([0, Math.round(horizonYrs*0.25), Math.round(horizonYrs*0.5), Math.round(horizonYrs*0.75), horizonYrs])];
-    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks };
-  })();
+  // Same £-first ranking the Modules screen uses (getModuleBreakdown) — Home only
+  // needs the total and the #1 pick, always in amount order regardless of
+  // whatever sort the Modules screen itself currently has selected.
+  const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, insights, "amount");
+  const topWin = modulesWithRec[0] || null;
 
   return (
     <PageWrap>
       <FeedbackButton />
-      <NavBar center="Dashboard" right={<div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+      <ReportNav active="home" right={<div style={{display:"flex",gap:"8px",alignItems:"center"}}>
         <button onClick={onEditInputs} style={{background:GOLD,border:"none",borderRadius:"8px",padding:"9px 18px",color:G,fontSize:"13px",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:"6px"}}><Pencil size={14}/>Edit inputs</button>
         <GhostBtn onClick={onReset}>Start over</GhostBtn>
       </div>}/>
@@ -3126,11 +3120,183 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           );
         })()}
 
+        {/* Biggest win teaser — top pick from the same £-first ranking the Modules
+            screen uses (getModuleBreakdown), so this can never disagree with what
+            that screen shows in position #1. Taps through to Modules rather than
+            straight into the module itself — this is a teaser, not the detail page. */}
+        {topWin && (
+          <div className="fu1" onClick={() => navigate("/modules")} style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.14)",borderRadius:"14px",padding:"18px 20px",marginBottom:"24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"14px",minWidth:0}}>
+              <div style={{width:"36px",height:"36px",borderRadius:"50%",background:G,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <Trophy size={17} color={GOLD}/>
+              </div>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:"10px",fontWeight:800,color:MUT,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"3px"}}>Your biggest win</div>
+                <div style={{fontSize:"16px",fontWeight:700,color:G,lineHeight:1.3,display:"flex",alignItems:"center",gap:"6px"}}>{topWin.title} {topWin.icon && <topWin.icon size={14}/>}</div>
+                <div style={{fontSize:"14px",color:TEXT,marginTop:"3px"}}>
+                  <span style={{fontWeight:700,color:G}}>{fmt(topWin.amount)}{topWin.amountIsLumpSum ? " by 18" : "/yr"}</span>
+                </div>
+              </div>
+            </div>
+            <span style={{fontSize:"12px",fontWeight:700,color:G,whiteSpace:"nowrap",flexShrink:0}}>See all modules →</span>
+          </div>
+        )}
+
+        {/* Net worth summary — relegated to the bottom of the report */}
+        {(assetItems.length > 0 || liabilityItems.length > 0) && (
+          <div
+            className="fu1"
+            onClick={() => setNetWorthExpanded(v => !v)}
+            style={{
+              background: WHITE,
+              borderRadius: "12px",
+              padding: "14px 18px",
+              border: "1px solid rgba(22,47,36,0.09)",
+              marginBottom: "16px",
+              cursor: "pointer",
+            }}
+          >
+            {/* Collapsed row: title + net worth + assets/liabilities + toggle — all on one line */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",flexWrap:"wrap"}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
+                <span style={{fontFamily:SERIF,fontSize:"14px",color:G,fontWeight:600}}>Net worth</span>
+                <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:netWorthPositive?"#2d6b4a":"#c0392b",lineHeight:1}}>{fmt(Math.abs(m.netWorth))}</span>
+                <span style={{fontSize:"11px",color:MUT}}>{netWorthPositive?"net positive":"net negative"}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
+                <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase"}}>Assets {fmt(m.totalAssets)}</div>
+                <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase"}}>Liabilities {fmt(m.totalLiabilities)}</div>
+                <span style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>{netWorthExpanded?"↑":"↓"}</span>
+              </div>
+            </div>
+
+            {/* Detailed breakdown (toggle) */}
+            {netWorthExpanded && (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div>
+                    {assetItems.map((a, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: a.bold ? "6px 0 5px" : "4px 0",
+                          borderBottom: `1px solid rgba(22,47,36,${a.bold ? 0.1 : 0.05})`,
+                          borderTop: a.bold ? "1px solid rgba(22,47,36,0.08)" : undefined,
+                          marginLeft: a.sub ? "10px" : undefined
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: a.bold ? "13px" : "12.5px",
+                            color: a.bold ? G : MUT,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontWeight: a.bold ? 700 : 400
+                          }}
+                        >
+                          {!a.sub && !a.bold && a.icon && <a.icon size={13}/>}
+                          {a.sub && <span style={{ fontSize: "10px", color: "rgba(22,47,36,0.3)" }}>└</span>}
+                          {a.label}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: a.bold ? "13px" : "12.5px",
+                            fontWeight: a.bold ? 700 : 600,
+                            color: a.bold ? G : TEXT
+                          }}
+                        >
+                          {fmt(a.value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    {liabilityItems.length > 0 ? (
+                      liabilityItems.map((l, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "5px 0",
+                            borderBottom: "1px solid rgba(22,47,36,0.05)"
+                          }}
+                        >
+                          <span style={{ fontSize: "13px", color: MUT, display: "flex", alignItems: "center", gap: "6px" }}>
+                            {l.icon && <l.icon size={13}/>}
+                            {l.label}
+                            {l.excludedFromNetWorth && (
+                              <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.12)",padding:"1.5px 6px",borderRadius:"100px",textTransform:"uppercase",letterSpacing:"0.03em",whiteSpace:"nowrap"}}>Excl. net worth</span>
+                            )}
+                          </span>
+                          <span style={{ fontSize: "13px", fontWeight: 600, color: "#c0392b" }}>
+                            {fmt(l.value)}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: "13px", color: MUT, padding: "5px 0", display: "flex", alignItems: "center", gap: "5px" }}>
+                        No liabilities recorded <PartyPopper size={14}/>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "12px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid rgba(22,47,36,0.08)",
+                    fontSize: "11px",
+                    color: MUT,
+                    lineHeight: 1.5
+                  }}
+                >
+                  Note: Pension pot shown at current value, not projected. Property is excluded — connect your accounts via
+                  Open Banking (coming soon) for a complete picture. Mortgage debt isn't subtracted from the net worth figure
+                  above (your property equity is already net of it) but is still included in total liabilities.
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        <ReferralCTA />
+
+        <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>
+          Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.{" "}
+          <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy Policy</a>
+          {" · "}
+          <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms of Service</a>
+        </p>
+      </ContentWrap>
+    </PageWrap>
+  );
+}
+
+// ── Modules — full £-ranked breakdown, entry point into each module's detail
+// page. Shares its ranking logic with HomeScreen's biggest-win teaser via
+// getModuleBreakdown rather than recomputing it here.
+function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, completedModules }) {
+  const [breakdownSort, setBreakdownSort] = useState("amount"); // "amount" | "category" — user-controlled order for the list below
+  const { moduleList, modulesWithRec, needActionCount, onTrackCount } = getModuleBreakdown(d, m, statuses, insights, breakdownSort);
+
+  return (
+    <PageWrap>
+      <FeedbackButton />
+      <ReportNav active="modules"/>
+      <ContentWrap maxWidth="780px">
         {/* Module breakdown — full-width, stacked, sorted by £ opportunity descending.
             Tile format mirrors the numbered "Win N" cards inside each module: the
             module title leads, the £ figure is a supporting line underneath it. */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
-          <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G}}>Module breakdown</h3>
+          <h1 style={{fontFamily:SERIF,fontSize:"clamp(22px,4vw,28px)",color:G,fontWeight:700,lineHeight:1.2}}>Your modules</h1>
           <span style={{fontSize:"12px",color:MUT}}>{needActionCount} need action · {onTrackCount} on track</span>
         </div>
 
@@ -3239,7 +3405,119 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
           );
         })()}
 
-        {/* Your Forecast */}
+        {HIDE_MVP_MODULES && (
+          <p style={{fontSize:"11px",color:MUT,textAlign:"center",marginTop:"4px"}}>
+            Coming soon: Mortgages · Personal loans · Children & family
+          </p>
+        )}
+      </ContentWrap>
+    </PageWrap>
+  );
+}
+
+// ── Forecast — moved out of the old Dashboard into its own screen; logic is
+// unchanged, just relocated since only this screen uses it now.
+function ForecastScreen({ d, m }) {
+  const isMobile = useWindowWidth() < 768;
+  const [forecastHorizon, setForecastHorizon] = useState(5);
+  const [forecastSurplus, setForecastSurplus] = useState(null); // null = use calculated default
+  const [forecastLumpSum, setForecastLumpSum] = useState(null); // null = 0
+  const [forecastTip, setForecastTip] = useState(null); // label of active assumption panel, or null
+
+  // ── Your Forecast — recalculates live as horizon/surplus controls change ────
+  const forecast = calcForecast(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
+  const forecastSeries = calcForecastSeries(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
+  const forecastSlRatePct = Math.round(resolveSlRate(d, m.salary) * 1000) / 10;
+  const FORECAST_ASSUMPTIONS = {
+    "Mortgage overpayment": {
+      lines: [
+        `Interest saved by overpaying at your current mortgage rate.`,
+        `If cleared early, freed-up payments earn ${(CASH_RATE_CENTRAL*100).toFixed(1)}% in savings for the remaining period.`,
+        `Low / High shift the mortgage rate ±0.5%.`,
+      ],
+      rates: {
+        low: `${Math.max(0, (+d.mortgageRate||0) - 0.5).toFixed(1)}%`,
+        central: `${(+d.mortgageRate||0).toFixed(1)}%`,
+        high: `${((+d.mortgageRate||0) + 0.5).toFixed(1)}%`,
+      },
+    },
+    "Student loan overpayment": {
+      lines: [
+        `Cumulative interest saved vs making no extra repayments.`,
+        `Interest rate: ${forecastSlRatePct}% p.a. (${+d.studentLoanRate > 0 ? "your entered rate" : "SLC 2024/25 default"}).`,
+        `Low / High reflect salary growth uncertainty — not a rate variation.`,
+        `Benefit is zero if the loan is written off regardless of overpayment.`,
+      ],
+      rates: {
+        low: `${forecastSlRatePct}%`,
+        central: `${forecastSlRatePct}%`,
+        high: `${forecastSlRatePct}%`,
+      },
+    },
+    "Stocks & Shares ISA": {
+      lines: [
+        `Globally diversified index fund, returns compound monthly.`,
+        `Tax-free inside an ISA.`,
+        `Past performance is not a reliable guide to future returns.`,
+      ],
+      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
+    },
+    "Cash savings": {
+      lines: [
+        `Easy-access savings account or Cash ISA.`,
+        `UK market defaults (Sep 2024). Your entered rate used as central if provided, with a ±1.5% spread.`,
+      ],
+      rates: {
+        low: `${(CASH_RATE_LOW*100).toFixed(1)}% p.a.`,
+        central: `${(CASH_RATE_CENTRAL*100).toFixed(1)}% p.a.`,
+        high: `${(CASH_RATE_HIGH*100).toFixed(1)}% p.a.`,
+      },
+    },
+    "Pension (salary sacrifice)": {
+      lines: [
+        `Surplus paid before tax and NI — HMRC effectively tops it up immediately.`,
+        `Uplift reflects your marginal tax rate plus the employer NI saving passed through.`,
+        `Excludes employer contributions on the extra amount.`,
+      ],
+      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
+    },
+    "Pension (relief at source)": {
+      lines: [
+        `Every £1 you contribute becomes £1.25 in the pension (20% HMRC basic-rate top-up).`,
+        `Higher-rate relief via self-assessment not modelled — conservative estimate.`,
+      ],
+      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
+    },
+  };
+  const forecastChart = (() => {
+    const { years, series } = forecastSeries;
+    const allValues = series.flatMap(s => s.values);
+    const yMax = Math.max(1, ...allValues);
+    const horizonYrs = years[years.length - 1] || 1;
+    const VW = 680, VH = 280, PL = 60, PR = 16, PT = 16, PB = 32;
+    const cW = VW - PL - PR, cH = VH - PT - PB;
+    const sx = yr => PL + (yr / horizonYrs) * cW;
+    const sy = v => PT + cH - (v / yMax) * cH;
+    const paths = series.map(s => {
+      const endIdx = s.termYear != null ? s.termYear : s.values.length - 1;
+      const d = s.values.slice(0, endIdx + 1).map((v, i) => `${i===0?"M":"L"}${sx(years[i]).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
+      const termDot = s.termYear != null ? {
+        x: +sx(s.termYear).toFixed(1),
+        y: +sy(s.values[s.termYear]).toFixed(1),
+        label: s.termLabel,
+      } : null;
+      return { label: s.label, d, termDot };
+    });
+    const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => yMax * f);
+    const xTicks = [...new Set([0, Math.round(horizonYrs*0.25), Math.round(horizonYrs*0.5), Math.round(horizonYrs*0.75), horizonYrs])];
+    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks };
+  })();
+
+  return (
+    <PageWrap>
+      <FeedbackButton />
+      <ReportNav active="forecast"/>
+      <ContentWrap maxWidth="780px">
         <div className="fu1" style={{background:WHITE,borderRadius:"16px",padding:isMobile?"18px":"24px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"24px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G,marginBottom:"4px"}}>Your Forecast</h3>
           <p style={{fontSize:"13px",color:MUT,marginBottom:"18px"}}>See what your surplus could become under different strategies.</p>
@@ -3375,145 +3653,29 @@ function Dashboard({ insights, d, m, statuses, savingsRates, onReset, onOpenModu
             These are illustrative projections based on assumed rates of return, which are not guaranteed and may vary significantly. This is guidance, not financial advice — the right strategy depends on your full circumstances.
           </p>
         </div>
+      </ContentWrap>
+    </PageWrap>
+  );
+}
 
-        {/* Net worth summary — relegated to the bottom of the dashboard */}
-        {(assetItems.length > 0 || liabilityItems.length > 0) && (
-          <div
-            className="fu1"
-            onClick={() => setNetWorthExpanded(v => !v)}
-            style={{
-              background: WHITE,
-              borderRadius: "12px",
-              padding: "14px 18px",
-              border: "1px solid rgba(22,47,36,0.09)",
-              marginBottom: "16px",
-              cursor: "pointer",
-            }}
-          >
-            {/* Collapsed row: title + net worth + assets/liabilities + toggle — all on one line */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",flexWrap:"wrap"}}>
-              <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
-                <span style={{fontFamily:SERIF,fontSize:"14px",color:G,fontWeight:600}}>Net worth</span>
-                <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:netWorthPositive?"#2d6b4a":"#c0392b",lineHeight:1}}>{fmt(Math.abs(m.netWorth))}</span>
-                <span style={{fontSize:"11px",color:MUT}}>{netWorthPositive?"net positive":"net negative"}</span>
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
-                <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase"}}>Assets {fmt(m.totalAssets)}</div>
-                <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase"}}>Liabilities {fmt(m.totalLiabilities)}</div>
-                <span style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>{netWorthExpanded?"↑":"↓"}</span>
-              </div>
-            </div>
-
-            {/* Detailed breakdown (toggle) */}
-            {netWorthExpanded && (
-              <>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                  <div>
-                    {assetItems.map((a, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: a.bold ? "6px 0 5px" : "4px 0",
-                          borderBottom: `1px solid rgba(22,47,36,${a.bold ? 0.1 : 0.05})`,
-                          borderTop: a.bold ? "1px solid rgba(22,47,36,0.08)" : undefined,
-                          marginLeft: a.sub ? "10px" : undefined
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: a.bold ? "13px" : "12.5px",
-                            color: a.bold ? G : MUT,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            fontWeight: a.bold ? 700 : 400
-                          }}
-                        >
-                          {!a.sub && !a.bold && a.icon && <a.icon size={13}/>}
-                          {a.sub && <span style={{ fontSize: "10px", color: "rgba(22,47,36,0.3)" }}>└</span>}
-                          {a.label}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: a.bold ? "13px" : "12.5px",
-                            fontWeight: a.bold ? 700 : 600,
-                            color: a.bold ? G : TEXT
-                          }}
-                        >
-                          {fmt(a.value)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div>
-                    {liabilityItems.length > 0 ? (
-                      liabilityItems.map((l, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            padding: "5px 0",
-                            borderBottom: "1px solid rgba(22,47,36,0.05)"
-                          }}
-                        >
-                          <span style={{ fontSize: "13px", color: MUT, display: "flex", alignItems: "center", gap: "6px" }}>
-                            {l.icon && <l.icon size={13}/>}
-                            {l.label}
-                            {l.excludedFromNetWorth && (
-                              <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.12)",padding:"1.5px 6px",borderRadius:"100px",textTransform:"uppercase",letterSpacing:"0.03em",whiteSpace:"nowrap"}}>Excl. net worth</span>
-                            )}
-                          </span>
-                          <span style={{ fontSize: "13px", fontWeight: 600, color: "#c0392b" }}>
-                            {fmt(l.value)}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{ fontSize: "13px", color: MUT, padding: "5px 0", display: "flex", alignItems: "center", gap: "5px" }}>
-                        No liabilities recorded <PartyPopper size={14}/>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "12px",
-                    paddingTop: "12px",
-                    borderTop: "1px solid rgba(22,47,36,0.08)",
-                    fontSize: "11px",
-                    color: MUT,
-                    lineHeight: 1.5
-                  }}
-                >
-                  Note: Pension pot shown at current value, not projected. Property is excluded — connect your accounts via
-                  Open Banking (coming soon) for a complete picture. Mortgage debt isn't subtracted from the net worth figure
-                  above (your property equity is already net of it) but is still included in total liabilities.
-                </div>
-              </>
-            )}
+// ── Chat — "Coming soon" placeholder for the upcoming AI-powered chat feature.
+// Reachable via nav like the other 3 report screens; no functional chat yet.
+function ChatScreen() {
+  return (
+    <PageWrap>
+      <FeedbackButton />
+      <ReportNav active="chat"/>
+      <ContentWrap maxWidth="580px">
+        <div style={{textAlign:"center",padding:"60px 20px"}}>
+          <div style={{width:"56px",height:"56px",borderRadius:"50%",background:G,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+            <MessageCircle size={26} color={GOLD}/>
           </div>
-        )}
-
-        <ReferralCTA />
-
-        <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>
-          Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.{" "}
-          <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy Policy</a>
-          {" · "}
-          <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms of Service</a>
-        </p>
-        {HIDE_MVP_MODULES && (
-          <p style={{fontSize:"11px",color:MUT,textAlign:"center",marginTop:"14px"}}>
-            Coming soon: Mortgages · Personal loans · Children & family
+          <h1 style={{fontFamily:SERIF,fontSize:"clamp(22px,4vw,28px)",color:G,fontWeight:700,marginBottom:"8px",lineHeight:1.2}}>Let's talk Candidly</h1>
+          <span style={{display:"inline-block",fontSize:"10px",fontWeight:800,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",background:"rgba(196,150,58,0.12)",padding:"4px 12px",borderRadius:"100px",marginBottom:"18px"}}>Coming soon</span>
+          <p style={{fontSize:"14px",color:MUT,lineHeight:1.7,maxWidth:"420px",margin:"0 auto"}}>
+            We're building an AI-powered chat so you can ask specific questions about your own numbers — pension contributions, ISA allowance, mortgage overpayments and more — and get answers grounded in your Candid report. Check back soon.
           </p>
-        )}
+        </div>
       </ContentWrap>
     </PageWrap>
   );
@@ -6711,10 +6873,12 @@ Rules:
   // Transient overlay while generateDashboard() awaits Claude — not a real route.
   if (generating) return <LoadingScreen name={d.name} msgs={["Analysing your cash position...","Calculating pension tax relief...","Reviewing ISA headroom...","Modelling your student loan...","Building your Candid report..."]}/>;
 
-  // Deep-link guard: /dashboard and /module/:key only render meaningfully once an
-  // assessment has produced a report — bounce home rather than show a broken or
-  // empty page for a stale bookmark, shared link, or a bare reload with no data.
-  if ((pathname === "/dashboard" || pathname.startsWith("/module/")) && !insights) {
+  // Deep-link guard: the 4 report screens and /module/:key only render meaningfully
+  // once an assessment has produced a report — bounce home rather than show a
+  // broken or empty page for a stale bookmark, shared link, or a bare reload with
+  // no data.
+  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat"];
+  if ((REPORT_PATHS.includes(pathname) || pathname.startsWith("/module/")) && !insights) {
     return <Navigate to="/" replace />;
   }
 
@@ -6752,21 +6916,29 @@ Rules:
 
   if (pathname === "/dashboard") return (
     <>
-      <Dashboard insights={insights} d={d} m={m} statuses={statuses} savingsRates={savingsRates} onReset={resetAll} completedModules={completedModules}
+      <HomeScreen insights={insights} d={d} m={m} statuses={statuses} onReset={resetAll}
         onOpenModule={key => openModule(key)}
-        onAddModule={addModule}
         onEditInputs={() => navigate("/assessment/1")}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
-        showScorePulse={showScorePulse} lastScoreDelta={lastScoreDelta} lastCompletedModule={lastCompletedModule}
         prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
       {pdfModalOpen && <PdfReportModal email={d.email} insights={insights} d={d} onDismiss={() => setPdfModalOpen(false)} />}
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} onSubmit={submitFeedback} />}
     </>
   );
 
+  if (pathname === "/modules") return (
+    <ModulesScreen d={d} m={m} statuses={statuses} insights={insights} completedModules={completedModules}
+      onOpenModule={key => openModule(key)}
+      onAddModule={addModule}/>
+  );
+
+  if (pathname === "/forecast") return <ForecastScreen d={d} m={m}/>;
+
+  if (pathname === "/chat") return <ChatScreen/>;
+
   if (pathname.startsWith("/module/")) {
     if (!activeModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(activeModule)) || !MODULE_META.some(mm => mm.key === activeModule)) {
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="/modules" replace />;
     }
     const localStatuses = statuses;
     const statusOrder = { critical:0, attention:1, ok:2, na:3 };
@@ -6802,8 +6974,8 @@ Rules:
       <>
         <ModuleDeepDive moduleKey={activeModule} insights={insights} d={d} m={m} statuses={statuses} savingsRates={savingsRates}
           openSection={activeSection}
-          goBack={() => navigate("/dashboard")}
-          goToDashboard={() => navigate("/dashboard")}
+          goBack={() => navigate("/modules")}
+          goToDashboard={() => navigate("/modules")}
           onComplete={() => markModuleComplete(activeModule)}
           isComplete={completedModules.includes(activeModule)}
           onOpenModule={(key, section) => openModule(key, section)}
