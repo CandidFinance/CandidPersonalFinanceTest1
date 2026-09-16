@@ -279,7 +279,7 @@ function LandingPage({ onStart }) {
             fontSize: "clamp(15px,2vw,18px)", color: MUT,
             lineHeight: 1.75, marginBottom: "52px", maxWidth: "600px", margin: "0 auto 52px",
           }}>
-            Most professionals on £50k–£150k are unknowingly leaving significant money behind every year — through pension underoptimisation, yield gaps, tax inefficiencies, and missed allowances. Candid finds exactly what it's costing you and tells you what to do about it.
+            Most professionals on £50k–£150k leave real money behind every year — pension gaps, yield gaps, tax inefficiencies, missed allowances. Candid finds exactly what it's costing you, and what to do about it.
           </p>
 
           {/* Stat chips */}

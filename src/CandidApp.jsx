@@ -2052,7 +2052,7 @@ function OnboardingStep({ stepId, d, set }) {
               }} placeholder="65"/>
               <Warn msg={+d.retirementAge > 0 && +d.retirementAge < 55 ? "Pension access age is currently 57 from 2028 — double-check" : null}/>
             </Field>
-            <Field label={<>NI years completed <InfoTooltip text="Your National Insurance record determines your State Pension. You need 35 qualifying years for the full new State Pension (currently £221.20/week). Fewer qualifying years = a proportionally smaller State Pension. Check your record for free at gov.uk/check-state-pension — you can also fill gaps by paying voluntary contributions."/></>} hint="Check via HMRC / Personal Tax Account">
+            <Field label={<>NI years completed <InfoTooltip text="You need 35 NI qualifying years for the full State Pension (£221.20/week). Fewer years = a smaller pension. Check yours free at gov.uk/check-state-pension — gaps can be filled with voluntary contributions."/></>} hint="Check via HMRC / Personal Tax Account">
               <input style={INP} type="number" value={d.niYears||""} onChange={e => {
                 const v = Math.min(35, Math.max(0, +e.target.value || 0));
                 set("niYears", e.target.value === "" ? "" : String(v));
@@ -2981,7 +2981,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
               <Calendar size={20} color={GOLD}/>
               <div>
                 <div style={{fontSize:"12px",fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"2px"}}>Tax year ends in {days} day{days!==1?"s":""}</div>
-                <p style={{fontSize:"13px",color:G,margin:0}}>ISA allowance ({fmt(m.isaHeadroom)} remaining) and other tax reliefs reset on April 6th — use them or lose them.</p>
+                <p style={{fontSize:"13px",color:G,margin:0}}>ISA allowance ({fmt(m.isaHeadroom)} left) and other tax reliefs reset April 6th — use them or lose them.</p>
               </div>
             </div>
           );
@@ -3011,7 +3011,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                     <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginTop:"8px",marginBottom:insights.isFallback?"10px":0}}>{insights.narrative}</p>
                     {insights.isFallback && (
                       <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:0}}>
-                        We couldn't generate your personalised analysis just now, so you're seeing a general summary — try regenerating shortly.
+                        Couldn't generate your personalised analysis — showing a general summary. Try regenerating shortly.
                       </p>
                     )}
                   </>
@@ -3033,7 +3033,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                 <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:insights.isFallback?"10px":"14px"}}>{insights.narrative}</p>
                 {insights.isFallback && (
                   <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:"0 0 14px"}}>
-                    We couldn't generate your personalised analysis just now, so you're seeing a general summary — try regenerating shortly.
+                    Couldn't generate your personalised analysis — showing a general summary. Try regenerating shortly.
                   </p>
                 )}
                 <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
@@ -3089,7 +3089,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
               <div style={{fontSize:"14px",color:MUT}}>You could be leaving <span style={{fontWeight:700,color:G}}>{fmt(totalOpp)}</span> on the table.</div>
               {eq && <div style={{fontSize:"12px",color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
               <div style={{fontSize:"11px",color:MUT,marginTop:"10px",lineHeight:1.6}}>
-                Sum of yield gaps, missed tax relief, and interest costs — across all open modules below.
+                Sum of yield gaps, tax relief missed, and interest costs — across your open modules.
               </div>
             </>
           );
@@ -3097,7 +3097,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
             <div className="fu1" style={{background:WHITE,border:`2px solid ${G}`,borderRadius:"14px",padding:"20px 28px",marginBottom:"20px",display:"flex",flexDirection:isMobile?"column":"row",alignItems:"center",gap:"24px",flexWrap:"wrap"}}>
               {isMobile ? (
                 <div style={{width:"100%",textAlign:"center"}}>
-                  <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"10px"}}>Your total opportunity</div>
+                  <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
                   <div style={{marginBottom:"16px"}}>
                     <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:G,lineHeight:1.1}}>{fmt(totalOpp)}</span>
                     <div style={{fontSize:"10px",color:MUT,fontWeight:500,marginTop:"3px"}}>per year</div>
@@ -3111,7 +3111,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                     <span style={{fontSize:"10px",color:MUT,fontWeight:500,marginTop:"3px"}}>per year</span>
                   </div>
                   <div style={{flex:1,minWidth:"200px"}}>
-                    <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Your total opportunity</div>
+                    <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Opportunity</div>
                     {bodyText}
                   </div>
                 </>
@@ -3320,8 +3320,8 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
             </div>
             <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:0}}>
               {breakdownSort === "category"
-                ? "Grouped by category (today's actions, then future opportunities), largest £ gap first within each group. This is a mathematical calculation, not a recommended order of priority."
-                : "Items ordered strictly by total £ difference. This is a mathematical calculation, not a recommended order of priority."}
+                ? "Grouped by category (today's actions, then future opportunities), then by £ gap. Not a recommended order of priority."
+                : "Ordered by total £ difference. Not a recommended order of priority."}
             </p>
           </div>
         )}
@@ -3650,7 +3650,7 @@ function ForecastScreen({ d, m }) {
 
           {/* Disclaimer */}
           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:0}}>
-            These are illustrative projections based on assumed rates of return, which are not guaranteed and may vary significantly. This is guidance, not financial advice — the right strategy depends on your full circumstances.
+            Illustrative projections based on assumed rates of return, not guaranteed. Guidance, not advice — the right strategy depends on your full circumstances.
           </p>
         </div>
       </ContentWrap>
@@ -3673,7 +3673,7 @@ function ChatScreen() {
           <h1 style={{fontFamily:SERIF,fontSize:"clamp(22px,4vw,28px)",color:G,fontWeight:700,marginBottom:"8px",lineHeight:1.2}}>Let's talk Candidly</h1>
           <span style={{display:"inline-block",fontSize:"10px",fontWeight:800,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",background:"rgba(196,150,58,0.12)",padding:"4px 12px",borderRadius:"100px",marginBottom:"18px"}}>Coming soon</span>
           <p style={{fontSize:"14px",color:MUT,lineHeight:1.7,maxWidth:"420px",margin:"0 auto"}}>
-            We're building an AI-powered chat so you can ask specific questions about your own numbers — pension contributions, ISA allowance, mortgage overpayments and more — and get answers grounded in your Candid report. Check back soon.
+            Ask specific questions about your own numbers — pension, ISA, mortgage overpayments and more — grounded in your Candid report. Check back soon.
           </p>
         </div>
       </ContentWrap>
@@ -4441,7 +4441,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const totalOpp = statuses.investments.amount;
           return (
             <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
-              <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
+              <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Opportunity</div>
               {totalOpp > 0 ? (
                 <>
                   <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
@@ -4455,7 +4455,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   Plus {fmt(m.isaHeadroom)} of unused ISA allowance — not a guaranteed gain, but investing it shelters future growth from tax.
                 </div>
               )}
-              <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below to act on these.</p>
+              <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below.</p>
             </div>
           );
         })()}
@@ -4494,10 +4494,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0;
 
           const showMatchWin = !contributing || m.missedMatch > 0;
-          const matchWinTitle = !contributing ? "Start your pension" : "Capture your employer match";
+          const matchWinTitle = !contributing ? "Start your pension" : "Capture full employer match";
           const matchWinHeadline = !contributing
-            ? `Every £${100-trPct} you put in becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
-            : `${fmt(m.missedMatch)}/yr in employer contributions you're not claiming`;
+            ? `Every £${100-trPct} becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
+            : `Up to ${fmt(m.missedMatch)}/yr`;
 
           // Only a numbered, actionable Win when the user told us during onboarding
           // they expect a bonus — otherwise it's just background info, not a "win".
@@ -4699,7 +4699,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             <>
               {(definitiveCols.length > 0 || bonusPotential > 0) && (
                 <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
-                  <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
+                  <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Opportunity</div>
                   {totalOpp > 0 ? (
                     <>
                       <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
@@ -4715,7 +4715,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       + up to {fmt(bonusPotential)}/yr more if you sacrifice your {fmt(statedBonus)} bonus once it lands
                     </div>
                   )}
-                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below to act on these.</p>
+                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below.</p>
                 </div>
               )}
 
@@ -4809,8 +4809,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 >
                   <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
                     {inTaper
-                      ? `Between £100,000 and £125,140, your Personal Allowance is withdrawn at £1 for every £2 earned above £100,000 — creating an effective 60% marginal tax rate on that band. Salary sacrifice reduces your adjusted net income, restoring the allowance and saving roughly ${fmt(taperTotalSaving)} in tax and NI.`
-                      : `Your adjusted net income is in the £80,000–£100,000 zone. Sacrificing into your pension now builds wealth efficiently — and if a bonus or pay rise pushes you over £100,000 later, prior sacrifice reduces how hard the taper bites.`}
+                      ? `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taperTotalSaving)} in tax and NI.`
+                      : `Your income sits in the £80k–£100k zone. Sacrificing now builds wealth efficiently — and softens the taper if a bonus or rise pushes you over £100k later.`}
                   </p>
                   {inTaper && taperTotalSaving > 0 && (
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"16px",textAlign:"center"}}>
@@ -4832,12 +4832,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"10px",padding:"14px 16px",marginBottom:"12px"}}>
                       <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Also at stake: your childcare support</div>
                       <p style={{fontSize:"13px",color:TEXT,lineHeight:1.7,margin:0}}>
-                        Tax-Free Childcare (worth up to £2,000 per child a year, £4,000 if disabled) and the free childcare hours scheme are both lost <strong>entirely</strong> — not tapered — the moment either parent's adjusted net income crosses £100,000. Staying under that line can be worth roughly £5,000–£7,500 per child a year in free hours alone, on top of the tax and NI saving above. Actual value depends on your child's age and how many hours you'd use.
+                        Tax-Free Childcare (up to £2,000/child, £4,000 if disabled) and free childcare hours are lost <strong>entirely</strong> — not tapered — the moment either parent crosses £100,000. Staying under it can be worth £5,000–£7,500 per child a year in free hours alone, on top of the saving above.
                       </p>
                     </div>
                   )}
                   <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>
-                    This is separate from your Personal Savings Allowance, which isn't affected by the £100k taper itself — it only falls to £0 once income crosses £125,140 (additional rate). You're currently in the {m.taxBandLabel}-rate band.
+                    Separate from your Personal Savings Allowance, which only falls to £0 once income crosses £125,140 (additional rate). You're in the {m.taxBandLabel}-rate band.
                   </p>
                 </ExpandableInvestmentItem>
               )}
@@ -4849,15 +4849,15 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     Your Annual Allowance may be reduced to approximately {fmt(approxAA)} this tax year (down from the standard £60,000)
                   </p>
                   <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
-                    Once your adjusted income — broadly, your total income plus all pension contributions, yours and your employer's — passes £260,000, the amount you and your employer can pay into your pension each year before a tax charge applies starts shrinking: £1 less for every £2 above that threshold, down to a minimum of £10,000. Based on your stated income and contribution rate, this looks like it may apply to you.
+                    Once adjusted income (total income plus all pension contributions) passes £260,000, your allowance shrinks £1 for every £2 above that, down to a £10,000 floor. Based on your figures, this looks like it applies to you.
                   </p>
                   <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
                     {showCarryForward
-                      ? `Unused allowance from the previous 3 tax years (carry-forward) can increase what you can actually contribute without a charge — use the carry-forward calculator below to work out roughly how much. This still needs confirming against your pension provider's annual allowance statements or your HMRC personal tax account before you rely on it.`
-                      : `Unused allowance from the previous 3 tax years (carry-forward) can increase what you can actually contribute without a charge — but working that out precisely needs your contribution and allowance-usage history from those years, which we don't have. Check your pension provider's annual allowance statements, your HMRC personal tax account, or a financial adviser for an exact figure, especially before making a large contribution.`}
+                      ? `Carry forward unused allowance from the last 3 tax years to contribute more without a charge — use the calculator below. Confirm the exact figure against your provider's statements or HMRC account before relying on it.`
+                      : `Carry forward unused allowance from the last 3 tax years to contribute more without a charge — but we don't have your contribution history to calculate it. Check your provider's statements, HMRC account, or an adviser for an exact figure before a large contribution.`}
                   </p>
                   <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,margin:0,paddingTop:"8px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
-                    Estimated from your stated salary, bonus, other income, and contribution rates — not a substitute for a precise calculation, and it doesn't account for any income we haven't asked about.
+                    Estimated from your stated income and contribution rates — not a substitute for a precise calculation, and excludes any income we haven't asked about.
                   </p>
                 </div>
               )}
@@ -4875,7 +4875,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     tag={{ label:"Today", color:GOLD }}
                   >
                     <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                      If you've had a pension scheme open in earlier tax years but didn't use the full £60,000 allowance, you can carry the unused part forward for up to 3 years — on top of this year's allowance. This is the standard route for sheltering a large bonus, a business sale, or any other one-off windfall from tax. You still can't contribute more than 100% of this year's earnings ({fmt(cfRelevantEarnings)}), and you must have been a member of a UK-registered scheme in a year to carry forward its allowance — even if you contributed nothing that year.
+                      Had a pension scheme in earlier years but didn't use the full £60,000 allowance? Carry the unused part forward for up to 3 years — the standard route for sheltering a bonus, business sale, or windfall. Capped at 100% of this year's earnings ({fmt(cfRelevantEarnings)}); you must have been a scheme member in that year to carry it forward, even with £0 contributed.
                     </p>
                     {cfBreakdown.map((y, i) => (
                       <div key={y.label} style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px",marginBottom:"8px"}}>
@@ -4911,7 +4911,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px 16px",marginBottom:"4px"}}>
                         <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>If pension contributions alone can't fix this</div>
                         <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 12px"}}>
-                          Even with carry forward, bringing your Threshold Income below £200,000 by pension contributions alone may not be realistic at your income. Venture Capital Trusts (VCTs) and the Enterprise Investment Scheme (EIS) are the usual alternative — both give 30% upfront income tax relief on top of (not instead of) your pension, though with far more investment risk and illiquidity than a pension.
+                          Even with carry forward, getting Threshold Income below £200,000 through pension contributions alone may not be realistic here. VCTs and EIS are the usual alternative — both give 30% upfront income tax relief on top of your pension, with far more risk and illiquidity.
                         </p>
                         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px"}}>
                           <ProductCard p={{ name:"Venture Capital Trust (VCT)", type:"30% income tax relief", rate:"Up to £200,000/yr", badge:"5-yr minimum hold", feature:"30% relief on new share issues up to £200,000 per tax year, tax-free dividends, and no CGT on disposal — but relief is clawed back if sold within 5 years, and the underlying companies are high-risk.", cta:"Learn more", highlight:false, appIcon:TrendingUp }} onInternalLink={onOpenModule}/>
@@ -4936,7 +4936,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     defaultOpen={openSection === "bonusSacrifice"}
                   >
                     <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"12px"}}>
-                      Sacrificing your bonus before it hits your payslip means you never pay tax, NI{bonusSlRate > 0 ? ", or student loan repayments" : ""} on that money. It goes into your pension gross, grows free of tax, and is only taxed when you draw it — typically at a lower rate in retirement.
+                      Sacrifice your bonus before it hits your payslip and you avoid tax, NI{bonusSlRate > 0 ? ", and student loan repayments" : ""} on it entirely. It goes into your pension gross, grows tax-free, and is only taxed on the way out — usually at a lower rate in retirement.
                     </p>
                     <div style={{marginBottom:"12px"}}>
                       <label style={{...LBL,marginBottom:"5px"}}>Bonus amount to model (£)</label>
@@ -5247,7 +5247,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             <div className="fu4">
               {opportunityCols.length > 0 && (
                 <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
-                  <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
+                  <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Opportunity</div>
                   <div style={{display:"grid",gridTemplateColumns:`repeat(${opportunityCols.length},1fr)`,gap:"14px"}}>
                     {opportunityCols.map((c,i) => (
                       <div key={i}>
@@ -5257,7 +5257,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       </div>
                     ))}
                   </div>
-                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below to act on these.</p>
+                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below.</p>
                 </div>
               )}
 
@@ -5269,14 +5269,14 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   tag={{ label:"Priority", color:"#c0392b" }}
                 >
                   <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
-                    You currently hold {fmt(m.totalLiquid)} against a {fmt(m.emergencyBuffer)} target ({m.bufferMonths} months of expenses) — a {fmt(m.emergencyShortfall)} gap. This comes before any tax-efficiency optimisation below: a real buffer protects you from having to sell investments or borrow at a bad time.
+                    You hold {fmt(m.totalLiquid)} against a {fmt(m.emergencyBuffer)} target ({m.bufferMonths} mo of expenses) — a {fmt(m.emergencyShortfall)} gap. Sort this before any tax optimisation below: a real buffer stops you selling investments or borrowing at a bad time.
                   </p>
                   {monthsToCloseGap && (
                     <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
                       At your current surplus of ~{fmt(Math.round(m.monthlySurplus))}/month, putting all of it aside would close this gap in <strong>~{monthsToCloseGap} month{monthsToCloseGap===1?"":"s"}</strong>.
                     </div>
                   )}
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7}}>Keep it somewhere instant-access while you build it up — see "Optimise your cash" below for the best rate available right now on whatever you're building it in.</p>
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7}}>Keep it instant-access while you build it up — see "Optimise your cash" below for the best rate on offer.</p>
                 </ExpandableInvestmentItem>
               )}
 
@@ -5555,7 +5555,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   return (
                   <div>
                     <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                      You have ~{fmt(totalGains)} of unrealised gain. £3,000 is exempt from CGT every year — realising it now banks {fmt(m.crystallisable)} of gain with £0 tax.{yearsNeeded > 1 && ` At that rate it'd take ${yearsNeeded} tax years to shield it all.`}
+                      You have ~{fmt(totalGains)} of unrealised gain. £3,000 is CGT-exempt each year — bank {fmt(m.crystallisable)} of gain now at £0 tax.{yearsNeeded > 1 && ` At that rate, shielding it all takes ${yearsNeeded} tax years.`}
                     </p>
 
                     {yearsNeeded > 1 && (
@@ -5576,19 +5576,19 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
                       <MiniExpandTile icon={RefreshCw} label="Bed &amp; breakfasting" color={GOLD} summary="Repurchase inside an ISA immediately, or wait 30 days outside it.">
                         <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
-                          HMRC's "30-day rule" matches a repurchase of the same holding within 30 days against the shares you just bought back — not your original, cheaper ones — which cancels out the gain you were trying to bank. Buying back inside an ISA or pension sidesteps the rule entirely, since that's a different tax wrapper, so you can crystallise and reinvest immediately there. Outside a wrapper, you either wait the full 30 days before repurchasing the same holding, or buy a different (but similarly-exposed) fund instead.
+                          HMRC's "30-day rule" matches a repurchase within 30 days against the shares you just bought — cancelling the gain you were banking. Buying back inside an ISA or pension sidesteps this, since it's a different tax wrapper — so you can reinvest immediately there. Outside a wrapper, wait the full 30 days, or buy a different but similarly-exposed fund instead.
                         </p>
                       </MiniExpandTile>
                       <MiniExpandTile icon={Hourglass} label="Use it or lose it" color="#c0392b" summary="This year's £3,000 exemption doesn't carry over — unused, it's gone on April 5th.">
                         <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
-                          The £3,000 annual exempt amount is flat — every taxpayer gets the same allowance regardless of income, and it can't be carried forward once the tax year ends. What income does change is the rate charged on any gain above it: basic-rate taxpayers pay 18%, higher and additional-rate taxpayers pay 24%. You're a {taxpayerBand} taxpayer, so gains above your exemption are taxed at {cgtRatePct}%.
+                          The £3,000 exempt amount is flat for every taxpayer and can't be carried forward once the tax year ends. Income only affects the rate above it: 18% basic-rate, 24% higher/additional-rate. You're a {taxpayerBand} taxpayer, so gains above your exemption are taxed at {cgtRatePct}%.
                         </p>
                       </MiniExpandTile>
                     </div>
                   </div>
                   );
                 })() : (
-                  <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>You have no unrealised gains recorded outside an ISA or pension this tax year, so there's nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount.</p>
+                  <p style={{fontSize:"14px",color:MUT,lineHeight:1.7}}>No unrealised gains recorded outside an ISA or pension this year — nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount.</p>
                 )}
               </ExpandableInvestmentItem>
 
@@ -5713,13 +5713,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             <>
               {worthOverpaying && (
                 <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
-                  <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Your opportunity right now</div>
+                  <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Opportunity</div>
                   <div>
                     <div style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
                     <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>Effective benefit from overpaying</div>
                     <div style={{fontSize:"11px",color:"rgba(255,255,255,0.55)",marginTop:"2px"}}>vs keeping that money as cash</div>
                   </div>
-                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the win below to act on this.</p>
+                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the win below.</p>
                 </div>
               )}
 
@@ -5754,11 +5754,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   </div>
                 </div>
                 {sl.belowThreshold ? (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your salary is below the repayment threshold, so no deductions are being made yet. Interest still accrues at {sl.slRatePct}% (~{fmt(sl.annualInterest)}/yr) — deductions start automatically once your salary crosses {fmt(sl.threshold)}.</p>
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your salary is below the repayment threshold, so no deductions yet. Interest still accrues at {sl.slRatePct}% (~{fmt(sl.annualInterest)}/yr) — deductions start once salary crosses {fmt(sl.threshold)}.</p>
                 ) : !sl.willClear ? (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your loan is projected to be written off before you'd clear it — overpaying mostly reduces what gets written off, not what you repay. Redirect any spare cash to your pension or ISA instead.</p>
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Projected to be written off before you'd clear it — overpaying mostly reduces the write-off, not your repayments. Redirect spare cash to your pension or ISA instead.</p>
                 ) : sl.effectiveBenefit <= 0 ? (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>You're on track to clear this loan in ~{sl.clearYr} years through regular repayments alone. Your savings rate ({sl.cashRate}%) beats your loan rate ({sl.slRatePct}%), so saving beats overpaying here.</p>
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>On track to clear this loan in ~{sl.clearYr} years through regular repayments alone. Your savings rate ({sl.cashRate}%) beats your loan rate ({sl.slRatePct}%) — so saving beats overpaying here.</p>
                 ) : (
                   <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>See the win below for what overpaying could save you.</p>
                 )}
@@ -6677,34 +6677,35 @@ USER FINANCIAL SUMMARY:
 ${JSON.stringify(financialSummary, null, 2)}
 
 Generate a JSON response with exactly this structure:
-{"score":<integer 0-100 based on moduleStatuses>,"headline":"<one punchy sentence: the single most important thing to address>","narrative":"<2-3 sentences of personalised narrative using specific figures from the summary. Use first name if provided. Tone: direct, like a knowledgeable friend.>","priorities":[{"title":"<max 6 words>","impact":"<£ figure>","description":"<1-2 sentences explaining why this matters for this specific person>","urgency":"<immediate|soon|this tax year>","module":"<cash|investments|pension|studentLoan|mortgage|personalLoan|kids|inheritance>"}],"modules":{"cash":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"investments":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"pension":{"status":"<ok|attention|critical>","summary":"<one sentence>"},"studentLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"mortgage":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"personalLoan":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"},"kids":{"status":"<ok|attention|critical|na>","summary":"<one sentence>"}}}
+{"score":<integer 0-100 based on moduleStatuses>,"headline":"<one punchy sentence, under 12 words: the single most important thing to address>","narrative":"<Max 2 short, punchy sentences, under 30 words total. Lead with the standout figure, close with the single biggest quick win. Use first name if provided. Tone: direct, like a knowledgeable friend.>","priorities":[{"title":"<max 6 words>","impact":"<£ figure>","description":"<1 short sentence, under 18 words, explaining why this matters for this specific person>","urgency":"<immediate|soon|this tax year>","module":"<cash|investments|pension|studentLoan|mortgage|personalLoan|kids|inheritance>"}],"modules":{"cash":{"status":"<ok|attention|critical>","summary":"<one short sentence, under 15 words>"},"investments":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"pension":{"status":"<ok|attention|critical>","summary":"<one short sentence, under 15 words>"},"studentLoan":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"mortgage":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"personalLoan":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"kids":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"}}}
 
 Rules:
 - Use ONLY the figures in the summary above. Do not invent or recalculate numbers.
 - If a module has status "na" in moduleStatuses, set its status to "na" and summary to "Not applicable based on your inputs."
 - Pension summary MUST reflect pensionContributing: ${financialSummary.pensionContributing} — never say "no contributions" or "start contributing" if pensionContributing is true.
 - Priorities ordered by urgency then impact. Maximum 4 priorities. No insurance priorities.
-- Module summaries must be direct and specific, not hedgy — cite the actual £ figure from the summary above (e.g. "£8,000 of unused ISA allowance") rather than vague phrasing like "may not be fully utilised".
+- Be ruthlessly concise. Every field above has a hard word limit — treat it as a ceiling, not a target. Cut adjectives, hedging, and any clause that doesn't carry a number or an action. Never write "you are currently", "in order to", or "this means that".
+- Module summaries must be direct and specific, not hedgy — cite the actual £ figure from the summary above (e.g. "£8,000 unused ISA allowance") rather than vague phrasing like "may not be fully utilised".
 - Score should correlate with moduleStatuses: each critical module reduces score significantly.
 - Write in British English. Do not use "silently", "quietly", or "invisible".
 - Return valid JSON only. No preamble, no markdown, no backticks.`;
 
     const fallback = {
       isFallback:true,
-      score:46, headline:"You're leaving meaningful money on the table — but it's all fixable.",
-      narrative:`${d.name?d.name.split(" ")[0]:""}, your finances have a solid foundation with clear optimisation gaps. The pension and ISA opportunities alone could significantly boost your long-term wealth.`,
+      score:46, headline:"You're leaving money on the table — but it's fixable.",
+      narrative:`${d.name?d.name.split(" ")[0]+", s":"S"}olid foundations, clear gaps. Pension and ISA are your fastest wins — see below.`,
       priorities:[
-        {title:"Review your pension contributions",impact:"£3,000+",description:"Tax relief plus employer match means a £100 contribution costs ~£80 in take-home. Higher-rate taxpayers get even more back.",urgency:"immediate"},
-        {title:"Maximise ISA allowance before April",impact:"£800+",description:"You have unused ISA allowance expiring April 5th. Moving surplus cash protects all future growth from tax permanently.",urgency:"this tax year"},
-        {title:"Review student loan strategy",impact:"Varies",description:"Most Plan 2/5 borrowers won't clear before write-off. That money works harder in a pension.",urgency:"soon"},
+        {title:"Review your pension contributions",impact:"£3,000+",description:"Tax relief plus employer match means £100 in costs ~£80 take-home.",urgency:"immediate"},
+        {title:"Maximise ISA allowance before April",impact:"£800+",description:"Unused ISA allowance expires April 5th — shelter it to protect future growth from tax.",urgency:"this tax year"},
+        {title:"Review student loan strategy",impact:"Varies",description:"Most Plan 2/5 loans are written off before you'd clear them — that money works harder in a pension.",urgency:"soon"},
       ],
       modules:{
-        cash:{status:"attention",summary:"Cash position looks reasonable but yield could be higher."},
+        cash:{status:"attention",summary:"Cash position's fine, but yield could be higher."},
         investments:{status:"attention",summary: metrics.isaHeadroom > 0
-          ? `You have ${fmt(metrics.isaHeadroom)} of unused ISA allowance this tax year — shelter it before April 5th or lose it for good.`
+          ? `${fmt(metrics.isaHeadroom)} of ISA allowance unused this year — shelter it before April 5th.`
           : "Your ISA allowance is fully used this tax year — well done."},
-        pension:{status:"attention",summary:"Review your pension contributions and projected retirement pot."},
-        studentLoan:{status:"attention",summary:"Overpayment strategy worth reviewing at your income level."},
+        pension:{status:"attention",summary:"Review your contributions and projected pot."},
+        studentLoan:{status:"attention",summary:"Overpayment strategy worth reviewing at your income."},
         mortgage:{status:"na",summary:"Not applicable based on your inputs."},
         personalLoan:{status:"na",summary:"Not applicable based on your inputs."},
         kids:{status:"na",summary:"Not applicable based on your inputs."},
@@ -6716,8 +6717,8 @@ Rules:
     const rateLimitedFallback = {
       ...fallback,
       isRateLimited: true,
-      headline: "You've generated a few reports in quick succession — please try again shortly.",
-      narrative: `${d.name?d.name.split(" ")[0]:""}, to keep this fair for everyone we cap how often a report can be regenerated in a short space of time. Your inputs are saved — just wait a little while and hit "Regenerate my report" again.`,
+      headline: "You're regenerating too fast — please try again shortly.",
+      narrative: `${d.name?d.name.split(" ")[0]+", y":"Y"}our inputs are saved. Wait a moment, then hit "Regenerate my report" again.`,
     };
     try {
       const result = await callClaude(prompt, 1400);
