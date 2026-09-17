@@ -867,6 +867,11 @@ function AppRoutes() {
           <Route path="/forecast" />
           <Route path="/chat" />
           <Route path="/module/:moduleKey" />
+          <Route path="/app/home" />
+          <Route path="/app/modules" />
+          <Route path="/app/forecast" />
+          <Route path="/app/chat" />
+          <Route path="/app/module/:moduleKey" />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

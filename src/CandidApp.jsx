@@ -2,7 +2,32 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
-import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart } from "lucide-react";
+import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart, Wrench } from "lucide-react";
+import { fmt, fmtK } from "./lib/format.js";
+import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
+import { resolveSlRate, studentLoanPlanConstants, calcStudentLoanScenario } from "./lib/studentLoan.js";
+import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving } from "./lib/pension.js";
+import { calcCashOptimisation } from "./lib/cash.js";
+import { calcMetrics, SALARY_GROWTH_RATES } from "./lib/metrics.js";
+import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown } from "./lib/moduleStatus.js";
+import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
+import { simulateLoan, fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions } from "./lib/forecast.js";
+import MobileLayout from "./mobile/MobileLayout.jsx";
+import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
+import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
+import MobileForecastScreen from "./mobile/screens/MobileForecastScreen.jsx";
+import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
+import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
+
+// Re-exported for existing external consumers (e.g. src/pdf/reportData.js)
+// now that these live in src/lib/ — see that file's own import for the
+// canonical source going forward.
+export { fmt, fmtK } from "./lib/format.js";
+export { calcMetrics } from "./lib/metrics.js";
+export { calcCashOptimisation } from "./lib/cash.js";
+export { calcStudentLoanScenario } from "./lib/studentLoan.js";
+export { calcPensionTaperSaving } from "./lib/pension.js";
+export { MODULE_META, getModuleSummary, computeModuleStatuses, sanitizeForMvp, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from "./lib/moduleStatus.js";
 
 // ── Supabase client — module level, no package needed ─────────────────────────
 const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
@@ -102,17 +127,6 @@ const LBL = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-export function fmt(n) {
-  return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Math.abs(n||0));
-}
-
-// Compact £Xk form for tight mobile columns (chart axis, forecast table) — falls
-// back to fmt() below £1,000 so small values don't round down to "£0k".
-export function fmtK(n) {
-  const abs = Math.abs(n||0);
-  return abs >= 1000 ? `£${Math.round(abs/1000)}k` : fmt(n);
-}
-
 // Formats a raw numeric value for display inside an input on blur
 // type: "gbp" → £12,345 | "pct" → 5.0% | else raw
 function fmtInput(val, type) {
@@ -128,7 +142,7 @@ function stripFmt(val) {
 }
 
 // A formatted number input that shows £xx,xxx on blur and x.x for %
-function FmtInput({ value, onChange, placeholder, fmtType, step, style }) {
+export function FmtInput({ value, onChange, placeholder, fmtType, step, style }) {
   const [display, setDisplay] = useState(value ? fmtInput(value, fmtType) : "");
   const focused = useRef(false);
   useEffect(() => {
@@ -168,63 +182,6 @@ function moduleScoreDelta(status) {
   if (status === "attention") return 4;
   if (status === "ok") return 1;
   return 0;
-}
-
-// ── User contributing to pension ────────────────────────────────────────────────────────
-function isPensionContributing(d) {
-  // pensionType has zero effect here — only affects return ratio
-  if (d.hasPension !== "yes") return false;
-  const pct = Number(d.myContribution);
-  return isNaN(pct) || d.myContribution === "" ? false : pct > 0;
-}
-
-// ── Pension return ratio (salary sacrifice vs relief at source) ───────────────────────
-function pensionReturnRatio(d, m) {
-  const isSS = d.pensionType === "sacrifice";
-  const niSaving = isSS && m.salary > 50270 ? 0.02 : 0;
-  return 1 / Math.max(0.01, 1 - (m.tr + niSaving));
-}
-function pensionReturnLabel(d, m) {
-  const ratio = pensionReturnRatio(d, m);
-  if (d.pensionType === "sacrifice") return `1:${ratio.toFixed(2)} — includes income tax + NI saving (employer never sees this income)`;
-  if (d.pensionType === "relief") return `1:${ratio.toFixed(2)} — income tax relief only (claim higher rate via self-assessment if applicable)`;
-  const low = (1 / Math.max(0.01, 1 - m.tr)).toFixed(2);
-  const high = (1 / Math.max(0.01, 1 - (m.tr + 0.02))).toFixed(2);
-  return low === high ? `1:${low}` : `1:${low}–1:${high} — check your payslip: if pension deduction appears before tax, it's likely salary sacrifice`;
-}
-
-// ── Month-by-month student loan simulator ────────────────────────────────────────────
-function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRate, repaymentThreshold, repaymentRate, maxYears = 30, extraMonthly = 0, trackYearly = false) {
-  let balance = openingBalance;
-  let salary = annualSalary;
-  let totalInterest = 0;
-  let totalPaid = 0;
-  let monthsToClear = null;
-  const monthlyRate = interestRate / 12;
-  // yearlyInterest[y] = cumulative interest accrued through end of year y (index 0 = £0 at start)
-  const yearlyInterest = trackYearly ? [0] : null;
-  for (let month = 0; month < maxYears * 12; month++) {
-    if (balance <= 0) break;
-    const interest = balance * monthlyRate;
-    balance += interest;
-    totalInterest += interest;
-    const annualRepayment = Math.max(0, (salary - repaymentThreshold) * repaymentRate);
-    const monthlyRepayment = annualRepayment / 12 + extraMonthly;
-    const payment = Math.min(monthlyRepayment, balance);
-    balance -= payment;
-    totalPaid += payment;
-    if (balance <= 0 && monthsToClear === null) monthsToClear = month + 1;
-    if ((month + 1) % 12 === 0) {
-      salary *= (1 + salaryGrowthRate);
-      if (trackYearly) yearlyInterest.push(Math.round(totalInterest));
-    }
-  }
-  // Pad remaining years (if loan cleared early) so yearlyInterest[y] is always valid up to maxYears
-  if (trackYearly) {
-    while (yearlyInterest.length <= maxYears) yearlyInterest.push(Math.round(totalInterest));
-  }
-  const cleared = balance <= 0;
-  return { totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid), cleared, writtenOff: !cleared, monthsToClear, yearlyInterest };
 }
 
 // ── Equivalence engine ────────────────────────────────────────────────────────
@@ -288,447 +245,6 @@ function getEquivalence(amount) {
     return `At 6% growth over 30 years, that's ~${fmt(Math.round(n * 5.74))} at retirement`;
   }
   return `At 6% growth over 30 years, that's ~${fmt(Math.round(n * 5.74))} at retirement — retire earlier`;
-}
-
-// Full marginal income tax calculation (UK 2025/26)
-// Handles personal allowance taper (£100k–£125,140 → effective 60% rate)
-function calcIncomeTax(gross) {
-  const g = Math.max(0, gross);
-  const paBase = 12570;
-  const taperReduction = Math.max(0, Math.min(paBase, (g - 100000) / 2));
-  const pa = Math.max(0, paBase - taperReduction);
-  const taxable = Math.max(0, g - pa);
-  let tax = 0;
-  tax += Math.min(taxable, 37700) * 0.20;
-  if (taxable > 37700) tax += Math.min(taxable - 37700, 74870) * 0.40;
-  if (taxable > 112570) tax += (taxable - 112570) * 0.45;
-  return Math.round(tax);
-}
-
-// Returns tax breakdown on a cash bonus given taxable salary (after sacrifice)
-function calcBonusTaxBreakdown(taxableSalary, cashBonus) {
-  if (cashBonus <= 0) return { tax:0, effectiveRate:0, crossesTaper:false, crossesAR:false };
-  const taxTotal = calcIncomeTax(taxableSalary + cashBonus);
-  const taxSalary = calcIncomeTax(taxableSalary);
-  const tax = Math.max(0, taxTotal - taxSalary);
-  const effectiveRate = cashBonus > 0 ? tax / cashBonus : 0;
-  const crossesTaper = (taxableSalary < 125140) && (taxableSalary + cashBonus > 100000);
-  const crossesAR = taxableSalary + cashBonus > 125140;
-  return { tax, effectiveRate, crossesTaper, crossesAR };
-}
-
-const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
-
-// marketRates: { isaRate, nonIsaRate } — the live max(rate_aer) from savings_rates,
-// resolved ONCE by the caller (client: Candid's useMemo; server: the PDF route) and
-// passed in here as plain numbers so this function stays synchronous. Defaults
-// preserve the exact prior hardcoded behaviour for any caller that omits it.
-export function calcMetrics(d, marketRates = {}) {
-  const { isaRate = 5.1, nonIsaRate = 5.1 } = marketRates;
-  const salaryGrowthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
-  const salary = +d.salary||0, expenses = +d.monthlyExpenses||0,
-        bonds = +d.premiumBonds||0;
-  // Cash: prefer sum of cashTiers (more granular); fall back to d.cashSavings
-  const tiers = Array.isArray(d.cashTiers) ? d.cashTiers : [];
-  const tiersTotal = tiers.reduce((s, t) => s + (+t.amount||0), 0);
-  const tiersWeightedRate = tiersTotal > 0
-    ? tiers.reduce((s, t) => s + (+t.amount||0) * (+t.rate||0), 0) / tiersTotal
-    : 0;
-  const effectiveSavingsRate = tiersTotal > 0 ? tiersWeightedRate : (+d.savingsRate||3.5);
-  const cash = tiersTotal > 0 ? tiersTotal : (+d.cashSavings||0);
-  const totalLiquid = cash + bonds,
-        runwayMonths = expenses > 0 ? totalLiquid / expenses : 0,
-        bufferMonths = d.higherBuffer === "yes" ? 9 : 6,
-        emergencyFund = totalLiquid,
-        emergencyBuffer = expenses * bufferMonths,
-        emergencyShortfall = Math.max(0, emergencyBuffer - emergencyFund),
-        emergencyExcess = Math.max(0, emergencyFund - emergencyBuffer),
-        surplusCash = emergencyExcess,
-        // ISA: always derived from granular breakdown fields
-        isaUsedThisYearCalc = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0),
-        isaHeadroom = Math.max(0, 20000 - isaUsedThisYearCalc),
-        myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0,
-        missedMatch = Math.max(0, empCapPct - myPct) * salary / 100,
-        potVal = (+d.potValue||0) + (+d.potValue2||0),
-        retireAge = +d.retirementAge||65,
-        age = +d.age||30, years = Math.max(1, retireAge - age),
-        annualContrib = (myPct + empCapPct) / 100 * salary,
-        projectedPot = potVal * Math.pow(1.06, years) +
-          annualContrib * ((Math.pow(1.06, years) - 1) / 0.06);
-  let annualRepayment = 0, willClear = false;
-  const loanBal = +d.loanBalance||0;
-  const slGrow = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
-  if (d.studentLoan === "plan2") {
-    annualRepayment = Math.max(0, (salary - 27295) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=30; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-27295)*0.09); if(b<=0) return true; } return false; })();
-  } else if (d.studentLoan === "plan5") {
-    annualRepayment = Math.max(0, (salary - 25000) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=40; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-25000)*0.09); if(b<=0) return true; } return false; })();
-  } else if (d.studentLoan === "plan1") {
-    annualRepayment = Math.max(0, (salary - 24990) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=25; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-24990)*0.09); if(b<=0) return true; } return false; })();
-  }
-  const otherIncome = +d.otherIncome||0;
-  const dividendIncome = +d.dividendIncome||0;
-  const pensionSacrifice = salary * myPct / 100;
-  const adjustedNetIncome = salary + otherIncome + dividendIncome - pensionSacrifice;
-  const tr = adjustedNetIncome > 125140 ? 0.45
-           : adjustedNetIncome > 50270  ? 0.40
-           : 0.20;
-  const taxBandLabel = adjustedNetIncome > 125140 ? "additional" : adjustedNetIncome > 50270 ? "higher" : "basic";
-  // CGT rates on shares/other assets (non-property): 18% basic, 24% higher/additional —
-  // aligned with residential property rates from the 30 Oct 2024 Budget. Not 10%/20%,
-  // which were the pre-Budget rates.
-  const gains = +d.unrealisedGains||0, crystallisable = Math.min(gains, 3000),
-        cgtRate = tr !== 0.20 ? 0.24 : 0.18,
-        cgtSaving = crystallisable * cgtRate,
-        savingsRate = effectiveSavingsRate,
-        // Blended, not flat: only isaHeadroom worth of CASH could actually go into an
-        // ISA — the rest would realistically land in a (usually lower-rate) non-ISA
-        // account. Each portion's gain is measured against the user's own current
-        // rate, then summed. The non-ISA portion is floored at £0 (not left negative)
-        // — if the best non-ISA rate doesn't even beat the user's current rate,
-        // there's nowhere better to move that excess right now.
-        // Deliberately `cash`, not `emergencyFund` (= cash + bonds) — premium bonds
-        // have their own separate yield-gap calculation (bondsYieldGain, in
-        // computeModuleStatuses, based on bondsSurplus). Basing this on emergencyFund
-        // would silently double-count the same bonds balance in both calculations.
-        isaEligiblePortion = Math.min(cash, isaHeadroom),
-        nonIsaPortion = Math.max(0, cash - isaHeadroom),
-        isaPortionGain = isaEligiblePortion * (isaRate - savingsRate),
-        nonIsaPortionGain = nonIsaPortion * (nonIsaRate - savingsRate),
-        cashExcessNotWorthMoving = nonIsaPortionGain < 0,
-        annualYieldGap = (isaPortionGain + Math.max(0, nonIsaPortionGain)) / 100,
-        // What to actually recommend moving: the full cash balance normally, but
-        // capped to the ISA-eligible portion when the excess has nowhere better to
-        // go — copy generators use this instead of the raw cash figure so they don't
-        // overstate the ask.
-        cashMoveAmount = cashExcessNotWorthMoving ? isaEligiblePortion : cash;
-  // State pension estimate
-  const niYears = +d.niYears||0;
-  const statePensionWeekly = (niYears / 35) * 221.20;
-  const statePensionAnnual = statePensionWeekly * 52;
-  const niYearsToFull = Math.max(0, 35 - niYears);
-  // Mortgage fix expiry in days
-  let daysToFixExpiry = null;
-  if (d.hasMortgage === "yes" && d.fixExpiryMonth && d.fixExpiryYear) {
-    const expiryDate = new Date(+d.fixExpiryYear, +d.fixExpiryMonth - 1, 1);
-    daysToFixExpiry = Math.round((expiryDate - new Date()) / 86400000);
-  }
-  // Net worth — use derived ISA totals
-  const isaPrevCalc = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
-  const totalIsaValue = isaUsedThisYearCalc + isaPrevCalc;
-  const hasMortgage = d.hasMortgage === "yes";
-  const propertyEquity = hasMortgage ? (+d.propertyEquity || 0) : (d.ownsOutright ? (+d.outrightPropertyValue || 0) : 0);
-  const totalAssets = totalLiquid + totalIsaValue + (+d.unwrappedValue||0) + potVal + propertyEquity;
-  const mortgageBalance = hasMortgage ? (+d.mortgageBalance||0) : 0;
-  const totalLiabilities = loanBal + mortgageBalance + (d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0);
-  // Net worth excludes the mortgage — propertyEquity above is already net of it (it's
-  // the equity stake the user enters, not the gross property value), so subtracting
-  // mortgageBalance again here would double-count the same debt. Mortgage still shows
-  // in totalLiabilities and the liabilities breakdown, just not in this figure.
-  const netWorth = totalAssets - (totalLiabilities - mortgageBalance);
-  const propertyValue = hasMortgage ? (propertyEquity + (+d.mortgageBalance || 0)) : 0;
-  const ltv = hasMortgage && propertyValue > 0 ? Math.round((+d.mortgageBalance / propertyValue) * 100) : null;
-  // Pension: user has told us they don't know their pension situation —
-  // exclude from the normal "no contributions = critical" scoring
-  const pensionStatus = d.pensionUnknown ? "unknown" : null;
-  // Personal loan payoff projection — factor in an optional extra annual repayment
-  const plMonthly = +d.personalLoanMonthly||0;
-  const plAnnualExtra = +d.personalLoanAnnualExtra||0;
-  const personalLoanAnnualRepayment = plMonthly * 12 + plAnnualExtra;
-  let personalLoanPayoffMonths = null;
-  if (d.hasPersonalLoan === "yes") {
-    const plBal = +d.personalLoanBalance||0;
-    const plRate = +d.personalLoanRate||0;
-    const monthlyEquiv = personalLoanAnnualRepayment / 12;
-    const r = plRate / 100 / 12;
-    if (plBal > 0 && monthlyEquiv > 0) {
-      if (r > 0 && monthlyEquiv > plBal * r) {
-        personalLoanPayoffMonths = Math.ceil(Math.log(monthlyEquiv / (monthlyEquiv - plBal * r)) / Math.log(1 + r));
-      } else if (r === 0) {
-        personalLoanPayoffMonths = Math.ceil(plBal / monthlyEquiv);
-      }
-    }
-  }
-  // Monthly surplus — rough "free cash" per month after estimated income tax,
-  // NI, pension contributions, living expenses, and existing debt repayments.
-  // Used as the default monthly contribution for forecasting (see calcForecast).
-  const niAnnual = 0.08 * Math.min(Math.max(0, salary - 12570), 37700) + 0.02 * Math.max(0, salary - 50270);
-  const incomeTaxAnnual = calcIncomeTax(adjustedNetIncome);
-  const netAnnualIncome = adjustedNetIncome - incomeTaxAnnual - niAnnual;
-  const existingMortgagePmt = hasMortgage ? (+d.monthlyMortgage||0) : 0;
-  const existingPersonalLoanPmt = d.hasPersonalLoan === "yes" ? plMonthly : 0;
-  const monthlySurplus = Math.max(0, netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - annualRepayment / 12);
-
-  return {
-    salary, expenses, totalLiquid, runwayMonths,
-    emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
-    isaHeadroom, isaUsedThisYear: isaUsedThisYearCalc,
-    missedMatch, annualRepayment, willClear, crystallisable, cgtSaving, cgtRate,
-    projectedPot, years, annualYieldGap, savingsRate, loanBal, tr,
-    cashMoveAmount, cashExcessNotWorthMoving,
-    cash, bonds, totalAssets, totalLiabilities, netWorth,
-    taxBandLabel, adjustedNetIncome, bufferMonths,
-    statePensionWeekly, statePensionAnnual, niYearsToFull,
-    daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate,
-    propertyEquity, propertyValue, ltv,
-    pensionStatus, personalLoanAnnualRepayment, personalLoanPayoffMonths,
-    monthlySurplus,
-  };
-}
-
-// ── Forecast helpers ───────────────────────────────────────────────────────
-
-// Static defaults — replace with live Moneyfacts API rates in future
-const CASH_RATE_LOW     = 0.030; // below average, high-street loyal-customer rate
-const CASH_RATE_CENTRAL = 0.045; // market-leading easy access rate
-const CASH_RATE_HIGH    = 0.050; // best available, a ceiling not a guarantee
-
-// Resolves the effective student loan interest rate for a given user.
-// Uses d.studentLoanRate (user-entered, %) if supplied, otherwise falls back to
-// statutory defaults. Update defaults each September when SLC publishes annual rates.
-// Plan 2: RPI to RPI+3%, ramped LINEARLY between two income thresholds (per
-// gov.uk's "How interest is calculated - Plan 2") — not a single cliff. Was
-// previously a step function (>£49,130 ? 6.1% : 3.1%), which both used the
-// wrong mechanism and an income figure that didn't correspond to either real
-// threshold. PLAN2_RATE_LOWER/_UPPER below are the current published values.
-// Plan 5: Prevailing market rate (2024/25: 7.3%)
-// Plan 1: Lower of RPI or BoE base+1% (2024/25 floor: 6.25%)
-const PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
-const PLAN2_RATE_LOWER = 0.032, PLAN2_RATE_UPPER = 0.062;
-function resolveSlRate(d, grossSalary) {
-  if (+d.studentLoanRate > 0) return +d.studentLoanRate / 100;
-  if (d.studentLoan === "plan2") {
-    if (grossSalary <= PLAN2_INCOME_LOWER) return PLAN2_RATE_LOWER;
-    if (grossSalary >= PLAN2_INCOME_UPPER) return PLAN2_RATE_UPPER;
-    const frac = (grossSalary - PLAN2_INCOME_LOWER) / (PLAN2_INCOME_UPPER - PLAN2_INCOME_LOWER);
-    return PLAN2_RATE_LOWER + frac * (PLAN2_RATE_UPPER - PLAN2_RATE_LOWER);
-  }
-  if (d.studentLoan === "plan5") return 0.073;
-  return 0.0625; // plan1 fallback
-}
-
-// Future value of a single lump sum invested today, compounded monthly.
-function fvSingle(pv, annualRatePct, months) {
-  if (pv <= 0 || months <= 0) return 0;
-  return pv * Math.pow(1 + annualRatePct / 100 / 12, months);
-}
-
-// Future value of a stream of equal monthly contributions, compounded monthly.
-// FV = PMT × (((1+r)^n - 1) / r), where r = monthly rate and n = number of months.
-function fvAnnuity(pmt, annualRatePct, months) {
-  if (months <= 0 || pmt <= 0) return 0;
-  const r = annualRatePct / 100 / 12;
-  if (r === 0) return pmt * months;
-  return pmt * ((Math.pow(1 + r, months) - 1) / r);
-}
-
-// Amortises a repayment loan/mortgage month-by-month at a fixed annual rate,
-// with an optional extra monthly overpayment on top of the normal payment.
-// Returns total interest paid over maxMonths, and (if the balance clears
-// within that window) the month it cleared.
-function simulateAmortisation(balance, annualRatePct, monthlyPayment, maxMonths) {
-  const r = annualRatePct / 100 / 12;
-  let bal = balance, totalInterest = 0, monthsToClear = null;
-  for (let month = 1; month <= maxMonths; month++) {
-    if (bal <= 0) break;
-    const interest = bal * r;
-    totalInterest += interest;
-    bal += interest;
-    const payment = Math.min(monthlyPayment, bal);
-    bal -= payment;
-    if (bal <= 0 && monthsToClear === null) monthsToClear = month;
-  }
-  return { totalInterest, monthsToClear, cleared: monthsToClear !== null };
-}
-
-// Projects low/central/high values at `horizonYears` for each way the user's
-// monthly surplus could be put to work: mortgage overpayment, student loan
-// overpayment, Stocks & Shares ISA, cash savings, and pension salary sacrifice.
-// Returns { horizonYears, monthlySurplus, options }, where `options` only
-// includes entries applicable to this user (applicable: true).
-function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverride = 0) {
-  const surplus = surplusOverride != null ? +surplusOverride : m.monthlySurplus;
-  const lump = +lumpSumOverride || 0;
-  const months = horizonYears * 12;
-  const options = [];
-
-  // ── 1. Mortgage overpayment ────────────────────────────────────────────
-  const hasOverpayableMortgage = d.hasMortgage === "yes" && !d.ownsOutright && (+d.mortgageBalance||0) > 0;
-  if (hasOverpayableMortgage) {
-    const bal = +d.mortgageBalance||0;
-    const pay = +d.monthlyMortgage||0;
-    const baseRate = +d.mortgageRate||0;
-    const valueAtRate = (rate) => {
-      // Lump sum reduces opening balance immediately; monthly surplus added to regular payment
-      const openBal = Math.max(0, bal - lump);
-      const base = simulateAmortisation(bal, rate, pay, months);
-      const over = simulateAmortisation(openBal, rate, pay + surplus, months);
-      let value = base.totalInterest - over.totalInterest + lump;
-      if (over.monthsToClear !== null && over.monthsToClear < months) {
-        // Freed-up payment invested in cash savings for remaining months
-        value += fvAnnuity(pay + surplus, CASH_RATE_CENTRAL * 100, months - over.monthsToClear);
-      }
-      return value;
-    };
-    options.push({
-      label: "Mortgage overpayment",
-      low: Math.round(valueAtRate(Math.max(0, baseRate - 0.5))),
-      central: Math.round(valueAtRate(baseRate)),
-      high: Math.round(valueAtRate(baseRate + 0.5)),
-      applicable: true,
-    });
-  }
-
-  // ── 2. Student loan overpayment ────────────────────────────────────────
-  if (m.loanBal > 0) {
-    const writeOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
-    const threshold  = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
-    const baseSlRate = resolveSlRate(d, m.salary);
-    // Cap simulation at write-off year — no point modelling interest past when the loan is forgiven
-    const simYears = Math.min(horizonYears, writeOffYr);
-    // Lump sum reduces opening balance for the overpayment scenario; baseline is unchanged
-    const overBal = Math.max(0, m.loanBal - lump);
-
-    // First check whether overpaying changes the write-off outcome at all
-    const baseWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, writeOffYr, 0);
-    const overWriteOff = simulateLoan(overBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, writeOffYr, surplus);
-    // If the loan is written off in both scenarios, overpaying just reduces the amount forgiven — no benefit
-    const writtenOffAnyway = !baseWriteOff.cleared && !overWriteOff.cleared;
-
-    let slCentral = 0, slLow = 0, slHigh = 0;
-    if (!writtenOffAnyway) {
-      // Benefit = cumulative interest saved vs baseline (not a compounding figure)
-      const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, 0);
-      const over = simulateLoan(overBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus);
-      const interestSaved = Math.max(0, base.totalInterest - over.totalInterest);
-      // Low/high reflect salary growth uncertainty — not rate-sensitive
-      slCentral = Math.round(interestSaved);
-      slLow     = Math.round(interestSaved * 0.85); // slower salary growth → mandatory repayments stretch, less benefit
-      slHigh    = Math.round(interestSaved * 1.05); // marginal upside from faster clearance
-    }
-
-    options.push({
-      label: "Student loan overpayment",
-      low: slLow, central: slCentral, high: slHigh,
-      applicable: true,
-      writtenOffAnyway,
-      note: writtenOffAnyway
-        ? "Overpaying doesn't change the outcome — this loan is likely written off before clearance regardless."
-        : null,
-    });
-  }
-
-  // ── 3. Stocks & Shares ISA ──────────────────────────────────────────────
-  options.push({
-    label: "Stocks & Shares ISA",
-    low: Math.round(fvSingle(lump, 4, months) + fvAnnuity(surplus, 4, months)),
-    central: Math.round(fvSingle(lump, 6, months) + fvAnnuity(surplus, 6, months)),
-    high: Math.round(fvSingle(lump, 8, months) + fvAnnuity(surplus, 8, months)),
-    applicable: true,
-  });
-
-  // ── 4. Cash savings ───────────────────────────────────────────────────────
-  // Use hardcoded UK market defaults unless the user has supplied their own rate.
-  // d.cashRate and d.savingsRate are stored as percentages (e.g. 4.5 = 4.5%).
-  const userRatePct = +d.cashRate > 0 ? +d.cashRate : +d.savingsRate > 0 ? +d.savingsRate : 0;
-  // Convert to decimal for spread arithmetic, then back to % for fvAnnuity/fvSingle
-  const cashCentralDec = userRatePct > 0 ? userRatePct / 100 : CASH_RATE_CENTRAL;
-  const cashLowDec     = userRatePct > 0 ? cashCentralDec - 0.015 : CASH_RATE_LOW;
-  const cashHighDec    = Math.min(userRatePct > 0 ? cashCentralDec + 0.005 : CASH_RATE_CENTRAL + 0.005, CASH_RATE_HIGH);
-  options.push({
-    label: "Cash savings",
-    low: Math.round(fvSingle(lump, Math.max(0, cashLowDec * 100), months) + fvAnnuity(surplus, Math.max(0, cashLowDec * 100), months)),
-    central: Math.round(fvSingle(lump, cashCentralDec * 100, months) + fvAnnuity(surplus, cashCentralDec * 100, months)),
-    high: Math.round(fvSingle(lump, cashHighDec * 100, months) + fvAnnuity(surplus, cashHighDec * 100, months)),
-    applicable: true,
-  });
-
-  // ── 5. Pension (salary sacrifice) ──────────────────────────────────────
-  if (d.pensionType === "sacrifice") {
-    // Tax + NI relief boosts every £1 of surplus into the pension immediately.
-    const ratio = pensionReturnRatio(d, m);
-    options.push({
-      label: "Pension (salary sacrifice)",
-      low: Math.round(fvSingle(lump * ratio, 4, months) + fvAnnuity(surplus * ratio, 4, months)),
-      central: Math.round(fvSingle(lump * ratio, 6, months) + fvAnnuity(surplus * ratio, 6, months)),
-      high: Math.round(fvSingle(lump * ratio, 8, months) + fvAnnuity(surplus * ratio, 8, months)),
-      applicable: true,
-    });
-  }
-
-  // ── 6. Pension (relief at source) ──────────────────────────────────────
-  if (d.pensionType === "relief") {
-    // HMRC adds 20% basic-rate relief automatically — every £1 you put in becomes £1.25 in the pension.
-    // Higher/additional rate taxpayers can claim further relief via self-assessment, but we model the
-    // conservative floor (basic rate top-up only) to avoid over-stating the benefit.
-    const effectiveLump = lump * 1.25;
-    const effectiveMonthly = surplus * 1.25;
-    options.push({
-      label: "Pension (relief at source)",
-      low: Math.round(fvSingle(effectiveLump, 4, months) + fvAnnuity(effectiveMonthly, 4, months)),
-      central: Math.round(fvSingle(effectiveLump, 6, months) + fvAnnuity(effectiveMonthly, 6, months)),
-      high: Math.round(fvSingle(effectiveLump, 8, months) + fvAnnuity(effectiveMonthly, 8, months)),
-      applicable: true,
-    });
-  }
-
-  return { horizonYears, monthlySurplus: surplus, options };
-}
-
-// Returns the year-by-year CENTRAL trajectory (years 0..horizonYears) for
-// each applicable forecast option, for plotting on a line graph.
-// Student loan uses a dedicated cumulative-interest-saved model (rises then
-// flatlines once the overpayment scenario clears the loan — see note inline).
-// All other options use calcForecast evaluated at each year.
-function calcForecastSeries(d, m, surplusOverride, horizonYears, lumpSumOverride = 0) {
-  const surplus = surplusOverride != null ? +surplusOverride : m.monthlySurplus;
-  const lump = +lumpSumOverride || 0;
-  const years = Array.from({ length: horizonYears + 1 }, (_, i) => i);
-  const { options } = calcForecast(d, m, surplusOverride, horizonYears, lump);
-
-  const series = options.map(opt => {
-    if (opt.label === "Student loan overpayment") {
-      // All-zero if written off in both scenarios
-      if (opt.writtenOffAnyway) return { label: opt.label, values: years.map(() => 0) };
-
-      const writeOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
-      const threshold  = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
-      const baseSlRate = resolveSlRate(d, m.salary);
-      const overBal = Math.max(0, m.loanBal - lump);
-      // Simulate both scenarios once, capturing yearly cumulative interest snapshots
-      const simYears = Math.min(horizonYears, writeOffYr);
-      const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, 0, true);
-      const over = simulateLoan(overBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus, true);
-      // Flatline at the year the overpayment scenario clears: once cleared, the
-      // interest saving is fully realised and the curve stops growing.
-      const clearYear = over.monthsToClear !== null ? Math.ceil(over.monthsToClear / 12) : null;
-      // termYear = the year where the series stops changing (loan cleared or written off)
-      const flatlineAt = Math.min(clearYear !== null ? clearYear : simYears, simYears);
-      const termYear = flatlineAt < horizonYears ? flatlineAt : null;
-      const termLabel = termYear !== null ? (clearYear !== null ? "Cleared" : "Written off") : null;
-      return {
-        label: opt.label,
-        termYear,
-        termLabel,
-        values: years.map(y => {
-          const capY = Math.min(y, clearYear !== null ? clearYear : simYears, simYears);
-          const baseInt = base.yearlyInterest[capY] ?? 0;
-          const overInt = over.yearlyInterest[capY] ?? 0;
-          return Math.max(0, Math.round(baseInt - overInt));
-        }),
-      };
-    }
-
-    // All other options: evaluate calcForecast at each year for the central value
-    return {
-      label: opt.label,
-      values: years.map(y => calcForecast(d, m, surplusOverride, y, lump).options.find(o => o.label === opt.label)?.central ?? 0),
-    };
-  });
-
-  return { years, series };
 }
 
 // ── Premium Bond Context Aware Surfacing ──────────────────────────────────────────
@@ -1371,7 +887,7 @@ export function Toggle({ value, onChange, options }) {
 // Segmented pill control — single rounded track, equal-width options, active
 // one filled solid. Compact alternative to Toggle's per-button outlined pills,
 // used where horizontal space is tight (e.g. Forecast's time-horizon picker).
-function PillSlider({ value, onChange, options }) {
+export function PillSlider({ value, onChange, options }) {
   return (
     <div style={{display:"flex",background:CDARK,borderRadius:"100px",padding:"3px",gap:"2px"}}>
       {options.map(o => (
@@ -2271,7 +1787,7 @@ function LoadingScreen({ name, msgs }) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function ScoreRing({ score, delta = 0 }) {
+export function ScoreRing({ score, delta = 0 }) {
   const r = 50, circ = 2 * Math.PI * r;
   const col = score >= 86 ? G : score >= 66 ? "#2d6b4a" : score >= 41 ? GOLD : "#c0392b";
   const lb  = score >= 86 ? "Optimised" : score >= 66 ? "On track" : score >= 41 ? "Room to improve" : "Needs attention";
@@ -2324,7 +1840,7 @@ function ScoreRing({ score, delta = 0 }) {
 // Shortcomings come straight from insights.priorities (same array driving the
 // Modules ranking); strengths are any module the AI marked "ok", using its
 // own one-line summary rather than restating priorities in reverse.
-function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, onReviewModules }) {
+export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, onReviewModules }) {
   const col = displayScore >= 86 ? G : displayScore >= 66 ? "#2d6b4a" : displayScore >= 41 ? GOLD : "#c0392b";
   const lb  = displayScore >= 86 ? "Optimised" : displayScore >= 66 ? "On track" : displayScore >= 41 ? "Room to improve" : "Needs attention";
   const strengths = Object.values(insights.modules||{}).filter(mo => mo?.status === "ok" && mo.summary);
@@ -2387,19 +1903,6 @@ function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, onReviewM
 export const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT, unknown:MUT };
 const SL = { ok:"On track", attention:"Review", critical:"Action needed", na:"N/A", unknown:"Find out" };
 
-// ── Dashboard module tiles — category pill + short context, keyed to MODULE_META ──
-// "Today" = act now for an immediate saving; "Future opportunity" = value that builds
-// over a longer horizon (growth, compounding, tax-free wrappers).
-const MODULE_TAG = {
-  cash:         { label:"Today",             color:GOLD },
-  investments:  { label:"Future opportunity", color:"#2d6b4a" },
-  pension:      { label:"Future opportunity", color:"#2d6b4a" },
-  studentLoan:  { label:"Today",             color:GOLD },
-  mortgage:     { label:"Today",             color:GOLD },
-  personalLoan: { label:"Today",             color:GOLD },
-  kids:         { label:"Future opportunity", color:"#2d6b4a" },
-};
-
 function TagPill({ label, color }) {
   return (
     <span style={{fontSize:"10px",fontWeight:700,color,background:`${color}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{label}</span>
@@ -2438,7 +1941,7 @@ function moduleContext(mm, d, m) {
 }
 
 // ── Your Forecast — per-option line colours (chart + legend + table dots) ─────
-const FORECAST_COLORS = {
+export const FORECAST_COLORS = {
   "Mortgage overpayment": "#c0392b",
   "Student loan overpayment": "#8a4fae",
   "Stocks & Shares ISA": GOLD,
@@ -2450,7 +1953,7 @@ const FORECAST_COLORS = {
 // Shorter display names for the same options — mobile legend/table space is
 // tight, so this only affects what's rendered; FORECAST_COLORS/FORECAST_ASSUMPTIONS
 // keys and calcForecast's own label strings are untouched.
-const FORECAST_SHORT_LABEL = {
+export const FORECAST_SHORT_LABEL = {
   "Mortgage overpayment": "Mortgage",
   "Student loan overpayment": "Student Loan",
   "Stocks & Shares ISA": "S&S ISA",
@@ -2459,472 +1962,11 @@ const FORECAST_SHORT_LABEL = {
   "Pension (relief at source)": "Pension (RAS)",
 };
 
-export const MODULE_META = [
-  { key:"cash",        icon:PoundSterling, title:"Cash & savings"  },
-  { key:"investments", icon:TrendingUp,    title:"Investments"     },
-  { key:"pension",     icon:Landmark,      title:"Pension"         },
-  { key:"studentLoan", icon:GraduationCap, title:"Student loan"    },
-  { key:"mortgage",    icon:Home,          title:"Mortgage"        },
-  { key:"personalLoan",icon:CreditCard,    title:"Personal loan"   },
-  { key:"kids",        icon:Baby,          title:"Kids & family"   },
-];
+// (MODULE_META, MVP-scope helpers, and computeModuleStatuses now live in
+// src/lib/moduleStatus.js — imported above.)
 
-// ── MVP scope ──────────────────────────────────────────────────────────────
-// Candid's active MVP surface is Savings, Investments, Pensions & Student
-// Loans. Mortgages, Personal Loans and Children remain fully built — onboarding
-// fields, calcMetrics/computeModuleStatuses logic, module deep-dive pages, dev
-// presets — nothing below is deleted. HIDE_MVP_MODULES just makes them read as
-// "not applicable" everywhere `d` is consumed (Dashboard, the AI prompt, the
-// PDF report, Supabase writes, module routing) without mutating or overwriting
-// any data a user already has stored locally from before this narrowing.
-// To re-enable a module: flip this back to false — onboarding fields, dashboard
-// tiles and routing all reappear at once, no other code changes needed.
-export const HIDE_MVP_MODULES = true;
-export const HIDDEN_MVP_MODULE_KEYS = ["mortgage", "personalLoan", "kids"];
-
-export function sanitizeForMvp(d) {
-  if (!HIDE_MVP_MODULES) return d;
-  return { ...d, hasMortgage: "no", ownsOutright: false, hasPersonalLoan: "no", hasKids: "no" };
-}
-
-// ── Cash waterfall optimiser: ISA → Personal Savings Allowance → Premium Bonds ──
-// Single source of truth for "what could this cash + Premium Bonds pot earn if
-// optimally allocated, vs what it earns today" — shared by the Cash & Savings
-// module's "Optimise your cash" win and computeModuleStatuses below, so the
-// Dashboard and the module page never show two different numbers for the same
-// underlying opportunity. isaRatePct/nonIsaRatePct are percentage numbers (e.g.
-// 5.1) or null/undefined, in which case the same pre-data-load fallbacks apply.
-export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
-  const bondsVal = m.bonds || 0;
-  const psaLimit = m.taxBandLabel === "basic" ? 1000 : m.taxBandLabel === "higher" ? 500 : 0;
-  // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
-  const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
-  const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
-  const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
-  const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
-  // NS&I's long-run prize-fund average — the same figure used everywhere else in
-  // this file for Premium Bonds' effective tax-free return.
-  const PB_RATE = 0.044;
-
-  const currentTaxableInterest = Math.round(m.cash * m.savingsRate / 100);
-  const currentPbInterest = Math.round(bondsVal * PB_RATE);
-  const currentGrossTotal = currentTaxableInterest + currentPbInterest;
-  const currentTaxableAmount = Math.max(0, currentTaxableInterest - psaLimit);
-  const trPct = Math.round(m.tr * 100);
-  const currentTaxCost = Math.round(currentTaxableAmount * m.tr);
-  const currentAfterTaxTotal = currentTaxableInterest - currentTaxCost + currentPbInterest;
-
-  // The full reallocation pot — cash (already outside any ISA) plus premium bonds.
-  // Deliberately the WHOLE amount, not just the surplus above the buffer: ISAs and
-  // Premium Bonds are both easy/near-instant access, so there's no liquidity reason
-  // to exclude the buffer portion from this.
-  const totalPot = m.cash + bondsVal;
-  const step1Isa = Math.min(totalPot, m.isaHeadroom);
-  const step1IsaInterest = Math.round(step1Isa * isaRateDecimal);
-  const afterStep1 = totalPot - step1Isa;
-  // Only worth filling the PSA with ordinary savings if the best available non-ISA
-  // rate actually beats the Premium Bonds average — otherwise the "tax-free"
-  // comparison is a wash and Premium Bonds are simply better.
-  const savingsWorthIt = nonIsaRateDecimal > PB_RATE;
-  const step2Savings = savingsWorthIt ? Math.min(afterStep1, psaLimit / nonIsaRateDecimal) : 0;
-  const step2SavingsInterest = Math.round(step2Savings * nonIsaRateDecimal);
-  const afterStep2 = afterStep1 - step2Savings;
-  // Once the ISA and PSA are filled, what's left is a genuine choice (Step 3 vs
-  // Step 4) rather than something this function should silently decide.
-  const discretionaryAmount = afterStep2;
-  const step3Pb = Math.min(discretionaryAmount, 50000); // £50,000 is a hard NS&I product limit, not a preference
-  const step3PbInterest = Math.round(step3Pb * PB_RATE);
-  const step3UpliftVsCurrent = step3PbInterest - Math.round(step3Pb * m.savingsRate / 100);
-  const beyondPbCap = Math.max(0, discretionaryAmount - step3Pb); // only nonzero above the £50,000 cap
-
-  // "Optimised interest income" and the top-line gain default to the cash-safe path
-  // (Step 3) — the same-unit, guaranteed comparison. Step 4's long-term illustration
-  // is a separate, non-guaranteed figure and isn't folded into this £/yr total.
-  const optimisedTotal = step1IsaInterest + step2SavingsInterest + step3PbInterest;
-  const keptAmount = step1Isa + step2Savings + step3Pb;
-  const todayBlendedRate = totalPot > 0 ? (currentTaxableInterest + currentPbInterest) / totalPot : 0;
-  const currentInterestOnKeptAmount = Math.round(keptAmount * todayBlendedRate);
-  const optimisationGain = optimisedTotal - currentInterestOnKeptAmount;
-
-  return {
-    psaLimit, isaRateDecimal, isaRateDisplay, nonIsaRateDecimal, nonIsaRateDisplay, PB_RATE,
-    currentTaxableInterest, currentPbInterest, currentGrossTotal, currentTaxableAmount, trPct, currentTaxCost, currentAfterTaxTotal,
-    totalPot, step1Isa, step1IsaInterest, afterStep1, savingsWorthIt,
-    step2Savings, step2SavingsInterest, afterStep2, discretionaryAmount,
-    step3Pb, step3PbInterest, step3UpliftVsCurrent, beyondPbCap,
-    optimisedTotal, keptAmount, todayBlendedRate, currentInterestOnKeptAmount, optimisationGain,
-  };
-}
-
-// ── Student loan plan constants — single source for write-off year + repayment
-// threshold, previously duplicated independently in getModuleInsights,
-// getModuleProducts, and the marginal-return chart memo.
-function studentLoanPlanConstants(studentLoanType) {
-  const writeOffYr = studentLoanType==="plan2" ? 30 : studentLoanType==="plan5" ? 40 : 25;
-  const threshold = studentLoanType==="plan2" ? 27295 : studentLoanType==="plan5" ? 25000 : 24990;
-  return { writeOffYr, threshold };
-}
-
-// ── Student loan core scenario — single source of truth for "is this loan
-// growing, will it clear before write-off, and is overpaying actually worth
-// it" — shared by computeModuleStatuses (Dashboard figure) and the module's
-// own Win/info tile, so the two can't disagree (same pattern as
-// calcCashOptimisation above).
-export function calcStudentLoanScenario(d, m) {
-  const { writeOffYr, threshold } = studentLoanPlanConstants(d.studentLoan);
-  const slInterestRate = resolveSlRate(d, m.salary);
-  const slRatePct = Math.round(slInterestRate * 1000) / 10;
-  const annualInterest = Math.round(m.loanBal * slInterestRate);
-  const annualRep = m.annualRepayment;
-  const belowThreshold = d.studentLoan !== "none" && annualRep === 0;
-  const netAnnualChange = annualInterest - annualRep; // positive = balance GROWING
-  const balanceGrowing = netAnnualChange > 0;
-  // Inflection point: salary at which repayments equal interest accrual
-  const inflectionSalary = Math.round(threshold + (m.loanBal * slInterestRate) / 0.09);
-  const salaryGapToInflection = Math.max(0, inflectionSalary - m.salary);
-
-  let projBal = m.loanBal, writeOffBal = 0, clearYr = null, totalRepaidProjected = 0;
-  for (let yr = 1; yr <= writeOffYr; yr++) {
-    projBal = projBal * (1 + slInterestRate);
-    // Cap the final year's repayment at what's actually left to clear — otherwise
-    // a loan that pays off partway through its final year books a full year's
-    // repayment against a balance that no longer exists, overstating total repaid.
-    const payment = Math.min(annualRep, projBal);
-    projBal -= payment;
-    totalRepaidProjected += payment;
-    if (projBal <= 0 && !clearYr) { clearYr = yr; break; }
-    if (yr === writeOffYr) writeOffBal = Math.max(0, projBal);
-  }
-  const willClear = clearYr !== null;
-  totalRepaidProjected = Math.round(totalRepaidProjected);
-
-  const cashRate = +d.savingsRate || 4.2;
-  const effectiveBenefit = Math.round((slInterestRate*100 - cashRate) * 10) / 10; // % — overpaying vs holding cash
-  // A genuine £/yr figure: the rate differential applied to the current balance
-  // — same shape as Cash's annualYieldGap (rate gap × principal) — rather than a
-  // one-off lump sum, so it stays comparable to every other module's £/yr amount.
-  const overpayAnnualBenefit = (willClear && effectiveBenefit > 0) ? Math.round(m.loanBal * effectiveBenefit / 100) : 0;
-
-  return {
-    writeOffYr, threshold, slInterestRate, slRatePct, annualInterest, annualRep,
-    belowThreshold, netAnnualChange, balanceGrowing, inflectionSalary, salaryGapToInflection,
-    clearYr, writeOffBal: Math.round(writeOffBal), willClear, totalRepaidProjected,
-    cashRate, effectiveBenefit, overpayAnnualBenefit,
-  };
-}
-
-// ── Pension Personal Allowance taper — single source of truth for the £100k–
-// £125,140 60% marginal-rate zone maths, shared by computeModuleStatuses
-// (Dashboard figure) and the module's own opportunity strip/Win tile, so the
-// two can't disagree (same pattern as calcStudentLoanScenario above).
-// NB: taperSacrificeNeeded/taperNiSaving are only meaningful when inTaper is
-// true — outside the taper zone they're repurposed to describe "how far below
-// £100k you are" for messaging, so taperTotalSaving must always be gated on
-// inTaper before being treated as a real £/yr saving.
-export function calcPensionTaperSaving(m) {
-  const taperStart = 100000, taperEnd = 125140;
-  const ani = m.adjustedNetIncome;
-  const inTaper = ani > taperStart && ani < taperEnd;
-  // Sacrifice needed to fully recover the Personal Allowance is the FULL gap back to
-  // £100,000, 1-for-1 — not half of it. Every £1 sacrificed while ANI is still above
-  // £100,000 saves 40% tax directly AND restores 50p of Personal Allowance (itself
-  // taxed at 40%, i.e. a further 20%), for a genuine 60% effective saving on that £1
-  // — but reaching that saving on the WHOLE gap requires sacrificing the whole gap,
-  // not half of it. (Previously halved here, which underclaimed "recovers your full
-  // Personal Allowance" by 2x — sacrificing half the gap only recovers half the
-  // withdrawn allowance.)
-  const taperSacrificeNeeded = inTaper ? Math.ceil(ani - taperStart) : Math.max(0, taperStart - ani);
-  const taperNiSaving = Math.round(taperSacrificeNeeded * 0.02);
-  const taperTaxSaving = inTaper ? Math.round(taperSacrificeNeeded * 0.60) : 0;
-  const taperTotalSaving = taperNiSaving + taperTaxSaving;
-  return { taperStart, taperEnd, ani, inTaper, taperSacrificeNeeded, taperNiSaving, taperTaxSaving, taperTotalSaving };
-}
-
-// ── Local module status computation ──────────────────────────────────────────
-// Computes status + £ impact for all 8 modules from user data alone.
-// AI response takes precedence for narrative summary; this drives sorting + visibility.
-// marketRates: same shape/contract as calcMetrics — resolved once by the caller.
-export function computeModuleStatuses(d, m, marketRates = {}) {
-  const { isaRate = 5, nonIsaRate = 4.5 } = marketRates;
-  const daysToTaxEnd = (() => {
-    const now = new Date(), taxEnd = new Date(now.getFullYear(), 3, 5);
-    if (taxEnd < now) taxEnd.setFullYear(taxEnd.getFullYear() + 1);
-    return Math.ceil((taxEnd - now) / (1000*60*60*24));
-  })();
-  const isaUrgencyBoost = daysToTaxEnd < 30 ? 3 : daysToTaxEnd < 90 ? 1.5 : 1;
-
-  const s = {};
-
-  // Cash — access type + emergency buffer + the ISA→PSA→Premium Bonds waterfall
-  // (calcCashOptimisation), the same calculation the Cash & Savings module's
-  // "Optimise your cash" win uses — so the Dashboard shows the identical £/yr figure
-  // rather than a cruder approximation. This also supersedes the old separate
-  // Premium-Bonds-only calc: the optimiser already reallocates cash + bonds together.
-  const cashOpt = calcCashOptimisation(m, isaRate, nonIsaRate);
-  const cashImpact = Math.max(0, Math.round(cashOpt.optimisationGain));
-  // Approaching-deadline urgency is a sort-priority-only nudge, kept separate from
-  // the £/yr figures shown to the user (see pension's +99999 sentinel below for the
-  // same pattern).
-  const cashSortPriority = cashImpact + Math.round(m.isaHeadroom * (isaRate / 100) * (isaUrgencyBoost - 1));
-  const tooMuchCash = m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
-  const genuinelyLowCash = m.emergencyFund === 0 && m.expenses > 0;
-  const accessType = d.cashAccessType || "partial";
-  const accessOk = m.emergencyFund >= m.emergencyBuffer;
-  // Emergency access warnings — only critical when truly no cash at all
-  let accessLabel = null;
-  if (accessType === "no" && accessOk) {
-    accessLabel = `Cash not in easy-access — consider keeping ${m.bufferMonths} months in instant-access`;
-  } else if (accessType === "partial") {
-    accessLabel = accessOk ? "Some cash may not be immediately accessible" : null;
-  }
-
-  let cashImpactLabel;
-  if (tooMuchCash) {
-    // emergencyExcess is a principal (the £ sitting above the buffer), not a £/yr
-    // figure — never label it "/yr" or use it as the amount. The actual annual
-    // benefit is the same optimisation-gain figure used below, just called out
-    // alongside the excess for context.
-    cashImpactLabel = cashImpact > 0
-      ? `${fmt(cashImpact)}/yr in tax-efficiency gain available — ${fmt(Math.round(m.emergencyExcess))} of it sits above your buffer`
-      : `${fmt(Math.round(m.emergencyExcess))} sits above your buffer, earning below its potential`;
-  } else if (accessLabel) {
-    cashImpactLabel = accessLabel;
-  } else if (cashImpact > 0) {
-    cashImpactLabel = `${fmt(cashImpact)}/yr in tax-efficiency gain available`;
-  } else {
-    cashImpactLabel = null;
-  }
-  // amount: a clean, always-£/yr figure for consumers (e.g. the PDF report) that need a
-  // real monetary saving rather than `impact` (a sort-priority score — see pension below,
-  // where impact includes a +99999 sentinel that must never be summed or displayed).
-  // Note: tooMuchCash intentionally falls through to cashImpact here too — emergencyExcess
-  // is a principal, not an annual figure, and must never be used as the £/yr amount.
-  const cashAmount = cashImpact > 0 ? cashImpact : 0; // accessLabel-only attention has no £ figure
-  s.cash = {
-    status: tooMuchCash || cashImpact > 800 ? "critical"
-          : cashImpact > 200 || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
-    impact: cashSortPriority,
-    impactLabel: cashImpactLabel,
-    amount: cashAmount,
-  };
-
-  // Investments — CGT saving is a real, guaranteed, this-tax-year £/yr figure.
-  // ISA headroom is not a gain — it's unused capacity that only becomes a gain if
-  // invested and if it grows — so unlike Cash/Pension/Student loan, it's excluded
-  // from `amount` (the £ figure shown to the user) entirely. It still feeds `impact`
-  // (sort priority only, weighted by the same tax-year-end urgency multiplier as
-  // Cash's cashSortPriority) and status/impactLabel, so a large unused allowance
-  // still surfaces on the dashboard even with no CGT saving to report.
-  const isaSortWeight = Math.round(m.isaHeadroom * 0.07 * m.tr * isaUrgencyBoost);
-  s.investments = {
-    status: (m.isaHeadroom > 10000 && daysToTaxEnd < 60) ? "critical"
-          : m.isaHeadroom > 2000 || m.cgtSaving > 0 ? "attention" : "ok",
-    impact: isaSortWeight + m.cgtSaving,
-    impactLabel: m.cgtSaving > 0 && m.isaHeadroom > 0
-      ? `${fmt(m.cgtSaving)} CGT saving + ${fmt(m.isaHeadroom)} ISA headroom`
-      : m.cgtSaving > 0
-        ? `${fmt(m.cgtSaving)} CGT saving available`
-        : m.isaHeadroom > 0
-          ? `${fmt(m.isaHeadroom)} ISA headroom unused`
-          : null,
-    amount: m.cgtSaving > 0 ? m.cgtSaving : 0,
-  };
-
-// Pension — missed match + contribution check + Personal Allowance taper are
-// DEFINITIVE (based on current, confirmed salary/contributions, via
-// calcPensionTaperSaving, the same shared taper calc the module's own
-// opportunity strip uses). Bonus sacrifice saving is POTENTIAL upside — it
-// depends on actually receiving the stated bonus, which may not have landed
-// yet — so it's kept out of `amount` (mirrors Investments excluding ISA
-// headroom from its definitive total) and exposed separately as
-// `potentialAmount` for the module's own "+ up to £X" signal.
-const contributing = isPensionContributing(d);
-const bonusSacrificeOpportunity = (+d.bonusAmount||0) * m.tr;
-const pensionTaper = calcPensionTaperSaving(m);
-const pensionTaperAmount = pensionTaper.inTaper ? pensionTaper.taperTotalSaving : 0;
-// "Not contributing" and "missed employer match" are mutually exclusive (the
-// latter only applies once you're contributing) — taper is an independent
-// opportunity that can stack on top of either.
-const pensionPrimaryAmount = !contributing ? Math.round(m.salary * 0.05 * m.tr) : m.missedMatch;
-const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount); // definitive only
-const pensionPotentialAmount = Math.round(bonusSacrificeOpportunity); // potential — not in amount
-// Sort priority still weighs the potential upside too, so a large bonus-sacrifice
-// opportunity isn't buried in the module ordering just because it's not "definitive".
-const pensionImpact = (!contributing ? pensionAmount + 99999 : pensionAmount) + pensionPotentialAmount;
-const pensionLabelParts = [
-  !contributing
-    ? `No pension — ${fmt(pensionPrimaryAmount)}/yr tax relief foregone`
-    : m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr missed employer match` : null,
-  pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr Personal Allowance recovery` : null,
-  pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} bonus sacrifice saving` : null,
-].filter(Boolean);
-
-s.pension = m.pensionStatus === "unknown" ? {
-  // User told us they don't know their pension situation — neutral/informational,
-  // not a scored "missed opportunity"
-  status: "unknown",
-  impact: 0,
-  impactLabel: null,
-  amount: 0,
-  potentialAmount: 0,
-} : {
-  // Only "critical" when genuinely missing match or not contributing at all
-  status: !contributing ? "critical" : m.missedMatch > 0 ? "critical" : "attention",
-  impact: pensionImpact,
-  impactLabel: pensionLabelParts.join(" + ") || null,
-  amount: pensionAmount,
-  potentialAmount: pensionPotentialAmount,
-};
-
-  // Student loan — calcStudentLoanScenario is the single source of truth, shared
-  // with the module's own Win/info tile (see there for the full scenario logic).
-  // Overpaying only genuinely matters when the loan will actually clear before
-  // write-off AND beats the user's cash rate — that's the only case with a
-  // non-zero £/yr amount; everything else (written off regardless, or clears
-  // but saving beats overpaying, or below threshold) has nothing actionable.
-  const sl = calcStudentLoanScenario(d, m);
-  const slWorthOverpaying = sl.willClear && sl.effectiveBenefit > 0;
-  const slAmount = slWorthOverpaying ? sl.overpayAnnualBenefit : 0;
-  s.studentLoan = {
-    status: d.studentLoan === "none" ? "na"
-          : slWorthOverpaying ? (sl.balanceGrowing ? "critical" : "attention")
-          : sl.belowThreshold ? "attention"
-          : "ok",
-    impact: slAmount,
-    impactLabel: sl.belowThreshold
-      ? "Below repayment threshold — no deductions currently"
-      : slWorthOverpaying
-        ? `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit from overpaying vs your cash rate`
-        : sl.balanceGrowing
-          ? `${fmt(Math.round(sl.netAnnualChange))}/yr, balance growing — but will be written off regardless`
-          : null,
-    belowThreshold: sl.belowThreshold,
-    amount: slAmount,
-  };
-
-  // Mortgage
-  const mortgageImpact = d.hasMortgage === "yes" ? Math.round(+d.mortgageBalance * +d.mortgageRate / 100 * 0.05) : 0;
-  s.mortgage = {
-    status: d.hasMortgage !== "yes" ? "na" : +d.mortgageRate > 4.5 ? "attention" : "ok",
-    impact: mortgageImpact,
-    impactLabel: d.hasMortgage === "yes" ? `${d.mortgageRate}% rate — ${+d.mortgageRate > 4.5 ? "above average" : "below average"}` : null,
-    amount: mortgageImpact, // only surfaced when status is "attention" (rate above average)
-  };
-
-  // Personal loan
-  const plBal = +d.personalLoanBalance||0, plRate = +d.personalLoanRate||0;
-  const plMo = +d.personalLoanMonthly||0, plTerm = +d.personalLoanTermRemaining||0;
-  const plInterestRemaining = Math.max(0, plMo * plTerm - plBal);
-  s.personalLoan = {
-    status: d.hasPersonalLoan !== "yes" || plBal === 0 ? "na"
-          : plRate > 10 ? "critical" : plRate > 6 ? "attention" : "ok",
-    impact: plInterestRemaining,
-    impactLabel: plBal > 0 ? `${fmt(plInterestRemaining)} interest remaining at ${plRate}%` : null,
-    amount: plInterestRemaining,
-  };
-
-  // Kids
-  const kidsAge = d.hasKids === "yes" && d.kidsAges ? parseInt(d.kidsAges.split(",")[0]) : null;
-  const kidsRunway = kidsAge !== null ? Math.max(0, 18 - kidsAge) : 10;
-  const kidsImpact = d.hasKids === "yes" && d.hasJISA !== "yes"
-    ? Math.round(100 * 12 * ((Math.pow(1.07, kidsRunway)-1)/0.07)) : 0;
-  s.kids = {
-    status: d.hasKids !== "yes" ? "na" : d.hasJISA !== "yes" ? "attention" : "ok",
-    impact: kidsImpact,
-    impactLabel: kidsImpact > 0 ? `~${fmt(kidsImpact)} JISA growth potential (£100/mo at 7%)` : null,
-    amount: kidsImpact,
-    amountIsLumpSum: true, // projected total by age 18, not a £/yr figure — exclude from /yr sums
-  };
-
-  // Modules the user didn't pick on the "Focus" onboarding step read as not
-  // applicable everywhere (Dashboard tiles, the AI prompt, the PDF report),
-  // overriding whatever the blocks above computed from blank/default data.
-  // This is what makes it safe to leave e.g. Pension unselected — without this,
-  // isPensionContributing(d) reading the blank default would otherwise mark it
-  // "critical" (with a +99999 sort sentinel) purely because it was never asked.
-  const selectedModules = new Set(d.selectedModules || []);
-  for (const key of ["cash", "investments", "pension"]) {
-    if (!selectedModules.has(key)) {
-      s[key] = { status: "na", impact: 0, impactLabel: null, amount: 0 };
-    }
-  }
-  if (!selectedModules.has("studentLoan")) {
-    s.studentLoan = { status: "na", impact: 0, impactLabel: null, belowThreshold: false, amount: 0 };
-  }
-
-  return s;
-}
-
-// Merges a module's local (deterministic) status with the AI-generated narrative summary,
-// applying the pension false-positive guard. Single source of truth for the explainer copy
-// shown in the "Module breakdown" cards, ModuleDeepDive's header, and the PDF report.
-export function getModuleSummary(mm, d, m, statuses, insights) {
-  const local = statuses[mm.key] || { status:"na", impact:0 };
-  const aiMod = insights?.modules?.[mm.key];
-  // A local "na" is authoritative and must never be overridden by the AI (or its
-  // offline fallback, which has no awareness of module selection at all) — this
-  // is what's now hidden-for-MVP, opted out of module selection, or otherwise
-  // genuinely not applicable, regardless of what a stale/generic AI status says.
-  // Pension + personalLoan additionally always trust local even when it's NOT
-  // "na" — a separate, pre-existing guard against stale AI data on those two.
-  const status = local.status === "na" ? "na"
-    : (mm.key === "pension" || mm.key === "personalLoan")
-    ? local.status
-    : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
-  const rawSummary = aiMod?.summary || (local.status !== "na" ? `Review your ${mm.title.toLowerCase()} situation.` : "N/A");
-  // For pension: if contributing, never show AI copy that says "no pension" or "start contributions"
-  const pensionContrib = mm.key === "pension" && isPensionContributing(d);
-  const aiHasFalsePositive = pensionContrib && (
-    rawSummary.toLowerCase().includes("no pension") ||
-    rawSummary.toLowerCase().includes("start contribution") ||
-    rawSummary.toLowerCase().includes("not contributing")
-  );
-  const summary = aiHasFalsePositive
-    ? `Contributing ${d.myContribution||""}% with ${d.employerMatch||"0"}% employer match. ${m.missedMatch > 0 ? `Increase to ${d.employerMatch}% to capture ${fmt(m.missedMatch)}/yr in free employer match.` : "Review your projected pot and bonus sacrifice options."}`
-    : rawSummary;
-  // Always use local impact for sorting — AI doesn't provide numeric impact
-  const impact = local.impact || 0;
-  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum };
-}
-
-// Shared £-ranking for the module breakdown — single source of truth for both
-// the Modules screen's full list and Home's "biggest win" teaser, so the two
-// can never drift into separate sort implementations.
-function getModuleBreakdown(d, m, statuses, insights, sortMode = "amount") {
-  const allModules = MODULE_META.map(mm => getModuleSummary(mm, d, m, statuses, insights));
-  const activeModules = allModules.filter(mm => mm.status !== "na");
-
-  // Descending by the clean £/yr `amount` figure (not the sort-priority `impact`,
-  // which carries a +99999 sentinel for an uncontributed pension) by default, or
-  // grouped by category first when sortMode === "category". This ordering is a
-  // mathematical ranking, not an implied recommendation — see the toggle + micro-
-  // copy on the Modules screen, which exists specifically so the default £-gap
-  // order isn't read as a priority call the app is making on the user's behalf.
-  // Modules with nothing actionable (amount === 0) sink to the bottom regardless
-  // of sort mode. Kids & Family is excluded from the ranking and always placed
-  // last — its `amount` is a lump sum by age 18, not a £/yr figure, so it isn't
-  // comparable to the others under either sort mode.
-  const rankedModules = activeModules.filter(mm => mm.key !== "kids");
-  const kidsModule     = activeModules.find(mm => mm.key === "kids") || null;
-  const modulesActionable = rankedModules.filter(mm => mm.amount > 0);
-  // "Category" groups Today-actionable items ahead of Future-opportunity items
-  // (the same Today/Future split already shown via each tile's TagPill), with
-  // largest £ gap as the tie-breaker within each group.
-  const CATEGORY_ORDER = { "Today": 0, "Future opportunity": 1 };
-  const modulesWithRec = sortMode === "category"
-    ? [...modulesActionable].sort((a,b) => {
-        const catDiff = (CATEGORY_ORDER[MODULE_TAG[a.key]?.label] ?? 2) - (CATEGORY_ORDER[MODULE_TAG[b.key]?.label] ?? 2);
-        return catDiff !== 0 ? catDiff : b.amount - a.amount;
-      })
-    : [...modulesActionable].sort((a,b) => b.amount - a.amount);
-  const modulesNoRec   = rankedModules.filter(mm => mm.amount === 0);
-  const moduleList     = [...modulesWithRec, ...modulesNoRec, ...(kidsModule ? [kidsModule] : [])];
-  const needActionCount = modulesWithRec.length + (kidsModule && kidsModule.amount > 0 ? 1 : 0);
-  const onTrackCount    = modulesNoRec.length + (kidsModule && kidsModule.amount === 0 ? 1 : 0);
-  const totalOpp = modulesWithRec.filter(mm => !mm.amountIsLumpSum).reduce((sum, mm) => sum + mm.amount, 0);
-
-  return { moduleList, modulesWithRec, modulesNoRec, kidsModule, needActionCount, onTrackCount, totalOpp };
-}
+// (getModuleSummary, getModuleBreakdown now live in src/lib/moduleStatus.js —
+// imported above.)
 
 function FeedbackButton() {
   const [open, setOpen] = useState(false);
@@ -3547,68 +2589,7 @@ function ForecastScreen({ d, m }) {
   // ── Your Forecast — recalculates live as horizon/surplus controls change ────
   const forecast = calcForecast(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
   const forecastSeries = calcForecastSeries(d, m, forecastSurplus, forecastHorizon, forecastLumpSum ?? 0);
-  const forecastSlRatePct = Math.round(resolveSlRate(d, m.salary) * 1000) / 10;
-  const FORECAST_ASSUMPTIONS = {
-    "Mortgage overpayment": {
-      lines: [
-        `Interest saved by overpaying at your current mortgage rate.`,
-        `If cleared early, freed-up payments earn ${(CASH_RATE_CENTRAL*100).toFixed(1)}% in savings for the remaining period.`,
-        `Low / High shift the mortgage rate ±0.5%.`,
-      ],
-      rates: {
-        low: `${Math.max(0, (+d.mortgageRate||0) - 0.5).toFixed(1)}%`,
-        central: `${(+d.mortgageRate||0).toFixed(1)}%`,
-        high: `${((+d.mortgageRate||0) + 0.5).toFixed(1)}%`,
-      },
-    },
-    "Student loan overpayment": {
-      lines: [
-        `Cumulative interest saved vs making no extra repayments.`,
-        `Interest rate: ${forecastSlRatePct}% p.a. (${+d.studentLoanRate > 0 ? "your entered rate" : "SLC 2024/25 default"}).`,
-        `Low / High reflect salary growth uncertainty — not a rate variation.`,
-        `Benefit is zero if the loan is written off regardless of overpayment.`,
-      ],
-      rates: {
-        low: `${forecastSlRatePct}%`,
-        central: `${forecastSlRatePct}%`,
-        high: `${forecastSlRatePct}%`,
-      },
-    },
-    "Stocks & Shares ISA": {
-      lines: [
-        `Globally diversified index fund, returns compound monthly.`,
-        `Tax-free inside an ISA.`,
-        `Past performance is not a reliable guide to future returns.`,
-      ],
-      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
-    },
-    "Cash savings": {
-      lines: [
-        `Easy-access savings account or Cash ISA.`,
-        `UK market defaults (Sep 2024). Your entered rate used as central if provided, with a ±1.5% spread.`,
-      ],
-      rates: {
-        low: `${(CASH_RATE_LOW*100).toFixed(1)}% p.a.`,
-        central: `${(CASH_RATE_CENTRAL*100).toFixed(1)}% p.a.`,
-        high: `${(CASH_RATE_HIGH*100).toFixed(1)}% p.a.`,
-      },
-    },
-    "Pension (salary sacrifice)": {
-      lines: [
-        `Surplus paid before tax and NI — HMRC effectively tops it up immediately.`,
-        `Uplift reflects your marginal tax rate plus the employer NI saving passed through.`,
-        `Excludes employer contributions on the extra amount.`,
-      ],
-      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
-    },
-    "Pension (relief at source)": {
-      lines: [
-        `Every £1 you contribute becomes £1.25 in the pension (20% HMRC basic-rate top-up).`,
-        `Higher-rate relief via self-assessment not modelled — conservative estimate.`,
-      ],
-      rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
-    },
-  };
+  const FORECAST_ASSUMPTIONS = buildForecastAssumptions(d, m);
   const forecastChart = (() => {
     const { years, series } = forecastSeries;
     const allValues = series.flatMap(s => s.values);
@@ -6693,155 +5674,18 @@ export default function AppShell() {
 
     // ── Reuse the metrics/statuses already computed for this render — no need to recalculate ──
     const metrics = m;
-    const isaPrev = (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0);
-    const totalOppForSummary = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
-
-    const financialSummary = {
-      name: d.name || "User",
-      age: +d.age || null,
-
-      // Income
-      grossSalary: fmt(+d.salary||0),
-      adjustedNetIncome: fmt(metrics.adjustedNetIncome||0),
-      taxBand: metrics.tr >= 0.45 ? "Additional rate (45%)" : metrics.tr === 0.40 ? "Higher rate (40%)" : metrics.adjustedNetIncome > 100000 ? "60% taper zone (£100k–£125,140)" : "Basic rate (20%)",
-      otherIncome: +d.otherIncome > 0 ? fmt(+d.otherIncome) : null,
-      dividendIncome: +d.dividendIncome > 0 ? fmt(+d.dividendIncome) : null,
-      bonusAmount: +d.bonusAmount > 0 ? fmt(+d.bonusAmount) : null,
-
-      // Cash
-      cashSavings: fmt(metrics.cash||0),
-      premiumBonds: fmt(+d.premiumBonds||0),
-      totalLiquid: fmt(metrics.totalLiquid||0),
-      monthlyExpenses: fmt(metrics.expenses||0),
-      runwayMonths: +metrics.runwayMonths.toFixed(1),
-      emergencyStatus: metrics.emergencyFund >= metrics.emergencyBuffer
-        ? `Adequate (${metrics.runwayMonths.toFixed(1)} months)`
-        : `Shortfall of ${fmt(metrics.emergencyBuffer - metrics.emergencyFund)}`,
-      effectiveSavingsRate: metrics.effectiveSavingsRate.toFixed(2) + "%",
-      annualYieldGap: fmt(Math.round(metrics.annualYieldGap||0)),
-
-      // ISA
-      isaUsedThisYear: fmt(metrics.isaUsedThisYear||0),
-      isaHeadroom: fmt(metrics.isaHeadroom||0),
-      isaPreviousBalance: isaPrev > 0 ? fmt(isaPrev) : null,
-
-      // Investments
-      hasInvestments: d.hasInvestments === "yes",
-      unwrappedValue: +d.unwrappedValue > 0 ? fmt(+d.unwrappedValue) : null,
-      unrealisedGains: +d.unrealisedGains > 0 ? fmt(+d.unrealisedGains) : null,
-      cgtSaving: metrics.cgtSaving > 0 ? fmt(Math.round(metrics.cgtSaving)) : null,
-
-      // Pension
-      pensionContributing: isPensionContributing(d),
-      myContributionPct: isPensionContributing(d) ? (+d.myContribution||0) + "%" : null,
-      employerMatchCap: (+d.employerMatch||0) + "%",
-      missedMatchAnnual: metrics.missedMatch > 0 ? fmt(Math.round(metrics.missedMatch)) + "/yr" : "None",
-      pensionPot: (+d.potValue||0) + (+d.potValue2||0) > 0 ? fmt((+d.potValue||0)+(+d.potValue2||0)) : null,
-      projectedPotAtRetirement: fmt(Math.round(metrics.projectedPot||0)),
-      retirementAge: +d.retirementAge||65,
-      pensionReturnRatio: "1:" + pensionReturnRatio(d, metrics).toFixed(2),
-      pensionType: d.pensionType === "sacrifice" ? "Salary sacrifice" : d.pensionType === "relief" ? "Relief at source" : "Unknown",
-
-      // Student loan
-      studentLoan: d.studentLoan !== "none" ? {
-        plan: d.studentLoan,
-        balance: fmt(+d.loanBalance||0),
-        annualRepayment: fmt(Math.round(metrics.annualRepayment||0)),
-        willClear: metrics.willClear ? "Yes — before write-off" : "No — likely written off",
-      } : null,
-
-      // Mortgage
-      mortgage: d.hasMortgage === "yes" ? {
-        balance: fmt(+d.mortgageBalance||0),
-        rate: (+d.mortgageRate||0) + "%",
-        monthlyPayment: fmt(+d.monthlyMortgage||0),
-        daysToFixExpiry: metrics.daysToFixExpiry || null,
-      } : null,
-
-      // Personal loan
-      personalLoan: d.hasPersonalLoan === "yes" ? {
-        balance: fmt(+d.personalLoanBalance||0),
-        rate: (+d.personalLoanRate||0) + "%",
-      } : null,
-
-      // Kids
-      kids: d.hasKids === "yes" ? {
-        numKids: d.numKids,
-        ages: d.kidsAges,
-        hasJISA: d.hasJISA === "yes",
-        jisaValue: d.hasJISA === "yes" ? fmt(+d.juniorISAValue||0) : null,
-      } : null,
-
-      // Net worth
-      netWorth: fmt(metrics.netWorth||0),
-      totalAssets: fmt(metrics.totalAssets||0),
-      totalLiabilities: fmt(metrics.totalLiabilities||0),
-
-      // Pre-calculated module statuses — Claude uses these, does not recalculate
-      moduleStatuses: Object.fromEntries(
-        Object.entries(statuses).map(([key, s]) => [key, {
-          status: s.status,
-          impact: s.impact > 0 ? fmt(Math.min(s.impact, 99998)) : null,
-          impactLabel: s.impactLabel || null,
-        }])
-      ),
-
-      totalOpportunity: fmt(Math.round(totalOppForSummary / 100) * 100),
-    };
+    const financialSummary = buildFinancialSummary(d, metrics, statuses);
 
     if (import.meta.env.DEV) {
       console.log("Metrics sent to Claude:", financialSummary);
     }
 
-    const prompt = `You are Candid, a UK personal finance guidance tool. A user has completed their financial health assessment. Below are their pre-calculated financial metrics. Your job is to generate a personalised financial health report based ONLY on these figures — do not recalculate or re-derive any numbers.
-
-USER FINANCIAL SUMMARY:
-${JSON.stringify(financialSummary, null, 2)}
-
-Generate a JSON response with exactly this structure:
-{"score":<integer 0-100 based on moduleStatuses>,"headline":"<one punchy sentence, under 12 words: the single most important thing to address>","narrative":"<Max 2 short, punchy sentences, under 30 words total. Lead with the standout figure, close with the single biggest quick win. Use first name if provided. Tone: direct, like a knowledgeable friend.>","priorities":[{"title":"<max 6 words>","impact":"<£ figure>","description":"<1 short sentence, under 18 words, explaining why this matters for this specific person>","urgency":"<immediate|soon|this tax year>","module":"<cash|investments|pension|studentLoan|mortgage|personalLoan|kids|inheritance>"}],"modules":{"cash":{"status":"<ok|attention|critical>","summary":"<one short sentence, under 15 words>"},"investments":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"pension":{"status":"<ok|attention|critical>","summary":"<one short sentence, under 15 words>"},"studentLoan":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"mortgage":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"personalLoan":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"kids":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"}}}
-
-Rules:
-- Use ONLY the figures in the summary above. Do not invent or recalculate numbers.
-- If a module has status "na" in moduleStatuses, set its status to "na" and summary to "Not applicable based on your inputs."
-- Pension summary MUST reflect pensionContributing: ${financialSummary.pensionContributing} — never say "no contributions" or "start contributing" if pensionContributing is true.
-- Priorities ordered by urgency then impact. Maximum 4 priorities. No insurance priorities.
-- Be ruthlessly concise. Every field above has a hard word limit — treat it as a ceiling, not a target. Cut adjectives, hedging, and any clause that doesn't carry a number or an action. Never write "you are currently", "in order to", or "this means that".
-- Module summaries must be direct and specific, not hedgy — cite the actual £ figure from the summary above (e.g. "£8,000 unused ISA allowance") rather than vague phrasing like "may not be fully utilised".
-- Score should correlate with moduleStatuses: each critical module reduces score significantly.
-- Write in British English. Do not use "silently", "quietly", or "invisible".
-- Return valid JSON only. No preamble, no markdown, no backticks.`;
-
-    const fallback = {
-      isFallback:true,
-      score:46, headline:"You're leaving money on the table — but it's fixable.",
-      narrative:`${d.name?d.name.split(" ")[0]+", s":"S"}olid foundations, clear gaps. Pension and ISA are your fastest wins — see below.`,
-      priorities:[
-        {title:"Review your pension contributions",impact:"£3,000+",description:"Tax relief plus employer match means £100 in costs ~£80 take-home.",urgency:"immediate"},
-        {title:"Maximise ISA allowance before April",impact:"£800+",description:"Unused ISA allowance expires April 5th — shelter it to protect future growth from tax.",urgency:"this tax year"},
-        {title:"Review student loan strategy",impact:"Varies",description:"Most Plan 2/5 loans are written off before you'd clear them — that money works harder in a pension.",urgency:"soon"},
-      ],
-      modules:{
-        cash:{status:"attention",summary:"Cash position's fine, but yield could be higher."},
-        investments:{status:"attention",summary: metrics.isaHeadroom > 0
-          ? `${fmt(metrics.isaHeadroom)} of ISA allowance unused this year — shelter it before April 5th.`
-          : "Your ISA allowance is fully used this tax year — well done."},
-        pension:{status:"attention",summary:"Review your contributions and projected pot."},
-        studentLoan:{status:"attention",summary:"Overpayment strategy worth reviewing at your income."},
-        mortgage:{status:"na",summary:"Not applicable based on your inputs."},
-        personalLoan:{status:"na",summary:"Not applicable based on your inputs."},
-        kids:{status:"na",summary:"Not applicable based on your inputs."},
-      }
-    };
+    const prompt = buildDashboardPrompt(financialSummary);
+    const fallback = buildFallbackInsights(d, metrics);
     // Same shape as `fallback` (so nothing downstream needs to special-case
     // it), just a headline/narrative that actually tells the user what
     // happened instead of reading like a generic AI hiccup.
-    const rateLimitedFallback = {
-      ...fallback,
-      isRateLimited: true,
-      headline: "You're regenerating too fast — please try again shortly.",
-      narrative: `${d.name?d.name.split(" ")[0]+", y":"Y"}our inputs are saved. Wait a moment, then hit "Regenerate my report" again.`,
-    };
+    const rateLimitedFallback = buildRateLimitedFallback(fallback, d);
     try {
       const result = await callClaude(prompt, 1400);
       setInsights(result);
@@ -6853,7 +5697,7 @@ Rules:
       posthog.capture("report_generated", { score: result.score, tax_band: metrics.taxBandLabel });
       // ── Supabase insert — reuse pre-computed statuses ──
       const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
-      const totalOpp = totalOppForSummary;
+      const totalOpp = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
       // Written once, ever, by main.jsx's getAcquisition()/handleStart() — read back
       // here rather than re-derived, so the ORIGINAL first-touch source (not whatever
       // UTM params happen to be in the URL right now) lands on the report row.
@@ -7000,8 +5844,8 @@ Rules:
   // once an assessment has produced a report — bounce home rather than show a
   // broken or empty page for a stale bookmark, shared link, or a bare reload with
   // no data.
-  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat"];
-  if ((REPORT_PATHS.includes(pathname) || pathname.startsWith("/module/")) && !insights) {
+  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat", "/app/home", "/app/modules", "/app/forecast", "/app/chat"];
+  if ((REPORT_PATHS.includes(pathname) || pathname.startsWith("/module/") || pathname.startsWith("/app/module/")) && !insights) {
     return <Navigate to="/" replace />;
   }
 
@@ -7034,6 +5878,56 @@ Rules:
           generateDashboard();
         }}
       />
+    );
+  }
+
+  if (pathname === "/app/home") return (
+    <MobileLayout pageLabel="Home" activeTab="home"
+      headerRight={
+        <button onClick={() => navigate("/assessment/1")} aria-label="Edit inputs" style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <Wrench size={20} color={GOLD}/>
+        </button>
+      }>
+      <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses}/>
+    </MobileLayout>
+  );
+
+  if (pathname === "/app/modules") return (
+    <MobileLayout pageLabel="Modules" activeTab="modules">
+      <MobileModulesScreen d={d} m={m} statuses={statuses} insights={insights}
+        completedModules={completedModules}
+        onMarkReviewed={markModuleComplete}
+        onOpenModule={key => navigate(`/app/module/${key}`)}/>
+    </MobileLayout>
+  );
+
+  if (pathname === "/app/forecast") return (
+    <MobileLayout pageLabel="Forecast" activeTab="forecast">
+      <MobileForecastScreen d={d} m={m}/>
+    </MobileLayout>
+  );
+
+  if (pathname === "/app/chat") return (
+    <MobileLayout pageLabel="Chat" activeTab="chat">
+      <MobileChatScreen/>
+    </MobileLayout>
+  );
+
+  if (pathname.startsWith("/app/module/")) {
+    const mobileActiveModule = params.moduleKey || null;
+    if (!mobileActiveModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(mobileActiveModule)) || !MODULE_META.some(mm => mm.key === mobileActiveModule)) {
+      return <Navigate to="/app/modules" replace />;
+    }
+    return (
+      <MobileLayout pageLabel={MODULE_META.find(mm => mm.key === mobileActiveModule)?.title || "Module"} activeTab="modules"
+        headerRight={
+          <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:GOLD,fontSize:"13px",fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+        }>
+        <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights}
+          isComplete={completedModules.includes(mobileActiveModule)}
+          onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
+          onBack={() => navigate("/app/modules")}/>
+      </MobileLayout>
     );
   }
 

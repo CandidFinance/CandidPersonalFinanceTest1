@@ -1,4 +1,5 @@
-import { MODULE_META, getModuleSummary, fmt } from "../CandidApp.jsx";
+import { MODULE_META, getModuleSummary } from "../lib/moduleStatus.js";
+import { fmt } from "../lib/format.js";
 
 // Restrained, low-saturation tint per module — pale fills with a darker on-tint text
 // colour, all mixed from the brand palette rather than arbitrary hues.
