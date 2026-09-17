@@ -2295,6 +2295,70 @@ function ScoreRing({ score, delta = 0 }) {
   );
 }
 
+// ── Score detail sheet — full AI breakdown behind a tap on the score card.
+// Shortcomings come straight from insights.priorities (same array driving the
+// Modules ranking); strengths are any module the AI marked "ok", using its
+// own one-line summary rather than restating priorities in reverse.
+function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, onReviewModules }) {
+  const col = displayScore >= 86 ? G : displayScore >= 66 ? "#2d6b4a" : displayScore >= 41 ? GOLD : "#c0392b";
+  const lb  = displayScore >= 86 ? "Optimised" : displayScore >= 66 ? "On track" : displayScore >= 41 ? "Room to improve" : "Needs attention";
+  const strengths = Object.values(insights.modules||{}).filter(mo => mo?.status === "ok" && mo.summary);
+
+  return createPortal(
+    <div onClick={onClose} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.55)",display:"flex",alignItems:isMobile?"flex-end":"center",justifyContent:"center",padding:isMobile?0:"24px",overflowY:"auto"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:CREAM,borderRadius:isMobile?"20px 20px 0 0":"18px",maxWidth:"480px",width:"100%",maxHeight:"88vh",overflowY:"auto",boxShadow:"0 -8px 30px rgba(0,0,0,0.2)"}}>
+        <div style={{position:"sticky",top:0,background:CREAM,padding:"18px 22px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(22,47,36,0.08)"}}>
+          <span style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G}}>Your Candid score</span>
+          <button onClick={onClose} style={{background:"rgba(22,47,36,0.08)",border:"none",borderRadius:"50%",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"16px",color:MUT,lineHeight:1}}>×</button>
+        </div>
+        <div style={{padding:"20px 22px 30px"}}>
+          <div style={{display:"flex",alignItems:"baseline",gap:"10px"}}>
+            <span style={{fontFamily:SERIF,fontSize:"42px",fontWeight:700,color:col}}>{displayScore}</span>
+            <span style={{fontSize:"13px",color:MUT}}>/100 · {lb}</span>
+          </div>
+          {!insights.isFallback && (
+            <div style={{marginTop:"12px",display:"inline-block",background:"rgba(196,150,58,0.16)",color:"#8a6a24",fontSize:"10.5px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",padding:"5px 12px",borderRadius:"100px"}}>AI-generated summary</div>
+          )}
+          <p style={{fontSize:"14px",color:TEXT,lineHeight:1.6,marginTop:"14px"}}>{insights.narrative}</p>
+
+          {insights.priorities?.length > 0 && (
+            <>
+              <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Shortcomings</div>
+              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+                {insights.priorities.map((p,i) => (
+                  <div key={i} style={{background:WHITE,borderRadius:"12px",padding:"12px 14px"}}>
+                    <div style={{fontSize:"13.5px",fontWeight:700,color:G}}>{p.title}</div>
+                    <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px",lineHeight:1.5}}>
+                      {p.impact && <span style={{fontWeight:700,color:TEXT}}>{p.impact} — </span>}
+                      {p.description}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {strengths.length > 0 && (
+            <>
+              <div style={{fontSize:"11px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Strengths</div>
+              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+                {strengths.map((mo,i) => (
+                  <div key={i} style={{background:WHITE,borderRadius:"12px",padding:"12px 14px"}}>
+                    <div style={{fontSize:"13px",color:TEXT,lineHeight:1.5}}>{mo.summary}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          <button type="button" onClick={onReviewModules} style={{display:"block",width:"100%",marginTop:"22px",background:G,border:"none",borderRadius:"100px",padding:"13px",fontSize:"14px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS}}>Review modules</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT, unknown:MUT };
 const SL = { ok:"On track", attention:"Review", critical:"Action needed", na:"N/A", unknown:"Find out" };
 
@@ -2890,7 +2954,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
   const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
-  const [scoreTextExpanded, setScoreTextExpanded] = useState(false); // mobile-only collapse for the AI narrative
+  const [scoreDetailOpen, setScoreDetailOpen] = useState(false);
   const isMobile = useWindowWidth() < 768;
       if (!insights) return null;
 
@@ -2997,50 +3061,54 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
             ring-left / text-right, with the update-inputs button sitting under
             the body text in that same right-hand column rather than a separate
             third column. */}
-        <div className="fu" style={{background:G,borderRadius:"16px",padding:"20px 28px",display:"flex",flexDirection:isMobile?"column":"row",alignItems:isMobile?"center":"center",gap:"24px",marginBottom:"20px",flexWrap:"wrap"}}>
+        <div className="fu" onClick={() => setScoreDetailOpen(true)} style={{background:G,borderRadius:"16px",padding:"20px 28px",display:"flex",flexDirection:isMobile?"column":"row",alignItems:"center",gap:"24px",marginBottom:"20px",flexWrap:"wrap",cursor:"pointer"}}>
           {isMobile ? (
             <div style={{width:"100%",textAlign:"center"}}>
-              <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"14px"}}>Your Candid Score</div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",marginBottom:"14px"}}>
+                <span style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase"}}>Your Candid Score</span>
+                <span style={{fontSize:"13px",color:GOLD}}>›</span>
+              </div>
               <div style={{display:"flex",justifyContent:"center",marginBottom:"16px"}}>
                 <ScoreRing score={displayScore} delta={totalDelta}/>
               </div>
               <div style={{textAlign:"left"}}>
                 <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"18px",lineHeight:1.35,margin:0}}>{insights.headline}</h2>
-                {scoreTextExpanded && (
-                  <>
-                    <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginTop:"8px",marginBottom:insights.isFallback?"10px":0}}>{insights.narrative}</p>
-                    {insights.isFallback && (
-                      <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:0}}>
-                        Couldn't generate your personalised analysis — showing a general summary. Try regenerating shortly.
-                      </p>
-                    )}
-                  </>
+                {insights.isFallback && (
+                  <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:"6px 0 0"}}>
+                    Couldn't generate your personalised analysis — showing a general summary.
+                  </p>
                 )}
-                <button type="button" onClick={() => setScoreTextExpanded(v => !v)} style={{background:"transparent",border:"none",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer",padding:0,marginTop:"10px"}}>
-                  {scoreTextExpanded ? "Show less ↑" : "Show more ↓"}
-                </button>
+                <div style={{fontSize:"12px",color:GOLD,fontWeight:700,marginTop:"10px"}}>Tap for the full breakdown ›</div>
               </div>
               <div style={{textAlign:"center",marginTop:"18px"}}>
-                <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
+                <button onClick={e => { e.stopPropagation(); onEditInputs(); }} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
               </div>
             </div>
           ) : (
             <>
               <ScoreRing score={displayScore} delta={totalDelta}/>
               <div style={{flex:1,minWidth:"200px"}}>
-                <div style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"6px"}}>Your Candid Score</div>
+                <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
+                  <span style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase"}}>Your Candid Score</span>
+                  <span style={{fontSize:"12px",color:GOLD}}>›</span>
+                </div>
                 <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"8px"}}>{insights.headline}</h2>
-                <p style={{color:"rgba(255,255,255,0.65)",fontSize:"14px",lineHeight:1.7,marginBottom:insights.isFallback?"10px":"14px"}}>{insights.narrative}</p>
                 {insights.isFallback && (
-                  <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:"0 0 14px"}}>
-                    Couldn't generate your personalised analysis — showing a general summary. Try regenerating shortly.
+                  <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:"0 0 8px"}}>
+                    Couldn't generate your personalised analysis — showing a general summary.
                   </p>
                 )}
-                <button onClick={onEditInputs} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
+                <div style={{fontSize:"12px",color:GOLD,fontWeight:700,marginBottom:"14px"}}>Tap for the full breakdown ›</div>
+                <button onClick={e => { e.stopPropagation(); onEditInputs(); }} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
               </div>
             </>
           )}
         </div>
+        {scoreDetailOpen && (
+          <ScoreDetailSheet insights={insights} displayScore={displayScore} isMobile={isMobile}
+            onClose={() => setScoreDetailOpen(false)}
+            onReviewModules={() => { setScoreDetailOpen(false); navigate("/modules"); }}/>
+        )}
 
 
         {/* Premium bonds countdown */}
@@ -3283,8 +3351,9 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
 // ── Modules — full £-ranked breakdown, entry point into each module's detail
 // page. Shares its ranking logic with HomeScreen's biggest-win teaser via
 // getModuleBreakdown rather than recomputing it here.
-function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, completedModules }) {
+function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, completedModules, onMarkReviewed }) {
   const [breakdownSort, setBreakdownSort] = useState("amount"); // "amount" | "category" — user-controlled order for the list below
+  const [expandedKey, setExpandedKey] = useState(null); // tapping a row expands it in place instead of navigating away
   const { moduleList, modulesWithRec, needActionCount, onTrackCount } = getModuleBreakdown(d, m, statuses, insights, breakdownSort);
 
   return (
@@ -3342,37 +3411,51 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
               // change on review so we don't stack a third and fourth signal on top.
               const baseOpacity = hasRec ? 1 : 0.6;
               const tileOpacity = reviewed ? +(baseOpacity * 0.75).toFixed(2) : baseOpacity;
+              const isOpen = expandedKey === mm.key;
               return (
-                <div key={mm.key} onClick={() => onOpenModule(mm.key)} className={`fu${Math.min(i+1,7)}`}
-                  style={{background:WHITE,border:`1.5px solid ${hasRec ? "rgba(22,47,36,0.14)" : "rgba(22,47,36,0.08)"}`,borderRadius:"12px",padding:"16px 18px",marginBottom:"10px",cursor:"pointer",opacity:tileOpacity,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
-                  <div style={{display:"flex",alignItems:"flex-start",gap:"12px",minWidth:0,flex:1}}>
-                    <div style={{width:"24px",height:"24px",borderRadius:"50%",background:hasRec?G:"rgba(22,47,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-                      {hasRec ? (
-                        <span style={{fontSize:"12px",fontWeight:700,color:CREAM}}>{winNumber}</span>
-                      ) : (
-                        <Check size={11} color={WHITE} strokeWidth={2.5}/>
-                      )}
+                <div key={mm.key} className={`fu${Math.min(i+1,7)}`}
+                  style={{background:isOpen?G:WHITE,border:`1.5px solid ${isOpen?G:(hasRec ? "rgba(22,47,36,0.14)" : "rgba(22,47,36,0.08)")}`,borderRadius:"12px",marginBottom:"10px",opacity:tileOpacity,overflow:"hidden",transition:"background 0.15s"}}>
+                  <div onClick={() => setExpandedKey(k => k===mm.key ? null : mm.key)} style={{padding:"16px 18px",cursor:"pointer",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:"12px",minWidth:0,flex:1}}>
+                      <div style={{width:"24px",height:"24px",borderRadius:"50%",background:hasRec?(isOpen?GOLD:G):"rgba(22,47,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
+                        {hasRec ? (
+                          <span style={{fontSize:"12px",fontWeight:700,color:isOpen?G:CREAM}}>{winNumber}</span>
+                        ) : (
+                          <Check size={11} color={WHITE} strokeWidth={2.5}/>
+                        )}
+                      </div>
+                      {/* Icon trails the title (rather than leading it) so the title and the
+                          body line below both start flush at the same left edge. */}
+                      <div style={{minWidth:0}}>
+                        <div style={{fontSize:"16px",fontWeight:700,color:isOpen?WHITE:G,lineHeight:1.3,display:"flex",alignItems:"center",gap:"6px"}}>{mm.title} {mm.icon && <mm.icon size={14}/>}</div>
+                        {hasRec ? (
+                          <div style={{fontSize:"14px",color:isOpen?"rgba(255,255,255,0.85)":TEXT,marginTop:"4px",lineHeight:1.4}}>
+                            <span style={{fontWeight:700,color:isOpen?WHITE:G}}>{fmt(mm.amount)}{mm.amountIsLumpSum ? " by 18" : "/yr"}</span>
+                            {context && <span style={{color:isOpen?"rgba(255,255,255,0.65)":MUT}}> — {context}</span>}
+                          </div>
+                        ) : (
+                          <div style={{fontSize:"13px",color:isOpen?"rgba(255,255,255,0.65)":MUT,marginTop:"4px",lineHeight:1.4}}>{mm.impactLabel || "On track — no action needed"}</div>
+                        )}
+                      </div>
                     </div>
-                    {/* Icon trails the title (rather than leading it) so the title and the
-                        body line below both start flush at the same left edge. */}
-                    <div style={{minWidth:0}}>
-                      <div style={{fontSize:"16px",fontWeight:700,color:G,lineHeight:1.3,display:"flex",alignItems:"center",gap:"6px"}}>{mm.title} {mm.icon && <mm.icon size={14}/>}</div>
-                      {hasRec ? (
-                        <div style={{fontSize:"14px",color:TEXT,marginTop:"4px",lineHeight:1.4}}>
-                          <span style={{fontWeight:700,color:G}}>{fmt(mm.amount)}{mm.amountIsLumpSum ? " by 18" : "/yr"}</span>
-                          {context && <span style={{color:MUT}}> — {context}</span>}
-                        </div>
-                      ) : (
-                        <div style={{fontSize:"13px",color:MUT,marginTop:"4px",lineHeight:1.4}}>{mm.impactLabel || "On track — no action needed"}</div>
-                      )}
+                    {/* Tag pill always occupies the top slot; the reviewed tick sits below
+                        it in the same column so its appearance never shifts the tag. */}
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"6px",flexShrink:0}}>
+                      {tag && <TagPill label={tag.label} color={tag.color}/>}
+                      {hasRec && reviewed && <Check size={14} color={isOpen?GOLD:"#2d6b4a"} strokeWidth={2.5}/>}
+                      <span style={{fontSize:"16px",color:isOpen?GOLD:MUT,transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}>›</span>
                     </div>
                   </div>
-                  {/* Tag pill always occupies the top slot; the reviewed tick sits below
-                      it in the same column so its appearance never shifts the tag. */}
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"6px",flexShrink:0}}>
-                    {tag && <TagPill label={tag.label} color={tag.color}/>}
-                    {hasRec && reviewed && <Check size={14} color="#2d6b4a" strokeWidth={2.5}/>}
-                  </div>
+                  {isOpen && (
+                    <div style={{padding:"0 18px 18px",display:"flex",gap:"10px",flexWrap:"wrap"}}>
+                      <button type="button" onClick={() => onOpenModule(mm.key)} style={{flex:"1 1 160px",background:GOLD,border:"none",borderRadius:"100px",padding:"11px",fontSize:"13px",fontWeight:700,color:G,cursor:"pointer",fontFamily:SANS}}>Deep dive · {mm.title}</button>
+                      {hasRec && (
+                        <button type="button" onClick={() => onMarkReviewed(mm.key)} style={{flex:"1 1 160px",background:"transparent",border:"1.5px solid rgba(255,255,255,0.4)",borderRadius:"100px",padding:"10px",fontSize:"12.5px",fontWeight:700,color:WHITE,cursor:"pointer",fontFamily:SANS,display:"flex",alignItems:"center",justifyContent:"center",gap:"5px"}}>
+                          {reviewed ? <><Check size={13}/> Reviewed</> : "Mark as reviewed"}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             });
@@ -6930,7 +7013,8 @@ Rules:
   if (pathname === "/modules") return (
     <ModulesScreen d={d} m={m} statuses={statuses} insights={insights} completedModules={completedModules}
       onOpenModule={key => openModule(key)}
-      onAddModule={addModule}/>
+      onAddModule={addModule}
+      onMarkReviewed={markModuleComplete}/>
   );
 
   if (pathname === "/forecast") return <ForecastScreen d={d} m={m}/>;
