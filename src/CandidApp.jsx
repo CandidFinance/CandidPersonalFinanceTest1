@@ -3642,9 +3642,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const currentPot = m.projectedPot;
           const optimisedContrib = (empCapPct * 2) * salary / 100;
           const optimisedPot = potVal * Math.pow(1.06, years) + optimisedContrib * ((Math.pow(1.06, years) - 1) / 0.06);
+          // Bonus sacrifice is a one-off lump sum this year, not a recurring
+          // annual contribution — grown with simple compounding, not the
+          // annuity formula used for optimisedContrib (which previously
+          // assumed the bonus repeated every year until retirement).
           const bonusExtra = (+d.bonusAmount||0) * 0.9;
-          const withBonusAnnual = optimisedContrib + bonusExtra;
-          const withBonusPot = potVal * Math.pow(1.06, years) + withBonusAnnual * ((Math.pow(1.06, years) - 1) / 0.06);
+          const withBonusPot = potVal * Math.pow(1.06, years) + optimisedContrib * ((Math.pow(1.06, years) - 1) / 0.06) + bonusExtra * Math.pow(1.06, years);
           const hasMissedMatch = m.missedMatch > 0;
           const hasBonus = (+d.bonusAmount||0) > 0;
           const showOptimised = hasMissedMatch || hasBonus;

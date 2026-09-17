@@ -1,3 +1,5 @@
+import { calcBonusTaxBreakdown } from "./tax.js";
+
 // ── User contributing to pension ────────────────────────────────────────────────────────
 export function isPensionContributing(d) {
   // pensionType has zero effect here — only affects return ratio
@@ -75,23 +77,192 @@ export function calcAnnualAllowanceTaper(d, m) {
   // Rounds DOWN so a just-tapered result never rounds back up to exactly
   // £60,000 — which would contradict the message announcing the reduction.
   const approxAA = inAATaper ? Math.max(10000, Math.floor((60000 - Math.max(0, adjustedIncome - AA_ADJUSTED_INCOME_LIMIT) / 2) / 1000) * 1000) : 60000;
-  return { thresholdIncome, adjustedIncome, inAATaper, approxAA, AA_THRESHOLD_INCOME_LIMIT, AA_ADJUSTED_INCOME_LIMIT };
+  // VCT/EIS gate — when pension contributions alone can't realistically bring
+  // Threshold Income below £200k (either the allowance is already at the
+  // £10k floor, or the sacrifice needed to escape the taper exceeds 30% of
+  // salary), VCT/EIS become the usual alternative (30% income tax relief).
+  const thresholdIncomeSacrificeToEscape = inAATaper ? Math.max(0, thresholdIncome - AA_THRESHOLD_INCOME_LIMIT) : 0;
+  const showVctEis = inAATaper && (approxAA <= 20000 || thresholdIncomeSacrificeToEscape > salary * 0.3);
+  return { thresholdIncome, adjustedIncome, inAATaper, approxAA, AA_THRESHOLD_INCOME_LIMIT, AA_ADJUSTED_INCOME_LIMIT, showVctEis };
 }
 
-// Simple carry-forward estimate — assumes a pension scheme existed with £0
-// contributed in each of the last 3 tax years (the maximum-unused, best-case
-// assumption), which is also the exact default desktop's own interactive
-// 3-year carry-forward calculator starts from before a user edits anything.
-// A real figure needs the user's actual contribution history; this is the
-// "assume the best case" simple figure for a first mobile pass, not a
-// replacement for that calculator.
-export function calcSimpleCarryForward(d, m, approxAA) {
+// ── Annual Allowance carry-forward — a member of a UK-registered pension
+// scheme can carry forward up to 3 prior tax years' unused Annual Allowance
+// (flat £60,000/yr under the current regime), stacked on top of the current
+// (possibly tapered) allowance, capped at 100% of relevant UK earnings.
+// cfYears: array of 3 {label, hadScheme, contribution} objects, most recent
+// first — real user input from the mobile/desktop carry-forward table, not
+// an assumption baked into this function.
+export function calcCarryForward(d, m, approxAA, cfYears) {
   const CF_STANDARD_AA = 60000;
-  const cfTotalUnused = CF_STANDARD_AA * 3;
+  const cfBreakdown = cfYears.map(y => {
+    const contributed = y.hadScheme ? Math.max(0, +y.contribution || 0) : 0;
+    const unused = y.hadScheme ? Math.max(0, CF_STANDARD_AA - contributed) : 0;
+    return { ...y, contributed, unused };
+  });
+  const cfTotalUnused = cfBreakdown.reduce((s,y) => s + y.unused, 0);
+  // "Relevant UK earnings" for the 100%-of-earnings cap — approximated as
+  // salary + bonus, excluding dividends and other unearned income.
   const cfRelevantEarnings = Math.round(m.salary + (+d.bonusAmount||0));
   const cfTheoreticalMax = approxAA + cfTotalUnused;
   const cfMaxContributable = Math.max(0, Math.min(cfTheoreticalMax, cfRelevantEarnings));
   const cfEarningsCapped = cfTheoreticalMax > cfRelevantEarnings;
   const showCarryForward = d.hasPension === "yes" && cfRelevantEarnings >= 100000;
-  return { cfTotalUnused, cfRelevantEarnings, cfTheoreticalMax, cfMaxContributable, cfEarningsCapped, showCarryForward };
+  return { cfBreakdown, cfTotalUnused, cfRelevantEarnings, cfTheoreticalMax, cfMaxContributable, cfEarningsCapped, showCarryForward };
+}
+
+// The default 3-year carry-forward state — most recent tax year first,
+// assuming a scheme existed with nothing contributed (the same default
+// desktop's own calculator starts from before a user edits anything).
+export function defaultCarryForwardYears() {
+  return [
+    { label:"2025/26", hadScheme:true, contribution:"" },
+    { label:"2024/25", hadScheme:true, contribution:"" },
+    { label:"2023/24", hadScheme:true, contribution:"" },
+  ];
+}
+
+// ── Bonus sacrifice calculator — tax/NI/student-loan breakdown for
+// sacrificing some or all of a stated bonus into the pension instead of
+// taking it as cash, at a chosen sacrifice percentage (0–100).
+export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
+  const bonus = Math.max(0, +bonusInput || 0);
+  const ongoingSacrifice = (+d.myContribution||0) / 100 * m.salary;
+  const taxableSalary = Math.max(0, m.salary - ongoingSacrifice);
+  // NI rate on bonus: above the £50,270 threshold it's 2%, below it's 8% —
+  // bonus sits on top of salary, so if salary is already above threshold,
+  // all of the bonus falls at 2%.
+  const niRateOnBonus = m.salary >= 50270 ? 0.02 : 0.08;
+  const slThreshold = d.studentLoan==="plan2" ? 27295 : d.studentLoan==="plan5" ? 25000 : d.studentLoan==="plan1" ? 24990 : 0;
+  const bonusSlRate = (d.studentLoan !== "none" && m.salary > slThreshold) ? 0.09 : 0;
+
+  // Full bonus, no sacrifice — effective income tax rate on the whole amount.
+  const fullBonusTax = calcBonusTaxBreakdown(taxableSalary, bonus);
+  const fullTaxPct = Math.round(fullBonusTax.effectiveRate * 100);
+  const fullNIPct = Math.round(niRateOnBonus * 100);
+  const fullSLPct = Math.round(bonusSlRate * 100);
+  const fullKeepPct = 100 - fullTaxPct - fullNIPct - fullSLPct;
+
+  // At the chosen sacrifice percentage.
+  const sacrificedAmt = Math.round(bonus * sacrificePct / 100);
+  const cashPortionBonus = bonus - sacrificedAmt;
+  const bonusTaxDetail = calcBonusTaxBreakdown(taxableSalary, cashPortionBonus);
+  const taxOnCash = bonusTaxDetail.tax;
+  const niOnCash = Math.round(cashPortionBonus * niRateOnBonus);
+  const slOnCash = Math.round(cashPortionBonus * bonusSlRate);
+  const takeHomeCash = cashPortionBonus - taxOnCash - niOnCash - slOnCash;
+  const totalDeducted = taxOnCash + niOnCash + slOnCash;
+  const totalReceived = sacrificedAmt + takeHomeCash;
+  const employerNISave = Math.round(sacrificedAmt * 0.138);
+  const crossesTaper = fullBonusTax.crossesTaper;
+  const crossesAR = fullBonusTax.crossesAR;
+
+  const age = +d.age||30, retireAge = +d.retirementAge||65;
+  const years = Math.max(1, retireAge - age);
+  const bonusFVpartial = (pct) => Math.round(bonus * pct/100 * Math.pow(1.06, years));
+
+  const loanBal = m.loanBal || 0;
+  const slRepaymentFromBonus = Math.round(bonus * bonusSlRate);
+  const slInterestRate = d.studentLoan==="plan2" ? 0.075 : d.studentLoan==="plan5" ? 0.075 : 0.05;
+  const slInterestSaved = Math.round(slRepaymentFromBonus * slInterestRate * Math.max(1, loanBal/Math.max(1,m.annualRepayment)));
+
+  return {
+    bonus, bonusSlRate,
+    fullTaxPct, fullNIPct, fullSLPct, fullKeepPct,
+    sacrificedAmt, cashPortionBonus, taxOnCash, niOnCash, slOnCash,
+    takeHomeCash, totalDeducted, totalReceived, employerNISave,
+    crossesTaper, crossesAR, years, retireAge, bonusFVpartial,
+    loanBal, slRepaymentFromBonus, slInterestSaved,
+    bonusTaxDetailEffectiveRate: bonusTaxDetail.effectiveRate,
+  };
+}
+
+// Future value helpers matching src/lib/forecast.js's fvSingle/fvAnnuity
+// exactly — duplicated here (rather than imported) to avoid a circular
+// import, since forecast.js already imports pensionReturnRatio from this
+// file. Keep in sync if either changes.
+function fvSingleLocal(pv, annualRatePct, months) {
+  if (pv <= 0 || months <= 0) return 0;
+  return pv * Math.pow(1 + annualRatePct / 100 / 12, months);
+}
+function fvAnnuityLocal(pmt, annualRatePct, months) {
+  if (months <= 0 || pmt <= 0) return 0;
+  const r = annualRatePct / 100 / 12;
+  if (r === 0) return pmt * months;
+  return pmt * ((Math.pow(1 + r, months) - 1) / r);
+}
+
+// ── Pension growth trajectory — the bar-chart data (now / at retirement /
+// optimised / with bonus / with extra contribution), the earliest-viable-
+// retirement-age search, and the Lump Sum Allowance inflection flag.
+// extraPct: the "what if you contributed more" stepper value (1/2/3/5).
+export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
+  const salary = m.salary, potVal = +d.potValue||0;
+  const myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0;
+  const retireAge = +d.retirementAge||65, age = +d.age||30;
+  const years = Math.max(1, retireAge - age);
+  const annualContrib = (myPct + empCapPct) / 100 * salary;
+  const currentPot = m.projectedPot;
+  const optimisedContrib = (empCapPct * 2) * salary / 100;
+  const optimisedPot = potVal * Math.pow(1.06, years) + optimisedContrib * ((Math.pow(1.06, years) - 1) / 0.06);
+  // Bonus sacrifice is a one-off lump sum this year, not a recurring annual
+  // contribution — grown with fvSingleLocal (simple compounding), not the
+  // annuity formula used for optimisedContrib. Previously this used the
+  // annuity formula for both, which assumed the bonus repeated every year
+  // until retirement and wildly overstated the "with bonus" bar.
+  const bonusExtra = (+d.bonusAmount||0) * 0.9;
+  const withBonusPot = potVal * Math.pow(1.06, years) + optimisedContrib * ((Math.pow(1.06, years) - 1) / 0.06) + fvSingleLocal(bonusExtra, 6, years * 12);
+  const hasMissedMatch = m.missedMatch > 0;
+  const hasBonus = (+d.bonusAmount||0) > 0;
+  const showOptimised = hasMissedMatch || hasBonus;
+
+  const extraGrowth = Math.round(salary * extraPct/100 * ((Math.pow(1.06, years) - 1) / 0.06));
+  const withExtraPot = Math.round(currentPot) + extraGrowth;
+
+  const bars = [
+    { key:"now", value: potVal, label: "Now" },
+    { key:"retirement", value: currentPot, label: `At retirement (age ${retireAge})` },
+    ...(hasMissedMatch ? [{ key:"optimised", value: optimisedPot, label: "Optimised (match cap)" }] : []),
+    ...(hasBonus ? [{ key:"bonus", value: withBonusPot, label: "With bonus sacrifice" }] : []),
+    { key:"extra", value: withExtraPot, label: `With +${extraPct}% contribution` },
+  ];
+
+  // Earliest viable retirement age — binary/linear search for when the pot
+  // reaches 25× estimated annual spend (or a £400k floor).
+  const annualSpend = (m.expenses||2000) * 12;
+  const targetPot = Math.max(400000, annualSpend * 25);
+  let earlyRetire = retireAge;
+  for (let testYrs = 1; testYrs <= years; testYrs++) {
+    const pot = potVal * Math.pow(1.06, testYrs) + annualContrib * ((Math.pow(1.06, testYrs) - 1) / 0.06);
+    if (pot >= targetPot) { earlyRetire = age + testYrs; break; }
+  }
+  const yearsSaved = retireAge - earlyRetire;
+  const onTrackEarly = yearsSaved > 0 && isPensionContributing(d);
+  const showTrajectory = d.hasPension === "yes" && (potVal > 0 || myPct > 0);
+
+  // Lump Sum Allowance inflection point — £1,073,100 is the pot size at
+  // which the standard 25% tax-free withdrawal entitlement equals the
+  // £268,275 Lump Sum Allowance cap (April 2024 reform). Below it, 25%
+  // tax-free applies in full; above it, the tax-free portion stays fixed
+  // while further growth is otherwise unrestricted.
+  const LSA_INFLECTION_POT = 1073100;
+  const alreadyPastLsa = potVal >= LSA_INFLECTION_POT;
+  let lsaCrossYearsLeft = null;
+  if (showTrajectory && !alreadyPastLsa) {
+    const monthlyContrib = annualContrib / 12;
+    const totalMonths = years * 12;
+    for (let testMonths = 1; testMonths <= totalMonths; testMonths++) {
+      const pot = fvSingleLocal(potVal, 6, testMonths) + fvAnnuityLocal(monthlyContrib, 6, testMonths);
+      if (pot >= LSA_INFLECTION_POT) { lsaCrossYearsLeft = Math.round(testMonths / 12); break; }
+    }
+  }
+  const lsaCrossAge = lsaCrossYearsLeft != null ? age + lsaCrossYearsLeft : null;
+  const showLsaFlag = showTrajectory && (alreadyPastLsa || lsaCrossAge != null);
+
+  return {
+    years, retireAge, age, currentPot, optimisedPot, withBonusPot, withExtraPot,
+    hasMissedMatch, hasBonus, showOptimised, bars,
+    earlyRetire, yearsSaved, onTrackEarly, showTrajectory,
+    alreadyPastLsa, lsaCrossAge, showLsaFlag, LSA_INFLECTION_POT,
+  };
 }

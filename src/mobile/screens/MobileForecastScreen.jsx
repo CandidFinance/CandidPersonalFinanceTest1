@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { WHITE, MUT, TEXT, G, SERIF, PillSlider, FORECAST_COLORS, FORECAST_SHORT_LABEL } from "../../CandidApp.jsx";
 import { calcForecast, calcForecastSeries, buildForecastAssumptions } from "../../lib/forecast.js";
-import { fmtCompact, formatThousands } from "../../lib/format.js";
+import { fmtCompact } from "../../lib/format.js";
+import PillMoneyInput from "../PillMoneyInput.jsx";
 
 // Mobile Forecast screen — the mockup's "Surplus" comparison view (multi-
 // strategy line chart + low/mid/high table), built on the same calcForecast/
@@ -13,37 +14,6 @@ import { fmtCompact, formatThousands } from "../../lib/format.js";
 // doesn't have one either), so it isn't reproduced here rather than
 // inventing figures with no source of truth.
 const HORIZON_OPTIONS = [{value:5,label:"5yr"},{value:10,label:"10yr"},{value:20,label:"20yr"},{value:40,label:"40yr"}];
-
-// A pill-styled £ input that starts blank (0/null just placeholders "0",
-// never a hardcoded displayed value) and comma-formats as you type — mirrors
-// desktop's FmtInput behaviour (see CandidApp.jsx) but keeps the mockup's
-// rounded-pill visual instead of FmtInput's boxed one.
-function PillMoneyInput({ label, value, onChange }) {
-  const [display, setDisplay] = useState(value ? formatThousands(value) : "");
-  const focused = useRef(false);
-  useEffect(() => {
-    if (!focused.current) setDisplay(value ? formatThousands(value) : "");
-  }, [value]);
-  return (
-    <div style={{flex:1,background:"#ede7db",borderRadius:"100px",padding:"9px 16px",display:"flex",flexDirection:"column"}}>
-      <span style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span>
-      <div style={{display:"flex",alignItems:"center"}}>
-        <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>£</span>
-        <input
-          type="text" inputMode="numeric" placeholder="0"
-          value={display}
-          onFocus={() => { focused.current = true; }}
-          onBlur={() => { focused.current = false; setDisplay(value ? formatThousands(value) : ""); }}
-          onChange={e => {
-            const raw = e.target.value.replace(/[^0-9]/g, "");
-            setDisplay(raw === "" ? "" : formatThousands(raw));
-            onChange(raw === "" ? null : +raw);
-          }}
-          style={{border:"none",background:"none",fontSize:"14px",fontWeight:600,color:TEXT,width:"100%",outline:"none",padding:0}}/>
-      </div>
-    </div>
-  );
-}
 
 export default function MobileForecastScreen({ d, m }) {
   const [horizon, setHorizon] = useState(10);
