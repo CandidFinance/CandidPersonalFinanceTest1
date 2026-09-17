@@ -106,6 +106,13 @@ export function fmt(n) {
   return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Math.abs(n||0));
 }
 
+// Compact £Xk form for tight mobile columns (chart axis, forecast table) — falls
+// back to fmt() below £1,000 so small values don't round down to "£0k".
+export function fmtK(n) {
+  const abs = Math.abs(n||0);
+  return abs >= 1000 ? `£${Math.round(abs/1000)}k` : fmt(n);
+}
+
 // Formats a raw numeric value for display inside an input on blur
 // type: "gbp" → £12,345 | "pct" → 5.0% | else raw
 function fmtInput(val, type) {
@@ -1361,6 +1368,24 @@ export function Toggle({ value, onChange, options }) {
   );
 }
 
+// Segmented pill control — single rounded track, equal-width options, active
+// one filled solid. Compact alternative to Toggle's per-button outlined pills,
+// used where horizontal space is tight (e.g. Forecast's time-horizon picker).
+function PillSlider({ value, onChange, options }) {
+  return (
+    <div style={{display:"flex",background:CDARK,borderRadius:"100px",padding:"3px",gap:"2px"}}>
+      {options.map(o => (
+        <button key={o.value} type="button" onClick={() => onChange(o.value)} style={{
+          flex:1, border:"none", borderRadius:"100px", padding:"9px 0",
+          background: value===o.value ? G : "transparent",
+          color: value===o.value ? WHITE : MUT,
+          fontSize:"13px", fontWeight:600, cursor:"pointer", fontFamily:SANS, transition:"all 0.15s",
+        }}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
+
 function Checkbox({ checked, onChange, label }) {
   return (
     <label style={{
@@ -2420,6 +2445,18 @@ const FORECAST_COLORS = {
   "Cash savings": "#1a6fa3",
   "Pension (salary sacrifice)": "#2d6b4a",
   "Pension (relief at source)": "#1e7a5a",
+};
+
+// Shorter display names for the same options — mobile legend/table space is
+// tight, so this only affects what's rendered; FORECAST_COLORS/FORECAST_ASSUMPTIONS
+// keys and calcForecast's own label strings are untouched.
+const FORECAST_SHORT_LABEL = {
+  "Mortgage overpayment": "Mortgage",
+  "Student loan overpayment": "Student Loan",
+  "Stocks & Shares ISA": "S&S ISA",
+  "Cash savings": "Cash",
+  "Pension (salary sacrifice)": "Pension (sal. sac.)",
+  "Pension (relief at source)": "Pension (RAS)",
 };
 
 export const MODULE_META = [
@@ -3609,9 +3646,11 @@ function ForecastScreen({ d, m }) {
           <div style={{display:"flex",gap:"20px",flexWrap:"wrap",alignItems:"flex-start",marginBottom:"22px"}}>
             <div style={{flex:"1 1 280px"}}>
               <label style={LBL}>Time horizon</label>
-              <Toggle value={forecastHorizon} onChange={setForecastHorizon} options={[
-                {value:5,label:"5 years"},{value:10,label:"10 years"},{value:20,label:"20 years"},{value:40,label:"40 years"},
-              ]}/>
+              <div style={{marginTop:"6px"}}>
+                <PillSlider value={forecastHorizon} onChange={setForecastHorizon} options={[
+                  {value:5,label:"5yr"},{value:10,label:"10yr"},{value:20,label:"20yr"},{value:40,label:"40yr"},
+                ]}/>
+              </div>
             </div>
             <div style={{flex:"0 0 160px"}}>
               <label style={LBL}>Monthly surplus</label>
@@ -3641,7 +3680,7 @@ function ForecastScreen({ d, m }) {
             {forecastChart.yTicks.map((v,i) => (
               <g key={i}>
                 <line x1={forecastChart.PL} x2={forecastChart.VW-forecastChart.PR} y1={forecastChart.sy(v)} y2={forecastChart.sy(v)} stroke="rgba(22,47,36,0.09)" strokeWidth="1.5"/>
-                <text x={forecastChart.PL-10} y={forecastChart.sy(v)+4} fontSize="12" fontWeight="700" fill={MUT} textAnchor="end">{v >= 1000 ? `£${Math.round(v/1000)}k` : fmt(v)}</text>
+                <text x={forecastChart.PL-10} y={forecastChart.sy(v)+4} fontSize="12" fontWeight="700" fill={MUT} textAnchor="end">{fmtK(v)}</text>
               </g>
             ))}
             {forecastChart.paths.map(p => {
@@ -3670,7 +3709,7 @@ function ForecastScreen({ d, m }) {
             {forecastChart.paths.map(p => (
               <div key={p.label} style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12px",color:TEXT}}>
                 <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[p.label]||MUT,display:"inline-block",flexShrink:0}}/>
-                {p.label}
+                {FORECAST_SHORT_LABEL[p.label] || p.label}
               </div>
             ))}
           </div>
@@ -3697,7 +3736,7 @@ function ForecastScreen({ d, m }) {
                         <td style={{padding:"10px",borderBottom:rowBorder,color:TEXT,fontWeight:600}}>
                           <div style={{display:"flex",alignItems:"center",gap:"8px",whiteSpace:"nowrap"}}>
                             <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
-                            {o.label}
+                            {FORECAST_SHORT_LABEL[o.label] || o.label}
                             {assumptions && (
                               <button type="button"
                                 onClick={() => setForecastTip(isOpen ? null : o.label)}
@@ -3708,9 +3747,9 @@ function ForecastScreen({ d, m }) {
                           </div>
                           {o.note && <div style={{fontSize:"11px",color:MUT,fontWeight:400,marginTop:"3px",whiteSpace:"normal"}}>{o.note}</div>}
                         </td>
-                        <td style={{padding:"10px",borderBottom:rowBorder,textAlign:"right",color:MUT}}>{fmt(o.low)}</td>
-                        <td style={{padding:"10px",borderBottom:rowBorder,textAlign:"right",color:G,fontWeight:700}}>{fmt(o.central)}</td>
-                        <td style={{padding:"10px",borderBottom:rowBorder,textAlign:"right",color:MUT}}>{fmt(o.high)}</td>
+                        <td style={{padding:"10px",borderBottom:rowBorder,textAlign:"right",color:MUT}}>{fmtK(o.low)}</td>
+                        <td style={{padding:"10px",borderBottom:rowBorder,textAlign:"right",color:G,fontWeight:700}}>{fmtK(o.central)}</td>
+                        <td style={{padding:"10px",borderBottom:rowBorder,textAlign:"right",color:MUT}}>{fmtK(o.high)}</td>
                       </tr>
                       {isOpen && assumptions && (
                         <tr key={o.label+"-tip"}>
