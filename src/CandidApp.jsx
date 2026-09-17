@@ -1408,7 +1408,7 @@ function Checkbox({ checked, onChange, label }) {
 export function NavBar({ right, center, onLogoClick }) {
   const wordmarkStyle = {fontFamily:SERIF,color:GOLD,fontSize:"22px",fontWeight:700,justifySelf:"start"};
   return (
-    <div style={{background:G,padding:"18px 32px",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px",flexShrink:0}}>
+    <div style={{background:G,padding:"18px 32px",paddingTop:"calc(18px + env(safe-area-inset-top, 0px))",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px",flexShrink:0}}>
       {onLogoClick ? (
         <button type="button" onClick={onLogoClick} aria-label="Back to Dashboard" style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
       ) : (
