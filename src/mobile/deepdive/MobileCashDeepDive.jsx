@@ -4,7 +4,8 @@ import { fmt, fmtCompact } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, topRate, getModuleProducts } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
-import { mobileIsaSubheading, mobilePsaSubheading } from "../copy.js";
+import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
+import { buildReminderSubject } from "../reminders.js";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
 // moduleKey==="cash" — CandidApp.jsx). Keeps the opportunity strip, the
@@ -84,7 +85,15 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
 
       <MobileWinTile number={optimiseWinNumber} title="Optimise your cash"
         headline={totalPot<=0 ? "Add your cash details to see this" : optimisationGain>50 ? `You can earn ${fmt(optimisationGain)}/yr more, tax-efficiently` : "Your cash is already well-placed for tax."}
-        tagLabel="Today">
+        tagLabel="Today"
+        reminder={optimisationGain > 50 ? {
+          id: "cash-move-surplus",
+          title: buildReminderSubject(`${fmt(optimisationGain)}/yr`, "Move surplus cash to a better rate"),
+          // Informational, not directive — states the figures and points to
+          // the rate tiles/provider to do the "how", rather than instructing
+          // a specific transfer, avoiding reading as financial advice.
+          description: `${firstName(d) ? firstName(d)+", m" : "M"}ove your surplus cash to a better rate when you get a moment. Filling your ISA at ${isaRateDisplay} first, then your Personal Savings Allowance at ${nonIsaRateDisplay}, is worth up to ${fmt(optimisationGain)}/yr more than where it sits today.\n\nCheck the current best rates in Candid and move the cash directly with the provider - most accounts open online in a few minutes.`,
+        } : null}>
         {totalPot > 0 ? (
           <div>
             <div style={rowStyle}><span>Gross interest today</span><span style={{fontWeight:600}}>{fmt(currentGrossTotal)}/yr</span></div>

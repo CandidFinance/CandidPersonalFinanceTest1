@@ -6,8 +6,9 @@ import {
   calcCarryForward, defaultCarryForwardYears, calcBonusSacrifice, calcPensionGrowthTrajectory,
 } from "../../lib/pension.js";
 import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, getModuleProducts } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
+import MobileProviderTile from "../MobileProviderTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
@@ -80,6 +81,7 @@ export default function MobilePensionDeepDive({ d, m }) {
   const bs = calcBonusSacrifice(d, m, bonusInput, sacrificePct);
 
   const traj = calcPensionGrowthTrajectory(d, m, extraPct);
+  const products = getModuleProducts("pension", d, m);
 
   const opportunityCols = [];
   if (!contributing) opportunityCols.push({ label:"Tax relief foregone", value: fmtCompact(Math.round(m.salary*0.05*m.tr)) });
@@ -256,7 +258,15 @@ export default function MobilePensionDeepDive({ d, m }) {
       {hasStatedBonus ? (
         <MobileWinTile number={win4Num} title="Model bonus sacrifice"
           headline={`Sacrificing your ${fmt(+d.bonusAmount)} bonus could save up to ${fmt(bonusPotential)} in tax`}
-          tagLabel="Today">
+          tagLabel="Today"
+          reminder={bonusPotential > 0 ? {
+            id: "pension-bonus-sacrifice",
+            title: buildReminderSubject(fmt(bonusPotential), "Bonus sacrifice"),
+            // Informational, not directive — states the figures and the action
+            // needed (an email to HR/Payroll) rather than instructing the
+            // person to sacrifice their bonus, avoiding reading as advice.
+            description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check whether you can sacrifice your bonus into your pension before it's paid. Based on your bonus (${fmt(+d.bonusAmount)}), sacrificing it could save up to ${fmt(bonusPotential)} in tax and National Insurance.\n\nDrop HR or Payroll an email to ask about bonus sacrifice - this needs actioning before your bonus is paid, as it usually can't be done retrospectively.`,
+          } : null}>
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"14px"}}>
             Sacrifice your bonus before it hits your payslip and you avoid tax, NI{bs.bonusSlRate > 0 ? ", and student loan repayments" : ""} on it entirely. It goes into your pension gross and grows tax-free.
           </p>
@@ -393,6 +403,8 @@ export default function MobilePensionDeepDive({ d, m }) {
           </div>
         );
       })()}
+
+      <MobileProviderTile heading={d.hasPension === "yes" ? "Consolidate or top up" : "Get started"} products={products.products} disclaimer={products.disclaimer}/>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Lock } from "lucide-react";
 import { fmt } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, getModuleProducts } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
+import MobileProviderTile from "../MobileProviderTile.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
 
@@ -136,6 +137,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
   const yearsNeeded = Math.ceil(totalGains / 3000);
   const taxpayerBand = m.tr !== 0.20 ? "higher/additional-rate" : "basic-rate";
   const taxIfWait = Math.round((totalGains - 3000) * m.cgtRate);
+  const products = getModuleProducts("investments", d, m);
 
   return (
     <div>
@@ -241,6 +243,8 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
           <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>Nothing left to shelter this tax year — check back after April 6th for a fresh £20,000 allowance.</p>
         )}
       </MobileWinTile>
+
+      <MobileProviderTile heading="Where to open one" products={products.products} disclaimer={products.disclaimer}/>
 
       <PortfolioBreakdownTile/>
     </div>
