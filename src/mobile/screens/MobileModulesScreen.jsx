@@ -53,30 +53,30 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
 
   return (
     <div>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px"}}>
-        <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginTop:"3px"}}>
-          {moduleList.length} modules · {needActionCount} need action
-        </div>
-        {totalOpp > 0 && (
-          <div style={{textAlign:"right",flexShrink:0}}>
-            <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>At stake</div>
-            <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:GOLD,lineHeight:1.15}}>{fmtCompact(totalOpp)}/yr</div>
-          </div>
-        )}
+      <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>
+        {moduleList.length} modules · {needActionCount} need action
       </div>
 
-      {modulesWithRec.length > 1 && (
-        <div style={{display:"flex",gap:"6px",marginTop:"12px",marginBottom:"18px"}}>
-          {[{ key:"category", label:"By category" }, { key:"amount", label:"By £ impact" }].map(opt => (
-            <button key={opt.key} onClick={() => setSortMode(opt.key)} style={{
-              border:"none",borderRadius:"100px",padding:"7px 14px",fontSize:"12.5px",fontWeight:600,cursor:"pointer",
-              background:sortMode===opt.key?G:"#ede7db",color:sortMode===opt.key?WHITE:MUT,
-            }}>{opt.label}</button>
-          ))}
+      {(modulesWithRec.length > 1 || totalOpp > 0) && (
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginTop:"12px",marginBottom:"18px"}}>
+          <div style={{display:"flex",gap:"6px"}}>
+            {modulesWithRec.length > 1 && [{ key:"category", label:"By category" }, { key:"amount", label:"By £ impact" }].map(opt => (
+              <button key={opt.key} onClick={() => setSortMode(opt.key)} style={{
+                border:"none",borderRadius:"100px",padding:"7px 14px",fontSize:"12.5px",fontWeight:600,cursor:"pointer",
+                background:sortMode===opt.key?G:"#ede7db",color:sortMode===opt.key?WHITE:MUT,
+              }}>{opt.label}</button>
+            ))}
+          </div>
+          {totalOpp > 0 && (
+            <div style={{textAlign:"right",flexShrink:0}}>
+              <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>At stake</div>
+              <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:GOLD,lineHeight:1.15}}>{fmtCompact(totalOpp)}/yr</div>
+            </div>
+          )}
         </div>
       )}
 
-      <div style={{display:"flex",flexDirection:"column",gap:"12px",marginTop:modulesWithRec.length > 1 ? 0 : "16px"}}>
+      <div style={{display:"flex",flexDirection:"column",gap:"12px",marginTop:(modulesWithRec.length > 1 || totalOpp > 0) ? 0 : "16px"}}>
         {moduleList.map(mm => {
           const reviewed = completedModules.includes(mm.key);
           const hasRec = mm.amount > 0;
