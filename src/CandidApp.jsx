@@ -4291,7 +4291,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             psaLimit, isaRateDisplay, nonIsaRateDisplay, PB_RATE,
             currentTaxableInterest, currentPbInterest, currentGrossTotal, currentTaxableAmount, trPct, currentTaxCost, currentAfterTaxTotal,
             totalPot, step1Isa, step1IsaInterest,
-            step2Savings, step2SavingsInterest, discretionaryAmount,
+            step2Savings, step2SavingsInterest, step2CurrentInterest, step2Delta, discretionaryAmount,
             step3Pb, step3PbInterest, step3UpliftVsCurrent, beyondPbCap,
             optimisedTotal, keptAmount, currentInterestOnKeptAmount, optimisationGain,
           } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct);
@@ -4473,7 +4473,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           <span>{fmt(step2Savings)} into savings at {nonIsaRateDisplay}</span>
                           <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step2SavingsInterest)}/yr</span>
                         </div>
-                        <p style={stepWhyStyle}>Why: interest within your {fmt(psaLimit)} allowance is also effectively tax-free — and {nonIsaRateDisplay} beats the ~4.4% Premium Bonds average, so this comes next.</p>
+                        <p style={stepWhyStyle}>Why: interest within your {fmt(psaLimit)} allowance is also effectively tax-free — and {nonIsaRateDisplay} beats the ~4.4% Premium Bonds average, so this comes next.{step2Delta > 0 ? ` You're already earning ${fmt(step2CurrentInterest)}/yr on this at your current ${m.savingsRate.toFixed(2)}% blended rate — moving it to ${nonIsaRateDisplay} is worth an extra ${fmt(step2Delta)}/yr on top, not ${fmt(step2SavingsInterest)}/yr from scratch.` : ""}</p>
                       </div>
                     )}
                     {discretionaryAmount > 0 && (
