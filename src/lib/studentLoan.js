@@ -1,26 +1,39 @@
 // Resolves the effective student loan interest rate for a given user.
 // Uses d.studentLoanRate (user-entered, %) if supplied, otherwise falls back to
-// statutory defaults. Update defaults each September when SLC publishes annual rates.
-// Plan 2: RPI to RPI+3%, ramped LINEARLY between two income thresholds (per
-// gov.uk's "How interest is calculated - Plan 2") — not a single cliff. Was
-// previously a step function (>£49,130 ? 6.1% : 3.1%), which both used the
-// wrong mechanism and an income figure that didn't correspond to either real
-// threshold. PLAN2_RATE_LOWER/_UPPER below are the current published values.
-// Plan 5: Prevailing market rate (2024/25: 7.3%)
-// Plan 1: Lower of RPI or BoE base+1% (2024/25 floor: 6.25%)
+// statutory defaults below. Update these each September when SLC publishes
+// that academic year's rates — see gov.uk's "How interest is calculated"
+// guidance for each plan.
+//
+// Plan 2 (2026/27): rate = RPI, ramped LINEARLY up by up to 3 percentage
+// points between the lower and upper income thresholds, capped at 6.0% —
+// per gov.uk's "How interest is calculated - Plan 2". The linear ramp
+// mathematically reaches the 6.0% cap at salary ≈ £44,268, then Math.min
+// holds it flat at 6.0% for every salary above that (rather than a separate
+// branch) — same numeric result, one less special case.
+// Plan 5: rate = RPI directly (no ramp) — set 1 September each year. Using
+// the same 2026/27 RPI figure as Plan 2 since gov.uk hasn't published a
+// separate reference for Plan 5; confirm they match if this matters.
+// Plan 1: lower of RPI or Bank of England base rate + 1%, set 1 September
+// each year — see gov.uk's "How interest is calculated - Plan 1". Value
+// below is the last one that page had published (1 Sept 2025 – 31 Aug 2026)
+// as of this update; re-check it once SLC publishes the 2026/27 Plan 1 rate,
+// since this app's "today" is already past that 1 September reset date.
+const PLAN2_RPI_BASE = 0.041; // 2026/27 RPI
 const PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
-const PLAN2_RATE_LOWER = 0.032, PLAN2_RATE_UPPER = 0.062;
+const PLAN2_MAX_VARIABLE = 0.03; // percentage points added by the time income reaches PLAN2_INCOME_UPPER, before capping
+const PLAN2_RATE_CAP = 0.06;
+const PLAN5_RATE = 0.041; // = 2026/27 RPI, same figure as Plan 2's base
+const PLAN1_RATE = 0.032; // last published: 1 Sept 2025 – 31 Aug 2026 — verify against https://www.gov.uk/guidance/how-interest-is-calculated-plan-1
 
 export function resolveSlRate(d, grossSalary) {
   if (+d.studentLoanRate > 0) return +d.studentLoanRate / 100;
   if (d.studentLoan === "plan2") {
-    if (grossSalary <= PLAN2_INCOME_LOWER) return PLAN2_RATE_LOWER;
-    if (grossSalary >= PLAN2_INCOME_UPPER) return PLAN2_RATE_UPPER;
+    if (grossSalary <= PLAN2_INCOME_LOWER) return PLAN2_RPI_BASE;
     const frac = (grossSalary - PLAN2_INCOME_LOWER) / (PLAN2_INCOME_UPPER - PLAN2_INCOME_LOWER);
-    return PLAN2_RATE_LOWER + frac * (PLAN2_RATE_UPPER - PLAN2_RATE_LOWER);
+    return Math.min(PLAN2_RPI_BASE + frac * PLAN2_MAX_VARIABLE, PLAN2_RATE_CAP);
   }
-  if (d.studentLoan === "plan5") return 0.073;
-  return 0.0625; // plan1 fallback
+  if (d.studentLoan === "plan5") return PLAN5_RATE;
+  return PLAN1_RATE; // plan1
 }
 
 // ── Student loan plan constants — single source for write-off year + repayment
