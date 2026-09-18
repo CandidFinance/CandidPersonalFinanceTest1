@@ -12,19 +12,26 @@ export const MOBILE_NAV_ITEMS = [
 
 export default function MobileTabBar({ active, onNavigate }) {
   return (
-    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:"#162f24",borderTop:"1px solid rgba(255,255,255,0.12)",display:"flex",zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
-      {MOBILE_NAV_ITEMS.map(item => {
-        const isActive = item.key === active;
-        return (
-          <button key={item.key} type="button" onClick={() => onNavigate(item.path)} style={{
-            flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"4px",
-            background:"transparent", border:"none", padding:"10px 4px 8px", cursor:"pointer",
-          }}>
-            <item.icon size={20} color={isActive ? "#c4963a" : "rgba(255,255,255,0.55)"} strokeWidth={isActive ? 2.4 : 2}/>
-            <span style={{fontSize:"10px",fontWeight:isActive?700:500,color:isActive ? "#c4963a" : "rgba(255,255,255,0.55)"}}>{item.label}</span>
-          </button>
-        );
-      })}
+    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:"#162f24",borderTop:"1px solid rgba(255,255,255,0.12)",zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
+      {/* The bar itself stays full-bleed (matches NavBar's full-width dark
+          header), but the buttons are capped to the same 580px content width
+          as MobileLayout's content column and centred — otherwise on a wide
+          (desktop browser) viewport the icons spread out across the full
+          window instead of the app's own screen width. */}
+      <div style={{display:"flex",maxWidth:"580px",margin:"0 auto"}}>
+        {MOBILE_NAV_ITEMS.map(item => {
+          const isActive = item.key === active;
+          return (
+            <button key={item.key} type="button" onClick={() => onNavigate(item.path)} style={{
+              flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"4px",
+              background:"transparent", border:"none", padding:"10px 4px 8px", cursor:"pointer",
+            }}>
+              <item.icon size={20} color={isActive ? "#c4963a" : "rgba(255,255,255,0.55)"} strokeWidth={isActive ? 2.4 : 2}/>
+              <span style={{fontSize:"10px",fontWeight:isActive?700:500,color:isActive ? "#c4963a" : "rgba(255,255,255,0.55)"}}>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }

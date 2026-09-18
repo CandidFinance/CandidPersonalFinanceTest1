@@ -79,3 +79,39 @@ export function calcStudentLoanScenario(d, m) {
     cashRate, effectiveBenefit, overpayAnnualBenefit,
   };
 }
+
+// ── Overpayment scenario cards — "what would repaying £5k/£10k/£20k today
+// do to your clear date/write-off balance" — ported from desktop's
+// ModuleDeepDive local projectLoan()/scenarios (CandidApp.jsx), the only
+// place this currently lives, so the mobile deep dive can share it. Uses its
+// own simple year-stepping projection (matching calcStudentLoanScenario's
+// loop above) rather than lib/forecast.js's simulateLoan — forecast.js
+// already imports resolveSlRate from this file, so importing simulateLoan
+// back here would create a lib-to-lib circular import.
+export function calcOverpaymentScenarios(m, sl, amounts = [5000, 10000, 20000]) {
+  const { writeOffYr, slInterestRate, annualRep, balanceGrowing } = sl;
+  function projectLoan(extraOneOff) {
+    let bal = Math.max(0, m.loanBal - extraOneOff);
+    let totalPaid = extraOneOff;
+    let clearYr = null;
+    let writeOffBal = 0;
+    for (let yr = 1; yr <= writeOffYr; yr++) {
+      bal = bal * (1 + slInterestRate);
+      // Cap the final year's repayment at what's actually left to clear — see
+      // calcStudentLoanScenario above for why this matters.
+      const payment = Math.min(annualRep, bal);
+      bal -= payment;
+      totalPaid += payment;
+      if (bal <= 0 && !clearYr) { clearYr = yr; break; }
+      if (yr === writeOffYr) { writeOffBal = Math.max(0, bal); }
+    }
+    const newInterestYr1 = Math.round(Math.max(0, m.loanBal - extraOneOff) * slInterestRate);
+    const newNetChange = newInterestYr1 - annualRep;
+    const crossesInflection = !clearYr && newNetChange <= 0 && balanceGrowing;
+    return { clearYr, writeOffBal: Math.round(writeOffBal), totalPaid: Math.round(totalPaid), newNetChange, crossesInflection };
+  }
+  const overpayAmounts = amounts.filter(x => x > 0 && x <= m.loanBal);
+  const scenarios = overpayAmounts.map(amt => ({ amt, ...projectLoan(amt) }));
+  const baseProjection = projectLoan(0);
+  return { scenarios, baseProjection };
+}

@@ -74,6 +74,61 @@ export function simulateAmortisation(balance, annualRatePct, monthlyPayment, max
   return { totalInterest, monthsToClear, cleared: monthsToClear !== null };
 }
 
+// ── Marginal return per £1 overpaid — where the loan's return crosses the
+// user's pension (and, if applicable, mortgage) return. Ported from desktop's
+// ModuleDeepDive `loanCurve` useMemo (CandidApp.jsx), the only place this
+// currently lives, so the mobile deep dive can share the same maths. `sl` is
+// calcStudentLoanScenario(d, m); `chartWidth` lets the caller pass a
+// measured container width so the returned coordinates match the rendered
+// SVG 1:1 (see mobile Forecast chart for the same pattern).
+export function calcLoanMarginalReturnCurve(d, m, sl, chartWidth = 340) {
+  if (!sl?.willClear || m.loanBal <= 0) return null;
+  const writeOffYr = sl.writeOffYr;
+  const pensionReturn = pensionReturnRatio(d, m);
+  const mortRate = d.hasMortgage === "yes" && +d.mortgageRate > 0 ? +d.mortgageRate : 4.5;
+  const mortReturn = 1 + mortRate / 100;
+  const planRate = d.studentLoan === "plan1" ? 0.05 : 0.075;
+  const planThreshold = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
+  const growthRate = m.salaryGrowthRate;
+  const baseCase = simulateLoan(m.loanBal, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+  const tiny = simulateLoan(Math.max(0, m.loanBal - 100), m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+  const tinyIntSaved = Math.max(0, baseCase.totalInterest - tiny.totalInterest);
+  const yIntercept = 1 + tinyIntSaved / 100;
+  const STEPS = 36;
+  const data = [{ amt: 0, ratio: yIntercept }, ...Array.from({ length: STEPS }, (_, i) => {
+    const amt = (m.loanBal * (i + 1)) / STEPS;
+    if (amt >= m.loanBal) return { amt: m.loanBal, ratio: 1.0 };
+    const oc = simulateLoan(m.loanBal - amt, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+    const intSaved = Math.max(0, baseCase.totalInterest - oc.totalInterest);
+    return { amt, ratio: (amt + intSaved) / amt };
+  })];
+  // Base yMax on the pension/mortgage reference lines, not data[0].ratio — the marginal
+  // return at amt≈0 can spike to 4-8x+ for loans that stay outstanding almost the entire
+  // write-off window, which would compress every tick into a sliver near the axis floor.
+  const yMax = Math.max(pensionReturn + 0.3, 1.6);
+  const yMin = 0.92;
+  const VW = chartWidth, VH = 170, PL = 38, PR = 8, PT = 14, PB = 26;
+  const cW = VW - PL - PR, cH = VH - PT - PB;
+  const sx = a => PL + (a / m.loanBal) * cW;
+  const sy = r => PT + cH - ((r - yMin) / (yMax - yMin)) * cH;
+  // Clamp plotted points to yMax so an outlier ratio flattens visually at the top of the
+  // chart instead of stretching the axis (crossover detection below still uses raw ratios).
+  const path = data.map((p,i) => `${i===0?"M":"L"}${sx(p.amt).toFixed(1)},${sy(Math.min(p.ratio, yMax)).toFixed(1)}`).join(" ");
+  let crossAmt = null;
+  for (let i = 0; i < data.length - 1; i++) {
+    if (data[i].ratio >= pensionReturn && data[i+1].ratio < pensionReturn) {
+      const t = (pensionReturn - data[i].ratio) / (data[i+1].ratio - data[i].ratio);
+      crossAmt = data[i].amt + t * (data[i+1].amt - data[i].amt);
+      break;
+    }
+  }
+  const yTicks = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5].filter(r => r >= yMin && r <= yMax + 0.05);
+  const xTicks = [0, 0.5, 1].map(f => m.loanBal * f);
+  const crossX = crossAmt !== null ? sx(crossAmt) : null;
+  const crossY = sy(pensionReturn);
+  return { writeOffYr, pensionReturn, mortRate, mortReturn, data, yMax, yMin, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, crossAmt, crossX, crossY, yTicks, xTicks };
+}
+
 // Projects low/central/high values at `horizonYears` for each way the user's
 // monthly surplus could be put to work: mortgage overpayment, student loan
 // overpayment, Stocks & Shares ISA, cash savings, and pension salary sacrifice.
@@ -328,4 +383,105 @@ export function buildForecastAssumptions(d, m) {
       rates: { low: "4% p.a.", central: "6% p.a.", high: "8% p.a." },
     },
   };
+}
+
+// ── Net worth trajectory — year-by-year projection of the same asset/
+// liability breakdown calcMetrics uses for today's net worth (m.netWorth),
+// each component grown forward under assumptions already used elsewhere in
+// the app rather than new invented rates:
+//   - Cash: at the user's own effective savings rate, topped up monthly by
+//     ongoing surplus only until it reaches the emergency buffer target
+//     (m.emergencyBuffer — expenses × buffer months, already computed).
+//     Beyond that, surplus is assumed to flow into investments instead —
+//     matching the Cash module's own "move excess into your ISA" guidance,
+//     rather than assuming someone lets spare cash pile up indefinitely,
+//     which made this line balloon unrealistically over long horizons.
+//   - Investments (ISA + unwrapped): today's balance grown at 7% nominal —
+//     the same rate already used for the Investments deep dive's ISA growth
+//     illustration — plus any surplus swept in once the cash buffer is full.
+//   - Pension: potVal + ongoing contributions grown at 6% p.a. — the exact
+//     same formula shape as calcMetrics' own projectedPot, evaluated at
+//     every year instead of just at retirement.
+//   - Student loan: the same year-stepping interest/repayment model
+//     calcStudentLoanScenario uses, extended to expose every year's balance.
+//   - Personal loan / mortgage: amortised at their own entered rate and
+//     repayment — genuine loan maths, not an assumption.
+//   - Property equity: property VALUE held flat (no house-price growth is
+//     assumed anywhere else in the app) — equity only grows as the mortgage
+//     balance is paid down; owned-outright property stays flat throughout.
+// Net worth = assets (incl. property equity, already net of mortgage) minus
+// remaining student loan + personal loan — mortgage is deliberately not
+// subtracted again here, matching calcMetrics' own netWorth formula exactly
+// (double-subtracting it would double-count debt already reflected in a
+// reduced propertyEquity).
+export function calcNetWorthTrajectory(d, m, horizonYears) {
+  const PENSION_RATE = 0.06, INVESTMENT_RATE = 0.07;
+  const cashMonthlyRate = (m.effectiveSavingsRate || 3.5) / 100 / 12;
+  const investMonthlyRate = INVESTMENT_RATE / 12;
+  const cashCapTarget = m.emergencyBuffer || 0;
+  const monthlySurplus = Math.max(0, m.monthlySurplus || 0);
+
+  const potVal = (+d.potValue||0) + (+d.potValue2||0);
+  const pensionAnnualContrib = ((+d.myContribution||0) + (+d.employerMatch||0)) / 100 * m.salary;
+
+  const isaUsedThisYear = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0);
+  const isaPrev = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
+  let investBal = isaUsedThisYear + isaPrev + (+d.unwrappedValue||0);
+  let cashBal = m.totalLiquid || 0;
+
+  const slWriteOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
+  const slRate = d.studentLoan !== "none" ? resolveSlRate(d, m.salary) : 0;
+  const slAnnualRep = m.annualRepayment || 0;
+
+  const plRate = (+d.personalLoanRate||0) / 100;
+  const plAnnualPmt = m.personalLoanAnnualRepayment || 0;
+
+  const mortRate = (+d.mortgageRate||0) / 100;
+  const monthlyMortgagePmt = +d.monthlyMortgage||0;
+
+  let loanBal = m.loanBal || 0;
+  let plBal = d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0;
+  let mortBal = d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0;
+
+  const rows = [];
+  for (let yr = 0; yr <= horizonYears; yr++) {
+    if (yr > 0) {
+      if (yr > slWriteOffYr) loanBal = 0;
+      else if (loanBal > 0) {
+        loanBal = loanBal * (1 + slRate);
+        loanBal = Math.max(0, loanBal - Math.min(slAnnualRep, loanBal));
+      }
+      if (plBal > 0) plBal = Math.max(0, plBal * (1 + plRate) - plAnnualPmt);
+      const mortMonthlyRate = mortRate / 12;
+      for (let mth = 0; mth < 12; mth++) {
+        if (mortBal > 0) {
+          mortBal += mortBal * mortMonthlyRate;
+          mortBal = Math.max(0, mortBal - monthlyMortgagePmt);
+        }
+        cashBal *= (1 + cashMonthlyRate);
+        investBal *= (1 + investMonthlyRate);
+        if (cashBal < cashCapTarget) {
+          const toCash = Math.min(monthlySurplus, cashCapTarget - cashBal);
+          cashBal += toCash;
+          investBal += monthlySurplus - toCash;
+        } else {
+          investBal += monthlySurplus;
+        }
+      }
+    }
+    const pension = potVal * Math.pow(1 + PENSION_RATE, yr) + pensionAnnualContrib * ((Math.pow(1 + PENSION_RATE, yr) - 1) / PENSION_RATE);
+    const cash = cashBal, investments = investBal;
+    const propertyEquity = d.hasMortgage === "yes" ? Math.max(0, (m.propertyValue||0) - mortBal)
+      : d.ownsOutright ? (+d.outrightPropertyValue||0)
+      : 0;
+    const debts = loanBal + plBal;
+    const assets = cash + investments + pension + propertyEquity;
+    rows.push({
+      year: yr,
+      cash: Math.round(cash), investments: Math.round(investments), pension: Math.round(pension),
+      propertyEquity: Math.round(propertyEquity), mortgageBalance: Math.round(mortBal), debts: Math.round(debts),
+      netWorth: Math.round(assets - debts),
+    });
+  }
+  return rows;
 }

@@ -10,9 +10,11 @@ export default function MobileWinTile({ number, title, headline, tagLabel, tagCo
   return (
     <div style={{background:WHITE,borderRadius:"14px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",marginBottom:"12px",overflow:"hidden"}}>
       <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"flex-start",gap:"12px",padding:"16px 16px 13px",cursor:"pointer"}}>
-        <div style={{width:"24px",height:"24px",borderRadius:"50%",background:G,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-          <span style={{fontSize:"12px",fontWeight:700,color:CREAM}}>{number}</span>
-        </div>
+        {number != null && (
+          <div style={{width:"24px",height:"24px",borderRadius:"50%",background:G,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
+            <span style={{fontSize:"12px",fontWeight:700,color:CREAM}}>{number}</span>
+          </div>
+        )}
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
             <div style={{fontSize:"15px",fontWeight:700,color:G,lineHeight:1.3}}>{title}</div>

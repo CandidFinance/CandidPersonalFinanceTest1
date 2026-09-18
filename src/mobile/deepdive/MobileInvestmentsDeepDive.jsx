@@ -1,7 +1,107 @@
 import { useState } from "react";
+import { Lock } from "lucide-react";
 import { fmt } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
+
+// Portfolio breakdown preview — not a real feature yet (no holdings-level
+// data exists anywhere in the app: no geography/sector/asset-type split, no
+// per-fund valuation or growth). Shown as an illustrative, locked mockup
+// (static placeholder figures, greyed out, non-interactive, with a lock
+// overlay) so the design is visible without pretending it's live — matches
+// the "How do I compare to my peers?" Coming Soon tile on the Forecast tab.
+function PortfolioBreakdownTile() {
+  const view = "geo";
+  const SEGMENTS_BY_VIEW = {
+    geo: [
+      { label:"UK", pct:38, color:"#2d6b4a" },
+      { label:"North America", pct:32, color:GOLD },
+      { label:"Europe", pct:18, color:"#8a4fae" },
+      { label:"Emerging markets", pct:12, color:"#9a9a8e" },
+    ],
+    sector: [
+      { label:"Technology", pct:28, color:"#2d6b4a" },
+      { label:"Financials", pct:22, color:GOLD },
+      { label:"Healthcare", pct:16, color:"#8a4fae" },
+      { label:"Other", pct:34, color:"#9a9a8e" },
+    ],
+    asset: [
+      { label:"Equities", pct:70, color:"#2d6b4a" },
+      { label:"Bonds", pct:18, color:GOLD },
+      { label:"Property", pct:7, color:"#8a4fae" },
+      { label:"Cash", pct:5, color:"#9a9a8e" },
+    ],
+  };
+  const holdings = [
+    { name:"Vanguard FTSE Global All Cap", value:"£12,450", growth:"+8.2%" },
+    { name:"iShares Core S&P 500", value:"£9,200", growth:"+11.4%" },
+    { name:"Fundsmith Equity", value:"£5,100", growth:"+6.7%" },
+    { name:"Cash (uninvested)", value:"£1,250", growth:"—" },
+  ];
+  const segments = SEGMENTS_BY_VIEW[view];
+  const r = 46, cx = 60, cy = 60, circumference = 2 * Math.PI * r;
+  let cumulative = 0;
+
+  return (
+    <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginTop:"16px",position:"relative",overflow:"hidden"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
+        <div style={{fontSize:"13px",fontWeight:600,color:G}}>Portfolio breakdown</div>
+        <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Coming soon</span>
+      </div>
+
+      <div style={{opacity:0.4,filter:"grayscale(35%)",pointerEvents:"none"}}>
+        <div style={{display:"flex",gap:"5px",background:"#ede7db",borderRadius:"100px",padding:"3px"}}>
+          {[{value:"geo",label:"Geography"},{value:"sector",label:"Sector"},{value:"asset",label:"Asset type"}].map(o => (
+            <div key={o.value} style={{flex:1,textAlign:"center",padding:"7px 0",borderRadius:"100px",background:view===o.value?G:"transparent",color:view===o.value?WHITE:MUT,fontSize:"11.5px",fontWeight:600}}>{o.label}</div>
+          ))}
+        </div>
+
+        <div style={{display:"flex",justifyContent:"center",marginTop:"20px"}}>
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            {segments.map((seg,i) => {
+              const dash = (seg.pct/100) * circumference;
+              const el = (
+                <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={seg.color} strokeWidth="16"
+                  strokeDasharray={`${dash} ${circumference-dash}`} strokeDashoffset={-cumulative}
+                  transform={`rotate(-90 ${cx} ${cy})`}/>
+              );
+              cumulative += dash;
+              return el;
+            })}
+          </svg>
+        </div>
+
+        <div style={{display:"flex",flexWrap:"wrap",gap:"10px",justifyContent:"center",marginTop:"14px"}}>
+          {segments.map((seg,i) => (
+            <div key={i} style={{display:"flex",alignItems:"center",gap:"5px"}}>
+              <span style={{width:"8px",height:"8px",borderRadius:"50%",background:seg.color,display:"inline-block"}}/>
+              <span style={{fontSize:"11px",color:TEXT}}>{seg.label} {seg.pct}%</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{marginTop:"18px"}}>
+          {holdings.map((h,i) => (
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"1px solid rgba(22,47,36,0.06)"}}>
+              <span style={{fontSize:"13px",color:TEXT}}>{h.name}</span>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontFamily:SERIF,fontSize:"14px",fontWeight:700,color:G}}>{h.value}</div>
+                <div style={{fontSize:"11px",color:"#2d6b4a"}}>{h.growth}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"10px",background:"rgba(246,240,230,0.6)",padding:"0 30px",textAlign:"center"}}>
+        <div style={{width:"42px",height:"42px",borderRadius:"50%",background:WHITE,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(22,47,36,0.15)"}}>
+          <Lock size={18} color={G}/>
+        </div>
+        <p style={{fontSize:"12.5px",color:G,fontWeight:600,lineHeight:1.5,margin:0}}>Connect your investment accounts to see a full breakdown by geography, sector and asset type</p>
+      </div>
+    </div>
+  );
+}
 
 // Trimmed mobile version of desktop's Investments deep dive (ModuleDeepDive,
 // moduleKey==="investments" — CandidApp.jsx). Keeps both wins (crystallise
@@ -126,6 +226,8 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
           <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>Nothing left to shelter this tax year — check back after April 6th for a fresh £20,000 allowance.</p>
         )}
       </MobileWinTile>
+
+      <PortfolioBreakdownTile/>
     </div>
   );
 }
