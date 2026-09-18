@@ -587,7 +587,10 @@ function ConfidenceCheck() {
 
   function handleContinue() {
     try { localStorage.setItem('candid_confidence_score', String(score)); } catch (e) { reportStorageFailure("confidence_check_save", e); }
-    navigate("/assessment/1");
+    // Same funnel either way (landing page -> this screen); only the wizard
+    // itself differs by device, same 768px breakpoint used everywhere else.
+    const isMobileDevice = typeof window !== "undefined" && window.innerWidth < 768;
+    navigate(isMobileDevice ? "/app/assessment/1" : "/assessment/1");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
@@ -797,16 +800,15 @@ function Home() {
     return <Navigate to={`/assessment/5${window.location.search}`} replace />;
   }
 
-  // A mobile-width visit skips the desktop landing/welcome-back screens
-  // entirely and goes straight into the mobile app — /app/home if there's
-  // already a report to show, /app/assessment/1 to start the mobile-native
-  // onboarding wizard otherwise. Same 768px breakpoint every other mobile/
-  // desktop switch in this app uses (CandidApp.jsx's useWindowWidth). Without
-  // this, every visitor — mobile or not — lands on the desktop flow, and the
-  // entire /app/* mobile experience is only reachable by typing its URL
-  // directly, which is how it's been tested all along.
-  if (typeof window !== "undefined" && window.innerWidth < 768) {
-    return <Navigate to={view === "welcome_back" ? "/app/home" : "/app/assessment/1"} replace />;
+  // A returning mobile visitor (already has a report) skips straight to the
+  // mobile app instead of desktop's WelcomeBack screen — a fresh visitor
+  // still sees the same landing page and confidence-check funnel as desktop
+  // (LandingPage -> ConfidenceCheck both hand off to the wizard at the end;
+  // ConfidenceCheck picks the mobile-native wizard itself, see below). Same
+  // 768px breakpoint every other mobile/desktop switch in this app uses
+  // (CandidApp.jsx's useWindowWidth).
+  if (typeof window !== "undefined" && window.innerWidth < 768 && view === "welcome_back") {
+    return <Navigate to="/app/home" replace />;
   }
 
   if (view === "welcome_back") {
