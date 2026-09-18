@@ -569,22 +569,32 @@ export function splitByIsaHeadroom(amount, isaHeadroom, nonIsaRatePct, baselineR
 // list — pagination itself lives at the render site (ModuleDeepDive), not here.
 const CASH_TILE_PAGE_SIZE = 5;
 
-function getModuleProducts(key, d, m, savingsRates) {
+export function getModuleProducts(key, d, m, savingsRates) {
   switch (key) {
     case "cash": {
       const subheading = m.isaHeadroom > 0
         ? `You have ${fmt(m.isaHeadroom)} of ISA allowance remaining — any interest earned inside an ISA is tax-free, permanently.`
         : "Your ISA allowance is fully used this year. Consider a high-interest easy-access account for remaining cash.";
       const heading = "Best easy-access Cash ISAs right now";
+      const nonIsaHeading = "Best non-ISA easy-access accounts";
+      // A second, genuinely different list — non-ISA rows, for the portion of
+      // the pot that doesn't fit in the ISA (Step 2's Personal Savings
+      // Allowance fill). Capped at 4 rows, unlike the ISA list, to keep this
+      // secondary list visibly secondary.
+      const buildNonIsaProducts = () => (savingsRates || [])
+        .filter(r => r.is_isa === false)
+        .sort((a, b) => +b.rate_aer - +a.rate_aer)
+        .slice(0, 4)
+        .map((r, i) => ({ name: r.provider_name, type: r.account_type, rate: `${r.rate_aer}% AER`, badge: i === 0 ? "Highest rate" : "", highlight: i === 0, cta: "View account", appIcon: Landmark, productUrl: r.product_url }));
 
       if (savingsRates === null || savingsRates === undefined) {
-        return { heading, subheading: "Loading current rates…", products: [], disclaimer: "" };
+        return { heading, subheading, nonIsaHeading, products: [], nonIsaProducts: [], disclaimer: "" };
       }
       // Tiles are ISA-specific, matching the heading — non-ISA rows still feed
       // topRate(savingsRates, false) elsewhere (e.g. Dashboard copy) but aren't shown here.
       const isaRows = savingsRates.filter(r => r.is_isa === true);
       if (isaRows.length === 0) {
-        return { heading, subheading, products: [], disclaimer: "Current rates are temporarily unavailable — check back shortly." };
+        return { heading, subheading, nonIsaHeading, products: [], nonIsaProducts: buildNonIsaProducts(), disclaimer: "Current rates are temporarily unavailable — check back shortly." };
       }
 
       const sorted = [...isaRows].sort((a, b) => +b.rate_aer - +a.rate_aer);
@@ -597,7 +607,7 @@ function getModuleProducts(key, d, m, savingsRates) {
         : "recently";
 
       return {
-        heading, subheading,
+        heading, subheading, nonIsaHeading,
         products: sorted.map((r, i) => ({
           name: r.provider_name,
           type: r.account_type,
@@ -608,6 +618,7 @@ function getModuleProducts(key, d, m, savingsRates) {
           appIcon: Landmark,
           productUrl: r.product_url,
         })),
+        nonIsaProducts: buildNonIsaProducts(),
         disclaimer: `Rates correct as of ${dateLabel} — always confirm current rates directly with the provider before applying.`,
       };
     }
@@ -4320,13 +4331,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
           const nearTaperZone = m.adjustedNetIncome >= 100000 && m.adjustedNetIncome < 125140;
 
-          // A separate, genuinely different list from the Cash ISA grid below — non-ISA
-          // rows, for the portion of the pot that doesn't fit in the ISA.
-          const nonIsaProducts = (savingsRates||[])
-            .filter(r => r.is_isa === false)
-            .sort((a,b) => +b.rate_aer - +a.rate_aer)
-            .slice(0, 4)
-            .map((r,i) => ({ name:r.provider_name, type:r.account_type, rate:`${r.rate_aer}% AER`, badge:i===0?"Highest rate":"", highlight:i===0, cta:"View account", appIcon:Landmark, productUrl:r.product_url }));
+          // Non-ISA rows, for the portion of the pot that doesn't fit in the ISA —
+          // now computed once in getModuleProducts (shared with mobile) rather than
+          // duplicated here.
+          const nonIsaProducts = products.nonIsaProducts || [];
 
           const showEmergencyWin = m.emergencyShortfall > 0;
           const monthsToCloseGap = m.monthlySurplus > 0 ? Math.ceil(m.emergencyShortfall / m.monthlySurplus) : null;
@@ -5962,7 +5970,7 @@ export default function AppShell() {
         headerRight={
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:GOLD,fontSize:"13px",fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
-        <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights}
+        <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
           onBack={() => navigate("/app/modules")}

@@ -18,7 +18,7 @@ const CONTENT_BY_KEY = {
   pension: MobilePensionDeepDive,
 };
 
-export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment }) {
+export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
   const statusColor = isComplete ? "#a8a89c" : (SC[status] || MUT);
@@ -40,7 +40,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
       </div>
 
       {Content ? (
-        <Content d={d} m={m} statuses={statuses} insights={insights} onRecordLoanOverpayment={onRecordLoanOverpayment}/>
+        <Content d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} onRecordLoanOverpayment={onRecordLoanOverpayment}/>
       ) : (
         <p style={{fontSize:"14px",color:MUT,lineHeight:1.6}}>This deep dive isn't built for mobile yet — check back soon, or view it on desktop.</p>
       )}

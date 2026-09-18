@@ -1,34 +1,37 @@
 import { useState } from "react";
 import { calcCashOptimisation } from "../../lib/cash.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, topRate, getModuleProducts } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
+import MobileProductListTile from "../MobileProductListTile.jsx";
+import { mobileIsaSubheading, mobilePsaSubheading } from "../copy.js";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
 // moduleKey==="cash" — CandidApp.jsx). Keeps the opportunity strip, the
 // emergency-fund win, a condensed 3-step ISA→PSA→Premium Bonds optimise-cash
-// walkthrough, and the cash-runway indicator. Deliberately drops desktop's
-// account-by-account allocation list, the Step 4 GIA growth illustration,
-// live product-rate cards, and the "other cash-like options" section — v1
-// scope per the mobile deep-dive plan; isaRatePct/nonIsaRatePct are omitted
-// (calcCashOptimisation's built-in ~4.9%/4.5% fallbacks apply, the same
-// defaults the app already shows before live market rates load — so "best
-// rate" here is illustrative, not yet a live comparison, until savingsRates
-// is wired into the mobile route).
-export default function MobileCashDeepDive({ m }) {
+// walkthrough, the cash-runway indicator, and (now wired in) the live
+// best-Cash-ISA provider list, sharing topRate/getModuleProducts/savingsRates
+// with desktop so the rates and links can't drift. Deliberately still drops
+// desktop's account-by-account allocation list, the Step 4 GIA growth
+// illustration, and the "other cash-like options" section — v1 scope per the
+// mobile deep-dive plan.
+export default function MobileCashDeepDive({ d, m, savingsRates }) {
   const [openInfo, setOpenInfo] = useState(null); // "step1" | "step2" | null
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const stepLabelRow = { display:"flex", alignItems:"center", gap:"6px", marginTop:"8px", marginBottom:"2px" };
   const stepLabel = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase" };
   const infoBtn = { background:"#a8a89c", color:WHITE, border:"none", borderRadius:"50%", width:"15px", height:"15px", fontSize:"10px", fontWeight:700, lineHeight:"15px", textAlign:"center", padding:0, cursor:"pointer", flexShrink:0 };
   const stepCaption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, marginTop:"6px", background:"#ede7db", borderRadius:"8px", padding:"8px 10px" };
+  const isaRatePct = topRate(savingsRates, true)?.rate_aer ?? null;
+  const nonIsaRatePct = topRate(savingsRates, false)?.rate_aer ?? null;
   const {
     psaLimit, isaRateDisplay, nonIsaRateDisplay,
     currentGrossTotal, trPct, currentTaxCost,
     totalPot, step1Isa, step1IsaInterest, step2Savings, step2SavingsInterest,
     step3Pb, step3PbInterest,
     optimisedTotal, keptAmount, currentInterestOnKeptAmount, optimisationGain, todayBlendedRate,
-  } = calcCashOptimisation(m, null, null);
+  } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct);
+  const products = getModuleProducts("cash", d, m, savingsRates);
   const optimalBlendedRatePct = keptAmount > 0 ? (optimisedTotal / keptAmount) * 100 : 0;
 
   const showEmergencyWin = m.emergencyShortfall > 0;
@@ -153,6 +156,12 @@ export default function MobileCashDeepDive({ m }) {
           <span style={{fontSize:"10px",color:MUT}}>{m.bufferMonths*2}mo+</span>
         </div>
       </div>
+
+      <MobileProductListTile heading={products.heading} subheading={mobileIsaSubheading(m)}
+        products={products.products} disclaimer={products.disclaimer}/>
+
+      <MobileProductListTile heading={products.nonIsaHeading} subheading={mobilePsaSubheading()}
+        products={products.nonIsaProducts} disclaimer={products.disclaimer}/>
     </div>
   );
 }
