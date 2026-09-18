@@ -2,10 +2,14 @@ import { useNavigate } from "react-router-dom";
 import { NavBar } from "../CandidApp.jsx";
 import MobileTabBar from "./MobileTabBar.jsx";
 
-// Shell for every /app/* mobile screen: shared <NavBar> header (per the
-// design-language rule that every page carries the identical Candid header +
-// page label, with an optional page-specific action in its right slot) and a
-// scrollable content area above the fixed mobile tab bar.
+// Shell for every /app/* mobile screen: shared <NavBar> header (wordmark +
+// optional page-specific action in its right slot) and a scrollable content
+// area above the fixed mobile tab bar. `pageLabel` is optional and left
+// unset by the 4 tab-bar screens (Home/Modules/Forecast/Chat) — the tab bar
+// below already shows which of those is active, so repeating it as a title
+// up top was redundant. A pushed sub-page like a module deep dive still
+// passes one (the specific module's name), since that's real information
+// the tab bar alone can't convey.
 export default function MobileLayout({ pageLabel, activeTab, headerRight, children }) {
   const navigate = useNavigate();
   return (

@@ -39,6 +39,12 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
   const savingsWorthIt = nonIsaRateDecimal > PB_RATE;
   const step2Savings = savingsWorthIt ? Math.min(afterStep1, psaLimit / nonIsaRateDecimal) : 0;
   const step2SavingsInterest = Math.round(step2Savings * nonIsaRateDecimal);
+  // What this same slice of money already earns today, at the person's actual
+  // current blended rate — so the step shows the genuine incremental benefit
+  // of moving it to the best rate, not the full interest as if starting from
+  // zero (which double-counts money they're already earning).
+  const step2CurrentInterest = Math.round(step2Savings * m.savingsRate / 100);
+  const step2Delta = step2SavingsInterest - step2CurrentInterest;
   const afterStep2 = afterStep1 - step2Savings;
   // Once the ISA and PSA are filled, what's left is a genuine choice (Step 3 vs
   // Step 4) rather than something this function should silently decide.
@@ -61,7 +67,7 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
     psaLimit, isaRateDecimal, isaRateDisplay, nonIsaRateDecimal, nonIsaRateDisplay, PB_RATE,
     currentTaxableInterest, currentPbInterest, currentGrossTotal, currentTaxableAmount, trPct, currentTaxCost, currentAfterTaxTotal,
     totalPot, step1Isa, step1IsaInterest, afterStep1, savingsWorthIt,
-    step2Savings, step2SavingsInterest, afterStep2, discretionaryAmount,
+    step2Savings, step2SavingsInterest, step2CurrentInterest, step2Delta, afterStep2, discretionaryAmount,
     step3Pb, step3PbInterest, step3UpliftVsCurrent, beyondPbCap,
     optimisedTotal, keptAmount, todayBlendedRate, currentInterestOnKeptAmount, optimisationGain,
   };

@@ -26,9 +26,9 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
   const isaRatePct = topRate(savingsRates, true)?.rate_aer ?? null;
   const nonIsaRatePct = topRate(savingsRates, false)?.rate_aer ?? null;
   const {
-    psaLimit, isaRateDisplay, nonIsaRateDisplay,
+    psaLimit, isaRateDisplay, nonIsaRateDisplay, PB_RATE,
     currentGrossTotal, trPct, currentTaxCost,
-    totalPot, step1Isa, step1IsaInterest, step2Savings, step2SavingsInterest,
+    totalPot, step1Isa, step1IsaInterest, step2Savings, step2SavingsInterest, step2CurrentInterest, step2Delta,
     step3Pb, step3PbInterest,
     optimisedTotal, keptAmount, currentInterestOnKeptAmount, optimisationGain, todayBlendedRate,
   } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct);
@@ -120,9 +120,11 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
                   <span style={stepLabel}>Step 2 — Fill your Personal Savings Allowance</span>
                   <button onClick={() => setOpenInfo(o => o==="step2"?null:"step2")} style={infoBtn}>?</button>
                 </div>
-                <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay}</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step2SavingsInterest)}/yr</span></div>
+                <div style={rowStyle}><span>{fmt(step2Savings)} at your current rate</span><span>{fmt(step2CurrentInterest)}/yr</span></div>
+                <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (best rate)</span><span style={{fontWeight:600}}>{fmt(step2SavingsInterest)}/yr</span></div>
+                <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?"#2d6b4a":TEXT}}><span>Extra from switching — the actual step to make</span><span>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
                 {openInfo === "step2" && (
-                  <p style={stepCaption}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band.</p>
+                  <p style={stepCaption}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band. You're already earning {fmt(step2CurrentInterest)}/yr on this money at your current rate; moving it to today's best non-ISA rate ({nonIsaRateDisplay}) is worth an extra {fmt(Math.max(0,step2Delta))}/yr on top — not {fmt(step2SavingsInterest)}/yr from scratch.</p>
                 )}
               </div>
             )}
@@ -138,7 +140,9 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
               Optimal cash allocation (on {fmt(keptAmount)} kept as cash)
             </div>
             <div style={rowStyle}><span>{fmt(keptAmount)} @ {(todayBlendedRate*100).toFixed(2)}% — today's blended rate</span><span>{fmt(currentInterestOnKeptAmount)}/yr</span></div>
+            <p style={{fontSize:"10.5px",color:MUT,marginTop:"-2px",marginBottom:"8px"}}>= {m.savingsRate}% on your cash + {(PB_RATE*100).toFixed(1)}% on Premium Bonds, blended</p>
             <div style={rowStyle}><span>{fmt(keptAmount)} @ {optimalBlendedRatePct.toFixed(2)}% — optimal blended rate</span><span>{fmt(optimisedTotal)}/yr</span></div>
+            <p style={{fontSize:"10.5px",color:MUT,marginTop:"-2px",marginBottom:"8px"}}>= {isaRateDisplay} ISA + {nonIsaRateDisplay} savings + {(PB_RATE*100).toFixed(1)}% Premium Bonds, blended</p>
             <div style={{...rowStyle,fontWeight:700,color:optimisationGain>0?"#2d6b4a":TEXT}}>
               <span>{optimisationGain>0?"You can earn":"Difference"}</span><span>{optimisationGain>0?"+":""}{fmt(optimisationGain)}/yr</span>
             </div>

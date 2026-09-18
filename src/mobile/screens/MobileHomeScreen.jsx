@@ -38,13 +38,18 @@ function netWorthBreakdown(d, m) {
   return { assets, liabilities };
 }
 
-export default function MobileHomeScreen({ insights, d, m, statuses }) {
+export default function MobileHomeScreen({ insights, d, m, statuses, scoreDeltas }) {
   const navigate = useNavigate();
   const [scoreDetailOpen, setScoreDetailOpen] = useState(false);
   const [netWorthOpen, setNetWorthOpen] = useState(false);
   if (!insights) return null;
 
-  const score = insights.score || 0;
+  // Same as desktop's HomeScreen: insights.score is the one-time AI-generated
+  // baseline, and scoreDeltas (from markModuleComplete, CandidApp.jsx) is the
+  // running total of points earned by reviewing modules since — without
+  // folding it in here, the score looked frozen no matter what you reviewed.
+  const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
+  const score = Math.min(100, (insights.score || 0) + totalDelta);
   const { color: scoreColor, label: scoreLabel } = scoreBand(score);
   const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, insights, "amount");
   const topWin = modulesWithRec[0] || null;
@@ -86,12 +91,12 @@ export default function MobileHomeScreen({ insights, d, m, statuses }) {
         // centred-modal mode is the closer match here.
         <ScoreDetailSheet insights={insights} displayScore={score} isMobile={false}
           onClose={() => setScoreDetailOpen(false)}
-          onReviewModules={() => { setScoreDetailOpen(false); navigate("/dashboard"); }}/>
+          onReviewModules={() => { setScoreDetailOpen(false); navigate("/app/modules"); }}/>
       )}
 
-      {/* Opportunity — taps through to the full module ranking (desktop for now). */}
+      {/* Opportunity — taps through to the full module ranking. */}
       {totalOpp > 0 && (
-        <div onClick={() => navigate("/dashboard")} style={{marginTop:"14px",background:"rgba(196,150,58,0.12)",borderRadius:"12px",padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",cursor:"pointer"}}>
+        <div onClick={() => navigate("/app/modules")} style={{marginTop:"14px",background:"rgba(196,150,58,0.12)",borderRadius:"12px",padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",cursor:"pointer"}}>
           <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
             <span style={{fontSize:"11px",fontWeight:600,color:"#8a6a24",letterSpacing:"0.07em",textTransform:"uppercase"}}>Opportunity</span>
             <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"17px",color:TEXT}}>{fmtCompact(totalOpp)}<span style={{fontSize:"12px",fontWeight:500,color:MUT}}>/yr</span></span>

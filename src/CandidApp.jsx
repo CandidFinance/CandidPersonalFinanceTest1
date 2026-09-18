@@ -5937,18 +5937,18 @@ export default function AppShell() {
   }
 
   if (pathname === "/app/home") return (
-    <MobileLayout pageLabel="Home" activeTab="home"
+    <MobileLayout activeTab="home"
       headerRight={
         <button onClick={() => navigate("/app/assessment/1")} aria-label="Edit inputs" style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <Wrench size={20} color={GOLD}/>
         </button>
       }>
-      <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses}/>
+      <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} scoreDeltas={scoreDeltas}/>
     </MobileLayout>
   );
 
   if (pathname === "/app/modules") return (
-    <MobileLayout pageLabel="Modules" activeTab="modules">
+    <MobileLayout activeTab="modules">
       <MobileModulesScreen d={d} m={m} statuses={statuses} insights={insights}
         completedModules={completedModules}
         onMarkReviewed={markModuleComplete}
@@ -5957,13 +5957,13 @@ export default function AppShell() {
   );
 
   if (pathname === "/app/forecast") return (
-    <MobileLayout pageLabel="Forecast" activeTab="forecast">
+    <MobileLayout activeTab="forecast">
       <MobileForecastScreen d={d} m={m}/>
     </MobileLayout>
   );
 
   if (pathname === "/app/chat") return (
-    <MobileLayout pageLabel="Chat" activeTab="chat">
+    <MobileLayout activeTab="chat">
       <MobileChatScreen/>
     </MobileLayout>
   );
