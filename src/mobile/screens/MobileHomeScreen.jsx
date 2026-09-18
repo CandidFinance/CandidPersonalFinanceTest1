@@ -76,7 +76,15 @@ export default function MobileHomeScreen({ insights, d, m, statuses }) {
         </div>
       </div>
       {scoreDetailOpen && (
-        <ScoreDetailSheet insights={insights} displayScore={score} isMobile={true}
+        // isMobile=false here on purpose: that flag switches ScoreDetailSheet
+        // into a bottom-sheet pinned to the very bottom of the *browser*
+        // viewport (full width, vertically flush to the bottom) — correct for
+        // an actual narrow-phone-width desktop visitor, but on this mobile
+        // app route (viewed at any window width, including a full desktop
+        // browser) it rendered detached from the app's own centred content
+        // column instead of appearing over the Candid Score tile. The
+        // centred-modal mode is the closer match here.
+        <ScoreDetailSheet insights={insights} displayScore={score} isMobile={false}
           onClose={() => setScoreDetailOpen(false)}
           onReviewModules={() => { setScoreDetailOpen(false); navigate("/dashboard"); }}/>
       )}
