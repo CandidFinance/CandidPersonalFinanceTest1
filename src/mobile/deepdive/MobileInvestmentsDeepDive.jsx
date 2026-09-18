@@ -3,6 +3,8 @@ import { Lock } from "lucide-react";
 import { fmt } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
+import { buildReminderSubject } from "../reminders.js";
+import { firstName } from "../copy.js";
 
 // Portfolio breakdown preview — not a real feature yet (no holdings-level
 // data exists anywhere in the app: no geography/sector/asset-type split, no
@@ -158,7 +160,15 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
 
       <MobileWinTile number={1} title="Crystallise paper gains"
         headline={m.crystallisable > 0 ? `${fmt(m.cgtSaving)} saved this tax year` : "No unrealised gains to crystallise this tax year."}
-        tagLabel="Today">
+        tagLabel="Today"
+        reminder={m.crystallisable > 0 ? {
+          id: "investments-crystallise-gains",
+          title: buildReminderSubject(fmt(m.cgtSaving), "Crystallise capital gains"),
+          // Informational, not directive — states the figures and points to
+          // your platform/adviser for the "how", rather than instructing a
+          // specific trade (avoids reading as financial advice).
+          description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your investment gains before the tax year ends. You have around ${fmt(totalGains)} of unrealised gain, and £3,000 of gain is CGT-exempt each year — crystallising ${fmt(m.crystallisable)} of it now is worth up to ${fmt(m.cgtSaving)}.\n\nThis needs actioning before April 5th - worth a quick check with your platform or a financial adviser on how to do this for your holdings.`,
+        } : null}>
         {m.crystallisable > 0 ? (
           <div>
             <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:yearsNeeded>1?"10px":0}}>
@@ -207,7 +217,12 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
         headline={m.isaHeadroom > 0
           ? `${fmt(m.isaHeadroom)} remaining — invested, that could grow to ~${fmt(Math.round(isaProjectedValue))} tax-free by 67`
           : "You've used your full £20,000 ISA allowance this tax year."}
-        tagLabel="Future opportunity" tagColor="#2d6b4a">
+        tagLabel="Future opportunity" tagColor="#2d6b4a"
+        reminder={m.isaHeadroom > 0 ? {
+          id: "investments-isa-allowance",
+          title: buildReminderSubject(fmt(m.isaHeadroom), "Unused ISA allowance"),
+          description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your ISA allowance before the tax year ends. You have ${fmt(m.isaHeadroom)} of it unused — investing it shelters future growth from tax, permanently.\n\nUnused allowance doesn't carry over: it's gone after April 5th and a fresh £20,000 opens on April 6th - worth a quick check with your platform or adviser on where to put it.`,
+        } : null}>
         {m.isaHeadroom > 0 ? (
           <div>
             {showMoveMsg && (

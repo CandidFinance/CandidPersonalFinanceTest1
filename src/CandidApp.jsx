@@ -5501,6 +5501,42 @@ export default function AppShell() {
 
   const set = (k, v) => setRawD(p => ({...p, [k]:v}));
 
+  // Records a student loan overpayment made outside the app (e.g. via the
+  // mobile deep dive's "Model a lump sum overpayment" slider, then actually
+  // paid through SLC): updates the recorded balance AND deducts the same
+  // amount from cash, since that money didn't vanish — it's what paid the
+  // loan down. Without this, manually lowering just the loan balance would
+  // make net worth look like it increased for free. Reduces cash tiers
+  // (largest first) when populated, else the flat cashSavings fallback —
+  // mirrors calcMetrics' own tiers-vs-flat preference (src/lib/metrics.js).
+  const recordLoanOverpayment = (newBalance) => {
+    const capped = capField("loanBalance", newBalance);
+    setRawD(p => {
+      const delta = Math.max(0, (+p.loanBalance||0) - (+capped||0));
+      const next = { ...p, loanBalance: String(capped) };
+      if (delta > 0) {
+        const tiers = Array.isArray(p.cashTiers) ? p.cashTiers : [];
+        const tiersTotal = tiers.reduce((s,t) => s + (+t.amount||0), 0);
+        if (tiersTotal > 0) {
+          let remaining = delta;
+          const newTiers = tiers.map(t => ({...t}));
+          const byLargest = newTiers.map((t,i) => i).sort((a,b) => (+newTiers[b].amount||0) - (+newTiers[a].amount||0));
+          for (const i of byLargest) {
+            if (remaining <= 0) break;
+            const amt = +newTiers[i].amount || 0;
+            const take = Math.min(amt, remaining);
+            newTiers[i] = { ...newTiers[i], amount: String(amt - take) };
+            remaining -= take;
+          }
+          next.cashTiers = newTiers;
+        } else {
+          next.cashSavings = String(Math.max(0, (+p.cashSavings||0) - delta));
+        }
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     try { localStorage.setItem('candid_inputs', JSON.stringify(rawD)); }
     catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist inputs to localStorage:", e); }
@@ -5929,7 +5965,8 @@ export default function AppShell() {
         <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
-          onBack={() => navigate("/app/modules")}/>
+          onBack={() => navigate("/app/modules")}
+          onRecordLoanOverpayment={recordLoanOverpayment}/>
       </MobileLayout>
     );
   }

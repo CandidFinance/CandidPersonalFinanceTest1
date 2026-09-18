@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
+import { ExternalLink, Wrench } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios } from "../../lib/studentLoan.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
+import PillMoneyInput from "../PillMoneyInput.jsx";
 
 // Overpayment slider stops — round amounts, dropping any that sit within 10%
 // of the full balance (e.g. a £20,500 loan shouldn't show both "£20k" and
@@ -64,8 +66,13 @@ function buildRepaymentVerdict({ pensionReturn, crossAmt, data, score }) {
 // calcOverpaymentScenarios/calcLoanMarginalReturnCurve are the same single
 // source of truth desktop and computeModuleStatuses use, so the numbers
 // can't drift between mobile and desktop.
-export default function MobileStudentLoanDeepDive({ d, m, insights }) {
+export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoanOverpayment }) {
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
+  const [editingBalance, setEditingBalance] = useState(false);
+  // null = still following the overpayment slider automatically; a number
+  // once the user types their own value into the editor, which then stops
+  // tracking further slider movement (their explicit edit wins).
+  const [manualBalanceInput, setManualBalanceInput] = useState(null);
   const chartWrapRef = useRef(null);
   // Measured in real CSS pixels so the viewBox always matches the rendered
   // width 1:1 — see mobile Forecast's chart for the same pattern/rationale.
@@ -106,12 +113,27 @@ export default function MobileStudentLoanDeepDive({ d, m, insights }) {
   const savedVsBase = selectedScenario ? baseProjection.totalPaid - selectedScenario.totalPaid : 0;
 
   const stats = [
-    { label:"Current balance", value:fmt(m.loanBal) },
     { label:"Interest rate", value:`${sl.slRatePct}%` },
     { label:"Annual interest", value:`${fmt(sl.annualInterest)}/yr` },
     { label:"Annual repayments", value:`${fmt(sl.annualRep)}/yr` },
     { label: sl.clearYr ? "Clears in" : "Written off after", value: sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs` },
   ];
+
+  // Suggests the balance after paying the currently-selected slider amount,
+  // rather than a blank/current-balance starting point — if the user came
+  // here having just modelled an overpayment above, that's almost certainly
+  // the figure they're about to confirm. Stays live-synced to the slider
+  // (recomputed every render, not snapshotted on open) until the user types
+  // their own value, and re-syncs the next time the editor is opened fresh.
+  const suggestedBalance = Math.max(0, Math.round(m.loanBal) - (overpayAmt || 0));
+  const balanceInput = manualBalanceInput != null ? manualBalanceInput : suggestedBalance;
+  const openBalanceEditor = () => { setManualBalanceInput(null); setEditingBalance(true); };
+  const closeBalanceEditor = () => { setEditingBalance(false); setManualBalanceInput(null); };
+  const saveBalanceEdit = () => {
+    if (onRecordLoanOverpayment) onRecordLoanOverpayment(Math.max(0, balanceInput));
+    closeBalanceEditor();
+  };
+  const cashDelta = Math.max(0, Math.round(m.loanBal) - balanceInput);
 
   return (
     <div>
@@ -125,6 +147,35 @@ export default function MobileStudentLoanDeepDive({ d, m, insights }) {
 
       <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
         <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your loan trajectory</div>
+
+        <div style={{marginBottom:"12px"}}>
+          <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Current balance</div>
+          <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"2px"}}>
+            <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(m.loanBal)}</div>
+            {onRecordLoanOverpayment && (
+              <button onClick={openBalanceEditor} aria-label="Update your loan balance" style={{background:"rgba(22,47,36,0.06)",border:"none",borderRadius:"50%",width:"26px",height:"26px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                <Wrench size={12} color={MUT}/>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {editingBalance && (
+          <div style={{background:"#ede7db",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
+            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Update your balance</div>
+            <PillMoneyInput label="New balance" value={balanceInput} onChange={setManualBalanceInput}/>
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
+              {cashDelta > 0
+                ? `We'll also reduce your recorded cash by ${fmt(cashDelta)} — that's what paid the loan down, so it shouldn't be counted twice.`
+                : "This updates your loan balance across the whole app."}
+            </p>
+            <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
+              <button onClick={closeBalanceEditor} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Cancel</button>
+              <button onClick={saveBalanceEdit} style={{flex:1,background:G,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer"}}>Save</button>
+            </div>
+          </div>
+        )}
+
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"12px"}}>
           {stats.map((s,i) => (
             <div key={i}>
@@ -199,6 +250,19 @@ export default function MobileStudentLoanDeepDive({ d, m, insights }) {
             {selectedScenario.crossesInflection && <span style={{color:"#2d6b4a",fontWeight:600}}> This reaches the inflection point — your balance starts shrinking from here.</span>}
           </p>
           <PillSlider value={overpayAmt} onChange={setOverpayAmt} options={overpayOptions.map(amt => ({ value:amt, label: amt===fullAmt ? "Full" : fmtK(amt) }))}/>
+
+          {worthOverpaying && surplusCash > 0 && (
+            <>
+              <a href="https://www.gov.uk/sign-in-to-manage-your-student-loan-balance" target="_blank" rel="noopener noreferrer" style={{
+                marginTop:"16px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"13px",
+                fontSize:"14px",fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
+                gap:"7px",textDecoration:"none",boxSizing:"border-box",
+              }}>
+                Make an overpayment via SLC <ExternalLink size={14}/>
+              </a>
+              <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,marginTop:"8px",marginBottom:0,textAlign:"center"}}>Opens gov.uk in a new tab to sign in and manage your loan.</p>
+            </>
+          )}
         </div>
       )}
 

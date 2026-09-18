@@ -9,6 +9,12 @@ export function mobileGreeting(d) {
   return `Hi${d.name ? " " + d.name.split(" ")[0] : ""}.`;
 }
 
+// First name only, or null — shared by anywhere that wants to personalise a
+// sentence (e.g. calendar reminder text) without repeating the split logic.
+export function firstName(d) {
+  return d.name ? d.name.split(" ")[0] : null;
+}
+
 // Desktop (lib/moduleStatus.js computeModuleStatuses, "too much cash" case):
 // `${fmt(cashImpact)}/yr in tax-efficiency gain available — ${fmt(excess)} of it sits above your buffer`
 export function mobileCashLabel(cashImpact, excess) {

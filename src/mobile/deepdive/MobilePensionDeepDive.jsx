@@ -9,6 +9,8 @@ import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
+import { buildReminderSubject } from "../reminders.js";
+import { firstName } from "../copy.js";
 
 const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` }));
 const EXTRA_PCT_OPTIONS = [1,2,3,5].map(p => ({ value:p, label:`+${p}%` }));
@@ -112,7 +114,17 @@ export default function MobilePensionDeepDive({ d, m }) {
       )}
 
       {showMatchWin && (
-        <MobileWinTile number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tagLabel="Today">
+        <MobileWinTile number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tagLabel="Today"
+          reminder={empCapPct > 0 ? {
+            id: "pension-employer-match",
+            title: buildReminderSubject(`${fmt(m.missedMatch)}/yr`, "Pension employer match"),
+            // Informational, not directive — states what the numbers show and
+            // leaves the decision and the "how" to HR/payroll, rather than
+            // instructing the person to act (avoids reading as financial advice).
+            description: contributing
+              ? `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your employer's pension match. Based on your salary (${fmt(m.salary)}), increasing your contribution from ${myPct}% to ${empCapPct}% is worth ${fmt(m.missedMatch)}/yr.\n\nDrop HR or Payroll an email to ask how to update your contribution rate - it will likely take effect from next month.`
+              : `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your employer's pension match. Based on your salary (${fmt(m.salary)}), contributing at least ${empCapPct}% would unlock your employer's full match — worth ${fmt(m.missedMatch)}/yr, on top of ${trPct}% tax relief.\n\nDrop HR or Payroll an email to ask how to set this up - it will likely take effect from next month.`,
+          } : null}>
           <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:"10px"}}>
             {!contributing
               ? `You're not currently contributing. Pension contributions get ${trPct}% tax relief automatically${empCapPct > 0 ? `, and your employer will match up to ${empCapPct}% of salary if you contribute at least that much` : ""} — money you're leaving unclaimed.`
