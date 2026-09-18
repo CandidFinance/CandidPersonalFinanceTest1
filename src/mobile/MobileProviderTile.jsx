@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Landmark, Unlock } from "lucide-react";
+import { Landmark, Unlock, ExternalLink } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../CandidApp.jsx";
 
 // Static "where to actually do this" provider list for Investments/Pension —
@@ -12,7 +12,10 @@ import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../CandidApp.jsx";
 // top edge to solid white by the tile's bottom edge. Items here are taller
 // and variable-height (icon row + feature paragraph), unlike Cash's fixed-
 // height rows, so the collapsed height/gradient split is an approximation
-// tuned to typical item length rather than an exact row boundary.
+// tuned to typical item length rather than an exact row boundary. Items with
+// a real productUrl render as an actual outbound link (same convention as
+// desktop's ProductCard and Cash's tile); the "demo" label only remains for
+// any future entry with no real destination yet.
 const COLLAPSED_HEIGHT = 190;
 
 export default function MobileProviderTile({ heading, products, disclaimer }) {
@@ -30,8 +33,11 @@ export default function MobileProviderTile({ heading, products, disclaimer }) {
         <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
           {products.map((p, i) => {
             const Icon = p.appIcon || Landmark;
+            const isLink = !!p.productUrl;
+            const Wrapper = isLink ? "a" : "div";
+            const wrapperProps = isLink ? { href: p.productUrl, target: "_blank", rel: "noopener noreferrer" } : {};
             return (
-              <div key={i} style={{border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,borderRadius:"10px",padding:"12px 14px"}}>
+              <Wrapper key={i} {...wrapperProps} style={{display:"block",textDecoration:"none",color:"inherit",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,borderRadius:"10px",padding:"12px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
                   <div style={{width:"32px",height:"32px",background:p.highlight?G:"rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     <Icon size={16} color={p.highlight?WHITE:G}/>
@@ -46,10 +52,10 @@ export default function MobileProviderTile({ heading, products, disclaimer }) {
                   {p.rate && <div style={{fontFamily:SERIF,fontSize:"14px",fontWeight:700,color:G,flexShrink:0,whiteSpace:"nowrap"}}>{p.rate}</div>}
                 </div>
                 {p.feature && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"8px",marginBottom:0}}>{p.feature}</p>}
-                <div style={{marginTop:"8px",fontSize:"10.5px",color:"rgba(22,47,36,0.4)",fontStyle:"italic",display:"flex",alignItems:"center",gap:"4px"}}>
-                  <Unlock size={10}/>{p.cta} · demo
+                <div style={{marginTop:"8px",fontSize:"11px",fontWeight:isLink?700:400,color:isLink?GOLD:"rgba(22,47,36,0.4)",fontStyle:isLink?"normal":"italic",display:"flex",alignItems:"center",gap:"4px"}}>
+                  {isLink ? <>{p.cta}<ExternalLink size={11}/></> : <><Unlock size={10}/>{p.cta} · demo</>}
                 </div>
-              </div>
+              </Wrapper>
             );
           })}
         </div>
