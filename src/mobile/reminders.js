@@ -45,12 +45,16 @@ function countOtherSetReminders(excludeId) {
 }
 
 // The working day a given reminder should land on: next working day, plus
-// one further working day for every other reminder already set — so the
-// first Bell set gets tomorrow, the second gets the day after, and so on.
+// two further working days for every other reminder already set — so the
+// first Bell set gets tomorrow, the second gets two working days after that,
+// and so on. Two days' gap (not one) gives each action room to actually get
+// done before the next one lands.
+const STAGGER_WORKING_DAYS = 2;
+
 export function nextAvailableWorkingDay(id) {
   const stagger = countOtherSetReminders(id);
   let date = nextWorkingDay();
-  for (let i = 0; i < stagger; i++) date = nextWorkingDay(date);
+  for (let i = 0; i < stagger * STAGGER_WORKING_DAYS; i++) date = nextWorkingDay(date);
   return date;
 }
 
