@@ -872,6 +872,7 @@ function AppRoutes() {
           <Route path="/app/forecast" />
           <Route path="/app/chat" />
           <Route path="/app/module/:moduleKey" />
+          <Route path="/app/assessment/:step" />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

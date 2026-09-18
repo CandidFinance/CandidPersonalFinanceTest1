@@ -1,4 +1,5 @@
 import { calcBonusTaxBreakdown } from "./tax.js";
+import { SALARY_GROWTH_RATES } from "./metrics.js";
 
 // ── User contributing to pension ────────────────────────────────────────────────────────
 export function isPensionContributing(d) {
@@ -14,6 +15,40 @@ export function pensionReturnRatio(d, m) {
   const niSaving = isSS && m.salary > 50270 ? 0.02 : 0;
   return 1 / Math.max(0.01, 1 - (m.tr + niSaving));
 }
+// ── Estimate a pension pot for someone who doesn't know their balance ──────────────────
+// Reverse-engineers a rough current pot from salary/age/trajectory, for the onboarding
+// "I don't know" case — not a real balance lookup (there is no source for that), just a
+// same-order-of-magnitude illustration so the rest of the report has something to work
+// with. Projects today's salary backwards year by year using the same SALARY_GROWTH_RATES
+// used elsewhere to project it forwards, applies a contribution rate (the user's own
+// stated %s if known, else the UK auto-enrolment minimum of 8% combined), and grows each
+// year's contribution forward at 6% — the same investment-growth assumption
+// calcPensionGrowthTrajectory uses for future projections, applied here in reverse.
+export const CAREER_START_AGE = 22;
+const DEFAULT_TOTAL_CONTRIB_RATE = 0.08; // UK auto-enrolment minimum: 5% employee + 3% employer
+const PENSION_GROWTH_RATE = 0.06;
+
+export function estimatePensionPot(d) {
+  const age = +d.age || 0;
+  const salary = +d.salary || 0;
+  const yearsWorked = Math.max(0, Math.min(45, age - CAREER_START_AGE));
+  if (salary <= 0 || yearsWorked === 0) return 0;
+
+  const salaryGrowth = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
+  const statedRate = ((+d.myContribution || 0) + (+d.employerMatch || 0)) / 100;
+  const totalContribRate = statedRate > 0 ? statedRate : DEFAULT_TOTAL_CONTRIB_RATE;
+
+  // Walk backwards from the earliest working year to now: each year's salary is
+  // today's salary discounted by the growth rate, contributions are a % of that
+  // year's salary, and the running pot compounds forward at the growth rate.
+  let pot = 0;
+  for (let yearsAgo = yearsWorked; yearsAgo >= 1; yearsAgo--) {
+    const salaryThatYear = salary / Math.pow(1 + salaryGrowth, yearsAgo);
+    pot = (pot + salaryThatYear * totalContribRate) * (1 + PENSION_GROWTH_RATE);
+  }
+  return Math.round(pot);
+}
+
 export function pensionReturnLabel(d, m) {
   const ratio = pensionReturnRatio(d, m);
   if (d.pensionType === "sacrifice") return `1:${ratio.toFixed(2)} — includes income tax + NI saving (employer never sees this income)`;

@@ -6,18 +6,20 @@ import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCa
 import { fmt, fmtK } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, calcStudentLoanScenario } from "./lib/studentLoan.js";
-import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving } from "./lib/pension.js";
+import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation } from "./lib/cash.js";
 import { calcMetrics, SALARY_GROWTH_RATES } from "./lib/metrics.js";
 import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown } from "./lib/moduleStatus.js";
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
 import { simulateLoan, fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions } from "./lib/forecast.js";
+import { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
 import MobileForecastScreen from "./mobile/screens/MobileForecastScreen.jsx";
 import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
+import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 
 // Re-exported for existing external consumers (e.g. src/pdf/reportData.js)
 // now that these live in src/lib/ — see that file's own import for the
@@ -28,6 +30,7 @@ export { calcCashOptimisation } from "./lib/cash.js";
 export { calcStudentLoanScenario } from "./lib/studentLoan.js";
 export { calcPensionTaperSaving } from "./lib/pension.js";
 export { MODULE_META, getModuleSummary, computeModuleStatuses, sanitizeForMvp, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from "./lib/moduleStatus.js";
+export { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
 
 // ── Supabase client — module level, no package needed ─────────────────────────
 const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
@@ -1133,21 +1136,6 @@ function ReportNav({ active, right }) {
 // in d.selectedModules. getActiveSteps(d) is the single source of truth for step
 // order/count everywhere (routing, StepProgress, PostHog labels) — nothing else
 // should assume a fixed step count or fixed index-to-content mapping.
-const ALL_STEP_DEFS = [
-  { id:"modules",     label:"Focus",           shortLabel:"Focus",       mobileLabel:"Focus", always:true },
-  { id:"name",        label:"Name",            shortLabel:"Name",        mobileLabel:"Name",  always:true },
-  { id:"email",       label:"Email",           shortLabel:"Email",       mobileLabel:"Email", always:true },
-  { id:"about",       label:"About you",       shortLabel:"Income",      mobileLabel:"Inc.",  always:true },
-  { id:"cash",        label:"Cash & savings",  shortLabel:"Savings",     mobileLabel:"Sav.",  moduleKey:"cash" },
-  { id:"investments", label:"Investments",     shortLabel:"Invest.",     mobileLabel:"Inv.",  moduleKey:"investments" },
-  { id:"pension",     label:"Pension",         shortLabel:"Pension",     mobileLabel:"Pension", moduleKey:"pension" },
-  { id:"studentLoan", label:"Student loan",    shortLabel:"Student loan", mobileLabel:"Loan", moduleKey:"studentLoan" },
-];
-function getActiveSteps(d) {
-  const selected = new Set(d.selectedModules || []);
-  return ALL_STEP_DEFS.filter(s => s.always || selected.has(s.moduleKey));
-}
-
 function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue, onStepClick, onClearData }) {
   const stepId = steps[step].id;
   useEffect(() => {
@@ -1202,27 +1190,6 @@ function Warn({ msg }) {
   return <p style={{fontSize:"12px",color:"#c4963a",marginTop:"4px",lineHeight:1.5,display:"flex",alignItems:"flex-start",gap:"5px"}}><AlertTriangle size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>{msg}</span></p>;
 }
 
-// Hard caps — silently clamp value, no message shown
-const FIELD_CAPS = {
-  salary:1000000, bonusAmount:5000000, otherIncome:1000000, dividendIncome:5000000,
-  monthlyExpenses:50000,
-  savingsRate:10, premiumBonds:50000,
-  isaThisYearCash:20000, isaThisYearSS:20000, isaThisYearLISA:4000, isaThisYearOther:20000,
-  isaPrevCash:500000, isaPrevSS:500000, isaPrevLISA:500000, isaPrevOther:500000,
-  unwrappedValue:10000000, unrealisedGains:5000000,
-  myContribution:60, employerMatch:20,
-  potValue:10000000, potValue2:10000000, niYears:35,
-  loanBalance:200000, mortgageBalance:5000000, mortgageRate:15,
-  personalLoanBalance:500000, personalLoanRate:50,
-};
-function capField(field, raw) {
-  const v = parseFloat(String(raw).replace(/[£,%,\s]/g,""));
-  if (isNaN(v)) return raw;
-  const cap = FIELD_CAPS[field];
-  if (cap !== undefined && v > cap) return String(cap);
-  return raw;
-}
-
 function InfoTooltip({ text }) {
   const [pos, setPos] = useState(null);
   const btnRef = useRef(null);
@@ -1264,6 +1231,7 @@ const MODULE_SELECT_TILES = [
 function OnboardingStep({ stepId, d, set }) {
   const g2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"};
   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
+  const [potEstimated, setPotEstimated] = useState(false); // true only right after the pension pot "estimate it" button is used, so the caption doesn't linger over a manually-typed figure
   const [paymentStaging, setPaymentStaging] = useState({status:"idle"}); // idle | loading | error
   const stagePayment = async () => {
     setPaymentStaging({status:"loading"});
@@ -1588,14 +1556,26 @@ function OnboardingStep({ stepId, d, set }) {
           </div>
           <div style={g2}>
             <Field label="Main pot value (£)">
-              <FmtInput fmtType="gbp" value={d.potValue} onChange={v=>set("potValue",capField("potValue",v))} placeholder="e.g. 35,000"/>
+              <FmtInput fmtType="gbp" value={d.potValue} onChange={v=>{ setPotEstimated(false); set("potValue",capField("potValue",v)); }} placeholder="e.g. 35,000"/>
               <Warn msg={+d.potValue > 2000000 ? "Large pension pot — double-check (lifetime allowance context)" : null}/>
+              {+d.age > 0 && +d.salary > 0 && (
+                <button type="button" onClick={() => { set("potValue", String(estimatePensionPot(d))); setPotEstimated(true); }}
+                  style={{background:"none",border:"none",color:GOLD,fontSize:"11.5px",fontWeight:600,cursor:"pointer",padding:"4px 0 0",display:"block"}}>
+                  Don't know? Estimate it from my salary & age
+                </button>
+              )}
             </Field>
             <Field label="Other pots combined (£)" hint="Old employer pensions etc.">
               <FmtInput fmtType="gbp" value={d.potValue2||""} onChange={v=>set("potValue2",capField("potValue2",v))} placeholder="e.g. 8,000"/>
               <Warn msg={+d.potValue2 > 2000000 ? "Large pension pot — double-check" : null}/>
             </Field>
           </div>
+          {potEstimated && +d.potValue > 0 && (
+            <p style={{fontSize:"11px",color:MUT,marginTop:"-14px",marginBottom:"20px",lineHeight:1.5}}>
+              Estimated assuming you've been working and contributing since age {CAREER_START_AGE}, at{" "}
+              {((+d.myContribution||0)+(+d.employerMatch||0)) > 0 ? `your stated ${(+d.myContribution||0)+(+d.employerMatch||0)}% combined contribution rate` : "the UK auto-enrolment minimum (8% combined)"}, growing at 6% p.a. — a rough order of magnitude, not a real balance. Replace it with your actual figure from your provider or pension dashboard if you have it.
+            </p>
+          )}
           <div style={g2}>
             <Field label="Target retirement age">
               <input style={INP} type="number" value={d.retirementAge} onChange={e => {
@@ -5715,7 +5695,7 @@ export default function AppShell() {
   }
 }
 
-  async function generateDashboard() {
+  async function generateDashboard(redirectPath = "/dashboard") {
     if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
     setGenerating(true);
 
@@ -5845,7 +5825,7 @@ export default function AppShell() {
         });
       }
     }
-    finally { setGenerating(false); navigate("/dashboard"); }
+    finally { setGenerating(false); navigate(redirectPath); }
   }
 
   function resetAll() {
@@ -5928,10 +5908,38 @@ export default function AppShell() {
     );
   }
 
+  if (pathname.startsWith("/app/assessment/")) {
+    // Same step-clamp logic as desktop's /assessment/:step block above — the
+    // two flows must never disagree on which steps exist for this user.
+    const activeSteps = getActiveSteps(d);
+    const stepNum = parseInt(params.step, 10);
+    if (!Number.isInteger(stepNum) || stepNum < 1 || stepNum > activeSteps.length) {
+      return <Navigate to="/app/assessment/1" replace />;
+    }
+    const step = stepNum - 1;
+    return (
+      <MobileOnboardingScreen step={step} steps={activeSteps} d={d} set={set} insights={insights}
+        onBack={() => {
+          if (step > 0) { navigate(`/app/assessment/${step}`); return; }
+          posthog.capture("assessment_abandoned", { step: step + 1, step_name: activeSteps[step].label, reason: "back_to_welcome" });
+          navigate("/welcome");
+        }}
+        onBackToDashboard={() => navigate("/app/home")}
+        onContinue={() => {
+          posthog.capture("assessment_question_completed", { step: step + 1, step_name: activeSteps[step].label });
+          if (step < activeSteps.length - 1) { navigate(`/app/assessment/${step+2}`); return; }
+          assessmentCompletedRef.current = true;
+          posthog.capture("assessment_completed");
+          generateDashboard("/app/home");
+        }}
+      />
+    );
+  }
+
   if (pathname === "/app/home") return (
     <MobileLayout pageLabel="Home" activeTab="home"
       headerRight={
-        <button onClick={() => navigate("/assessment/1")} aria-label="Edit inputs" style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <button onClick={() => navigate("/app/assessment/1")} aria-label="Edit inputs" style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <Wrench size={20} color={GOLD}/>
         </button>
       }>
