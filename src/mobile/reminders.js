@@ -25,6 +25,35 @@ export function nextWorkingDay(base = new Date()) {
   return d;
 }
 
+const REMINDER_KEY_PREFIX = "candid_reminder_";
+
+// How many *other* Bells are already set on this device — used to stagger
+// a newly-set reminder onto a later working day, one per existing reminder,
+// so setting several in one sitting (e.g. pension + investments + cash)
+// doesn't stack three separate actions onto the same day.
+function countOtherSetReminders(excludeId) {
+  try {
+    let count = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(REMINDER_KEY_PREFIX) && key !== `${REMINDER_KEY_PREFIX}${excludeId}` && localStorage.getItem(key) === "1") {
+        count++;
+      }
+    }
+    return count;
+  } catch { return 0; }
+}
+
+// The working day a given reminder should land on: next working day, plus
+// one further working day for every other reminder already set — so the
+// first Bell set gets tomorrow, the second gets the day after, and so on.
+export function nextAvailableWorkingDay(id) {
+  const stagger = countOtherSetReminders(id);
+  let date = nextWorkingDay();
+  for (let i = 0; i < stagger; i++) date = nextWorkingDay(date);
+  return date;
+}
+
 function escapeIcsText(s) {
   return String(s).replace(/\\/g, "\\\\").replace(/,/g, "\\,").replace(/;/g, "\\;").replace(/\n/g, "\\n");
 }
@@ -66,11 +95,11 @@ function buildIcs({ title, description, date }) {
   ].join("\r\n");
 }
 
-// Triggers the OS's native "add event" flow for a reminder on the next
-// working day. Returns nothing — this is a side-effecting action, not a
-// calculation.
-export function triggerCalendarReminder({ title, description }) {
-  const ics = buildIcs({ title, description, date: nextWorkingDay() });
+// Triggers the OS's native "add event" flow for a reminder on the given date
+// (defaults to the next working day if none is passed). Returns nothing —
+// this is a side-effecting action, not a calculation.
+export function triggerCalendarReminder({ title, description, date = nextWorkingDay() }) {
+  const ics = buildIcs({ title, description, date });
   const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   window.location.href = url;
