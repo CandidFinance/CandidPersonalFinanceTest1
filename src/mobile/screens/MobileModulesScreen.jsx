@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
 import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -45,6 +45,17 @@ function moduleInsights(mm, d, m) {
       return [];
   }
 }
+
+// Modules not yet built for anyone (hidden app-wide behind HIDE_MVP_MODULES,
+// not just on mobile) — shown here as locked teasers so the roadmap is
+// visible, rather than looking like the app only ever covers 4 areas.
+// Icons/keys come from the shared MODULE_META; title/description here are
+// this teaser's own copy, not MODULE_META's (which is written for the real,
+// unlocked module elsewhere).
+const LOCKED_MODULES = [
+  { key:"mortgage", title:"Mortgages", description:"Overpay-vs-invest analysis, remortgage timing, and rate-change impact." },
+  { key:"kids", title:"Family tax planning", description:"Junior ISAs, Child Benefit tapering, and tax-efficient gifting for your children." },
+];
 
 export default function MobileModulesScreen({ d, m, statuses, insights, completedModules, onMarkReviewed, onOpenModule }) {
   const [sortMode, setSortMode] = useState("amount");
@@ -130,6 +141,27 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
                   )}
                 </div>
               )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Coming soon</div>
+      <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+        {LOCKED_MODULES.map(lm => {
+          const meta = MODULE_META.find(mm => mm.key === lm.key);
+          return (
+            <div key={lm.key} style={{background:"rgba(255,255,255,0.55)",borderRadius:"16px",border:"1.5px dashed rgba(22,47,36,0.15)",padding:"18px",display:"flex",alignItems:"flex-start",gap:"14px"}}>
+              <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
+                {meta?.icon && <meta.icon size={18} color={MUT}/>}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+                  <div style={{fontSize:"16px",fontWeight:600,color:MUT}}>{lm.title}</div>
+                  <div style={{fontSize:"12px",fontWeight:700,color:MUT,flexShrink:0}}>Locked</div>
+                </div>
+                <p style={{fontSize:"13px",color:"#9a9a8e",lineHeight:1.5,marginTop:"6px",marginBottom:0}}>{lm.description}</p>
+              </div>
             </div>
           );
         })}

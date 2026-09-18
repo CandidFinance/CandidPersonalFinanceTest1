@@ -2,7 +2,7 @@
   "name": "Candid — Personal finance, honestly",
   "short_name": "Candid",
   "description": "Your personalised financial health report — free, in under 5 minutes.",
-  "start_url": "/",
+  "start_url": "/app/home",
   "id": "/",
   "display": "standalone",
   "background_color": "#f6f0e6",

@@ -5,6 +5,7 @@ import posthog from "posthog-js"
 import { motion, MotionConfig, useReducedMotion, useInView, animate } from "framer-motion"
 import CandidApp, { PageWrap, NavBar, ContentWrap } from "./CandidApp.jsx"
 import { ClipboardList, Target, Search, GraduationCap, PoundSterling, Home as HomeIcon } from "lucide-react"
+import ErrorBoundary from "./ErrorBoundary.jsx"
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -796,6 +797,18 @@ function Home() {
     return <Navigate to={`/assessment/5${window.location.search}`} replace />;
   }
 
+  // A mobile-width visit skips the desktop landing/welcome-back screens
+  // entirely and goes straight into the mobile app — /app/home if there's
+  // already a report to show, /app/assessment/1 to start the mobile-native
+  // onboarding wizard otherwise. Same 768px breakpoint every other mobile/
+  // desktop switch in this app uses (CandidApp.jsx's useWindowWidth). Without
+  // this, every visitor — mobile or not — lands on the desktop flow, and the
+  // entire /app/* mobile experience is only reachable by typing its URL
+  // directly, which is how it's been tested all along.
+  if (typeof window !== "undefined" && window.innerWidth < 768) {
+    return <Navigate to={view === "welcome_back" ? "/app/home" : "/app/assessment/1"} replace />;
+  }
+
   if (view === "welcome_back") {
     return (
       <WelcomeBack
@@ -888,11 +901,13 @@ function AppRoutes() {
 
 function Root() {
   return (
-    <MotionConfig reducedMotion="user">
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </MotionConfig>
+    <ErrorBoundary>
+      <MotionConfig reducedMotion="user">
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </MotionConfig>
+    </ErrorBoundary>
   );
 }
 
