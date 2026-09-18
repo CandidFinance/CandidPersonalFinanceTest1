@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SERIF, SC } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC } from "../../CandidApp.jsx";
 import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -49,12 +49,20 @@ function moduleInsights(mm, d, m) {
 export default function MobileModulesScreen({ d, m, statuses, insights, completedModules, onMarkReviewed, onOpenModule }) {
   const [sortMode, setSortMode] = useState("amount");
   const [expandedKey, setExpandedKey] = useState(null);
-  const { moduleList, modulesWithRec, needActionCount } = getModuleBreakdown(d, m, statuses, insights, sortMode);
+  const { moduleList, modulesWithRec, needActionCount, totalOpp } = getModuleBreakdown(d, m, statuses, insights, sortMode);
 
   return (
     <div>
-      <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>
-        {moduleList.length} modules · {needActionCount} need action
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px"}}>
+        <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginTop:"3px"}}>
+          {moduleList.length} modules · {needActionCount} need action
+        </div>
+        {totalOpp > 0 && (
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>At stake</div>
+            <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:GOLD,lineHeight:1.15}}>{fmtCompact(totalOpp)}/yr</div>
+          </div>
+        )}
       </div>
 
       {modulesWithRec.length > 1 && (
