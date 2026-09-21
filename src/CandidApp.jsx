@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
 import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart, Wrench } from "lucide-react";
-import { fmt, fmtK } from "./lib/format.js";
+import { fmt, fmtK, fmtCompact } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, calcStudentLoanScenario } from "./lib/studentLoan.js";
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
@@ -915,6 +915,27 @@ export function PillSlider({ value, onChange, options }) {
   );
 }
 
+// Preset-buttons-plus-range-slider for a single £ target, mirroring the
+// salary-sacrifice "%" slider pattern elsewhere in this file (quick picks for
+// the common values, full slider for anything in between).
+function GoalAmountSlider({ label, value, onChange, max, step, presets }) {
+  const v = +value || 0;
+  return (
+    <div style={{marginBottom:"16px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"6px"}}>
+        <label style={LBL}>{label}</label>
+        <span style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{fmt(v)}</span>
+      </div>
+      <div style={{display:"flex",gap:"6px",marginBottom:"8px",flexWrap:"wrap"}}>
+        {presets.map(p => (
+          <button key={p} type="button" onClick={() => onChange(String(p))} style={{flex:"1 1 auto",minWidth:"56px",padding:"6px 4px",background:v===p?G:"transparent",border:`1.5px solid ${v===p?G:"rgba(22,47,36,0.2)"}`,borderRadius:"7px",color:v===p?WHITE:G,fontSize:FONT_SIZE.LABEL,fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>{fmtCompact(p)}</button>
+        ))}
+      </div>
+      <input type="range" min="0" max={max} step={step} value={v} onChange={e => onChange(e.target.value)} style={{width:"100%",accentColor:G}}/>
+    </div>
+  );
+}
+
 function Checkbox({ checked, onChange, label }) {
   return (
     <label style={{
@@ -1243,6 +1264,25 @@ const MODULE_SELECT_TILES = [
   { key:"studentLoan", emoji:GraduationCap, label:"Student Loans" },
 ];
 
+// The "Your goals" step, right after module selection. Multi-select — real
+// goals aren't mutually exclusive — except "exploring", which stands in for
+// "none of the above" and clears/blocks every other selection.
+const GOAL_TILES = [
+  { key:"buy_house",          icon:Home,      label:"Buy a house",                        needsTarget:true  },
+  { key:"big_purchase",       icon:Star,      label:"Saving for a big purchase",          needsTarget:true  },
+  { key:"future_generations", icon:Baby,      label:"Money aside for future generations", needsTarget:false },
+  { key:"consolidate",        icon:RefreshCw, label:"Consolidating what I already have",  needsTarget:false },
+  { key:"emergency_fund",     icon:Shield,    label:"Building an emergency fund",         needsTarget:false },
+  { key:"exploring",          icon:Lightbulb, label:"Just exploring, no specific goal",   needsTarget:false, exclusive:true },
+];
+
+const GOAL_TIMEFRAME_OPTIONS = [
+  { value:"lt1",   label:"<1 year"   },
+  { value:"1to3",  label:"1–3 years" },
+  { value:"3to5",  label:"3–5 years" },
+  { value:"5plus", label:"5+ years"  },
+];
+
 function OnboardingStep({ stepId, d, set }) {
   const g2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"};
   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
@@ -1327,6 +1367,62 @@ function OnboardingStep({ stepId, d, set }) {
           );
         })}
       </div>
+    </div>
+  );
+  if (stepId === "goals") return (
+    <div>
+      <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"8px",textAlign:"center"}}>What are you working towards?</h2>
+      <p style={{fontSize:FONT_SIZE.BODY,color:MUT,marginBottom:"24px",lineHeight:1.5,textAlign:"center"}}>Pick as many as apply — this helps us weigh advice around what actually matters to you, not just the numbers.</p>
+      <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+        {GOAL_TILES.map(({ key, icon:Icon, label, exclusive }) => {
+          const goals = d.financialGoals || [];
+          const selected = goals.includes(key);
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => {
+                if (selected) { set("financialGoals", goals.filter(k => k !== key)); return; }
+                if (exclusive) { set("financialGoals", [key]); return; }
+                set("financialGoals", [...goals.filter(k => k !== "exploring"), key]);
+              }}
+              style={{
+                display:"flex", alignItems:"center", gap:"12px", width:"100%", textAlign:"left",
+                padding:"13px 16px", borderRadius:"10px", cursor:"pointer",
+                background: selected ? "rgba(196,150,58,0.08)" : WHITE,
+                border: `1.5px solid ${selected ? GOLD : "rgba(22,47,36,0.14)"}`,
+                transition:"all 0.15s",
+              }}
+            >
+              <div style={{width:"34px",height:"34px",borderRadius:"9px",background:selected?G:"rgba(22,47,36,0.06)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <Icon size={16} color={selected?WHITE:G}/>
+              </div>
+              <span style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:TEXT,flex:1}}>{label}</span>
+              {selected && <Check size={16} color={GOLD}/>}
+            </button>
+          );
+        })}
+      </div>
+
+      {(d.financialGoals||[]).includes("buy_house") && (
+        <div style={{marginTop:"22px",padding:"16px",background:"rgba(22,47,36,0.03)",borderRadius:"10px"}}>
+          <div style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G,marginBottom:"12px"}}>Buying a house</div>
+          <GoalAmountSlider label="Target deposit or purchase amount" value={d.houseTargetAmount} onChange={v=>set("houseTargetAmount",capField("houseTargetAmount",v))} max={500000} step={5000} presets={[10000,25000,50000,100000,200000]}/>
+          <Field label="When do you need this by?">
+            <Toggle value={d.houseTimeframe} onChange={v=>set("houseTimeframe",v)} options={GOAL_TIMEFRAME_OPTIONS}/>
+          </Field>
+        </div>
+      )}
+
+      {(d.financialGoals||[]).includes("big_purchase") && (
+        <div style={{marginTop:"18px",padding:"16px",background:"rgba(22,47,36,0.03)",borderRadius:"10px"}}>
+          <div style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G,marginBottom:"12px"}}>Big purchase</div>
+          <GoalAmountSlider label="Target amount" value={d.bigPurchaseTargetAmount} onChange={v=>set("bigPurchaseTargetAmount",capField("bigPurchaseTargetAmount",v))} max={100000} step={1000} presets={[1000,5000,10000,25000,50000]}/>
+          <Field label="When do you need this by?">
+            <Toggle value={d.bigPurchaseTimeframe} onChange={v=>set("bigPurchaseTimeframe",v)} options={GOAL_TIMEFRAME_OPTIONS}/>
+          </Field>
+        </div>
+      )}
     </div>
   );
   if (stepId === "about") return (
@@ -5345,6 +5441,14 @@ const BLANK_DATA = {
   // Drives which subsequent steps are shown (getActiveSteps) and which modules
   // computeModuleStatuses treats as applicable.
   selectedModules:[],
+  // Multi-select goals from the "Your goals" onboarding step, right after
+  // module selection — collected so future advice can be weighed against what
+  // the user is actually trying to do, not just their raw numbers. Not yet
+  // read by any calc-engine logic (see MobileInvestmentsDeepDive/CGT-style
+  // features for the pattern once that wiring is scoped).
+  financialGoals:[],
+  houseTargetAmount:"", houseTimeframe:"",
+  bigPurchaseTargetAmount:"", bigPurchaseTimeframe:"",
   age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"stable",
   monthlyExpenses:"", higherBuffer:"no",
   cashSavings:"", savingsRate:"", premiumBonds:"", cashAccessType:"",

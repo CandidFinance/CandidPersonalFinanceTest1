@@ -1,11 +1,11 @@
 import { useState } from "react";
 import posthog from "posthog-js";
-import { AlertTriangle, Landmark, CreditCard } from "lucide-react";
+import { AlertTriangle, Landmark, CreditCard, Home, Star, Baby, RefreshCw, Shield, Lightbulb, Check } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, MODULE_META, PillSlider } from "../../CandidApp.jsx";
 import { capField, isaThisYearTotal } from "../../lib/onboarding.js";
 import { estimatePensionPot, CAREER_START_AGE } from "../../lib/pension.js";
 import { resolveSlRate } from "../../lib/studentLoan.js";
-import { fmt } from "../../lib/format.js";
+import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import MobileCashTiersList from "./MobileCashTiersList.jsx";
 
@@ -36,6 +36,48 @@ const STUDENT_LOAN_OPTIONS = [
   { value:"plan2", label:"Plan 2" },
   { value:"plan5", label:"Plan 5" },
 ];
+
+// "Your goals" step, right after module selection — same keys/fields as
+// desktop's GOAL_TILES (CandidApp.jsx). Multi-select except "exploring",
+// which stands in for "none of the above" and clears every other selection.
+const GOAL_TILES = [
+  { key:"buy_house",          icon:Home,      label:"Buy a house" },
+  { key:"big_purchase",       icon:Star,      label:"Saving for a big purchase" },
+  { key:"future_generations", icon:Baby,      label:"Money aside for future generations" },
+  { key:"consolidate",        icon:RefreshCw, label:"Consolidating what I already have" },
+  { key:"emergency_fund",     icon:Shield,    label:"Building an emergency fund" },
+  { key:"exploring",          icon:Lightbulb, label:"Just exploring, no specific goal", exclusive:true },
+];
+const GOAL_TIMEFRAME_OPTIONS = [
+  { value:"lt1",   label:"<1 yr"   },
+  { value:"1to3",  label:"1-3 yrs" },
+  { value:"3to5",  label:"3-5 yrs" },
+  { value:"5plus", label:"5+ yrs"  },
+];
+
+// Preset-buttons-plus-range-slider for a single £ target — mobile-styled
+// twin of desktop's GoalAmountSlider (CandidApp.jsx). A plain function
+// declaration, not an object literal, so referencing G/WHITE/SERIF inside its
+// body is safe despite the circular-import TDZ hazard noted above: those are
+// only read when the function is called at render time, well after
+// CandidApp.jsx has finished initializing.
+function GoalAmountSlider({ label, value, onChange, max, step, presets }) {
+  const v = +value || 0;
+  return (
+    <div style={{marginBottom:"14px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"6px"}}>
+        <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span>
+        <span style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G}}>{fmt(v)}</span>
+      </div>
+      <div style={{display:"flex",gap:"6px",marginBottom:"8px",flexWrap:"wrap"}}>
+        {presets.map(p => (
+          <button key={p} type="button" onClick={() => onChange(String(p))} style={{flex:"1 1 auto",minWidth:"52px",padding:"6px 4px",background:v===p?G:"transparent",border:`1.5px solid ${v===p?G:"rgba(22,47,36,0.2)"}`,borderRadius:"7px",color:v===p?WHITE:G,fontSize:"11px",fontWeight:600,cursor:"pointer"}}>{fmtCompact(p)}</button>
+        ))}
+      </div>
+      <input type="range" min="0" max={max} step={step} value={v} onChange={e => onChange(e.target.value)} style={{width:"100%",accentColor:G}}/>
+    </div>
+  );
+}
 
 // Mobile-native rebuild of desktop's OnboardingStep (CandidApp.jsx) — same
 // step ids, same `d`/`set` writes (values land in the exact same fields), but
@@ -99,6 +141,57 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
             );
           })}
         </div>
+      </div>
+    );
+  }
+
+  if (stepId === "goals") {
+    const goals = d.financialGoals || [];
+    return (
+      <div>
+        <h2 style={questionHeading}>What are you working towards?</h2>
+        <p style={questionSub}>Pick as many as apply — this helps us tailor advice to what matters to you.</p>
+        <div style={{display:"flex",flexDirection:"column",gap:"9px"}}>
+          {GOAL_TILES.map(({ key, icon:Icon, label, exclusive }) => {
+            const selected = goals.includes(key);
+            return (
+              <button key={key} type="button" onClick={() => {
+                if (selected) { set("financialGoals", goals.filter(k => k !== key)); return; }
+                if (exclusive) { set("financialGoals", [key]); return; }
+                set("financialGoals", [...goals.filter(k => k !== "exploring"), key]);
+              }} style={{
+                display:"flex",alignItems:"center",gap:"11px",width:"100%",textAlign:"left",
+                padding:"12px 14px",borderRadius:"10px",cursor:"pointer",
+                background:selected?"rgba(196,150,58,0.08)":WHITE,
+                border:`1.5px solid ${selected?GOLD:"rgba(22,47,36,0.14)"}`,
+              }}>
+                <div style={{width:"32px",height:"32px",borderRadius:"8px",background:selected?G:"rgba(22,47,36,0.06)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <Icon size={15} color={selected?WHITE:G}/>
+                </div>
+                <span style={{fontSize:"13px",fontWeight:600,color:TEXT,flex:1}}>{label}</span>
+                {selected && <Check size={15} color={GOLD}/>}
+              </button>
+            );
+          })}
+        </div>
+
+        {goals.includes("buy_house") && (
+          <div style={{marginTop:"20px",padding:"14px",background:"rgba(22,47,36,0.03)",borderRadius:"10px"}}>
+            <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>Buying a house</div>
+            <GoalAmountSlider label="Target deposit or purchase amount" value={d.houseTargetAmount} onChange={v=>set("houseTargetAmount",capField("houseTargetAmount",v))} max={500000} step={5000} presets={[10000,25000,50000,100000,200000]}/>
+            <label style={fieldLabel}>When do you need this by?</label>
+            <PillSlider value={d.houseTimeframe} onChange={v=>set("houseTimeframe",v)} options={GOAL_TIMEFRAME_OPTIONS}/>
+          </div>
+        )}
+
+        {goals.includes("big_purchase") && (
+          <div style={{marginTop:"16px",padding:"14px",background:"rgba(22,47,36,0.03)",borderRadius:"10px"}}>
+            <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>Big purchase</div>
+            <GoalAmountSlider label="Target amount" value={d.bigPurchaseTargetAmount} onChange={v=>set("bigPurchaseTargetAmount",capField("bigPurchaseTargetAmount",v))} max={100000} step={1000} presets={[1000,5000,10000,25000,50000]}/>
+            <label style={fieldLabel}>When do you need this by?</label>
+            <PillSlider value={d.bigPurchaseTimeframe} onChange={v=>set("bigPurchaseTimeframe",v)} options={GOAL_TIMEFRAME_OPTIONS}/>
+          </div>
+        )}
       </div>
     );
   }

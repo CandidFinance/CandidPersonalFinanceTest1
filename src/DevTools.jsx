@@ -16,6 +16,7 @@ const CUSTOM_PRESETS_KEY = "candid_dev_custom_presets";
 const baseProfile = {
   name: "", email: "", interests: [],
   selectedModules: [],
+  financialGoals: [], houseTargetAmount: "", houseTimeframe: "", bigPurchaseTargetAmount: "", bigPurchaseTimeframe: "",
   age: "32", salary: "55000", otherIncome: "0", dividendIncome: "0", bonusAmount: "0", salaryTrajectory: "stable",
   monthlyExpenses: "1800", higherBuffer: "no",
   cashSavings: "10000", savingsRate: "2.5", premiumBonds: "0", cashAccessType: "yes",
@@ -45,6 +46,7 @@ const BUILT_IN_PRESETS = [
     data: {
       ...baseProfile,
       selectedModules: ["cash","investments","pension","studentLoan"],
+      financialGoals: ["buy_house","consolidate"], houseTargetAmount: "40000", houseTimeframe: "1to3",
       name: "Alex Full", email: "alex.full@example.com",
       age: "34", salary: "72000", otherIncome: "2000", dividendIncome: "500", bonusAmount: "5000", salaryTrajectory: "moderate",
       monthlyExpenses: "2200",

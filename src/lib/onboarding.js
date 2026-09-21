@@ -6,6 +6,7 @@
 
 export const ALL_STEP_DEFS = [
   { id:"modules",     label:"Focus",           shortLabel:"Focus",       mobileLabel:"Focus", always:true },
+  { id:"goals",       label:"Your goals",      shortLabel:"Goals",       mobileLabel:"Goals", always:true },
   { id:"name",        label:"Name",            shortLabel:"Name",        mobileLabel:"Name",  always:true },
   { id:"email",       label:"Email",           shortLabel:"Email",       mobileLabel:"Email", always:true },
   { id:"about",       label:"About you",       shortLabel:"Income",      mobileLabel:"Inc.",  always:true },
@@ -28,6 +29,7 @@ export const FIELD_CAPS = {
   isaThisYearCash:20000, isaThisYearSS:20000, isaThisYearLISA:4000, isaThisYearOther:20000,
   isaPrevCash:500000, isaPrevSS:500000, isaPrevLISA:500000, isaPrevOther:500000,
   unwrappedValue:10000000, unrealisedGains:5000000, realisedCgtGains:5000000,
+  houseTargetAmount:5000000, bigPurchaseTargetAmount:1000000,
   myContribution:60, employerMatch:20,
   potValue:10000000, potValue2:10000000, niYears:35,
   loanBalance:200000, mortgageBalance:5000000, mortgageRate:15,
