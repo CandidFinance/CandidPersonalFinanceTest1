@@ -63,7 +63,10 @@ export function calcMetrics(d, marketRates = {}) {
   // CGT rates on shares/other assets (non-property): 18% basic, 24% higher/additional —
   // aligned with residential property rates from the 30 Oct 2024 Budget. Not 10%/20%,
   // which were the pre-Budget rates.
-  const gains = +d.unrealisedGains||0, crystallisable = Math.min(gains, 3000),
+  const gains = +d.unrealisedGains||0,
+        realisedCgtGains = d.hasSoldAssetsOutsideWrapper === "yes" ? Math.max(0, +d.realisedCgtGains||0) : 0,
+        remainingCgtAllowance = Math.max(0, 3000 - realisedCgtGains),
+        crystallisable = Math.min(gains, remainingCgtAllowance),
         cgtRate = tr !== 0.20 ? 0.24 : 0.18,
         cgtSaving = crystallisable * cgtRate,
         savingsRate = effectiveSavingsRate,
@@ -149,7 +152,7 @@ export function calcMetrics(d, marketRates = {}) {
     salary, expenses, totalLiquid, runwayMonths,
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
     isaHeadroom, isaUsedThisYear: isaUsedThisYearCalc,
-    missedMatch, annualRepayment, willClear, crystallisable, cgtSaving, cgtRate,
+    missedMatch, annualRepayment, willClear, crystallisable, cgtSaving, cgtRate, remainingCgtAllowance,
     projectedPot, years, annualYieldGap, savingsRate, loanBal, tr,
     cashMoveAmount, cashExcessNotWorthMoving,
     cash, bonds, totalAssets, totalLiabilities, netWorth,

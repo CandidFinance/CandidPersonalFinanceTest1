@@ -5350,6 +5350,7 @@ const BLANK_DATA = {
   cashSavings:"", savingsRate:"", premiumBonds:"", cashAccessType:"",
   cashTiers:[{amount:"",rate:""}],
   hasInvestments:"no", isaUsedThisYear:"", isaPreviousBalance:"", isaType:"none", unwrappedValue:"", unrealisedGains:"",
+  hasSoldAssetsOutsideWrapper:"no", realisedCgtGains:"",
   isaThisYearCash:"", isaThisYearSS:"", isaThisYearLISA:"", isaThisYearOther:"",
   isaPrevCash:"", isaPrevSS:"", isaPrevLISA:"", isaPrevOther:"",
   hasPension:"no", myContribution:"", employerMatch:"", potValue:"", potValue2:"", retirementAge:"65", pensionType:"",

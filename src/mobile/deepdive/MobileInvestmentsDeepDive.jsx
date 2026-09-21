@@ -4,6 +4,7 @@ import { fmt } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, getModuleProducts } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProviderTile from "../MobileProviderTile.jsx";
+import GoToIsaButton from "../GoToIsaButton.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
 
@@ -116,7 +117,7 @@ function PortfolioBreakdownTile() {
 // savingsRates wired into the mobile route yet, and inline charts need
 // mobile-specific redesign, not a direct port).
 export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
-  const [openInfo, setOpenInfo] = useState(null); // "bnb" | "useit" | null
+  const [openInfo, setOpenInfo] = useState(null); // "bnb" | "useit" | "isa" | null
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const infoBtnStyle = { background:"#a8a89c", color:WHITE, border:"none", borderRadius:"50%", width:"15px", height:"15px", fontSize:"10px", fontWeight:700, lineHeight:"15px", textAlign:"center", padding:0, cursor:"pointer", flexShrink:0 };
 
@@ -134,9 +135,9 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
 
   const totalGains = +d.unrealisedGains || 0;
   const cgtRatePct = Math.round(m.cgtRate * 100);
-  const yearsNeeded = Math.ceil(totalGains / 3000);
+  const yearsNeeded = m.remainingCgtAllowance > 0 ? Math.ceil(totalGains / m.remainingCgtAllowance) : 0;
   const taxpayerBand = m.tr !== 0.20 ? "higher/additional-rate" : "basic-rate";
-  const taxIfWait = Math.round((totalGains - 3000) * m.cgtRate);
+  const taxIfWait = Math.round((totalGains - m.remainingCgtAllowance) * m.cgtRate);
   const products = getModuleProducts("investments", d, m);
 
   return (
@@ -169,20 +170,25 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
           // Informational, not directive — states the figures and points to
           // your platform/adviser for the "how", rather than instructing a
           // specific trade (avoids reading as financial advice).
-          description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your investment gains before the tax year ends. You have around ${fmt(totalGains)} of unrealised gain, and £3,000 of gain is CGT-exempt each year — crystallising ${fmt(m.crystallisable)} of it now is worth up to ${fmt(m.cgtSaving)}.\n\nThis needs actioning before April 5th - worth a quick check with your platform or a financial adviser on how to do this for your holdings.`,
+          description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your investment gains before the tax year ends. You have around ${fmt(totalGains)} of unrealised gain, and ${fmt(m.remainingCgtAllowance)} of gain is CGT-exempt this year — crystallising ${fmt(m.crystallisable)} of it now is worth up to ${fmt(m.cgtSaving)}.\n\nThis needs actioning before April 5th - worth a quick check with your platform or a financial adviser on how to do this for your holdings.`,
         } : null}>
         {m.crystallisable > 0 ? (
           <div>
+            {m.remainingCgtAllowance < 3000 && (
+              <div style={{fontSize:"11.5px",fontWeight:700,color:GOLD,marginBottom:"8px"}}>
+                You have {fmt(m.remainingCgtAllowance)} of your £3,000 CGT allowance left this year.
+              </div>
+            )}
             <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:yearsNeeded>1?"10px":0}}>
-              You have ~{fmt(totalGains)} of unrealised gain. £3,000 is CGT-exempt each year — bank {fmt(m.crystallisable)} of gain now at £0 tax.{yearsNeeded > 1 && ` At that rate, shielding it all takes ${yearsNeeded} tax years.`}
+              You have ~{fmt(totalGains)} of unrealised gain. {fmt(m.remainingCgtAllowance)} is CGT-exempt this year — bank {fmt(m.crystallisable)} of gain now at £0 tax.{yearsNeeded > 1 && ` At that rate, shielding it all takes ${yearsNeeded} tax years.`}
             </p>
             {yearsNeeded > 1 && (
               <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
-                <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"6px"}}>Wait and sell it all, vs shielding £3,000/yr</div>
+                <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"6px"}}>Wait and sell it all, vs shielding {fmt(m.remainingCgtAllowance)}/yr</div>
                 <div style={rowStyle}><span>Total unrealised gain</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
-                <div style={rowStyle}><span>Less: one year's exemption</span><span>−{fmt(3000)}</span></div>
+                <div style={rowStyle}><span>Less: one year's exemption</span><span>−{fmt(m.remainingCgtAllowance)}</span></div>
                 <div style={{...rowStyle,fontWeight:700,color:"#c0392b"}}><span>Tax due at {cgtRatePct}%</span><span>{fmt(taxIfWait)}</span></div>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:0}}>Shield {fmt(3000)}/yr instead — spread across {yearsNeeded} tax years — and the same gain costs £0 in total: a saving of {fmt(taxIfWait)}.</p>
+                <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:0}}>Shield {fmt(m.remainingCgtAllowance)}/yr instead — spread across {yearsNeeded} tax years — and the same gain costs £0 in total: a saving of {fmt(taxIfWait)}.</p>
               </div>
             )}
             <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
@@ -204,20 +210,24 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
                 </div>
                 {openInfo === "useit" && (
                   <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
-                    The £3,000 exempt amount doesn't carry over — unused, it's gone on April 5th. You're a {taxpayerBand} taxpayer, so gains above it are taxed at {cgtRatePct}%.
+                    The £3,000 exempt amount doesn't carry over — unused, it's gone on April 5th. You're a {taxpayerBand} taxpayer, so gains above it are taxed at {cgtRatePct}%.{m.remainingCgtAllowance < 3000 && ` You've already used ${fmt(3000 - m.remainingCgtAllowance)} of it on gains sold earlier this tax year.`}
                   </p>
                 )}
               </div>
             </div>
           </div>
         ) : (
-          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>No unrealised gains recorded outside an ISA or pension this year — nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount.</p>
+          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>
+            {m.remainingCgtAllowance === 0
+              ? "You've used your full £3,000 CGT allowance this tax year — further gains outside an ISA or pension will be taxed at your marginal rate."
+              : "No unrealised gains recorded outside an ISA or pension this year — nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount."}
+          </p>
         )}
       </MobileWinTile>
 
       <MobileWinTile number={2} title="Utilise unused ISA allowance"
         headline={m.isaHeadroom > 0
-          ? `${fmt(m.isaHeadroom)} remaining — invested, that could grow to ~${fmt(Math.round(isaProjectedValue))} tax-free by 67`
+          ? `${fmt(m.isaHeadroom)} remaining.`
           : "You've used your full £20,000 ISA allowance this tax year."}
         tagLabel="Future opportunity" tagColor="#2d6b4a"
         reminder={m.isaHeadroom > 0 ? {
@@ -227,17 +237,29 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
         } : null}>
         {m.isaHeadroom > 0 ? (
           <div>
-            {showMoveMsg && (
-              <div style={{borderLeft:`3px solid ${GOLD}`,paddingLeft:"12px",marginBottom:"10px"}}>
-                <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"4px"}}>Move this into your S&amp;S ISA</div>
-                <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>
-                  You have {surplusSources.join(" and ")} — {fmt(m.isaHeadroom)} of ISA allowance is available to shelter it from tax, permanently.
+            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,marginTop:0,marginBottom:"4px"}}>
+              Invest it and shelter the growth from tax, for good.{" "}
+              <button onClick={() => setOpenInfo(o => o==="isa"?null:"isa")} style={{...infoBtnStyle,display:"inline-flex",alignItems:"center",justifyContent:"center",verticalAlign:"middle"}}>?</button>
+            </p>
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:0,marginBottom:openInfo==="isa"?"10px":"12px"}}>
+              Invested, that could grow to ~{fmt(Math.round(isaProjectedValue))} tax-free by 67.
+            </p>
+            {openInfo === "isa" && (
+              <div style={{marginBottom:"12px"}}>
+                {showMoveMsg && (
+                  <div style={{borderLeft:`3px solid ${GOLD}`,paddingLeft:"12px",marginBottom:"10px"}}>
+                    <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"4px"}}>Move this into your S&amp;S ISA</div>
+                    <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>
+                      You have {surplusSources.join(" and ")} — {fmt(m.isaHeadroom)} of ISA allowance is available to shelter it from tax, permanently.
+                    </p>
+                  </div>
+                )}
+                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>
+                  Illustrative only — assumes 7% p.a. nominal growth (not guaranteed) and investing at age {currentAge}, retiring at {retirementAge}. Real returns could be lower or negative.
                 </p>
               </div>
             )}
-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>
-              Illustrative only — assumes 7% p.a. nominal growth (not guaranteed) and investing at age {currentAge}, retiring at {retirementAge}. Real returns could be lower or negative.
-            </p>
+            <GoToIsaButton/>
           </div>
         ) : (
           <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>Nothing left to shelter this tax year — check back after April 6th for a fresh £20,000 allowance.</p>

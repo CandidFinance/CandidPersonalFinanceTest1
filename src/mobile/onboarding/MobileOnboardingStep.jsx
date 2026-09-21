@@ -261,6 +261,17 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
               <PillMoneyInput label="Estimated unrealised gains" value={d.unrealisedGains || null} onChange={v => set("unrealisedGains", capField("unrealisedGains", v ?? ""))}/>
               <p style={{fontSize:"11px",color:MUT,marginTop:"6px"}}>Profit above what you paid, for investments outside an ISA/pension</p>
             </div>
+
+            <div style={{marginTop:"18px"}}>
+              <label style={fieldLabel}>Have you sold any investments or property outside an ISA or pension this tax year?</label>
+              <PillSlider value={d.hasSoldAssetsOutsideWrapper || "no"} onChange={v => { set("hasSoldAssetsOutsideWrapper", v); if (v === "no") set("realisedCgtGains", ""); }} options={YES_NO_OPTIONS}/>
+              {d.hasSoldAssetsOutsideWrapper === "yes" && (
+                <div style={{marginTop:"10px"}}>
+                  <p style={{fontSize:"11px",color:MUT,marginTop:0,marginBottom:"8px"}}>We ask this to track your £3,000 CGT allowance.</p>
+                  <PillMoneyInput label="Estimated total profit" value={d.realisedCgtGains || null} onChange={v => set("realisedCgtGains", capField("realisedCgtGains", v ?? ""))}/>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

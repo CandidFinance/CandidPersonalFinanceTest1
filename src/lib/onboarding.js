@@ -27,7 +27,7 @@ export const FIELD_CAPS = {
   savingsRate:10, premiumBonds:50000,
   isaThisYearCash:20000, isaThisYearSS:20000, isaThisYearLISA:4000, isaThisYearOther:20000,
   isaPrevCash:500000, isaPrevSS:500000, isaPrevLISA:500000, isaPrevOther:500000,
-  unwrappedValue:10000000, unrealisedGains:5000000,
+  unwrappedValue:10000000, unrealisedGains:5000000, realisedCgtGains:5000000,
   myContribution:60, employerMatch:20,
   potValue:10000000, potValue2:10000000, niYears:35,
   loanBalance:200000, mortgageBalance:5000000, mortgageRate:15,
