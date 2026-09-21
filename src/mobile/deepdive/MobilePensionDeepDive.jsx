@@ -12,6 +12,7 @@ import MobileProviderTile from "../MobileProviderTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
+import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
 
 const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` }));
 const EXTRA_PCT_OPTIONS = [1,2,3,5].map(p => ({ value:p, label:`+${p}%` }));
@@ -135,16 +136,21 @@ export default function MobilePensionDeepDive({ d, m }) {
 
       {showMatchWin && (
         <MobileWinTile number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tagLabel="Today"
-          reminder={empCapPct > 0 ? {
+          reminder={{
             id: "pension-employer-match",
-            title: buildReminderSubject(`${fmt(m.missedMatch)}/yr`, "Pension employer match"),
+            title: empCapPct > 0 ? buildReminderSubject(`${fmt(m.missedMatch)}/yr`, "Pension employer match") : "Candid: Pension employer match",
             // Informational, not directive — states what the numbers show and
             // leaves the decision and the "how" to HR/payroll, rather than
             // instructing the person to act (avoids reading as financial advice).
-            description: contributing
+            // Shown even when the employer cap is unknown (empCapPct 0) — the
+            // HR email is exactly how they'd find it out.
+            description: empCapPct === 0
+              ? `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your employer's pension match. You didn't know your employer's match cap when you set up - it's worth finding out, as it could be free money on top of your ${trPct}% tax relief.\n\nDrop HR or Payroll an email to ask what the match is and how to set it up.`
+              : contributing
               ? `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your employer's pension match. Based on your salary (${fmt(m.salary)}), increasing your contribution from ${myPct}% to ${empCapPct}% is worth ${fmt(m.missedMatch)}/yr.\n\nDrop HR or Payroll an email to ask how to update your contribution rate - it will likely take effect from next month.`
               : `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your employer's pension match. Based on your salary (${fmt(m.salary)}), contributing at least ${empCapPct}% would unlock your employer's full match — worth ${fmt(m.missedMatch)}/yr, on top of ${trPct}% tax relief.\n\nDrop HR or Payroll an email to ask how to set this up - it will likely take effect from next month.`,
-          } : null}>
+            email: pensionMatchDraft({ name: d.name, contributing, myPct }),
+          }}>
           <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:"10px"}}>
             {!contributing
               ? `You're not currently contributing. Pension contributions get ${trPct}% tax relief automatically${empCapPct > 0 ? `, and your employer will match up to ${empCapPct}% of salary if you contribute at least that much` : ""} — money you're leaving unclaimed.`
@@ -300,6 +306,7 @@ export default function MobilePensionDeepDive({ d, m }) {
             // needed (an email to HR/Payroll) rather than instructing the
             // person to sacrifice their bonus, avoiding reading as advice.
             description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check whether you can sacrifice your bonus into your pension before it's paid. Based on your bonus (${fmt(+d.bonusAmount)}), sacrificing it could save up to ${fmt(bonusPotential)} in tax and National Insurance.\n\nDrop HR or Payroll an email to ask about bonus sacrifice - this needs actioning before your bonus is paid, as it usually can't be done retrospectively.`,
+            email: bonusSacrificeDraft({ name: d.name }),
           } : null}>
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"14px"}}>
             Sacrifice your bonus before it hits your payslip and you avoid tax, NI{bs.bonusSlRate > 0 ? ", and student loan repayments" : ""} on it entirely. It goes into your pension gross and grows tax-free.
@@ -352,9 +359,11 @@ export default function MobilePensionDeepDive({ d, m }) {
           {showFVInfo && (
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,background:"#ede7db",borderRadius:"8px",padding:"8px 10px",marginTop:"6px"}}>
               Assumes this amount is left untouched in your pension and grows at 6% p.a. until retirement.
-              {bs.bonusSlRate > 0 && bs.loanBal > 0 && (m.willClear
-                ? ` The ${fmt(bs.slRepaymentFromBonus)} student loan deduction on the cash portion also brings your clear date forward, saving roughly ${fmt(bs.slInterestSaved)} in interest.`
-                : ` Your loan is unlikely to clear before write-off, so the ${fmt(bs.slRepaymentFromBonus)} student loan deduction on the cash portion would likely be written off anyway.`)}
+              {bs.bonusSlRate > 0 && bs.loanBal > 0 && (bs.slOnCash <= 0
+                ? " None of the bonus is taken as cash, so no student loan deduction applies to it."
+                : m.willClear
+                  ? ` The ${fmt(bs.slOnCash)} student loan deduction on the cash portion also brings your clear date forward, saving roughly ${fmt(bs.slInterestSaved)} in interest.`
+                  : ` Your loan is unlikely to clear before write-off, so the ${fmt(bs.slOnCash)} student loan deduction on the cash portion would likely be written off anyway.`)}
               {" "}Employer NI of 13.8% on the sacrificed amount is also saved — some employers pass this on.
             </p>
           )}

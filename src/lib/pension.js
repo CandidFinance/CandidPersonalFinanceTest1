@@ -197,9 +197,10 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   const bonusFVpartial = (pct) => Math.round(bonus * pct/100 * Math.pow(1.06, years));
 
   const loanBal = m.loanBal || 0;
-  const slRepaymentFromBonus = Math.round(bonus * bonusSlRate);
+  // Based on slOnCash (the deduction on the portion NOT sacrificed), so it
+  // moves with the sacrifice slider — it's 0 at 100% sacrifice.
   const slInterestRate = d.studentLoan==="plan2" ? 0.075 : d.studentLoan==="plan5" ? 0.075 : 0.05;
-  const slInterestSaved = Math.round(slRepaymentFromBonus * slInterestRate * Math.max(1, loanBal/Math.max(1,m.annualRepayment)));
+  const slInterestSaved = Math.round(slOnCash * slInterestRate * Math.max(1, loanBal/Math.max(1,m.annualRepayment)));
 
   return {
     bonus, bonusSlRate,
@@ -207,7 +208,7 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
     sacrificedAmt, cashPortionBonus, taxOnCash, niOnCash, slOnCash,
     takeHomeCash, totalDeducted, totalReceived, employerNISave,
     crossesTaper, crossesAR, years, retireAge, bonusFVpartial,
-    loanBal, slRepaymentFromBonus, slInterestSaved,
+    loanBal, slInterestSaved,
     bonusTaxDetailEffectiveRate: bonusTaxDetail.effectiveRate,
   };
 }
