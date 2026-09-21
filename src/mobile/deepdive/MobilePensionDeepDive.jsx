@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, PartyPopper, Banknote } from "lucide-react";
+import { AlertTriangle, PartyPopper, Banknote, Lock } from "lucide-react";
 import {
   isPensionContributing,
   calcPensionTaperSaving, calcAnnualAllowanceTaper,
@@ -83,6 +83,24 @@ export default function MobilePensionDeepDive({ d, m }) {
   const traj = calcPensionGrowthTrajectory(d, m, extraPct);
   const products = getModuleProducts("pension", d, m);
 
+  // Salary Sacrifice Tax Saver (folded into the existing £100k-taper win
+  // below, rather than a separate tile) — a flexible "what if you tried a
+  // custom %" exploration alongside that tile's exact "sacrifice this much
+  // to fully escape the taper" figure. Reuses extraPct so it stays in sync
+  // with the growth-trajectory stepper further down the page.
+  const isSalarySacrifice = d.pensionType === "sacrifice";
+  const niSavingPct = isSalarySacrifice && m.salary > 50270 ? 2 : 0;
+  const totalReliefPct = trPct + niSavingPct;
+  const illustrativeExtraAmt = m.salary * extraPct / 100;
+  const illustrativeExtraRelief = Math.round(illustrativeExtraAmt * (m.tr + niSavingPct/100));
+  const illustrativeExtraNetCost = Math.round(illustrativeExtraAmt - illustrativeExtraRelief);
+  const newAdjustedIncome = Math.max(0, m.adjustedNetIncome - illustrativeExtraAmt);
+  const newBandLabel = newAdjustedIncome > 125140 ? "additional" : newAdjustedIncome > 50270 ? "higher" : "basic";
+  // Personal Savings Allowance — a band fact, not something £100k itself
+  // changes (it shifts at £50,270 and £125,140, not £100k), so it's shown
+  // as context in this tile rather than as a consequence of the taper.
+  const psaAmount = m.taxBandLabel === "additional" ? 0 : m.taxBandLabel === "higher" ? 500 : 1000;
+
   const opportunityCols = [];
   if (!contributing) opportunityCols.push({ label:"Tax relief foregone", value: fmtCompact(Math.round(m.salary*0.05*m.tr)) });
   else if (m.missedMatch > 0) opportunityCols.push({ label:"Missed employer match", value: fmtCompact(m.missedMatch) });
@@ -156,7 +174,7 @@ export default function MobilePensionDeepDive({ d, m }) {
 
       {showSacrificeCalc && (
         <MobileWinTile number={win2Num}
-          title={taper.inTaper ? "Recover your Personal Allowance" : "Get ahead of the £100k taper"}
+          title="Salary sacrifice tax saver"
           headline={taper.inTaper
             ? `Sacrificing ${fmt(taper.taperSacrificeNeeded)} recovers your full Personal Allowance — worth ~${fmt(taper.taperTotalSaving)}`
             : `You're ${fmt(Math.max(0, taper.taperStart - taper.ani))} below the £100k taper — sacrifice now to stay ahead of it`}
@@ -190,6 +208,22 @@ export default function MobilePensionDeepDive({ d, m }) {
               </p>
             </div>
           )}
+          <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",marginBottom:"12px"}}>
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
+              Your Personal Savings Allowance is {psaAmount>0?fmt(psaAmount):"£0"} as a {m.taxBandLabel}-rate taxpayer{psaAmount>0?" — savings interest above that is taxed at your marginal rate":""}. This doesn't move within the £100k–£125,140 taper zone itself — it only shrinks further if you cross into additional-rate above £125,140, or would recover to £1,000 if sacrifice took you all the way back under £50,270.
+            </p>
+          </div>
+
+          <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px"}}>
+            <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"8px"}}>Or try your own amount — sacrifice an extra {extraPct}% of salary</div>
+            <div style={rowStyle}><span>Comes off your taxable income</span><span style={{fontWeight:600}}>−{fmt(Math.round(illustrativeExtraAmt))}</span></div>
+            <div style={rowStyle}><span>Tax{niSavingPct>0?" + NI":""} relief at {totalReliefPct}%</span><span>−{fmt(illustrativeExtraRelief)}</span></div>
+            <div style={{...rowStyle,fontWeight:700}}><span>Net cost to your take-home</span><span>{fmt(illustrativeExtraNetCost)}</span></div>
+          </div>
+          <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"10px",marginBottom:0}}>
+            That leaves your taxable income at ~{fmt(Math.round(newAdjustedIncome))}
+            {newBandLabel !== m.taxBandLabel ? `, dropping you into the ${newBandLabel}-rate band.` : `, still within the ${m.taxBandLabel}-rate band.`} Use the "What if you contributed more?" stepper further down to try a different percentage.
+          </p>
         </MobileWinTile>
       )}
 
@@ -337,12 +371,16 @@ export default function MobilePensionDeepDive({ d, m }) {
       {traj.showTrajectory && (() => {
         const maxBar = Math.max(...traj.bars.map(b => b.value), 1);
         const barColors = { now:"rgba(196,150,58,0.5)", retirement:GOLD, optimised:"#2d6b4a", bonus:"rgba(45,107,74,0.7)", extra:"#8a4fae" };
+        // Short labels for narrow mobile columns — the bars themselves are a
+        // cumulative staircase (see calcPensionGrowthTrajectory), so each
+        // label after "Optimised" is a running "+lever" on top of the last,
+        // not an independent scenario.
         const shortLabel = {
           now: "Now",
           retirement: `Retire (${traj.retireAge})`,
-          optimised: "Optimised",
-          bonus: "+Bonus",
-          extra: `+${extraPct}%`,
+          optimised: `Optimised (+${traj.matchCapIncreasePct}%)`,
+          bonus: "+ Bonus",
+          extra: `+ ${extraPct}%`,
         };
         return (
           <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px"}}>
@@ -389,7 +427,7 @@ export default function MobilePensionDeepDive({ d, m }) {
               <div style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>What if you contributed more?</div>
               <PillSlider value={extraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS}/>
               <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,marginTop:"8px",marginBottom:0}}>
-                An extra {extraPct}% of salary grows to {fmt(traj.withExtraPot - Math.round(traj.currentPot))} on top of your projected pot by retirement.
+                An extra {extraPct}% of salary grows to {fmt(traj.withExtraPot - Math.round(traj.hasBonus ? traj.withBonusPot : traj.optimisedPot))} on top{(traj.hasMissedMatch || traj.hasBonus) ? " of your optimised/bonus scenario" : " of your projected pot"} by retirement.
               </p>
             </div>
 
@@ -403,6 +441,21 @@ export default function MobilePensionDeepDive({ d, m }) {
           </div>
         );
       })()}
+
+      <div style={{background:"rgba(255,255,255,0.55)",borderRadius:"14px",border:"1.5px dashed rgba(22,47,36,0.15)",padding:"18px",display:"flex",alignItems:"flex-start",gap:"14px",marginTop:"16px"}}>
+        <div style={{width:"38px",height:"38px",borderRadius:"10px",background:"rgba(22,47,36,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <Lock size={16} color={MUT}/>
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+            <div style={{fontSize:"14px",fontWeight:600,color:MUT}}>Old pension pot tracing</div>
+            <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0,whiteSpace:"nowrap"}}>Coming soon</span>
+          </div>
+          <p style={{fontSize:"12.5px",color:"#9a9a8e",lineHeight:1.55,marginTop:"6px",marginBottom:0}}>
+            Lost track of a pension from an old employer? We'll help you find and consolidate it here.
+          </p>
+        </div>
+      </div>
 
       <MobileProviderTile heading={d.hasPension === "yes" ? "Consolidate or top up" : "Get started"} products={products.products} disclaimer={products.disclaimer}/>
     </div>

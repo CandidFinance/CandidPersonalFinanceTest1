@@ -236,30 +236,53 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   const myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0;
   const retireAge = +d.retirementAge||65, age = +d.age||30;
   const years = Math.max(1, retireAge - age);
+  const annuityFactor = (Math.pow(1.06, years) - 1) / 0.06;
   const annualContrib = (myPct + empCapPct) / 100 * salary;
   const currentPot = m.projectedPot;
-  const optimisedContrib = (empCapPct * 2) * salary / 100;
-  const optimisedPot = potVal * Math.pow(1.06, years) + optimisedContrib * ((Math.pow(1.06, years) - 1) / 0.06);
-  // Bonus sacrifice is a one-off lump sum this year, not a recurring annual
-  // contribution — grown with fvSingleLocal (simple compounding), not the
-  // annuity formula used for optimisedContrib. Previously this used the
-  // annuity formula for both, which assumed the bonus repeated every year
-  // until retirement and wildly overstated the "with bonus" bar.
-  const bonusExtra = (+d.bonusAmount||0) * 0.9;
-  const withBonusPot = potVal * Math.pow(1.06, years) + optimisedContrib * ((Math.pow(1.06, years) - 1) / 0.06) + fvSingleLocal(bonusExtra, 6, years * 12);
   const hasMissedMatch = m.missedMatch > 0;
   const hasBonus = (+d.bonusAmount||0) > 0;
-  const showOptimised = hasMissedMatch || hasBonus;
+  // Percentage-points the user would need to add to their own contribution to
+  // fully capture the employer match — shown on the "Optimised" bar so the
+  // chart itself states the action needed, not just the resulting pot.
+  const matchCapIncreasePct = Math.max(0, empCapPct - myPct);
 
-  const extraGrowth = Math.round(salary * extraPct/100 * ((Math.pow(1.06, years) - 1) / 0.06));
-  const withExtraPot = Math.round(currentPot) + extraGrowth;
+  // The four bars are a genuine cumulative staircase — each builds on the
+  // pot from every lever to its left, not an independent "what if only this
+  // one thing changed" comparison (that was the previous behaviour, and
+  // meant e.g. the "+X% contribution" bar silently ignored any bonus the
+  // user was already modelling). "Optimised" contribution degrades to the
+  // user's actual current rate when there's no missed match, so withBonusPot/
+  // withExtraPot below are always built on the right base regardless of
+  // whether the match-cap or bonus levers are individually active.
+  const optimisedContrib = hasMissedMatch ? (empCapPct * 2) * salary / 100 : annualContrib;
+  const optimisedPot = potVal * Math.pow(1.06, years) + optimisedContrib * annuityFactor;
+
+  // Bonus sacrifice is a one-off lump sum this year, not a recurring annual
+  // contribution — grown with fvSingleLocal (simple compounding) on top of
+  // optimisedPot, not the annuity formula optimisedContrib itself uses.
+  const bonusExtra = (+d.bonusAmount||0) * 0.9;
+  const withBonusPot = optimisedPot + fvSingleLocal(bonusExtra, 6, years * 12);
+
+  const showOptimised = hasMissedMatch || hasBonus;
+  const extraBase = hasBonus ? withBonusPot : optimisedPot;
+  const extraGrowth = Math.round(salary * extraPct/100 * annuityFactor);
+  const withExtraPot = Math.round(extraBase) + extraGrowth;
+
+  // Builds each label as "everything included so far", e.g. once both the
+  // match-cap and bonus levers are active: "Optimised", "Optimised + bonus",
+  // "Optimised + bonus + 2% extra" — so the labels themselves show the
+  // staircase, not just the bar heights.
+  const priorLevers = [];
+  if (hasMissedMatch) priorLevers.push(`Optimised (+${matchCapIncreasePct}%)`);
+  if (hasBonus) priorLevers.push("bonus");
+  const extraLabel = priorLevers.length > 0 ? `${priorLevers.join(" + ")} + ${extraPct}% extra` : `With +${extraPct}% contribution`;
 
   const bars = [
     { key:"now", value: potVal, label: "Now" },
     { key:"retirement", value: currentPot, label: `At retirement (age ${retireAge})` },
-    ...(hasMissedMatch ? [{ key:"optimised", value: optimisedPot, label: "Optimised (match cap)" }] : []),
-    ...(hasBonus ? [{ key:"bonus", value: withBonusPot, label: "With bonus sacrifice" }] : []),
-    { key:"extra", value: withExtraPot, label: `With +${extraPct}% contribution` },
+    ...(hasMissedMatch ? [{ key:"optimised", value: optimisedPot, label: `Optimised (+${matchCapIncreasePct}%)` }] : []),
+    ...(hasBonus ? [{ key:"bonus", value: withBonusPot, label: hasMissedMatch ? `Optimised (+${matchCapIncreasePct}%) + bonus` : "With bonus sacrifice" }] : []),
+    { key:"extra", value: withExtraPot, label: extraLabel },
   ];
 
   // Earliest viable retirement age — binary/linear search for when the pot
@@ -296,7 +319,7 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
 
   return {
     years, retireAge, age, currentPot, optimisedPot, withBonusPot, withExtraPot,
-    hasMissedMatch, hasBonus, showOptimised, bars,
+    hasMissedMatch, hasBonus, showOptimised, bars, matchCapIncreasePct,
     earlyRetire, yearsSaved, onTrackEarly, showTrajectory,
     alreadyPastLsa, lsaCrossAge, showLsaFlag, LSA_INFLECTION_POT,
   };
