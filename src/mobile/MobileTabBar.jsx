@@ -1,4 +1,5 @@
 import { Home, LayoutGrid, LineChart, MessageCircle } from "lucide-react";
+import { G, MUT, CREAM, WHITE } from "../CandidApp.jsx";
 
 // Single source of truth for the mobile app's own bottom nav — deliberately
 // separate from desktop's NAV_ITEMS (CandidApp.jsx) rather than reusing it,
@@ -12,12 +13,14 @@ export const MOBILE_NAV_ITEMS = [
 
 export default function MobileTabBar({ active, onNavigate }) {
   return (
-    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:"#162f24",borderTop:"1px solid rgba(255,255,255,0.12)",zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
-      {/* The bar itself stays full-bleed (matches NavBar's full-width dark
-          header), but the buttons are capped to the same 580px content width
-          as MobileLayout's content column and centred — otherwise on a wide
-          (desktop browser) viewport the icons spread out across the full
-          window instead of the app's own screen width. */}
+    // No border: the bar starts at the page's own beige (CREAM) so it melts
+    // into the content above, and fades to white at the very bottom edge.
+    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:`linear-gradient(180deg, ${CREAM} 0%, ${WHITE} 100%)`,zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
+      {/* The bar itself stays full-bleed, but the buttons are capped to the
+          same 580px content width as MobileLayout's content column and
+          centred — otherwise on a wide (desktop browser) viewport the icons
+          spread out across the full window instead of the app's own screen
+          width. */}
       <div style={{display:"flex",maxWidth:"580px",margin:"0 auto"}}>
         {MOBILE_NAV_ITEMS.map(item => {
           const isActive = item.key === active;
@@ -26,8 +29,8 @@ export default function MobileTabBar({ active, onNavigate }) {
               flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"4px",
               background:"transparent", border:"none", padding:"10px 4px 8px", cursor:"pointer",
             }}>
-              <item.icon size={20} color={isActive ? "#c4963a" : "rgba(255,255,255,0.55)"} strokeWidth={isActive ? 2.4 : 2}/>
-              <span style={{fontSize:"10px",fontWeight:isActive?700:500,color:isActive ? "#c4963a" : "rgba(255,255,255,0.55)"}}>{item.label}</span>
+              <item.icon size={20} color={isActive ? G : MUT} strokeWidth={isActive ? 2.4 : 2}/>
+              <span style={{fontSize:"10px",fontWeight:isActive?700:500,color:isActive ? G : MUT}}>{item.label}</span>
             </button>
           );
         })}
