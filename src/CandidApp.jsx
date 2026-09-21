@@ -961,28 +961,33 @@ function Checkbox({ checked, onChange, label }) {
 // the Claude Design mockup the mobile build has been targeting all along —
 // a native app's own header usually doesn't sit in a contrasting color bar.
 // A hairline border replaces the color-block as the only remaining visual
-// separation from the content below. In this mode the wordmark itself moves
-// out of this bar entirely — the caller renders it inline in its own content
-// column instead (see MobileLayout/MobileOnboardingScreen) so it lines up
-// left-aligned with the tiles below it rather than sitting in a system-chrome
-// bar — this bar becomes just a safe-area spacer plus the optional right-side
-// action.
+// separation from the content below. In this mode the "Candid." wordmark
+// sits in the bar itself, above that hairline, in brand green; the bar's
+// contents are capped to the same 580px / 20px-gutter column as the app's
+// content so the wordmark left-aligns with the tiles below it.
 export function NavBar({ right, center, onLogoClick, light }) {
-  const wordmarkStyle = {fontFamily:SERIF,color:GOLD,fontSize:FONT_SIZE.HEADLINE,fontWeight:700,justifySelf:"start"};
-  return (
-    <div style={{
-      background:light?CREAM:G,
-      borderBottom:light?"1px solid rgba(22,47,36,0.08)":"none",
-      padding:"18px 32px",paddingTop:"calc(18px + env(safe-area-inset-top, 0px))",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px",flexShrink:0,
-    }}>
-      {light ? <span/> : onLogoClick ? (
-        <button type="button" onClick={onLogoClick} aria-label="Back to Dashboard" style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
+  const wordmarkStyle = light
+    ? {fontFamily:SERIF,color:G,fontSize:"20px",fontWeight:700,justifySelf:"start"}
+    : {fontFamily:SERIF,color:GOLD,fontSize:FONT_SIZE.HEADLINE,fontWeight:700,justifySelf:"start"};
+  const row = (
+    <>
+      {onLogoClick ? (
+        <button type="button" onClick={onLogoClick} aria-label={light ? "Back to Home" : "Back to Dashboard"} style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
       ) : (
         <span style={wordmarkStyle}>Candid.</span>
       )}
       {center ? <div style={{color:light?"rgba(22,47,36,0.5)":"rgba(255,255,255,0.5)",fontSize:FONT_SIZE.LABEL,fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
       <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>
+    </>
+  );
+  const grid = {display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px"};
+  if (light) return (
+    <div style={{background:CREAM,borderBottom:"1px solid rgba(22,47,36,0.08)",paddingTop:"env(safe-area-inset-top, 0px)",flexShrink:0}}>
+      <div style={{...grid,maxWidth:"580px",margin:"0 auto",padding:"14px 20px",width:"100%",boxSizing:"border-box"}}>{row}</div>
     </div>
+  );
+  return (
+    <div style={{background:G,padding:"18px 32px",paddingTop:"calc(18px + env(safe-area-inset-top, 0px))",...grid,flexShrink:0}}>{row}</div>
   );
 }
 

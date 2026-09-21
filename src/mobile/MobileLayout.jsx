@@ -1,13 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { NavBar, G, SERIF } from "../CandidApp.jsx";
+import { NavBar } from "../CandidApp.jsx";
 import MobileTabBar from "./MobileTabBar.jsx";
 
-// Shell for every /app/* mobile screen: a bare NavBar (safe-area spacer +
-// optional page-specific action in its right slot — see NavBar's `light`
-// mode) and a scrollable content area above the fixed mobile tab bar. The
-// "Candid." wordmark lives here instead, as the first thing in the content
-// column — left-aligned with every tile/card below it, like a native app's
-// own in-content branding rather than a system-chrome bar. `pageLabel` is
+// Shell for every /app/* mobile screen: a light NavBar (the "Candid."
+// wordmark on the left, above the bar's hairline, plus an optional page-
+// specific action on the right — see NavBar's `light` mode) and a scrollable
+// content area above the fixed mobile tab bar. `pageLabel` is
 // optional and currently unset everywhere: the tab bar shows which of the 4
 // tab-bar screens is active, and a module deep dive already carries its own
 // title heading in its content, so a nav-bar title would just repeat it.
@@ -22,9 +20,8 @@ export default function MobileLayout({ pageLabel, activeTab, headerRight, childr
         @keyframes btnGoldTint{0%{background:transparent;}40%{background:rgba(196,150,58,0.35);}100%{background:transparent;}}
         @keyframes badgeFadeUp{0%{opacity:0;transform:translateY(8px);}20%{opacity:1;transform:translateY(0);}70%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-6px);}}
       `}</style>
-      <NavBar light center={pageLabel} right={headerRight} />
+      <NavBar light center={pageLabel} right={headerRight} onLogoClick={() => navigate("/app/home")} />
       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",paddingBottom:"90px",width:"100%"}}>
-        <button type="button" onClick={() => navigate("/app/home")} style={{fontFamily:SERIF,color:G,fontSize:"20px",fontWeight:700,background:"none",border:"none",padding:0,marginBottom:"18px",cursor:"pointer",display:"block"}}>Candid.</button>
         {children}
       </div>
       <MobileTabBar active={activeTab} onNavigate={navigate} />
