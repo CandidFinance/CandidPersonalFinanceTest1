@@ -13,6 +13,7 @@ import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sani
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
 import { simulateLoan, fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions } from "./lib/forecast.js";
 import { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
+import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, FONT_SIZE } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
@@ -93,7 +94,7 @@ const FONTS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 input,select,textarea{outline:none;font-family:inherit;}
-input:focus,select:focus,textarea:focus{border-color:#162f24!important;box-shadow:0 0 0 3px rgba(22,47,36,0.08);}
+input:focus,select:focus,textarea:focus{border-color:${G}!important;box-shadow:0 0 0 3px rgba(22,47,36,0.08);}
 button{cursor:pointer;font-family:inherit;}
 button:active{transform:scale(0.98);}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -101,8 +102,8 @@ button:active{transform:scale(0.98);}
 @keyframes coinFloat{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-40px) scale(1.3);}}
 @keyframes scorePulse{0%{box-shadow:0 0 0 0 rgba(196,150,58,0.6);}70%{box-shadow:0 0 0 14px rgba(196,150,58,0);}100%{box-shadow:0 0 0 0 rgba(196,150,58,0);}}
 @keyframes badgeFadeUp{0%{opacity:0;transform:translateY(8px);}20%{opacity:1;transform:translateY(0);}70%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-6px);}}
-@keyframes btnFlash{0%{background:#162f24;}40%{background:#c4963a;}100%{background:#162f24;}}
-@keyframes btnGold{0%{background:#162f24;}40%{background:#c4963a;}100%{background:#162f24;}}
+@keyframes btnFlash{0%{background:${G};}40%{background:${GOLD};}100%{background:${G};}}
+@keyframes btnGold{0%{background:${G};}40%{background:${GOLD};}100%{background:${G};}}
 @keyframes scalePulse{0%{transform:scale(1);}50%{transform:scale(1.08);}100%{transform:scale(1);}}
 @keyframes btnPulse{0%{transform:scale(1);}50%{transform:scale(1.08);}100%{transform:scale(1);}}
 .fu {animation:fadeUp 0.45s ease forwards;}
@@ -115,9 +116,7 @@ button:active{transform:scale(0.98);}
 .fu7{animation:fadeUp 0.45s ease 0.49s forwards;opacity:0;}
 `;
 
-export const G = "#162f24", GOLD = "#c4963a", CREAM = "#f6f0e6", CDARK = "#ede7db",
-      TEXT = "#1a1a1a", MUT = "#6b6b6b", WHITE = "#ffffff",
-      SERIF = "'Playfair Display',serif", SANS = "'DM Sans',sans-serif";
+export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, FONT_SIZE };
 
 const INP = {
   width:"100%", padding:"11px 14px", border:"1.5px solid rgba(22,47,36,0.18)",
@@ -876,7 +875,7 @@ function Field({ label:lb, hint, children }) {
   return (
     <div style={{marginBottom:"22px"}}>
       <label style={LBL}>{lb}</label>
-      {hint && <p style={{fontSize:"12px",color:MUT,marginTop:"2px",marginBottom:"2px"}}>{hint}</p>}
+      {hint && <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,marginTop:"2px",marginBottom:"2px"}}>{hint}</p>}
       {children}
     </div>
   );
@@ -891,7 +890,7 @@ export function Toggle({ value, onChange, options }) {
           border:`1.5px solid ${value===o.value ? G : "rgba(22,47,36,0.18)"}`,
           borderRadius:"8px", background:value===o.value ? G : WHITE,
           color:value===o.value ? WHITE : TEXT,
-          fontSize:"13px", fontWeight:500, transition:"all 0.15s"
+          fontSize:FONT_SIZE.BODY, fontWeight:500, transition:"all 0.15s"
         }}>{o.label}</button>
       ))}
     </div>
@@ -903,13 +902,13 @@ export function Toggle({ value, onChange, options }) {
 // used where horizontal space is tight (e.g. Forecast's time-horizon picker).
 export function PillSlider({ value, onChange, options }) {
   return (
-    <div style={{display:"flex",background:CDARK,borderRadius:"100px",padding:"3px",gap:"2px"}}>
+    <div style={{display:"flex",background:CDARK,borderRadius:RADIUS_PILL,padding:"3px",gap:"2px"}}>
       {options.map(o => (
         <button key={o.value} type="button" onClick={() => onChange(o.value)} style={{
-          flex:1, border:"none", borderRadius:"100px", padding:"9px 0",
+          flex:1, border:"none", borderRadius:RADIUS_PILL, padding:"9px 0",
           background: value===o.value ? G : "transparent",
           color: value===o.value ? WHITE : MUT,
-          fontSize:"13px", fontWeight:600, cursor:"pointer", fontFamily:SANS, transition:"all 0.15s",
+          fontSize:FONT_SIZE.BODY, fontWeight:600, cursor:"pointer", fontFamily:SANS, transition:"all 0.15s",
         }}>{o.label}</button>
       ))}
     </div>
@@ -935,16 +934,32 @@ function Checkbox({ checked, onChange, label }) {
 // Grid (not flex space-between) so the page label stays centred whether or
 // not `right` is present — with only 2 flex children, space-between shoves
 // a lone `center` all the way to the far edge instead of the middle.
-export function NavBar({ right, center, onLogoClick }) {
-  const wordmarkStyle = {fontFamily:SERIF,color:GOLD,fontSize:"22px",fontWeight:700,justifySelf:"start"};
+// `light` (mobile app only — every desktop call site omits it, so desktop's
+// dark-green header is completely unchanged) swaps the header to the same
+// cream as the page background, matching the app-like "no chrome" look of
+// the Claude Design mockup the mobile build has been targeting all along —
+// a native app's own header usually doesn't sit in a contrasting color bar.
+// A hairline border replaces the color-block as the only remaining visual
+// separation from the content below. In this mode the wordmark itself moves
+// out of this bar entirely — the caller renders it inline in its own content
+// column instead (see MobileLayout/MobileOnboardingScreen) so it lines up
+// left-aligned with the tiles below it rather than sitting in a system-chrome
+// bar — this bar becomes just a safe-area spacer plus the optional right-side
+// action.
+export function NavBar({ right, center, onLogoClick, light }) {
+  const wordmarkStyle = {fontFamily:SERIF,color:GOLD,fontSize:FONT_SIZE.HEADLINE,fontWeight:700,justifySelf:"start"};
   return (
-    <div style={{background:G,padding:"18px 32px",paddingTop:"calc(18px + env(safe-area-inset-top, 0px))",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px",flexShrink:0}}>
-      {onLogoClick ? (
+    <div style={{
+      background:light?CREAM:G,
+      borderBottom:light?"1px solid rgba(22,47,36,0.08)":"none",
+      padding:"18px 32px",paddingTop:"calc(18px + env(safe-area-inset-top, 0px))",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px",flexShrink:0,
+    }}>
+      {light ? <span/> : onLogoClick ? (
         <button type="button" onClick={onLogoClick} aria-label="Back to Dashboard" style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
       ) : (
         <span style={wordmarkStyle}>Candid.</span>
       )}
-      {center ? <div style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
+      {center ? <div style={{color:light?"rgba(22,47,36,0.5)":"rgba(255,255,255,0.5)",fontSize:FONT_SIZE.LABEL,fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
       <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>
     </div>
   );
@@ -1005,11 +1020,11 @@ function StepProgress({ step, steps, onStepClick, isEditMode }) {
                   title={clickable ? `Jump to ${label}` : undefined}
                 >
                   {done
-                    ? <span style={{color:WHITE,fontSize:"13px",fontWeight:700}}>✓</span>
-                    : <span style={{color: current ? G : isEditMode ? G : MUT, fontSize:"12px", fontWeight:600}}>{i+1}</span>
+                    ? <span style={{color:WHITE,fontSize:FONT_SIZE.BODY,fontWeight:700}}>✓</span>
+                    : <span style={{color: current ? G : isEditMode ? G : MUT, fontSize:FONT_SIZE.LABEL, fontWeight:600}}>{i+1}</span>
                   }
                 </div>
-                <span style={{fontSize:"10px",fontWeight:600,color:current?G:done?G:MUT,letterSpacing:"0.04em",whiteSpace:"nowrap",opacity:current?1:done?0.7:(isEditMode?0.7:0.5)}}>{shortLabel}</span>
+                <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:600,color:current?G:done?G:MUT,letterSpacing:"0.04em",whiteSpace:"nowrap",opacity:current?1:done?0.7:(isEditMode?0.7:0.5)}}>{shortLabel}</span>
               </div>
               {!isLastVisible && (
                 <div style={{flex:1,height:"2px",background: i < step ? G : "rgba(22,47,36,0.12)",marginBottom:"18px",marginLeft:"6px",marginRight:"6px",transition:"background 0.4s ease"}}/>
@@ -1027,7 +1042,7 @@ function StepProgress({ step, steps, onStepClick, isEditMode }) {
 
 function GhostBtn({ onClick, children }) {
   return (
-    <button type="button" onClick={onClick} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.2)",borderRadius:"6px",padding:"6px 14px",color:"rgba(255,255,255,0.6)",fontSize:"12px"}}>
+    <button type="button" onClick={onClick} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.2)",borderRadius:"6px",padding:"6px 14px",color:"rgba(255,255,255,0.6)",fontSize:FONT_SIZE.LABEL}}>
       {children}
     </button>
   );
@@ -1076,7 +1091,7 @@ function BottomTabBar({ active }) {
             background:"transparent", border:"none", padding:"10px 4px 8px", cursor:"pointer",
           }}>
             <item.icon size={20} color={isActive ? GOLD : "rgba(255,255,255,0.55)"} strokeWidth={isActive ? 2.4 : 2}/>
-            <span style={{fontSize:"10px",fontWeight:isActive?700:500,color:isActive ? GOLD : "rgba(255,255,255,0.55)"}}>{item.label}</span>
+            <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:isActive?700:500,color:isActive ? GOLD : "rgba(255,255,255,0.55)"}}>{item.label}</span>
           </button>
         );
       })}
@@ -1097,7 +1112,7 @@ function DesktopNavLinks({ active }) {
           <button key={item.key} type="button" onClick={() => navigate(item.path)} style={{
             display:"flex", alignItems:"center", gap:"6px", background:"transparent", border:"none",
             cursor:"pointer", padding:"4px 0", color: isActive ? GOLD : "rgba(255,255,255,0.55)",
-            fontSize:"13px", fontWeight: isActive ? 700 : 500, borderBottom: isActive ? `2px solid ${GOLD}` : "2px solid transparent",
+            fontSize:FONT_SIZE.BODY, fontWeight: isActive ? 700 : 500, borderBottom: isActive ? `2px solid ${GOLD}` : "2px solid transparent",
           }}>
             <item.icon size={14}/>
             {item.label}
@@ -1165,7 +1180,7 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
         </div>
         {stepId === "email" && (
           <p style={{textAlign:"center",marginTop:"14px"}}>
-            <button type="button" onClick={onContinue} style={{background:"none",border:"none",fontSize:"13px",color:MUT,cursor:"pointer",textDecoration:"underline",padding:0}}>
+            <button type="button" onClick={onContinue} style={{background:"none",border:"none",fontSize:FONT_SIZE.BODY,color:MUT,cursor:"pointer",textDecoration:"underline",padding:0}}>
               Skip
             </button>
           </p>
@@ -1187,7 +1202,7 @@ function OnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashb
 
 function Warn({ msg }) {
   if (!msg) return null;
-  return <p style={{fontSize:"12px",color:"#c4963a",marginTop:"4px",lineHeight:1.5,display:"flex",alignItems:"flex-start",gap:"5px"}}><AlertTriangle size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>{msg}</span></p>;
+  return <p style={{fontSize:FONT_SIZE.LABEL,color:GOLD,marginTop:"4px",lineHeight:1.5,display:"flex",alignItems:"flex-start",gap:"5px"}}><AlertTriangle size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>{msg}</span></p>;
 }
 
 function InfoTooltip({ text }) {
@@ -1206,11 +1221,11 @@ function InfoTooltip({ text }) {
   return (
     <span style={{display:"inline-block",marginLeft:"6px",verticalAlign:"middle"}}>
       <button ref={btnRef} type="button" onClick={open}
-        style={{width:"17px",height:"17px",borderRadius:"50%",background:G,border:"none",color:WHITE,fontSize:"10px",fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        style={{width:"17px",height:"17px",borderRadius:"50%",background:G,border:"none",color:WHITE,fontSize:FONT_SIZE.CAPTION,fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
         ?
       </button>
       {pos && (
-        <div style={{position:"fixed",bottom:pos.bottom+"px",left:pos.left+"px",transform:"translateX(-50%)",width:"270px",whiteSpace:"normal",background:G,color:WHITE,borderRadius:"10px",padding:"14px 16px",fontSize:"12px",lineHeight:1.65,zIndex:1000,boxShadow:"0 8px 24px rgba(0,0,0,0.22)"}}>
+        <div style={{position:"fixed",bottom:pos.bottom+"px",left:pos.left+"px",transform:"translateX(-50%)",width:"270px",whiteSpace:"normal",background:G,color:WHITE,borderRadius:"10px",padding:"14px 16px",fontSize:FONT_SIZE.LABEL,lineHeight:1.65,zIndex:1000,boxShadow:"0 8px 24px rgba(0,0,0,0.22)"}}>
           {text}
           <button type="button" onClick={e=>{e.stopPropagation();setPos(null)}} style={{position:"absolute",top:"8px",right:"10px",background:"transparent",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"15px",cursor:"pointer",lineHeight:1}}>×</button>
         </div>
@@ -1255,7 +1270,7 @@ function OnboardingStep({ stepId, d, set }) {
   const isaThisYearOver = isaThisYearTotal > 20000;
   if (stepId === "name") return (
     <div style={{textAlign:"center",paddingTop:"20px"}}>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"12px"}}>What should we call you?</h2>
+      <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"12px"}}>What should we call you?</h2>
       <input
         style={{...INP,maxWidth:"340px",margin:"0 auto",display:"block",textAlign:"center",fontSize:"17px",padding:"14px 18px"}}
         value={d.name}
@@ -1267,8 +1282,8 @@ function OnboardingStep({ stepId, d, set }) {
   );
   if (stepId === "email") return (
     <div style={{textAlign:"center",paddingTop:"20px"}}>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Where shall we send a backup version of your report?</h2>
-      <p style={{fontSize:"13px",color:MUT,marginBottom:"24px",lineHeight:1.5}}>Optional — so you can refer back to it anytime.</p>
+      <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"8px"}}>Where shall we send a backup version of your report?</h2>
+      <p style={{fontSize:FONT_SIZE.BODY,color:MUT,marginBottom:"24px",lineHeight:1.5}}>Optional — so you can refer back to it anytime.</p>
       <input
         type="email"
         style={{...INP,maxWidth:"340px",margin:"0 auto",display:"block",textAlign:"center",fontSize:"17px",padding:"14px 18px"}}
@@ -1280,8 +1295,8 @@ function OnboardingStep({ stepId, d, set }) {
   );
   if (stepId === "modules") return (
     <div>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px",textAlign:"center"}}>What do you want Candid to look at?</h2>
-      <p style={{fontSize:"13px",color:MUT,marginBottom:"28px",lineHeight:1.5,textAlign:"center"}}>Pick at least one — we'll only ask what's needed for these. You can always add more later from your dashboard.</p>
+      <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"8px",textAlign:"center"}}>What do you want Candid to look at?</h2>
+      <p style={{fontSize:FONT_SIZE.BODY,color:MUT,marginBottom:"28px",lineHeight:1.5,textAlign:"center"}}>Pick at least one — we'll only ask what's needed for these. You can always add more later from your dashboard.</p>
       {/* Fixed 2-column grid — 4 tiles specifically, so a proper 2x2 that fills the
           available width rather than auto-fill's 3-then-1 orphan row at this
           container's max width. */}
@@ -1299,7 +1314,7 @@ function OnboardingStep({ stepId, d, set }) {
               style={{
                 display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
                 gap:"8px", padding:"18px 12px", borderRadius:"12px", cursor:"pointer",
-                background: selected ? "#162F24" : "rgba(255,255,255,0.04)",
+                background: selected ? G : "rgba(255,255,255,0.04)",
                 border: selected ? `2px solid ${GOLD}` : "1px solid rgba(200,216,204,0.25)",
                 color: selected ? WHITE : MUT,
                 transition:"all 0.15s ease",
@@ -1307,7 +1322,7 @@ function OnboardingStep({ stepId, d, set }) {
               }}
             >
               <span style={{opacity: selected ? 1 : 0.6,display:"flex"}}><Emoji size={28}/></span>
-              <span style={{fontSize:"13px",fontWeight:600,fontFamily:SANS}}>{label}</span>
+              <span style={{fontSize:FONT_SIZE.BODY,fontWeight:600,fontFamily:SANS}}>{label}</span>
             </button>
           );
         })}
@@ -1316,8 +1331,8 @@ function OnboardingStep({ stepId, d, set }) {
   );
   if (stepId === "about") return (
     <div>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Tell us about you</h2>
-      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We use your income to work out your tax band, savings potential, and which optimisations matter most for you.</p>
+      <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"8px"}}>Tell us about you</h2>
+      <p style={{fontSize:FONT_SIZE.BODY,color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We use your income to work out your tax band, savings potential, and which optimisations matter most for you.</p>
       <div style={g2}>
         <Field label="Age">
           <input style={INP} type="number" value={d.age} onChange={e => set("age",e.target.value)} placeholder="e.g. 29"/>
@@ -1337,7 +1352,7 @@ function OnboardingStep({ stepId, d, set }) {
                +d.salary + (+d.otherIncome||0) + (+d.dividendIncome||0) > 50270  ? "Higher rate (40%)" : "Basic rate (20%)"}
             </div>
           </div>
-          <div style={{fontSize:"12px",color:MUT,textAlign:"right",maxWidth:"180px",lineHeight:1.5}}>
+          <div style={{fontSize:FONT_SIZE.LABEL,color:MUT,textAlign:"right",maxWidth:"180px",lineHeight:1.5}}>
             Based on £{(+d.salary+(+d.otherIncome||0)+(+d.dividendIncome||0)).toLocaleString()} total income
           </div>
         </div>
@@ -1345,7 +1360,7 @@ function OnboardingStep({ stepId, d, set }) {
       <Field label="Salary trajectory" hint="Used to project your salary in student loan and pension calculations.">
         <Toggle value={d.salaryTrajectory} onChange={v=>set("salaryTrajectory",v)} options={[{value:"stable",label:"Stable (~2% p.a.)"},{value:"moderate",label:"Steady growth (~5% p.a.)"},{value:"high",label:"Rapid growth (~15% p.a.)"}]}/>
       </Field>
-      <button type="button" onClick={() => setShowAdditionalIncome(v => !v)} style={{background:"transparent",border:"none",color:GOLD,fontSize:"13px",fontWeight:600,cursor:"pointer",padding:"4px 0",marginTop:"8px",marginBottom:"4px",display:"block"}}>
+      <button type="button" onClick={() => setShowAdditionalIncome(v => !v)} style={{background:"transparent",border:"none",color:GOLD,fontSize:FONT_SIZE.BODY,fontWeight:600,cursor:"pointer",padding:"4px 0",marginTop:"8px",marginBottom:"4px",display:"block"}}>
         {showAdditionalIncome ? "− Hide additional income" : "+ Add bonus / other income"}
       </button>
       {showAdditionalIncome && (
@@ -1379,12 +1394,12 @@ function OnboardingStep({ stepId, d, set }) {
   );
   if (stepId === "cash") return (
     <div>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Cash & savings</h2>
-      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"20px",lineHeight:1.5}}>Helps us identify yield gaps and whether your cash is working as hard as it should be.</p>
+      <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"8px"}}>Cash & savings</h2>
+      <p style={{fontSize:FONT_SIZE.BODY,color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"20px",lineHeight:1.5}}>Helps us identify yield gaps and whether your cash is working as hard as it should be.</p>
       <button type="button" onClick={() => { window.location.href = `/api/truelayer/auth-link?email=${encodeURIComponent(d.email || "")}`; }} style={{
         display:"flex",alignItems:"center",gap:"9px",width:"100%",textAlign:"left",
         background:"rgba(22,47,36,0.04)",border:`1.5px dashed ${GOLD}`,borderRadius:"10px",
-        padding:"13px 16px",color:G,fontSize:"13px",fontWeight:600,cursor:"pointer",
+        padding:"13px 16px",color:G,fontSize:FONT_SIZE.BODY,fontWeight:600,cursor:"pointer",
         marginBottom:"24px",fontFamily:SANS,
       }}>
         <Landmark size={17}/>
@@ -1393,7 +1408,7 @@ function OnboardingStep({ stepId, d, set }) {
       <button type="button" disabled={paymentStaging.status==="loading"} onClick={stagePayment} style={{
         display:"flex",alignItems:"center",gap:"9px",width:"100%",textAlign:"left",
         background:"rgba(22,47,36,0.04)",border:`1.5px dashed ${GOLD}`,borderRadius:"10px",
-        padding:"13px 16px",color:G,fontSize:"13px",fontWeight:600,
+        padding:"13px 16px",color:G,fontSize:FONT_SIZE.BODY,fontWeight:600,
         cursor:paymentStaging.status==="loading" ? "default" : "pointer",
         opacity:paymentStaging.status==="loading" ? 0.6 : 1,
         marginBottom:paymentStaging.status==="error" ? "8px" : "24px",fontFamily:SANS,
@@ -1402,7 +1417,7 @@ function OnboardingStep({ stepId, d, set }) {
         <span>{paymentStaging.status==="loading" ? "Staging test payment…" : "Stage a test payment (Sandbox) — £2,500 via TrueLayer"}</span>
       </button>
       {paymentStaging.status==="error" && (
-        <p style={{fontSize:"12px",color:"#b3261e",marginTop:0,marginBottom:"24px"}}>Couldn't stage the sandbox payment — please try again.</p>
+        <p style={{fontSize:FONT_SIZE.LABEL,color:"#b3261e",marginTop:0,marginBottom:"24px"}}>Couldn't stage the sandbox payment — please try again.</p>
       )}
       <Field label="Emergency fund target">
         <Toggle value={d.higherBuffer||"no"} onChange={v=>set("higherBuffer",v)} options={[{value:"no",label:"6 months"},{value:"yes",label:"9 months"}]}/>
@@ -1412,7 +1427,7 @@ function OnboardingStep({ stepId, d, set }) {
         {(d.cashTiers||[{amount:"",rate:""}]).map((tier,i) => (
           <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 1fr auto",gap:"8px",marginBottom:"8px",alignItems:"flex-end"}}>
             <div>
-              {i===0 && <label style={{fontSize:"12px",color:MUT,display:"block",marginBottom:"4px"}}>Amount (£)</label>}
+              {i===0 && <label style={{fontSize:FONT_SIZE.LABEL,color:MUT,display:"block",marginBottom:"4px"}}>Amount (£)</label>}
               <FmtInput fmtType="gbp" value={tier.amount} onChange={v=>{
                 const capped = capField("isaPrevCash", v); // reuse 500k cap for individual cash tier
                 const t=[...(d.cashTiers||[])]; t[i]={...t[i],amount:capped}; set("cashTiers",t);
@@ -1420,7 +1435,7 @@ function OnboardingStep({ stepId, d, set }) {
               <Warn msg={+tier.amount > 500000 ? "Large cash holding — double-check" : null}/>
             </div>
             <div>
-              {i===0 && <label style={{fontSize:"12px",color:MUT,display:"block",marginBottom:"4px"}}>Rate (%)</label>}
+              {i===0 && <label style={{fontSize:FONT_SIZE.LABEL,color:MUT,display:"block",marginBottom:"4px"}}>Rate (%)</label>}
               <FmtInput fmtType="pct" value={tier.rate} onChange={v=>{
                 const capped = capField("savingsRate", v);
                 const t=[...(d.cashTiers||[])]; t[i]={...t[i],rate:capped}; set("cashTiers",t);
@@ -1434,7 +1449,7 @@ function OnboardingStep({ stepId, d, set }) {
           </div>
         ))}
         <button onClick={()=>set("cashTiers",[...(d.cashTiers||[]),{amount:"",rate:""}])}
-          style={{background:"transparent",border:`1px dashed ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:600,cursor:"pointer",marginTop:"4px"}}>
+          style={{background:"transparent",border:`1px dashed ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:FONT_SIZE.LABEL,fontWeight:600,cursor:"pointer",marginTop:"4px"}}>
           + Add another account
         </button>
       </Field>
@@ -1457,13 +1472,13 @@ function OnboardingStep({ stepId, d, set }) {
           total as the Investments step's S&S/LISA/Other fields — see
           isaThisYearTotal/isaThisYearOver above. */}
       <div style={{marginTop:"20px",marginBottom:"8px"}}>
-        <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>Cash ISA <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(counts toward your £20,000 annual ISA allowance)</span></div>
+        <div style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G,marginBottom:"10px"}}>Cash ISA <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(counts toward your £20,000 annual ISA allowance)</span></div>
         <div style={g2}>
           <Field label="Contributed this tax year (£)"><FmtInput fmtType="gbp" value={d.isaThisYearCash} onChange={v=>set("isaThisYearCash",capField("isaThisYearCash",v))} placeholder="0"/></Field>
           <Field label="Balance from previous years (£)"><FmtInput fmtType="gbp" value={d.isaPrevCash} onChange={v=>set("isaPrevCash",capField("isaPrevCash",v))} placeholder="0"/></Field>
         </div>
         {isaThisYearOver && (
-          <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+          <div style={{marginTop:"8px",fontSize:FONT_SIZE.LABEL,color:CRITICAL,fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
             <AlertTriangle size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaThisYearTotal)} — exceeds the £20,000 annual ISA allowance.</span>
           </div>
         )}
@@ -1473,8 +1488,8 @@ function OnboardingStep({ stepId, d, set }) {
   );
   if (stepId === "investments") return (
     <div>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Investments</h2>
-      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We'll check whether your investments are sheltered efficiently and whether any CGT opportunities exist.</p>
+      <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"8px"}}>Investments</h2>
+      <p style={{fontSize:FONT_SIZE.BODY,color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>We'll check whether your investments are sheltered efficiently and whether any CGT opportunities exist.</p>
       <Field label="Do you have investments?">
         <Toggle value={d.hasInvestments} onChange={v => set("hasInvestments",v)} options={[{value:"yes",label:"Yes"},{value:"no",label:"No"}]}/>
       </Field>
@@ -1484,14 +1499,14 @@ function OnboardingStep({ stepId, d, set }) {
               isaThisYearTotal/isaThisYearOver (computed above) still sum all 4
               fields, so the warning here reflects the true combined allowance. */}
           <div style={{marginBottom:"20px"}}>
-            <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>ISA contributions this tax year <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(April 6 – April 5, £20,000 limit shared with any Cash ISA)</span></div>
+            <div style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G,marginBottom:"10px"}}>ISA contributions this tax year <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(April 6 – April 5, £20,000 limit shared with any Cash ISA)</span></div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
               <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearSS} onChange={v=>set("isaThisYearSS",capField("isaThisYearSS",v))} placeholder="0"/></Field>
               <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearLISA} onChange={v=>set("isaThisYearLISA",capField("isaThisYearLISA",v))} placeholder="0"/></Field>
               <Field label="Other ISA (£)"><FmtInput fmtType="gbp" value={d.isaThisYearOther||""} onChange={v=>set("isaThisYearOther",capField("isaThisYearOther",v))} placeholder="0"/></Field>
             </div>
             {isaThisYearOver && (
-              <div style={{marginTop:"8px",fontSize:"12px",color:"#c0392b",fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+              <div style={{marginTop:"8px",fontSize:FONT_SIZE.LABEL,color:CRITICAL,fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
                 <AlertTriangle size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaThisYearTotal)} — exceeds the £20,000 annual ISA allowance.</span>
               </div>
             )}
@@ -1501,13 +1516,13 @@ function OnboardingStep({ stepId, d, set }) {
             const total = (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0);
             return (
               <div style={{marginBottom:"20px"}}>
-                <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>ISA balance from previous years <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(accumulated before this tax year)</span></div>
+                <div style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G,marginBottom:"10px"}}>ISA balance from previous years <span style={{fontSize:"11px",color:MUT,fontWeight:400}}>(accumulated before this tax year)</span></div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
                   <Field label="Stocks & Shares ISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevSS} onChange={v=>set("isaPrevSS",capField("isaPrevSS",v))} placeholder="0"/></Field>
                   <Field label="LISA (£)"><FmtInput fmtType="gbp" value={d.isaPrevLISA} onChange={v=>set("isaPrevLISA",capField("isaPrevLISA",v))} placeholder="0"/></Field>
                   <Field label="Other (£)"><FmtInput fmtType="gbp" value={d.isaPrevOther} onChange={v=>set("isaPrevOther",capField("isaPrevOther",v))} placeholder="0"/></Field>
                 </div>
-                {total > 0 && <div style={{marginTop:"8px",fontSize:"12px",color:MUT}}>Total previous years: {fmt(total)}</div>}
+                {total > 0 && <div style={{marginTop:"8px",fontSize:FONT_SIZE.LABEL,color:MUT}}>Total previous years: {fmt(total)}</div>}
                 <Warn msg={total > 200000 ? "Large ISA balance — double-check" : null}/>
               </div>
             );
@@ -1526,8 +1541,8 @@ function OnboardingStep({ stepId, d, set }) {
   );
   if (stepId === "pension") return (
     <div>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Pension</h2>
-      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>The single biggest optimisation for most people in your income bracket. Takes 60 seconds to fill in.</p>
+      <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"8px"}}>Pension</h2>
+      <p style={{fontSize:FONT_SIZE.BODY,color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>The single biggest optimisation for most people in your income bracket. Takes 60 seconds to fill in.</p>
       <Field label="Do you contribute to a pension?">
         <Toggle value={d.pensionUnknown ? "unsure" : (d.hasPension || "no")} onChange={v => {
           if (v === "unsure") { set("pensionUnknown", true); }
@@ -1613,8 +1628,8 @@ function OnboardingStep({ stepId, d, set }) {
   );
   if (stepId === "studentLoan") return (
     <div>
-      <h2 style={{fontFamily:SERIF,fontSize:"28px",color:G,marginBottom:"8px"}}>Student loan</h2>
-      <p style={{fontSize:"13px",color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>Understanding your loan lets us work out whether overpaying is actually worth it for you.</p>
+      <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"8px"}}>Student loan</h2>
+      <p style={{fontSize:FONT_SIZE.BODY,color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"28px",lineHeight:1.5}}>Understanding your loan lets us work out whether overpaying is actually worth it for you.</p>
       <Field label="Student loan">
         <select style={INP} value={d.studentLoan} onChange={e => set("studentLoan",e.target.value)}>
           <option value="none">No student loan</option>
@@ -1780,7 +1795,7 @@ function LoadingScreen({ name, msgs }) {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export function ScoreRing({ score, delta = 0 }) {
   const r = 50, circ = 2 * Math.PI * r;
-  const col = score >= 86 ? G : score >= 66 ? "#2d6b4a" : score >= 41 ? GOLD : "#c0392b";
+  const col = score >= 86 ? G : score >= 66 ? SUCCESS : score >= 41 ? GOLD : CRITICAL;
   const lb  = score >= 86 ? "Optimised" : score >= 66 ? "On track" : score >= 41 ? "Room to improve" : "Needs attention";
   const [fadeDelta, setFadeDelta] = useState(false);
   const prevDelta = useRef(0);
@@ -1822,7 +1837,7 @@ export function ScoreRing({ score, delta = 0 }) {
           )}
         </div>
       </div>
-      <span style={{fontSize:"10px",fontWeight:700,color:col,letterSpacing:"0.07em",textTransform:"uppercase"}}>{lb}</span>
+      <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:col,letterSpacing:"0.07em",textTransform:"uppercase"}}>{lb}</span>
     </div>
   );
 }
@@ -1832,7 +1847,7 @@ export function ScoreRing({ score, delta = 0 }) {
 // Modules ranking); strengths are any module the AI marked "ok", using its
 // own one-line summary rather than restating priorities in reverse.
 export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, onReviewModules }) {
-  const col = displayScore >= 86 ? G : displayScore >= 66 ? "#2d6b4a" : displayScore >= 41 ? GOLD : "#c0392b";
+  const col = displayScore >= 86 ? G : displayScore >= 66 ? SUCCESS : displayScore >= 41 ? GOLD : CRITICAL;
   const lb  = displayScore >= 86 ? "Optimised" : displayScore >= 66 ? "On track" : displayScore >= 41 ? "Room to improve" : "Needs attention";
   const strengths = Object.values(insights.modules||{}).filter(mo => mo?.status === "ok" && mo.summary);
 
@@ -1846,16 +1861,16 @@ export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, on
         <div style={{padding:"20px 22px 30px"}}>
           <div style={{display:"flex",alignItems:"baseline",gap:"10px"}}>
             <span style={{fontFamily:SERIF,fontSize:"42px",fontWeight:700,color:col}}>{displayScore}</span>
-            <span style={{fontSize:"13px",color:MUT}}>/100 · {lb}</span>
+            <span style={{fontSize:FONT_SIZE.BODY,color:MUT}}>/100 · {lb}</span>
           </div>
           {!insights.isFallback && (
-            <div style={{marginTop:"12px",display:"inline-block",background:"rgba(196,150,58,0.16)",color:"#8a6a24",fontSize:"10.5px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",padding:"5px 12px",borderRadius:"100px"}}>AI-generated summary</div>
+            <div style={{marginTop:"12px",display:"inline-block",background:"rgba(196,150,58,0.16)",color:"#8a6a24",fontSize:"10.5px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",padding:"5px 12px",borderRadius:RADIUS_PILL}}>AI-generated summary</div>
           )}
           <p style={{fontSize:"14px",color:TEXT,lineHeight:1.6,marginTop:"14px"}}>{insights.narrative}</p>
 
           {insights.priorities?.length > 0 && (
             <>
-              <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Shortcomings</div>
+              <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.07em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Shortcomings</div>
               <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
                 {insights.priorities.map((p,i) => (
                   <div key={i} style={{background:WHITE,borderRadius:"12px",padding:"12px 14px"}}>
@@ -1872,18 +1887,18 @@ export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, on
 
           {strengths.length > 0 && (
             <>
-              <div style={{fontSize:"11px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Strengths</div>
+              <div style={{fontSize:"11px",fontWeight:700,color:SUCCESS,letterSpacing:"0.07em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Strengths</div>
               <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
                 {strengths.map((mo,i) => (
                   <div key={i} style={{background:WHITE,borderRadius:"12px",padding:"12px 14px"}}>
-                    <div style={{fontSize:"13px",color:TEXT,lineHeight:1.5}}>{mo.summary}</div>
+                    <div style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.5}}>{mo.summary}</div>
                   </div>
                 ))}
               </div>
             </>
           )}
 
-          <button type="button" onClick={onReviewModules} style={{display:"block",width:"100%",marginTop:"22px",background:G,border:"none",borderRadius:"100px",padding:"13px",fontSize:"14px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS}}>Review modules</button>
+          <button type="button" onClick={onReviewModules} style={{display:"block",width:"100%",marginTop:"22px",background:G,border:"none",borderRadius:RADIUS_PILL,padding:"13px",fontSize:"14px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS}}>Review modules</button>
         </div>
       </div>
     </div>,
@@ -1891,12 +1906,11 @@ export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, on
   );
 }
 
-export const SC = { ok:"#2d6b4a", attention:GOLD, critical:"#c0392b", na:MUT, unknown:MUT };
 const SL = { ok:"On track", attention:"Review", critical:"Action needed", na:"N/A", unknown:"Find out" };
 
 function TagPill({ label, color }) {
   return (
-    <span style={{fontSize:"10px",fontWeight:700,color,background:`${color}18`,padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{label}</span>
+    <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color,background:`${color}18`,padding:"3px 9px",borderRadius:RADIUS_PILL,letterSpacing:"0.04em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{label}</span>
   );
 }
 
@@ -1931,27 +1945,8 @@ function moduleContext(mm, d, m) {
   }
 }
 
-// ── Your Forecast — per-option line colours (chart + legend + table dots) ─────
-export const FORECAST_COLORS = {
-  "Mortgage overpayment": "#c0392b",
-  "Student loan overpayment": "#8a4fae",
-  "Stocks & Shares ISA": GOLD,
-  "Cash savings": "#1a6fa3",
-  "Pension (salary sacrifice)": "#2d6b4a",
-  "Pension (relief at source)": "#1e7a5a",
-};
-
-// Shorter display names for the same options — mobile legend/table space is
-// tight, so this only affects what's rendered; FORECAST_COLORS/FORECAST_ASSUMPTIONS
-// keys and calcForecast's own label strings are untouched.
-export const FORECAST_SHORT_LABEL = {
-  "Mortgage overpayment": "Mortgage",
-  "Student loan overpayment": "Student Loan",
-  "Stocks & Shares ISA": "S&S ISA",
-  "Cash savings": "Cash",
-  "Pension (salary sacrifice)": "Pension (sal. sac.)",
-  "Pension (relief at source)": "Pension (RAS)",
-};
+// (FORECAST_COLORS/FORECAST_SHORT_LABEL now live in src/design-tokens.js —
+// imported above.)
 
 // (MODULE_META, MVP-scope helpers, and computeModuleStatuses now live in
 // src/lib/moduleStatus.js — imported above.)
@@ -1961,21 +1956,19 @@ export const FORECAST_SHORT_LABEL = {
 
 function FeedbackButton() {
   const [open, setOpen] = useState(false);
-  const G2 = "#162f24", GOLD2 = "#c4963a", WHITE2 = "#ffffff", MUT2 = "#6b6b6b";
-  const SANS2 = "'DM Sans',sans-serif", SERIF2 = "'Playfair Display',serif";
   return createPortal(
     <>
       {!open && (
         <button onClick={() => setOpen(true)} style={{
           position:"fixed", bottom:"100px", right:"0",
-          background:G2, border:`2px solid ${GOLD2}`,
+          background:G, border:`2px solid ${GOLD}`,
           borderRadius:"10px 0 0 10px", borderRight:"none",
           padding:"14px 12px", display:"flex", flexDirection:"column",
           alignItems:"center", gap:"8px", cursor:"pointer", zIndex:5000,
           boxShadow:"-3px 3px 12px rgba(0,0,0,0.18)",
         }}>
           <MessageCircle size={16}/>
-          <span style={{fontSize:"9px",fontWeight:700,color:GOLD2,letterSpacing:"0.1em",textTransform:"uppercase",writingMode:"vertical-rl",transform:"rotate(180deg)"}}>Feedback</span>
+          <span style={{fontSize:"9px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",writingMode:"vertical-rl",transform:"rotate(180deg)"}}>Feedback</span>
         </button>
       )}
       {open && (
@@ -1985,30 +1978,30 @@ function FeedbackButton() {
           display:"flex", alignItems:"center", justifyContent:"center", padding:"24px",
         }}>
           <div onClick={e => e.stopPropagation()} style={{
-            background:WHITE2, borderRadius:"18px", maxWidth:"460px", width:"100%",
+            background:WHITE, borderRadius:"18px", maxWidth:"460px", width:"100%",
             overflow:"hidden", boxShadow:"0 24px 64px rgba(0,0,0,0.25)",
           }}>
-            <div style={{background:GOLD2,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
-              <MessageCircle size={20} color={G2}/>
+            <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
+              <MessageCircle size={20} color={G}/>
               <div>
-                <div style={{fontFamily:SERIF2,fontSize:"16px",fontWeight:700,color:G2}}>How was your Candid report?</div>
+                <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>How was your Candid report?</div>
                 <div style={{fontSize:"11px",color:"rgba(22,47,36,0.65)",marginTop:"1px"}}>60 seconds — helps us build this right</div>
               </div>
               <button onClick={() => setOpen(false)} style={{marginLeft:"auto",background:"transparent",border:"none",fontSize:"20px",color:"rgba(22,47,36,0.4)",cursor:"pointer",lineHeight:1}}>×</button>
             </div>
             <div style={{padding:"24px"}}>
-              <p style={{fontSize:"14px",color:MUT2,lineHeight:1.65,marginBottom:"20px"}}>
+              <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"20px"}}>
                 Five quick questions — completely anonymous unless you choose to leave your email.
               </p>
               <a href="https://tally.so/r/aQrNKE" target="_blank" rel="noreferrer" style={{
-                display:"block",width:"100%",background:G2,borderRadius:"10px",padding:"15px",
-                textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE2,
-                cursor:"pointer",fontFamily:SANS2,textDecoration:"none",marginBottom:"10px",
+                display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",
+                textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,
+                cursor:"pointer",fontFamily:SANS,textDecoration:"none",marginBottom:"10px",
               }}>Share my feedback →</a>
               <button onClick={() => setOpen(false)} style={{
                 display:"block",width:"100%",background:"transparent",
                 border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",
-                padding:"12px",fontSize:"13px",color:MUT2,cursor:"pointer",fontFamily:SANS2,
+                padding:"12px",fontSize:FONT_SIZE.BODY,color:MUT,cursor:"pointer",fontFamily:SANS,
               }}>Close</button>
             </div>
           </div>
@@ -2060,17 +2053,17 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
     <PageWrap>
       <FeedbackButton />
       <ReportNav active="home" right={<div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-        <button onClick={onEditInputs} style={{background:GOLD,border:"none",borderRadius:"8px",padding:"9px 18px",color:G,fontSize:"13px",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:"6px"}}><Pencil size={14}/>Edit inputs</button>
+        <button onClick={onEditInputs} style={{background:GOLD,border:"none",borderRadius:"8px",padding:"9px 18px",color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:"6px"}}><Pencil size={14}/>Edit inputs</button>
         <GhostBtn onClick={onReset}>Start over</GhostBtn>
       </div>}/>
       <ContentWrap maxWidth="780px">
         {/* Score improvement banner (on regeneration) */}
         {prevScoreRef?.current !== null && insights.score > (prevScoreRef?.current||0) && whatChangedOpen && (
           <div style={{background:"rgba(45,107,74,0.1)",border:"1px solid rgba(45,107,74,0.3)",borderRadius:"10px",padding:"12px 18px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"12px"}}>
-            <TrendingUp size={20} color="#2D6B4A"/>
+            <TrendingUp size={20} color={SUCCESS}/>
             <div>
-              <div style={{fontSize:"13px",fontWeight:700,color:"#2D6B4A"}}>Your score improved by +{insights.score - (prevScoreRef?.current||0)} points</div>
-              <div style={{fontSize:"12px",color:MUT}}>Your recent changes moved your Candid score from {prevScoreRef?.current} to {insights.score}</div>
+              <div style={{fontSize:FONT_SIZE.BODY,fontWeight:700,color:SUCCESS}}>Your score improved by +{insights.score - (prevScoreRef?.current||0)} points</div>
+              <div style={{fontSize:FONT_SIZE.LABEL,color:MUT}}>Your recent changes moved your Candid score from {prevScoreRef?.current} to {insights.score}</div>
             </div>
           </div>
         )}
@@ -2083,13 +2076,13 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
             <div style={{background:"rgba(22,47,36,0.05)",border:"1px solid rgba(22,47,36,0.15)",borderRadius:"10px",padding:"14px 16px",marginBottom:"20px"}}>
               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
                 <div>
-                  <div style={{fontSize:"12px",fontWeight:700,color:G,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"6px"}}>What changed in your report</div>
+                  <div style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:G,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"6px"}}>What changed in your report</div>
                   <div style={{display:"flex",alignItems:"center",gap:"12px",flexWrap:"wrap"}}>
-                    <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:scoreDelta >= 0 ? "#2d6b4a" : "#c0392b"}}>
+                    <span style={{fontFamily:SERIF,fontSize:FONT_SIZE.HEADLINE,fontWeight:700,color:scoreDelta >= 0 ? SUCCESS : CRITICAL}}>
                       {scoreDelta >= 0 ? "+" : ""}{scoreDelta} points
                     </span>
                     {changed.length > 0 && (
-                      <span style={{fontSize:"13px",color:MUT}}>{changed.map(k => {
+                      <span style={{fontSize:FONT_SIZE.BODY,color:MUT}}>{changed.map(k => {
                         const from = prevInsights.modules[k]?.status, to = insights.modules[k]?.status;
                         const pretty = {cash:"Cash",investments:"Investments",pension:"Pension",studentLoan:"Student loan",mortgage:"Mortgage",personalLoan:"Personal loan",kids:"Kids"};
                         return `${pretty[k]||k}: ${from} → ${to}`;
@@ -2114,8 +2107,8 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
             <div style={{borderLeft:`4px solid ${GOLD}`,background:"rgba(196,150,58,0.07)",borderRadius:"0 8px 8px 0",padding:"13px 16px",marginBottom:"20px",display:"flex",alignItems:"center",gap:"12px"}}>
               <Calendar size={20} color={GOLD}/>
               <div>
-                <div style={{fontSize:"12px",fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"2px"}}>Tax year ends in {days} day{days!==1?"s":""}</div>
-                <p style={{fontSize:"13px",color:G,margin:0}}>ISA allowance ({fmt(m.isaHeadroom)} left) and other tax reliefs reset April 6th — use them or lose them.</p>
+                <div style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"2px"}}>Tax year ends in {days} day{days!==1?"s":""}</div>
+                <p style={{fontSize:FONT_SIZE.BODY,color:G,margin:0}}>ISA allowance ({fmt(m.isaHeadroom)} left) and other tax reliefs reset April 6th — use them or lose them.</p>
               </div>
             </div>
           );
@@ -2135,8 +2128,8 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
           {isMobile ? (
             <div style={{width:"100%",textAlign:"center"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",marginBottom:"14px"}}>
-                <span style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase"}}>Your Candid Score</span>
-                <span style={{fontSize:"13px",color:GOLD}}>›</span>
+                <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase"}}>Your Candid Score</span>
+                <span style={{fontSize:FONT_SIZE.BODY,color:GOLD}}>›</span>
               </div>
               <div style={{display:"flex",justifyContent:"center",marginBottom:"16px"}}>
                 <ScoreRing score={displayScore} delta={totalDelta}/>
@@ -2148,10 +2141,10 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                     Couldn't generate your personalised analysis — showing a general summary.
                   </p>
                 )}
-                <div style={{fontSize:"12px",color:GOLD,fontWeight:700,marginTop:"10px"}}>Tap for the full breakdown ›</div>
+                <div style={{fontSize:FONT_SIZE.LABEL,color:GOLD,fontWeight:700,marginTop:"10px"}}>Tap for the full breakdown ›</div>
               </div>
               <div style={{textAlign:"center",marginTop:"18px"}}>
-                <button onClick={e => { e.stopPropagation(); onEditInputs(); }} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
+                <button onClick={e => { e.stopPropagation(); onEditInputs(); }} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:FONT_SIZE.LABEL,fontWeight:700,cursor:"pointer"}}>Update inputs</button>
               </div>
             </div>
           ) : (
@@ -2159,8 +2152,8 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
               <ScoreRing score={displayScore} delta={totalDelta}/>
               <div style={{flex:1,minWidth:"200px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
-                  <span style={{fontSize:"10px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase"}}>Your Candid Score</span>
-                  <span style={{fontSize:"12px",color:GOLD}}>›</span>
+                  <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase"}}>Your Candid Score</span>
+                  <span style={{fontSize:FONT_SIZE.LABEL,color:GOLD}}>›</span>
                 </div>
                 <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"20px",lineHeight:1.35,marginBottom:"8px"}}>{insights.headline}</h2>
                 {insights.isFallback && (
@@ -2168,8 +2161,8 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                     Couldn't generate your personalised analysis — showing a general summary.
                   </p>
                 )}
-                <div style={{fontSize:"12px",color:GOLD,fontWeight:700,marginBottom:"14px"}}>Tap for the full breakdown ›</div>
-                <button onClick={e => { e.stopPropagation(); onEditInputs(); }} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>Update inputs</button>
+                <div style={{fontSize:FONT_SIZE.LABEL,color:GOLD,fontWeight:700,marginBottom:"14px"}}>Tap for the full breakdown ›</div>
+                <button onClick={e => { e.stopPropagation(); onEditInputs(); }} style={{background:"transparent",border:`1.5px solid ${GOLD}`,borderRadius:"7px",padding:"7px 14px",color:GOLD,fontSize:FONT_SIZE.LABEL,fontWeight:700,cursor:"pointer"}}>Update inputs</button>
               </div>
             </>
           )}
@@ -2201,17 +2194,17 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
             <div className="fu1" style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"12px",padding:"14px 18px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"14px"}}>
               <Trophy size={24} color={GOLD} style={{flexShrink:0}}/>
               <div style={{flex:1}}>
-                <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>
+                <div style={{fontSize:FONT_SIZE.BODY,fontWeight:700,color:G,marginBottom:"3px"}}>
                   {isDrawDay ? "It's Premium Bond draw day!" : `${daysUntil} day${daysUntil!==1?"s":""} until the next Premium Bond draw`}
                 </div>
-                <div style={{fontSize:"13px",color:MUT,lineHeight:1.5}}>
+                <div style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.5}}>
                   {isDrawDay
                     ? `NS&I results are out. Did you win? You hold ${fmt(+d.premiumBonds)} — your expected monthly return is ~${fmt(Math.round(+d.premiumBonds * 0.044 / 12))} on average.`
                     : `Results are published on the first working day of each month. You hold ${fmt(+d.premiumBonds)} — expected ~${fmt(Math.round(+d.premiumBonds * 0.044 / 12))}/month. A good time to review your Candid score when they're out.`
                   }
                 </div>
               </div>
-              <button type="button" onClick={() => onOpenModule("cash")} style={{background:G,border:"none",borderRadius:"6px",padding:"7px 12px",color:WHITE,fontSize:"12px",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Review savings →</button>
+              <button type="button" onClick={() => onOpenModule("cash")} style={{background:G,border:"none",borderRadius:"6px",padding:"7px 12px",color:WHITE,fontSize:FONT_SIZE.LABEL,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Review savings →</button>
             </div>
           );
         })()}
@@ -2225,7 +2218,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
           const bodyText = (
             <>
               <div style={{fontSize:"14px",color:MUT}}>You could be leaving <span style={{fontWeight:700,color:G}}>{fmt(totalOpp)}</span> on the table.</div>
-              {eq && <div style={{fontSize:"12px",color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
+              {eq && <div style={{fontSize:FONT_SIZE.LABEL,color:"#a67c2e",fontWeight:600,marginTop:"6px"}}>{eq}</div>}
               <div style={{fontSize:"11px",color:MUT,marginTop:"10px",lineHeight:1.6}}>
                 Sum of yield gaps, tax relief missed, and interest costs — across your open modules.
               </div>
@@ -2235,10 +2228,10 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
             <div className="fu1" style={{background:WHITE,border:`2px solid ${G}`,borderRadius:"14px",padding:"20px 28px",marginBottom:"20px",display:"flex",flexDirection:isMobile?"column":"row",alignItems:"center",gap:"24px",flexWrap:"wrap"}}>
               {isMobile ? (
                 <div style={{width:"100%",textAlign:"center"}}>
-                  <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+                  <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
                   <div style={{marginBottom:"16px"}}>
                     <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:G,lineHeight:1.1}}>{fmt(totalOpp)}</span>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:500,marginTop:"3px"}}>per year</div>
+                    <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:500,marginTop:"3px"}}>per year</div>
                   </div>
                   <div style={{textAlign:"left"}}>{bodyText}</div>
                 </div>
@@ -2246,10 +2239,10 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                 <>
                   <div style={{width:"124px",flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
                     <span style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:G,lineHeight:1.1}}>{fmt(totalOpp)}</span>
-                    <span style={{fontSize:"10px",color:MUT,fontWeight:500,marginTop:"3px"}}>per year</span>
+                    <span style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:500,marginTop:"3px"}}>per year</span>
                   </div>
                   <div style={{flex:1,minWidth:"200px"}}>
-                    <div style={{fontSize:"10px",fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Opportunity</div>
+                    <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:800,color:G,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:"8px"}}>Opportunity</div>
                     {bodyText}
                   </div>
                 </>
@@ -2269,14 +2262,14 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                 <Trophy size={17} color={GOLD}/>
               </div>
               <div style={{minWidth:0}}>
-                <div style={{fontSize:"10px",fontWeight:800,color:MUT,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"3px"}}>Your biggest win</div>
+                <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:800,color:MUT,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"3px"}}>Your biggest win</div>
                 <div style={{fontSize:"16px",fontWeight:700,color:G,lineHeight:1.3,display:"flex",alignItems:"center",gap:"6px"}}>{topWin.title} {topWin.icon && <topWin.icon size={14}/>}</div>
                 <div style={{fontSize:"14px",color:TEXT,marginTop:"3px"}}>
                   <span style={{fontWeight:700,color:G}}>{fmt(topWin.amount)}{topWin.amountIsLumpSum ? " by 18" : "/yr"}</span>
                 </div>
               </div>
             </div>
-            <span style={{fontSize:"12px",fontWeight:700,color:G,whiteSpace:"nowrap",flexShrink:0}}>See all modules →</span>
+            <span style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:G,whiteSpace:"nowrap",flexShrink:0}}>See all modules →</span>
           </div>
         )}
 
@@ -2298,13 +2291,13 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",flexWrap:"wrap"}}>
               <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
                 <span style={{fontFamily:SERIF,fontSize:"14px",color:G,fontWeight:600}}>Net worth</span>
-                <span style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:netWorthPositive?"#2d6b4a":"#c0392b",lineHeight:1}}>{fmt(Math.abs(m.netWorth))}</span>
+                <span style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,fontWeight:700,color:netWorthPositive?SUCCESS:CRITICAL,lineHeight:1}}>{fmt(Math.abs(m.netWorth))}</span>
                 <span style={{fontSize:"11px",color:MUT}}>{netWorthPositive?"net positive":"net negative"}</span>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
-                <div style={{fontSize:"10px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.07em",textTransform:"uppercase"}}>Assets {fmt(m.totalAssets)}</div>
-                <div style={{fontSize:"10px",fontWeight:700,color:"#c0392b",letterSpacing:"0.07em",textTransform:"uppercase"}}>Liabilities {fmt(m.totalLiabilities)}</div>
-                <span style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>{netWorthExpanded?"↑":"↓"}</span>
+                <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:SUCCESS,letterSpacing:"0.07em",textTransform:"uppercase"}}>Assets {fmt(m.totalAssets)}</div>
+                <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:CRITICAL,letterSpacing:"0.07em",textTransform:"uppercase"}}>Liabilities {fmt(m.totalLiabilities)}</div>
+                <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>{netWorthExpanded?"↑":"↓"}</span>
               </div>
             </div>
 
@@ -2370,10 +2363,10 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                             {l.icon && <l.icon size={13}/>}
                             {l.label}
                             {l.excludedFromNetWorth && (
-                              <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.12)",padding:"1.5px 6px",borderRadius:"100px",textTransform:"uppercase",letterSpacing:"0.03em",whiteSpace:"nowrap"}}>Excl. net worth</span>
+                              <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.12)",padding:"1.5px 6px",borderRadius:RADIUS_PILL,textTransform:"uppercase",letterSpacing:"0.03em",whiteSpace:"nowrap"}}>Excl. net worth</span>
                             )}
                           </span>
-                          <span style={{ fontSize: "13px", fontWeight: 600, color: "#c0392b" }}>
+                          <span style={{ fontSize: "13px", fontWeight: 600, color: CRITICAL }}>
                             {fmt(l.value)}
                           </span>
                         </div>
@@ -2407,7 +2400,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
 
         <ReferralCTA />
 
-        <p style={{fontSize:"12px",color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>
+        <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.7,borderTop:"1px solid rgba(22,47,36,0.12)",paddingTop:"20px"}}>
           Candid provides financial education and guidance only — not regulated financial advice. All projections are estimates. Tax rules may change. Consider speaking to an IFA for personalised advice.{" "}
           <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy Policy</a>
           {" · "}
@@ -2436,7 +2429,7 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
             module title leads, the £ figure is a supporting line underneath it. */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
           <h1 style={{fontFamily:SERIF,fontSize:"clamp(22px,4vw,28px)",color:G,fontWeight:700,lineHeight:1.2}}>Your modules</h1>
-          <span style={{fontSize:"12px",color:MUT}}>{needActionCount} need action · {onTrackCount} on track</span>
+          <span style={{fontSize:FONT_SIZE.LABEL,color:MUT}}>{needActionCount} need action · {onTrackCount} on track</span>
         </div>
 
         {/* Sort control + micro-copy — the list below is a mathematical ranking of
@@ -2452,7 +2445,7 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
                 { key:"category", label:"Category" },
               ].map(opt => (
                 <button key={opt.key} type="button" onClick={() => setBreakdownSort(opt.key)}
-                  style={{background:breakdownSort===opt.key?G:"transparent",color:breakdownSort===opt.key?CREAM:G,border:`1.5px solid ${G}`,borderRadius:"100px",padding:"5px 12px",fontSize:"12px",fontWeight:700,cursor:"pointer"}}>
+                  style={{background:breakdownSort===opt.key?G:"transparent",color:breakdownSort===opt.key?CREAM:G,border:`1.5px solid ${G}`,borderRadius:RADIUS_PILL,padding:"5px 12px",fontSize:FONT_SIZE.LABEL,fontWeight:700,cursor:"pointer"}}>
                   {opt.label}
                 </button>
               ))}
@@ -2489,7 +2482,7 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
                     <div style={{display:"flex",alignItems:"flex-start",gap:"12px",minWidth:0,flex:1}}>
                       <div style={{width:"24px",height:"24px",borderRadius:"50%",background:hasRec?(isOpen?GOLD:G):"rgba(22,47,36,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
                         {hasRec ? (
-                          <span style={{fontSize:"12px",fontWeight:700,color:isOpen?G:CREAM}}>{winNumber}</span>
+                          <span style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:isOpen?G:CREAM}}>{winNumber}</span>
                         ) : (
                           <Check size={11} color={WHITE} strokeWidth={2.5}/>
                         )}
@@ -2504,7 +2497,7 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
                             {context && <span style={{color:isOpen?"rgba(255,255,255,0.65)":MUT}}> — {context}</span>}
                           </div>
                         ) : (
-                          <div style={{fontSize:"13px",color:isOpen?"rgba(255,255,255,0.65)":MUT,marginTop:"4px",lineHeight:1.4}}>{mm.impactLabel || "On track — no action needed"}</div>
+                          <div style={{fontSize:FONT_SIZE.BODY,color:isOpen?"rgba(255,255,255,0.65)":MUT,marginTop:"4px",lineHeight:1.4}}>{mm.impactLabel || "On track — no action needed"}</div>
                         )}
                       </div>
                     </div>
@@ -2512,15 +2505,15 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
                         it in the same column so its appearance never shifts the tag. */}
                     <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"6px",flexShrink:0}}>
                       {tag && <TagPill label={tag.label} color={tag.color}/>}
-                      {hasRec && reviewed && <Check size={14} color={isOpen?GOLD:"#2d6b4a"} strokeWidth={2.5}/>}
+                      {hasRec && reviewed && <Check size={14} color={isOpen?GOLD:SUCCESS} strokeWidth={2.5}/>}
                       <span style={{fontSize:"16px",color:isOpen?GOLD:MUT,transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}>›</span>
                     </div>
                   </div>
                   {isOpen && (
                     <div style={{padding:"0 18px 18px",display:"flex",gap:"10px",flexWrap:"wrap"}}>
-                      <button type="button" onClick={() => onOpenModule(mm.key)} style={{flex:"1 1 160px",background:GOLD,border:"none",borderRadius:"100px",padding:"11px",fontSize:"13px",fontWeight:700,color:G,cursor:"pointer",fontFamily:SANS}}>Deep dive · {mm.title}</button>
+                      <button type="button" onClick={() => onOpenModule(mm.key)} style={{flex:"1 1 160px",background:GOLD,border:"none",borderRadius:RADIUS_PILL,padding:"11px",fontSize:FONT_SIZE.BODY,fontWeight:700,color:G,cursor:"pointer",fontFamily:SANS}}>Deep dive · {mm.title}</button>
                       {hasRec && (
-                        <button type="button" onClick={() => onMarkReviewed(mm.key)} style={{flex:"1 1 160px",background:"transparent",border:"1.5px solid rgba(255,255,255,0.4)",borderRadius:"100px",padding:"10px",fontSize:"12.5px",fontWeight:700,color:WHITE,cursor:"pointer",fontFamily:SANS,display:"flex",alignItems:"center",justifyContent:"center",gap:"5px"}}>
+                        <button type="button" onClick={() => onMarkReviewed(mm.key)} style={{flex:"1 1 160px",background:"transparent",border:"1.5px solid rgba(255,255,255,0.4)",borderRadius:RADIUS_PILL,padding:"10px",fontSize:"12.5px",fontWeight:700,color:WHITE,cursor:"pointer",fontFamily:SANS,display:"flex",alignItems:"center",justifyContent:"center",gap:"5px"}}>
                           {reviewed ? <><Check size={13}/> Reviewed</> : "Mark as reviewed"}
                         </button>
                       )}
@@ -2540,14 +2533,14 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
           if (!missing.length) return null;
           return (
             <div className="fu1" style={{background:"rgba(22,47,36,0.03)",border:"1px dashed rgba(22,47,36,0.2)",borderRadius:"14px",padding:"16px 18px",marginBottom:"24px"}}>
-              <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"10px"}}>Want a fuller picture?</div>
+              <div style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G,marginBottom:"10px"}}>Want a fuller picture?</div>
               <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
                 {missing.map(t => {
                   const TileIcon = t.emoji;
                   return (
                     <button key={t.key} type="button" onClick={() => onAddModule(t.key)} style={{
                       display:"flex",alignItems:"center",gap:"6px",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",
-                      borderRadius:"100px",padding:"7px 14px",fontSize:"12.5px",fontWeight:600,color:G,cursor:"pointer",
+                      borderRadius:RADIUS_PILL,padding:"7px 14px",fontSize:"12.5px",fontWeight:600,color:G,cursor:"pointer",
                     }}>
                       <TileIcon size={14}/><span>+ Add {t.label}</span>
                     </button>
@@ -2612,7 +2605,7 @@ function ForecastScreen({ d, m }) {
       <ContentWrap maxWidth="780px">
         <div className="fu1" style={{background:WHITE,borderRadius:"16px",padding:isMobile?"18px":"24px",border:"1px solid rgba(22,47,36,0.09)",marginBottom:"24px"}}>
           <h3 style={{fontFamily:SERIF,fontSize:"21px",color:G,marginBottom:"4px"}}>Your Forecast</h3>
-          <p style={{fontSize:"13px",color:MUT,marginBottom:"18px"}}>See what your surplus could become under different strategies.</p>
+          <p style={{fontSize:FONT_SIZE.BODY,color:MUT,marginBottom:"18px"}}>See what your surplus could become under different strategies.</p>
 
           {/* Controls row */}
           <div style={{display:"flex",gap:"20px",flexWrap:"wrap",alignItems:"flex-start",marginBottom:"22px"}}>
@@ -2679,7 +2672,7 @@ function ForecastScreen({ d, m }) {
           {/* Legend */}
           <div style={{display:"flex",gap:"16px",flexWrap:"wrap",marginBottom:"22px"}}>
             {forecastChart.paths.map(p => (
-              <div key={p.label} style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12px",color:TEXT}}>
+              <div key={p.label} style={{display:"flex",alignItems:"center",gap:"6px",fontSize:FONT_SIZE.LABEL,color:TEXT}}>
                 <span style={{width:"10px",height:"10px",borderRadius:"50%",background:FORECAST_COLORS[p.label]||MUT,display:"inline-block",flexShrink:0}}/>
                 {FORECAST_SHORT_LABEL[p.label] || p.label}
               </div>
@@ -2688,7 +2681,7 @@ function ForecastScreen({ d, m }) {
 
           {/* Summary table */}
           <div style={{overflowX:"auto",marginBottom:"12px"}}>
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:FONT_SIZE.BODY}}>
               <thead>
                 <tr>
                   <th style={{textAlign:"left",padding:"8px 10px",borderBottom:"1.5px solid rgba(22,47,36,0.12)",color:MUT,fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em"}}>Option</th>
@@ -2712,7 +2705,7 @@ function ForecastScreen({ d, m }) {
                             {assumptions && (
                               <button type="button"
                                 onClick={() => setForecastTip(isOpen ? null : o.label)}
-                                style={{width:"16px",height:"16px",borderRadius:"50%",background:isOpen ? MUT : "rgba(22,47,36,0.18)",border:"none",color:WHITE,fontSize:"10px",fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                style={{width:"16px",height:"16px",borderRadius:"50%",background:isOpen ? MUT : "rgba(22,47,36,0.18)",border:"none",color:WHITE,fontSize:FONT_SIZE.CAPTION,fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                                 ?
                               </button>
                             )}
@@ -2727,12 +2720,12 @@ function ForecastScreen({ d, m }) {
                         <tr key={o.label+"-tip"}>
                           <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",verticalAlign:"top"}}>
                             {assumptions.lines.map((line, i) => (
-                              <div key={i} style={{fontSize:"12px",color:TEXT,lineHeight:1.65,paddingTop: i===0 ? 0 : "4px"}}>{line}</div>
+                              <div key={i} style={{fontSize:FONT_SIZE.LABEL,color:TEXT,lineHeight:1.65,paddingTop: i===0 ? 0 : "4px"}}>{line}</div>
                             ))}
                           </td>
-                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",textAlign:"right",verticalAlign:"top",color:MUT,fontSize:"12px",whiteSpace:"nowrap"}}>{assumptions.rates.low}</td>
-                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",textAlign:"right",verticalAlign:"top",color:G,fontSize:"12px",fontWeight:700,whiteSpace:"nowrap"}}>{assumptions.rates.central}</td>
-                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",textAlign:"right",verticalAlign:"top",color:MUT,fontSize:"12px",whiteSpace:"nowrap"}}>{assumptions.rates.high}</td>
+                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",textAlign:"right",verticalAlign:"top",color:MUT,fontSize:FONT_SIZE.LABEL,whiteSpace:"nowrap"}}>{assumptions.rates.low}</td>
+                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",textAlign:"right",verticalAlign:"top",color:G,fontSize:FONT_SIZE.LABEL,fontWeight:700,whiteSpace:"nowrap"}}>{assumptions.rates.central}</td>
+                          <td style={{padding:"8px 10px 14px",borderBottom:"1px solid rgba(22,47,36,0.06)",background:"#f8f7f4",textAlign:"right",verticalAlign:"top",color:MUT,fontSize:FONT_SIZE.LABEL,whiteSpace:"nowrap"}}>{assumptions.rates.high}</td>
                         </tr>
                       )}
                     </>
@@ -2765,7 +2758,7 @@ function ChatScreen() {
             <MessageCircle size={26} color={GOLD}/>
           </div>
           <h1 style={{fontFamily:SERIF,fontSize:"clamp(22px,4vw,28px)",color:G,fontWeight:700,marginBottom:"8px",lineHeight:1.2}}>Let's talk Candidly</h1>
-          <span style={{display:"inline-block",fontSize:"10px",fontWeight:800,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",background:"rgba(196,150,58,0.12)",padding:"4px 12px",borderRadius:"100px",marginBottom:"18px"}}>Coming soon</span>
+          <span style={{display:"inline-block",fontSize:FONT_SIZE.CAPTION,fontWeight:800,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",background:"rgba(196,150,58,0.12)",padding:"4px 12px",borderRadius:RADIUS_PILL,marginBottom:"18px"}}>Coming soon</span>
           <p style={{fontSize:"14px",color:MUT,lineHeight:1.7,maxWidth:"420px",margin:"0 auto"}}>
             Ask specific questions about your own numbers — pension, ISA, mortgage overpayments and more — grounded in your Candid report. Check back soon.
           </p>
@@ -2809,7 +2802,7 @@ function ReferralCTA() {
         <div style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G}}>Know someone who'd get value from this?</div>
         <div style={{fontSize:"12.5px",color:MUT,marginTop:"2px"}}>Send them your link and they can run their own numbers in a few minutes.</div>
       </div>
-      <button type="button" onClick={handleCopy} style={{background:copied?"#2d6b4a":G,border:"none",borderRadius:"8px",padding:"11px 18px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,whiteSpace:"nowrap",minWidth:"96px"}}>
+      <button type="button" onClick={handleCopy} style={{background:copied?SUCCESS:G,border:"none",borderRadius:"8px",padding:"11px 18px",fontSize:FONT_SIZE.BODY,fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,whiteSpace:"nowrap",minWidth:"96px"}}>
         {copied ? "Copied!" : "Copy link"}
       </button>
     </div>
@@ -2886,12 +2879,12 @@ function FeedbackModal({ onDismiss, onSubmit }) {
               </div>
               {showChangeFollowUp && (
                 <div style={{marginBottom:"22px"}}>
-                  <label style={{fontSize:"12px",color:MUT,display:"block"}}>What are you thinking of doing? <em>(optional)</em></label>
+                  <label style={{fontSize:FONT_SIZE.LABEL,color:MUT,display:"block"}}>What are you thinking of doing? <em>(optional)</em></label>
                   <textarea value={changeText} onChange={e=>setChangeText(e.target.value)} placeholder="No pressure — only if you want to share" style={{...textareaStyle, minHeight:"52px"}}/>
                 </div>
               )}
               <button type="button" onClick={handleSubmit} disabled={!canSubmit} style={{display:"block",width:"100%",background:canSubmit?G:"rgba(22,47,36,0.25)",border:"none",borderRadius:"10px",padding:"14px",fontSize:"15px",fontWeight:600,color:WHITE,cursor:canSubmit?"pointer":"not-allowed",fontFamily:SANS,marginBottom:"10px"}}>Submit feedback</button>
-              <button type="button" onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"none",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS,padding:"6px"}}>Maybe later</button>
+              <button type="button" onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"none",fontSize:FONT_SIZE.BODY,color:MUT,cursor:"pointer",fontFamily:SANS,padding:"6px"}}>Maybe later</button>
             </>
           )}
         </div>
@@ -2981,20 +2974,20 @@ function PdfReportModal({ email, insights, d, onDismiss }) {
                 <label style={LBL}>{hadPrefill ? `We'll send your report to ${email}` : "Email address"}</label>
                 <input
                   type="email"
-                  style={{...INP, border: error ? "1.5px solid #c0392b" : INP.border}}
+                  style={{...INP, border: error ? `1.5px solid ${CRITICAL}` : INP.border}}
                   value={value}
                   onChange={e => { setValue(e.target.value); if (error) setError(false); }}
                   placeholder="your@email.com"
                   autoFocus
                 />
-                {error && <div style={{fontSize:"12px",color:"#c0392b",marginTop:"6px"}}>Enter a valid email address</div>}
+                {error && <div style={{fontSize:FONT_SIZE.LABEL,color:CRITICAL,marginTop:"6px"}}>Enter a valid email address</div>}
 
                 <div style={{marginTop:"18px"}}>
                   <Checkbox checked={marketingOptIn} onChange={setMarketingOptIn} label="Also send me quarterly check-ins and early access to new features" />
                 </div>
 
                 <button onClick={submit} style={{display:"block",width:"100%",background:G,borderRadius:"10px",padding:"15px",textAlign:"center",fontSize:"15px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:SANS,border:"none",marginBottom:"10px"}}>Email my report</button>
-                <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:"13px",color:MUT,cursor:"pointer",fontFamily:SANS}}>No thanks</button>
+                <button onClick={onDismiss} style={{display:"block",width:"100%",background:"transparent",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px",fontSize:FONT_SIZE.BODY,color:MUT,cursor:"pointer",fontFamily:SANS}}>No thanks</button>
               </div>
             </>
           ) : (
@@ -3026,7 +3019,7 @@ function TakeMeThere({ app, icon: Icon, message, demoNote }) {
       }}>
         <span style={{flexShrink:0,display:"flex"}}>{Icon && <Icon size={20}/>}</span>
         <div style={{flex:1,textAlign:"left"}}>
-          <div style={{fontSize:"13px",fontWeight:700,color:tapped?G:WHITE,marginBottom:"2px",display:"flex",alignItems:"center",gap:"5px"}}>{tapped && <ArrowUpRight size={13}/>}<span>{tapped ? `Opening ${app}…` : message}</span></div>
+          <div style={{fontSize:FONT_SIZE.BODY,fontWeight:700,color:tapped?G:WHITE,marginBottom:"2px",display:"flex",alignItems:"center",gap:"5px"}}>{tapped && <ArrowUpRight size={13}/>}<span>{tapped ? `Opening ${app}…` : message}</span></div>
           <div style={{fontSize:"11px",color:tapped?"rgba(22,47,36,0.5)":"rgba(255,255,255,0.5)"}}>{tapped ? demoNote : `Tap to open ${app}`}</div>
         </div>
         {!tapped && <span style={{fontSize:"14px",color:GOLD,flexShrink:0}}>→</span>}
@@ -3055,9 +3048,9 @@ function ProductCard({ p, onInternalLink }) {
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:600,fontSize:"14px",color:TEXT,lineHeight:1.3}}>{p.name}</div>
-          <div style={{fontSize:"12px",color:MUT}}>{p.type}</div>
+          <div style={{fontSize:FONT_SIZE.LABEL,color:MUT}}>{p.type}</div>
           {p.badge && (
-            <span style={{display:"inline-flex",alignItems:"center",gap:"3px",marginTop:"4px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"3px 9px":"2px 7px",borderRadius:"100px",letterSpacing:"0.04em"}}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:"3px",marginTop:"4px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"3px 9px":"2px 7px",borderRadius:RADIUS_PILL,letterSpacing:"0.04em"}}>
               {superlative && <Star size={10}/>}{p.badge}
             </span>
           )}
@@ -3078,20 +3071,20 @@ function ProductCard({ p, onInternalLink }) {
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:600,fontSize:"14px",color:TEXT,lineHeight:1.3}}>{p.name}</div>
-          <div style={{fontSize:"12px",color:MUT}}>{p.type}</div>
+          <div style={{fontSize:FONT_SIZE.LABEL,color:MUT}}>{p.type}</div>
           {p.badge && (
-            <span style={{display:"inline-flex",alignItems:"center",gap:"3px",marginTop:"5px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"4px 10px":"3px 8px",borderRadius:"100px",letterSpacing:"0.04em"}}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:"3px",marginTop:"5px",fontSize:superlative?"11px":"10px",fontWeight:700,color:superlative?G:GOLD,background:superlative?GOLD:"rgba(196,150,58,0.12)",padding:superlative?"4px 10px":"3px 8px",borderRadius:RADIUS_PILL,letterSpacing:"0.04em"}}>
               {superlative && <Star size={10}/>}{p.badge}
             </span>
           )}
         </div>
         <button type="button" onClick={() => p.internalLink ? onInternalLink(p.internalLink) : null}
-          style={{flexShrink:0,padding:"7px 12px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:"12px",fontWeight:600,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:"4px"}}>
+          style={{flexShrink:0,padding:"7px 12px",background:p.highlight?G:"transparent",border:`1.5px solid ${p.highlight?G:"rgba(22,47,36,0.22)"}`,borderRadius:"8px",color:p.highlight?WHITE:G,fontSize:FONT_SIZE.LABEL,fontWeight:600,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:"4px"}}>
           {p.internalLink ? p.cta : <><Unlock size={12}/>Open</>}
         </button>
       </div>
       {p.rate && <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700,marginTop:"8px"}}>{p.rate}</div>}
-      {p.feature && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"6px"}}>{p.feature}</p>}
+      {p.feature && <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.5,marginTop:"6px"}}>{p.feature}</p>}
       {!p.internalLink && (
         <div style={{marginTop:"6px",fontSize:"11px",color:"rgba(22,47,36,0.4)",fontStyle:"italic"}}>
           Demo
@@ -3113,7 +3106,7 @@ function NonWinExpandable({ eyebrow, title, subtitle, children }) {
         <div style={{textAlign:"left"}}>
           <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"3px"}}>{eyebrow}</div>
           <div style={{fontSize:"14px",fontWeight:600,color:open?WHITE:G}}>{title}</div>
-          <div style={{fontSize:"13px",color:open?"rgba(255,255,255,0.75)":MUT,marginTop:"3px",lineHeight:1.5}}>{subtitle}</div>
+          <div style={{fontSize:FONT_SIZE.BODY,color:open?"rgba(255,255,255,0.75)":MUT,marginTop:"3px",lineHeight:1.5}}>{subtitle}</div>
         </div>
         <span style={{fontSize:"18px",color:open?GOLD:MUT,transform:open?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0,marginLeft:"12px"}}>›</span>
       </button>
@@ -3165,7 +3158,7 @@ function AlternativeInvestments({ age }) {
   return (
     <NonWinExpandable eyebrow={eyebrow} title={label} subtitle={subLabel}>
       <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.2)",borderRadius:"10px",padding:"12px 14px",marginBottom:"16px"}}>
-        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.7}}>These should only be considered once your ISA allowance is maxed, pension is on track, and you have a solid emergency fund. Think of them as the layer on top — not the foundation.</p>
+        <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.7}}>These should only be considered once your ISA allowance is maxed, pension is on track, and you have a solid emergency fund. Think of them as the layer on top — not the foundation.</p>
       </div>
       <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Higher-risk, regulated</div>
       <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"20px"}}>
@@ -3173,19 +3166,19 @@ function AlternativeInvestments({ age }) {
           <div key={i} style={{background:WHITE,borderRadius:"10px",padding:"16px",border:"1px solid rgba(22,47,36,0.09)"}}>
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px",marginBottom:"8px"}}>
               <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                <span style={{fontSize:"22px",display:"flex",alignItems:"center"}}>{typeof h.icon === "string" ? h.icon : <h.icon size={22}/>}</span>
+                <span style={{fontSize:FONT_SIZE.HEADLINE,display:"flex",alignItems:"center"}}>{typeof h.icon === "string" ? h.icon : <h.icon size={22}/>}</span>
                 <div>
                   <div style={{fontWeight:600,fontSize:"14px",color:TEXT}}>{h.name}</div>
                   <div style={{fontSize:"11px",color:MUT}}>{h.type}</div>
                 </div>
               </div>
-              <span style={{fontSize:"10px",fontWeight:700,color:"#c0392b",background:"rgba(192,57,43,0.08)",padding:"3px 8px",borderRadius:"100px",whiteSpace:"nowrap",flexShrink:0}}>Risk: {h.risk}</span>
+              <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:CRITICAL,background:"rgba(192,57,43,0.08)",padding:"3px 8px",borderRadius:RADIUS_PILL,whiteSpace:"nowrap",flexShrink:0}}>Risk: {h.risk}</span>
             </div>
-            <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"10px"}}>{h.desc}</p>
+            <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.6,marginBottom:"10px"}}>{h.desc}</p>
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
               <span style={{fontSize:"11px",color:MUT}}>Platforms:</span>
               {h.platforms.map(pl => (
-                <span key={pl} style={{fontSize:"11px",fontWeight:600,color:G,background:"rgba(22,47,36,0.07)",padding:"2px 8px",borderRadius:"100px"}}>{pl}</span>
+                <span key={pl} style={{fontSize:"11px",fontWeight:600,color:G,background:"rgba(22,47,36,0.07)",padding:"2px 8px",borderRadius:RADIUS_PILL}}>{pl}</span>
               ))}
             </div>
           </div>
@@ -3198,7 +3191,7 @@ function AlternativeInvestments({ age }) {
             <div style={{marginBottom:"8px"}}>{a.icon && <a.icon size={22}/>}</div>
             <div style={{fontWeight:600,fontSize:"14px",color:TEXT,marginBottom:"3px"}}>{a.name}</div>
             <div style={{fontSize:"11px",color:MUT,marginBottom:"8px"}}>{a.type}</div>
-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginBottom:"8px"}}>{a.desc}</p>
+            <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.55,marginBottom:"8px"}}>{a.desc}</p>
             <div style={{fontSize:"11px",color:GOLD,fontWeight:600,background:"rgba(196,150,58,0.08)",padding:"4px 8px",borderRadius:"6px"}}>{a.gate}</div>
           </div>
         ))}
@@ -3230,7 +3223,7 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children, defa
           <div style={{display:"flex", alignItems:"flex-start", gap:"12px", minWidth:0, flex: isNarrow ? "1 1 100%" : 1}}>
             {number != null && (
               <div style={{width:"24px", height:"24px", borderRadius:"50%", background:G, border:"1.5px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:"1px"}}>
-                <span style={{fontSize:"12px", fontWeight:700, color:CREAM}}>{number}</span>
+                <span style={{fontSize:FONT_SIZE.LABEL, fontWeight:700, color:CREAM}}>{number}</span>
               </div>
             )}
             <div style={{minWidth:0}}>
@@ -3238,12 +3231,12 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children, defa
                 <div style={{fontSize:"11px", fontWeight:800, color:GOLD, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"3px"}}>Win {number}</div>
               )}
               <div style={{fontSize:"14px", fontWeight:600, color: open ? WHITE : G}}>{title}</div>
-              <div style={{fontSize:"13px", color: open ? "rgba(255,255,255,0.75)" : MUT, marginTop:"3px", lineHeight:1.5}}>{headline}</div>
+              <div style={{fontSize:FONT_SIZE.BODY, color: open ? "rgba(255,255,255,0.75)" : MUT, marginTop:"3px", lineHeight:1.5}}>{headline}</div>
             </div>
           </div>
           <div style={{display:"flex", alignItems:"center", gap:"8px", flexShrink:0}}>
             {tag && (
-              <span style={{fontSize:"10px", fontWeight:700, color:tag.color, background:`${tag.color}18`, padding:"3px 9px", borderRadius:"100px", letterSpacing:"0.04em", textTransform:"uppercase", whiteSpace:"nowrap"}}>{tag.label}</span>
+              <span style={{fontSize:FONT_SIZE.CAPTION, fontWeight:700, color:tag.color, background:`${tag.color}18`, padding:"3px 9px", borderRadius:RADIUS_PILL, letterSpacing:"0.04em", textTransform:"uppercase", whiteSpace:"nowrap"}}>{tag.label}</span>
             )}
             <span style={{fontSize:"18px", color: open ? GOLD : MUT, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s"}}>›</span>
           </div>
@@ -3252,7 +3245,7 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children, defa
       {open && (
         <div style={{marginTop:"12px"}}>
           {children}
-          <button type="button" onClick={() => setOpen(false)} style={{width:"100%", marginTop:"14px", padding:"10px", background:"transparent", border:"1.5px solid rgba(22,47,36,0.15)", borderRadius:"8px", color:MUT, fontSize:"12px", fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px"}}>
+          <button type="button" onClick={() => setOpen(false)} style={{width:"100%", marginTop:"14px", padding:"10px", background:"transparent", border:"1.5px solid rgba(22,47,36,0.15)", borderRadius:"8px", color:MUT, fontSize:FONT_SIZE.LABEL, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px"}}>
             <span style={{fontSize:"11px"}}>▲</span> Collapse
           </button>
         </div>
@@ -3273,11 +3266,11 @@ function MiniExpandTile({ icon:Icon, label, color, summary, children }) {
         <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:"6px"}}>
           <div style={{display:"flex", alignItems:"center", gap:"6px", minWidth:0}}>
             <Icon size={13} color={color}/>
-            <span style={{fontSize:"10px", fontWeight:700, color, letterSpacing:"0.05em", textTransform:"uppercase", whiteSpace:"nowrap"}}>{label}</span>
+            <span style={{fontSize:FONT_SIZE.CAPTION, fontWeight:700, color, letterSpacing:"0.05em", textTransform:"uppercase", whiteSpace:"nowrap"}}>{label}</span>
           </div>
           <span style={{fontSize:"14px", color, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s", flexShrink:0}}>›</span>
         </div>
-        <p style={{fontSize:"12px", color:TEXT, lineHeight:1.5, margin:0}}>{summary}</p>
+        <p style={{fontSize:FONT_SIZE.LABEL, color:TEXT, lineHeight:1.5, margin:0}}>{summary}</p>
       </button>
       {open && <div style={{padding:"0 12px 12px"}}>{children}</div>}
     </div>
@@ -3484,14 +3477,14 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             <div>
               <h2 style={{fontFamily:SERIF,fontSize:"26px",color:G,lineHeight:1.2}}>{meta?.title}</h2>
               {(isPensionUnknown || modSummary?.status) && (
-                <span style={{fontSize:"11px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 10px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginTop:"6px"}}>{isPensionUnknown ? SL.unknown : SL[modSummary.status]}</span>
+                <span style={{fontSize:"11px",fontWeight:700,color:col,background:`${col}18`,padding:"3px 10px",borderRadius:RADIUS_PILL,letterSpacing:"0.04em",textTransform:"uppercase",display:"inline-block",marginTop:"6px"}}>{isPensionUnknown ? SL.unknown : SL[modSummary.status]}</span>
               )}
             </div>
           </div>
           {isComplete && (
-            <div style={{display:"flex",alignItems:"center",gap:"6px",background:"rgba(45,107,74,0.1)",borderRadius:"100px",padding:"6px 14px"}}>
-              <Check size={13} color="#2d6b4a" strokeWidth={2.5}/>
-              <span style={{fontSize:"12px",fontWeight:600,color:"#2d6b4a"}}>Reviewed</span>
+            <div style={{display:"flex",alignItems:"center",gap:"6px",background:"rgba(45,107,74,0.1)",borderRadius:RADIUS_PILL,padding:"6px 14px"}}>
+              <Check size={13} color={SUCCESS} strokeWidth={2.5}/>
+              <span style={{fontSize:FONT_SIZE.LABEL,fontWeight:600,color:SUCCESS}}>Reviewed</span>
             </div>
           )}
         </div>
@@ -3538,18 +3531,18 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Opportunity</div>
               {totalOpp > 0 ? (
                 <>
-                  <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
-                  <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>CGT saving available this tax year</div>
+                  <div style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
+                  <div style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>CGT saving available this tax year</div>
                 </>
               ) : (
                 <div style={{fontSize:"14px",color:"rgba(255,255,255,0.85)",fontWeight:600}}>No CGT saving to bank this tax year</div>
               )}
               {m.isaHeadroom > 0 && (
-                <div style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"10px"}}>
+                <div style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"10px"}}>
                   Plus {fmt(m.isaHeadroom)} of unused ISA allowance — not a guaranteed gain, but investing it shelters future growth from tax.
                 </div>
               )}
-              <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below.</p>
+              <p style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below.</p>
             </div>
           );
         })()}
@@ -3563,12 +3556,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"6px"}}>
                   <div style={{fontSize:"11px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",lineHeight:1.3,paddingRight:"4px"}}>{ins.label}</div>
                   {ins.tooltip && (
-                    <button type="button" onClick={() => setOpenTip(openTip===i ? null : i)} style={{width:"18px",height:"18px",borderRadius:"50%",border:"1.5px solid rgba(22,47,36,0.25)",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:MUT,fontSize:"10px",fontWeight:700,lineHeight:1}}>?</button>
+                    <button type="button" onClick={() => setOpenTip(openTip===i ? null : i)} style={{width:"18px",height:"18px",borderRadius:"50%",border:"1.5px solid rgba(22,47,36,0.25)",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:MUT,fontSize:FONT_SIZE.CAPTION,fontWeight:700,lineHeight:1}}>?</button>
                   )}
                 </div>
                 <div style={{fontFamily:SERIF,fontSize:"18px",color:ins.flag ? G : TEXT,fontWeight:ins.flag ? 700 : 500,marginBottom:openTip===i?"8px":"0"}}>{ins.value}</div>
                 {openTip===i && ins.tooltip && (
-                  <div style={{marginTop:"8px",padding:"10px 12px",background:"rgba(22,47,36,0.06)",borderRadius:"6px",fontSize:"12px",color:TEXT,lineHeight:1.65,borderTop:"1px solid rgba(22,47,36,0.08)",whiteSpace:"pre-wrap"}}>
+                  <div style={{marginTop:"8px",padding:"10px 12px",background:"rgba(22,47,36,0.06)",borderRadius:"6px",fontSize:FONT_SIZE.LABEL,color:TEXT,lineHeight:1.65,borderTop:"1px solid rgba(22,47,36,0.08)",whiteSpace:"pre-wrap"}}>
                     {ins.tooltip}
                   </div>
                 )}
@@ -3653,9 +3646,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const bars = [
             { value: potVal, label: "Now", color: "rgba(196,150,58,0.4)", textCol: G },
             { value: currentPot, label: `At retirement\n(age ${retireAge})`, color: GOLD, textCol: G },
-            ...(hasMissedMatch ? [{ value: optimisedPot, label: `Optimised\n(match cap)`, color: "#2d6b4a", textCol: WHITE }] : []),
+            ...(hasMissedMatch ? [{ value: optimisedPot, label: `Optimised\n(match cap)`, color: SUCCESS, textCol: WHITE }] : []),
             ...(hasBonus ? [{ value: withBonusPot, label: "With bonus\nsacrifice", color: "rgba(45,107,74,0.7)", textCol: WHITE }] : []),
-            { value: withExtraPot, label: `With +${extraPct}%\ncontribution`, color: "#8a4fae", textCol: WHITE },
+            { value: withExtraPot, label: `With +${extraPct}%\ncontribution`, color: STUDENT_PURPLE, textCol: WHITE },
           ];
           const maxVal = Math.max(...bars.map(b => b.value)) * 1.15;
           const VW = 680, VH = 300, PL = 20, PR = 20, PT = 44, PB = 72;
@@ -3799,8 +3792,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Opportunity</div>
                   {totalOpp > 0 ? (
                     <>
-                      <div style={{fontFamily:SERIF,fontSize:"28px",color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
-                      <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>
+                      <div style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:WHITE,fontWeight:700}}>{fmt(totalOpp)}</div>
+                      <div style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"4px"}}>
                         {definitiveCols.map(c => `${c.label} (${fmt(c.amount)})`).join(" + ")}
                       </div>
                     </>
@@ -3808,22 +3801,22 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     <div style={{fontSize:"14px",color:"rgba(255,255,255,0.85)",fontWeight:600}}>No confirmed opportunity right now</div>
                   )}
                   {bonusPotential > 0 && (
-                    <div style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"10px"}}>
+                    <div style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"10px"}}>
                       + up to {fmt(bonusPotential)}/yr more if you sacrifice your {fmt(statedBonus)} bonus once it lands
                     </div>
                   )}
-                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below.</p>
+                  <p style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below.</p>
                 </div>
               )}
 
               {showMatchWin && (
                 <ExpandableInvestmentItem number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tag={{ label:"Today", color:GOLD }}>
                   {(() => {
-                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, fontFamily:SERIF };
+                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:FONT_SIZE.BODY, color:TEXT, fontFamily:SERIF };
                     const totalRowStyle = { ...rowStyle, paddingTop:"7px", borderTop:"1px dashed rgba(22,47,36,0.18)", fontWeight:700 };
                     const stepCardStyle = { background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.12)", borderRadius:"12px", padding:"14px 16px", marginBottom:"10px" };
-                    const stepEyebrowStyle = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
-                    const stepWhyStyle = { fontSize:"12px", color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
+                    const stepEyebrowStyle = { fontSize:FONT_SIZE.CAPTION, fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
+                    const stepWhyStyle = { fontSize:FONT_SIZE.LABEL, color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
 
                     const perOnePctValue = Math.round(m.salary/100);
                     const myContribAnnual = Math.round(myPct/100 * m.salary);
@@ -3848,13 +3841,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         </div>
 
                         <div style={{...stepCardStyle, background: m.missedMatch>0 ? "rgba(196,150,58,0.07)" : "rgba(45,107,74,0.06)", border:`1px solid ${m.missedMatch>0 ? "rgba(196,150,58,0.28)" : "rgba(45,107,74,0.22)"}`}}>
-                          <div style={{...stepEyebrowStyle, color: m.missedMatch>0 ? GOLD : "#2d6b4a"}}>Step 2 — Employer match {m.missedMatch>0 ? "(not fully claimed)" : "(fully claimed ✓)"}</div>
+                          <div style={{...stepEyebrowStyle, color: m.missedMatch>0 ? GOLD : SUCCESS}}>Step 2 — Employer match {m.missedMatch>0 ? "(not fully claimed)" : "(fully claimed ✓)"}</div>
                           <div style={rowStyle}>
                             <span>Matched up to {empCapPct}% of salary</span>
-                            <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(currentMatchReceived)}/yr</span>
+                            <span style={{fontWeight:700,color:SUCCESS}}>{fmt(currentMatchReceived)}/yr</span>
                           </div>
                           {m.missedMatch > 0 && (
-                            <div style={{...rowStyle,color:"#c0392b",marginTop:"4px"}}>
+                            <div style={{...rowStyle,color:CRITICAL,marginTop:"4px"}}>
                               <span>Left on the table</span>
                               <span style={{fontWeight:700}}>{fmt(Math.round(m.missedMatch))}/yr</span>
                             </div>
@@ -3866,7 +3859,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           <div style={stepEyebrowStyle}>Your effective pay from this job</div>
                           <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                             <div style={rowStyle}><span>Salary before pension</span><span>{fmt(m.salary)}</span></div>
-                            <div style={rowStyle}><span>+ Employer match (today)</span><span style={{color:"#2d6b4a",fontWeight:600}}>{fmt(currentMatchReceived)}</span></div>
+                            <div style={rowStyle}><span>+ Employer match (today)</span><span style={{color:SUCCESS,fontWeight:600}}>{fmt(currentMatchReceived)}</span></div>
                             <div style={totalRowStyle}><span>Effective total pay today</span><span>{fmt(effectiveSalaryNow)}</span></div>
                             {m.missedMatch > 0 && (
                               <div style={{...rowStyle,marginTop:"4px",color:GOLD,fontWeight:700}}>
@@ -3877,7 +3870,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           </div>
                         </div>
 
-                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                        <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6}}>
                           Adding 1% of salary costs just {fmt(Math.round(m.salary*0.01/12*(1-m.tr)))}/mo in take-home pay after {trPct}% tax relief — see the growth trajectory below for what closing this gap does to your pot.
                         </p>
                       </>
@@ -3916,7 +3909,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         <div style={{fontSize:"11px",color:MUT,marginTop:"3px"}}>sacrifice needed</div>
                       </div>
                       <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"12px 8px"}}>
-                        <div style={{fontFamily:SERIF,fontSize:"20px",color:"#2d6b4a",fontWeight:700}}>{fmt(taperTaxSaving)}</div>
+                        <div style={{fontFamily:SERIF,fontSize:"20px",color:SUCCESS,fontWeight:700}}>{fmt(taperTaxSaving)}</div>
                         <div style={{fontSize:"11px",color:MUT,marginTop:"3px"}}>tax saved</div>
                       </div>
                       <div style={{background:"rgba(196,150,58,0.18)",borderRadius:"8px",padding:"12px 8px"}}>
@@ -3927,13 +3920,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   )}
                   {d.hasKids === "yes" && (
                     <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"10px",padding:"14px 16px",marginBottom:"12px"}}>
-                      <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Also at stake: your childcare support</div>
-                      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.7,margin:0}}>
+                      <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Also at stake: your childcare support</div>
+                      <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.7,margin:0}}>
                         Tax-Free Childcare (up to £2,000/child, £4,000 if disabled) and free childcare hours are lost <strong>entirely</strong> — not tapered — the moment either parent crosses £100,000. Staying under it can be worth £5,000–£7,500 per child a year in free hours alone, on top of the saving above.
                       </p>
                     </div>
                   )}
-                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                  <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6}}>
                     Separate from your Personal Savings Allowance, which only falls to £0 once income crosses £125,140 (additional rate). You're in the {m.taxBandLabel}-rate band.
                   </p>
                 </ExpandableInvestmentItem>
@@ -3942,13 +3935,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               {inAATaper && (
                 <div className="fu2" style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 8px 8px 0",padding:"14px 16px",marginBottom:"20px"}}>
                   <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Worth knowing</div>
-                  <p style={{fontSize:"13px",color:G,lineHeight:1.65,margin:"0 0 8px",fontWeight:600}}>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:G,lineHeight:1.65,margin:"0 0 8px",fontWeight:600}}>
                     Your Annual Allowance may be reduced to approximately {fmt(approxAA)} this tax year (down from the standard £60,000)
                   </p>
-                  <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
                     Once adjusted income (total income plus all pension contributions) passes £260,000, your allowance shrinks £1 for every £2 above that, down to a £10,000 floor. Based on your figures, this looks like it applies to you.
                   </p>
-                  <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
                     {showCarryForward
                       ? `Carry forward unused allowance from the last 3 tax years to contribute more without a charge — use the calculator below. Confirm the exact figure against your provider's statements or HMRC account before relying on it.`
                       : `Carry forward unused allowance from the last 3 tax years to contribute more without a charge — but we don't have your contribution history to calculate it. Check your provider's statements, HMRC account, or an adviser for an exact figure before a large contribution.`}
@@ -3960,7 +3953,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               )}
 
               {showCarryForward && (() => {
-                const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, fontFamily:SERIF };
+                const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:FONT_SIZE.BODY, color:TEXT, fontFamily:SERIF };
                 const totalRowStyle = { ...rowStyle, paddingTop:"7px", borderTop:"1px dashed rgba(22,47,36,0.18)", fontWeight:700 };
                 return (
                   <ExpandableInvestmentItem
@@ -3977,7 +3970,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     {cfBreakdown.map((y, i) => (
                       <div key={y.label} style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px",marginBottom:"8px"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-                          <div style={{fontSize:"12px",fontWeight:700,color:G}}>{y.label}</div>
+                          <div style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:G}}>{y.label}</div>
                           <Toggle value={y.hadScheme ? "yes" : "no"} onChange={v => setCfYears(prev => prev.map((yy,idx) => idx===i ? {...yy, hadScheme: v==="yes"} : yy))} options={[
                             {value:"yes",label:"Had a scheme"},
                             {value:"no",label:"No scheme"},
@@ -3985,10 +3978,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         </div>
                         {y.hadScheme && (
                           <div style={{marginTop:"8px",display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-                            <label style={{fontSize:"12px",color:MUT,flexShrink:0}}>Contributed that year (£)</label>
-                            <input type="number" style={{...INP,maxWidth:"140px",padding:"6px 10px",fontSize:"13px"}}
+                            <label style={{fontSize:FONT_SIZE.LABEL,color:MUT,flexShrink:0}}>Contributed that year (£)</label>
+                            <input type="number" style={{...INP,maxWidth:"140px",padding:"6px 10px",fontSize:FONT_SIZE.BODY}}
                               value={y.contribution} onChange={e => { const v = e.target.value; setCfYears(prev => prev.map((yy,idx) => idx===i ? {...yy, contribution: v} : yy)); }} placeholder="0"/>
-                            <span style={{fontSize:"12px",color:"#2d6b4a",fontWeight:600}}>{fmt(y.unused)} unused</span>
+                            <span style={{fontSize:FONT_SIZE.LABEL,color:SUCCESS,fontWeight:600}}>{fmt(y.unused)} unused</span>
                           </div>
                         )}
                       </div>
@@ -3998,7 +3991,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <div style={rowStyle}><span>+ Unused from last 3 years</span><span>{fmt(cfTotalUnused)}</span></div>
                       <div style={totalRowStyle}><span>Theoretical maximum</span><span>{fmt(cfTheoreticalMax)}</span></div>
                       {cfEarningsCapped && (
-                        <div style={{...rowStyle,color:"#c0392b",marginTop:"4px"}}>
+                        <div style={{...rowStyle,color:CRITICAL,marginTop:"4px"}}>
                           <span>Capped at 100% of earnings ({fmt(cfRelevantEarnings)})</span>
                           <span style={{fontWeight:700}}>{fmt(cfMaxContributable)}</span>
                         </div>
@@ -4007,7 +4000,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     {showVctEis && (
                       <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px 16px",marginBottom:"4px"}}>
                         <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>If pension contributions alone can't fix this</div>
-                        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 12px"}}>
+                        <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.65,margin:"0 0 12px"}}>
                           Even with carry forward, getting Threshold Income below £200,000 through pension contributions alone may not be realistic here. VCTs and EIS are the usual alternative — both give 30% upfront income tax relief on top of your pension, with far more risk and illiquidity.
                         </p>
                         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"12px"}}>
@@ -4032,7 +4025,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     tag={{ label:"Today", color:GOLD }}
                     defaultOpen={openSection === "bonusSacrifice"}
                   >
-                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"12px"}}>
+                    <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.6,marginBottom:"12px"}}>
                       Sacrifice your bonus before it hits your payslip and you avoid tax, NI{bonusSlRate > 0 ? ", and student loan repayments" : ""} on it entirely. It goes into your pension gross, grows tax-free, and is only taxed on the way out — usually at a lower rate in retirement.
                     </p>
                     <div style={{marginBottom:"12px"}}>
@@ -4044,7 +4037,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:"8px",padding:"8px 10px",marginBottom:"10px",display:"flex",gap:"8px",alignItems:"flex-start"}}>
                         <AlertTriangle size={13} style={{flexShrink:0}}/>
                         <div>
-                          <div style={{fontSize:"12px",fontWeight:600,color:"#c0392b",marginBottom:"2px"}}>
+                          <div style={{fontSize:FONT_SIZE.LABEL,fontWeight:600,color:CRITICAL,marginBottom:"2px"}}>
                             {crossesTaper && !crossesAR ? "Your bonus crosses the 60% taper zone (£100k–£125,140)" : "Your bonus spans the 40% → 60% taper → 45% rate bands"}
                           </div>
                           <div style={{fontSize:"11px",color:MUT,lineHeight:1.45}}>Between £100,000 and £125,140 your personal allowance is progressively withdrawn — creating an effective 60% marginal rate. Sacrificing the portion of your bonus that lands here is especially valuable. The rate shown is the average across the full bonus.</div>
@@ -4052,10 +4045,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       </div>
                     )}
                     <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 12px",marginBottom:"12px"}}>
-                      <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>For every £1 of your bonus — with no sacrifice</div>
+                      <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>For every £1 of your bonus — with no sacrifice</div>
                       <div style={{display:"grid",gridTemplateColumns:`repeat(${bonusSlRate > 0 ? 4 : 3},1fr)`,gap:"6px"}}>
                         <div style={{textAlign:"center",padding:"7px 6px",background:"rgba(192,57,43,0.06)",borderRadius:"7px"}}>
-                          <div style={{fontFamily:SERIF,fontSize:"18px",color:"#c0392b",fontWeight:700}}>{fullTaxPct}p</div>
+                          <div style={{fontFamily:SERIF,fontSize:"18px",color:CRITICAL,fontWeight:700}}>{fullTaxPct}p</div>
                           <div style={{fontSize:"9px",color:MUT,marginTop:"2px",lineHeight:1.25}}>income tax<br/>({fullTaxPct}% eff.)</div>
                         </div>
                         <div style={{textAlign:"center",padding:"7px 6px",background:"rgba(196,150,58,0.08)",borderRadius:"7px"}}>
@@ -4064,18 +4057,18 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         </div>
                         {bonusSlRate > 0 && (
                           <div style={{textAlign:"center",padding:"7px 6px",background:"rgba(22,47,36,0.06)",borderRadius:"7px"}}>
-                            <div style={{fontFamily:SERIF,fontSize:"18px",color:"#1e4030",fontWeight:700}}>{fullSLPct}p</div>
+                            <div style={{fontFamily:SERIF,fontSize:"18px",color:SUCCESS,fontWeight:700}}>{fullSLPct}p</div>
                             <div style={{fontSize:"9px",color:MUT,marginTop:"2px",lineHeight:1.25}}>student<br/>loan (9%)</div>
-                            {loanBal > 0 && <div style={{marginTop:"3px",fontSize:"8px",color:"#2d6b4a",fontWeight:600,lineHeight:1.25}}>{m.willClear ? "clears faster" : "likely written off"}</div>}
+                            {loanBal > 0 && <div style={{marginTop:"3px",fontSize:"8px",color:SUCCESS,fontWeight:600,lineHeight:1.25}}>{m.willClear ? "clears faster" : "likely written off"}</div>}
                           </div>
                         )}
                         <div style={{textAlign:"center",padding:"7px 6px",background:"rgba(45,107,74,0.08)",borderRadius:"7px"}}>
-                          <div style={{fontFamily:SERIF,fontSize:"18px",color:"#2d6b4a",fontWeight:700}}>{fullKeepPct}p</div>
+                          <div style={{fontFamily:SERIF,fontSize:"18px",color:SUCCESS,fontWeight:700}}>{fullKeepPct}p</div>
                           <div style={{fontSize:"9px",color:MUT,marginTop:"2px",lineHeight:1.25}}>you keep</div>
                         </div>
                       </div>
                       {bonusSlRate > 0 && loanBal > 0 && (
-                        <div style={{marginTop:"8px",padding:"6px 8px",background:"rgba(22,47,36,0.04)",borderRadius:"5px",fontSize:"10px",color:MUT,lineHeight:1.5,display:"flex",alignItems:"flex-start",gap:"4px"}}>
+                        <div style={{marginTop:"8px",padding:"6px 8px",background:"rgba(22,47,36,0.04)",borderRadius:"5px",fontSize:FONT_SIZE.CAPTION,color:MUT,lineHeight:1.5,display:"flex",alignItems:"flex-start",gap:"4px"}}>
                           <Pin size={10} style={{flexShrink:0,marginTop:"2px"}}/>
                           <span>{m.willClear
                             ? `The ${fmt(slRepaymentFromBonus)} student loan deduction from this bonus brings your clear date forward, saving roughly ${fmt(slInterestSaved)} in interest.`
@@ -4090,39 +4083,39 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       </div>
                       <div style={{display:"flex",gap:"6px",marginBottom:"8px"}}>
                         {[0,25,50,75,100].map(pct => (
-                          <button key={pct} type="button" onClick={() => setSacrificePct(pct)} style={{flex:1,padding:"6px 4px",background:sacrificePct===pct?G:"transparent",border:`1.5px solid ${sacrificePct===pct?G:"rgba(22,47,36,0.2)"}`,borderRadius:"7px",color:sacrificePct===pct?WHITE:G,fontSize:"12px",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>{pct}%</button>
+                          <button key={pct} type="button" onClick={() => setSacrificePct(pct)} style={{flex:1,padding:"6px 4px",background:sacrificePct===pct?G:"transparent",border:`1.5px solid ${sacrificePct===pct?G:"rgba(22,47,36,0.2)"}`,borderRadius:"7px",color:sacrificePct===pct?WHITE:G,fontSize:FONT_SIZE.LABEL,fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>{pct}%</button>
                         ))}
                       </div>
                       <input type="range" min="0" max="100" step="1" value={sacrificePct} onChange={e => setSacrificePct(+e.target.value)} style={{width:"100%",accentColor:G}}/>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"10px"}}>
                       <div style={{background:"rgba(45,107,74,0.06)",border:"1px solid rgba(45,107,74,0.22)",borderRadius:"8px",padding:"10px 12px"}}>
-                        <div style={{fontSize:"9px",fontWeight:700,color:"#2d6b4a",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"6px"}}>You receive</div>
+                        <div style={{fontSize:"9px",fontWeight:700,color:SUCCESS,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"6px"}}>You receive</div>
                         <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700,marginBottom:"5px"}}>{fmt(totalReceived)}</div>
                         <div style={{fontSize:"11px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
-                          {sacrificedAmt > 0 && <span style={{color:"#2d6b4a",fontWeight:500}}>Pension: {fmt(sacrificedAmt)}</span>}
+                          {sacrificedAmt > 0 && <span style={{color:SUCCESS,fontWeight:500}}>Pension: {fmt(sacrificedAmt)}</span>}
                           {takeHomeCash > 0 && <span>Cash: {fmt(takeHomeCash)}</span>}
-                          {employerNISave > 0 && <span style={{color:"#2d6b4a",marginTop:"3px"}}>+ {fmt(employerNISave)} employer NI saved*</span>}
+                          {employerNISave > 0 && <span style={{color:SUCCESS,marginTop:"3px"}}>+ {fmt(employerNISave)} employer NI saved*</span>}
                         </div>
                       </div>
                       <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"8px",padding:"10px 12px"}}>
-                        <div style={{fontSize:"9px",fontWeight:700,color:"#c0392b",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"6px"}}>Paid to HMRC{bonusSlRate>0?" + SLC":""}</div>
+                        <div style={{fontSize:"9px",fontWeight:700,color:CRITICAL,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"6px"}}>Paid to HMRC{bonusSlRate>0?" + SLC":""}</div>
                         <div style={{fontFamily:SERIF,fontSize:"17px",color:TEXT,fontWeight:700,marginBottom:"5px"}}>{sacrificePct===100?fmt(0):fmt(totalDeducted)}</div>
                         <div style={{fontSize:"11px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
                           {sacrificePct===100
-                            ? <span style={{color:"#2d6b4a",fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}>Nothing — full sacrifice <PartyPopper size={12}/></span>
+                            ? <span style={{color:SUCCESS,fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}>Nothing — full sacrifice <PartyPopper size={12}/></span>
                             : <>{taxOnCash>0&&<span>Tax: {fmt(taxOnCash)} ({Math.round(bonusTaxDetail.effectiveRate*100)}% eff.)</span>}{niOnCash>0&&<span>NI: {fmt(niOnCash)}</span>}{slOnCash>0&&<span>Student loan: {fmt(slOnCash)}</span>}</>}
                         </div>
                       </div>
                     </div>
                     <div style={{background:G,borderRadius:"8px",padding:"10px 12px",marginBottom:"8px"}}>
-                      <div style={{fontSize:"10px",fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"8px"}}>If sacrificed today — value at retirement (age {retireAge})</div>
+                      <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:GOLD,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"8px"}}>If sacrificed today — value at retirement (age {retireAge})</div>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>
                         {[100,50,0].map(pct => {
                           const active = sacrificePct === pct;
                           return (
                             <div key={pct} onClick={() => setSacrificePct(pct)} style={{textAlign:"center",padding:"8px 6px",borderRadius:"7px",background:active?"rgba(196,150,58,0.18)":"rgba(255,255,255,0.05)",cursor:"pointer",border:`1px solid ${active?"rgba(196,150,58,0.4)":"transparent"}`,transition:"all 0.2s"}}>
-                              <div style={{fontSize:"10px",color:active?GOLD:"rgba(255,255,255,0.5)",marginBottom:"4px",fontWeight:active?700:400}}>{pct}% sacrificed</div>
+                              <div style={{fontSize:FONT_SIZE.CAPTION,color:active?GOLD:"rgba(255,255,255,0.5)",marginBottom:"4px",fontWeight:active?700:400}}>{pct}% sacrificed</div>
                               <div style={{fontFamily:SERIF,fontSize:"clamp(13px,3vw,18px)",color:active?GOLD:WHITE,fontWeight:700,marginBottom:"1px"}}>{fmt(bonusFVpartial(pct))}</div>
                               <div style={{fontSize:"8px",color:"rgba(255,255,255,0.35)"}}>in {years} yrs at 6%</div>
                             </div>
@@ -4137,8 +4130,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </div>
               ) : (
                 <div style={{borderTop:"1px solid rgba(22,47,36,0.1)",paddingTop:"16px",marginBottom:"20px"}}>
-                  <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px",display:"flex",alignItems:"center",gap:"6px"}}><Banknote size={15}/>Getting a bonus? Sacrifice it before it's paid</div>
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.65,margin:0}}>
+                  <div style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G,marginBottom:"6px",display:"flex",alignItems:"center",gap:"6px"}}><Banknote size={15}/>Getting a bonus? Sacrifice it before it's paid</div>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.65,margin:0}}>
                     Sacrificing a bonus into your pension before it hits your payslip means you never pay tax or NI on that money — it goes in gross, grows tax-free, and is only taxed (typically at a lower rate) when you draw it in retirement. If you're expecting one this year, update your inputs to model it here.
                   </p>
                 </div>
@@ -4150,7 +4143,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"18px 22px",marginBottom:"20px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
                     <span style={{width:"9px",height:"9px",borderRadius:"50%",background:col,flexShrink:0,display:"inline-block"}}/>
-                    <span style={{fontSize:"13px",fontWeight:600,color:G}}>Pension growth trajectory</span>
+                    <span style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G}}>Pension growth trajectory</span>
                   </div>
                   <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible"}}>
                     {showOptimised && (
@@ -4185,33 +4178,33 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     </defs>
                     <line x1={PL} x2={VW-PR} y1={PT+cH} y2={PT+cH} stroke="rgba(200,216,204,0.55)" strokeWidth="2"/>
                   </svg>
-                  <div style={{fontSize:"12px",color:MUT,marginTop:"4px",lineHeight:1.6}}>
+                  <div style={{fontSize:FONT_SIZE.LABEL,color:MUT,marginTop:"4px",lineHeight:1.6}}>
                     Based on 6% annual growth over {years} year{years!==1?"s":""} to age {retireAge}. Contributions shown in today's money.
                   </div>
 
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"10px",marginTop:"18px"}}>
                     <div>
-                      <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Projected pot at {retireAge}</div>
+                      <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Projected pot at {retireAge}</div>
                       <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(m.projectedPot)}</div>
                     </div>
                     <div>
-                      <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Pension return ratio</div>
+                      <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Pension return ratio</div>
                       <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>1:{pensionReturnRatio(d,m).toFixed(2)}</div>
                     </div>
                     {onTrackEarly && (
                       <div>
-                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Earliest viable retirement</div>
-                        <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{earlyRetire} <span style={{fontSize:"12px",fontWeight:400,color:MUT}}>({yearsSaved} yr{yearsSaved!==1?"s":""} early)</span></div>
+                        <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Earliest viable retirement</div>
+                        <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{earlyRetire} <span style={{fontSize:FONT_SIZE.LABEL,fontWeight:400,color:MUT}}>({yearsSaved} yr{yearsSaved!==1?"s":""} early)</span></div>
                       </div>
                     )}
                     {+d.niYears > 0 && (
                       <div>
-                        <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>State pension estimate</div>
+                        <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>State pension estimate</div>
                         <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(m.statePensionAnnual)}/yr</div>
                       </div>
                     )}
                   </div>
-                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,marginTop:"10px"}}>{pensionReturnLabel(d,m)}</p>
+                  <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6,marginTop:"10px"}}>{pensionReturnLabel(d,m)}</p>
 
                   {/* "What if you contributed more?" — adjustable version of the old static 1% chip */}
                   <div style={{marginTop:"16px",borderLeft:`4px solid ${GOLD}`,background:"rgba(196,150,58,0.07)",borderRadius:"0 8px 8px 0",padding:"14px 16px"}}>
@@ -4219,11 +4212,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase"}}>What if you contributed more?</div>
                       <div style={{display:"flex",gap:"6px"}}>
                         {[1,2,3,5].map(pct => (
-                          <button key={pct} type="button" onClick={() => setExtraPct(pct)} style={{padding:"6px 12px",background:extraPct===pct?G:"transparent",border:`1.5px solid ${extraPct===pct?G:"rgba(22,47,36,0.2)"}`,borderRadius:"7px",color:extraPct===pct?WHITE:G,fontSize:"12px",fontWeight:700,cursor:"pointer"}}>+{pct}%</button>
+                          <button key={pct} type="button" onClick={() => setExtraPct(pct)} style={{padding:"6px 12px",background:extraPct===pct?G:"transparent",border:`1.5px solid ${extraPct===pct?G:"rgba(22,47,36,0.2)"}`,borderRadius:"7px",color:extraPct===pct?WHITE:G,fontSize:FONT_SIZE.LABEL,fontWeight:700,cursor:"pointer"}}>+{pct}%</button>
                         ))}
                       </div>
                     </div>
-                    <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}>
+                    <p style={{fontSize:FONT_SIZE.BODY,color:G,lineHeight:1.6,margin:0}}>
                       An extra <strong>{extraPct}%</strong> of salary costs just <strong>{fmt(extraNetCostMonthly)}/mo</strong> after tax relief, and could add roughly <strong>{fmt(extraGrowth)}</strong> to your pot by retirement — <strong>{fmt(Math.round(m.projectedPot) + extraGrowth)}</strong> total.
                     </p>
                   </div>
@@ -4233,24 +4226,24 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Worth knowing</div>
                       {alreadyPastLsa ? (
                         <>
-                          <p style={{fontSize:"13px",color:G,lineHeight:1.65,margin:"0 0 8px",fontWeight:600}}>
+                          <p style={{fontSize:FONT_SIZE.BODY,color:G,lineHeight:1.65,margin:"0 0 8px",fontWeight:600}}>
                             Your pension pot is already above {fmt(LSA_INFLECTION_POT)}
                           </p>
-                          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                          <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
                             The standard 25% tax-free withdrawal applies up to this pot size. Above it, the tax-free portion of any withdrawal stays fixed at £268,275 rather than scaling with your pot — the rest is taxed as income when you take it out.
                           </p>
                         </>
                       ) : (
                         <>
-                          <p style={{fontSize:"13px",color:G,lineHeight:1.65,margin:"0 0 8px",fontWeight:600}}>
+                          <p style={{fontSize:FONT_SIZE.BODY,color:G,lineHeight:1.65,margin:"0 0 8px",fontWeight:600}}>
                             Your pot is projected to pass {fmt(LSA_INFLECTION_POT)} around age {lsaCrossAge} {lsaCrossYearsLeft > 0 ? `(in ~${lsaCrossYearsLeft} year${lsaCrossYearsLeft!==1?"s":""})` : "(within the next year)"}
                           </p>
-                          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                          <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
                             Below this pot size, the standard 25% tax-free withdrawal applies in full. Above it, the tax-free portion of any withdrawal stays fixed at £268,275 rather than continuing to scale with your pot — the rest is taxed as income when you take it out.
                           </p>
                         </>
                       )}
-                      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
+                      <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.65,margin:"0 0 8px"}}>
                         This doesn't make contributing less worthwhile — you still get tax relief going in and tax-deferred growth throughout, no matter how large the pot gets. It just means the tax-free-cash upside specifically levels off at the margin, which is worth factoring into how you plan withdrawals later.
                       </p>
                       <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,margin:0,paddingTop:"8px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
@@ -4271,9 +4264,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               <div key={i} onClick={() => onOpenModule(link.target, link.section)} style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 18px",border:"1px solid rgba(22,47,36,0.1)",cursor:"pointer",display:"flex",alignItems:"center",gap:"14px"}}>
                 <span style={{flexShrink:0,display:"flex"}}>{link.icon && <link.icon size={20}/>}</span>
                 <div style={{flex:1}}>
-                  <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6}}>{link.text}</p>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.6}}>{link.text}</p>
                 </div>
-                <span style={{fontSize:"12px",fontWeight:600,color:GOLD,whiteSpace:"nowrap",flexShrink:0}}>{link.label} →</span>
+                <span style={{fontSize:FONT_SIZE.LABEL,fontWeight:600,color:GOLD,whiteSpace:"nowrap",flexShrink:0}}>{link.label} →</span>
               </div>
             ))}
           </div>
@@ -4329,7 +4322,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           const runwayTarget = m.emergencyBuffer;
           const runwayCurrent = m.totalLiquid;
           const runwayPctRaw = runwayTarget > 0 ? (runwayCurrent / runwayTarget) * 100 : 0;
-          const runwayTierColor = runwayPctRaw >= 100 ? "#2d6b4a" : runwayPctRaw >= 33 ? GOLD : "#c0392b";
+          const runwayTierColor = runwayPctRaw >= 100 ? SUCCESS : runwayPctRaw >= 33 ? GOLD : CRITICAL;
           const runwayStatusLabel = runwayPctRaw >= 150 ? "More than sufficient" : runwayPctRaw >= 100 ? "Sufficient" : runwayPctRaw >= 33 ? "Borderline" : "Insufficient";
           const runwayMarkerPct = runwayTarget > 0 ? Math.min(100, (runwayPctRaw / 200) * 100) : 0;
 
@@ -4345,13 +4338,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   <div style={{display:"grid",gridTemplateColumns:`repeat(${opportunityCols.length},1fr)`,gap:"14px"}}>
                     {opportunityCols.map((c,i) => (
                       <div key={i}>
-                        <div style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700}}>{c.value}</div>
-                        <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>{c.label}</div>
+                        <div style={{fontFamily:SERIF,fontSize:FONT_SIZE.HEADLINE,color:WHITE,fontWeight:700}}>{c.value}</div>
+                        <div style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>{c.label}</div>
                         <div style={{fontSize:"11px",color:"rgba(255,255,255,0.55)",marginTop:"2px"}}>{c.sub}</div>
                       </div>
                     ))}
                   </div>
-                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below.</p>
+                  <p style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the wins below.</p>
                 </div>
               )}
 
@@ -4360,17 +4353,17 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   number={emergencyWinNumber}
                   title="Build your emergency fund"
                   headline={`${fmt(m.emergencyShortfall)} more needed to reach your ${m.bufferMonths}-month target`}
-                  tag={{ label:"Priority", color:"#c0392b" }}
+                  tag={{ label:"Priority", color:CRITICAL }}
                 >
                   <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"12px"}}>
                     You hold {fmt(m.totalLiquid)} against a {fmt(m.emergencyBuffer)} target ({m.bufferMonths} mo of expenses) — a {fmt(m.emergencyShortfall)} gap. Sort this before any tax optimisation below: a real buffer stops you selling investments or borrowing at a bad time.
                   </p>
                   {monthsToCloseGap && (
-                    <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                    <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px",fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.6}}>
                       At your current surplus of ~{fmt(Math.round(m.monthlySurplus))}/month, putting all of it aside would close this gap in <strong>~{monthsToCloseGap} month{monthsToCloseGap===1?"":"s"}</strong>.
                     </div>
                   )}
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7}}>Keep it instant-access while you build it up — see "Optimise your cash" below for the best rate on offer.</p>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.7}}>Keep it instant-access while you build it up — see "Optimise your cash" below for the best rate on offer.</p>
                 </ExpandableInvestmentItem>
               )}
 
@@ -4381,11 +4374,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 tag={{ label:"Today", color:GOLD }}
               >
                 {totalPot > 0 ? (() => {
-                  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, fontFamily:SERIF };
+                  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:FONT_SIZE.BODY, color:TEXT, fontFamily:SERIF };
                   const totalRowStyle = { ...rowStyle, paddingTop:"7px", borderTop:"1px dashed rgba(22,47,36,0.18)", fontWeight:700 };
                   const stepCardStyle = { background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.12)", borderRadius:"12px", padding:"14px 16px", marginBottom:"10px" };
-                  const stepEyebrowStyle = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
-                  const stepWhyStyle = { fontSize:"12px", color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
+                  const stepEyebrowStyle = { fontSize:FONT_SIZE.CAPTION, fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
+                  const stepWhyStyle = { fontSize:FONT_SIZE.LABEL, color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
                   return (
                   <>
                     <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"16px"}}>
@@ -4408,7 +4401,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           const acctTileStyle = {
                             display:"flex", justifyContent:"space-between", alignItems:"center",
                             background:WHITE, border:"1.5px solid rgba(22,47,36,0.12)", borderRadius:"8px",
-                            padding:"10px 12px", fontSize:"13px", color:TEXT,
+                            padding:"10px 12px", fontSize:FONT_SIZE.BODY, color:TEXT,
                           };
                           return (
                             <>
@@ -4424,7 +4417,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                                 );
                               })}
                               {collapseAccts && (
-                                <button type="button" onClick={() => setShowAllAccounts(true)} style={{background:"transparent",border:"none",padding:"2px 0",color:GOLD,fontSize:"12px",fontWeight:600,cursor:"pointer",textAlign:"left"}}>
+                                <button type="button" onClick={() => setShowAllAccounts(true)} style={{background:"transparent",border:"none",padding:"2px 0",color:GOLD,fontSize:FONT_SIZE.LABEL,fontWeight:600,cursor:"pointer",textAlign:"left"}}>
                                   Show all {displayTiers.length} accounts ↓
                                 </button>
                               )}
@@ -4440,14 +4433,14 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
                     {m.cash > 0 && (
                       <div style={{...stepCardStyle,padding:"16px 18px",marginBottom:"16px",background:"rgba(192,57,43,0.04)",border:"1px solid rgba(192,57,43,0.18)"}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Tax on that interest</div>
+                        <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Tax on that interest</div>
                         <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"12px"}}>
                           <div style={rowStyle}><span>Taxable interest (outside an ISA, excluding Premium Bonds)</span><span style={{fontWeight:600}}>{fmt(currentTaxableInterest)}</span></div>
                           <div style={rowStyle}><span>Less: your Personal Savings Allowance</span><span>−{fmt(Math.min(currentTaxableInterest, psaLimit))}</span></div>
                           <div style={{...rowStyle,paddingTop:"7px",borderTop:"1px dashed rgba(192,57,43,0.25)"}}><span>Taxable amount</span><span style={{fontWeight:600}}>{fmt(currentTaxableAmount)}</span></div>
-                          <div style={{...rowStyle,color:"#c0392b",fontWeight:700}}><span>Tax due at {trPct}%</span><span>{fmt(currentTaxCost)}</span></div>
+                          <div style={{...rowStyle,color:CRITICAL,fontWeight:700}}><span>Tax due at {trPct}%</span><span>{fmt(currentTaxCost)}</span></div>
                         </div>
-                        <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT}}>
+                        <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:FONT_SIZE.BODY,color:TEXT}}>
                           Net interest income, after tax: <strong>{fmt(currentAfterTaxTotal)}/yr</strong>
                         </div>
                       </div>
@@ -4461,7 +4454,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         <div style={stepEyebrowStyle}>Step 1 — Fill your ISA</div>
                         <div style={rowStyle}>
                           <span>{fmt(step1Isa)} into a Cash ISA at {isaRateDisplay}</span>
-                          <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span>
+                          <span style={{fontWeight:700,color:SUCCESS}}>{fmt(step1IsaInterest)}/yr</span>
                         </div>
                         <p style={stepWhyStyle}>Why: interest inside an ISA is completely tax-free, for life, and doesn't touch your Personal Savings Allowance — so it's always the first place to fill.</p>
                       </div>
@@ -4471,7 +4464,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         <div style={stepEyebrowStyle}>Step 2 — Fill your Personal Savings Allowance</div>
                         <div style={rowStyle}>
                           <span>{fmt(step2Savings)} into savings at {nonIsaRateDisplay}</span>
-                          <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step2SavingsInterest)}/yr</span>
+                          <span style={{fontWeight:700,color:SUCCESS}}>{fmt(step2SavingsInterest)}/yr</span>
                         </div>
                         <p style={stepWhyStyle}>Why: interest within your {fmt(psaLimit)} allowance is also effectively tax-free — and {nonIsaRateDisplay} beats the ~4.4% Premium Bonds average, so this comes next.{step2Delta > 0 ? ` You're already earning ${fmt(step2CurrentInterest)}/yr on this at your current ${m.savingsRate.toFixed(2)}% blended rate — moving it to ${nonIsaRateDisplay} is worth an extra ${fmt(step2Delta)}/yr on top, not ${fmt(step2SavingsInterest)}/yr from scratch.` : ""}</p>
                       </div>
@@ -4482,7 +4475,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           <div style={stepEyebrowStyle}>Step 3 — Cash-focused: near-term need, or risk-averse</div>
                           <div style={rowStyle}>
                             <span>{fmt(step3Pb)} in Premium Bonds at ~4.4% (tax-free avg.)</span>
-                            <span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span>
+                            <span style={{fontWeight:700,color:SUCCESS}}>{fmt(step3PbInterest)}/yr</span>
                           </div>
                           <p style={stepWhyStyle}>Why: once your allowance is used, ordinary savings interest is taxed at your {trPct}% marginal rate — Premium Bonds aren't.{step3UpliftVsCurrent > 0 ? ` That's ~${fmt(step3UpliftVsCurrent)}/yr more than your current ${m.savingsRate.toFixed(2)}% blended rate on this amount,` : ""} with no risk of loss and nothing locked in — the right choice for money you might need before you'd want it exposed to markets.{beyondPbCap > 0 ? ` Capped at the £50,000 NS&I product limit — ${fmt(beyondPbCap)} wouldn't fit here.` : ""}</p>
                         </div>
@@ -4501,13 +4494,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
                         <div style={rowStyle}><span>Optimised interest income (on the {fmt(keptAmount)} kept as cash)</span><span style={{fontWeight:700}}>{fmt(optimisedTotal)}/yr</span></div>
                         <div style={rowStyle}><span>That same {fmt(keptAmount)}, at today's blended rate</span><span>{fmt(currentInterestOnKeptAmount)}/yr</span></div>
-                        <div style={{...totalRowStyle, color: optimisationGain > 0 ? "#2d6b4a" : TEXT}}>
+                        <div style={{...totalRowStyle, color: optimisationGain > 0 ? SUCCESS : TEXT}}>
                           <span>{optimisationGain > 0 ? "You can earn" : "Difference"}</span>
                           <span>{optimisationGain > 0 ? "+" : ""}{fmt(optimisationGain)}/yr</span>
                         </div>
                       </div>
                       {discretionaryAmount > 0 && (
-                        <div style={{marginTop:"10px",background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                        <div style={{marginTop:"10px",background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.6}}>
                           This total assumes the cash-safe route (Step 3) for the {fmt(discretionaryAmount)} beyond your ISA and PSA. Prefer to invest it instead? See Step 4 above.
                         </div>
                       )}
@@ -4530,7 +4523,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       </>
                     )}
                     {step3Pb > 0 && bondsVal === 0 && (
-                      <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px",fontSize:"13px",color:TEXT,lineHeight:1.65}}>
+                      <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px",fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.65}}>
                         <strong>New to Premium Bonds?</strong> They're via NS&amp;I, backed directly by HM Treasury, and don't pay interest — instead every £1 bond is entered into a monthly prize draw, with prizes from £25 up to £1 million. Nothing is guaranteed in any single month, but averaged out, the prize fund pays the equivalent of ~4.4% a year, entirely tax-free. Minimum £25, maximum £50,000 holding, and penalty-free to cash out any time.
                       </div>
                     )}
@@ -4539,20 +4532,20 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     {discretionaryAmount > 500 && (
                       <div style={{marginTop:"8px"}}>
                         <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Ready to go the Step 4 route? — {fmt(discretionaryAmount)}</div>
-                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,marginBottom:"12px"}}>If you won't need this for several years, here's how to actually put it to work — two options worth weighing up:</p>
+                        <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.7,marginBottom:"12px"}}>If you won't need this for several years, here's how to actually put it to work — two options worth weighing up:</p>
                         <div onClick={() => onOpenModule("investments")} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"14px 16px",background:"rgba(22,47,36,0.04)",borderRadius:"10px",cursor:"pointer",marginBottom:"8px"}}>
                           <TrendingUp size={16} style={{flexShrink:0}} color={G}/>
                           <div style={{flex:1}}>
-                            <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>Invest it (a General Investment Account)</div>
-                            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>Over the long term, capital growth taxed at CGT rates (18%/24%, with a £3,000 annual exempt amount) often comes out ahead of interest taxed at your full {Math.round(m.tr*100)}% marginal rate — and equities have historically outgrown cash over long periods. But this is genuinely higher risk: you could lose money, and it only suits cash you won't need for several years. Consider your objectives and time horizon before moving anything.</p>
+                            <div style={{fontSize:FONT_SIZE.BODY,fontWeight:700,color:G,marginBottom:"3px"}}>Invest it (a General Investment Account)</div>
+                            <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.6,margin:0}}>Over the long term, capital growth taxed at CGT rates (18%/24%, with a £3,000 annual exempt amount) often comes out ahead of interest taxed at your full {Math.round(m.tr*100)}% marginal rate — and equities have historically outgrown cash over long periods. But this is genuinely higher risk: you could lose money, and it only suits cash you won't need for several years. Consider your objectives and time horizon before moving anything.</p>
                           </div>
-                          <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>Investments →</span>
+                          <span style={{fontSize:FONT_SIZE.LABEL,color:GOLD,fontWeight:600,flexShrink:0}}>Investments →</span>
                         </div>
                         <div onClick={() => onOpenModule("pension")} style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"14px 16px",background:"rgba(22,47,36,0.04)",borderRadius:"10px",cursor:"pointer"}}>
                           <Landmark size={16} style={{flexShrink:0}} color={G}/>
                           <div style={{flex:1}}>
-                            <div style={{fontSize:"13px",fontWeight:700,color:G,marginBottom:"3px"}}>Contribute to your pension</div>
-                            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>
+                            <div style={{fontSize:FONT_SIZE.BODY,fontWeight:700,color:G,marginBottom:"3px"}}>Contribute to your pension</div>
+                            <p style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.6,margin:0}}>
                               A pension contribution gets tax relief at your marginal rate — {Math.round(m.tr*100)}% for a {m.taxBandLabel}-rate taxpayer — though if it's not made via salary sacrifice or net pay, you may need to claim the higher-rate portion back via self-assessment.
                               {nearTaperZone
                                 ? ` This matters even more for you: between £100,000 and £125,140 of adjusted net income you lose £1 of your tax-free Personal Allowance for every £2 earned — an effective 60% marginal rate in that band. A pension contribution that brings your adjusted net income back under £100,000 restores it.`
@@ -4560,7 +4553,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                               }
                             </p>
                           </div>
-                          <span style={{fontSize:"12px",color:GOLD,fontWeight:600,flexShrink:0}}>Pension →</span>
+                          <span style={{fontSize:FONT_SIZE.LABEL,color:GOLD,fontWeight:600,flexShrink:0}}>Pension →</span>
                         </div>
                       </div>
                     )}
@@ -4578,24 +4571,24 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px",flexWrap:"wrap",gap:"8px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                     <span style={{width:"9px",height:"9px",borderRadius:"50%",background:runwayTierColor,flexShrink:0,display:"inline-block"}}/>
-                    <span style={{fontSize:"13px",fontWeight:600,color:G}}>Cash runway — {runwayStatusLabel}</span>
+                    <span style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G}}>Cash runway — {runwayStatusLabel}</span>
                   </div>
-                  <span style={{fontSize:"13px",color:MUT}}>{m.runwayMonths.toFixed(1)} months</span>
+                  <span style={{fontSize:FONT_SIZE.BODY,color:MUT}}>{m.runwayMonths.toFixed(1)} months</span>
                 </div>
-                <div style={{position:"relative",width:"100%",height:"14px",borderRadius:"7px",background:`linear-gradient(90deg, #c0392b 0%, ${GOLD} 33%, #2d6b4a 60%, #1e4d35 100%)`,overflow:"visible"}}>
+                <div style={{position:"relative",width:"100%",height:"14px",borderRadius:"7px",background:`linear-gradient(90deg, ${CRITICAL} 0%, ${GOLD} 33%, ${SUCCESS} 60%, #1e4d35 100%)`,overflow:"visible"}}>
                   <div style={{position:"absolute",left:"50%",top:"-3px",bottom:"-3px",width:"2px",background:"rgba(255,255,255,0.65)",transform:"translateX(-1px)"}}/>
                   <div style={{position:"absolute",left:`${runwayMarkerPct}%`,top:"-4px",bottom:"-4px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)",transition:"left 0.4s ease"}}/>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between",marginTop:"5px"}}>
-                  <span style={{fontSize:"10px",color:MUT}}>0 mo</span>
-                  <span style={{fontSize:"10px",color:TEXT,fontWeight:600}}>{m.bufferMonths}mo target</span>
-                  <span style={{fontSize:"10px",color:MUT}}>{m.bufferMonths*2}mo+</span>
+                  <span style={{fontSize:FONT_SIZE.CAPTION,color:MUT}}>0 mo</span>
+                  <span style={{fontSize:FONT_SIZE.CAPTION,color:TEXT,fontWeight:600}}>{m.bufferMonths}mo target</span>
+                  <span style={{fontSize:FONT_SIZE.CAPTION,color:MUT}}>{m.bufferMonths*2}mo+</span>
                 </div>
-                <div style={{marginTop:"8px",fontSize:"13px",color:TEXT}}>
+                <div style={{marginTop:"8px",fontSize:FONT_SIZE.BODY,color:TEXT}}>
                   {runwayPctRaw >= 150
-                    ? <span style={{color:"#2d6b4a",fontWeight:600}}>✓ More than sufficient — {fmt(runwayCurrent)} saved, {(runwayPctRaw/100).toFixed(1)}× your {m.bufferMonths}-month target ({fmt(runwayTarget)})</span>
+                    ? <span style={{color:SUCCESS,fontWeight:600}}>✓ More than sufficient — {fmt(runwayCurrent)} saved, {(runwayPctRaw/100).toFixed(1)}× your {m.bufferMonths}-month target ({fmt(runwayTarget)})</span>
                     : runwayPctRaw >= 100
-                      ? <span style={{color:"#2d6b4a",fontWeight:600}}>✓ Fully funded — {fmt(runwayCurrent)} of {fmt(runwayTarget)} target</span>
+                      ? <span style={{color:SUCCESS,fontWeight:600}}>✓ Fully funded — {fmt(runwayCurrent)} of {fmt(runwayTarget)} target</span>
                       : `${fmt(runwayCurrent)} of ${fmt(runwayTarget)} emergency fund target (${Math.round(runwayPctRaw)}% covered)`}
                 </div>
               </div>
@@ -4656,12 +4649,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
                         <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"12px"}}>Wait and sell it all at once, vs shielding £3,000/yr</div>
                         <div style={{display:"flex",flexDirection:"column",gap:"7px",marginBottom:"12px"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT}}><span>Total unrealised gain</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:MUT}}><span>Less: one year's CGT exemption</span><span>−{fmt(3000)}</span></div>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)"}}><span>Taxable gain</span><span style={{fontWeight:600}}>{fmt(totalGains-3000)}</span></div>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",color:"#c0392b",fontWeight:700}}><span>Tax due at {cgtRatePct}%</span><span>{fmt(taxIfWait)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:FONT_SIZE.BODY,color:TEXT}}><span>Total unrealised gain</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:FONT_SIZE.BODY,color:MUT}}><span>Less: one year's CGT exemption</span><span>−{fmt(3000)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:FONT_SIZE.BODY,color:TEXT,paddingTop:"7px",borderTop:"1px dashed rgba(22,47,36,0.18)"}}><span>Taxable gain</span><span style={{fontWeight:600}}>{fmt(totalGains-3000)}</span></div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:FONT_SIZE.BODY,color:CRITICAL,fontWeight:700}}><span>Tax due at {cgtRatePct}%</span><span>{fmt(taxIfWait)}</span></div>
                         </div>
-                        <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                        <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 12px",fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.6}}>
                           Shield {fmt(3000)} a year instead — spread across {yearsNeeded} tax years — and the same {fmt(totalGains)} of gain costs <strong>£0</strong> in total: a saving of <strong>{fmt(taxIfWait)}</strong> versus leaving it all until you sell.
                         </div>
                       </div>
@@ -4669,12 +4662,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
                       <MiniExpandTile icon={RefreshCw} label="Bed &amp; breakfasting" color={GOLD} summary="Repurchase inside an ISA immediately, or wait 30 days outside it.">
-                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
+                        <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6,margin:0}}>
                           HMRC's "30-day rule" matches a repurchase within 30 days against the shares you just bought — cancelling the gain you were banking. Buying back inside an ISA or pension sidesteps this, since it's a different tax wrapper — so you can reinvest immediately there. Outside a wrapper, wait the full 30 days, or buy a different but similarly-exposed fund instead.
                         </p>
                       </MiniExpandTile>
-                      <MiniExpandTile icon={Hourglass} label="Use it or lose it" color="#c0392b" summary="This year's £3,000 exemption doesn't carry over — unused, it's gone on April 5th.">
-                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
+                      <MiniExpandTile icon={Hourglass} label="Use it or lose it" color={CRITICAL} summary="This year's £3,000 exemption doesn't carry over — unused, it's gone on April 5th.">
+                        <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6,margin:0}}>
                           The £3,000 exempt amount is flat for every taxpayer and can't be carried forward once the tax year ends. Income only affects the rate above it: 18% basic-rate, 24% higher/additional-rate. You're a {taxpayerBand} taxpayer, so gains above your exemption are taxed at {cgtRatePct}%.
                         </p>
                       </MiniExpandTile>
@@ -4690,7 +4683,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 number={2}
                 title="Utilise unused ISA allowance"
                 headline={isaHeadline}
-                tag={{ label: "Future opportunity", color: "#2d6b4a" }}
+                tag={{ label: "Future opportunity", color: SUCCESS }}
               >
                 <p style={{fontSize:"14px",color:MUT,lineHeight:1.65,marginBottom:"14px",display:products.subheadingUrgent?"flex":undefined,alignItems:products.subheadingUrgent?"flex-start":undefined,gap:products.subheadingUrgent?"5px":undefined}}>{products.subheadingUrgent && <AlertTriangle size={14} style={{flexShrink:0,marginTop:"2px"}}/>}<span>{products.subheading}</span></p>
 
@@ -4698,7 +4691,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   <div style={{borderLeft:`3px solid ${GOLD}`,paddingLeft:"14px",marginBottom:"16px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
                       <PoundSterling size={16} color={GOLD}/>
-                      <span style={{fontSize:"12px",fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Move this into your S&S ISA</span>
+                      <span style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:GOLD,letterSpacing:"0.06em",textTransform:"uppercase"}}>Move this into your S&S ISA</span>
                     </div>
                     <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7}}>
                       You have {surplusSources.join(" and ")} — {fmt(m.isaHeadroom)} of ISA allowance is available to shelter it from tax, permanently. The providers below are where you'd actually do this.
@@ -4781,7 +4774,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               <button type="button" onClick={() => setVisibleTileCount(c => c + CASH_TILE_PAGE_SIZE)} style={{
                 display:"block",width:"100%",padding:"10px",background:"transparent",
                 border:"1.5px dashed rgba(22,47,36,0.25)",borderRadius:"8px",color:G,
-                fontSize:"13px",fontWeight:600,cursor:"pointer",marginBottom:"14px",fontFamily:SANS,
+                fontSize:FONT_SIZE.BODY,fontWeight:600,cursor:"pointer",marginBottom:"14px",fontFamily:SANS,
               }}>
                 See {Math.min(CASH_TILE_PAGE_SIZE, products.products.length - visibleTileCount)} more ({products.products.length - visibleTileCount} remaining) ↓
               </button>
@@ -4809,11 +4802,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 <div className="fu1" style={{background:G,borderRadius:"12px",padding:"18px 22px",marginBottom:"24px"}}>
                   <div style={{fontSize:"11px",fontWeight:800,color:GOLD,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>Opportunity</div>
                   <div>
-                    <div style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
-                    <div style={{fontSize:"12px",color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>Effective benefit from overpaying</div>
+                    <div style={{fontFamily:SERIF,fontSize:FONT_SIZE.HEADLINE,color:WHITE,fontWeight:700}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
+                    <div style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.85)",fontWeight:600,marginTop:"2px"}}>Effective benefit from overpaying</div>
                     <div style={{fontSize:"11px",color:"rgba(255,255,255,0.55)",marginTop:"2px"}}>vs keeping that money as cash</div>
                   </div>
-                  <p style={{fontSize:"12px",color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the win below.</p>
+                  <p style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.6)",lineHeight:1.6,marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(255,255,255,0.12)"}}>See the win below.</p>
                 </div>
               )}
 
@@ -4823,38 +4816,38 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"18px 22px",marginBottom:"20px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
                   <span style={{width:"9px",height:"9px",borderRadius:"50%",background:col,flexShrink:0,display:"inline-block"}}/>
-                  <span style={{fontSize:"13px",fontWeight:600,color:G}}>Your loan trajectory</span>
+                  <span style={{fontSize:FONT_SIZE.BODY,fontWeight:600,color:G}}>Your loan trajectory</span>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:"10px",marginBottom:"14px"}}>
                   <div>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Current balance</div>
+                    <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Current balance</div>
                     <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(m.loanBal)}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Interest rate</div>
+                    <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Interest rate</div>
                     <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.slRatePct}%</div>
                   </div>
                   <div>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Annual interest</div>
+                    <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Annual interest</div>
                     <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(sl.annualInterest)}/yr</div>
                   </div>
                   <div>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Annual repayments</div>
+                    <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Annual repayments</div>
                     <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{fmt(sl.annualRep)}/yr</div>
                   </div>
                   <div>
-                    <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{sl.clearYr ? "Clears in" : "Written off after"}</div>
+                    <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{sl.clearYr ? "Clears in" : "Written off after"}</div>
                     <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs`}</div>
                   </div>
                 </div>
                 {sl.belowThreshold ? (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Your salary is below the repayment threshold, so no deductions yet. Interest still accrues at {sl.slRatePct}% (~{fmt(sl.annualInterest)}/yr) — deductions start once salary crosses {fmt(sl.threshold)}.</p>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.7,margin:0}}>Your salary is below the repayment threshold, so no deductions yet. Interest still accrues at {sl.slRatePct}% (~{fmt(sl.annualInterest)}/yr) — deductions start once salary crosses {fmt(sl.threshold)}.</p>
                 ) : !sl.willClear ? (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>Projected to be written off before you'd clear it — overpaying mostly reduces the write-off, not your repayments. Redirect spare cash to your pension or ISA instead.</p>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.7,margin:0}}>Projected to be written off before you'd clear it — overpaying mostly reduces the write-off, not your repayments. Redirect spare cash to your pension or ISA instead.</p>
                 ) : sl.effectiveBenefit <= 0 ? (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>On track to clear this loan in ~{sl.clearYr} years through regular repayments alone. Your savings rate ({sl.cashRate}%) beats your loan rate ({sl.slRatePct}%) — so saving beats overpaying here.</p>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.7,margin:0}}>On track to clear this loan in ~{sl.clearYr} years through regular repayments alone. Your savings rate ({sl.cashRate}%) beats your loan rate ({sl.slRatePct}%) — so saving beats overpaying here.</p>
                 ) : (
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.7,margin:0}}>See the win below for what overpaying could save you.</p>
+                  <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.7,margin:0}}>See the win below for what overpaying could save you.</p>
                 )}
               </div>
 
@@ -4875,20 +4868,20 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     : worthOverpaying
                       ? `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit vs keeping the cash`
                       : `Your ${sl.cashRate}% savings rate beats your ${sl.slRatePct}% loan rate — saving wins here`}
-                  tag={worthOverpaying ? { label:"Today", color:GOLD } : { label:"Not optimal", color:"#c0392b" }}
+                  tag={worthOverpaying ? { label:"Today", color:GOLD } : { label:"Not optimal", color:CRITICAL }}
                 >
                   {(() => {
-                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, fontFamily:SERIF };
+                    const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:FONT_SIZE.BODY, color:TEXT, fontFamily:SERIF };
                     const stepCardStyle = { background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.12)", borderRadius:"12px", padding:"14px 16px", marginBottom:"10px" };
-                    const stepEyebrowStyle = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
-                    const stepWhyStyle = { fontSize:"12px", color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
+                    const stepEyebrowStyle = { fontSize:FONT_SIZE.CAPTION, fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"6px" };
+                    const stepWhyStyle = { fontSize:FONT_SIZE.LABEL, color:MUT, lineHeight:1.6, marginTop:"6px", marginBottom:0 };
                     return (
                       <>
                         {sl.balanceGrowing && (
                           <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"12px"}}>
                             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                              <AlertOctagon size={16} color="#c0392b"/>
-                              <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>Effective 9% income surcharge</span>
+                              <AlertOctagon size={16} color={CRITICAL}/>
+                              <span style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase"}}>Effective 9% income surcharge</span>
                             </div>
                             <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
                               Your loan balance is growing faster than you repay it. Every £1 of income above the threshold ({fmt(sl.threshold)}) is taxed an extra 9% — and your balance compounds upward. This continues until you either reach the <strong>inflection point</strong> or the loan is written off.
@@ -4897,9 +4890,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                               <div>
                                 <div style={{fontSize:"11px",color:MUT,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"3px"}}>Inflection point salary</div>
                                 <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(sl.inflectionSalary)}</div>
-                                <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>where repayments = interest</div>
+                                <div style={{fontSize:FONT_SIZE.LABEL,color:MUT,marginTop:"2px"}}>where repayments = interest</div>
                               </div>
-                              <div style={{fontSize:"13px",color:MUT,lineHeight:1.6,flex:1,minWidth:"160px"}}>
+                              <div style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.6,flex:1,minWidth:"160px"}}>
                                 At this salary, 9% of income above the threshold exactly matches your annual interest charge. Above this point, every pay rise reduces your balance. Below it, every year adds to it.
                               </div>
                             </div>
@@ -4918,7 +4911,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           {surplusCash > 0 ? (
                             <div style={rowStyle}><span>Held above your {m.bufferMonths}-month emergency buffer</span><span style={{fontWeight:700,color:G}}>{fmt(surplusCash)}</span></div>
                           ) : (
-                            <p style={{fontSize:"13px",color:MUT,margin:0}}>You don't currently hold cash above your emergency buffer — the comparison below still applies to any spare cash you build up or hold elsewhere.</p>
+                            <p style={{fontSize:FONT_SIZE.BODY,color:MUT,margin:0}}>You don't currently hold cash above your emergency buffer — the comparison below still applies to any spare cash you build up or hold elsewhere.</p>
                           )}
                         </div>
 
@@ -4926,15 +4919,15 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         <div style={worthOverpaying
                           ? {...stepCardStyle, background:"rgba(45,107,74,0.06)", border:"1px solid rgba(45,107,74,0.22)"}
                           : {...stepCardStyle, background:"rgba(192,57,43,0.05)", border:"1px solid rgba(192,57,43,0.2)"}}>
-                          <div style={{...stepEyebrowStyle, color: worthOverpaying ? "#2d6b4a" : "#c0392b"}}>Step 3 — Does repaying beat cash?</div>
+                          <div style={{...stepEyebrowStyle, color: worthOverpaying ? SUCCESS : CRITICAL}}>Step 3 — Does repaying beat cash?</div>
                           {worthOverpaying ? (
                             <>
-                              <div style={rowStyle}><span>Loan rate {sl.slRatePct}% vs your cash rate {sl.cashRate}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>Yes, by {sl.effectiveBenefit}%</span></div>
+                              <div style={rowStyle}><span>Loan rate {sl.slRatePct}% vs your cash rate {sl.cashRate}%</span><span style={{fontWeight:700,color:SUCCESS}}>Yes, by {sl.effectiveBenefit}%</span></div>
                               <p style={stepWhyStyle}>Every £1 put toward the loan instead of left as cash earns an extra {sl.effectiveBenefit}% a year. That's where the {fmt(sl.overpayAnnualBenefit)}/yr figure above comes from — the {sl.effectiveBenefit}% differential applied to your full {fmt(m.loanBal)} balance.</p>
                             </>
                           ) : (
                             <>
-                              <div style={rowStyle}><span>Loan rate {sl.slRatePct}% vs your cash rate {sl.cashRate}%</span><span style={{fontWeight:700,color:"#c0392b"}}>No, cash wins by {Math.abs(sl.effectiveBenefit)}%</span></div>
+                              <div style={rowStyle}><span>Loan rate {sl.slRatePct}% vs your cash rate {sl.cashRate}%</span><span style={{fontWeight:700,color:CRITICAL}}>No, cash wins by {Math.abs(sl.effectiveBenefit)}%</span></div>
                               <p style={stepWhyStyle}>Your cash rate beats your loan rate — every £1 left as cash (or in an ISA) earns {Math.abs(sl.effectiveBenefit)}% more a year than putting it toward this loan instead. Given your details, overpaying isn't the optimal move right now — but the scenarios below still show what it would do if you chose to anyway.</p>
                             </>
                           )}
@@ -4945,17 +4938,17 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <div style={stepEyebrowStyle}>
                         {worthOverpaying ? "Step 4 — What overpaying could save you" : "Step 4 — What overpaying would still do"}
                       </div>
-                      <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,marginBottom:"10px"}}>{worthOverpaying ? "If you put some of that spare cash toward the loan today:" : "Not recommended given your rates, but for reference — if you put spare cash toward the loan today:"}</p>
+                      <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6,marginBottom:"10px"}}>{worthOverpaying ? "If you put some of that spare cash toward the loan today:" : "Not recommended given your rates, but for reference — if you put spare cash toward the loan today:"}</p>
                       <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px",display:"flex",gap:"16px",flexWrap:"wrap",alignItems:"center"}}>
                         <div style={{flex:"0 0 auto"}}>
-                          <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment</div>
+                          <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment</div>
                           <div style={{fontFamily:SERIF,fontSize:"17px",color:TEXT,fontWeight:600}}>
                             {sl.baseProjection.clearYr
                               ? `Clears in ${sl.baseProjection.clearYr} yrs`
                               : `${fmt(sl.baseProjection.writeOffBal)} written off`}
                           </div>
                         </div>
-                        <div style={{flex:1,minWidth:"140px",fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                        <div style={{flex:1,minWidth:"140px",fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6}}>
                           Total repaid: {fmt(sl.baseProjection.totalPaid)} over {sl.writeOffYr} years. Interest accruing: {fmt(sl.annualInterest)}/yr.
                         </div>
                       </div>
@@ -4969,7 +4962,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           <div key={i} style={{background:bg,border:`1.5px solid ${bdr}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"8px"}}>
                               <div>
-                                <div style={{fontSize:"10px",fontWeight:700,color:clears?"#2d6b4a":reaches?GOLD:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>
+                                <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:clears?SUCCESS:reaches?GOLD:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>
                                   {clears ? "✓ Clears the loan" : reaches ? "✓ Reaches inflection point" : `Overpay ${fmt(s.amt)} today`}
                                 </div>
                                 <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>
@@ -4977,18 +4970,18 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                                 </div>
                               </div>
                               <div style={{textAlign:"right",flexShrink:0}}>
-                                <div style={{fontSize:"10px",color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Overpayment</div>
+                                <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Overpayment</div>
                                 <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>{fmt(s.amt)}</div>
                               </div>
                             </div>
-                            <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                            <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6}}>
                               <span>Total repaid: {fmt(s.totalPaid)}</span>
-                              {savedVsBase > 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Saves: {fmt(savedVsBase)} vs doing nothing</span>}
-                              {!clears && s.newNetChange <= 0 && <span style={{color:"#2d6b4a",fontWeight:600}}>Balance now shrinking by {fmt(-s.newNetChange)}/yr</span>}
+                              {savedVsBase > 0 && <span style={{color:SUCCESS,fontWeight:600}}>Saves: {fmt(savedVsBase)} vs doing nothing</span>}
+                              {!clears && s.newNetChange <= 0 && <span style={{color:SUCCESS,fontWeight:600}}>Balance now shrinking by {fmt(-s.newNetChange)}/yr</span>}
                               {!clears && s.newNetChange > 0 && <span style={{color:GOLD}}>Balance still growing by {fmt(s.newNetChange)}/yr</span>}
                             </div>
                             {reaches && !clears && (
-                              <div style={{marginTop:"8px",fontSize:"12px",color:"#1e4030",background:"rgba(45,107,74,0.06)",borderRadius:"6px",padding:"8px 10px",lineHeight:1.5}}>
+                              <div style={{marginTop:"8px",fontSize:FONT_SIZE.LABEL,color:SUCCESS,background:"rgba(45,107,74,0.06)",borderRadius:"6px",padding:"8px 10px",lineHeight:1.5}}>
                                 This overpayment brings you to the inflection point — your balance will now start shrinking with every repayment. This is the most impactful outcome possible without clearing the loan entirely.
                               </div>
                             )}
@@ -5000,7 +4993,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         const { pensionReturn, mortRate, mortReturn, data, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, crossAmt, crossX, crossY, yTicks, xTicks } = loanCurve;
                         return (
                           <div style={{marginTop:"16px",marginBottom:"16px"}}>
-                            <div style={{fontSize:"12px",fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Return per £1 overpaid — where the maths tips</div>
+                            <div style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"10px"}}>Return per £1 overpaid — where the maths tips</div>
                             <svg viewBox={`0 0 ${VW} ${VH}`} width="100%" preserveAspectRatio="xMidYMid meet" style={{display:"block",overflow:"visible"}}>
                               <rect x={PL} y={PT} width={cW} height={cH} fill="rgba(22,47,36,0.03)" rx="4"/>
                               {yTicks.map(r => (
@@ -5049,10 +5042,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                             {crossAmt === null && (() => {
                               const lastRatio = data[data.length - 1]?.ratio ?? 1;
                               if (data[0].ratio < pensionReturn) {
-                                return <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>Every £1 works harder in your pension than on your loan — your {pensionReturn.toFixed(2)}× pension return ({pensionReturnLabel(d,m)}) exceeds the loan marginal return at all overpayment levels.</div>;
+                                return <div style={{marginTop:"8px",fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.6}}>Every £1 works harder in your pension than on your loan — your {pensionReturn.toFixed(2)}× pension return ({pensionReturnLabel(d,m)}) exceeds the loan marginal return at all overpayment levels.</div>;
                               }
                               if (lastRatio > pensionReturn) {
-                                return <div style={{marginTop:"8px",fontSize:"13px",color:MUT,lineHeight:1.6}}>Overpaying your loan may beat your pension at current contribution levels — your loan marginal return exceeds your {pensionReturn.toFixed(2)}× pension return throughout. Consider clearing the loan before maximising pension contributions.</div>;
+                                return <div style={{marginTop:"8px",fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.6}}>Overpaying your loan may beat your pension at current contribution levels — your loan marginal return exceeds your {pensionReturn.toFixed(2)}× pension return throughout. Consider clearing the loan before maximising pension contributions.</div>;
                               }
                               return null;
                             })()}
@@ -5085,16 +5078,16 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"12px"}}>
               <div style={{background:"rgba(255,255,255,0.07)",borderRadius:"8px",padding:"12px 14px",textAlign:"center"}}>
                 <div style={{fontSize:"11px",color:"rgba(255,255,255,0.5)",marginBottom:"4px"}}>Inside a JISA (tax-free)</div>
-                <div style={{fontFamily:SERIF,fontSize:"22px",color:GOLD,fontWeight:700}}>{fmt(products.kidsSection.monthly100)}</div>
+                <div style={{fontFamily:SERIF,fontSize:FONT_SIZE.HEADLINE,color:GOLD,fontWeight:700}}>{fmt(products.kidsSection.monthly100)}</div>
                 <div style={{fontSize:"11px",color:"rgba(255,255,255,0.4)",marginTop:"2px"}}>7% p.a. for {products.kidsSection.runway} yrs</div>
               </div>
               <div style={{background:"rgba(255,255,255,0.07)",borderRadius:"8px",padding:"12px 14px",textAlign:"center"}}>
                 <div style={{fontSize:"11px",color:"rgba(255,255,255,0.5)",marginBottom:"4px"}}>£50/month instead</div>
-                <div style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700}}>{fmt(products.kidsSection.monthly50)}</div>
+                <div style={{fontFamily:SERIF,fontSize:FONT_SIZE.HEADLINE,color:WHITE,fontWeight:700}}>{fmt(products.kidsSection.monthly50)}</div>
                 <div style={{fontSize:"11px",color:"rgba(255,255,255,0.4)",marginTop:"2px"}}>Half the amount, same timeframe</div>
               </div>
             </div>
-            <p style={{fontSize:"12px",color:"rgba(255,255,255,0.5)",lineHeight:1.6}}>
+            <p style={{fontSize:FONT_SIZE.LABEL,color:"rgba(255,255,255,0.5)",lineHeight:1.6}}>
               The JISA wrapper means zero CGT or income tax on any gains, ever. Outside a JISA, a {Math.round(m.tr*100)}% taxpayer would owe tax on dividends and any gains above the £3k annual CGT exempt amount.
             </p>
           </div>
@@ -5119,12 +5112,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"12px"}}>What if you overpaid today?</div>
               <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px",display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
                 <div>
-                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment — pay minimum</div>
+                  <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>No overpayment — pay minimum</div>
                   <div style={{fontFamily:SERIF,fontSize:"17px",color:TEXT}}>{fmt(mo)}/mo for {mos} months</div>
                 </div>
                 <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:"10px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>Total interest cost</div>
-                  <div style={{fontFamily:SERIF,fontSize:"17px",color:"#c0392b"}}>{fmt(totalInterest)}</div>
+                  <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"3px"}}>Total interest cost</div>
+                  <div style={{fontFamily:SERIF,fontSize:"17px",color:CRITICAL}}>{fmt(totalInterest)}</div>
                 </div>
               </div>
               {overpays.map((extra,i) => {
@@ -5137,22 +5130,22 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   <div key={i} style={{background:clears?"rgba(45,107,74,0.06)":WHITE,border:`1.5px solid ${clears?"rgba(45,107,74,0.22)":"rgba(22,47,36,0.09)"}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"6px"}}>
                       <div>
-                        <div style={{fontSize:"10px",fontWeight:700,color:clears?"#2d6b4a":G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>{label}</div>
+                        <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:clears?SUCCESS:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>{label}</div>
                         <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>Pay {fmt(extra)} today</div>
                       </div>
                       <div style={{textAlign:"right",flexShrink:0}}>
-                        <div style={{fontSize:"10px",color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Interest saved</div>
-                        <div style={{fontFamily:SERIF,fontSize:"18px",color:"#2d6b4a",fontWeight:700}}>{fmt(interestSaved)}</div>
+                        <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Interest saved</div>
+                        <div style={{fontFamily:SERIF,fontSize:"18px",color:SUCCESS,fontWeight:700}}>{fmt(interestSaved)}</div>
                       </div>
                     </div>
-                    <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                    <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6}}>
                       {clears ? `Clears the loan entirely. Zero remaining interest. Guaranteed ${rate}% return on the lump sum.` : `Remaining balance: ${fmt(newBal)}. Continue ${mos} months of ${fmt(mo)} payments. Interest saved: ${fmt(interestSaved)} vs doing nothing.`}
                     </p>
                   </div>
                 );
               })}
               <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"12px 14px",marginTop:"4px"}}>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+                <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6,display:"flex",alignItems:"flex-start",gap:"5px"}}>
                   <Lightbulb size={13} style={{flexShrink:0,marginTop:"1px"}}/><span>Compare: clearing the loan gives a guaranteed {rate}% return. Your pension gets {Math.round(m.tr*100)}% tax relief. Pension wins first — then throw spare cash at this loan.</span>
                 </p>
               </div>
@@ -5175,14 +5168,14 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               {isVariable && (
                 <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                    <AlertTriangle size={16} color="#c0392b"/>
-                    <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>You're on a variable rate — already exposed to rate movements</span>
+                    <AlertTriangle size={16} color={CRITICAL}/>
+                    <span style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase"}}>You're on a variable rate — already exposed to rate movements</span>
                   </div>
                   <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"10px"}}>
                     Variable rates (SVR/tracker) move with the Bank of England base rate. You have no protection if rates rise. Locking into a fixed deal now at ~4.2% could save you
                     {fixedSavings > 0 ? <strong> {fmt(fixedSavings)}/month</strong> : " significantly"} compared to your current {rate}% rate — and gives you certainty for 2–5 years.
                   </p>
-                  <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",fontSize:"13px",color:TEXT,lineHeight:1.6}}>
+                  <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px",fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.6}}>
                     A fee-free broker can search the whole market and confirm whether fixing now makes sense for your situation — no obligation.
                   </div>
                 </div>
@@ -5201,15 +5194,15 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       <div key={i} style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.09)",borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"6px"}}>
                           <div>
-                            <div style={{fontSize:"10px",fontWeight:700,color:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>Overpay {fmt(extra)} today</div>
+                            <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>Overpay {fmt(extra)} today</div>
                             <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>{mosSaved > 0 ? `${mosSaved} months shorter` : "Minimal impact"}</div>
                           </div>
                           <div style={{textAlign:"right",flexShrink:0}}>
-                            <div style={{fontSize:"10px",color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Interest saved</div>
-                            <div style={{fontFamily:SERIF,fontSize:"18px",color:"#2d6b4a",fontWeight:700}}>{intSaved > 0 ? fmt(intSaved) : "—"}</div>
+                            <div style={{fontSize:FONT_SIZE.CAPTION,color:MUT,textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>Interest saved</div>
+                            <div style={{fontFamily:SERIF,fontSize:"18px",color:SUCCESS,fontWeight:700}}>{intSaved > 0 ? fmt(intSaved) : "—"}</div>
                           </div>
                         </div>
-                        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6}}>
+                        <p style={{fontSize:FONT_SIZE.LABEL,color:MUT,lineHeight:1.6}}>
                           Guaranteed {rate}% return. vs saving at {savRate}%: {+overpayBenefit > 0 ? `overpaying wins by ${overpayBenefit}%` : `saving wins by ${Math.abs(+overpayBenefit)}%`}.
                         </p>
                       </div>
@@ -5232,8 +5225,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             {products.inheritanceSection.ihtBill > 0 && (
               <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.18)",borderRadius:"12px",padding:"16px 18px",marginBottom:"14px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
-                  <ClipboardList size={16} color="#c0392b"/>
-                  <span style={{fontSize:"12px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase"}}>IHT bill breakdown</span>
+                  <ClipboardList size={16} color={CRITICAL}/>
+                  <span style={{fontSize:FONT_SIZE.LABEL,fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase"}}>IHT bill breakdown</span>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"12px"}}>
                   <div style={{background:WHITE,borderRadius:"8px",padding:"12px 14px"}}>
@@ -5246,11 +5239,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   </div>
                   <div style={{background:"rgba(192,57,43,0.06)",borderRadius:"8px",padding:"12px 14px"}}>
                     <div style={{fontSize:"11px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Taxable portion</div>
-                    <div style={{fontFamily:SERIF,fontSize:"20px",color:"#c0392b",fontWeight:700}}>{fmt(products.inheritanceSection.taxable)}</div>
+                    <div style={{fontFamily:SERIF,fontSize:"20px",color:CRITICAL,fontWeight:700}}>{fmt(products.inheritanceSection.taxable)}</div>
                   </div>
                   <div style={{background:"rgba(192,57,43,0.06)",borderRadius:"8px",padding:"12px 14px"}}>
                     <div style={{fontSize:"11px",color:MUT,fontWeight:600,textTransform:"uppercase",marginBottom:"4px"}}>Estimated IHT bill (40%)</div>
-                    <div style={{fontFamily:SERIF,fontSize:"20px",color:"#c0392b",fontWeight:700}}>{fmt(products.inheritanceSection.ihtBill)}</div>
+                    <div style={{fontFamily:SERIF,fontSize:"20px",color:CRITICAL,fontWeight:700}}>{fmt(products.inheritanceSection.ihtBill)}</div>
                   </div>
                 </div>
               </div>
@@ -5268,8 +5261,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 <div key={i} style={{padding:"14px 18px",borderBottom:i<3?"1px solid rgba(22,47,36,0.07)":"none",display:"flex",gap:"12px",alignItems:"flex-start"}}>
                   <item.icon size={18} style={{flexShrink:0}} color={G}/>
                   <div>
-                    <div style={{fontWeight:600,fontSize:"13px",color:TEXT,marginBottom:"4px"}}>{item.title}</div>
-                    <p style={{fontSize:"13px",color:MUT,lineHeight:1.6}}>{item.body}</p>
+                    <div style={{fontWeight:600,fontSize:FONT_SIZE.BODY,color:TEXT,marginBottom:"4px"}}>{item.title}</div>
+                    <p style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.6}}>{item.body}</p>
                   </div>
                 </div>
               ))}
@@ -5292,7 +5285,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={20} color={GOLD}/></span>
                   <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={20} color={GOLD}/></span>
                   {localDelta > 0 && (
-                    <span style={{position:"absolute",top:"-12px",right:"calc(50% - 60px)",background:"#2D6B4A",color:WHITE,borderRadius:"100px",padding:"3px 10px",fontSize:"13px",fontWeight:700,animation:"coinFloat 0.9s ease-out 0.05s forwards",whiteSpace:"nowrap"}}>+{localDelta} pts</span>
+                    <span style={{position:"absolute",top:"-12px",right:"calc(50% - 60px)",background:SUCCESS,color:WHITE,borderRadius:RADIUS_PILL,padding:"3px 10px",fontSize:FONT_SIZE.BODY,fontWeight:700,animation:"coinFloat 0.9s ease-out 0.05s forwards",whiteSpace:"nowrap"}}>+{localDelta} pts</span>
                   )}
                 </div>
               );
@@ -5940,7 +5933,7 @@ export default function AppShell() {
     <MobileLayout activeTab="home"
       headerRight={
         <button onClick={() => navigate("/app/assessment/1")} aria-label="Edit inputs" style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <Wrench size={20} color={GOLD}/>
+          <Wrench size={20} color={G}/>
         </button>
       }>
       <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} scoreDeltas={scoreDeltas}/>
@@ -5976,7 +5969,7 @@ export default function AppShell() {
     return (
       <MobileLayout pageLabel={MODULE_META.find(mm => mm.key === mobileActiveModule)?.title || "Module"} activeTab="modules"
         headerRight={
-          <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:GOLD,fontSize:"13px",fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+          <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
         <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates}
           isComplete={completedModules.includes(mobileActiveModule)}

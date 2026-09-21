@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { G, GOLD, WHITE, MUT, TEXT, NavBar } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, NavBar } from "../../CandidApp.jsx";
 import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
 
 // Mobile-native rebuild of desktop's OnboardingScreen (CandidApp.jsx) — same
@@ -19,8 +19,13 @@ export default function MobileOnboardingScreen({ step, steps, d, set, insights, 
 
   return (
     <div style={{minHeight:"100vh",background:"#f6f0e6",display:"flex",flexDirection:"column"}}>
-      <NavBar center={`Step ${step+1} of ${steps.length}`} onLogoClick={insights ? onBackToDashboard : undefined}/>
+      <NavBar light center={`Step ${step+1} of ${steps.length}`}/>
       <div style={{padding:"16px 20px 0"}}>
+        {insights ? (
+          <button type="button" onClick={onBackToDashboard} style={{fontFamily:SERIF,color:G,fontSize:"20px",fontWeight:700,background:"none",border:"none",padding:0,marginBottom:"14px",cursor:"pointer",display:"block"}}>Candid.</button>
+        ) : (
+          <div style={{fontFamily:SERIF,color:G,fontSize:"20px",fontWeight:700,marginBottom:"14px"}}>Candid.</div>
+        )}
         <div style={{height:"4px",borderRadius:"2px",background:"rgba(22,47,36,0.1)",overflow:"hidden"}}>
           <div style={{height:"100%",width:`${progressPct}%`,background:GOLD,borderRadius:"2px",transition:"width 0.2s"}}/>
         </div>
