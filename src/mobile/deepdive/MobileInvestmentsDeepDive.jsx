@@ -4,7 +4,8 @@ import { fmt } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, getModuleProducts } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProviderTile from "../MobileProviderTile.jsx";
-import GoToIsaButton from "../GoToIsaButton.jsx";
+import GoToProviderButton from "../GoToProviderButton.jsx";
+import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
 
@@ -116,10 +117,20 @@ function PortfolioBreakdownTile() {
 // cards for this v1 — same trim rationale as Cash/Student Loan (no
 // savingsRates wired into the mobile route yet, and inline charts need
 // mobile-specific redesign, not a direct port).
-export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
+export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrystallisedGain }) {
   const [openInfo, setOpenInfo] = useState(null); // "bnb" | "useit" | "isa" | null
+  const [loggingGain, setLoggingGain] = useState(false);
+  const [amountSoldInput, setAmountSoldInput] = useState(null);
+  const [gainInput, setGainInput] = useState(null);
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const infoBtnStyle = { background:"#a8a89c", color:WHITE, border:"none", borderRadius:"50%", width:"15px", height:"15px", fontSize:"10px", fontWeight:700, lineHeight:"15px", textAlign:"center", padding:0, cursor:"pointer", flexShrink:0 };
+
+  const openGainLogger = () => { setAmountSoldInput(null); setGainInput(null); setLoggingGain(true); };
+  const closeGainLogger = () => setLoggingGain(false);
+  const saveGainLog = () => {
+    if (onRecordCrystallisedGain) onRecordCrystallisedGain(Math.max(0, +amountSoldInput || 0), Math.max(0, +gainInput || 0));
+    closeGainLogger();
+  };
 
   const totalOpp = statuses.investments?.amount || 0;
   const unwrappedVal = +d.unwrappedValue || 0;
@@ -135,9 +146,32 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
 
   const totalGains = +d.unrealisedGains || 0;
   const cgtRatePct = Math.round(m.cgtRate * 100);
-  const yearsNeeded = m.remainingCgtAllowance > 0 ? Math.ceil(totalGains / m.remainingCgtAllowance) : 0;
-  const taxpayerBand = m.tr !== 0.20 ? "higher/additional-rate" : "basic-rate";
-  const taxIfWait = Math.round((totalGains - m.remainingCgtAllowance) * m.cgtRate);
+  // Single source of truth for every £ figure this tile shows — crystallisable
+  // (m, from metrics.js) is "what fits under this year's remaining allowance";
+  // everything else here is derived from that one number, so the collapsed
+  // pill, the breakdown, and the two-option comparison can never disagree
+  // with each other the way the old cgtSaving-vs-ad-hoc-taxIfWait split did.
+  const taxableSurplus = Math.max(0, totalGains - m.crystallisable);
+  const instantSellTax = Math.round(taxableSurplus * m.cgtRate);
+  // How many tax years it'd take to shield the whole gain: this year's
+  // (already-reduced) allowance first, then a fresh £3,000 each year after —
+  // not `remainingCgtAllowance` repeated, since only THIS year is capped by
+  // gains already realised.
+  const spreadYears = (() => {
+    const years = [];
+    let remaining = totalGains;
+    const first = Math.min(remaining, m.remainingCgtAllowance);
+    if (first > 0) { years.push(first); remaining -= first; }
+    while (remaining > 0.5) {
+      const slice = Math.min(remaining, 3000);
+      years.push(slice);
+      remaining -= slice;
+    }
+    return years;
+  })();
+  const spreadTimingLabel = spreadYears
+    .map((amt, i) => i === 0 ? `${fmt(Math.round(amt))} today` : i === 1 ? `${fmt(Math.round(amt))} after April 5` : `${fmt(Math.round(amt))} in tax year ${i+1}`)
+    .join(", ");
   const products = getModuleProducts("investments", d, m);
 
   return (
@@ -162,36 +196,77 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
       )}
 
       <MobileWinTile number={1} title="Crystallise paper gains"
-        headline={m.crystallisable > 0 ? `${fmt(m.cgtSaving)} saved this tax year` : "No unrealised gains to crystallise this tax year."}
-        tagLabel="Today"
+        headline={m.crystallisable > 0
+          ? (m.remainingCgtAllowance >= 3000
+              ? "Your full £3,000 CGT allowance is available this year."
+              : `You have ${fmt(m.remainingCgtAllowance)} of your £3,000 CGT allowance left this year.`)
+          : "No unrealised gains to crystallise this tax year."}
+        tagLabel="Harvest gains" tagColor={GOLD}
         reminder={m.crystallisable > 0 ? {
           id: "investments-crystallise-gains",
-          title: buildReminderSubject(fmt(m.cgtSaving), "Crystallise capital gains"),
+          title: buildReminderSubject(fmt(m.crystallisable), "Crystallise capital gains"),
           // Informational, not directive — states the figures and points to
           // your platform/adviser for the "how", rather than instructing a
           // specific trade (avoids reading as financial advice).
-          description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check your investment gains before the tax year ends. You have around ${fmt(totalGains)} of unrealised gain, and ${fmt(m.remainingCgtAllowance)} of gain is CGT-exempt this year — crystallising ${fmt(m.crystallisable)} of it now is worth up to ${fmt(m.cgtSaving)}.\n\nThis needs actioning before April 5th - worth a quick check with your platform or a financial adviser on how to do this for your holdings.`,
+          description: `${firstName(d) ? firstName(d)+", y" : "Y"}ou have ${fmt(m.remainingCgtAllowance)} of your £3,000 CGT allowance left this year, against ~${fmt(totalGains)} of unrealised gain.${instantSellTax > 0 ? ` Selling it all today would cost ${fmt(instantSellTax)} in tax — spreading it over ${spreadYears.length} tax years (${spreadTimingLabel}) avoids that entirely.` : ` Crystallising ${fmt(m.crystallisable)} of it now costs £0 in tax.`}\n\nThis needs actioning before April 5th - worth a quick check with your platform or a financial adviser on how to do this for your holdings.`,
         } : null}>
         {m.crystallisable > 0 ? (
           <div>
-            {m.remainingCgtAllowance < 3000 && (
-              <div style={{fontSize:"11.5px",fontWeight:700,color:GOLD,marginBottom:"8px"}}>
-                You have {fmt(m.remainingCgtAllowance)} of your £3,000 CGT allowance left this year.
+            <div style={{background:"#f8f7f4",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"10px",padding:"4px 14px",marginBottom:"12px"}}>
+              <div style={rowStyle}><span>Total unrealised gain</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
+              <div style={rowStyle}><span>Less: allowance available</span><span>−{fmt(m.crystallisable)}</span></div>
+              <div style={{...rowStyle,borderTop:"1px solid rgba(22,47,36,0.1)",fontWeight:600}}><span>Taxable surplus</span><span>{fmt(taxableSurplus)}</span></div>
+              <div style={{...rowStyle,fontWeight:700,color:instantSellTax>0?"#c0392b":G}}><span>Instant-sell tax bill ({cgtRatePct}%)</span><span>{fmt(instantSellTax)}</span></div>
+            </div>
+
+            {instantSellTax > 0 ? (
+              <>
+                <div style={{display:"flex",gap:"8px",marginBottom:"6px"}}>
+                  <div style={{flex:1,background:WHITE,border:"1.5px solid rgba(192,57,43,0.25)",borderRadius:"10px",padding:"10px 12px"}}>
+                    <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Sell it all today</div>
+                    <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:"#c0392b"}}>{fmt(instantSellTax)}</div>
+                    <div style={{fontSize:"10.5px",color:MUT,marginTop:"2px"}}>Tax due</div>
+                  </div>
+                  <div style={{flex:1,background:"rgba(196,150,58,0.1)",border:`1.5px solid ${GOLD}`,borderRadius:"10px",padding:"10px 12px"}}>
+                    <div style={{fontSize:"9.5px",fontWeight:700,color:"#8a6a24",letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Spread over {spreadYears.length} tax yrs · optimal</div>
+                    <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G}}>{fmt(0)}</div>
+                    <div style={{fontSize:"10.5px",color:"#8a6a24",fontWeight:600,marginTop:"2px"}}>Saves {fmt(instantSellTax)}</div>
+                  </div>
+                </div>
+                <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginBottom:"12px"}}>Spread plan: {spreadTimingLabel}.</p>
+              </>
+            ) : (
+              <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,marginBottom:"12px"}}>Fully shielded by this year's allowance — no CGT due either way.</p>
+            )}
+
+            <GoToProviderButton storageKey="candid_gia_provider_pref" defaultLabel={`Bank ${fmt(m.crystallisable)} tax-free now`}/>
+
+            {onRecordCrystallisedGain && (
+              <div style={{marginTop:"10px"}}>
+                {!loggingGain ? (
+                  <button onClick={openGainLogger} style={{background:"transparent",border:"none",color:MUT,fontSize:"12px",fontWeight:600,textDecoration:"underline",cursor:"pointer",padding:0}}>
+                    I've sold some — update my figures
+                  </button>
+                ) : (
+                  <div style={{background:"#ede7db",borderRadius:"10px",padding:"12px 14px"}}>
+                    <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Record what you sold</div>
+                    <div style={{display:"flex",gap:"8px"}}>
+                      <PillMoneyInput label="Amount sold" value={amountSoldInput} onChange={setAmountSoldInput}/>
+                      <PillMoneyInput label="Gain crystallised" value={gainInput} onChange={setGainInput}/>
+                    </div>
+                    <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
+                      We'll move this from your investments into cash, and count the gain against this year's CGT allowance.
+                    </p>
+                    <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
+                      <button onClick={closeGainLogger} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Cancel</button>
+                      <button onClick={saveGainLog} style={{flex:1,background:G,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer"}}>Save</button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-            <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:yearsNeeded>1?"10px":0}}>
-              You have ~{fmt(totalGains)} of unrealised gain. {fmt(m.remainingCgtAllowance)} is CGT-exempt this year — bank {fmt(m.crystallisable)} of gain now at £0 tax.{yearsNeeded > 1 && ` At that rate, shielding it all takes ${yearsNeeded} tax years.`}
-            </p>
-            {yearsNeeded > 1 && (
-              <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
-                <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"6px"}}>Wait and sell it all, vs shielding {fmt(m.remainingCgtAllowance)}/yr</div>
-                <div style={rowStyle}><span>Total unrealised gain</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
-                <div style={rowStyle}><span>Less: one year's exemption</span><span>−{fmt(m.remainingCgtAllowance)}</span></div>
-                <div style={{...rowStyle,fontWeight:700,color:"#c0392b"}}><span>Tax due at {cgtRatePct}%</span><span>{fmt(taxIfWait)}</span></div>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:0}}>Shield {fmt(m.remainingCgtAllowance)}/yr instead — spread across {yearsNeeded} tax years — and the same gain costs £0 in total: a saving of {fmt(taxIfWait)}.</p>
-              </div>
-            )}
-            <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+
+            <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
                   <span style={{fontSize:"12.5px",fontWeight:600,color:GOLD}}>Bed &amp; breakfasting</span>
@@ -210,7 +285,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
                 </div>
                 {openInfo === "useit" && (
                   <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
-                    The £3,000 exempt amount doesn't carry over — unused, it's gone on April 5th. You're a {taxpayerBand} taxpayer, so gains above it are taxed at {cgtRatePct}%.{m.remainingCgtAllowance < 3000 && ` You've already used ${fmt(3000 - m.remainingCgtAllowance)} of it on gains sold earlier this tax year.`}
+                    The £3,000 exemption doesn't carry over — whatever's unused is gone on April 5th.
                   </p>
                 )}
               </div>
@@ -259,7 +334,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses }) {
                 </p>
               </div>
             )}
-            <GoToIsaButton/>
+            <GoToProviderButton storageKey="candid_isa_provider_pref" defaultLabel="To my ISA"/>
           </div>
         ) : (
           <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>Nothing left to shelter this tax year — check back after April 6th for a fresh £20,000 allowance.</p>

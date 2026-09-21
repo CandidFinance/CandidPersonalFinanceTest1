@@ -5519,6 +5519,41 @@ export default function AppShell() {
     });
   };
 
+  // Records a non-ISA/pension sale made outside the app (the mobile deep
+  // dive's "I've sold some" editor on the Investments module's "Crystallise
+  // paper gains" tile): moves `amountSold` out of unwrappedValue and into
+  // cash (it didn't vanish, it's now sitting as cash — added to the first
+  // cash tier when populated, else the flat cashSavings fallback, mirroring
+  // recordLoanOverpayment's tiers-vs-flat preference above), moves
+  // `gainCrystallised` out of unrealisedGains (that portion of paper gain is
+  // no longer unrealised), and adds it to realisedCgtGains so it counts
+  // against this year's £3,000 CGT allowance (src/lib/metrics.js) exactly
+  // like a sale reported during onboarding would.
+  const recordCrystallisedGain = (amountSold, gainCrystallised) => {
+    const soldCapped = Math.max(0, +capField("unwrappedValue", amountSold) || 0);
+    const gainCapped = Math.max(0, +capField("unrealisedGains", gainCrystallised) || 0);
+    setRawD(p => {
+      const next = {
+        ...p,
+        unwrappedValue: String(Math.max(0, (+p.unwrappedValue||0) - soldCapped)),
+        unrealisedGains: String(Math.max(0, (+p.unrealisedGains||0) - gainCapped)),
+        hasSoldAssetsOutsideWrapper: "yes",
+        realisedCgtGains: String(Math.max(0, (+p.realisedCgtGains||0) + gainCapped)),
+      };
+      if (soldCapped > 0) {
+        const tiers = Array.isArray(p.cashTiers) ? p.cashTiers : [];
+        if (tiers.length > 0) {
+          const newTiers = tiers.map(t => ({...t}));
+          newTiers[0] = { ...newTiers[0], amount: String((+newTiers[0].amount||0) + soldCapped) };
+          next.cashTiers = newTiers;
+        } else {
+          next.cashSavings = String((+p.cashSavings||0) + soldCapped);
+        }
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     try { localStorage.setItem('candid_inputs', JSON.stringify(rawD)); }
     catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist inputs to localStorage:", e); }
@@ -5976,7 +6011,8 @@ export default function AppShell() {
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
           onBack={() => navigate("/app/modules")}
-          onRecordLoanOverpayment={recordLoanOverpayment}/>
+          onRecordLoanOverpayment={recordLoanOverpayment}
+          onRecordCrystallisedGain={recordCrystallisedGain}/>
       </MobileLayout>
     );
   }
