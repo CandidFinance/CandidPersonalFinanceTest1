@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ScoreDetailSheet, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC } from "../../CandidApp.jsx";
+import { ScoreDetailSheet, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
 import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
@@ -96,7 +96,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, scoreDeltas
 
       {/* Opportunity — taps through to the full module ranking. */}
       {totalOpp > 0 && (
-        <div onClick={() => navigate("/app/modules")} style={{marginTop:"14px",background:"rgba(196,150,58,0.12)",borderRadius:"12px",padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",cursor:"pointer"}}>
+        <div onClick={() => navigate("/app/modules")} style={{marginTop:"14px",background:OPPORTUNITY_TILE_BG,borderRadius:"12px",padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",cursor:"pointer"}}>
           <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
             <span style={{fontSize:"11px",fontWeight:600,color:"#8a6a24",letterSpacing:"0.07em",textTransform:"uppercase"}}>Opportunity</span>
             <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"17px",color:TEXT}}>{fmtCompact(totalOpp)}<span style={{fontSize:"12px",fontWeight:500,color:MUT}}>/yr</span></span>

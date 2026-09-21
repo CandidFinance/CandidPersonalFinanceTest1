@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { calcCashOptimisation } from "../../lib/cash.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, topRate, getModuleProducts } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, topRate, getModuleProducts, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
@@ -55,7 +55,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
   return (
     <div>
       {opportunityCols.length > 0 && (
-        <div style={{background:"rgba(196,150,58,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+        <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{fontSize:"10px",fontWeight:800,color:"#8a6a24",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
           <div style={{display:"flex",gap:"24px",flexWrap:"wrap"}}>
             {opportunityCols.map((c,i) => (

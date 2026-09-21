@@ -92,6 +92,10 @@ export const PROVIDER_TILE_BG_END = "#eef4ef";
 export const PROVIDER_TILE_BORDER = "1.5px solid rgba(45,107,74,0.18)";
 export const PROVIDER_TILE_SHADOW = "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 10px rgba(22,47,36,0.06)";
 
+// Module pages' "Opportunity" hero tile — stays white for the first ~30% then
+// fades into a light gold tint (the tile's old flat fill was 0.12 alpha).
+export const OPPORTUNITY_TILE_BG = "linear-gradient(165deg, #ffffff 0%, #ffffff 30%, rgba(196,150,58,0.10) 100%)";
+
 // ── One-off colours — reference only, NOT for reuse ───────────────────────
 // Each of these appears in exactly one place (a specific SVG chart
 // gradient/line, or a single badge) and isn't part of the shared palette

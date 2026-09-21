@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Lock } from "lucide-react";
 import { fmt } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, getModuleProducts } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, getModuleProducts, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProviderTile from "../MobileProviderTile.jsx";
 import GoToProviderButton from "../GoToProviderButton.jsx";
@@ -177,7 +177,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
   return (
     <div>
       {(m.isaHeadroom > 0 || m.crystallisable > 0) && (
-        <div style={{background:"rgba(196,150,58,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+        <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{fontSize:"10px",fontWeight:800,color:"#8a6a24",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
           {totalOpp > 0 ? (
             <>

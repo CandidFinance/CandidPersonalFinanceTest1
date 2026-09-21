@@ -13,7 +13,7 @@ import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sani
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
 import { simulateLoan, fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions } from "./lib/forecast.js";
 import { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
-import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "./design-tokens.js";
+import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
@@ -116,7 +116,7 @@ button:active{transform:scale(0.98);}
 .fu7{animation:fadeUp 0.45s ease 0.49s forwards;opacity:0;}
 `;
 
-export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW };
+export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG };
 
 const INP = {
   width:"100%", padding:"11px 14px", border:"1.5px solid rgba(22,47,36,0.18)",

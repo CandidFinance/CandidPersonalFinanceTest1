@@ -3,7 +3,7 @@ import { ExternalLink, Wrench } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios } from "../../lib/studentLoan.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 
@@ -138,7 +138,7 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
   return (
     <div>
       {worthOverpaying && (
-        <div style={{background:"rgba(196,150,58,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+        <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{fontSize:"10px",fontWeight:800,color:"#8a6a24",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
           <div style={{fontFamily:SERIF,fontSize:"32px",color:TEXT,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
           <div style={{fontSize:"12px",color:"#8a6a24",marginTop:"4px",fontWeight:600}}>Effective benefit from overpaying vs cash</div>
