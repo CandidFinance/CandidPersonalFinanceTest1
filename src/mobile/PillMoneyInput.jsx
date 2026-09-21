@@ -23,7 +23,11 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
     if (!focused.current) setDisplay(displayValue(value));
   }, [value, useThousands]);
   return (
-    <div style={{flex:1,background:"#ede7db",borderRadius:"100px",padding:"9px 16px",display:"flex",flexDirection:"column"}}>
+    // A <label> wrapping the input, not a div: tapping anywhere in the pill
+    // (its padding, the caption, the £/% symbol) focuses the input. Without
+    // this the % variant's auto-width input made the tap target only as wide
+    // as the digits typed.
+    <label style={{flex:1,background:"#ede7db",borderRadius:"100px",padding:"9px 16px",display:"flex",flexDirection:"column",cursor:"text"}}>
       <span style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span>
       <div style={{display:"flex",alignItems:"center"}}>
         {showPrefix && <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>£</span>}
@@ -43,6 +47,6 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
           size={showSuffix ? Math.max(1, (display || placeholder || "0").length) : undefined}/>
         {showSuffix && <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>%</span>}
       </div>
-    </div>
+    </label>
   );
 }
