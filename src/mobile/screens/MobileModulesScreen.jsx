@@ -111,12 +111,12 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
                     <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
                     <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel(mm, reviewed)}</span>
                   </div>
-                  <p style={{fontSize:"13px",color:"#4a4a4a",lineHeight:1.5,marginTop:"8px",marginBottom:0}}>{mm.summary}</p>
                 </div>
                 <span style={{fontSize:"14px",color:MUT,flexShrink:0,marginTop:"6px",display:"inline-block",transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}>›</span>
               </div>
               {isOpen && (
                 <div style={{background:"rgba(22,47,36,0.03)",padding:"14px 18px 18px",display:"flex",flexDirection:"column",gap:"10px"}}>
+                  <p style={{fontSize:"13px",color:"#4a4a4a",lineHeight:1.5,margin:0}}>{mm.summary}</p>
                   {insights.length > 0 && (
                     <div style={{display:"flex",gap:"10px"}}>
                       {insights.map((ins,i) => (
