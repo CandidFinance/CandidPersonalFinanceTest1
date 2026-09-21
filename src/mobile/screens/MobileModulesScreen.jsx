@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Users } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
 import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
@@ -51,10 +51,12 @@ function moduleInsights(mm, d, m) {
 // visible, rather than looking like the app only ever covers 4 areas.
 // Icons/keys come from the shared MODULE_META; title/description here are
 // this teaser's own copy, not MODULE_META's (which is written for the real,
-// unlocked module elsewhere).
+// unlocked module elsewhere). An entry with no MODULE_META counterpart
+// (e.g. household) supplies its own `icon`.
 const LOCKED_MODULES = [
   { key:"mortgage", title:"Mortgages", description:"Overpay-vs-invest analysis, remortgage timing, and rate-change impact." },
   { key:"kids", title:"Family tax planning", description:"Junior ISAs, Child Benefit tapering, and tax-efficient gifting for your children." },
+  { key:"household", title:"Household finances", icon:Users, description:"Two people, one plan. Marriage or a civil partnership changes the advice, from shared allowances to how you hold savings and investments." },
 ];
 
 export default function MobileModulesScreen({ d, m, statuses, insights, completedModules, onMarkReviewed, onOpenModule }) {
@@ -149,11 +151,11 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
       <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Coming soon</div>
       <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
         {LOCKED_MODULES.map(lm => {
-          const meta = MODULE_META.find(mm => mm.key === lm.key);
+          const LockedIcon = lm.icon || MODULE_META.find(mm => mm.key === lm.key)?.icon;
           return (
             <div key={lm.key} style={{background:"rgba(255,255,255,0.55)",borderRadius:"16px",border:"1.5px dashed rgba(22,47,36,0.15)",padding:"18px",display:"flex",alignItems:"flex-start",gap:"14px"}}>
               <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-                {meta?.icon && <meta.icon size={18} color={MUT}/>}
+                {LockedIcon && <LockedIcon size={18} color={MUT}/>}
               </div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
