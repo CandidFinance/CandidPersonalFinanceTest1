@@ -15,6 +15,13 @@ export default function MobileLayout({ pageLabel, activeTab, headerRight, childr
   const navigate = useNavigate();
   return (
     <div style={{minHeight:"100vh",background:"#f6f0e6",fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
+      {/* Keyframes for the "reviewed" coins and Home score gain. Desktop gets
+          the same ones from PageWrap's stylesheet, which this layout doesn't use. */}
+      <style>{`
+        @keyframes coinFloat{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-40px) scale(1.3);}}
+        @keyframes btnGoldTint{0%{background:transparent;}40%{background:rgba(196,150,58,0.35);}100%{background:transparent;}}
+        @keyframes badgeFadeUp{0%{opacity:0;transform:translateY(8px);}20%{opacity:1;transform:translateY(0);}70%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-6px);}}
+      `}</style>
       <NavBar light center={pageLabel} right={headerRight} />
       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",paddingBottom:"90px",width:"100%"}}>
         <button type="button" onClick={() => navigate("/app/home")} style={{fontFamily:SERIF,color:G,fontSize:"20px",fontWeight:700,background:"none",border:"none",padding:0,marginBottom:"18px",cursor:"pointer",display:"block"}}>Candid.</button>

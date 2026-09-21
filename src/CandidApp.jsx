@@ -179,7 +179,7 @@ export function FmtInput({ value, onChange, placeholder, fmtType, step, style })
 }
 
 // ── Local score delta per module completion ───────────────────────────────────────────
-function moduleScoreDelta(status) {
+export function moduleScoreDelta(status) {
   if (status === "critical") return 8;
   if (status === "attention") return 4;
   if (status === "ok") return 1;

@@ -1,5 +1,6 @@
-import { Check } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
+import { useState } from "react";
+import { Check, Coins } from "lucide-react";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META, moduleScoreDelta } from "../../CandidApp.jsx";
 import { statusLabel } from "../statusLabel.js";
 import MobileCashDeepDive from "../deepdive/MobileCashDeepDive.jsx";
 import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx";
@@ -23,6 +24,20 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
   const status = statuses[moduleKey]?.status || "na";
   const statusColor = isComplete ? "#a8a89c" : (SC[status] || MUT);
   const Content = CONTENT_BY_KEY[moduleKey];
+  // Same celebration as desktop's "Mark as reviewed": two floating coins, a
+  // "+N pts" pill, and a brief gold flash on the button — only when marking
+  // complete (not when un-marking).
+  const [showCoins, setShowCoins] = useState(false);
+  const [flashing, setFlashing] = useState(false);
+  const scoreGain = moduleScoreDelta(status);
+  const handleReviewed = () => {
+    if (!isComplete) {
+      setShowCoins(true); setFlashing(true);
+      setTimeout(() => setShowCoins(false), 900);
+      setTimeout(() => setFlashing(false), 400);
+    }
+    onMarkReviewed();
+  };
 
   return (
     <div>
@@ -46,13 +61,25 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
       )}
 
       <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"20px"}}>
-        <button onClick={onMarkReviewed} style={{
-          width:"100%",background:"transparent",border:`1.3px solid ${isComplete?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
-          color:isComplete?"#2d6b4a":G,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,cursor:"pointer",
-          display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",
-        }}>
-          {isComplete ? <><Check size={14}/> Reviewed</> : "Mark as reviewed"}
-        </button>
+        <div style={{position:"relative"}}>
+          {showCoins && (
+            <div style={{position:"relative",pointerEvents:"none",height:0}}>
+              <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={20} color={GOLD}/></span>
+              <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={20} color={GOLD}/></span>
+              {scoreGain > 0 && (
+                <span style={{position:"absolute",top:"-12px",right:"calc(50% - 60px)",background:"#2d6b4a",color:WHITE,borderRadius:"100px",padding:"3px 10px",fontSize:"13px",fontWeight:700,animation:"coinFloat 0.9s ease-out 0.05s forwards",whiteSpace:"nowrap"}}>+{scoreGain} pts</span>
+              )}
+            </div>
+          )}
+          <button onClick={handleReviewed} style={{
+            width:"100%",background:"transparent",border:`1.3px solid ${isComplete?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
+            color:isComplete?"#2d6b4a":G,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,cursor:"pointer",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",
+            animation: flashing ? "btnGoldTint 0.4s ease-out" : "none",
+          }}>
+            {isComplete ? <><Check size={14}/> Reviewed</> : "Mark as reviewed"}
+          </button>
+        </div>
         <button onClick={onBack} style={{width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:600,cursor:"pointer"}}>
           Back to Modules
         </button>

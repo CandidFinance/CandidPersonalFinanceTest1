@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ScoreDetailSheet, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
 import { getModuleBreakdown } from "../../lib/moduleStatus.js";
@@ -38,18 +38,53 @@ function netWorthBreakdown(d, m) {
   return { assets, liabilities };
 }
 
+// The score last shown on Home this session. Home unmounts whenever you open
+// a module, so this is what lets it animate from the old score to the new one
+// when you come back after reviewing a module. Not persisted: a fresh page
+// load just shows the score with no animation.
+let lastShownScore = null;
+
 export default function MobileHomeScreen({ insights, d, m, statuses, scoreDeltas }) {
   const navigate = useNavigate();
   const [scoreDetailOpen, setScoreDetailOpen] = useState(false);
   const [netWorthOpen, setNetWorthOpen] = useState(false);
-  if (!insights) return null;
 
   // Same as desktop's HomeScreen: insights.score is the one-time AI-generated
   // baseline, and scoreDeltas (from markModuleComplete, CandidApp.jsx) is the
   // running total of points earned by reviewing modules since — without
   // folding it in here, the score looked frozen no matter what you reviewed.
   const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
-  const score = Math.min(100, (insights.score || 0) + totalDelta);
+  const score = Math.min(100, (insights?.score || 0) + totalDelta);
+
+  // Score-gain animation (mirrors desktop's gold delta arc + "+N pts"): the
+  // number counts up from the previous score, the bar turns gold while it
+  // fills, and a "+N pts" badge floats up. Hooks sit above the early return.
+  const [shownScore, setShownScore] = useState(() => (lastShownScore !== null && lastShownScore < score) ? lastShownScore : score);
+  const [gain, setGain] = useState(0);
+  const hasInsights = !!insights;
+  useEffect(() => {
+    if (!hasInsights) return;
+    const from = shownScore;
+    const prev = lastShownScore;
+    lastShownScore = score;
+    // First time Home is shown this session (prev === null), or the score
+    // didn't go up: just show it, no animation.
+    if (prev === null || from >= score) { setShownScore(score); return; }
+    setGain(score - from);
+    const start = performance.now(), duration = 900;
+    let raf;
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      setShownScore(Math.round(from + (score - from) * t));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    const timer = setTimeout(() => setGain(0), 2600);
+    return () => { cancelAnimationFrame(raf); clearTimeout(timer); };
+  }, [score, hasInsights]);
+
+  if (!insights) return null;
+
   const { color: scoreColor, label: scoreLabel } = scoreBand(score);
   const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, insights, "amount");
   const topWin = modulesWithRec[0] || null;
@@ -70,14 +105,17 @@ export default function MobileHomeScreen({ insights, d, m, statuses, scoreDeltas
           <span style={{fontSize:"14px",color:MUT}}>›</span>
         </div>
         <div style={{display:"flex",alignItems:"flex-end",gap:"8px",marginTop:"6px"}}>
-          <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"48px",lineHeight:1,color:scoreColor}}>{score}</span>
+          <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"48px",lineHeight:1,color:scoreColor}}>{shownScore}</span>
           <span style={{fontSize:"14px",color:MUT,marginBottom:"7px"}}>/100 · {scoreLabel}</span>
+          {gain > 0 && (
+            <span style={{fontSize:"12px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"3px 10px",marginBottom:"8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain} pts</span>
+          )}
         </div>
         {insights.headline && (
           <p style={{fontSize:"13px",color:MUT,marginTop:"6px",lineHeight:1.5}}>{insights.headline}</p>
         )}
         <div style={{height:"6px",borderRadius:"100px",background:CDARK,marginTop:"12px",overflow:"hidden"}}>
-          <div style={{height:"100%",borderRadius:"100px",background:scoreColor,width:`${Math.min(100,score)}%`}}/>
+          <div style={{height:"100%",borderRadius:"100px",background:gain > 0 ? GOLD : scoreColor,width:`${Math.min(100,shownScore)}%`,transition:"background 1.2s ease"}}/>
         </div>
       </div>
       {scoreDetailOpen && (
