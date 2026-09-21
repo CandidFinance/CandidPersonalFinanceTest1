@@ -80,6 +80,18 @@ export const FONT_SIZE = {
 // untokenized rather than inventing a false consistency.
 export const RADIUS_PILL = "100px";
 
+// "Where to open an account" provider tiles (Cash/Investments/Pension) — a
+// pale green, close to white, with a subtle top-to-bottom gradient for a
+// raised/glossy feel, so these link-out tiles read as visually distinct from
+// the app's plain-white numbered action tiles at a glance. PROVIDER_TILE_BG_END
+// is the gradient's own bottom-stop colour, reused by scrollable provider
+// lists' fade-to-solid overlay so the fade blends into the tile rather than
+// revealing a mismatched white seam.
+export const PROVIDER_TILE_BG = "linear-gradient(180deg, #f8faf8 0%, #eef4ef 100%)";
+export const PROVIDER_TILE_BG_END = "#eef4ef";
+export const PROVIDER_TILE_BORDER = "1.5px solid rgba(45,107,74,0.18)";
+export const PROVIDER_TILE_SHADOW = "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 10px rgba(22,47,36,0.06)";
+
 // ── One-off colours — reference only, NOT for reuse ───────────────────────
 // Each of these appears in exactly one place (a specific SVG chart
 // gradient/line, or a single badge) and isn't part of the shared palette

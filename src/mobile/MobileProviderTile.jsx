@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Landmark, Unlock, ExternalLink } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../CandidApp.jsx";
 
 // Static "where to actually do this" provider list for Investments/Pension —
 // unlike Cash's MobileProductListTile, there's no live-rate data source for
@@ -23,7 +23,7 @@ export default function MobileProviderTile({ heading, products, disclaimer }) {
   if (!products || products.length === 0) return null;
 
   return (
-    <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginTop:"16px"}}>
+    <div style={{background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginTop:"16px"}}>
       <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",cursor:"pointer",marginBottom:"12px"}}>
         <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</div>
         <span style={{fontSize:"14px",color:"#6b6b6b",flexShrink:0,display:"inline-block",transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}>›</span>
@@ -37,7 +37,7 @@ export default function MobileProviderTile({ heading, products, disclaimer }) {
             const Wrapper = isLink ? "a" : "div";
             const wrapperProps = isLink ? { href: p.productUrl, target: "_blank", rel: "noopener noreferrer" } : {};
             return (
-              <Wrapper key={i} {...wrapperProps} style={{display:"block",textDecoration:"none",color:"inherit",border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,borderRadius:"10px",padding:"12px 14px"}}>
+              <Wrapper key={i} {...wrapperProps} style={{display:"block",textDecoration:"none",color:"inherit",background:WHITE,border:`1.5px solid ${p.highlight ? GOLD : "rgba(22,47,36,0.09)"}`,borderRadius:"10px",padding:"12px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
                   <div style={{width:"32px",height:"32px",background:p.highlight?G:"rgba(22,47,36,0.07)",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     <Icon size={16} color={p.highlight?WHITE:G}/>
@@ -61,7 +61,7 @@ export default function MobileProviderTile({ heading, products, disclaimer }) {
         </div>
         {!open && products.length > 1 && (
           <>
-            <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 55%, ${WHITE} 100%)`,pointerEvents:"none"}}/>
+            <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, rgba(238,244,239,0) 0%, rgba(238,244,239,0) 55%, ${PROVIDER_TILE_BG_END} 100%)`,pointerEvents:"none"}}/>
             <div onClick={() => setOpen(true)} style={{position:"absolute",left:0,right:0,bottom:"10px",textAlign:"center",cursor:"pointer"}}>
               <span style={{fontSize:"12px",fontWeight:600,color:GOLD}}>See all {products.length} options</span>
             </div>

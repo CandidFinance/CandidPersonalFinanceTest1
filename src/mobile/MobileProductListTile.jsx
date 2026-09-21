@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../CandidApp.jsx";
 
 // Collapsible "Best [X] right now" provider-rate tile — collapsed by default
 // to roughly 2 rows' worth of height: the 1st row fully visible, the 2nd
@@ -15,7 +15,7 @@ export default function MobileProductListTile({ heading, subheading, products, d
   if (!products || products.length === 0) return null;
 
   return (
-    <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginTop:"16px"}}>
+    <div style={{background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginTop:"16px"}}>
       <div onClick={() => setOpen(o => !o)} style={{cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
           <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</div>
@@ -46,7 +46,7 @@ export default function MobileProductListTile({ heading, subheading, products, d
         ))}
         {!open && products.length > 1 && (
           <>
-            <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 50%, ${WHITE} 100%)`,pointerEvents:"none"}}/>
+            <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, rgba(238,244,239,0) 0%, rgba(238,244,239,0) 50%, ${PROVIDER_TILE_BG_END} 100%)`,pointerEvents:"none"}}/>
             <div onClick={() => setOpen(true)} style={{position:"absolute",left:0,right:0,bottom:"10px",textAlign:"center",cursor:"pointer"}}>
               <span style={{fontSize:"12px",fontWeight:600,color:GOLD}}>See all {products.length} rates</span>
             </div>
