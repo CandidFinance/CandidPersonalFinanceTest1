@@ -143,10 +143,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, scoreDeltas
         </div>
       )}
 
-      <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"20px 0"}}/>
-
-      {/* Net worth — tap to expand the assets/liabilities breakdown in place. */}
-      <div onClick={() => setNetWorthOpen(v => !v)} style={{cursor:"pointer"}}>
+      {/* Net worth — a tile; tap anywhere on it to expand the assets/liabilities
+          breakdown in place (same white card treatment as "Your biggest win"). */}
+      <div onClick={() => setNetWorthOpen(v => !v)} style={{marginTop:"20px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"14px",padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Net worth</span>
           <span style={{fontSize:"14px",color:MUT,display:"inline-block",transform:netWorthOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}>⌄</span>
@@ -188,12 +187,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, scoreDeltas
         )}
       </div>
 
-      <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"20px 0"}}/>
-
-      {/* Biggest win — the one interactive card on this screen (CLAUDE.md rule 3:
-          reserve card wrapping for discrete, actionable components). */}
+      {/* Biggest win — an interactive card (CLAUDE.md rule 3: reserve card
+          wrapping for discrete, actionable components), like the Net worth tile. */}
       {topWin && (
-        <div>
+        <div style={{marginTop:"20px"}}>
           <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginBottom:"10px"}}>Your biggest win</div>
           <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"14px",padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
