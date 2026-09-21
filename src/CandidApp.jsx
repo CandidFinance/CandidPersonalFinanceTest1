@@ -6107,7 +6107,7 @@ export default function AppShell() {
       return <Navigate to="/app/modules" replace />;
     }
     return (
-      <MobileLayout pageLabel={MODULE_META.find(mm => mm.key === mobileActiveModule)?.title || "Module"} activeTab="modules"
+      <MobileLayout activeTab="modules"
         headerRight={
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>

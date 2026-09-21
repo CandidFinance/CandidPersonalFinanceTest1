@@ -8,11 +8,9 @@ import MobileTabBar from "./MobileTabBar.jsx";
 // "Candid." wordmark lives here instead, as the first thing in the content
 // column — left-aligned with every tile/card below it, like a native app's
 // own in-content branding rather than a system-chrome bar. `pageLabel` is
-// optional and left unset by the 4 tab-bar screens (Home/Modules/Forecast/
-// Chat) — the tab bar below already shows which of those is active, so
-// repeating it as a title up top was redundant. A pushed sub-page like a
-// module deep dive still passes one (the specific module's name), since
-// that's real information the tab bar alone can't convey.
+// optional and currently unset everywhere: the tab bar shows which of the 4
+// tab-bar screens is active, and a module deep dive already carries its own
+// title heading in its content, so a nav-bar title would just repeat it.
 export default function MobileLayout({ pageLabel, activeTab, headerRight, children }) {
   const navigate = useNavigate();
   return (
