@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import ReactDOM from "react-dom/client"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import posthog from "posthog-js"
-import { motion, MotionConfig, useReducedMotion, useInView, animate } from "framer-motion"
+import { MotionConfig } from "framer-motion"
 import CandidApp, { PageWrap, NavBar, ContentWrap } from "./CandidApp.jsx"
-import { ClipboardList, Target, Search, GraduationCap, PoundSterling, Home as HomeIcon } from "lucide-react"
 import ErrorBoundary from "./ErrorBoundary.jsx"
+import BetaGate, { RequireBeta } from "./BetaGate.jsx"
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -94,6 +94,13 @@ if (SHOW_DEV_TOOLS) {
   DevToolsPanel = lazy(() => import("./DevTools.jsx"))
 }
 
+// The live marketing site — rebuilt at /new during review, now promoted to
+// "/" itself (see RootRoute below). Kept lazy so the desktop app bundle
+// (CandidApp.jsx) doesn't pull this in and vice versa.
+const NewLandingPage = lazy(() => import("./mockups/NewLandingPage.jsx"))
+const TheProblemPage = lazy(() => import("./mockups/TheProblemPage.jsx"))
+const HowItWorksPage = lazy(() => import("./mockups/HowItWorksPage.jsx"))
+
 const G    = "#162f24"
 const GOLD = "#c4963a"
 const CREAM= "#f6f0e6"
@@ -101,413 +108,6 @@ const WHITE= "#ffffff"
 const MUT  = "#6b6b6b"
 const SERIF= "'Playfair Display', serif"
 const SANS = "'DM Sans', sans-serif"
-
-// ── Landing page motion primitives ─────────────────────────────────────────────
-// A steep-deceleration curve (fast start, long soft settle) reads as more
-// considered than the default ease-in-out — used for every entrance/hover
-// animation on the landing page. prefers-reduced-motion is handled globally
-// via <MotionConfig reducedMotion="user"> in Root(), which auto-disables all
-// variant/whileHover/whileInView animation; the one exception is the imperative
-// count-up in CountUpStat, which checks useReducedMotion() itself below.
-const EASE = [0.16, 1, 0.3, 1];
-
-const heroStagger = { hidden: {}, visible: { transition: { staggerChildren: 0.07 } } };
-const heroItem = {
-  hidden: { opacity: 0, y: 14 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE } },
-};
-
-// Entrance for a tile at position `i` in a staggered row/grid. MotionConfig's
-// reducedMotion="user" (set on <Root>) only strips transform-based motion
-// (x/y/scale/rotate) — it leaves opacity fades running — so an explicit
-// reduceMotion flag is threaded through here to skip the fade too and render
-// the tile straight into its final state, per "instant states, no animation".
-function tileEntrance(i, reduceMotion, delayStep = 0.07) {
-  if (reduceMotion) return { initial: false };
-  return {
-    initial: { opacity: 0, y: 14 },
-    whileInView: { opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE, delay: i * delayStep } },
-    viewport: { once: true, margin: "-60px" },
-  };
-}
-
-// Subtle lift + soft shadow on hover, for interactive cards/tiles.
-const tileHover = {
-  whileHover: { y: -4, boxShadow: "0 16px 36px rgba(22,47,36,0.14)", transition: { duration: 0.2, ease: EASE } },
-};
-
-// Parses a display string like "£4,200" or "6.5m" into its numeric target
-// plus the surrounding prefix/suffix, so CountUpStat can animate the number
-// while preserving currency symbols, unit suffixes, decimals and thousands commas.
-function parseStatValue(str) {
-  const match = String(str).match(/^([^\d]*)([\d,.]+)([^\d]*)$/);
-  if (!match) return { prefix: "", target: 0, suffix: String(str), decimals: 0, hasComma: false };
-  const [, prefix, numStr, suffix] = match;
-  const hasComma = numStr.includes(",");
-  const cleanNum = numStr.replace(/,/g, "");
-  const decimals = cleanNum.includes(".") ? cleanNum.split(".")[1].length : 0;
-  return { prefix, target: parseFloat(cleanNum), suffix, decimals, hasComma };
-}
-
-function formatStatNumber(value, { decimals, hasComma }) {
-  const fixed = value.toFixed(decimals);
-  if (!hasComma) return fixed;
-  const [intPart, decPart] = fixed.split(".");
-  const withCommas = Number(intPart).toLocaleString("en-GB");
-  return decPart ? `${withCommas}.${decPart}` : withCommas;
-}
-
-// Counts up from 0 to the target value once the stat scrolls into view.
-// Instant (no animation) when the user has prefers-reduced-motion enabled.
-function CountUpStat({ value }) {
-  const parsed = useMemo(() => parseStatValue(value), [value]);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const reduceMotion = useReducedMotion();
-  const [display, setDisplay] = useState(reduceMotion ? parsed.target : 0);
-
-  useEffect(() => {
-    if (!isInView) return;
-    if (reduceMotion) { setDisplay(parsed.target); return; }
-    const controls = animate(0, parsed.target, {
-      duration: 0.9,
-      ease: EASE,
-      onUpdate: setDisplay,
-    });
-    return () => controls.stop();
-  }, [isInView, parsed.target, reduceMotion]);
-
-  return <span ref={ref}>{parsed.prefix}{formatStatNumber(display, parsed)}{parsed.suffix}</span>;
-}
-
-// ── Shared CTA button ─────────────────────────────────────────────────────────
-function CtaButton({ onClick, dark }) {
-  return (
-    <motion.button
-      onClick={onClick}
-      whileHover={{ scale: 1.03, boxShadow: "0 10px 24px rgba(196,150,58,0.35)", transition: { duration: 0.2, ease: EASE } }}
-      style={{
-        background: GOLD, border: "none", borderRadius: "10px",
-        padding: "18px 44px", fontSize: "17px", fontWeight: 700,
-        color: G, cursor: "pointer", fontFamily: SANS,
-        display: "inline-block", boxShadow: "0 0px 0px rgba(196,150,58,0)",
-      }}>Get my free Candid report →</motion.button>
-  )
-}
-
-function TrustLine({ light }) {
-  return (
-    <div style={{
-      fontSize: "12px", marginTop: "12px",
-      color: light ? "rgba(255,255,255,0.35)" : MUT,
-      letterSpacing: "0.03em",
-    }}>
-      Free · No account needed · Takes 5 minutes
-    </div>
-  )
-}
-
-// ── Section label ─────────────────────────────────────────────────────────────
-function SectionLabel({ children }) {
-  return (
-    <div style={{
-      fontSize: "10px", fontWeight: 700, color: GOLD,
-      letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "20px",
-    }}>{children}</div>
-  )
-}
-
-// ── Landing page ──────────────────────────────────────────────────────────────
-function LandingPage({ onStart }) {
-  const reduceMotion = useReducedMotion();
-  return (
-    <div style={{ fontFamily: SANS }}>
-      <NavBar center="Home"/>
-
-      {/* ── SECTION 1: HERO ── */}
-      <div style={{
-        background: G,
-        minHeight: "calc(100vh - 76px)",
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        textAlign: "center", padding: "60px 24px",
-        position: "relative", overflow: "hidden",
-      }}>
-        {/* subtle grid texture */}
-        <div style={{
-          position: "absolute", inset: 0, opacity: 0.35, pointerEvents: "none",
-          backgroundImage: "linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px)",
-          backgroundSize: "64px 64px",
-        }}/>
-
-        <motion.div
-          variants={heroStagger} initial={reduceMotion ? "visible" : "hidden"} animate="visible"
-          style={{ position: "relative", zIndex: 1, maxWidth: "640px" }}
-        >
-          {/* Wordmark */}
-          <motion.div variants={heroItem} style={{
-            fontFamily: SERIF, fontSize: "clamp(52px,8vw,72px)", fontWeight: 700,
-            color: GOLD, lineHeight: 1, marginBottom: "18px", letterSpacing: "-0.01em",
-          }}>
-            Candid.
-          </motion.div>
-
-          {/* Tagline */}
-          <motion.div variants={heroItem} style={{
-            fontSize: "18px", color: `${CREAM}99`, fontStyle: "italic",
-            marginBottom: "52px", letterSpacing: "0.01em",
-          }}>
-            Personal finance, honestly.
-          </motion.div>
-
-          <motion.div variants={heroItem}>
-            <CtaButton onClick={onStart}/>
-            <TrustLine light/>
-          </motion.div>
-        </motion.div>
-      </div>
-
-      {/* ── SECTION 2: PROBLEM STATEMENT ── */}
-      <div style={{ background: CREAM, padding: "88px 24px" }}>
-        <div style={{ maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
-          <h2 style={{
-            fontFamily: SERIF, fontSize: "clamp(26px,4vw,32px)",
-            color: G, fontWeight: 700, lineHeight: 1.2, marginBottom: "22px",
-          }}>
-            Good income. Good career.<br />Still losing thousands.
-          </h2>
-          <p style={{
-            fontSize: "clamp(15px,2vw,18px)", color: MUT,
-            lineHeight: 1.75, marginBottom: "52px", maxWidth: "600px", margin: "0 auto 52px",
-          }}>
-            Most professionals on £50k–£150k leave real money behind every year — pension gaps, yield gaps, tax inefficiencies, missed allowances. Candid finds exactly what it's costing you, and what to do about it.
-          </p>
-
-          {/* Stat chips */}
-          <div style={{
-            display: "flex", gap: "16px", justifyContent: "center",
-            flexWrap: "wrap",
-          }}>
-            {[
-              { n: "£4,200", label: "avg annual pension tax relief unclaimed" },
-              { n: "£680",   label: "left on the table in savings yield gaps" },
-              { n: "6.5m",   label: "higher-rate taxpayers in the UK" },
-            ].map((chip, i) => (
-              <motion.div key={chip.n} {...tileEntrance(i, reduceMotion)} style={{
-                background: G, borderRadius: "12px", padding: "20px 24px",
-                textAlign: "center", minWidth: "160px", flex: "1 1 160px", maxWidth: "220px",
-              }}>
-                <div style={{
-                  fontFamily: SERIF, fontSize: "28px", fontWeight: 700,
-                  color: GOLD, lineHeight: 1, marginBottom: "8px",
-                }}><CountUpStat value={chip.n}/></div>
-                <div style={{
-                  fontSize: "13px", color: `${CREAM}99`, lineHeight: 1.4,
-                }}>{chip.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── SECTION 3: HOW IT WORKS ── */}
-      <div style={{ background: WHITE, padding: "88px 24px" }}>
-        <div style={{ maxWidth: "960px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "56px" }}>
-            <SectionLabel>How it works</SectionLabel>
-            <h2 style={{
-              fontFamily: SERIF, fontSize: "clamp(26px,4vw,34px)",
-              color: G, fontWeight: 700, lineHeight: 1.2,
-            }}>
-              Your complete financial picture,<br />in 5 minutes.
-            </h2>
-          </div>
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "28px",
-          }}>
-            {[
-              {
-                icon: ClipboardList, title: "Tell us about your finances",
-                body: "Salary, savings, pension, debts. Takes about 5 minutes. Approximate figures are fine — you can refine later.",
-              },
-              {
-                icon: Target, title: "Get your Candid score",
-                body: "A personalised 0–100 financial health score showing where you stand and what matters most.",
-              },
-              {
-                icon: Search, title: "Explore your modules",
-                body: "Deep-dive into each area of your finances with specific actions and their £ impact, calculated from your actual inputs.",
-              },
-            ].map((step, i) => (
-              <motion.div key={step.title} {...tileEntrance(i, reduceMotion)} {...tileHover} style={{
-                background: CREAM, borderRadius: "14px", padding: "32px 28px",
-                borderTop: `4px solid ${GOLD}`, boxShadow: "0 0px 0px rgba(22,47,36,0)",
-              }}>
-                <div style={{ marginBottom: "16px" }}><step.icon size={28} color={G}/></div>
-                <div style={{
-                  fontFamily: SERIF, fontSize: "18px", color: G,
-                  fontWeight: 600, marginBottom: "10px",
-                }}>{step.title}</div>
-                <div style={{ fontSize: "14px", color: MUT, lineHeight: 1.7 }}>{step.body}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── SECTION 4: AREAS COVERED ── */}
-      <div style={{ background: G, padding: "88px 24px", textAlign: "center" }}>
-        <div style={{ maxWidth: "700px", margin: "0 auto" }}>
-          <SectionLabel>What Candid covers</SectionLabel>
-          <h2 style={{
-            fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,32px)",
-            color: WHITE, fontWeight: 700, marginBottom: "36px", lineHeight: 1.25,
-          }}>
-            Every area of your finances, connected.
-          </h2>
-
-          {/* Area chips */}
-          <div style={{
-            display: "flex", flexWrap: "wrap", gap: "12px",
-            justifyContent: "center", marginBottom: "16px",
-          }}>
-            {[
-              "Pension & salary sacrifice",
-              "ISA & investments",
-              "Student loan strategy",
-              "Mortgage & debt",
-            ].map((area, i) => (
-              <motion.div key={area} {...tileEntrance(i, reduceMotion, 0.06)} style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: "100px", padding: "10px 20px",
-                fontSize: "14px", color: WHITE, fontWeight: 500,
-              }}>{area}</motion.div>
-            ))}
-          </div>
-
-          <div style={{
-            fontSize: "13px", color: "rgba(255,255,255,0.4)",
-            marginBottom: "44px", letterSpacing: "0.01em",
-          }}>
-            + more areas depending on your situation
-          </div>
-
-          {/* Guidance disclaimer — visually distinct */}
-          <div style={{
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-            paddingTop: "32px",
-            fontSize: "16px", color: `${CREAM}cc`,
-            fontStyle: "italic", lineHeight: 1.7, maxWidth: "540px", margin: "0 auto",
-          }}>
-            Guidance, not advice. Candid helps you understand your options — the decisions are always yours.
-          </div>
-        </div>
-      </div>
-
-      {/* ── SECTION 4.5: FREE CALCULATORS ── standalone tools that don't need
-          the full assessment, each also a dedicated landing page in its own
-          right (student-loan-calculator.html etc.) — linked here so both
-          users and search crawlers have a path in from the homepage. */}
-      <div style={{ background: WHITE, padding: "88px 24px" }}>
-        <div style={{ maxWidth: "960px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "56px" }}>
-            <SectionLabel>Free calculators</SectionLabel>
-            <h2 style={{
-              fontFamily: SERIF, fontSize: "clamp(26px,4vw,34px)",
-              color: G, fontWeight: 700, lineHeight: 1.2,
-            }}>
-              Answer one question in 30 seconds.
-            </h2>
-          </div>
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "28px",
-          }}>
-            {[
-              {
-                href: "/student-loan-calculator.html", icon: GraduationCap,
-                title: "Student loan overpayment calculator",
-                body: "Plan 1, 2, 4, 5 & Postgraduate — find out if overpaying saves you money or just hands cash to the government that would've been written off.",
-              },
-              {
-                href: "/100k-tax-trap-calculator.html", icon: PoundSterling,
-                title: "£100,000 tax trap & childcare cliff calculator",
-                body: "Check the 60% marginal-rate zone and the childcare cliff, and see the exact pension sacrifice that fixes both at once.",
-              },
-              {
-                href: "/mortgage-vs-savings-calculator.html", icon: HomeIcon,
-                title: "Mortgage overpayment vs high-yield savings",
-                body: "When your fix ends, compare paying down the mortgage against a savings account or Cash ISA — tax accounted for.",
-              },
-            ].map((tool, i) => (
-              <motion.a key={tool.href} href={tool.href} {...tileEntrance(i, reduceMotion)} {...tileHover} style={{
-                background: CREAM, borderRadius: "14px", padding: "32px 28px",
-                borderTop: `4px solid ${GOLD}`, textDecoration: "none", display: "block",
-                boxShadow: "0 0px 0px rgba(22,47,36,0)",
-              }}>
-                <div style={{ marginBottom: "16px" }}><tool.icon size={28} color={G}/></div>
-                <div style={{
-                  fontFamily: SERIF, fontSize: "18px", color: G,
-                  fontWeight: 600, marginBottom: "10px",
-                }}>{tool.title}</div>
-                <div style={{ fontSize: "14px", color: MUT, lineHeight: 1.7 }}>{tool.body}</div>
-              </motion.a>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── SECTION 5: FINAL CTA ── */}
-      <div style={{
-        background: CREAM, padding: "96px 24px",
-        display: "flex", flexDirection: "column",
-        alignItems: "center", textAlign: "center",
-      }}>
-        <h2 style={{
-          fontFamily: SERIF, fontSize: "clamp(22px,3.5vw,28px)",
-          color: G, fontWeight: 700, marginBottom: "32px", lineHeight: 1.3,
-        }}>
-          Ready to see what Candid finds?
-        </h2>
-        <CtaButton onClick={onStart}/>
-        <TrustLine/>
-      </div>
-
-      {/* ── FOOTER ── */}
-      <div style={{
-        background: G, padding: "28px 32px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap", gap: "12px",
-      }}>
-        <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: GOLD }}>Candid.</div>
-        <div style={{
-          fontSize: "11px", color: "rgba(255,255,255,0.3)",
-          lineHeight: 1.6, maxWidth: "560px",
-        }}>
-          Candid provides financial guidance and education only — not regulated financial advice. Always consider your personal circumstances and consult a qualified adviser for complex situations. Candid may earn referral fees when you click through to product providers.
-        </div>
-        <div style={{
-          fontSize: "11px", color: "rgba(255,255,255,0.25)",
-          display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap",
-        }}>
-          <span>© 2026 Candid Finance</span>
-          <a href="/student-loan-calculator.html" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Student Loan Calculator</a>
-          <a href="/100k-tax-trap-calculator.html" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>£100k Tax Trap Calculator</a>
-          <a href="/mortgage-vs-savings-calculator.html" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Mortgage vs Savings Calculator</a>
-          <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Privacy Policy</a>
-          <a href="/terms.html"   target="_blank" rel="noreferrer" style={{ color:"rgba(255,255,255,0.35)", textDecoration:"none" }}>Terms of Service</a>
-        </div>
-      </div>
-
-    </div>
-  )
-}
 
 // ── Welcome back screen ───────────────────────────────────────────────────────
 function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStartFresh }) {
@@ -587,10 +187,10 @@ function ConfidenceCheck() {
 
   function handleContinue() {
     try { localStorage.setItem('candid_confidence_score', String(score)); } catch (e) { reportStorageFailure("confidence_check_save", e); }
-    // Same funnel either way (landing page -> this screen); only the wizard
-    // itself differs by device, same 768px breakpoint used everywhere else.
-    const isMobileDevice = typeof window !== "undefined" && window.innerWidth < 768;
-    navigate(isMobileDevice ? "/app/assessment/1" : "/assessment/1");
+    // Always the mobile-native wizard, regardless of viewport — the product
+    // is the mobile-native app; there's no separate desktop destination to
+    // branch to any more.
+    navigate("/app/assessment/1");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
@@ -732,37 +332,38 @@ function FeedbackAdmin() {
   );
 }
 
-// ── Home route (landing page, or "welcome back" for a returning user) ─────────
-function Home() {
+// ── Root route ("/") ── the live marketing site, for everyone, except a
+// TrueLayer bounce. TrueLayer's bank-connect callback and hosted-payment-page
+// redirect always land here (never inside the app — the API callback
+// redirects to the site root, and the hosted payment page redirects straight
+// to return_uri with no server hop), so this checks for those params first
+// and forwards into the mobile-native wizard's Cash & savings step (route 5
+// — MobileOnboardingStep shares the same ALL_STEP_DEFS/step numbering as the
+// desktop wizard, and already has its own TrueLayer connect UI) with the
+// query string intact, instead of ever rendering the marketing page. Whoever
+// started that TrueLayer flow already unlocked the beta gate to get into the
+// assessment in the first place, so RequireBeta on /app/assessment/:step
+// passes straight through.
+function RootRoute() {
+  const search = new URLSearchParams(window.location.search);
+  const isTrueLayerBounce = search.get('truelayer') || search.get('truelayer_payment');
+  if (isTrueLayerBounce) {
+    return <Navigate to={`/app/assessment/5${window.location.search}`} replace />;
+  }
+  return <Suspense fallback={null}><NewLandingPage /></Suspense>;
+}
+
+// ── Returning-tester screen ── reached only once beta-unlocked, via
+// BetaGate's destinationAfterUnlock: a tester who already has a saved report
+// lands here instead of the confidence check. Same content/behaviour as the
+// old root route's "welcome back" branch, just relocated behind the gate.
+function WelcomeBackRoute() {
   const navigate = useNavigate();
 
-  // A TrueLayer bank-connect redirect always lands here with ?truelayer=... (the
-  // API callback redirects to the site root, not into the app), and a TrueLayer
-  // payment-staging redirect lands here with ?truelayer_payment=... (TrueLayer's
-  // hosted payment page redirects straight to return_uri, no server hop). Both
-  // forward into the assessment's Cash & savings step (route 5) with the query
-  // string intact, so CandidApp's own mount effects can read and process them
-  // there instead of being stranded on a route that never mounts them.
-  const search = new URLSearchParams(window.location.search);
-  const trueLayerParam = search.get('truelayer');
-  const trueLayerPaymentParam = search.get('truelayer_payment');
-  const isTrueLayerBounce = trueLayerParam || trueLayerPaymentParam;
-
-  const [view, setView] = useState(() => {
-    try {
-      const hasSavedInputs = !!localStorage.getItem('candid_inputs');
-      const hasSavedInsights = !!localStorage.getItem('candid_insights');
-      if (hasSavedInputs && hasSavedInsights) return 'welcome_back';
-    } catch(e) { reportStorageFailure("home_initial_view", e); }
-    return 'landing';
-  });
-
-  // Fires once per mount, only if this mount landed straight into welcome_back
-  // (i.e. this is a later visit, not a fresh one) — flips the `returned` flag
-  // on the report row this browser generated last, via the same row id
-  // CandidApp mirrors to localStorage alongside candid_insights.
+  // Fires once per mount — flips the `returned` flag on the report row this
+  // browser generated last, via the same row id CandidApp mirrors to
+  // localStorage alongside candid_insights.
   useEffect(() => {
-    if (isTrueLayerBounce || view !== "welcome_back") return;
     posthog.capture("user_returned");
     try {
       const rowId = localStorage.getItem('candid_report_row_id');
@@ -774,69 +375,30 @@ function Home() {
         }).catch(() => {});
       }
     } catch (e) { reportStorageFailure("welcome_back_mark_returned", e); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-once, not re-fired on later `view` changes within this mount
-  }, []);
-
-  // Fires once per mount, only for a genuine fresh landing (not welcome-back,
-  // not a TrueLayer bounce-through).
-  useEffect(() => {
-    if (isTrueLayerBounce || view !== "landing") return;
-    posthog.capture("landing_page_viewed");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-once
   }, []);
 
-  function handleStart() {
-    posthog.capture("assessment_started")
-    try {
-      if (!localStorage.getItem('candid_assessment_started_at')) {
-        localStorage.setItem('candid_assessment_started_at', new Date().toISOString());
-      }
-    } catch (e) { reportStorageFailure("assessment_started_at", e); }
-    navigate("/welcome")
-    window.scrollTo({ top: 0, behavior: "instant" })
-  }
-
-  if (isTrueLayerBounce) {
-    return <Navigate to={`/assessment/5${window.location.search}`} replace />;
-  }
-
-  // A returning mobile visitor (already has a report) skips straight to the
-  // mobile app instead of desktop's WelcomeBack screen — a fresh visitor
-  // still sees the same landing page and confidence-check funnel as desktop
-  // (LandingPage -> ConfidenceCheck both hand off to the wizard at the end;
-  // ConfidenceCheck picks the mobile-native wizard itself, see below). Same
-  // 768px breakpoint every other mobile/desktop switch in this app uses
-  // (CandidApp.jsx's useWindowWidth).
-  if (typeof window !== "undefined" && window.innerWidth < 768 && view === "welcome_back") {
-    return <Navigate to="/app/home" replace />;
-  }
-
-  if (view === "welcome_back") {
-    return (
-      <WelcomeBack
-        name={(() => { try { const s = localStorage.getItem('candid_inputs'); return s ? JSON.parse(s).name || "" : ""; } catch(e) { reportStorageFailure("welcome_back_name", e); return ""; } })()}
-        insightsDate={(() => { try { return localStorage.getItem('candid_insights_date'); } catch(e) { reportStorageFailure("welcome_back_insights_date", e); return null; } })()}
-        onViewReport={() => { navigate("/dashboard"); window.scrollTo({ top:0, behavior:"instant" }); }}
-        onUpdateInputs={() => {
-          try { localStorage.removeItem('candid_insights'); localStorage.removeItem('candid_insights_date'); } catch(e) { reportStorageFailure("update_inputs_clear", e); }
-          navigate("/assessment/1");
-          window.scrollTo({ top:0, behavior:"instant" });
-        }}
-        onStartFresh={() => {
-          try {
-            localStorage.removeItem('candid_inputs');
-            localStorage.removeItem('candid_insights');
-            localStorage.removeItem('candid_insights_date');
-          } catch(e) { reportStorageFailure("start_fresh_clear", e); }
-          setView("landing");
-          posthog.capture("landing_page_viewed");
-          window.scrollTo({ top:0, behavior:"instant" });
-        }}
-      />
-    );
-  }
-
-  return <LandingPage onStart={handleStart} />;
+  return (
+    <WelcomeBack
+      name={(() => { try { const s = localStorage.getItem('candid_inputs'); return s ? JSON.parse(s).name || "" : ""; } catch(e) { reportStorageFailure("welcome_back_name", e); return ""; } })()}
+      insightsDate={(() => { try { return localStorage.getItem('candid_insights_date'); } catch(e) { reportStorageFailure("welcome_back_insights_date", e); return null; } })()}
+      onViewReport={() => { navigate("/app/home"); window.scrollTo({ top:0, behavior:"instant" }); }}
+      onUpdateInputs={() => {
+        try { localStorage.removeItem('candid_insights'); localStorage.removeItem('candid_insights_date'); } catch(e) { reportStorageFailure("update_inputs_clear", e); }
+        navigate("/app/assessment/1");
+        window.scrollTo({ top:0, behavior:"instant" });
+      }}
+      onStartFresh={() => {
+        try {
+          localStorage.removeItem('candid_inputs');
+          localStorage.removeItem('candid_insights');
+          localStorage.removeItem('candid_insights_date');
+        } catch(e) { reportStorageFailure("start_fresh_clear", e); }
+        navigate("/welcome");
+        window.scrollTo({ top:0, behavior:"instant" });
+      }}
+    />
+  );
 }
 
 // Wraps CandidApp with the scroll-target id its own "jump to top on module
@@ -867,15 +429,21 @@ function AppRoutes() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/welcome" element={<ConfidenceCheck />} />
+        <Route path="/" element={<RootRoute />} />
+        <Route path="/the-problem" element={<Suspense fallback={null}><TheProblemPage /></Suspense>} />
+        <Route path="/how-it-works" element={<Suspense fallback={null}><HowItWorksPage /></Suspense>} />
+        <Route path="/beta" element={<BetaGate />} />
+        <Route path="/welcome" element={<RequireBeta><ConfidenceCheck /></RequireBeta>} />
+        <Route path="/welcome-back" element={<RequireBeta><WelcomeBackRoute /></RequireBeta>} />
         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
         {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
             holds — d, insights, completedModules, one-shot modal refs, etc.)
             stays mounted across navigation between all three of these paths,
             branching on the URL internally the same way it used to branch on
-            local `screen` state. */}
-        <Route element={<CandidAppLayout key={devReloadKey} />}>
+            local `screen` state. RequireBeta wraps the whole layout so a
+            direct/bookmarked URL into any of these — not just the nav
+            button — is bounced to the password gate. */}
+        <Route element={<RequireBeta><CandidAppLayout key={devReloadKey} /></RequireBeta>}>
           <Route path="/assessment/:step" />
           <Route path="/dashboard" />
           <Route path="/modules" />

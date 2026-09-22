@@ -1,0 +1,178 @@
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Layers, Clock, DoorClosed, TrendingUp, Home as HomeIcon, Users, CheckCircle2 } from "lucide-react";
+import posthog from "posthog-js";
+import { G, GOLD, WHITE, MUT, SERIF } from "../CandidApp.jsx";
+import NewSiteLayout from "./NewSiteLayout.jsx";
+import WaitlistForm from "./WaitlistForm.jsx";
+import FinancesModuleTiles from "./FinancesModuleTiles.jsx";
+import { EASE_STEADY, riseIn, pullTogether } from "./motion.js";
+
+const CAUSES = [
+  { icon: Layers, title: "Complexity", body: "Pensions, ISAs, tax bands, allowances and mortgages all interact. Get one decision wrong and it can quietly undo the benefit of another." },
+  { icon: Clock, title: "Lack of time", body: "Between work and everything else, few people have hours to spend cross-checking every financial decision against the rest of their situation." },
+  { icon: DoorClosed, title: "Lack of access", body: "A financial adviser typically costs hundreds of pounds and expects a minimum portfolio size most people don't have yet — leaving good earners with nowhere expert to turn." },
+];
+
+const LIFE_EVENTS = [
+  { icon: TrendingUp, label: "Salary & tax band change" },
+  { icon: HomeIcon, label: "House purchase" },
+  { icon: Users, label: "Family planning" },
+  { icon: CheckCircle2, label: "Student loan payoff" },
+];
+
+const SectionLabel = ({ children }) => (
+  <div style={{ fontSize: "10px", fontWeight: 700, color: GOLD, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "18px" }}>
+    {children}
+  </div>
+);
+
+// A card that flips on hover to reveal its body text on the reverse — the
+// front stays a simple icon + title so the row reads cleanly at a glance,
+// and the back uses the opposite colour scheme (dark green, not white) so
+// the flip itself reads as "turning the card over" rather than a plain swap.
+//
+// Hover is detected on this OUTER, never-rotated wrapper and just flips a
+// bit of state — deliberately not `whileHover` on the rotating element
+// itself. The perspective/rotateY foreshortening shrinks a rotating
+// element's own hit-box as it turns, so hovering the element that's doing
+// the rotating makes the pointer fall outside that shrinking box mid-flip,
+// which re-triggers mouseleave/mouseenter over and over (the "spasm").
+// Keeping the hover target's box static and driving a separate child's
+// rotation from state avoids that entirely.
+//
+// The flip still applies instantly under prefers-reduced-motion (the hover
+// state itself isn't an animation to suppress) — only its transition
+// duration drops to 0, per this site's existing reduced-motion convention.
+function FlipCard({ icon: Icon, title, body, i, total, reduceMotion }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <motion.div
+      {...pullTogether(i, total, reduceMotion)}
+      style={{ perspective: "1400px" }}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+    >
+      <motion.div
+        animate={{ rotateY: hovered ? 180 : 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.6, ease: EASE_STEADY }}
+        style={{ position: "relative", height: "236px", transformStyle: "preserve-3d" }}
+      >
+        {/* Front */}
+        <div style={{
+          position: "absolute", inset: 0, backfaceVisibility: "hidden",
+          background: WHITE, borderRadius: "18px", borderTop: `4px solid ${GOLD}`,
+          boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px",
+        }}>
+          <Icon size={30} color={G} />
+          <div style={{ fontFamily: SERIF, fontSize: "19px", color: G, fontWeight: 600, textAlign: "center" }}>{title}</div>
+        </div>
+        {/* Back — reversed colour scheme (dark green, gold accent) for depth */}
+        <div style={{
+          position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
+          background: G, borderRadius: "18px", padding: "28px",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(22,47,36,0.25)",
+          display: "flex", flexDirection: "column", justifyContent: "center",
+        }}>
+          <div style={{ fontFamily: SERIF, fontSize: "15px", color: GOLD, fontWeight: 700, marginBottom: "10px" }}>{title}</div>
+          <div style={{ fontSize: "13.5px", color: "rgba(246,240,230,0.85)", lineHeight: 1.7 }}>{body}</div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+export default function TheProblemPage() {
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => { posthog.capture("the_problem_viewed"); }, []);
+
+  return (
+    <NewSiteLayout>
+      {/* ── HERO ── */}
+      <div style={{ padding: "56px 24px 80px", textAlign: "center" }}>
+        <motion.div {...riseIn(reduceMotion)} style={{ maxWidth: "700px", margin: "0 auto" }}>
+          <SectionLabel>The problem</SectionLabel>
+          <h1 style={{
+            fontFamily: SERIF, fontSize: "clamp(30px,4.5vw,44px)", fontWeight: 700,
+            color: G, lineHeight: 1.2, letterSpacing: "-0.01em", marginBottom: "20px",
+          }}>
+            Millions of good earners are worse off than they should be.
+          </h1>
+          <p style={{ fontSize: "clamp(15px,2vw,17px)", color: MUT, lineHeight: 1.75, maxWidth: "580px", margin: "0 auto" }}>
+            Not because they've done anything wrong — because personal finance has become too complex, too time-consuming, and too hard to get proper help with. The result is thousands of pounds a year, quietly left on the table.
+          </p>
+        </motion.div>
+      </div>
+
+      {/* ── ROOT CAUSES ── */}
+      <div style={{ padding: "0 24px 88px" }}>
+        <div style={{ maxWidth: "960px", margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px" }}>
+            {CAUSES.map((cause, i) => (
+              <FlipCard key={cause.title} icon={cause.icon} title={cause.title} body={cause.body} i={i} total={CAUSES.length} reduceMotion={reduceMotion} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── THE HOLISTIC POINT — a plain wrapping row of module tiles at
+          normal page width (see FinancesModuleTiles.jsx). ── */}
+      <FinancesModuleTiles />
+
+      {/* ── YOUR SITUATION KEEPS CHANGING ── */}
+      <div style={{ padding: "0 24px 88px" }}>
+        <div style={{ maxWidth: "880px", margin: "0 auto", textAlign: "center" }}>
+          <SectionLabel>And it never stands still</SectionLabel>
+          <motion.h2 {...riseIn(reduceMotion)} style={{
+            fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,32px)", color: G, fontWeight: 700, lineHeight: 1.3, marginBottom: "44px",
+          }}>
+            Year on year, the picture changes — your plan has to keep up.
+          </motion.h2>
+          <div style={{ position: "relative" }}>
+            <div style={{ position: "absolute", top: "24px", left: "8%", right: "8%", height: "1.5px", background: "rgba(22,47,36,0.12)" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "24px", position: "relative" }}>
+              {LIFE_EVENTS.map((ev, i) => (
+                <motion.div key={ev.label} {...pullTogether(i, LIFE_EVENTS.length, reduceMotion, { stagger: 0.1, spreadPx: 22, riseYPx: 26 })} style={{
+                  flex: "1 1 140px", maxWidth: "160px", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px",
+                }}>
+                  <div style={{
+                    width: "48px", height: "48px", borderRadius: "50%", background: WHITE, border: `2px solid ${GOLD}`,
+                    display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 10px rgba(22,47,36,0.08)",
+                  }}>
+                    <ev.icon size={20} color={G} />
+                  </div>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: G, lineHeight: 1.4 }}>{ev.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── CANDID'S AIM ── */}
+      <div style={{ padding: "0 24px 88px" }}>
+        <motion.div {...riseIn(reduceMotion, { duration: 0.75 })} style={{
+          maxWidth: "760px", margin: "0 auto", background: G, borderRadius: "24px",
+          padding: "56px 40px", textAlign: "center",
+        }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: WHITE, fontWeight: 700, marginBottom: "18px", lineHeight: 1.3 }}>
+            Candid's aim is to fix this.
+          </h2>
+          <p style={{ fontSize: "14.5px", color: "rgba(246,240,230,0.75)", lineHeight: 1.7, maxWidth: "540px", margin: "0 auto" }}>
+            One holistic, always-up-to-date view of your whole financial life — built to keep pace with a job change, a house move, a growing family, or a student loan finally paid off.
+          </p>
+        </motion.div>
+      </div>
+
+      {/* ── CTA ── */}
+      <div style={{ padding: "0 24px 96px", textAlign: "center" }}>
+        <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(22px,3.5vw,28px)", color: G, fontWeight: 700, marginBottom: "28px", lineHeight: 1.3 }}>
+          Be first to know when Candid launches.
+        </motion.h2>
+        <WaitlistForm source="the_problem_cta" />
+      </div>
+    </NewSiteLayout>
+  );
+}
