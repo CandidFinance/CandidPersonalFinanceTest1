@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { AlertTriangle, PartyPopper, Banknote, Lock } from "lucide-react";
+import { AlertTriangle, PartyPopper, Banknote, Lock, Check } from "lucide-react";
 import {
   isPensionContributing,
   calcPensionTaperSaving, calcAnnualAllowanceTaper,
   calcCarryForward, defaultCarryForwardYears, calcBonusSacrifice, calcPensionGrowthTrajectory,
 } from "../../lib/pension.js";
+import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, getModuleProducts, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
@@ -41,7 +42,40 @@ function YearToggle({ value, onChange }) {
   );
 }
 
-export default function MobilePensionDeepDive({ d, m }) {
+// The actual "acted on this" control — distinct from "Mark as reviewed"
+// (MobileModuleDeepDive's footer button, which only tracks that you've read
+// the advice). Pre-filled with the suggested contribution %, editable in case
+// they only want to close part of the gap. Submitting writes the real value
+// into `d` via `set`, which is what makes the Candid score move: it's a pure
+// function of `statuses`, which recomputes the instant `d` changes — no
+// regenerate, no API call, no waiting.
+function QuickUpdateContribution({ d, myPct, suggested, set }) {
+  const [draft, setDraft] = useState(suggested);
+  const applied = draft != null && myPct > 0 && String(draft) === String(myPct);
+  return (
+    <div style={{marginTop:"14px",paddingTop:"14px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
+      <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Acted on this?</div>
+      <div style={{display:"flex",gap:"8px",alignItems:"flex-end"}}>
+        <PillMoneyInput label="New contribution" unit="%" value={draft} onChange={setDraft}/>
+        <button type="button" disabled={applied || draft == null}
+          onClick={() => {
+            set("myContribution", capField("myContribution", String(draft)));
+            if (d.hasPension !== "yes") set("hasPension", "yes");
+          }}
+          style={{
+            background: applied ? "#a8a89c" : G, color:WHITE, border:"none", borderRadius:"100px",
+            padding:"11px 18px", fontSize:"13px", fontWeight:700, cursor: applied ? "default" : "pointer",
+            whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:"5px",
+          }}>
+          {applied ? <><Check size={13}/> Updated</> : "Update"}
+        </button>
+      </div>
+      {applied && <p style={{fontSize:"11px",color:"#2d6b4a",marginTop:"6px",lineHeight:1.5}}>Saved — your Candid score now reflects this.</p>}
+    </div>
+  );
+}
+
+export default function MobilePensionDeepDive({ d, m, set }) {
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const infoBtnStyle = { background:"#a8a89c", color:WHITE, border:"none", borderRadius:"50%", width:"15px", height:"15px", fontSize:"10px", fontWeight:700, lineHeight:"15px", textAlign:"center", padding:0, cursor:"pointer", flexShrink:0 };
   const [cfYears, setCfYears] = useState(defaultCarryForwardYears());
@@ -175,6 +209,7 @@ export default function MobilePensionDeepDive({ d, m }) {
               <div style={{...rowStyle,fontWeight:700,color:"#2d6b4a"}}><span>Goes into your pension</span><span>{fmt(illustrativeAmount + (empCapPct>0?employerCapAmount:0))}/yr</span></div>
             </div>
           )}
+          {set && <QuickUpdateContribution d={d} myPct={myPct} suggested={contributing ? empCapPct : illustrativeRate} set={set}/>}
         </MobileWinTile>
       )}
 

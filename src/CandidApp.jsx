@@ -9,7 +9,7 @@ import { resolveSlRate, studentLoanPlanConstants, calcStudentLoanScenario } from
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation } from "./lib/cash.js";
 import { calcMetrics, SALARY_GROWTH_RATES } from "./lib/metrics.js";
-import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown } from "./lib/moduleStatus.js";
+import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown, calcCandidScore } from "./lib/moduleStatus.js";
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
 import { simulateLoan, fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions } from "./lib/forecast.js";
 import { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
@@ -30,7 +30,7 @@ export { calcMetrics } from "./lib/metrics.js";
 export { calcCashOptimisation } from "./lib/cash.js";
 export { calcStudentLoanScenario } from "./lib/studentLoan.js";
 export { calcPensionTaperSaving } from "./lib/pension.js";
-export { MODULE_META, getModuleSummary, computeModuleStatuses, sanitizeForMvp, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from "./lib/moduleStatus.js";
+export { MODULE_META, getModuleSummary, computeModuleStatuses, sanitizeForMvp, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, calcCandidScore } from "./lib/moduleStatus.js";
 export { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
 
 // ── Supabase client — module level, no package needed ─────────────────────────
@@ -178,13 +178,12 @@ export function FmtInput({ value, onChange, placeholder, fmtType, step, style })
   );
 }
 
-// ── Local score delta per module completion ───────────────────────────────────────────
-export function moduleScoreDelta(status) {
-  if (status === "critical") return 8;
-  if (status === "attention") return 4;
-  if (status === "ok") return 1;
-  return 0;
-}
+// Note: there used to be a moduleScoreDelta(status) here, awarding "+N pts"
+// added straight onto the displayed Candid score whenever a module was marked
+// reviewed. Removed — reviewing a module's advice isn't the same as acting on
+// it, so it shouldn't move a score that's meant to reflect your actual
+// finances. See HomeScreen/MobileHomeScreen for the "reviewed" progress
+// indicator that replaced it, tracked separately from the score.
 
 // ── Equivalence engine ────────────────────────────────────────────────────────
 // Returns a witty real-world comparison for a £ saving
@@ -1893,11 +1892,24 @@ function LoadingScreen({ name, msgs }) {
   );
 }
 
+// ── Score band — colour + label for a given Candid score. Single source of
+// truth so the score ring, the mobile score bar, and the tap-through detail
+// sheet never disagree on where the bands sit or what colour a given score
+// reads as. Five discrete bands, not a continuous gradient — deliberately:
+// a flat colour per band reads as "which zone am I in" at a glance, which a
+// smoothly-interpolated fill doesn't.
+export function scoreBand(score) {
+  if (score >= 80) return { color: G, label: "Optimised" };
+  if (score >= 65) return { color: "#2d6b4a", label: "On track" };
+  if (score >= 50) return { color: GOLD, label: "Room to improve" };
+  if (score >= 35) return { color: "#d9822b", label: "Needs work" };
+  return { color: "#c0392b", label: "Needs attention" };
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export function ScoreRing({ score, delta = 0 }) {
   const r = 50, circ = 2 * Math.PI * r;
-  const col = score >= 86 ? G : score >= 66 ? SUCCESS : score >= 41 ? GOLD : CRITICAL;
-  const lb  = score >= 86 ? "Optimised" : score >= 66 ? "On track" : score >= 41 ? "Room to improve" : "Needs attention";
+  const { color: col, label: lb } = scoreBand(score);
   const [fadeDelta, setFadeDelta] = useState(false);
   const prevDelta = useRef(0);
   useEffect(() => {
@@ -1948,8 +1960,7 @@ export function ScoreRing({ score, delta = 0 }) {
 // Modules ranking); strengths are any module the AI marked "ok", using its
 // own one-line summary rather than restating priorities in reverse.
 export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, onReviewModules }) {
-  const col = displayScore >= 86 ? G : displayScore >= 66 ? SUCCESS : displayScore >= 41 ? GOLD : CRITICAL;
-  const lb  = displayScore >= 86 ? "Optimised" : displayScore >= 66 ? "On track" : displayScore >= 41 ? "Room to improve" : "Needs attention";
+  const { color: col, label: lb } = scoreBand(displayScore);
   const strengths = Object.values(insights.modules||{}).filter(mo => mo?.status === "ok" && mo.summary);
 
   return createPortal(
@@ -2113,10 +2124,17 @@ function FeedbackButton() {
   );
 }
 
-function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, prevScoreRef, scoreDeltas }) {
+function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInputs, prevInsights, whatChangedOpen, onDismissWhatChanged, prevScoreRef, completedModules }) {
   const navigate = useNavigate();
-  const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
-  const displayScore = Math.min(100, (insights?.score || 0) + totalDelta);
+  // Computed live from `statuses`, not read from insights.score — the AI's
+  // number only ever changed on a full regenerate, so nothing else (reviewing
+  // a module, a per-recommendation quick-update) could move it. calcCandidScore
+  // is a pure function of the same `statuses` that already drive every other
+  // number on this screen, so it reacts instantly and for free to any change
+  // in `d`, from any source. See the "Reviewed X of Y" line below the score
+  // card for the separate progress tracker (reading ≠ acting, tracked apart
+  // from the score itself).
+  const displayScore = calcCandidScore(statuses);
   const [netWorthExpanded, setNetWorthExpanded] = useState(false);
   const [scoreDetailOpen, setScoreDetailOpen] = useState(false);
   const isMobile = useWindowWidth() < 768;
@@ -2149,6 +2167,11 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
   // whatever sort the Modules screen itself currently has selected.
   const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, insights, "amount");
   const topWin = modulesWithRec[0] || null;
+  // "Reviewed" tracks engagement with the report (has this module's advice
+  // been read?), not your actual financial position — kept as its own line
+  // rather than folded into the score the way it used to be.
+  const reviewableModules = modulesWithRec.length;
+  const reviewedModuleCount = modulesWithRec.filter(mm => (completedModules||[]).includes(mm.key)).length;
 
   return (
     <PageWrap>
@@ -2233,7 +2256,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                 <span style={{fontSize:FONT_SIZE.BODY,color:GOLD}}>›</span>
               </div>
               <div style={{display:"flex",justifyContent:"center",marginBottom:"16px"}}>
-                <ScoreRing score={displayScore} delta={totalDelta}/>
+                <ScoreRing score={displayScore}/>
               </div>
               <div style={{textAlign:"left"}}>
                 <h2 style={{fontFamily:SERIF,color:WHITE,fontSize:"18px",lineHeight:1.35,margin:0}}>{insights.headline}</h2>
@@ -2250,7 +2273,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
             </div>
           ) : (
             <>
-              <ScoreRing score={displayScore} delta={totalDelta}/>
+              <ScoreRing score={displayScore}/>
               <div style={{flex:1,minWidth:"200px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
                   <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase"}}>Your Candid Score</span>
@@ -2268,6 +2291,19 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
             </>
           )}
         </div>
+        {/* Separate from the score card on purpose — this tracks how much of
+            the report you've read, not your financial position, so it's
+            never allowed to visually blend into "Your Candid Score" above —
+            brand green here, not gold/red/green, since those belong to the
+            score's own colour scale (see ScoreRing). */}
+        {reviewableModules > 0 && (
+          <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"20px"}} onClick={() => navigate("/modules")}>
+            <div style={{flex:1,height:"6px",borderRadius:"100px",background:"rgba(22,47,36,0.1)",overflow:"hidden",cursor:"pointer"}}>
+              <div style={{height:"100%",borderRadius:"100px",background:G,width:`${Math.round((reviewedModuleCount/reviewableModules)*100)}%`,transition:"width 0.4s ease"}}/>
+            </div>
+            <span style={{fontSize:FONT_SIZE.LABEL,color:MUT,whiteSpace:"nowrap",cursor:"pointer"}}>{reviewedModuleCount} of {reviewableModules} modules reviewed</span>
+          </div>
+        )}
         {scoreDetailOpen && (
           <ScoreDetailSheet insights={insights} displayScore={displayScore} isMobile={isMobile}
             onClose={() => setScoreDetailOpen(false)}
@@ -2518,6 +2554,10 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
 function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, completedModules, onMarkReviewed }) {
   const [breakdownSort, setBreakdownSort] = useState("amount"); // "amount" | "category" — user-controlled order for the list below
   const [expandedKey, setExpandedKey] = useState(null); // tapping a row expands it in place instead of navigating away
+  // Same celebration as the module deep dive (ModuleDeepDive) — coins only,
+  // no "+N pts" — now also shown here, the other place "Mark as reviewed"
+  // can be tapped from.
+  const [celebratingKey, setCelebratingKey] = useState(null);
   const { moduleList, modulesWithRec, needActionCount, onTrackCount } = getModuleBreakdown(d, m, statuses, insights, breakdownSort);
 
   return (
@@ -2614,9 +2654,23 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
                     <div style={{padding:"0 18px 18px",display:"flex",gap:"10px",flexWrap:"wrap"}}>
                       <button type="button" onClick={() => onOpenModule(mm.key)} style={{flex:"1 1 160px",background:GOLD,border:"none",borderRadius:RADIUS_PILL,padding:"11px",fontSize:FONT_SIZE.BODY,fontWeight:700,color:G,cursor:"pointer",fontFamily:SANS}}>Deep dive · {mm.title}</button>
                       {hasRec && (
-                        <button type="button" onClick={() => onMarkReviewed(mm.key)} style={{flex:"1 1 160px",background:"transparent",border:"1.5px solid rgba(255,255,255,0.4)",borderRadius:RADIUS_PILL,padding:"10px",fontSize:"12.5px",fontWeight:700,color:WHITE,cursor:"pointer",fontFamily:SANS,display:"flex",alignItems:"center",justifyContent:"center",gap:"5px"}}>
-                          {reviewed ? <><Check size={13}/> Reviewed</> : "Mark as reviewed"}
-                        </button>
+                        <div style={{position:"relative",flex:"1 1 160px"}}>
+                          {celebratingKey === mm.key && (
+                            <div style={{position:"relative",pointerEvents:"none",height:0}}>
+                              <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={18} color={GOLD}/></span>
+                              <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={18} color={GOLD}/></span>
+                            </div>
+                          )}
+                          <button type="button" onClick={() => {
+                            if (!reviewed) {
+                              setCelebratingKey(mm.key);
+                              setTimeout(() => setCelebratingKey(k => k === mm.key ? null : k), 900);
+                            }
+                            onMarkReviewed(mm.key);
+                          }} style={{width:"100%",background:"transparent",border:"1.5px solid rgba(255,255,255,0.4)",borderRadius:RADIUS_PILL,padding:"10px",fontSize:"12.5px",fontWeight:700,color:WHITE,cursor:"pointer",fontFamily:SANS,display:"flex",alignItems:"center",justifyContent:"center",gap:"5px"}}>
+                            {reviewed ? <><Check size={13}/> Reviewed</> : "Mark as reviewed"}
+                          </button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -4712,8 +4766,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             Replaces the old flat tile stack. "Unused ISA allowance" nests the
             compound-growth chart and ISA provider comparison; "CGT allowance
             crystallisation" nests the existing "Action before April 5th" panel.
-            The score-affecting action remains the separate "Mark as reviewed"
-            button at the bottom of this page. */}
+            The "Mark as reviewed" tracking action remains the separate button
+            at the bottom of this page. */}
         {moduleKey === "investments" && products && !isPensionUnknown && (() => {
           const unwrappedVal = +d.unwrappedValue||0;
           const surplusSources = [];
@@ -5379,18 +5433,15 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
         {/* Actions — mark reviewed + navigation */}
         <div className="fu5" style={{marginTop:"32px"}}>
           <div style={{position:"relative"}}>
-            {showCoins && (() => {
-              const localDelta = moduleScoreDelta(statuses[moduleKey]?.status);
-              return (
-                <div style={{position:"relative",pointerEvents:"none",height:0}}>
-                  <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={20} color={GOLD}/></span>
-                  <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={20} color={GOLD}/></span>
-                  {localDelta > 0 && (
-                    <span style={{position:"absolute",top:"-12px",right:"calc(50% - 60px)",background:SUCCESS,color:WHITE,borderRadius:RADIUS_PILL,padding:"3px 10px",fontSize:FONT_SIZE.BODY,fontWeight:700,animation:"coinFloat 0.9s ease-out 0.05s forwards",whiteSpace:"nowrap"}}>+{localDelta} pts</span>
-                  )}
-                </div>
-              );
-            })()}
+            {/* Celebratory coin float on review — kept as a plain reward flourish.
+                No "+N pts" label any more: reviewing a module doesn't move
+                your actual Candid score, so nothing here should imply it does. */}
+            {showCoins && (
+              <div style={{position:"relative",pointerEvents:"none",height:0}}>
+                <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={20} color={GOLD}/></span>
+                <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={20} color={GOLD}/></span>
+              </div>
+            )}
             <button type="button"
               onClick={() => {
                 if (!isComplete) {
@@ -5415,7 +5466,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 animation: animating ? "btnGold 0.4s ease-out" : "none",
               }}>
               {isComplete ? (
-                <><Check size={16} color={GOLD} strokeWidth={2.2}/>{meta?.title}: Optimised</>
+                <><Check size={16} color={GOLD} strokeWidth={2.2}/>{meta?.title}: Reviewed</>
               ) : (
                 <><Check size={16} color={GOLD} strokeWidth={2.2}/>Mark as reviewed</>
               )}
@@ -5497,6 +5548,17 @@ function loadSavedInsights() {
   return null;
 }
 
+// Which module keys the user has marked reviewed — persisted so "Reviewed X
+// of Y modules" (HomeScreen/MobileHomeScreen) reflects real progress across
+// visits, not just within one session.
+function loadCompletedModules() {
+  try {
+    const saved = localStorage.getItem('candid_completed_modules');
+    if (saved) return JSON.parse(saved);
+  } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to load reviewed modules from localStorage:", e); }
+  return [];
+}
+
 export default function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -5519,13 +5581,9 @@ export default function AppShell() {
   const [insights,         setInsights]         = useState(loadSavedInsights);
   const [prevInsights,     setPrevInsights]     = useState(null);
   const [whatChangedOpen,  setWhatChangedOpen]  = useState(false);
-  const [completedModules, setCompletedModules] = useState([]);
+  const [completedModules, setCompletedModules] = useState(loadCompletedModules);
   const [feedbackOpen,    setFeedbackOpen]    = useState(false);
   const [pdfModalOpen,    setPdfModalOpen]    = useState(false);
-  const [showScorePulse,  setShowScorePulse]  = useState(false);
-  const [lastScoreDelta,  setLastScoreDelta]  = useState(0);
-  const [lastCompletedModule, setLastCompletedModule] = useState(null);
-  const [scoreDeltas, setScoreDeltas] = useState([]);
   const feedbackFired = useRef(false);
   const pdfModalFired = useRef(false);
   const supaRowId = useRef(null);
@@ -5673,6 +5731,11 @@ export default function AppShell() {
     catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist inputs to localStorage:", e); }
   }, [rawD]);
 
+  useEffect(() => {
+    try { localStorage.setItem('candid_completed_modules', JSON.stringify(completedModules)); }
+    catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist reviewed modules to localStorage:", e); }
+  }, [completedModules]);
+
   // ── Savings rates — fetched once here (not per-component) since both Dashboard's
   // copy and ModuleDeepDive's Cash tiles need it. null = still loading.
   const [savingsRates, setSavingsRates] = useState(null);
@@ -5798,17 +5861,6 @@ export default function AppShell() {
       if (!prev.includes(key)) {
         posthog.capture("module_completed", { module_key: key, total_completed: next.length });
         supaUpdate({ modules_completed: next.length });
-        const delta = moduleScoreDelta(statuses[key]?.status);
-        if (delta > 0) {
-          setScoreDeltas(sd => [...sd, { key, delta, timestamp: Date.now() }]);
-          setLastScoreDelta(delta);
-          setLastCompletedModule(key);
-          setShowScorePulse(true);
-          setTimeout(() => setShowScorePulse(false), 2500);
-        }
-      } else {
-        // Unmark: remove that module's delta from the running total
-        setScoreDeltas(sd => sd.filter(s => s.key !== key));
       }
       return next;
     });
@@ -5845,6 +5897,11 @@ export default function AppShell() {
     // ── Reuse the metrics/statuses already computed for this render — no need to recalculate ──
     const metrics = m;
     const financialSummary = buildFinancialSummary(d, metrics, statuses);
+    // The real score — see calcCandidScore. Claude's own JSON response no
+    // longer carries a score field (nothing downstream reads it); this is
+    // what's actually stored on `insights.score` and everywhere else a score
+    // is logged, so "what changed since your last report" stays honest.
+    const localScore = calcCandidScore(statuses);
 
     if (import.meta.env.DEV) {
       console.log("Metrics sent to Claude:", financialSummary);
@@ -5858,6 +5915,7 @@ export default function AppShell() {
     const rateLimitedFallback = buildRateLimitedFallback(fallback, d);
     try {
       const result = await callClaude(prompt, 1400);
+      result.score = localScore;
       setInsights(result);
       try {
         localStorage.setItem('candid_insights', JSON.stringify(result));
@@ -5945,6 +6003,10 @@ export default function AppShell() {
       if (import.meta.env.DEV) console.error("[Candid] generateDashboard() caught an error — falling back:", e?.message, "\nstack:", e?.stack, "\nfull error object:", e);
       const isRateLimit = !!e?.isRateLimit;
       const insightsToUse = isRateLimit ? rateLimitedFallback : fallback;
+      // Even on a fallback (no AI narrative), the score itself is still the
+      // real, locally-computed one — no reason for an API hiccup to also
+      // mean a made-up score.
+      insightsToUse.score = localScore;
       setInsights(insightsToUse);
       try {
         localStorage.setItem('candid_insights', JSON.stringify(insightsToUse));
@@ -6000,8 +6062,10 @@ export default function AppShell() {
     // are untouched there.
     localStorage.removeItem('candid_assessment_started_at');
     localStorage.removeItem('candid_confidence_score');
+    localStorage.removeItem('candid_completed_modules');
     setRawD(BLANK_DATA);
     setInsights(null);
+    setCompletedModules([]);
     navigate("/welcome");
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
@@ -6086,7 +6150,7 @@ export default function AppShell() {
           <Wrench size={20} color={G}/>
         </button>
       }>
-      <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} scoreDeltas={scoreDeltas}/>
+      <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} completedModules={completedModules}/>
     </MobileLayout>
   );
 
@@ -6121,7 +6185,7 @@ export default function AppShell() {
         headerRight={
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
-        <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates}
+        <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
           onBack={() => navigate("/app/modules")}
@@ -6137,7 +6201,7 @@ export default function AppShell() {
         onOpenModule={key => openModule(key)}
         onEditInputs={() => navigate("/assessment/1")}
         prevInsights={prevInsights} whatChangedOpen={whatChangedOpen} onDismissWhatChanged={() => setWhatChangedOpen(false)}
-        prevScoreRef={prevScoreRef} scoreDeltas={scoreDeltas}/>
+        prevScoreRef={prevScoreRef} completedModules={completedModules}/>
       {pdfModalOpen && <PdfReportModal email={d.email} insights={insights} d={d} onDismiss={() => setPdfModalOpen(false)} />}
       {feedbackOpen && <FeedbackModal onDismiss={() => setFeedbackOpen(false)} onSubmit={submitFeedback} />}
     </>

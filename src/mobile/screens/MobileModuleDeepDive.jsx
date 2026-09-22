@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Check, Coins } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META, moduleScoreDelta } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
 import { statusLabel } from "../statusLabel.js";
 import MobileCashDeepDive from "../deepdive/MobileCashDeepDive.jsx";
 import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx";
@@ -19,17 +19,17 @@ const CONTENT_BY_KEY = {
   pension: MobilePensionDeepDive,
 };
 
-export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain }) {
+export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
   const statusColor = isComplete ? "#a8a89c" : (SC[status] || MUT);
   const Content = CONTENT_BY_KEY[moduleKey];
-  // Same celebration as desktop's "Mark as reviewed": two floating coins, a
-  // "+N pts" pill, and a brief gold flash on the button — only when marking
-  // complete (not when un-marking).
+  // Same celebration as desktop's "Mark as reviewed": two floating coins and
+  // a brief gold flash on the button — only when marking complete (not when
+  // un-marking). No "+N pts" any more: reviewing a module doesn't move your
+  // actual Candid score, so nothing here should imply it does.
   const [showCoins, setShowCoins] = useState(false);
   const [flashing, setFlashing] = useState(false);
-  const scoreGain = moduleScoreDelta(status);
   const handleReviewed = () => {
     if (!isComplete) {
       setShowCoins(true); setFlashing(true);
@@ -55,7 +55,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
       </div>
 
       {Content ? (
-        <Content d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain}/>
+        <Content d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain}/>
       ) : (
         <p style={{fontSize:"14px",color:MUT,lineHeight:1.6}}>This deep dive isn't built for mobile yet — check back soon, or view it on desktop.</p>
       )}
@@ -66,9 +66,6 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
             <div style={{position:"relative",pointerEvents:"none",height:0}}>
               <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={20} color={GOLD}/></span>
               <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={20} color={GOLD}/></span>
-              {scoreGain > 0 && (
-                <span style={{position:"absolute",top:"-12px",right:"calc(50% - 60px)",background:"#2d6b4a",color:WHITE,borderRadius:"100px",padding:"3px 10px",fontSize:"13px",fontWeight:700,animation:"coinFloat 0.9s ease-out 0.05s forwards",whiteSpace:"nowrap"}}>+{scoreGain} pts</span>
-              )}
             </div>
           )}
           <button onClick={handleReviewed} style={{

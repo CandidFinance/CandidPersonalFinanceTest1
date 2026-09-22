@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Users } from "lucide-react";
+import { Check, Users, Coins } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
 import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
@@ -62,6 +62,12 @@ const LOCKED_MODULES = [
 export default function MobileModulesScreen({ d, m, statuses, insights, completedModules, onMarkReviewed, onOpenModule }) {
   const [sortMode, setSortMode] = useState("amount");
   const [expandedKey, setExpandedKey] = useState(null);
+  // Same celebration as the module deep dive (MobileModuleDeepDive) — coins
+  // only, no "+N pts" — shown here too now, since this list is the other
+  // place "Mark as reviewed" can be tapped from. Tracks which single tile is
+  // celebrating, not a per-tile state array, since only one can be reviewed
+  // at a time from a tap.
+  const [celebratingKey, setCelebratingKey] = useState(null);
   const { moduleList, modulesWithRec, needActionCount, totalOpp } = getModuleBreakdown(d, m, statuses, insights, sortMode);
 
   return (
@@ -133,13 +139,27 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
                     Deep dive · {mm.title}
                   </button>
                   {hasRec && (
-                    <button onClick={() => onMarkReviewed(mm.key)} style={{
-                      width:"100%",background:"transparent",border:`1.3px solid ${reviewed?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
-                      color:reviewed?"#2d6b4a":G,borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,cursor:"pointer",
-                      display:"flex",alignItems:"center",justifyContent:"center",gap:"5px",
-                    }}>
-                      {reviewed ? <><Check size={13}/> Reviewed</> : "Mark as reviewed"}
-                    </button>
+                    <div style={{position:"relative"}}>
+                      {celebratingKey === mm.key && (
+                        <div style={{position:"relative",pointerEvents:"none",height:0}}>
+                          <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={18} color={GOLD}/></span>
+                          <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={18} color={GOLD}/></span>
+                        </div>
+                      )}
+                      <button onClick={() => {
+                        if (!reviewed) {
+                          setCelebratingKey(mm.key);
+                          setTimeout(() => setCelebratingKey(k => k === mm.key ? null : k), 900);
+                        }
+                        onMarkReviewed(mm.key);
+                      }} style={{
+                        width:"100%",background:"transparent",border:`1.3px solid ${reviewed?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
+                        color:reviewed?"#2d6b4a":G,borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,cursor:"pointer",
+                        display:"flex",alignItems:"center",justifyContent:"center",gap:"5px",
+                      }}>
+                        {reviewed ? <><Check size={13}/> Reviewed</> : "Mark as reviewed"}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}

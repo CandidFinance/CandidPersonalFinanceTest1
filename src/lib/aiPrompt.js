@@ -109,7 +109,7 @@ USER FINANCIAL SUMMARY:
 ${JSON.stringify(financialSummary, null, 2)}
 
 Generate a JSON response with exactly this structure:
-{"score":<integer 0-100 based on moduleStatuses>,"headline":"<one punchy sentence, under 12 words: the single most important thing to address>","narrative":"<Max 2 short, punchy sentences, under 30 words total. Lead with the standout figure, close with the single biggest quick win. Use first name if provided. Tone: direct, like a knowledgeable friend.>","priorities":[{"title":"<max 6 words>","impact":"<£ figure>","description":"<1 short sentence, under 18 words, explaining why this matters for this specific person>","urgency":"<immediate|soon|this tax year>","module":"<cash|investments|pension|studentLoan|mortgage|personalLoan|kids|inheritance>"}],"modules":{"cash":{"status":"<ok|attention|critical>","summary":"<one short sentence, under 15 words>"},"investments":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"pension":{"status":"<ok|attention|critical>","summary":"<one short sentence, under 15 words>"},"studentLoan":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"mortgage":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"personalLoan":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"kids":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"}}}
+{"headline":"<one punchy sentence, under 12 words: the single most important thing to address>","narrative":"<Max 2 short, punchy sentences, under 30 words total. Lead with the standout figure, close with the single biggest quick win. Use first name if provided. Tone: direct, like a knowledgeable friend.>","priorities":[{"title":"<max 6 words>","impact":"<£ figure>","description":"<1 short sentence, under 18 words, explaining why this matters for this specific person>","urgency":"<immediate|soon|this tax year>","module":"<cash|investments|pension|studentLoan|mortgage|personalLoan|kids|inheritance>"}],"modules":{"cash":{"status":"<ok|attention|critical>","summary":"<one short sentence, under 15 words>"},"investments":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"pension":{"status":"<ok|attention|critical>","summary":"<one short sentence, under 15 words>"},"studentLoan":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"mortgage":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"personalLoan":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"},"kids":{"status":"<ok|attention|critical|na>","summary":"<one short sentence, under 15 words>"}}}
 
 Rules:
 - Use ONLY the figures in the summary above. Do not invent or recalculate numbers.
@@ -118,7 +118,6 @@ Rules:
 - Priorities ordered by urgency then impact. Maximum 4 priorities. No insurance priorities.
 - Be ruthlessly concise. Every field above has a hard word limit — treat it as a ceiling, not a target. Cut adjectives, hedging, and any clause that doesn't carry a number or an action. Never write "you are currently", "in order to", or "this means that".
 - Module summaries must be direct and specific, not hedgy — cite the actual £ figure from the summary above (e.g. "£8,000 unused ISA allowance") rather than vague phrasing like "may not be fully utilised".
-- Score should correlate with moduleStatuses: each critical module reduces score significantly.
 - Write in British English. Do not use "silently", "quietly", or "invisible".
 - Return valid JSON only. No preamble, no markdown, no backticks.`;
 }
@@ -126,7 +125,8 @@ Rules:
 export function buildFallbackInsights(d, m) {
   return {
     isFallback:true,
-    score:46, headline:"You're leaving money on the table — but it's fixable.",
+    score:46, // always overwritten with calcCandidScore's real figure by generateDashboard — kept here only so this object's shape is complete on its own
+    headline:"You're leaving money on the table — but it's fixable.",
     narrative:`${d.name?d.name.split(" ")[0]+", s":"S"}olid foundations, clear gaps. Pension and ISA are your fastest wins — see below.`,
     priorities:[
       {title:"Review your pension contributions",impact:"£3,000+",description:"Tax relief plus employer match means £100 in costs ~£80 take-home.",urgency:"immediate"},

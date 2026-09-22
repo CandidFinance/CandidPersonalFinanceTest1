@@ -292,6 +292,29 @@ export function getModuleSummary(mm, d, m, statuses, insights) {
   return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum };
 }
 
+// ── Candid score — deterministic, local, free ────────────────────────────────
+// Replaces an earlier AI-generated score: Claude's number only ever changed
+// when the whole assessment was re-run, so nothing short of that — not
+// reviewing a module, not any other in-context change — ever moved it. This
+// is a pure function of the same `statuses` that already drive every other
+// number on the Dashboard (sorting, £ opportunity, tile colours), so it
+// updates instantly and for free the moment `d` changes, from ANY source:
+// the full "Edit inputs" wizard, or a per-recommendation quick-update inside
+// a module deep dive (see ModuleDeepDive's QuickUpdate control).
+// Starts at 100 and takes a flat deduction per flagged module. "na" (not
+// selected/applicable) and "unknown" (e.g. pension status not known) are
+// excluded entirely — both are already treated as neutral, not a scored
+// missed opportunity, everywhere else in this file.
+const SCORE_PENALTY = { critical: 18, attention: 8, ok: 0 };
+export function calcCandidScore(statuses) {
+  let score = 100;
+  for (const s of Object.values(statuses || {})) {
+    if (s.status === "na" || s.status === "unknown") continue;
+    score -= SCORE_PENALTY[s.status] ?? 0;
+  }
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
 // Shared £-ranking for the module breakdown — single source of truth for both
 // the Modules screen's full list and Home's "biggest win" teaser, so the two
 // can never drift into separate sort implementations.

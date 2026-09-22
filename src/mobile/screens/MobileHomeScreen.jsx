@@ -1,23 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ScoreDetailSheet, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
-import { getModuleBreakdown } from "../../lib/moduleStatus.js";
+import { ScoreDetailSheet, scoreBand, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
+import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
 // (score progress bar, Opportunity pill, expandable Net Worth card, Biggest
 // Win card), rebuilt against real app data instead of the mockup's sample
-// numbers. Score labels/colors reuse the same bands as desktop's ScoreRing/
-// ScoreDetailSheet rather than the mockup's own wording, so the score reads
-// identically everywhere in the app. Icons stay lucide-react (CLAUDE.md rule
-// 2) rather than the mockup's hand-drawn SVGs.
-function scoreBand(score) {
-  if (score >= 86) return { color: G, label: "Optimised" };
-  if (score >= 66) return { color: "#2d6b4a", label: "On track" };
-  if (score >= 41) return { color: GOLD, label: "Room to improve" };
-  return { color: "#c0392b", label: "Needs attention" };
-}
+// numbers. Score labels/colors reuse scoreBand (CandidApp.jsx) — the same
+// bands as desktop's ScoreRing/ScoreDetailSheet — rather than the mockup's
+// own wording, so the score reads identically everywhere in the app. Icons
+// stay lucide-react (CLAUDE.md rule 2) rather than the mockup's hand-drawn
+// SVGs.
 
 // Flat asset/liability list for the expandable Net Worth card — a simpler
 // grouping than desktop's (ISA/unwrapped combined into one "Investments"
@@ -44,17 +39,17 @@ function netWorthBreakdown(d, m) {
 // load just shows the score with no animation.
 let lastShownScore = null;
 
-export default function MobileHomeScreen({ insights, d, m, statuses, scoreDeltas }) {
+export default function MobileHomeScreen({ insights, d, m, statuses, completedModules }) {
   const navigate = useNavigate();
   const [scoreDetailOpen, setScoreDetailOpen] = useState(false);
   const [netWorthOpen, setNetWorthOpen] = useState(false);
 
-  // Same as desktop's HomeScreen: insights.score is the one-time AI-generated
-  // baseline, and scoreDeltas (from markModuleComplete, CandidApp.jsx) is the
-  // running total of points earned by reviewing modules since — without
-  // folding it in here, the score looked frozen no matter what you reviewed.
-  const totalDelta = (scoreDeltas||[]).reduce((sum, s) => sum + s.delta, 0);
-  const score = Math.min(100, (insights?.score || 0) + totalDelta);
+  // Computed live from `statuses` (see calcCandidScore) rather than read from
+  // insights.score — reacts instantly and for free to any change in `d`, from
+  // the full "Edit inputs" wizard or a per-recommendation quick-update alike.
+  // The count-up/gain-badge animation below still fires correctly: it just
+  // reacts to `score` changing, whatever the reason.
+  const score = calcCandidScore(statuses);
 
   // Score-gain animation (mirrors desktop's gold delta arc + "+N pts"): the
   // number counts up from the previous score, the bar turns gold while it
@@ -88,6 +83,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, scoreDeltas
   const { color: scoreColor, label: scoreLabel } = scoreBand(score);
   const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, insights, "amount");
   const topWin = modulesWithRec[0] || null;
+  // "Reviewed" tracks engagement with the report, not your actual financial
+  // position — its own line, never folded into the score above.
+  const reviewableModules = modulesWithRec.length;
+  const reviewedModuleCount = modulesWithRec.filter(mm => (completedModules||[]).includes(mm.key)).length;
   const { assets, liabilities } = netWorthBreakdown(d, m);
   const netWorthPositive = m.netWorth >= 0;
   const topWinColor = topWin ? (SC[topWin.status] || MUT) : MUT;
@@ -114,10 +113,28 @@ export default function MobileHomeScreen({ insights, d, m, statuses, scoreDeltas
         {insights.headline && (
           <p style={{fontSize:"13px",color:MUT,marginTop:"6px",lineHeight:1.5}}>{insights.headline}</p>
         )}
+        {/* Solid fill, coloured by scoreBand — five flat bands (red through
+            Candid green) rather than a continuous gradient, so the colour
+            reads as "which zone am I in" at a glance. Gold flash while a
+            gain is animating in, same as before, settling to the real band
+            colour once the count-up finishes. */}
         <div style={{height:"6px",borderRadius:"100px",background:CDARK,marginTop:"12px",overflow:"hidden"}}>
           <div style={{height:"100%",borderRadius:"100px",background:gain > 0 ? GOLD : scoreColor,width:`${Math.min(100,shownScore)}%`,transition:"background 1.2s ease"}}/>
         </div>
       </div>
+      {/* Separate bar, deliberately not blended into the score above — this
+          tracks how much of the report you've read, not your finances, so it
+          gets its own colour (brand green, not the score's red-to-green
+          spectrum or its gold gain-flash) rather than reading as another
+          score indicator. */}
+      {reviewableModules > 0 && (
+        <div onClick={() => navigate("/app/modules")} style={{display:"flex",alignItems:"center",gap:"10px",marginTop:"14px",cursor:"pointer"}}>
+          <div style={{flex:1,height:"5px",borderRadius:"100px",background:CDARK,overflow:"hidden"}}>
+            <div style={{height:"100%",borderRadius:"100px",background:G,width:`${Math.round((reviewedModuleCount/reviewableModules)*100)}%`,transition:"width 0.4s ease"}}/>
+          </div>
+          <span style={{fontSize:"11px",color:MUT,whiteSpace:"nowrap"}}>{reviewedModuleCount} of {reviewableModules} reviewed</span>
+        </div>
+      )}
       {scoreDetailOpen && (
         // isMobile=false here on purpose: that flag switches ScoreDetailSheet
         // into a bottom-sheet pinned to the very bottom of the *browser*
