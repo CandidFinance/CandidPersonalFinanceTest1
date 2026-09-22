@@ -4196,7 +4196,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         <div style={{fontSize:"11px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
                           {sacrificedAmt > 0 && <span style={{color:SUCCESS,fontWeight:500}}>Pension: {fmt(sacrificedAmt)}</span>}
                           {takeHomeCash > 0 && <span>Cash: {fmt(takeHomeCash)}</span>}
-                          {employerNISave > 0 && <span style={{color:SUCCESS,marginTop:"3px"}}>+ {fmt(employerNISave)} employer NI saved*</span>}
+                          {employerNISave > 0 && d.employmentStatus !== "self_employed" && <span style={{color:SUCCESS,marginTop:"3px"}}>+ {fmt(employerNISave)} employer NI saved*</span>}
                         </div>
                       </div>
                       <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"8px",padding:"10px 12px"}}>
@@ -4225,7 +4225,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       </div>
                     </div>
                     <p style={{fontSize:"10.5px",color:MUT,lineHeight:1.5}}>
-                      Tax rate shown is the effective average across the bonus — it may exceed your salary tax band if total income crosses the £100k personal allowance taper or £125,140 additional rate threshold. * Employer NI of 13.8% on sacrificed amount — some employers pass this on. Future values assume 6% p.a. growth, undrawn until retirement.
+                      Tax rate shown is the effective average across the bonus — it may exceed your salary tax band if total income crosses the £100k personal allowance taper or £125,140 additional rate threshold. {d.employmentStatus !== "self_employed" && "* Employer NI of 13.8% on sacrificed amount — some employers pass this on. "}Future values assume 6% p.a. growth, undrawn until retirement.
                     </p>
                   </ExpandableInvestmentItem>
                 </div>
@@ -5455,6 +5455,11 @@ const BLANK_DATA = {
   houseTargetAmount:"", houseTimeframe:"",
   bigPurchaseTargetAmount:"", bigPurchaseTimeframe:"",
   age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"stable",
+  // "employed" | "self_employed" | "not_working" — collected so commentary
+  // that only makes sense for a PAYE employee (e.g. employer NI savings on a
+  // pension sacrifice, see calcBonusSacrifice in lib/pension.js) can be
+  // suppressed for a self-employed user, who has no employer to pass it on.
+  employmentStatus:"employed",
   monthlyExpenses:"", higherBuffer:"no",
   cashSavings:"", savingsRate:"", premiumBonds:"", cashAccessType:"",
   cashTiers:[{amount:"",rate:""}],

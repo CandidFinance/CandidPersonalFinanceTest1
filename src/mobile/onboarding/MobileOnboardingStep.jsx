@@ -30,6 +30,11 @@ const EMERGENCY_FUND_OPTIONS = [{ value:"no", label:"6 months" }, { value:"yes",
 const CASH_ACCESS_OPTIONS = [{ value:"yes", label:"Instant access" }, { value:"partial", label:"Partial" }, { value:"no", label:"No" }];
 const PENSION_STATUS_OPTIONS = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }, { value:"unsure", label:"Not sure" }];
 const PENSION_TYPE_OPTIONS = [{ value:"sacrifice", label:"Salary sacrifice" }, { value:"relief", label:"Relief at source" }, { value:"", label:"Not sure" }];
+const EMPLOYMENT_STATUS_OPTIONS = [
+  { value:"employed", label:"Employed" },
+  { value:"self_employed", label:"Self-employed" },
+  { value:"not_working", label:"Not working" },
+];
 const STUDENT_LOAN_OPTIONS = [
   { value:"none", label:"No loan" },
   { value:"plan1", label:"Plan 1" },
@@ -88,6 +93,7 @@ function GoalAmountSlider({ label, value, onChange, max, step, presets }) {
 // still be completed end to end while later steps are built out.
 export default function MobileOnboardingStep({ stepId, d, set }) {
   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
+  const [showEmploymentInfo, setShowEmploymentInfo] = useState(false);
   const [potEstimated, setPotEstimated] = useState(false); // true only right after the "estimate it" button is used, so the caption doesn't linger over a manually-typed figure
   const [paymentStaging, setPaymentStaging] = useState({ status:"idle" }); // idle | loading | error
   const stagePayment = async () => {
@@ -112,6 +118,8 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
   const questionSub = { fontSize:"13px", color:MUT, lineHeight:1.5, textAlign:"center", marginBottom:"24px" };
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
   const centeredInput = { width:"100%", maxWidth:"320px", margin:"0 auto", display:"block", textAlign:"center", fontSize:"17px", fontWeight:600, color:TEXT, padding:"14px 18px", borderRadius:"100px", border:"1.5px solid rgba(22,47,36,0.18)", background:WHITE, outline:"none", boxSizing:"border-box" };
+  // Same grey circular "?" convention as the deep-dive screens (MobilePensionDeepDive etc.) — toggles a short explanatory note rather than showing it inline by default.
+  const infoBtnStyle = { background:"#a8a89c", color:WHITE, border:"none", borderRadius:"50%", width:"15px", height:"15px", fontSize:"10px", fontWeight:700, lineHeight:"15px", textAlign:"center", padding:0, cursor:"pointer", flexShrink:0 };
 
   if (stepId === "modules") {
     const modules = MODULE_META.filter(mm => PICKABLE_MODULE_KEYS.includes(mm.key));
@@ -222,6 +230,19 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
         <div style={{display:"flex",gap:"10px",marginBottom:"14px"}}>
           <PillMoneyInput label="Age" unit="" value={d.age || null} onChange={v => set("age", v ?? "")}/>
           <PillMoneyInput label="Gross salary" value={d.salary || null} onChange={v => set("salary", capField("salary", v ?? ""))}/>
+        </div>
+
+        <div style={{marginBottom:"18px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px"}}>
+            <span style={{...fieldLabel,marginBottom:0}}>Employment status</span>
+            <button type="button" onClick={() => setShowEmploymentInfo(v => !v)} style={infoBtnStyle}>?</button>
+          </div>
+          <PillSlider value={d.employmentStatus || "employed"} onChange={v => set("employmentStatus", v)} options={EMPLOYMENT_STATUS_OPTIONS}/>
+          {showEmploymentInfo && (
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"8px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
+              We factor this into your analysis — whether you're employed, self-employed or not working changes which levers are actually available to you, so we can work out what's genuinely optimal for your position rather than giving generic advice.
+            </p>
+          )}
         </div>
 
         {totalIncome > 0 && (

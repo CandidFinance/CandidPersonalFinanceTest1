@@ -336,7 +336,7 @@ export default function MobilePensionDeepDive({ d, m }) {
               <div style={{fontSize:"10.5px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
                 {bs.sacrificedAmt > 0 && <span style={{color:"#2d6b4a",fontWeight:500}}>Pension: {fmt(bs.sacrificedAmt)}</span>}
                 {bs.takeHomeCash > 0 && <span>Cash: {fmt(bs.takeHomeCash)}</span>}
-                {bs.employerNISave > 0 && <span style={{color:"#2d6b4a",marginTop:"2px"}}>+{fmt(bs.employerNISave)} employer NI*</span>}
+                {bs.employerNISave > 0 && d.employmentStatus !== "self_employed" && <span style={{color:"#2d6b4a",marginTop:"2px"}}>+{fmt(bs.employerNISave)} employer NI*</span>}
               </div>
             </div>
             <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"8px",padding:"10px 10px"}}>
@@ -364,7 +364,7 @@ export default function MobilePensionDeepDive({ d, m }) {
                 : m.willClear
                   ? ` The ${fmt(bs.slOnCash)} student loan deduction on the cash portion also brings your clear date forward, saving roughly ${fmt(bs.slInterestSaved)} in interest.`
                   : ` Your loan is unlikely to clear before write-off, so the ${fmt(bs.slOnCash)} student loan deduction on the cash portion would likely be written off anyway.`)}
-              {" "}Employer NI of 13.8% on the sacrificed amount is also saved — some employers pass this on.
+              {d.employmentStatus !== "self_employed" && " Employer NI of 13.8% on the sacrificed amount is also saved — some employers pass this on."}
             </p>
           )}
         </MobileWinTile>
