@@ -24,8 +24,11 @@ const tileHover = {
 };
 
 function parseStatValue(str) {
+  // Only a single "prefix + number + suffix" shape (e.g. "£4,200") can be
+  // counted up. Anything else — e.g. "£425 / £527", two figures side by
+  // side — is displayed as plain static text instead (see CountUpStat).
   const match = String(str).match(/^([^\d]*)([\d,.]+)([^\d]*)$/);
-  if (!match) return { prefix: "", target: 0, suffix: String(str), decimals: 0, hasComma: false };
+  if (!match) return { raw: String(str) };
   const [, prefix, numStr, suffix] = match;
   const hasComma = numStr.includes(",");
   const cleanNum = numStr.replace(/,/g, "");
@@ -41,16 +44,18 @@ function formatStatNumber(value, { decimals, hasComma }) {
 }
 function CountUpStat({ value }) {
   const parsed = useMemo(() => parseStatValue(value), [value]);
+  const isRaw = parsed.raw != null;
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const reduceMotion = useReducedMotion();
-  const [display, setDisplay] = useState(reduceMotion ? parsed.target : 0);
+  const [display, setDisplay] = useState(reduceMotion || isRaw ? parsed.target : 0);
   useEffect(() => {
-    if (!isInView) return;
+    if (isRaw || !isInView) return;
     if (reduceMotion) { setDisplay(parsed.target); return; }
     const controls = animate(0, parsed.target, { duration: 0.9, ease: EASE_STEADY, onUpdate: setDisplay });
     return () => controls.stop();
-  }, [isInView, parsed.target, reduceMotion]);
+  }, [isInView, parsed.target, reduceMotion, isRaw]);
+  if (isRaw) return <span ref={ref}>{parsed.raw}</span>;
   return <span ref={ref}>{parsed.prefix}{formatStatNumber(display, parsed)}{parsed.suffix}</span>;
 }
 
@@ -70,6 +75,70 @@ function Tile({ children, style, ...motionProps }) {
       boxShadow: "0 4px 24px rgba(22,47,36,0.07)", ...style,
     }}>
       {children}
+    </motion.div>
+  );
+}
+
+// A stat tile that flips on hover to reveal its source on the back — same
+// mechanic as TheProblemPage's FlipCard (rotateY driven from a separate,
+// never-hovered wrapper, so the flip's own perspective foreshortening never
+// shrinks the thing being hovered — see that file's comment for why this
+// matters). Not a shared import: FlipCard's front is an icon + title, this
+// one's is a big stat + short label, different enough to keep separate.
+function StatFlipTile({ n, label, source, i, total, reduceMotion }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <motion.div
+      {...pullTogether(i, total, reduceMotion)}
+      style={{ perspective: "1400px", minWidth: "240px", flex: "1 1 240px", maxWidth: "340px" }}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+    >
+      <motion.div
+        animate={{ rotateY: hovered ? 180 : 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.6, ease: EASE_STEADY }}
+        style={{ position: "relative", height: "200px", transformStyle: "preserve-3d" }}
+      >
+        {/* Front — title and body as one block, centred together in the
+            tile (both horizontally and vertically) — back to how this
+            looked originally, now that the content itself is settled. */}
+        <div style={{
+          position: "absolute", inset: 0, backfaceVisibility: "hidden",
+          background: WHITE, borderRadius: "18px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 20px",
+        }}>
+          {/* Title box */}
+          <div style={{ marginBottom: "8px" }}>
+            <div style={{ fontFamily: SERIF, fontSize: "40px", fontWeight: 700, color: GOLD, lineHeight: 1.15, textAlign: "center" }}>
+              <CountUpStat value={n} />
+            </div>
+          </div>
+          {/* Body box */}
+          <div>
+            {/* Fixed size (not length-based) — all three tiles' copy is now
+                comparably long, so a shared size is what keeps them looking
+                consistent with each other, same as the numbers above. */}
+            <div style={{ fontSize: "11px", color: MUT, lineHeight: 1.4, textAlign: "center" }}>
+              {/* "\n" in a label forces a manual line break (e.g. the pension-relief
+                  stat splits after the comma) — plain labels have none, so they
+                  render as a single line same as before. */}
+              {label.split("\n").map((line, idx) => (
+                <span key={idx}>{idx > 0 && <br />}{line}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Back — source citation, reversed colour scheme for depth */}
+        <div style={{
+          position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
+          background: G, borderRadius: "18px", padding: "20px",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(22,47,36,0.25)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center",
+        }}>
+          <div style={{ fontSize: "10px", fontWeight: 700, color: GOLD, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "8px" }}>Source</div>
+          <div style={{ fontSize: "12.5px", color: "rgba(246,240,230,0.85)", lineHeight: 1.6 }}>{source}</div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -113,22 +182,21 @@ export default function NewLandingPage() {
 
       {/* ── PROBLEM STATS ── */}
       <div style={{ padding: "0 24px 88px" }}>
-        <div style={{ maxWidth: "720px", margin: "0 auto", textAlign: "center" }}>
+        {/* Widened from 720px so the tiles below have room to fit "£425 / £527
+            p.a." on one line without shrinking. */}
+        <div style={{ maxWidth: "960px", margin: "0 auto", textAlign: "center" }}>
           <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: G, fontWeight: 700, lineHeight: 1.25, marginBottom: "40px" }}>
             Good income. Good career.<br />Still losing thousands.
           </motion.h2>
           <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
             {[
-              { n: "£4,200", label: "avg annual pension tax relief unclaimed" },
-              { n: "£680", label: "left on the table in savings yield gaps" },
-              { n: "6.5m", label: "higher-rate taxpayers in the UK" },
+              // `source` is a placeholder pending real citations (see the
+              // "sources of these claims" discussion) — swap each one in once confirmed.
+              { n: "£425 p.a.", label: "average unclaimed pension tax relief,\nby higher-rate taxpayers", source: "PensionBee (Jan 2023), 2020/21 tax year" },
+              { n: "61%", label: "of people with £10k+ in investable assets\nhold ≥ 75% of it in cash", source: "FCA Financial Lives (May 2024)" },
+              { n: "~£100 p.a.", label: "average foregone interest surplus,\nper cash saver", source: "FCA update on cash savings (Sept 2024), FCA Financial Lives (May 2025)" },
             ].map((chip, i) => (
-              <Tile key={chip.n} {...pullTogether(i, 3, reduceMotion)} style={{ textAlign: "center", minWidth: "160px", flex: "1 1 160px", maxWidth: "220px", padding: "24px 20px" }}>
-                <div style={{ fontFamily: SERIF, fontSize: "28px", fontWeight: 700, color: GOLD, lineHeight: 1, marginBottom: "8px" }}>
-                  <CountUpStat value={chip.n} />
-                </div>
-                <div style={{ fontSize: "13px", color: MUT, lineHeight: 1.4 }}>{chip.label}</div>
-              </Tile>
+              <StatFlipTile key={chip.n} n={chip.n} label={chip.label} source={chip.source} i={i} total={3} reduceMotion={reduceMotion} />
             ))}
           </div>
         </div>
@@ -140,10 +208,19 @@ export default function NewLandingPage() {
           <div style={{ textAlign: "center", marginBottom: "44px" }}>
             <SectionLabel>How it works</SectionLabel>
             <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: G, fontWeight: 700, lineHeight: 1.2 }}>
-              Your complete financial picture, in 5 minutes.
+              Your financial position, reviewed. Next steps, tailored to grow your wealth. In under 5 minutes.
             </motion.h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "24px" }}>
+          {/* Fixed 2x2 down to phone width, then a single column — a plain
+              `repeat(2, 1fr)` never relaxes, so on a narrow screen it would
+              just keep squeezing two columns rather than stacking them. */}
+          <style>{`
+            .how-it-works-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+            @media (max-width: 560px) {
+              .how-it-works-grid { grid-template-columns: 1fr; }
+            }
+          `}</style>
+          <div className="how-it-works-grid">
             {[
               { icon: ClipboardList, title: "Tell us about your finances", body: "Salary, savings, pension, debts, as they stand today. Approximate figures are fine — no need to have anything optimised first." },
               { icon: Scale, title: "We analyse your whole position", body: "A trade-off analysis against the UK's actual tax rules, weighed against your goals — the outcome is a health score and clear next steps." },
