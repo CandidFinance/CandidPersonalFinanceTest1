@@ -196,7 +196,7 @@ function ConfidenceCheck() {
 
   return (
     <PageWrap>
-      <NavBar center="Before you start" right={<button type="button" onClick={() => navigate("/")} style={{background:"transparent",border:"1px solid rgba(255,255,255,0.2)",borderRadius:"6px",padding:"6px 14px",color:"rgba(255,255,255,0.6)",fontSize:"12px",cursor:"pointer"}}>← Back</button>}/>
+      <NavBar light center="Before you start" right={<button type="button" onClick={() => navigate("/")} style={{background:"transparent",border:`1px solid rgba(22,47,36,0.2)`,borderRadius:"6px",padding:"6px 14px",color:"rgba(22,47,36,0.6)",fontSize:"12px",cursor:"pointer"}}>← Back</button>}/>
       <ContentWrap maxWidth="480px">
         <div style={{textAlign:"center", marginTop:"32px"}}>
           <div style={{fontFamily:SERIF, fontSize:"clamp(22px,4vw,26px)", fontWeight:700, color:G, marginBottom:"12px"}}>
