@@ -1,5 +1,5 @@
 import { Home, LayoutGrid, LineChart, MessageCircle } from "lucide-react";
-import { G, MUT, CREAM, WHITE } from "../CandidApp.jsx";
+import { G, MUT, WHITE } from "../CandidApp.jsx";
 
 // Single source of truth for the mobile app's own bottom nav — deliberately
 // separate from desktop's NAV_ITEMS (CandidApp.jsx) rather than reusing it,
@@ -13,9 +13,14 @@ export const MOBILE_NAV_ITEMS = [
 
 export default function MobileTabBar({ active, onNavigate }) {
   return (
-    // No border: the bar starts at the page's own beige (CREAM) so it melts
-    // into the content above, and fades to white at the very bottom edge.
-    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:`linear-gradient(180deg, ${CREAM} 0%, ${WHITE} 100%)`,zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
+    // No border: the bar's top edge is fully transparent, not opaque CREAM,
+    // so it melts into whatever is scrolled underneath it (the page's own
+    // beige background, or a white tile) with a soft fade either way,
+    // rather than a hard line only hidden when the background happens to
+    // already be CREAM. Reaches solid white by 40% down the bar (not the
+    // full height) so the tab icons/labels sit on a fully opaque surface
+    // rather than a still-fading one, with just the top portion soft.
+    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:`linear-gradient(180deg, transparent 0%, ${WHITE} 40%)`,zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
       {/* The bar itself stays full-bleed, but the buttons are capped to the
           same 580px content width as MobileLayout's content column and
           centred — otherwise on a wide (desktop browser) viewport the icons
