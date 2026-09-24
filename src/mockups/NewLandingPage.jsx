@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion, useInView, animate } from "framer-motion";
 import { ClipboardList, Scale, Search, Compass, GraduationCap, PoundSterling, Home as HomeIcon } from "lucide-react";
 import posthog from "posthog-js";
@@ -6,6 +6,7 @@ import { G, GOLD, WHITE, MUT, SERIF } from "../CandidApp.jsx";
 import NewSiteLayout from "./NewSiteLayout.jsx";
 import WaitlistForm from "./WaitlistForm.jsx";
 import { EASE_STEADY, riseIn, pullTogether, heroStagger, heroItem } from "./motion.js";
+import { useEqualHeights } from "./useEqualHeights.js";
 
 // ── Home tab of the rebuilt marketing site: same brand (green/gold/serif),
 // one new accent (Apple's #0071E3 blue, reserved for the waitlist CTA) and
@@ -68,16 +69,18 @@ function SectionLabel({ children }) {
 }
 
 // White floating card — the one reusable "tile" surface for this page.
-function Tile({ children, style, ...motionProps }) {
+// Forwards its ref so a tile set can be measured/equalised via
+// useEqualHeights (see the "How it works" teaser and calculator grids below).
+const Tile = forwardRef(function Tile({ children, style, ...motionProps }, ref) {
   return (
-    <motion.div {...motionProps} style={{
+    <motion.div ref={ref} {...motionProps} style={{
       background: WHITE, borderRadius: "18px", padding: "32px 28px",
       boxShadow: "0 4px 24px rgba(22,47,36,0.07)", ...style,
     }}>
       {children}
     </motion.div>
   );
-}
+});
 
 // A stat tile that flips on hover to reveal its source on the back — same
 // mechanic as TheProblemPage's FlipCard (rotateY driven from a separate,
@@ -151,6 +154,14 @@ function StatFlipTile({ n, label, source, i, total, reduceMotion }) {
 
 export default function NewLandingPage() {
   const reduceMotion = useReducedMotion();
+  // Both tile sets below have visibly uneven copy lengths, so each is sized
+  // to match whichever tile currently has the most — see useEqualHeights.
+  // The teaser grid needs this because CSS Grid only equalises height within
+  // a shared row, not across the whole 2x2 set; the calculators row is
+  // already equalised by Grid's own default row-stretch in the common
+  // 3-in-a-row case, but this keeps it true even if it ever wraps unevenly.
+  const teaserRef = useEqualHeights(4);
+  const calcRef = useEqualHeights(3);
 
   useEffect(() => { posthog.capture("landing_page_viewed"); }, []);
 
@@ -234,7 +245,7 @@ export default function NewLandingPage() {
               { icon: Search, title: "See the £ value of every decision", body: "Walk through personalised actions, showing precisely how much each decision adds to your net worth." },
               { icon: Compass, title: "Guidance that grows with you", body: "Life isn't static. Whether you get a pay rise, buy a home, or start a family – Candid updates automatically, keeping your money on track." },
             ].map((step, i) => (
-              <Tile key={step.title} {...pullTogether(i, 4, reduceMotion)} {...tileHover} style={{ borderTop: `4px solid ${GOLD}` }}>
+              <Tile key={step.title} ref={teaserRef(i)} {...pullTogether(i, 4, reduceMotion)} {...tileHover} style={{ borderTop: `4px solid ${GOLD}` }}>
                 <div style={{ marginBottom: "16px" }}><step.icon size={26} color={G} /></div>
                 <div style={{ fontFamily: SERIF, fontSize: "17px", color: G, fontWeight: 600, marginBottom: "10px" }}>{step.title}</div>
                 <div style={{ fontSize: "14px", color: MUT, lineHeight: 1.7 }}>{step.body}</div>
@@ -289,7 +300,7 @@ export default function NewLandingPage() {
               { href: "/100k-tax-trap-calculator.html", icon: PoundSterling, title: "£100,000 tax trap & childcare cliff calculator", body: "Check the 60% marginal-rate zone and the childcare cliff, and see the exact pension sacrifice that fixes both at once." },
               { href: "/mortgage-vs-savings-calculator.html", icon: HomeIcon, title: "Mortgage overpayment vs high-yield savings", body: "When your fix ends, compare paying down the mortgage against a savings account or Cash ISA – tax accounted for." },
             ].map((tool, i) => (
-              <motion.a key={tool.href} href={tool.href} {...pullTogether(i, 3, reduceMotion)} {...tileHover} style={{
+              <motion.a key={tool.href} href={tool.href} ref={calcRef(i)} {...pullTogether(i, 3, reduceMotion)} {...tileHover} style={{
                 background: WHITE, borderRadius: "18px", padding: "32px 28px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
                 borderTop: `4px solid ${GOLD}`, textDecoration: "none", display: "block",
               }}>

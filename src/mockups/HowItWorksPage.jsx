@@ -6,6 +6,7 @@ import { G, GOLD, WHITE, MUT, SERIF } from "../CandidApp.jsx";
 import NewSiteLayout from "./NewSiteLayout.jsx";
 import WaitlistForm from "./WaitlistForm.jsx";
 import { riseIn, pullTogether } from "./motion.js";
+import { useEqualHeights } from "./useEqualHeights.js";
 
 const STEPS = [
   {
@@ -32,6 +33,10 @@ const STEPS = [
 
 export default function HowItWorksPage() {
   const reduceMotion = useReducedMotion();
+  // All four step tiles are sized to match whichever currently has the
+  // most copy (see useEqualHeights) — a plain vertical flex column, unlike
+  // CSS Grid, never equalises sibling heights on its own.
+  const stepRef = useEqualHeights(STEPS.length);
 
   useEffect(() => { posthog.capture("how_it_works_viewed"); }, []);
 
@@ -54,7 +59,7 @@ export default function HowItWorksPage() {
       <div style={{ padding: "0 24px 88px" }}>
         <div style={{ maxWidth: "760px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
           {STEPS.map((step, i) => (
-            <motion.div key={step.title} {...pullTogether(i, STEPS.length, reduceMotion, { stagger: 0.1, duration: 0.7, spreadPx: 20, riseYPx: 44 })} style={{
+            <motion.div key={step.title} ref={stepRef(i)} {...pullTogether(i, STEPS.length, reduceMotion, { stagger: 0.1, duration: 0.7, spreadPx: 20, riseYPx: 44 })} style={{
               background: WHITE, borderRadius: "18px", padding: "32px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
               display: "flex", gap: "22px", alignItems: "flex-start", textAlign: "left",
             }}>
