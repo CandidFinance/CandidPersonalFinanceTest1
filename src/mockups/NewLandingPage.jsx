@@ -177,7 +177,7 @@ export default function NewLandingPage() {
             Your finances,<br />trending in the <span style={{ color: G, fontWeight: 800 }}>right</span> direction.
           </motion.h1>
           <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 auto 40px" }}>
-            Candid finds the gaps, inefficiencies and missed allowances costing you thousands – then shows you exactly what to do. Join the waitlist to be first in when we launch.
+            Candid finds the gaps, inefficiencies and missed allowances costing you thousands – then shows you exactly how to fix it. Join the waitlist to be first in when we launch.
           </motion.p>
           <motion.div variants={heroItem}>
             <WaitlistForm id="waitlist" source="hero" />
@@ -200,7 +200,7 @@ export default function NewLandingPage() {
               // `source` is a placeholder pending real citations (see the
               // "sources of these claims" discussion) — swap each one in once confirmed.
               { n: "£425 p.a.", label: "average unclaimed pension tax relief,\nby higher-rate taxpayers", source: "PensionBee (Jan 2023), 2020/21 tax year" },
-              { n: "61%", label: "of people with £10k+ in investable assets\nhold ≥ 75% of it in cash", source: "FCA Financial Lives (May 2024)" },
+              { n: "61%", label: "of those with £10k+ in investable assets hold at least three-quarters or more in cash", source: "FCA Financial Lives (May 2024)" },
               { n: "~£100 p.a.", label: "average foregone interest surplus,\nper cash saver", source: "FCA update on cash savings (Sept 2024),\nFCA Financial Lives (May 2025)" },
             ].map((chip, i) => (
               <StatFlipTile key={chip.n} n={chip.n} label={chip.label} source={chip.source} i={i} total={3} reduceMotion={reduceMotion} />
@@ -215,7 +215,7 @@ export default function NewLandingPage() {
           <div style={{ textAlign: "center", marginBottom: "44px" }}>
             <SectionLabel>How it works</SectionLabel>
             <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: G, fontWeight: 700, lineHeight: 1.2 }}>
-              Your finances reviewed. Tailored next steps grow your wealth. All, in under 5 minutes.
+              Your finances, mapped. Tailored steps to grow your wealth. All, in 5 minutes.
             </motion.h2>
           </div>
           {/* Fixed 2x2 down to phone width, then a single column — a plain
@@ -229,10 +229,10 @@ export default function NewLandingPage() {
           `}</style>
           <div className="how-it-works-grid">
             {[
-              { icon: ClipboardList, title: "Tell us about your finances", body: "Salary, savings, pension, debts, as they stand today. Approximate figures are fine – no need to have anything optimised first." },
-              { icon: Scale, title: "We analyse your whole position", body: "A trade-off analysis against the UK's actual tax rules, weighed against your goals – the outcome is a health score and clear next steps." },
-              { icon: Search, title: "Deep-dive guidance", body: "Walk through each area of your finances with specific, prioritised actions and their £ impact, calculated from your actual numbers." },
-              { icon: Compass, title: "Ongoing, as things change", body: "A pay rise, a house move, a growing family – the guidance keeps up with your position, not just on day one." },
+              { icon: ClipboardList, title: "Where you stand and where you're headed", body: "Share your current setup and targets, from salary and savings to buying a home or growing your investments. Rough estimates are fine, we'll do the maths." },
+              { icon: Scale, title: "Your full financial picture, analysed", body: "We test your setup against UK tax traps, debt mechanics, and personal goals. Delivering an instant financial health score and a tailored plan." },
+              { icon: Search, title: "See the £ value of every decision", body: "Walk through personalised actions, showing precisely how much each decision adds to your net worth." },
+              { icon: Compass, title: "Guidance that grows with you", body: "Life isn't static. Whether you get a pay rise, buy a home, or start a family – Candid updates automatically, keeping your money on track." },
             ].map((step, i) => (
               <Tile key={step.title} {...pullTogether(i, 4, reduceMotion)} {...tileHover} style={{ borderTop: `4px solid ${GOLD}` }}>
                 <div style={{ marginBottom: "16px" }}><step.icon size={26} color={G} /></div>

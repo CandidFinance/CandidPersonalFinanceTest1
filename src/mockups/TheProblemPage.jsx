@@ -9,9 +9,9 @@ import FinancesModuleTiles from "./FinancesModuleTiles.jsx";
 import { EASE_STEADY, riseIn, pullTogether } from "./motion.js";
 
 const CAUSES = [
-  { icon: Layers, title: "Complexity", body: "Pensions, ISAs, tax bands, allowances and mortgages all interact. Get one decision wrong and it can quietly undo the benefit of another." },
-  { icon: Clock, title: "Lack of time", body: "Between work and everything else, few people have hours to spend cross-checking every financial decision against the rest of their situation." },
-  { icon: DoorClosed, title: "Lack of access", body: "A financial adviser typically costs hundreds of pounds and expects a minimum portfolio size most people don't have yet – leaving good earners with nowhere expert to turn." },
+  { icon: Layers, title: "Complexity", body: "Pensions, ISAs, tax bands, allowances and mortgages all interact. Get one decision wrong and it can undo the benefit of another." },
+  { icon: Clock, title: "Lack of time", body: "Between demanding careers and life outside work, few have the bandwidth to model each financial decision against every tax threshold, account rule and investment option against their wider setup." },
+  { icon: DoorClosed, title: "Lack of access", body: "Traditional financial advisers charge thousands in fees or demand six-figure minimum portfolios – leaving millions with nowhere clear to turn." },
 ];
 
 const LIFE_EVENTS = [
@@ -113,10 +113,10 @@ export default function TheProblemPage() {
             fontFamily: SERIF, fontSize: "clamp(30px,4.5vw,44px)", fontWeight: 700,
             color: G, lineHeight: 1.2, letterSpacing: "-0.01em", marginBottom: "20px",
           }}>
-            Millions of good earners are worse off than they should be.
+            Millions of higher and additional rate taxpayers are uniquely exposed to a financial minefield.
           </h1>
           <p style={{ fontSize: "clamp(15px,2vw,17px)", color: MUT, lineHeight: 1.75, maxWidth: "580px", margin: "0 auto" }}>
-            Not because they've done anything wrong – because personal finance has become too complex, too time-consuming, and too hard to get proper help with. The result is thousands of pounds a year, quietly left on the table.
+            Not because they've made mistakes – because personal finance has become overly complex, time-consuming, and frustratingly opaque. The result? Thousands of pounds leaking from your net worth every year.
           </p>
         </motion.div>
       </div>
@@ -176,7 +176,7 @@ export default function TheProblemPage() {
             Candid's aim is to fix this.
           </h2>
           <p style={{ fontSize: "14.5px", color: "rgba(246,240,230,0.75)", lineHeight: 1.7, maxWidth: "540px", margin: "0 auto" }}>
-            One holistic, always-up-to-date view of your whole financial life – built to keep pace with a job change, a house move, a growing family, or a student loan finally paid off.
+            One complete, always-up-to-date view of your finances – built to adapt instantly as you change jobs, buy a home, start a family, or clear your student loan.
           </p>
         </motion.div>
       </div>

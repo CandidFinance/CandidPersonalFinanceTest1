@@ -9,24 +9,24 @@ import { riseIn, pullTogether } from "./motion.js";
 
 const STEPS = [
   {
-    icon: ClipboardList, title: "Tell us about your finances",
-    body: "Salary, savings, pension, debts – as they stand today. There's no need to have anything optimised first; your current position, as it is, is exactly what we need.",
-    detail: "Approximate figures are fine, and nothing is shared until you choose to. Takes about 5 minutes.",
+    icon: ClipboardList, title: "Share your current setup",
+    body: "Salary, savings, pension, debts – as they stand today. Ballpark figures are fine, and you don't need to organise a thing beforehand.",
+    detail: "We do the heavy lifting, in under 5 minutes.",
   },
   {
-    icon: Scale, title: "Candid analyses your whole position",
-    body: "We run a trade-off analysis against the UK's actual tax structures and systems – pensions, ISAs, student loan, thresholds – to work out what's genuinely best for you, in the context of your position and your goals.",
-    detail: "The outcome is a Candid health score and a clear set of actionable steps towards a more optimised position.",
+    icon: Scale, title: "Candid runs the numbers against UK tax rules",
+    body: "Candid cross-references your figures against pension allowances, ISA limits, tax brackets, student loan thresholds, and more. The outcome is an instant financial health score and a prioritised roadmap for your specific goals.",
+    detail: "",
   },
   {
-    icon: Search, title: "Deep-dive guidance, module by module",
-    body: "We walk you through exactly where you can improve – pension, ISA, student loan, cash – with specific, prioritised actions and their £ impact, calculated from your actual numbers.",
-    detail: "Every recommendation shows its working, in plain English, so you understand the 'why' as well as the 'what.'",
+    icon: Search, title: "Actionable steps with exact £ impact",
+    body: "Break down your finances area by area – pension, ISAs, mortgage, debt and cash. Every action shows its quantified £ impact, calculated directly from your numbers, alongside clear plain English explainers so you see the 'why' behind every step.",
+    detail: "",
   },
   {
-    icon: Compass, title: "Ongoing guidance as things change",
-    body: "A pay rise, a house move, a growing family, a student loan finally paid off – your position keeps moving, so the guidance does too, not just on day one.",
-    detail: "Come back whenever something changes; your score and your next steps update with it.",
+    icon: Compass, title: "Guidance that grows with you",
+    body: "A pay rise, buying a home, starting a family, or clearing a student loan – life isn't static. Update your numbers whenever things change, and Candid automatically recalculates your score and next steps to keep your plan on track.",
+    detail: "",
   },
 ];
 
@@ -46,7 +46,7 @@ export default function HowItWorksPage() {
             How Candid works.
           </h1>
           <p style={{ fontSize: "clamp(15px,2vw,17px)", color: MUT, lineHeight: 1.7, maxWidth: "480px", margin: "0 auto" }}>
-            Four steps, five minutes, and a complete picture of where your money's going, what to do about it, and how that keeps up as life changes.
+            Four steps, five minutes, and a complete picture of your tax efficiency, net worth, and tailored action plan – built to update automatically as you life changes.
           </p>
         </motion.div>
       </div>

@@ -38,7 +38,7 @@ export default function FinancesModuleTiles() {
           Your finances are one whole picture, not a set of separate accounts.
         </h2>
         <p style={{ fontSize: "15px", color: MUT, lineHeight: 1.7, marginBottom: "8px" }}>
-          Good financial decisions need a deep understanding of where you stand today <em>and</em> where you're headed. A savings app can tell you your best interest rate, but it has no idea whether you're missing your full employer pension match, or leaving ISA allowance unused.
+          Good decisions require seeing all the moving parts at once. Savings apps hunt for a slightly better interest rate, but won't notice that you're missing your full employer pension match or wasting your ISA allowance.
         </p>
       </motion.div>
 
