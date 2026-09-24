@@ -10,8 +10,8 @@ import { riseIn, pullTogether } from "./motion.js";
 const STEPS = [
   {
     icon: ClipboardList, title: "Share your current setup",
-    body: "Salary, savings, pension, debts – as they stand today. Ballpark figures are fine, and you don't need to organise a thing beforehand.",
-    detail: "We do the heavy lifting, in under 5 minutes.",
+    body: "Salary, savings, pension, debts – as they stand today. Ballpark figures are fine, and you don't need to organise a thing beforehand. We do the heavy lifting, in under 5 minutes.",
+    detail: "",
   },
   {
     icon: Scale, title: "Candid runs the numbers against UK tax rules",
@@ -46,7 +46,7 @@ export default function HowItWorksPage() {
             How Candid works.
           </h1>
           <p style={{ fontSize: "clamp(15px,2vw,17px)", color: MUT, lineHeight: 1.7, maxWidth: "480px", margin: "0 auto" }}>
-            Four steps, five minutes, and a complete picture of your tax efficiency, net worth, and tailored action plan – built to update automatically as you life changes.
+            Four steps, five minutes, and a complete picture of your tax efficiency, net worth, and tailored action plan – built to update automatically as your life changes.
           </p>
         </motion.div>
       </div>

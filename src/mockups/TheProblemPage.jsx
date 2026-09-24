@@ -10,7 +10,7 @@ import { EASE_STEADY, riseIn, pullTogether } from "./motion.js";
 
 const CAUSES = [
   { icon: Layers, title: "Complexity", body: "Pensions, ISAs, tax bands, allowances and mortgages all interact. Get one decision wrong and it can undo the benefit of another." },
-  { icon: Clock, title: "Lack of time", body: "Between demanding careers and life outside work, few have the bandwidth to model each financial decision against every tax threshold, account rule and investment option against their wider setup." },
+  { icon: Clock, title: "Lack of time", body: "Between demanding careers and life outside work, few have the bandwidth to model each financial decision against every tax threshold, account rule and investment option across their wider setup." },
   { icon: DoorClosed, title: "Lack of access", body: "Traditional financial advisers charge thousands in fees or demand six-figure minimum portfolios – leaving millions with nowhere clear to turn." },
 ];
 
