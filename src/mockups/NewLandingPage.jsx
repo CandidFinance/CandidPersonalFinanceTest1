@@ -136,7 +136,13 @@ function StatFlipTile({ n, label, source, i, total, reduceMotion }) {
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center",
         }}>
           <div style={{ fontSize: "10px", fontWeight: 700, color: GOLD, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "8px" }}>Source</div>
-          <div style={{ fontSize: "12.5px", color: "rgba(246,240,230,0.85)", lineHeight: 1.6 }}>{source}</div>
+          <div style={{ fontSize: "12.5px", color: "rgba(246,240,230,0.85)", lineHeight: 1.6 }}>
+            {/* Same "\n"-forces-a-break convention as the label above (e.g. the
+                cash-savings source splits after its comma). */}
+            {source.split("\n").map((line, idx) => (
+              <span key={idx}>{idx > 0 && <br />}{line}</span>
+            ))}
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -171,7 +177,7 @@ export default function NewLandingPage() {
             Your finances,<br />trending in the <span style={{ color: G, fontWeight: 800 }}>right</span> direction.
           </motion.h1>
           <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 auto 40px" }}>
-            Candid finds the gaps, inefficiencies and missed allowances costing you thousands — then shows you exactly what to do. Join the waitlist to be first in when we launch.
+            Candid finds the gaps, inefficiencies and missed allowances costing you thousands – then shows you exactly what to do. Join the waitlist to be first in when we launch.
           </motion.p>
           <motion.div variants={heroItem}>
             <WaitlistForm id="waitlist" source="hero" />
@@ -185,6 +191,7 @@ export default function NewLandingPage() {
         {/* Widened from 720px so the tiles below have room to fit "£425 / £527
             p.a." on one line without shrinking. */}
         <div style={{ maxWidth: "960px", margin: "0 auto", textAlign: "center" }}>
+          <SectionLabel>What it solves</SectionLabel>
           <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: G, fontWeight: 700, lineHeight: 1.25, marginBottom: "40px" }}>
             Good income. Good career.<br />Still losing thousands.
           </motion.h2>
@@ -194,7 +201,7 @@ export default function NewLandingPage() {
               // "sources of these claims" discussion) — swap each one in once confirmed.
               { n: "£425 p.a.", label: "average unclaimed pension tax relief,\nby higher-rate taxpayers", source: "PensionBee (Jan 2023), 2020/21 tax year" },
               { n: "61%", label: "of people with £10k+ in investable assets\nhold ≥ 75% of it in cash", source: "FCA Financial Lives (May 2024)" },
-              { n: "~£100 p.a.", label: "average foregone interest surplus,\nper cash saver", source: "FCA update on cash savings (Sept 2024), FCA Financial Lives (May 2025)" },
+              { n: "~£100 p.a.", label: "average foregone interest surplus,\nper cash saver", source: "FCA update on cash savings (Sept 2024),\nFCA Financial Lives (May 2025)" },
             ].map((chip, i) => (
               <StatFlipTile key={chip.n} n={chip.n} label={chip.label} source={chip.source} i={i} total={3} reduceMotion={reduceMotion} />
             ))}
@@ -208,7 +215,7 @@ export default function NewLandingPage() {
           <div style={{ textAlign: "center", marginBottom: "44px" }}>
             <SectionLabel>How it works</SectionLabel>
             <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: G, fontWeight: 700, lineHeight: 1.2 }}>
-              Your financial position, reviewed. Next steps, tailored to grow your wealth. In under 5 minutes.
+              Your finances reviewed. Tailored next steps grow your wealth. All, in under 5 minutes.
             </motion.h2>
           </div>
           {/* Fixed 2x2 down to phone width, then a single column — a plain
@@ -222,10 +229,10 @@ export default function NewLandingPage() {
           `}</style>
           <div className="how-it-works-grid">
             {[
-              { icon: ClipboardList, title: "Tell us about your finances", body: "Salary, savings, pension, debts, as they stand today. Approximate figures are fine — no need to have anything optimised first." },
-              { icon: Scale, title: "We analyse your whole position", body: "A trade-off analysis against the UK's actual tax rules, weighed against your goals — the outcome is a health score and clear next steps." },
+              { icon: ClipboardList, title: "Tell us about your finances", body: "Salary, savings, pension, debts, as they stand today. Approximate figures are fine – no need to have anything optimised first." },
+              { icon: Scale, title: "We analyse your whole position", body: "A trade-off analysis against the UK's actual tax rules, weighed against your goals – the outcome is a health score and clear next steps." },
               { icon: Search, title: "Deep-dive guidance", body: "Walk through each area of your finances with specific, prioritised actions and their £ impact, calculated from your actual numbers." },
-              { icon: Compass, title: "Ongoing, as things change", body: "A pay rise, a house move, a growing family — the guidance keeps up with your position, not just on day one." },
+              { icon: Compass, title: "Ongoing, as things change", body: "A pay rise, a house move, a growing family – the guidance keeps up with your position, not just on day one." },
             ].map((step, i) => (
               <Tile key={step.title} {...pullTogether(i, 4, reduceMotion)} {...tileHover} style={{ borderTop: `4px solid ${GOLD}` }}>
                 <div style={{ marginBottom: "16px" }}><step.icon size={26} color={G} /></div>
@@ -262,7 +269,7 @@ export default function NewLandingPage() {
             borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "18px",
             fontSize: "11px", color: "rgba(246,240,230,0.45)", lineHeight: 1.5, maxWidth: "440px", margin: "0 auto",
           }}>
-            Guidance, not advice. Candid helps you understand your options — the decisions are always yours.
+            Guidance, not advice. Candid helps you understand your options – the decisions are always yours.
           </div>
         </motion.div>
       </div>
@@ -278,9 +285,9 @@ export default function NewLandingPage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px" }}>
             {[
-              { href: "/student-loan-calculator.html", icon: GraduationCap, title: "Student loan overpayment calculator", body: "Plan 1, 2, 4, 5 & Postgraduate — find out if overpaying saves you money or just hands cash to the government that would've been written off." },
+              { href: "/student-loan-calculator.html", icon: GraduationCap, title: "Student loan overpayment calculator", body: "Plan 1, 2, 4, 5 & Postgraduate – find out if overpaying saves you money or just hands cash to the government that would've been written off." },
               { href: "/100k-tax-trap-calculator.html", icon: PoundSterling, title: "£100,000 tax trap & childcare cliff calculator", body: "Check the 60% marginal-rate zone and the childcare cliff, and see the exact pension sacrifice that fixes both at once." },
-              { href: "/mortgage-vs-savings-calculator.html", icon: HomeIcon, title: "Mortgage overpayment vs high-yield savings", body: "When your fix ends, compare paying down the mortgage against a savings account or Cash ISA — tax accounted for." },
+              { href: "/mortgage-vs-savings-calculator.html", icon: HomeIcon, title: "Mortgage overpayment vs high-yield savings", body: "When your fix ends, compare paying down the mortgage against a savings account or Cash ISA – tax accounted for." },
             ].map((tool, i) => (
               <motion.a key={tool.href} href={tool.href} {...pullTogether(i, 3, reduceMotion)} {...tileHover} style={{
                 background: WHITE, borderRadius: "18px", padding: "32px 28px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",

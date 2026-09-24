@@ -17,7 +17,7 @@ export default function SiteFooter() {
         </div>
       </div>
       <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", lineHeight: 1.6, maxWidth: "560px" }}>
-        Candid provides financial guidance and education only — not regulated financial advice. Always consider your personal circumstances and consult a qualified adviser for complex situations.
+        Candid provides financial guidance and education only – not regulated financial advice. Always consider your personal circumstances and consult a qualified adviser for complex situations.
       </div>
       <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
         <span>© 2026 Candid Finance</span>

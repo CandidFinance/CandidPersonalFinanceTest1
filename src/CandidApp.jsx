@@ -114,6 +114,16 @@ button:active{transform:scale(0.98);}
 .fu5{animation:fadeUp 0.45s ease 0.35s forwards;opacity:0;}
 .fu6{animation:fadeUp 0.45s ease 0.42s forwards;opacity:0;}
 .fu7{animation:fadeUp 0.45s ease 0.49s forwards;opacity:0;}
+/* Expands a small circular icon-button's actual tap target on mobile without
+   touching how it looks — the visible circle stays whatever size it already
+   is, an invisible ::after just extends the clickable area around it. Scoped
+   to <768px (this file's usual isMobile breakpoint) so desktop's mouse-sized
+   hit area — and appearance — is completely untouched. Used on the "?" info
+   buttons (17-18px), which are otherwise well under a comfortable tap size. */
+@media (max-width:767px){
+  .tapTarget44{position:relative;}
+  .tapTarget44::after{content:"";position:absolute;inset:-13px;}
+}
 `;
 
 export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG };
@@ -1002,6 +1012,18 @@ function useWindowWidth() {
   return width;
 }
 
+// Every inline chart below scales its whole SVG viewBox down to fit
+// whatever width its container ends up being — that part already works — but
+// a fixed fontSize inside that viewBox shrinks right along with it. On
+// desktop, these charts render close to their native viewBox width, so a
+// "12" reads fine; on a narrow phone the container can be under half that,
+// so the same "12" ends up rendering at only ~5 physical px. Scaling a
+// chart's own fontSize numbers up on mobile (viewBox units only — the
+// desktop number passed in is never touched) keeps the text physically
+// legible on both, since it's the same viewBox-to-container scale factor
+// working against a bigger starting number.
+const svgFont = (px, isMobile) => isMobile ? Math.round(px * 1.6) : px;
+
 // Step labels now live on each step's own definition (see ALL_STEP_DEFS) rather
 // than these separate positional arrays — indices used to line up 1:1 with a
 // fixed STEPS array, which no longer holds true once steps are selection-dependent.
@@ -1245,7 +1267,7 @@ function InfoTooltip({ text }) {
   };
   return (
     <span style={{display:"inline-block",marginLeft:"6px",verticalAlign:"middle"}}>
-      <button ref={btnRef} type="button" onClick={open}
+      <button ref={btnRef} type="button" onClick={open} className="tapTarget44"
         style={{width:"17px",height:"17px",borderRadius:"50%",background:G,border:"none",color:WHITE,fontSize:FONT_SIZE.CAPTION,fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
         ?
       </button>
@@ -2800,7 +2822,7 @@ function ForecastScreen({ d, m }) {
             {forecastChart.yTicks.map((v,i) => (
               <g key={i}>
                 <line x1={forecastChart.PL} x2={forecastChart.VW-forecastChart.PR} y1={forecastChart.sy(v)} y2={forecastChart.sy(v)} stroke="rgba(22,47,36,0.09)" strokeWidth="1.5"/>
-                <text x={forecastChart.PL-10} y={forecastChart.sy(v)+4} fontSize="12" fontWeight="700" fill={MUT} textAnchor="end">{fmtK(v)}</text>
+                <text x={forecastChart.PL-10} y={forecastChart.sy(v)+4} fontSize={svgFont(12,isMobile)} fontWeight="700" fill={MUT} textAnchor="end">{fmtK(v)}</text>
               </g>
             ))}
             {forecastChart.paths.map(p => {
@@ -2811,7 +2833,7 @@ function ForecastScreen({ d, m }) {
                   {p.termDot && (
                     <>
                       <circle cx={p.termDot.x} cy={p.termDot.y} r="5" fill={color}/>
-                      <text x={p.termDot.x + 8} y={p.termDot.y + 4} fontSize="10" fontWeight="600" fill={color}>{p.termDot.label}</text>
+                      <text x={p.termDot.x + 8} y={p.termDot.y + 4} fontSize={svgFont(10,isMobile)} fontWeight="600" fill={color}>{p.termDot.label}</text>
                     </>
                   )}
                 </g>
@@ -2819,7 +2841,7 @@ function ForecastScreen({ d, m }) {
             })}
             <line x1={forecastChart.PL} x2={forecastChart.VW-forecastChart.PR} y1={forecastChart.VH-forecastChart.PB} y2={forecastChart.VH-forecastChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="2"/>
             {forecastChart.xTicks.map((yr,i) => (
-              <text key={i} x={forecastChart.sx(yr)} y={forecastChart.VH-forecastChart.PB+20} fontSize="12" fontWeight="700" fill={MUT} textAnchor="middle">Yr {yr}</text>
+              <text key={i} x={forecastChart.sx(yr)} y={forecastChart.VH-forecastChart.PB+20} fontSize={svgFont(12,isMobile)} fontWeight="700" fill={MUT} textAnchor="middle">Yr {yr}</text>
             ))}
             <line x1={forecastChart.PL} x2={forecastChart.PL} y1={forecastChart.PT} y2={forecastChart.VH-forecastChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="2"/>
           </svg>
@@ -2860,6 +2882,7 @@ function ForecastScreen({ d, m }) {
                             {assumptions && (
                               <button type="button"
                                 onClick={() => setForecastTip(isOpen ? null : o.label)}
+                                className="tapTarget44"
                                 style={{width:"16px",height:"16px",borderRadius:"50%",background:isOpen ? MUT : "rgba(22,47,36,0.18)",border:"none",color:WHITE,fontSize:FONT_SIZE.CAPTION,fontWeight:700,cursor:"pointer",lineHeight:1,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                                 ?
                               </button>
@@ -3457,6 +3480,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // here (not inside the moduleKey==="cash" block) per the Rules of Hooks.
   const [showAllAccounts, setShowAllAccounts] = useState(false);
   const winWidth = useWindowWidth();
+  const isMobile = winWidth < 768;
   useEffect(() => { setShowAllAccounts(false); }, [moduleKey]);
 
   // The bonus-sacrifice Win opens itself via ExpandableInvestmentItem's defaultOpen
@@ -3711,7 +3735,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"6px"}}>
                   <div style={{fontSize:"11px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",lineHeight:1.3,paddingRight:"4px"}}>{ins.label}</div>
                   {ins.tooltip && (
-                    <button type="button" onClick={() => setOpenTip(openTip===i ? null : i)} style={{width:"18px",height:"18px",borderRadius:"50%",border:"1.5px solid rgba(22,47,36,0.25)",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:MUT,fontSize:FONT_SIZE.CAPTION,fontWeight:700,lineHeight:1}}>?</button>
+                    <button type="button" onClick={() => setOpenTip(openTip===i ? null : i)} className="tapTarget44" style={{width:"18px",height:"18px",borderRadius:"50%",border:"1.5px solid rgba(22,47,36,0.25)",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:MUT,fontSize:FONT_SIZE.CAPTION,fontWeight:700,lineHeight:1}}>?</button>
                   )}
                 </div>
                 <div style={{fontFamily:SERIF,fontSize:"18px",color:ins.flag ? G : TEXT,fontWeight:ins.flag ? 700 : 500,marginBottom:openTip===i?"8px":"0"}}>{ins.value}</div>
@@ -4304,7 +4328,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     {showOptimised && (
                       <>
                         <line x1={PL} x2={VW-PR} y1={refY} y2={refY} stroke="#e8d5a3" strokeWidth="1.5" strokeDasharray="8,5" opacity="0.7"/>
-                        <text x={VW-PR-6} y={refY-7} fontSize="13" fill="#e8d5a3" textAnchor="end" fontWeight="600">Potential</text>
+                        <text x={VW-PR-6} y={refY-7} fontSize={svgFont(13,isMobile)} fill="#e8d5a3" textAnchor="end" fontWeight="600">Potential</text>
                       </>
                     )}
                     {bars.map((bar, i) => {
@@ -4315,9 +4339,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       return (
                         <g key={i}>
                           <rect x={x} y={y} width={barW} height={barH} rx="6" fill={bar.color}/>
-                          <text x={x + barW/2} y={y - 10} fontSize="18" fontWeight="700" fill={G} textAnchor="middle">{fmt(Math.round(bar.value/1000)*1000)}</text>
+                          <text x={x + barW/2} y={y - 10} fontSize={svgFont(18,isMobile)} fontWeight="700" fill={G} textAnchor="middle">{fmt(Math.round(bar.value/1000)*1000)}</text>
                           {lines.map((ln, li) => (
-                            <text key={li} x={x + barW/2} y={VH - PB + 20 + li * 18} fontSize="13" fontWeight={li===0?"700":"400"} fill={MUT} textAnchor="middle">{ln}</text>
+                            <text key={li} x={x + barW/2} y={VH - PB + 20 + li * 18} fontSize={svgFont(13,isMobile)} fontWeight={li===0?"700":"400"} fill={MUT} textAnchor="middle">{ln}</text>
                           ))}
                           {i === 0 && (
                             <line x1={x+barW+8} x2={barX(1)-8} y1={(y + PT+cH)/2} y2={(sy(bars[1].value) + PT+cH)/2}
@@ -4891,10 +4915,13 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         </defs>
                         <path d={areaPath} fill="url(#isaGrowthFill)"/>
                         <path d={linePath} fill="none" stroke="#C79A3D" strokeWidth="3" strokeLinecap="round"/>
-                        <text x={VW-PR} y={PT-20} textAnchor="end" fontSize="21" fontWeight="700" fill="#153524" fontFamily={SERIF}>{`~${fmt(Math.round(finalValue))}`}</text>
-                        <text x={VW-PR} y={PT-5} textAnchor="end" fontSize="11" fill="#153524" opacity="0.75">{`at ${growthRatePct}% p.a., tax-free`}</text>
-                        <text x={PL} y={PT+cH+20} fontSize="11" fontWeight="600" fill="#153524" opacity="0.8">{`Today · ${fmt(Math.round(principal))}`}</text>
-                        <text x={VW-PR} y={PT+cH+20} textAnchor="end" fontSize="11" fill="#153524" opacity="0.6">{`${years} years`}</text>
+                        <text x={VW-PR} y={PT-20} textAnchor="end" fontSize={svgFont(21,isMobile)} fontWeight="700" fill="#153524" fontFamily={SERIF}>{`~${fmt(Math.round(finalValue))}`}</text>
+                        {/* Gap to the line above widens on mobile too (not just the font),
+                            since a bigger font needs more clearance to avoid the two lines
+                            overlapping — the desktop offset (PT-5) is untouched. */}
+                        <text x={VW-PR} y={isMobile ? PT+4 : PT-5} textAnchor="end" fontSize={svgFont(11,isMobile)} fill="#153524" opacity="0.75">{`at ${growthRatePct}% p.a., tax-free`}</text>
+                        <text x={PL} y={PT+cH+20} fontSize={svgFont(11,isMobile)} fontWeight="600" fill="#153524" opacity="0.8">{`Today · ${fmt(Math.round(principal))}`}</text>
+                        <text x={VW-PR} y={PT+cH+20} textAnchor="end" fontSize={svgFont(11,isMobile)} fill="#153524" opacity="0.6">{`${years} years`}</text>
                       </svg>
                       <p style={{fontSize:"11px",color:"#153524",opacity:0.65,lineHeight:1.5,marginTop:"2px"}}>
                         Illustrative only — assumes {growthRatePct}% p.a. nominal growth (not guaranteed) and retirement at {retirementAge}. Real returns could be lower or negative.
@@ -5154,15 +5181,15 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                               {yTicks.map(r => (
                                 <g key={r}>
                                   <line x1={PL} x2={VW-PR} y1={sy(r)} y2={sy(r)} stroke="rgba(22,47,36,0.09)" strokeWidth="1.5"/>
-                                  <text x={PL-10} y={sy(r)+5} fontSize="16" fontWeight="700" fill={MUT} textAnchor="end">{r.toFixed(2)}</text>
+                                  <text x={PL-10} y={sy(r)+5} fontSize={svgFont(16,isMobile)} fontWeight="700" fill={MUT} textAnchor="end">{r.toFixed(2)}</text>
                                 </g>
                               ))}
                               <line x1={PL} x2={VW-PR} y1={sy(pensionReturn)} y2={sy(pensionReturn)} stroke="#d4b97a" strokeWidth="2.5" strokeDasharray="10,5"/>
-                              <text x={VW-PR-8} y={sy(pensionReturn) + (crossX !== null ? 20 : -10)} fontSize="14" fontWeight="700" fill="#d4b97a" textAnchor="end">Pension {d.pensionType==="sacrifice"?"(salary sacrifice)":d.pensionType==="relief"?"(relief at source)":"return"} {pensionReturn.toFixed(2)}×</text>
+                              <text x={VW-PR-8} y={sy(pensionReturn) + (crossX !== null ? 20 : -10)} fontSize={svgFont(14,isMobile)} fontWeight="700" fill="#d4b97a" textAnchor="end">Pension {d.pensionType==="sacrifice"?"(salary sacrifice)":d.pensionType==="relief"?"(relief at source)":"return"} {pensionReturn.toFixed(2)}×</text>
                               {sy(mortReturn) > PT + 20 && sy(mortReturn) < VH-PB - 20 && (
                                 <>
                                   <line x1={PL} x2={VW-PR} y1={sy(mortReturn)} y2={sy(mortReturn)} stroke={MUT} strokeWidth="1.5" strokeDasharray="8,5" opacity="0.55"/>
-                                  <text x={VW-PR-8} y={sy(mortReturn)-8} fontSize="13" fill={MUT} textAnchor="end" opacity="0.7">Mortgage {mortRate}%</text>
+                                  <text x={VW-PR-8} y={sy(mortReturn)-8} fontSize={svgFont(13,isMobile)} fill={MUT} textAnchor="end" opacity="0.7">Mortgage {mortRate}%</text>
                                 </>
                               )}
                               <path d={path} fill="none" stroke={GOLD} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -5175,11 +5202,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                               )}
                               <line x1={PL} x2={VW-PR} y1={VH-PB} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="3"/>
                               {xTicks.map((amt,i) => (
-                                <text key={i} x={sx(amt)} y={VH-PB+22} fontSize="16" fontWeight="700" fill={MUT} textAnchor="middle">
+                                <text key={i} x={sx(amt)} y={VH-PB+22} fontSize={svgFont(16,isMobile)} fontWeight="700" fill={MUT} textAnchor="middle">
                                   {i===0?"£0":i===4?fmt(amt):"£"+Math.round(amt/1000)+"k"}
                                 </text>
                               ))}
-                              <text x={VW/2} y={VH-6} fontSize="15" fill={MUT} textAnchor="middle" opacity="0.7">Overpayment amount →</text>
+                              <text x={VW/2} y={VH-6} fontSize={svgFont(15,isMobile)} fill={MUT} textAnchor="middle" opacity="0.7">Overpayment amount →</text>
                               <line x1={PL} x2={PL} y1={PT} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="3"/>
                               {crossX !== null && (() => {
                                 const bx = Math.min(crossX - 10, VW - PR - 270);

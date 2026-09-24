@@ -11,7 +11,7 @@ import { EASE_STEADY, riseIn, pullTogether } from "./motion.js";
 const CAUSES = [
   { icon: Layers, title: "Complexity", body: "Pensions, ISAs, tax bands, allowances and mortgages all interact. Get one decision wrong and it can quietly undo the benefit of another." },
   { icon: Clock, title: "Lack of time", body: "Between work and everything else, few people have hours to spend cross-checking every financial decision against the rest of their situation." },
-  { icon: DoorClosed, title: "Lack of access", body: "A financial adviser typically costs hundreds of pounds and expects a minimum portfolio size most people don't have yet — leaving good earners with nowhere expert to turn." },
+  { icon: DoorClosed, title: "Lack of access", body: "A financial adviser typically costs hundreds of pounds and expects a minimum portfolio size most people don't have yet – leaving good earners with nowhere expert to turn." },
 ];
 
 const LIFE_EVENTS = [
@@ -27,10 +27,30 @@ const SectionLabel = ({ children }) => (
   </div>
 );
 
-// A card that flips on hover to reveal its body text on the reverse — the
-// front stays a simple icon + title so the row reads cleanly at a glance,
-// and the back uses the opposite colour scheme (dark green, not white) so
-// the flip itself reads as "turning the card over" rather than a plain swap.
+// There's no mouse to hover with on a touchscreen — framer-motion's
+// onHoverStart/onHoverEnd deliberately never fire for touch pointers (to
+// avoid the classic "sticky hover" glitch), so without this, FlipCard simply
+// never flips on mobile. `(hover: hover)` is true only when the primary
+// input can actually hover (a mouse/trackpad); false on touch-primary
+// devices, where we switch to tap-to-flip instead. Starts `true` (assume
+// hover-capable) so desktop's very first render isn't briefly wired for tap.
+function useCanHover() {
+  const [canHover, setCanHover] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover)");
+    setCanHover(mq.matches);
+    const onChange = e => setCanHover(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return canHover;
+}
+
+// A card that flips on hover (or, on touch devices, on tap — see
+// useCanHover above) to reveal its body text on the reverse — the front
+// stays a simple icon + title so the row reads cleanly at a glance, and the
+// back uses the opposite colour scheme (dark green, not white) so the flip
+// itself reads as "turning the card over" rather than a plain swap.
 //
 // Hover is detected on this OUTER, never-rotated wrapper and just flips a
 // bit of state — deliberately not `whileHover` on the rotating element
@@ -46,12 +66,14 @@ const SectionLabel = ({ children }) => (
 // duration drops to 0, per this site's existing reduced-motion convention.
 function FlipCard({ icon: Icon, title, body, i, total, reduceMotion }) {
   const [hovered, setHovered] = useState(false);
+  const canHover = useCanHover();
   return (
     <motion.div
       {...pullTogether(i, total, reduceMotion)}
       style={{ perspective: "1400px" }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
+      {...(canHover
+        ? { onHoverStart: () => setHovered(true), onHoverEnd: () => setHovered(false) }
+        : { onTap: () => setHovered(h => !h) })}
     >
       <motion.div
         animate={{ rotateY: hovered ? 180 : 0 }}
@@ -101,7 +123,7 @@ export default function TheProblemPage() {
             Millions of good earners are worse off than they should be.
           </h1>
           <p style={{ fontSize: "clamp(15px,2vw,17px)", color: MUT, lineHeight: 1.75, maxWidth: "580px", margin: "0 auto" }}>
-            Not because they've done anything wrong — because personal finance has become too complex, too time-consuming, and too hard to get proper help with. The result is thousands of pounds a year, quietly left on the table.
+            Not because they've done anything wrong – because personal finance has become too complex, too time-consuming, and too hard to get proper help with. The result is thousands of pounds a year, quietly left on the table.
           </p>
         </motion.div>
       </div>
@@ -128,7 +150,7 @@ export default function TheProblemPage() {
           <motion.h2 {...riseIn(reduceMotion)} style={{
             fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,32px)", color: G, fontWeight: 700, lineHeight: 1.3, marginBottom: "44px",
           }}>
-            Year on year, the picture changes — your plan has to keep up.
+            Year on year, the picture changes – your plan has to keep up.
           </motion.h2>
           <div style={{ position: "relative" }}>
             <div style={{ position: "absolute", top: "24px", left: "8%", right: "8%", height: "1.5px", background: "rgba(22,47,36,0.12)" }} />
@@ -161,7 +183,7 @@ export default function TheProblemPage() {
             Candid's aim is to fix this.
           </h2>
           <p style={{ fontSize: "14.5px", color: "rgba(246,240,230,0.75)", lineHeight: 1.7, maxWidth: "540px", margin: "0 auto" }}>
-            One holistic, always-up-to-date view of your whole financial life — built to keep pace with a job change, a house move, a growing family, or a student loan finally paid off.
+            One holistic, always-up-to-date view of your whole financial life – built to keep pace with a job change, a house move, a growing family, or a student loan finally paid off.
           </p>
         </motion.div>
       </div>

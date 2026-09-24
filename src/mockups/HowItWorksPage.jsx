@@ -10,22 +10,22 @@ import { riseIn, pullTogether } from "./motion.js";
 const STEPS = [
   {
     icon: ClipboardList, title: "Tell us about your finances",
-    body: "Salary, savings, pension, debts — as they stand today. There's no need to have anything optimised first; your current position, as it is, is exactly what we need.",
+    body: "Salary, savings, pension, debts – as they stand today. There's no need to have anything optimised first; your current position, as it is, is exactly what we need.",
     detail: "Approximate figures are fine, and nothing is shared until you choose to. Takes about 5 minutes.",
   },
   {
     icon: Scale, title: "Candid analyses your whole position",
-    body: "We run a trade-off analysis against the UK's actual tax structures and systems — pensions, ISAs, student loan, thresholds — to work out what's genuinely best for you, in the context of your position and your goals.",
+    body: "We run a trade-off analysis against the UK's actual tax structures and systems – pensions, ISAs, student loan, thresholds – to work out what's genuinely best for you, in the context of your position and your goals.",
     detail: "The outcome is a Candid health score and a clear set of actionable steps towards a more optimised position.",
   },
   {
     icon: Search, title: "Deep-dive guidance, module by module",
-    body: "We walk you through exactly where you can improve — pension, ISA, student loan, cash — with specific, prioritised actions and their £ impact, calculated from your actual numbers.",
+    body: "We walk you through exactly where you can improve – pension, ISA, student loan, cash – with specific, prioritised actions and their £ impact, calculated from your actual numbers.",
     detail: "Every recommendation shows its working, in plain English, so you understand the 'why' as well as the 'what.'",
   },
   {
     icon: Compass, title: "Ongoing guidance as things change",
-    body: "A pay rise, a house move, a growing family, a student loan finally paid off — your position keeps moving, so the guidance does too, not just on day one.",
+    body: "A pay rise, a house move, a growing family, a student loan finally paid off – your position keeps moving, so the guidance does too, not just on day one.",
     detail: "Come back whenever something changes; your score and your next steps update with it.",
   },
 ];

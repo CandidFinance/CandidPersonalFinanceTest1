@@ -57,7 +57,7 @@ export default function WaitlistForm({ id, source = "hero" }) {
   if (status === "success") {
     return (
       <div id={id} style={{ fontFamily: SANS, fontSize: "15px", fontWeight: 600, color: G, padding: "16px 4px" }}>
-        You're on the list — we'll email you the moment Candid launches.
+        You're on the list – we'll email you the moment Candid launches.
       </div>
     );
   }
@@ -86,7 +86,7 @@ export default function WaitlistForm({ id, source = "hero" }) {
         {status === "loading" ? "Joining…" : "Join the waitlist"}
       </motion.button>
       {status === "invalid" && <div style={{ width: "100%", fontSize: "12px", color: "#c0392b" }}>Enter a valid email address.</div>}
-      {status === "error" && <div style={{ width: "100%", fontSize: "12px", color: "#c0392b" }}>Something went wrong — please try again.</div>}
+      {status === "error" && <div style={{ width: "100%", fontSize: "12px", color: "#c0392b" }}>Something went wrong – please try again.</div>}
     </form>
   );
 }
