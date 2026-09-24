@@ -29,7 +29,20 @@ export default function FinancesModuleTiles() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div style={{ padding: "0 24px 88px" }}>
+    <div className="of-clip-pills" style={{ padding: "0 24px 88px" }}>
+      {/* .of-clip-pills (mobile-only): contains this row's scroll-entrance
+          overflow on narrow phones. Each pill starts off-screen — translated
+          sideways (up to ~92px for the 5-pill first row, via pullTogether in
+          motion.js) while invisible (opacity:0) — until scrolled into its
+          reveal trigger, and a CSS transform still counts toward scrollable
+          overflow even at opacity:0. Safe to clip: this wrapper's own 88px
+          bottom padding comfortably exceeds the animation's 54px vertical
+          travel, so nothing visible gets cut off mid-reveal. */}
+      <style>{`
+        @media (max-width: 768px) {
+          .of-clip-pills { overflow-x: hidden; }
+        }
+      `}</style>
       <motion.div {...riseIn(reduceMotion)} style={{ maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
         <div style={{ fontSize: "10px", fontWeight: 700, color: GOLD, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "14px" }}>
           The real issue

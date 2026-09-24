@@ -198,7 +198,18 @@ export default function NewLandingPage() {
       </div>
 
       {/* ── PROBLEM STATS ── */}
-      <div style={{ padding: "0 24px 88px" }}>
+      {/* .of-clip-stats (mobile-only, see the shared <style> below): contains
+          this section's entrance-animation overflow on narrow phones. Each
+          stat tile starts off-screen — translated sideways by up to ~46px
+          while invisible (opacity:0), via pullTogether in motion.js — until
+          scrolled into its reveal trigger. A CSS transform still counts
+          toward scrollable overflow even at opacity:0, so before that tile
+          is ever scrolled into view, that offset alone was enough to make
+          the whole page horizontally scrollable on a narrow phone. Safe to
+          clip here: this wrapper's own 88px bottom padding is comfortably
+          more than the animation's 54px vertical travel, so nothing visible
+          ever gets cut off mid-reveal. */}
+      <div className="of-clip-stats" style={{ padding: "0 24px 88px" }}>
         {/* Widened from 720px so the tiles below have room to fit "£425 / £527
             p.a." on one line without shrinking. */}
         <div style={{ maxWidth: "960px", margin: "0 auto", textAlign: "center" }}>
@@ -221,7 +232,9 @@ export default function NewLandingPage() {
       </div>
 
       {/* ── HOW IT WORKS (teaser — the full "How it works" tab has more detail) ── */}
-      <div style={{ padding: "0 24px 88px" }}>
+      {/* .of-clip-teaser — same off-screen entrance-animation overflow fix as
+          .of-clip-stats above, for this grid's own tiles. */}
+      <div className="of-clip-teaser" style={{ padding: "0 24px 88px" }}>
         <div style={{ maxWidth: "960px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "44px" }}>
             <SectionLabel>How it works</SectionLabel>
@@ -236,6 +249,9 @@ export default function NewLandingPage() {
             .how-it-works-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
             @media (max-width: 560px) {
               .how-it-works-grid { grid-template-columns: 1fr; }
+            }
+            @media (max-width: 768px) {
+              .of-clip-stats, .of-clip-teaser, .of-clip-calc { overflow-x: hidden; }
             }
           `}</style>
           <div className="how-it-works-grid">
@@ -286,7 +302,11 @@ export default function NewLandingPage() {
       </div>
 
       {/* ── FREE CALCULATORS ── */}
-      <div style={{ padding: "0 24px 88px" }}>
+      {/* .of-clip-calc — same off-screen entrance-animation overflow fix as
+          .of-clip-stats/.of-clip-teaser above. Found while re-measuring after
+          fixing those two: not one of the originally reported sections, but
+          the identical bug (see the other .of-clip-* comments in this file). */}
+      <div className="of-clip-calc" style={{ padding: "0 24px 88px" }}>
         <div style={{ maxWidth: "960px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "44px" }}>
             <SectionLabel>Free calculators</SectionLabel>

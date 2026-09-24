@@ -122,7 +122,23 @@ export default function TheProblemPage() {
       </div>
 
       {/* ── ROOT CAUSES ── */}
-      <div style={{ padding: "0 24px 88px" }}>
+      {/* .of-clip-causes (mobile-only, see <style> below) contains this
+          section's scroll-entrance overflow on narrow phones: each cause
+          tile starts off-screen — translated sideways by up to ~46px while
+          invisible (opacity:0), via pullTogether in motion.js — until
+          scrolled into its reveal trigger, and a CSS transform still counts
+          toward scrollable overflow even at opacity:0. That's what made the
+          "Lack of access" tile (the outermost, so the largest offset)
+          overflow the viewport before it had ever been scrolled to. Safe to
+          clip here: this wrapper's own 88px bottom padding comfortably
+          exceeds the animation's 54px vertical travel, so nothing visible
+          gets cut off mid-reveal. */}
+      <style>{`
+        @media (max-width: 768px) {
+          .of-clip-causes, .of-clip-life { overflow-x: hidden; }
+        }
+      `}</style>
+      <div className="of-clip-causes" style={{ padding: "0 24px 88px" }}>
         <div style={{ maxWidth: "960px", margin: "0 auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px" }}>
             {CAUSES.map((cause, i) => (
@@ -137,7 +153,11 @@ export default function TheProblemPage() {
       <FinancesModuleTiles />
 
       {/* ── YOUR SITUATION KEEPS CHANGING ── */}
-      <div style={{ padding: "0 24px 88px" }}>
+      {/* .of-clip-life — same off-screen entrance-animation overflow fix as
+          .of-clip-causes above. Found while re-measuring after fixing that
+          one: not one of the originally reported sections, but the identical
+          bug (see .of-clip-causes' comment for the full mechanism). */}
+      <div className="of-clip-life" style={{ padding: "0 24px 88px" }}>
         <div style={{ maxWidth: "880px", margin: "0 auto", textAlign: "center" }}>
           <SectionLabel>And it never stands still</SectionLabel>
           <motion.h2 {...riseIn(reduceMotion)} style={{

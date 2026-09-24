@@ -56,7 +56,21 @@ export default function HowItWorksPage() {
         </motion.div>
       </div>
 
-      <div style={{ padding: "0 24px 88px" }}>
+      {/* .of-clip-steps (mobile-only): contains this list's scroll-entrance
+          overflow on narrow phones. Step 4 (the last, so the largest offset)
+          starts off-screen — translated sideways by up to ~30px while
+          invisible (opacity:0), via pullTogether in motion.js — until
+          scrolled into its reveal trigger, and a CSS transform still counts
+          toward scrollable overflow even at opacity:0. Safe to clip: this
+          wrapper's own 88px bottom padding comfortably exceeds the
+          animation's 44px vertical travel, so nothing visible gets cut off
+          mid-reveal. */}
+      <style>{`
+        @media (max-width: 768px) {
+          .of-clip-steps { overflow-x: hidden; }
+        }
+      `}</style>
+      <div className="of-clip-steps" style={{ padding: "0 24px 88px" }}>
         <div style={{ maxWidth: "760px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
           {STEPS.map((step, i) => (
             <motion.div key={step.title} ref={stepRef(i)} {...pullTogether(i, STEPS.length, reduceMotion, { stagger: 0.1, duration: 0.7, spreadPx: 20, riseYPx: 44 })} style={{
