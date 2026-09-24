@@ -239,7 +239,7 @@ export default function NewLandingPage() {
           <div style={{ textAlign: "center", marginBottom: "44px" }}>
             <SectionLabel>How it works</SectionLabel>
             <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: G, fontWeight: 700, lineHeight: 1.2 }}>
-              Your finances, mapped. Tailored steps to grow your wealth. All, in 5 minutes.
+              Your finances, mapped. Tailored steps to grow your wealth.<br />All, in 5 minutes.
             </motion.h2>
           </div>
           {/* Fixed 2x2 down to phone width, then a single column — a plain
