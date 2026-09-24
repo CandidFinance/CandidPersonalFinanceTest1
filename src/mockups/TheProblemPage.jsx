@@ -27,30 +27,22 @@ const SectionLabel = ({ children }) => (
   </div>
 );
 
-// There's no mouse to hover with on a touchscreen — framer-motion's
-// onHoverStart/onHoverEnd deliberately never fire for touch pointers (to
-// avoid the classic "sticky hover" glitch), so without this, FlipCard simply
-// never flips on mobile. `(hover: hover)` is true only when the primary
-// input can actually hover (a mouse/trackpad); false on touch-primary
-// devices, where we switch to tap-to-flip instead. Starts `true` (assume
-// hover-capable) so desktop's very first render isn't briefly wired for tap.
-function useCanHover() {
-  const [canHover, setCanHover] = useState(true);
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: hover)");
-    setCanHover(mq.matches);
-    const onChange = e => setCanHover(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return canHover;
-}
-
-// A card that flips on hover (or, on touch devices, on tap — see
-// useCanHover above) to reveal its body text on the reverse — the front
-// stays a simple icon + title so the row reads cleanly at a glance, and the
-// back uses the opposite colour scheme (dark green, not white) so the flip
-// itself reads as "turning the card over" rather than a plain swap.
+// A card that flips to reveal its body text on the reverse, on either hover
+// (laptop/desktop) or tap (tablet/mobile) — the front stays a simple icon +
+// title so the row reads cleanly at a glance, and the back uses the opposite
+// colour scheme (dark green, not white) so the flip itself reads as "turning
+// the card over" rather than a plain swap.
+//
+// Both triggers are wired unconditionally, not chosen via a `(hover: hover)`
+// capability check — that check sounds right but isn't reliable in practice:
+// plenty of touchscreen-enabled laptops report `hover: none` (a touch
+// digitizer is present at all) even while being driven entirely by a mouse
+// or trackpad, which would wire up tap-only and silently kill hover on a
+// real laptop. Running both at once is safe because framer-motion's hover
+// gesture already ignores touch pointers internally (to avoid the classic
+// "sticky hover" glitch) — so onHoverStart/onHoverEnd only ever fire for a
+// genuine mouse/trackpad, and onTap only ever fires from an actual tap or
+// click, with each pointer type only ever driving the mechanism meant for it.
 //
 // Hover is detected on this OUTER, never-rotated wrapper and just flips a
 // bit of state — deliberately not `whileHover` on the rotating element
@@ -66,17 +58,18 @@ function useCanHover() {
 // duration drops to 0, per this site's existing reduced-motion convention.
 function FlipCard({ icon: Icon, title, body, i, total, reduceMotion }) {
   const [hovered, setHovered] = useState(false);
-  const canHover = useCanHover();
+  const [tapped, setTapped] = useState(false);
+  const flipped = hovered || tapped;
   return (
     <motion.div
       {...pullTogether(i, total, reduceMotion)}
       style={{ perspective: "1400px" }}
-      {...(canHover
-        ? { onHoverStart: () => setHovered(true), onHoverEnd: () => setHovered(false) }
-        : { onTap: () => setHovered(h => !h) })}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      onTap={() => setTapped(t => !t)}
     >
       <motion.div
-        animate={{ rotateY: hovered ? 180 : 0 }}
+        animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: reduceMotion ? 0 : 0.6, ease: EASE_STEADY }}
         style={{ position: "relative", height: "236px", transformStyle: "preserve-3d" }}
       >
