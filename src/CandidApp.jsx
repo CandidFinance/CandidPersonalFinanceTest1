@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
-import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart, Wrench } from "lucide-react";
+import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart, Wrench, ChevronRight, ChevronDown } from "lucide-react";
 import { fmt, fmtK, fmtCompact } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, calcStudentLoanScenario } from "./lib/studentLoan.js";
@@ -13,7 +13,7 @@ import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sani
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
 import { simulateLoan, fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions } from "./lib/forecast.js";
 import { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
-import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG } from "./design-tokens.js";
+import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
@@ -126,7 +126,7 @@ button:active{transform:scale(0.98);}
 }
 `;
 
-export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG };
+export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK };
 
 const INP = {
   width:"100%", padding:"11px 14px", border:"1.5px solid rgba(22,47,36,0.18)",
@@ -353,7 +353,7 @@ function getModuleInsights(key, d, m, savingsRates) {
       const onTrackEarly = yearsSaved > 0 && contributing;
       return [
         {
-          label:"Employer match gap", value: employerLeaving > 0 ? fmt(employerLeaving)+"/yr" : "Fully captured ✓", flag: employerLeaving > 0,
+          label:"Employer match gap", value: employerLeaving > 0 ? fmt(employerLeaving)+"/yr" : "Fully captured", flag: employerLeaving > 0,
           tooltip:`Your employer matches up to ${empPct}% of your salary (${fmt(empPct/100*m.salary)}/yr). You're contributing ${myPct}% (${fmt(myPct/100*m.salary)}/yr). The gap — ${fmt(employerLeaving)}/yr — is money your employer would pay that you are not claiming. This is the highest-priority fix.`
         },
         {
@@ -976,8 +976,8 @@ function Checkbox({ checked, onChange, label }) {
 // content so the wordmark left-aligns with the tiles below it.
 export function NavBar({ right, center, onLogoClick, light }) {
   const wordmarkStyle = light
-    ? {fontFamily:SERIF,color:G,fontSize:"20px",fontWeight:700,justifySelf:"start"}
-    : {fontFamily:SERIF,color:GOLD,fontSize:FONT_SIZE.HEADLINE,fontWeight:700,justifySelf:"start"};
+    ? {...HEADER_WORDMARK_LIGHT,fontSize:"20px",justifySelf:"start"}
+    : {...HEADER_WORDMARK_DARK,fontSize:FONT_SIZE.HEADLINE,justifySelf:"start"};
   const row = (
     <>
       {onLogoClick ? (
@@ -991,12 +991,12 @@ export function NavBar({ right, center, onLogoClick, light }) {
   );
   const grid = {display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px"};
   if (light) return (
-    <div style={{background:CREAM,borderBottom:"1px solid rgba(22,47,36,0.08)",paddingTop:"env(safe-area-inset-top, 0px)",flexShrink:0}}>
+    <div style={{background:HEADER_BG_LIGHT,borderBottom:"1px solid rgba(22,47,36,0.08)",paddingTop:"env(safe-area-inset-top, 0px)",flexShrink:0}}>
       <div style={{...grid,maxWidth:"580px",margin:"0 auto",padding:"14px 20px",width:"100%",boxSizing:"border-box"}}>{row}</div>
     </div>
   );
   return (
-    <div style={{background:G,padding:"18px 32px",paddingTop:"calc(18px + env(safe-area-inset-top, 0px))",...grid,flexShrink:0}}>{row}</div>
+    <div style={{background:HEADER_BG_DARK,padding:"18px 32px",paddingTop:"calc(18px + env(safe-area-inset-top, 0px))",...grid,flexShrink:0}}>{row}</div>
   );
 }
 
@@ -1067,7 +1067,7 @@ function StepProgress({ step, steps, onStepClick, isEditMode }) {
                   title={clickable ? `Jump to ${label}` : undefined}
                 >
                   {done
-                    ? <span style={{color:WHITE,fontSize:FONT_SIZE.BODY,fontWeight:700}}>✓</span>
+                    ? <Check size={16} color={WHITE} strokeWidth={2.5}/>
                     : <span style={{color: current ? G : isEditMode ? G : MUT, fontSize:FONT_SIZE.LABEL, fontWeight:600}}>{i+1}</span>
                   }
                 </div>
@@ -1272,7 +1272,7 @@ function InfoTooltip({ text }) {
         ?
       </button>
       {pos && (
-        <div style={{position:"fixed",bottom:pos.bottom+"px",left:pos.left+"px",transform:"translateX(-50%)",width:"270px",whiteSpace:"normal",background:G,color:WHITE,borderRadius:"10px",padding:"14px 16px",fontSize:FONT_SIZE.LABEL,lineHeight:1.65,zIndex:1000,boxShadow:"0 8px 24px rgba(0,0,0,0.22)"}}>
+        <div style={{position:"fixed",bottom:pos.bottom+"px",left:pos.left+"px",transform:"translateX(-50%)",width:"270px",whiteSpace:"normal",background:G,color:WHITE,borderRadius:"10px",padding:"14px 16px",fontSize:FONT_SIZE.LABEL,lineHeight:1.65,zIndex:1000,boxShadow:"0 8px 24px rgba(22,47,36,0.22)"}}>
           {text}
           <button type="button" onClick={e=>{e.stopPropagation();setPos(null)}} style={{position:"absolute",top:"8px",right:"10px",background:"transparent",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"15px",cursor:"pointer",lineHeight:1}}>×</button>
         </div>
@@ -1914,20 +1914,6 @@ function LoadingScreen({ name, msgs }) {
   );
 }
 
-// ── Score band — colour + label for a given Candid score. Single source of
-// truth so the score ring, the mobile score bar, and the tap-through detail
-// sheet never disagree on where the bands sit or what colour a given score
-// reads as. Five discrete bands, not a continuous gradient — deliberately:
-// a flat colour per band reads as "which zone am I in" at a glance, which a
-// smoothly-interpolated fill doesn't.
-export function scoreBand(score) {
-  if (score >= 80) return { color: G, label: "Optimised" };
-  if (score >= 65) return { color: "#2d6b4a", label: "On track" };
-  if (score >= 50) return { color: GOLD, label: "Room to improve" };
-  if (score >= 35) return { color: "#d9822b", label: "Needs work" };
-  return { color: "#c0392b", label: "Needs attention" };
-}
-
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export function ScoreRing({ score, delta = 0 }) {
   const r = 50, circ = 2 * Math.PI * r;
@@ -1987,7 +1973,7 @@ export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, on
 
   return createPortal(
     <div onClick={onClose} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.55)",display:"flex",alignItems:isMobile?"flex-end":"center",justifyContent:"center",padding:isMobile?0:"24px",overflowY:"auto"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:CREAM,borderRadius:isMobile?"20px 20px 0 0":"18px",maxWidth:"480px",width:"100%",maxHeight:"88vh",overflowY:"auto",boxShadow:"0 -8px 30px rgba(0,0,0,0.2)"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:CREAM,borderRadius:isMobile?"20px 20px 0 0":RADIUS_MODAL,maxWidth:"480px",width:"100%",maxHeight:"88vh",overflowY:"auto",boxShadow:"0 -8px 30px rgba(22,47,36,0.2)"}}>
         <div style={{position:"sticky",top:0,background:CREAM,padding:"18px 22px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(22,47,36,0.08)"}}>
           <span style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G}}>Your Candid score</span>
           <button onClick={onClose} style={{background:"rgba(22,47,36,0.08)",border:"none",borderRadius:"50%",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"16px",color:MUT,lineHeight:1}}>×</button>
@@ -2099,7 +2085,7 @@ function FeedbackButton() {
           borderRadius:"10px 0 0 10px", borderRight:"none",
           padding:"14px 12px", display:"flex", flexDirection:"column",
           alignItems:"center", gap:"8px", cursor:"pointer", zIndex:5000,
-          boxShadow:"-3px 3px 12px rgba(0,0,0,0.18)",
+          boxShadow:"-3px 3px 12px rgba(22,47,36,0.18)",
         }}>
           <MessageCircle size={16}/>
           <span style={{fontSize:"9px",fontWeight:700,color:GOLD,letterSpacing:"0.1em",textTransform:"uppercase",writingMode:"vertical-rl",transform:"rotate(180deg)"}}>Feedback</span>
@@ -2112,8 +2098,8 @@ function FeedbackButton() {
           display:"flex", alignItems:"center", justifyContent:"center", padding:"24px",
         }}>
           <div onClick={e => e.stopPropagation()} style={{
-            background:WHITE, borderRadius:"18px", maxWidth:"460px", width:"100%",
-            overflow:"hidden", boxShadow:"0 24px 64px rgba(0,0,0,0.25)",
+            background:WHITE, borderRadius:RADIUS_MODAL, maxWidth:"460px", width:"100%",
+            overflow:"hidden", boxShadow:"0 24px 64px rgba(22,47,36,0.25)",
           }}>
             <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
               <MessageCircle size={20} color={G}/>
@@ -2456,7 +2442,7 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
               <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
                 <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:SUCCESS,letterSpacing:"0.07em",textTransform:"uppercase"}}>Assets {fmt(m.totalAssets)}</div>
                 <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:CRITICAL,letterSpacing:"0.07em",textTransform:"uppercase"}}>Liabilities {fmt(m.totalLiabilities)}</div>
-                <span style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:G,letterSpacing:"0.07em",textTransform:"uppercase",userSelect:"none"}}>{netWorthExpanded?"↑":"↓"}</span>
+                <ChevronDown size={13} color={G} style={{transform:netWorthExpanded?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
               </div>
             </div>
 
@@ -2669,7 +2655,7 @@ function ModulesScreen({ d, m, statuses, insights, onOpenModule, onAddModule, co
                     <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"6px",flexShrink:0}}>
                       {tag && <TagPill label={tag.label} color={tag.color}/>}
                       {hasRec && reviewed && <Check size={14} color={isOpen?GOLD:SUCCESS} strokeWidth={2.5}/>}
-                      <span style={{fontSize:"16px",color:isOpen?GOLD:MUT,transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}>›</span>
+                      <ChevronRight size={16} color={isOpen?GOLD:MUT} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
                     </div>
                   </div>
                   {isOpen && (
@@ -3024,7 +3010,7 @@ function FeedbackModal({ onDismiss, onSubmit }) {
 
   return createPortal(
     <div onClick={submitted ? undefined : onDismiss} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.7)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",overflowY:"auto"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:WHITE,borderRadius:RADIUS_MODAL,maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(22,47,36,0.25)"}}>
         <div style={{background:GOLD,padding:"14px 24px",display:"flex",alignItems:"center",gap:"10px"}}>
           <MessageCircle size={20} color={G}/>
           <div>
@@ -3134,7 +3120,7 @@ function PdfReportModal({ email, insights, d, onDismiss }) {
       opacity: phase === "exit" ? 0 : 1, transition:"opacity 0.3s ease",
     }}>
       <div onClick={e=>e.stopPropagation()} style={{
-        background:WHITE,borderRadius:"18px",maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(0,0,0,0.25)",
+        background:WHITE,borderRadius:RADIUS_MODAL,maxWidth:"460px",width:"100%",overflow:"hidden",boxShadow:"0 24px 64px rgba(22,47,36,0.25)",
         transform: phase === "form" ? "scale(1)" : "scale(0.96)", transition:"transform 0.3s ease",
       }}>
         <div style={{opacity: contentIn ? 1 : 0, transition:"opacity 0.2s ease"}}>
@@ -3286,7 +3272,7 @@ function NonWinExpandable({ eyebrow, title, subtitle, children }) {
           <div style={{fontSize:"14px",fontWeight:600,color:open?WHITE:G}}>{title}</div>
           <div style={{fontSize:FONT_SIZE.BODY,color:open?"rgba(255,255,255,0.75)":MUT,marginTop:"3px",lineHeight:1.5}}>{subtitle}</div>
         </div>
-        <span style={{fontSize:"18px",color:open?GOLD:MUT,transform:open?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0,marginLeft:"12px"}}>›</span>
+        <ChevronRight size={18} color={open?GOLD:MUT} style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0,marginLeft:"12px"}}/>
       </button>
       {open && <div>{children}</div>}
     </div>
@@ -3416,7 +3402,7 @@ function ExpandableInvestmentItem({ number, title, headline, tag, children, defa
             {tag && (
               <span style={{fontSize:FONT_SIZE.CAPTION, fontWeight:700, color:tag.color, background:`${tag.color}18`, padding:"3px 9px", borderRadius:RADIUS_PILL, letterSpacing:"0.04em", textTransform:"uppercase", whiteSpace:"nowrap"}}>{tag.label}</span>
             )}
-            <span style={{fontSize:"18px", color: open ? GOLD : MUT, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s"}}>›</span>
+            <ChevronRight size={18} color={open ? GOLD : MUT} style={{transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s"}}/>
           </div>
         </button>
       </div>
@@ -3446,7 +3432,7 @@ function MiniExpandTile({ icon:Icon, label, color, summary, children }) {
             <Icon size={13} color={color}/>
             <span style={{fontSize:FONT_SIZE.CAPTION, fontWeight:700, color, letterSpacing:"0.05em", textTransform:"uppercase", whiteSpace:"nowrap"}}>{label}</span>
           </div>
-          <span style={{fontSize:"14px", color, transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s", flexShrink:0}}>›</span>
+          <ChevronRight size={14} color={color} style={{transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s", flexShrink:0}}/>
         </div>
         <p style={{fontSize:FONT_SIZE.LABEL, color:TEXT, lineHeight:1.5, margin:0}}>{summary}</p>
       </button>
@@ -4020,7 +4006,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         </div>
 
                         <div style={{...stepCardStyle, background: m.missedMatch>0 ? "rgba(196,150,58,0.07)" : "rgba(45,107,74,0.06)", border:`1px solid ${m.missedMatch>0 ? "rgba(196,150,58,0.28)" : "rgba(45,107,74,0.22)"}`}}>
-                          <div style={{...stepEyebrowStyle, color: m.missedMatch>0 ? GOLD : SUCCESS}}>Step 2 — Employer match {m.missedMatch>0 ? "(not fully claimed)" : "(fully claimed ✓)"}</div>
+                          <div style={{...stepEyebrowStyle, color: m.missedMatch>0 ? GOLD : SUCCESS}}>Step 2 — Employer match {m.missedMatch>0 ? "(not fully claimed)" : "(fully claimed)"}</div>
                           <div style={rowStyle}>
                             <span>Matched up to {empCapPct}% of salary</span>
                             <span style={{fontWeight:700,color:SUCCESS}}>{fmt(currentMatchReceived)}/yr</span>
@@ -4765,9 +4751,9 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                 </div>
                 <div style={{marginTop:"8px",fontSize:FONT_SIZE.BODY,color:TEXT}}>
                   {runwayPctRaw >= 150
-                    ? <span style={{color:SUCCESS,fontWeight:600}}>✓ More than sufficient — {fmt(runwayCurrent)} saved, {(runwayPctRaw/100).toFixed(1)}× your {m.bufferMonths}-month target ({fmt(runwayTarget)})</span>
+                    ? <span style={{color:SUCCESS,fontWeight:600,display:"inline-flex",alignItems:"center",gap:"5px"}}><Check size={14} color={SUCCESS} strokeWidth={2.5}/>More than sufficient — {fmt(runwayCurrent)} saved, {(runwayPctRaw/100).toFixed(1)}× your {m.bufferMonths}-month target ({fmt(runwayTarget)})</span>
                     : runwayPctRaw >= 100
-                      ? <span style={{color:SUCCESS,fontWeight:600}}>✓ Fully funded — {fmt(runwayCurrent)} of {fmt(runwayTarget)} target</span>
+                      ? <span style={{color:SUCCESS,fontWeight:600,display:"inline-flex",alignItems:"center",gap:"5px"}}><Check size={14} color={SUCCESS} strokeWidth={2.5}/>Fully funded — {fmt(runwayCurrent)} of {fmt(runwayTarget)} target</span>
                       : `${fmt(runwayCurrent)} of ${fmt(runwayTarget)} emergency fund target (${Math.round(runwayPctRaw)}% covered)`}
                 </div>
               </div>
@@ -5144,8 +5130,8 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           <div key={i} style={{background:bg,border:`1.5px solid ${bdr}`,borderRadius:"10px",padding:"14px 16px",marginBottom:"8px"}}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",flexWrap:"wrap",marginBottom:"8px"}}>
                               <div>
-                                <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:clears?SUCCESS:reaches?GOLD:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px"}}>
-                                  {clears ? "✓ Clears the loan" : reaches ? "✓ Reaches inflection point" : `Overpay ${fmt(s.amt)} today`}
+                                <div style={{fontSize:FONT_SIZE.CAPTION,fontWeight:700,color:clears?SUCCESS:reaches?GOLD:G,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:"3px",display:"flex",alignItems:"center",gap:"4px"}}>
+                                  {clears ? <><Check size={11} color={SUCCESS} strokeWidth={2.5}/>Clears the loan</> : reaches ? <><Check size={11} color={GOLD} strokeWidth={2.5}/>Reaches inflection point</> : `Overpay ${fmt(s.amt)} today`}
                                 </div>
                                 <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700}}>
                                   {clears ? `Clears in ${s.clearYr} yrs (vs ${sl.baseProjection.clearYr||sl.writeOffYr})` : `${fmt(s.writeOffBal)} written off`}

@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import posthog from "posthog-js"
 import { MotionConfig } from "framer-motion"
-import CandidApp, { PageWrap, NavBar, ContentWrap } from "./CandidApp.jsx"
+import CandidApp, { PageWrap, NavBar, ContentWrap, G, GOLD, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "./CandidApp.jsx"
 import ErrorBoundary from "./ErrorBoundary.jsx"
 import BetaGate, { RequireBeta } from "./BetaGate.jsx"
 
@@ -100,14 +100,6 @@ if (SHOW_DEV_TOOLS) {
 const NewLandingPage = lazy(() => import("./mockups/NewLandingPage.jsx"))
 const TheProblemPage = lazy(() => import("./mockups/TheProblemPage.jsx"))
 const HowItWorksPage = lazy(() => import("./mockups/HowItWorksPage.jsx"))
-
-const G    = "#162f24"
-const GOLD = "#c4963a"
-const CREAM= "#f6f0e6"
-const WHITE= "#ffffff"
-const MUT  = "#6b6b6b"
-const SERIF= "'Playfair Display', serif"
-const SANS = "'DM Sans', sans-serif"
 
 // ── Welcome back screen ───────────────────────────────────────────────────────
 function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStartFresh }) {
@@ -211,7 +203,7 @@ function ConfidenceCheck() {
                 width:"52px", height:"52px", borderRadius:"50%",
                 border:`1.5px solid ${score===n ? G : "rgba(22,47,36,0.18)"}`,
                 background: score===n ? G : WHITE,
-                color: score===n ? WHITE : "#1a1a1a",
+                color: score===n ? WHITE : TEXT,
                 fontSize:"18px", fontWeight:700, cursor:"pointer",
                 fontFamily:SANS, transition:"all 0.15s",
               }}>{n}</button>
@@ -258,7 +250,7 @@ function FeedbackAdmin() {
     setLoading(false);
   }
 
-  const cellStyle = { padding: "10px 14px", borderBottom: "1px solid rgba(22,47,36,0.1)", fontSize: "13px", color: "#1a1a1a", verticalAlign: "top", textAlign: "left" };
+  const cellStyle = { padding: "10px 14px", borderBottom: "1px solid rgba(22,47,36,0.1)", fontSize: "13px", color: TEXT, verticalAlign: "top", textAlign: "left" };
   const headStyle = { ...cellStyle, fontWeight: 700, color: G, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", borderBottom: `2px solid ${G}`, whiteSpace: "nowrap" };
 
   if (!rows) {
@@ -266,7 +258,7 @@ function FeedbackAdmin() {
       <div style={{ minHeight: "100vh", background: CREAM, display: "flex", flexDirection: "column" }}>
         <NavBar center="Feedback admin"/>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, padding: "24px" }}>
-          <form onSubmit={handleSubmit} style={{ background: WHITE, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "340px", boxShadow: "0 8px 32px rgba(0,0,0,0.1)" }}>
+          <form onSubmit={handleSubmit} style={{ background: WHITE, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "340px", boxShadow: "0 8px 32px rgba(22,47,36,0.1)" }}>
             <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, marginBottom: "18px" }}>Feedback admin</div>
             <input
               type="password"

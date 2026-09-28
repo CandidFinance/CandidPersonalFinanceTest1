@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Landmark, Unlock, ExternalLink } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../CandidApp.jsx";
+import { Landmark, Unlock, ExternalLink, ChevronRight } from "lucide-react";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../CandidApp.jsx";
 
 // Static "where to actually do this" provider list for Investments/Pension —
 // unlike Cash's MobileProductListTile, there's no live-rate data source for
@@ -23,10 +23,10 @@ export default function MobileProviderTile({ heading, products, disclaimer }) {
   if (!products || products.length === 0) return null;
 
   return (
-    <div style={{background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginTop:"16px"}}>
+    <div style={{background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
       <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",cursor:"pointer",marginBottom:"12px"}}>
         <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</div>
-        <span style={{fontSize:"14px",color:"#6b6b6b",flexShrink:0,display:"inline-block",transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}>›</span>
+        <ChevronRight size={14} color={MUT} style={{flexShrink:0,transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
       </div>
 
       <div style={{position:"relative",maxHeight:open?"none":`${COLLAPSED_HEIGHT}px`,overflow:"hidden"}}>

@@ -34,6 +34,11 @@
     p { color: #4a4a4a; font-size: 15px; line-height: 1.7; }
     a { color: #162F24; }
     label { display:block; font-size: 12px; font-weight: 700; color: rgba(246,240,230,0.75); letter-spacing:0.04em; text-transform:uppercase; margin-bottom: 6px; }
+    /* #0f2018 matches design-tokens.js's INPUT_BG_DARK — the recessed dark
+       background for a form field sitting on a G-green surface, also used by
+       DevTools.jsx. This page can't import that file (plain HTML); if
+       INPUT_BG_DARK changes there, update here and in the other 2 calculator
+       pages, which share this same rule. */
     input, select {
       width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
       background: #0f2018; color: #f6f0e6; font-size: 15px; font-family: 'DM Sans', sans-serif;
@@ -53,6 +58,10 @@
   </style>
 </head>
 <body>
+  <!-- This standalone page can't import src/design-tokens.js, so this nav hand-matches
+       HEADER_BG_DARK (#162f24) + HEADER_WORDMARK_DARK (Playfair Display, 700, GOLD #c4963a).
+       If either changes there, update this markup (and privacy.html / terms.html / the
+       other 2 calculator pages, which share the same pattern) to match. -->
   <nav style="background:#162F24;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
     <span style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;color:#C4963A;">Candid.</span>
     <span style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:500;">Mortgage vs Savings Calculator</span>

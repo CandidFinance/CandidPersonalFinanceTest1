@@ -4,6 +4,7 @@ import { fmt, fmtCompact } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, topRate, getModuleProducts, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
+import InfoButton from "../InfoButton.jsx";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
 
@@ -21,7 +22,6 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const stepLabelRow = { display:"flex", alignItems:"center", gap:"6px", marginTop:"8px", marginBottom:"2px" };
   const stepLabel = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase" };
-  const infoBtn = { background:"#a8a89c", color:WHITE, border:"none", borderRadius:"50%", width:"15px", height:"15px", fontSize:"10px", fontWeight:700, lineHeight:"15px", textAlign:"center", padding:0, cursor:"pointer", flexShrink:0 };
   const stepCaption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, marginTop:"6px", background:"#ede7db", borderRadius:"8px", padding:"8px 10px" };
   const isaRatePct = topRate(savingsRates, true)?.rate_aer ?? null;
   const nonIsaRatePct = topRate(savingsRates, false)?.rate_aer ?? null;
@@ -106,7 +106,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
               <div>
                 <div style={stepLabelRow}>
                   <span style={stepLabel}>Step 1 — Fill your ISA</span>
-                  <button onClick={() => setOpenInfo(o => o==="step1"?null:"step1")} style={infoBtn}>?</button>
+                  <InfoButton onClick={() => setOpenInfo(o => o==="step1"?null:"step1")} open={openInfo==="step1"}/>
                 </div>
                 <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (best rate)</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span></div>
                 {openInfo === "step1" && (
@@ -118,7 +118,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
               <div>
                 <div style={stepLabelRow}>
                   <span style={stepLabel}>Step 2 — Fill your Personal Savings Allowance</span>
-                  <button onClick={() => setOpenInfo(o => o==="step2"?null:"step2")} style={infoBtn}>?</button>
+                  <InfoButton onClick={() => setOpenInfo(o => o==="step2"?null:"step2")} open={openInfo==="step2"}/>
                 </div>
                 <div style={rowStyle}><span>{fmt(step2Savings)} at your current rate</span><span>{fmt(step2CurrentInterest)}/yr</span></div>
                 <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (best rate)</span><span style={{fontWeight:600}}>{fmt(step2SavingsInterest)}/yr</span></div>

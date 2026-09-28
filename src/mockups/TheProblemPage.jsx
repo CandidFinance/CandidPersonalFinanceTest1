@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Layers, Clock, DoorClosed, TrendingUp, Home as HomeIcon, Users, CheckCircle2 } from "lucide-react";
 import posthog from "posthog-js";
-import { G, GOLD, WHITE, MUT, SERIF } from "../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
 import NewSiteLayout from "./NewSiteLayout.jsx";
 import WaitlistForm from "./WaitlistForm.jsx";
 import FinancesModuleTiles from "./FinancesModuleTiles.jsx";
@@ -76,7 +76,7 @@ function FlipCard({ icon: Icon, title, body, i, total, reduceMotion }) {
         {/* Front */}
         <div style={{
           position: "absolute", inset: 0, backfaceVisibility: "hidden",
-          background: WHITE, borderRadius: "18px", borderTop: `4px solid ${GOLD}`,
+          background: WHITE, borderRadius: RADIUS_MODAL, borderTop: `4px solid ${GOLD}`,
           boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px",
         }}>
@@ -86,7 +86,7 @@ function FlipCard({ icon: Icon, title, body, i, total, reduceMotion }) {
         {/* Back — reversed colour scheme (dark green, gold accent) for depth */}
         <div style={{
           position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
-          background: G, borderRadius: "18px", padding: "28px",
+          background: G, borderRadius: RADIUS_MODAL, padding: "28px",
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(22,47,36,0.25)",
           display: "flex", flexDirection: "column", justifyContent: "center",
         }}>

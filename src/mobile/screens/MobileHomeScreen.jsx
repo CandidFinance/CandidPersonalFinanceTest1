@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ScoreDetailSheet, scoreBand, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
+import { ChevronDown } from "lucide-react";
+import { ScoreDetailSheet, scoreBand, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC, OPPORTUNITY_TILE_BG, RADIUS_CARD } from "../../CandidApp.jsx";
 import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
@@ -162,10 +163,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
       {/* Net worth — a tile; tap anywhere on it to expand the assets/liabilities
           breakdown in place (same white card treatment as "Your biggest win"). */}
-      <div onClick={() => setNetWorthOpen(v => !v)} style={{marginTop:"20px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"14px",padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",cursor:"pointer"}}>
+      <div onClick={() => setNetWorthOpen(v => !v)} style={{marginTop:"20px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Net worth</span>
-          <span style={{fontSize:"14px",color:MUT,display:"inline-block",transform:netWorthOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}>⌄</span>
+          <ChevronDown size={14} color={MUT} style={{transform:netWorthOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
         </div>
         <div style={{display:"flex",alignItems:"baseline",gap:"8px",marginTop:"6px"}}>
           <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:netWorthPositive?TEXT:"#c0392b"}}>{fmt(Math.abs(m.netWorth))}</span>
@@ -209,7 +210,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       {topWin && (
         <div style={{marginTop:"20px"}}>
           <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginBottom:"10px"}}>Your biggest win</div>
-          <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"14px",padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
+          <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
               <div style={{width:"34px",height:"34px",borderRadius:"9px",background:`${topWinColor}1f`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 {topWin.icon && <topWin.icon size={16} color={topWinColor}/>}

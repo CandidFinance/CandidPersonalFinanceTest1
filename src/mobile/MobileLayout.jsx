@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { NavBar } from "../CandidApp.jsx";
+import { NavBar, CREAM } from "../CandidApp.jsx";
 import MobileTabBar from "./MobileTabBar.jsx";
 
 // Shell for every /app/* mobile screen: a light NavBar (the "Candid."
@@ -12,7 +12,7 @@ import MobileTabBar from "./MobileTabBar.jsx";
 export default function MobileLayout({ pageLabel, activeTab, headerRight, children }) {
   const navigate = useNavigate();
   return (
-    <div style={{minHeight:"100vh",background:"#f6f0e6",fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh",background:CREAM,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
       {/* Keyframes for the "reviewed" coins and Home score gain. Desktop gets
           the same ones from PageWrap's stylesheet, which this layout doesn't use. */}
       <style>{`

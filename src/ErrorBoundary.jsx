@@ -11,6 +11,10 @@ import posthog from "posthog-js";
 // phase — a bug that throws while a module is first being imported (e.g. a
 // circular-import ordering issue) happens before React ever mounts, and no
 // error boundary can intercept that class of failure.
+//
+// The hex values below are intentionally re-typed rather than imported from
+// design-tokens.js (see above) — they should still match CREAM/G/MUT exactly
+// if those ever change, so update both places together.
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -31,14 +35,14 @@ export default class ErrorBoundary extends Component {
   render() {
     if (!this.state.hasError) return this.props.children;
     return (
-      <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center",background:"#F6F0E6",fontFamily:"'DM Sans', sans-serif"}}>
-        <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:"22px",color:"#162F24",fontWeight:700,marginBottom:"10px"}}>
+      <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center",background:"#f6f0e6",fontFamily:"'DM Sans', sans-serif"}}>
+        <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:"22px",color:"#162f24",fontWeight:700,marginBottom:"10px"}}>
           Something went wrong
         </div>
         <p style={{fontSize:"14px",color:"#6b6b6b",lineHeight:1.6,maxWidth:"320px",marginBottom:"24px"}}>
           Candid hit an unexpected error. Your saved data is safe — reloading usually fixes this.
         </p>
-        <button onClick={() => window.location.reload()} style={{background:"#162F24",color:"#fff",border:"none",borderRadius:"100px",padding:"12px 28px",fontSize:"14px",fontWeight:600,cursor:"pointer"}}>
+        <button onClick={() => window.location.reload()} style={{background:"#162f24",color:"#ffffff",border:"none",borderRadius:"100px",padding:"12px 28px",fontSize:"14px",fontWeight:600,cursor:"pointer"}}>
           Reload Candid
         </button>
       </div>

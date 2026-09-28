@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Users, Coins } from "lucide-react";
+import { Check, Users, Coins, ChevronRight } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
 import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
@@ -99,14 +99,17 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
         {moduleList.map(mm => {
           const reviewed = completedModules.includes(mm.key);
           const hasRec = mm.amount > 0;
-          const statusColor = reviewed ? "#a8a89c" : (SC[mm.status] || MUT);
+          // Priority reads through the headline figure and status dot, both
+          // coloured by statusColor. The module icon stays neutral (module
+          // identity, not urgency), and the tile itself stays flat white.
+          const statusColor = reviewed ? MUT : (SC[mm.status] || MUT);
           const isOpen = expandedKey === mm.key;
           const insights = isOpen ? moduleInsights(mm, d, m) : [];
           return (
             <div key={mm.key} style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",opacity:reviewed?0.6:1,overflow:"hidden"}}>
               <div onClick={() => setExpandedKey(k => k===mm.key ? null : mm.key)} style={{display:"flex",alignItems:"flex-start",gap:"14px",padding:"18px 18px 13px",cursor:"pointer"}}>
-                <div style={{width:"42px",height:"42px",borderRadius:"11px",background:`${statusColor}1f`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-                  {mm.icon && <mm.icon size={18} color={statusColor}/>}
+                <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
+                  {mm.icon && <mm.icon size={18} color={G}/>}
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
@@ -120,11 +123,11 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
                     <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel(mm, reviewed)}</span>
                   </div>
                 </div>
-                <span style={{fontSize:"14px",color:MUT,flexShrink:0,marginTop:"6px",display:"inline-block",transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}>›</span>
+                <ChevronRight size={14} color={MUT} style={{flexShrink:0,marginTop:"6px",transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
               </div>
               {isOpen && (
                 <div style={{background:"rgba(22,47,36,0.03)",padding:"14px 18px 18px",display:"flex",flexDirection:"column",gap:"10px"}}>
-                  <p style={{fontSize:"13px",color:"#4a4a4a",lineHeight:1.5,margin:0}}>{mm.summary}</p>
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:0}}>{mm.summary}</p>
                   {insights.length > 0 && (
                     <div style={{display:"flex",gap:"10px"}}>
                       {insights.map((ins,i) => (
@@ -182,7 +185,7 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
                   <div style={{fontSize:"16px",fontWeight:600,color:MUT}}>{lm.title}</div>
                   <div style={{fontSize:"12px",fontWeight:700,color:MUT,flexShrink:0}}>Locked</div>
                 </div>
-                <p style={{fontSize:"13px",color:"#9a9a8e",lineHeight:1.5,marginTop:"6px",marginBottom:0}}>{lm.description}</p>
+                <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:0}}>{lm.description}</p>
               </div>
             </div>
           );

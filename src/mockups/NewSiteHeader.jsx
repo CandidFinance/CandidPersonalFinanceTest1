@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Lock, Menu, X } from "lucide-react";
-import { G, GOLD, CREAM, MUT, SERIF, SANS } from "../CandidApp.jsx";
+import { G, GOLD, MUT, SANS, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT } from "../CandidApp.jsx";
 import { isBetaUnlocked, destinationAfterUnlock } from "../BetaGate.jsx";
 import { EASE_STEADY } from "./motion.js";
 
@@ -101,7 +101,7 @@ export default function NewSiteHeader() {
       transition={{ duration: 0.75, ease: EASE_STEADY }}
       style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, height: HEADER_HEIGHT,
-        background: CREAM, borderBottom: "1px solid rgba(22,47,36,0.08)",
+        background: HEADER_BG_LIGHT, borderBottom: "1px solid rgba(22,47,36,0.08)",
         paddingTop: "env(safe-area-inset-top, 0px)", boxSizing: "border-box",
       }}
     >
@@ -127,7 +127,7 @@ export default function NewSiteHeader() {
         height: "100%", display: "flex", alignItems: "center", gap: "56px",
         padding: `0 ${RESERVE_FOR_DEV_TOOLS ? "170px" : "28px"} 0 28px`,
       }}>
-        <Link to="/" style={{ fontFamily: SERIF, fontSize: "28px", fontWeight: 700, color: G, textDecoration: "none" }}>
+        <Link to="/" style={{ ...HEADER_WORDMARK_LIGHT, fontSize: "28px", textDecoration: "none" }}>
           Candid.
         </Link>
         <nav className="nsh-tabs" style={{ gap: "30px" }}>
@@ -193,7 +193,7 @@ export default function NewSiteHeader() {
         className={`nsh-mobile-panel${mobileOpen ? " nsh-mobile-panel--open" : ""}`}
         style={{
           position: "absolute", top: "100%", left: 0, right: 0,
-          background: CREAM, borderBottom: "1px solid rgba(22,47,36,0.08)",
+          background: HEADER_BG_LIGHT, borderBottom: "1px solid rgba(22,47,36,0.08)",
           boxShadow: "0 12px 24px rgba(22,47,36,0.1)",
         }}
       >

@@ -8,6 +8,7 @@ import { resolveSlRate } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import MobileCashTiersList from "./MobileCashTiersList.jsx";
+import InfoButton from "../InfoButton.jsx";
 
 // The 4 active MVP modules a user can pick from on the "Focus" step — same
 // keys/icons as desktop's MODULE_SELECT_TILES (CandidApp.jsx), sourced from
@@ -119,7 +120,6 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
   const centeredInput = { width:"100%", maxWidth:"320px", margin:"0 auto", display:"block", textAlign:"center", fontSize:"17px", fontWeight:600, color:TEXT, padding:"14px 18px", borderRadius:"100px", border:"1.5px solid rgba(22,47,36,0.18)", background:WHITE, outline:"none", boxSizing:"border-box" };
   // Same grey circular "?" convention as the deep-dive screens (MobilePensionDeepDive etc.) — toggles a short explanatory note rather than showing it inline by default.
-  const infoBtnStyle = { background:"#a8a89c", color:WHITE, border:"none", borderRadius:"50%", width:"15px", height:"15px", fontSize:"10px", fontWeight:700, lineHeight:"15px", textAlign:"center", padding:0, cursor:"pointer", flexShrink:0 };
 
   if (stepId === "modules") {
     const modules = MODULE_META.filter(mm => PICKABLE_MODULE_KEYS.includes(mm.key));
@@ -235,7 +235,7 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
         <div style={{marginBottom:"18px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px"}}>
             <span style={{...fieldLabel,marginBottom:0}}>Employment status</span>
-            <button type="button" onClick={() => setShowEmploymentInfo(v => !v)} style={infoBtnStyle}>?</button>
+            <InfoButton onClick={() => setShowEmploymentInfo(v => !v)} open={showEmploymentInfo}/>
           </div>
           <PillSlider value={d.employmentStatus || "employed"} onChange={v => set("employmentStatus", v)} options={EMPLOYMENT_STATUS_OPTIONS}/>
           {showEmploymentInfo && (

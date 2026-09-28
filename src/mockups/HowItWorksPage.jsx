@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ClipboardList, Scale, Search, Compass } from "lucide-react";
 import posthog from "posthog-js";
-import { G, GOLD, WHITE, MUT, SERIF } from "../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
 import NewSiteLayout from "./NewSiteLayout.jsx";
 import WaitlistForm from "./WaitlistForm.jsx";
 import { riseIn, pullTogether } from "./motion.js";
@@ -74,7 +74,7 @@ export default function HowItWorksPage() {
         <div style={{ maxWidth: "760px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
           {STEPS.map((step, i) => (
             <motion.div key={step.title} ref={stepRef(i)} {...pullTogether(i, STEPS.length, reduceMotion, { stagger: 0.1, duration: 0.7, spreadPx: 20, riseYPx: 44 })} style={{
-              background: WHITE, borderRadius: "18px", padding: "32px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
+              background: WHITE, borderRadius: RADIUS_MODAL, padding: "32px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
               display: "flex", gap: "22px", alignItems: "flex-start", textAlign: "left",
             }}>
               <div style={{
@@ -89,7 +89,7 @@ export default function HowItWorksPage() {
                 </div>
                 <div style={{ fontFamily: SERIF, fontSize: "20px", color: G, fontWeight: 600, marginBottom: "8px" }}>{step.title}</div>
                 <div style={{ fontSize: "14.5px", color: MUT, lineHeight: 1.7, marginBottom: "10px" }}>{step.body}</div>
-                <div style={{ fontSize: "13px", color: "#8a8a7e", lineHeight: 1.6, fontStyle: "italic" }}>{step.detail}</div>
+                <div style={{ fontSize: "13px", color: MUT, lineHeight: 1.6, fontStyle: "italic" }}>{step.detail}</div>
               </div>
             </motion.div>
           ))}

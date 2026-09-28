@@ -16,11 +16,19 @@ export const CDARK = "#ede7db"; // secondary/darker cream surface
 export const TEXT  = "#1a1a1a"; // body text
 export const MUT   = "#6b6b6b"; // muted/secondary text
 export const WHITE = "#ffffff";
+// Deliberately darker than G — every form <input>/<select> that sits on a G
+// (or near-G) dark surface uses this as a "recessed" background so the
+// field reads as tappable/editable rather than blending into the panel
+// around it. Consistent across DevTools.jsx and the 3 standalone calculator
+// pages (which can't import this file — see the Header section below for
+// the same caveat, and check those pages by hand if this value changes).
+export const INPUT_BG_DARK = "#0f2018";
 
 // Semantic status colours. SUCCESS also absorbs the old "#1e4030" — a
 // near-identical third green used in only 2 places that read as an
 // unintentional one-off rather than a deliberate distinct colour.
 export const SUCCESS  = "#2d6b4a"; // "on track" / positive state
+export const WARNING  = "#d9822b"; // scoreBand's 4th tier only — sits between GOLD and CRITICAL
 export const CRITICAL = "#c0392b"; // "action needed" / error state
 
 // Forecast-chart-only accents. Named (rather than left inline) because the
@@ -31,6 +39,21 @@ export const STUDENT_PURPLE = "#8a4fae"; // "Student loan overpayment"
 export const PENSION_RAS    = "#1e7a5a"; // "Pension (relief at source)"
 
 export const SC = { ok: SUCCESS, attention: GOLD, critical: CRITICAL, na: MUT, unknown: MUT };
+
+// Candid score → colour + label. Five discrete bands, not a continuous
+// gradient — deliberately: a flat colour per band reads as "which zone am I
+// in" at a glance, which a smoothly-interpolated fill doesn't. Single source
+// of truth for the score ring, the mobile score bar, the tap-through detail
+// sheet, and the PDF report — none of them should ever disagree on where
+// the bands sit or what colour a given score reads as (they used to: the
+// PDF had its own separate 4-band version with different thresholds).
+export function scoreBand(score) {
+  if (score >= 80) return { color: G, label: "Optimised" };
+  if (score >= 65) return { color: SUCCESS, label: "On track" };
+  if (score >= 50) return { color: GOLD, label: "Room to improve" };
+  if (score >= 35) return { color: WARNING, label: "Needs work" };
+  return { color: CRITICAL, label: "Needs attention" };
+}
 
 // Per-option line colours (chart + legend + table dots) shared by both
 // Forecast tabs.
@@ -73,12 +96,35 @@ export const FONT_SIZE = {
   HERO:     "28px", // hero £ figures
 };
 
+// ── Header / nav wordmark ────────────────────────────────────────────────
+// The "Candid." wordmark's font/weight/colour-per-background, shared by
+// every header in the app — CandidApp.jsx's in-app `NavBar` and the
+// marketing site's `NewSiteHeader` both build their wordmark style off
+// these rather than re-declaring it, so a change here (or a GOLD/SERIF
+// change) can't quietly stop reaching one of them. Each context still
+// picks its own font-size (they're different-height bars), so only
+// font-family/weight/colour are centralised here.
+//
+// The standalone HTML pages (privacy.html, terms.html, and the three
+// calculator pages) can't import this file — they're plain HTML, not
+// bundled. Their inline `<nav>` markup hand-matches HEADER_BG_DARK +
+// HEADER_WORDMARK_DARK's values; if either changes here, check those 5
+// files too.
+export const HEADER_BG_DARK = G;
+export const HEADER_BG_LIGHT = CREAM;
+export const HEADER_WORDMARK_DARK  = { fontFamily: SERIF, fontWeight: 700, color: GOLD };
+export const HEADER_WORDMARK_LIGHT = { fontFamily: SERIF, fontWeight: 700, color: G };
+
 // ── Spacing / radius ─────────────────────────────────────────────────────
-// Border-radius is otherwise inconsistent (11 distinct values found in the
-// audit, no dominant "card" radius). This is the one value used
-// consistently everywhere it appears (pills, buttons) — the rest is left
-// untokenized rather than inventing a false consistency.
-export const RADIUS_PILL = "100px";
+// Border-radius is otherwise inconsistent (11+ distinct values found in the
+// audit). These three are the ones with a genuine dominant pattern behind
+// them — pills/buttons, mobile card containers, and desktop/mockup modal
+// shells — each already used consistently everywhere that role appears. All
+// other radii are left untokenized rather than inventing a false
+// consistency.
+export const RADIUS_PILL  = "100px";
+export const RADIUS_CARD  = "14px"; // mobile card containers (WinTile, ProviderTile, ProductListTile, HomeScreen/ForecastScreen cards)
+export const RADIUS_MODAL = "18px"; // desktop modal shells + marketing/mockup cards
 
 // "Where to open an account" provider tiles (Cash/Investments/Pension) — a
 // pale green, close to white, with a subtle top-to-bottom gradient for a

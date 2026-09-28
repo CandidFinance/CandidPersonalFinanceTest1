@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ExternalLink } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../CandidApp.jsx";
+import { ExternalLink, ChevronRight } from "lucide-react";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../CandidApp.jsx";
 
 // Collapsible "Best [X] right now" provider-rate tile — collapsed by default
 // to roughly 2 rows' worth of height: the 1st row fully visible, the 2nd
@@ -15,11 +15,11 @@ export default function MobileProductListTile({ heading, subheading, products, d
   if (!products || products.length === 0) return null;
 
   return (
-    <div style={{background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginTop:"16px"}}>
+    <div style={{background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
       <div onClick={() => setOpen(o => !o)} style={{cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
           <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</div>
-          <span style={{fontSize:"14px",color:"#6b6b6b",flexShrink:0,display:"inline-block",transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}>›</span>
+          <ChevronRight size={14} color={MUT} style={{flexShrink:0,transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
         </div>
         {subheading && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.4,marginTop:"3px",marginBottom:0}}>{subheading}</p>}
       </div>

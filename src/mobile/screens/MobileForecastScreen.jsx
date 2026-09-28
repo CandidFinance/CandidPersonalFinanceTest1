@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Lock } from "lucide-react";
-import { WHITE, MUT, TEXT, G, GOLD, SERIF, PillSlider, FORECAST_COLORS, FORECAST_SHORT_LABEL } from "../../CandidApp.jsx";
+import { Lock, ChevronRight } from "lucide-react";
+import { WHITE, MUT, TEXT, G, GOLD, SERIF, PillSlider, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_CARD } from "../../CandidApp.jsx";
 import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
+import InfoButton from "../InfoButton.jsx";
 
 // Mobile Forecast screen — a "Surplus" comparison view (multi-strategy line
 // chart + low/mid/high table) and a "Net worth" view (single projected net
@@ -151,7 +152,7 @@ export default function MobileForecastScreen({ d, m }) {
         <PillMoneyInput label="Lump sum today" value={lumpSum} onChange={setLumpSum}/>
       </div>
 
-      <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"14px",padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
+      <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
         <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>
           Projected value · {horizon} years
         </div>
@@ -198,9 +199,9 @@ export default function MobileForecastScreen({ d, m }) {
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
           <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Estimate at {horizonLabel(horizon)}</span>
           <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px"}}>
-            <span style={{fontSize:"9.5px",fontWeight:700,color:"#9a9a8e",letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Low</span>
-            <span style={{fontSize:"9.5px",fontWeight:700,color:"#9a9a8e",letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Mid</span>
-            <span style={{fontSize:"9.5px",fontWeight:700,color:"#9a9a8e",letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>High</span>
+            <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Low</span>
+            <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Mid</span>
+            <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>High</span>
           </div>
         </div>
         {forecast.options.map((o,i) => {
@@ -213,7 +214,7 @@ export default function MobileForecastScreen({ d, m }) {
                   <span style={{width:"8px",height:"8px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
                   <span style={{fontSize:"13px",color:TEXT,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{FORECAST_SHORT_LABEL[o.label]||o.label}</span>
                   {a && (
-                    <button onClick={() => setOpenTip(isOpen ? null : o.label)} style={{background:"#a8a89c",color:WHITE,border:"none",borderRadius:"50%",width:"15px",height:"15px",fontSize:"10px",fontWeight:700,lineHeight:"15px",textAlign:"center",padding:0,cursor:"pointer",flexShrink:0}}>?</button>
+                    <InfoButton onClick={() => setOpenTip(isOpen ? null : o.label)} open={isOpen}/>
                   )}
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px",flexShrink:0}}>
@@ -228,7 +229,7 @@ export default function MobileForecastScreen({ d, m }) {
               {isOpen && a && (
                 <div style={{marginTop:"8px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
                   {a.lines.map((line,i) => (
-                    <p key={i} style={{fontSize:"12px",color:"#4a4a4a",lineHeight:1.55,margin:0}}>{line}</p>
+                    <p key={i} style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>{line}</p>
                   ))}
                   <div style={{display:"flex",gap:"14px",marginTop:"2px",fontSize:"11px",color:MUT}}>
                     <span>Low <b style={{color:TEXT}}>{a.rates.low}</b></span>
@@ -255,7 +256,7 @@ export default function MobileForecastScreen({ d, m }) {
             </div>
           </div>
 
-          <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"14px",padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
+          <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
             <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginBottom:"8px"}}>
               Projected net worth · {horizon} years
             </div>
@@ -284,13 +285,13 @@ export default function MobileForecastScreen({ d, m }) {
 
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"12px"}}>
               <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Breakdown {age ? `at age ${age+horizon}` : `at ${horizon}yrs`}</span>
-              <button onClick={() => setShowNwAssumptions(o => !o)} style={{background:"#a8a89c",color:WHITE,border:"none",borderRadius:"50%",width:"15px",height:"15px",fontSize:"10px",fontWeight:700,lineHeight:"15px",textAlign:"center",padding:0,cursor:"pointer"}}>?</button>
+              <InfoButton onClick={() => setShowNwAssumptions(o => !o)} open={showNwAssumptions}/>
             </div>
             {showNwAssumptions && (
               <div style={{marginBottom:"12px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
-                <p style={{fontSize:"12px",color:"#4a4a4a",lineHeight:1.55,margin:0}}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
-                <p style={{fontSize:"12px",color:"#4a4a4a",lineHeight:1.55,margin:0}}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
-                <p style={{fontSize:"12px",color:"#4a4a4a",lineHeight:1.55,margin:0}}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
+                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
+                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
+                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
               </div>
             )}
             {(() => {
@@ -315,7 +316,7 @@ export default function MobileForecastScreen({ d, m }) {
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
                         <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:row.negative?"#c0392b":G}}>{row.negative?"−":""}{fmt(row.value)}</span>
-                        <span style={{fontSize:"13px",color:"#6b6b6b",display:"inline-block",transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}>›</span>
+                        <ChevronRight size={13} color={MUT} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
                       </div>
                     </div>
                     <div style={{height:"8px",borderRadius:"4px",background:"#ede7db",overflow:"hidden",marginTop:"8px"}}>
@@ -326,11 +327,11 @@ export default function MobileForecastScreen({ d, m }) {
                         {row.label === "Pension" && age && (
                           <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
                             <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:G}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
-                            <span style={{fontSize:"12.5px",color:"#4a4a4a"}}>years until available (from age {PENSION_ACCESS_AGE})</span>
+                            <span style={{fontSize:"12.5px",color:MUT}}>years until available (from age {PENSION_ACCESS_AGE})</span>
                           </div>
                         )}
-                        <p style={{fontSize:"13px",color:"#4a4a4a",lineHeight:1.55,margin:0}}>{row.assumption}</p>
-                        <p style={{fontSize:"13px",color:"#4a4a4a",lineHeight:1.55,margin:0,fontWeight:600}}>{meta.liquidity}</p>
+                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0}}>{row.assumption}</p>
+                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0,fontWeight:600}}>{meta.liquidity}</p>
                       </div>
                     )}
                   </div>

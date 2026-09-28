@@ -6,6 +6,7 @@ import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProviderTile from "../MobileProviderTile.jsx";
 import GoToProviderButton from "../GoToProviderButton.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
+import InfoButton from "../InfoButton.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
 
@@ -22,19 +23,19 @@ function PortfolioBreakdownTile() {
       { label:"UK", pct:38, color:"#2d6b4a" },
       { label:"North America", pct:32, color:GOLD },
       { label:"Europe", pct:18, color:"#8a4fae" },
-      { label:"Emerging markets", pct:12, color:"#9a9a8e" },
+      { label:"Emerging markets", pct:12, color:MUT },
     ],
     sector: [
       { label:"Technology", pct:28, color:"#2d6b4a" },
       { label:"Financials", pct:22, color:GOLD },
       { label:"Healthcare", pct:16, color:"#8a4fae" },
-      { label:"Other", pct:34, color:"#9a9a8e" },
+      { label:"Other", pct:34, color:MUT },
     ],
     asset: [
       { label:"Equities", pct:70, color:"#2d6b4a" },
       { label:"Bonds", pct:18, color:GOLD },
       { label:"Property", pct:7, color:"#8a4fae" },
-      { label:"Cash", pct:5, color:"#9a9a8e" },
+      { label:"Cash", pct:5, color:MUT },
     ],
   };
   const holdings = [
@@ -123,7 +124,6 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
   const [amountSoldInput, setAmountSoldInput] = useState(null);
   const [gainInput, setGainInput] = useState(null);
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
-  const infoBtnStyle = { background:"#a8a89c", color:WHITE, border:"none", borderRadius:"50%", width:"15px", height:"15px", fontSize:"10px", fontWeight:700, lineHeight:"15px", textAlign:"center", padding:0, cursor:"pointer", flexShrink:0 };
 
   const openGainLogger = () => { setAmountSoldInput(null); setGainInput(null); setLoggingGain(true); };
   const closeGainLogger = () => setLoggingGain(false);
@@ -270,7 +270,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
                   <span style={{fontSize:"12.5px",fontWeight:600,color:GOLD}}>Bed &amp; breakfasting</span>
-                  <button onClick={() => setOpenInfo(o => o==="bnb"?null:"bnb")} style={infoBtnStyle}>?</button>
+                  <InfoButton onClick={() => setOpenInfo(o => o==="bnb"?null:"bnb")} open={openInfo==="bnb"}/>
                 </div>
                 {openInfo === "bnb" && (
                   <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
@@ -281,7 +281,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
                   <span style={{fontSize:"12.5px",fontWeight:600,color:"#c0392b"}}>Use it or lose it</span>
-                  <button onClick={() => setOpenInfo(o => o==="useit"?null:"useit")} style={infoBtnStyle}>?</button>
+                  <InfoButton onClick={() => setOpenInfo(o => o==="useit"?null:"useit")} open={openInfo==="useit"}/>
                 </div>
                 {openInfo === "useit" && (
                   <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
@@ -314,7 +314,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
           <div>
             <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,marginTop:0,marginBottom:"4px"}}>
               Invest it and shelter the growth from tax, for good.{" "}
-              <button onClick={() => setOpenInfo(o => o==="isa"?null:"isa")} style={{...infoBtnStyle,display:"inline-flex",alignItems:"center",justifyContent:"center",verticalAlign:"middle"}}>?</button>
+              <InfoButton onClick={() => setOpenInfo(o => o==="isa"?null:"isa")} open={openInfo==="isa"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",verticalAlign:"middle"}}/>
             </p>
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:0,marginBottom:openInfo==="isa"?"10px":"12px"}}>
               Invested, that could grow to ~{fmt(Math.round(isaProjectedValue))} tax-free by 67.

@@ -10,6 +10,7 @@ import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, getModuleProducts, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProviderTile from "../MobileProviderTile.jsx";
+import InfoButton from "../InfoButton.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
@@ -63,7 +64,7 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
             if (d.hasPension !== "yes") set("hasPension", "yes");
           }}
           style={{
-            background: applied ? "#a8a89c" : G, color:WHITE, border:"none", borderRadius:"100px",
+            background: applied ? MUT : G, color:WHITE, border:"none", borderRadius:"100px",
             padding:"11px 18px", fontSize:"13px", fontWeight:700, cursor: applied ? "default" : "pointer",
             whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:"5px",
           }}>
@@ -77,7 +78,6 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
 
 export default function MobilePensionDeepDive({ d, m, set }) {
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
-  const infoBtnStyle = { background:"#a8a89c", color:WHITE, border:"none", borderRadius:"50%", width:"15px", height:"15px", fontSize:"10px", fontWeight:700, lineHeight:"15px", textAlign:"center", padding:0, cursor:"pointer", flexShrink:0 };
   const [cfYears, setCfYears] = useState(defaultCarryForwardYears());
   const [bonusInput, setBonusInput] = useState(+d.bonusAmount || null);
   const [sacrificePct, setSacrificePct] = useState(100);
@@ -389,7 +389,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
             <span style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5}}>
               <b style={{fontFamily:SERIF}}>{fmtCompact(bs.bonusFVpartial(sacrificePct))}</b> at retirement (age {bs.retireAge})
             </span>
-            <button onClick={() => setShowFVInfo(o => !o)} style={infoBtnStyle}>?</button>
+            <InfoButton onClick={() => setShowFVInfo(o => !o)} open={showFVInfo}/>
           </div>
           {showFVInfo && (
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,background:"#ede7db",borderRadius:"8px",padding:"8px 10px",marginTop:"6px"}}>
@@ -495,7 +495,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
             <div style={{fontSize:"14px",fontWeight:600,color:MUT}}>Old pension pot tracing</div>
             <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0,whiteSpace:"nowrap"}}>Coming soon</span>
           </div>
-          <p style={{fontSize:"12.5px",color:"#9a9a8e",lineHeight:1.55,marginTop:"6px",marginBottom:0}}>
+          <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.55,marginTop:"6px",marginBottom:0}}>
             Lost track of a pension from an old employer? We'll help you find and consolidate it here.
           </p>
         </div>

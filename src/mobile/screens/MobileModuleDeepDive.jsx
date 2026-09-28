@@ -22,7 +22,9 @@ const CONTENT_BY_KEY = {
 export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
-  const statusColor = isComplete ? "#a8a89c" : (SC[status] || MUT);
+  // Status has exactly one visual indicator here — the dot below. The
+  // header icon (module identity, not module status) stays neutral.
+  const statusColor = isComplete ? MUT : (SC[status] || MUT);
   const Content = CONTENT_BY_KEY[moduleKey];
   // Same celebration as desktop's "Mark as reviewed": two floating coins and
   // a brief gold flash on the button — only when marking complete (not when
@@ -42,8 +44,8 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px"}}>
-        <div style={{width:"42px",height:"42px",borderRadius:"11px",background:`${statusColor}1f`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          {meta?.icon && <meta.icon size={18} color={statusColor}/>}
+        <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {meta?.icon && <meta.icon size={18} color={G}/>}
         </div>
         <div style={{flex:1,minWidth:0}}>
           <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>

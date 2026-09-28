@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { formatThousands } from "../lib/format.js";
-import { MUT, TEXT } from "../CandidApp.jsx";
+import { MUT, TEXT, CDARK } from "../CandidApp.jsx";
 
 // Shared pill-styled £/% input — starts blank (0/null just placeholders "0",
 // never a hardcoded displayed value). £ (default) comma-formats as you type
@@ -27,7 +27,7 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
     // (its padding, the caption, the £/% symbol) focuses the input. Without
     // this the % variant's auto-width input made the tap target only as wide
     // as the digits typed.
-    <label style={{flex:1,background:"#ede7db",borderRadius:"100px",padding:"9px 16px",display:"flex",flexDirection:"column",cursor:"text"}}>
+    <label style={{flex:1,background:CDARK,borderRadius:"100px",padding:"9px 16px",display:"flex",flexDirection:"column",cursor:"text"}}>
       <span style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span>
       <div style={{display:"flex",alignItems:"center"}}>
         {showPrefix && <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>£</span>}

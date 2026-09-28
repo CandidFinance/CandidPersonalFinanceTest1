@@ -10,12 +10,16 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'DM Sans', Arial, sans-serif; background: #f6f0e6; }
-    h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 19px; color: #000; margin-top: 28px; }
+    h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 19px; color: #1a1a1a; margin-top: 28px; }
     p  { color: #595959; font-size: 14px; line-height: 1.6; margin-top: 10px; }
     a  { color: #162F24; }
   </style>
 </head>
 <body>
+  <!-- This standalone page can't import src/design-tokens.js, so this nav hand-matches
+       HEADER_BG_DARK (#162f24) + HEADER_WORDMARK_DARK (Playfair Display, 700, GOLD #c4963a).
+       If either changes there, update this markup (and privacy.html / the 3 calculator
+       pages, which share the same pattern) to match. -->
   <nav style="background:#162F24;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
     <span style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;color:#C4963A;">Candid.</span>
     <span style="font-family:'DM Sans',Arial,sans-serif;color:rgba(255,255,255,0.5);font-size:12px;font-weight:500;">Terms of Service</span>

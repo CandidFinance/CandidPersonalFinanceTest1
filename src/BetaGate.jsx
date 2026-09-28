@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
-import { G, WHITE, MUT, SERIF, SANS } from "./CandidApp.jsx";
+import { G, WHITE, MUT, SERIF, SANS, CREAM } from "./CandidApp.jsx";
 
 const BETA_UNLOCK_KEY = "candid_beta_unlocked";
 
@@ -75,8 +75,8 @@ export default function BetaGate() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f6f0e6", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", fontFamily: SANS }}>
-      <form onSubmit={handleSubmit} style={{ background: WHITE, borderRadius: "14px", padding: "36px 32px", width: "100%", maxWidth: "360px", boxShadow: "0 8px 32px rgba(0,0,0,0.1)" }}>
+    <div style={{ minHeight: "100vh", background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", fontFamily: SANS }}>
+      <form onSubmit={handleSubmit} style={{ background: WHITE, borderRadius: "14px", padding: "36px 32px", width: "100%", maxWidth: "360px", boxShadow: "0 8px 32px rgba(22,47,36,0.1)" }}>
         <div style={{ fontFamily: SERIF, fontSize: "22px", fontWeight: 700, color: G, marginBottom: "8px" }}>Candid.</div>
         <div style={{ fontSize: "14px", color: MUT, marginBottom: "22px", lineHeight: 1.6 }}>
           The app is currently in private beta. Enter your tester password to continue.

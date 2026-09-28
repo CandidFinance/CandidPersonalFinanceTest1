@@ -6,7 +6,7 @@
 // we confirmed this chunk is absent from a real production build.
 import { useState } from "react";
 import { Wrench } from "lucide-react";
-import { calcMetrics, computeModuleStatuses, MODULE_META, sanitizeForMvp } from "./CandidApp.jsx";
+import { calcMetrics, computeModuleStatuses, MODULE_META, sanitizeForMvp, G, GOLD, CREAM, INPUT_BG_DARK } from "./CandidApp.jsx";
 
 const CUSTOM_PRESETS_KEY = "candid_dev_custom_presets";
 
@@ -199,15 +199,13 @@ export default function DevToolsPanel({ onPresetLoaded }) {
     if (selected === id) setSelected(BUILT_IN_PRESETS[0].id);
   }
 
-  const G = "#162f24", GOLD = "#c4963a", CREAM = "#f6f0e6";
-
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)} style={{
         position: "fixed", top: "16px", right: "16px", zIndex: 999999,
         background: GOLD, color: G, border: "none", borderRadius: "8px",
         padding: "8px 14px", fontWeight: 700, fontSize: "12px", cursor: "pointer",
-        fontFamily: "'DM Sans',sans-serif", boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+        fontFamily: "'DM Sans',sans-serif", boxShadow: "0 2px 10px rgba(22,47,36,0.3)",
         display: "flex", alignItems: "center", gap: "6px",
       }}>
         <Wrench size={13}/> DEV TOOLS
@@ -220,7 +218,7 @@ export default function DevToolsPanel({ onPresetLoaded }) {
       position: "fixed", top: "16px", right: "16px", zIndex: 999999, width: "300px",
       background: G, color: CREAM, borderRadius: "10px", padding: "14px",
       fontFamily: "'DM Sans',sans-serif", fontSize: "13px",
-      boxShadow: "0 4px 24px rgba(0,0,0,0.4)", border: "1px solid rgba(196,150,58,0.5)",
+      boxShadow: "0 4px 24px rgba(22,47,36,0.4)", border: "1px solid rgba(196,150,58,0.5)",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <span style={{ fontWeight: 700, color: GOLD, fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "5px" }}>
@@ -231,7 +229,7 @@ export default function DevToolsPanel({ onPresetLoaded }) {
 
       <select value={selected} onChange={e => setSelected(e.target.value)} style={{
         width: "100%", padding: "6px 8px", borderRadius: "6px", marginBottom: "6px",
-        border: "1px solid rgba(255,255,255,0.2)", background: "#0f2018", color: CREAM, fontSize: "12px",
+        border: "1px solid rgba(255,255,255,0.2)", background: INPUT_BG_DARK, color: CREAM, fontSize: "12px",
       }}>
         <optgroup label="Built-in presets">
           {BUILT_IN_PRESETS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -280,7 +278,7 @@ export default function DevToolsPanel({ onPresetLoaded }) {
               placeholder="Preset name"
               style={{
                 width: "100%", padding: "6px 8px", borderRadius: "6px", marginBottom: "6px",
-                border: "1px solid rgba(255,255,255,0.2)", background: "#0f2018", color: CREAM, fontSize: "12px",
+                border: "1px solid rgba(255,255,255,0.2)", background: INPUT_BG_DARK, color: CREAM, fontSize: "12px",
               }}
             />
             <div style={{ display: "flex", gap: "6px" }}>

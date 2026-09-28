@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion, useInView, animate } from "framer-motion";
 import { ClipboardList, Scale, Search, Compass, GraduationCap, PoundSterling, Home as HomeIcon } from "lucide-react";
 import posthog from "posthog-js";
-import { G, GOLD, WHITE, MUT, SERIF } from "../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
 import NewSiteLayout from "./NewSiteLayout.jsx";
 import WaitlistForm from "./WaitlistForm.jsx";
 import { EASE_STEADY, riseIn, pullTogether, heroStagger, heroItem } from "./motion.js";
@@ -74,7 +74,7 @@ function SectionLabel({ children }) {
 const Tile = forwardRef(function Tile({ children, style, ...motionProps }, ref) {
   return (
     <motion.div ref={ref} {...motionProps} style={{
-      background: WHITE, borderRadius: "18px", padding: "32px 28px",
+      background: WHITE, borderRadius: RADIUS_MODAL, padding: "32px 28px",
       boxShadow: "0 4px 24px rgba(22,47,36,0.07)", ...style,
     }}>
       {children}
@@ -107,7 +107,7 @@ function StatFlipTile({ n, label, source, i, total, reduceMotion }) {
             looked originally, now that the content itself is settled. */}
         <div style={{
           position: "absolute", inset: 0, backfaceVisibility: "hidden",
-          background: WHITE, borderRadius: "18px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
+          background: WHITE, borderRadius: RADIUS_MODAL, boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 20px",
         }}>
           {/* Title box */}
@@ -134,7 +134,7 @@ function StatFlipTile({ n, label, source, i, total, reduceMotion }) {
         {/* Back — source citation, reversed colour scheme for depth */}
         <div style={{
           position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
-          background: G, borderRadius: "18px", padding: "20px",
+          background: G, borderRadius: RADIUS_MODAL, padding: "20px",
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(22,47,36,0.25)",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center",
         }}>
@@ -321,7 +321,7 @@ export default function NewLandingPage() {
               { href: "/mortgage-vs-savings-calculator.html", icon: HomeIcon, title: "Mortgage overpayment vs high-yield savings", body: "When your fix ends, compare paying down the mortgage against a savings account or Cash ISA – tax accounted for." },
             ].map((tool, i) => (
               <motion.a key={tool.href} href={tool.href} ref={calcRef(i)} {...pullTogether(i, 3, reduceMotion)} {...tileHover} style={{
-                background: WHITE, borderRadius: "18px", padding: "32px 28px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
+                background: WHITE, borderRadius: RADIUS_MODAL, padding: "32px 28px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
                 borderTop: `4px solid ${GOLD}`, textDecoration: "none", display: "block",
               }}>
                 <div style={{ marginBottom: "16px" }}><tool.icon size={26} color={G} /></div>
