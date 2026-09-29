@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
-import { ScoreDetailSheet, scoreBand, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC, OPPORTUNITY_TILE_BG, RADIUS_CARD } from "../../CandidApp.jsx";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { ScoreDetailSheet, scoreBand, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC, RADIUS_CARD } from "../../CandidApp.jsx";
 import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
@@ -150,14 +150,20 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
           onReviewModules={() => { setScoreDetailOpen(false); navigate("/app/modules"); }}/>
       )}
 
-      {/* Opportunity — taps through to the full module ranking. */}
+      {/* Opportunity — taps through to the full module ranking. Same card,
+          header row and 30px serif figure as the Net worth tile below, so the
+          Home tiles read as one set (not the module pages' dark
+          OPPORTUNITY_TILE_* panel, which competed with the score here). */}
       {totalOpp > 0 && (
-        <div onClick={() => navigate("/app/modules")} style={{marginTop:"14px",background:OPPORTUNITY_TILE_BG,borderRadius:"12px",padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",cursor:"pointer"}}>
-          <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
-            <span style={{fontSize:"11px",fontWeight:600,color:"#8a6a24",letterSpacing:"0.07em",textTransform:"uppercase"}}>Opportunity</span>
-            <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"17px",color:TEXT}}>{fmtCompact(totalOpp)}<span style={{fontSize:"12px",fontWeight:500,color:MUT}}>/yr</span></span>
+        <div onClick={() => navigate("/app/modules")} style={{marginTop:"14px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",cursor:"pointer"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Opportunity</span>
+            <ChevronRight size={14} color={MUT}/>
           </div>
-          <span style={{fontSize:"14px",color:"#8a6a24",flexShrink:0}}>›</span>
+          <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginTop:"6px"}}>
+            <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:TEXT}}>{fmtCompact(totalOpp)}</span>
+            <span style={{fontSize:"14px",color:MUT}}>/yr</span>
+          </div>
         </div>
       )}
 
@@ -209,9 +215,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
           wrapping for discrete, actionable components), like the Net worth tile. */}
       {topWin && (
         <div style={{marginTop:"20px"}}>
-          <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginBottom:"10px"}}>Your biggest win</div>
           <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            {/* Title sits inside the card, as the Opportunity/Net worth tiles' header rows do. */}
+            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Your biggest win</div>
+            <div style={{display:"flex",alignItems:"center",gap:"10px",marginTop:"12px"}}>
               <div style={{width:"34px",height:"34px",borderRadius:"9px",background:`${topWinColor}1f`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 {topWin.icon && <topWin.icon size={16} color={topWinColor}/>}
               </div>

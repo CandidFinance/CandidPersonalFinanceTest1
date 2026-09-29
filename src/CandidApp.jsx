@@ -8,12 +8,12 @@ import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, calcStudentLoanScenario } from "./lib/studentLoan.js";
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation } from "./lib/cash.js";
-import { calcMetrics, SALARY_GROWTH_RATES } from "./lib/metrics.js";
+import { calcMetrics, SALARY_GROWTH_RATES, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
 import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown, calcCandidScore } from "./lib/moduleStatus.js";
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
 import { simulateLoan, fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions } from "./lib/forecast.js";
 import { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
-import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK } from "./design-tokens.js";
+import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
@@ -47,7 +47,9 @@ function reportSupabaseFailure(table, operation, errorMessage, status) {
 async function supaInsert(table, row) {
   if (!SUPA_URL || !SUPA_KEY) return null;
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+    // ?select=id: anon only has column-level SELECT on `id` (lock_down_test_table_rls),
+    // so returning the full row makes PostgREST reject the whole insert with a 401.
+    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?select=id`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -126,7 +128,7 @@ button:active{transform:scale(0.98);}
 }
 `;
 
-export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK };
+export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK };
 
 const INP = {
   width:"100%", padding:"11px 14px", border:"1.5px solid rgba(22,47,36,0.18)",
@@ -1542,8 +1544,8 @@ function OnboardingStep({ stepId, d, set }) {
         <p style={{fontSize:FONT_SIZE.LABEL,color:"#b3261e",marginTop:0,marginBottom:"24px"}}>Couldn't stage the sandbox payment — please try again.</p>
       )}
       <Field label="Emergency fund target">
-        <Toggle value={d.higherBuffer||"no"} onChange={v=>set("higherBuffer",v)} options={[{value:"no",label:"6 months"},{value:"yes",label:"9 months"}]}/>
-        <p style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>9 months if self-employed or variable income</p>
+        <Toggle value={String(getBufferMonths(d))} onChange={v=>set("emergencyMonths",v)} options={EMERGENCY_MONTHS_OPTIONS}/>
+        <p style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>{EMERGENCY_MONTHS_HINT[getBufferMonths(d)]}</p>
       </Field>
       <Field label="Cash savings accounts" hint="Add each account separately for an accurate blended rate">
         {(d.cashTiers||[{amount:"",rate:""}]).map((tier,i) => (
@@ -6156,19 +6158,22 @@ export default function AppShell() {
     );
   }
 
+  // Shared by the Home, Modules and Forecast tabs so the edit-inputs entry
+  // point sits in the same header slot on each.
+  const editInputsButton = (
+    <button onClick={() => navigate("/app/assessment/1")} aria-label="Edit inputs" style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <Wrench size={20} color={G}/>
+    </button>
+  );
+
   if (pathname === "/app/home") return (
-    <MobileLayout activeTab="home"
-      headerRight={
-        <button onClick={() => navigate("/app/assessment/1")} aria-label="Edit inputs" style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <Wrench size={20} color={G}/>
-        </button>
-      }>
+    <MobileLayout activeTab="home" headerRight={editInputsButton}>
       <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} completedModules={completedModules}/>
     </MobileLayout>
   );
 
   if (pathname === "/app/modules") return (
-    <MobileLayout activeTab="modules">
+    <MobileLayout activeTab="modules" headerRight={editInputsButton}>
       <MobileModulesScreen d={d} m={m} statuses={statuses} insights={insights}
         completedModules={completedModules}
         onMarkReviewed={markModuleComplete}
@@ -6177,7 +6182,7 @@ export default function AppShell() {
   );
 
   if (pathname === "/app/forecast") return (
-    <MobileLayout activeTab="forecast">
+    <MobileLayout activeTab="forecast" headerRight={editInputsButton}>
       <MobileForecastScreen d={d} m={m}/>
     </MobileLayout>
   );

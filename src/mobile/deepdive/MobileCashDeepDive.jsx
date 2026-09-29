@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { calcCashOptimisation } from "../../lib/cash.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, topRate, getModuleProducts, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, topRate, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import InfoButton from "../InfoButton.jsx";
@@ -56,12 +56,12 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
     <div>
       {opportunityCols.length > 0 && (
         <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:800,color:"#8a6a24",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+          <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
           <div style={{display:"flex",gap:"24px",flexWrap:"wrap"}}>
             {opportunityCols.map((c,i) => (
               <div key={i}>
-                <div style={{fontFamily:SERIF,fontSize:"32px",color:TEXT,fontWeight:700,lineHeight:1.1}}>{c.value}</div>
-                <div style={{fontSize:"12px",color:"#8a6a24",marginTop:"4px",fontWeight:600}}>{c.label}</div>
+                <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{c.value}</div>
+                <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>{c.label}</div>
               </div>
             ))}
           </div>

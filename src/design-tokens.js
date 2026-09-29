@@ -138,9 +138,15 @@ export const PROVIDER_TILE_BG_END = "#eef4ef";
 export const PROVIDER_TILE_BORDER = "1.5px solid rgba(45,107,74,0.18)";
 export const PROVIDER_TILE_SHADOW = "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 10px rgba(22,47,36,0.06)";
 
-// Module pages' "Opportunity" hero tile — stays white for the first ~30% then
-// fades into a light gold tint (the tile's old flat fill was 0.12 alpha).
-export const OPPORTUNITY_TILE_BG = "linear-gradient(165deg, #ffffff 0%, #ffffff 30%, rgba(196,150,58,0.10) 100%)";
+// "Opportunity" tile (Home + each module deep dive) — each page's key message,
+// so it's the one solid brand-green surface in the content area, set apart
+// from the white action cards around it. Previously a white-to-light-gold
+// gradient: "linear-gradient(165deg, #ffffff 0%, #ffffff 30%, rgba(196,150,58,0.10) 100%)"
+// with label/sub-label "#8a6a24" and figure/body TEXT.
+export const OPPORTUNITY_TILE_BG     = G;
+export const OPPORTUNITY_TILE_LABEL  = GOLD;                     // "OPPORTUNITY" overline, sub-labels, chevron
+export const OPPORTUNITY_TILE_FIGURE = CREAM;                    // serif £ figures
+export const OPPORTUNITY_TILE_BODY   = "rgba(246,240,230,0.72)"; // supporting sentences, "/yr"
 
 // ── One-off colours — reference only, NOT for reuse ───────────────────────
 // Each of these appears in exactly one place (a specific SVG chart

@@ -7,6 +7,25 @@ export const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
 // resolved ONCE by the caller (client: Candid's useMemo; server: the PDF route) and
 // passed in here as plain numbers so this function stays synchronous. Defaults
 // preserve the exact prior hardcoded behaviour for any caller that omits it.
+// Emergency fund target in months of expenses — "3" | "6" | "9" on
+// `emergencyMonths`. Inputs saved before the 3-month option existed only have
+// the old yes/no `higherBuffer` flag, so fall back to it (yes = 9, else 6).
+export const EMERGENCY_MONTHS_OPTIONS = [
+  { value:"3", label:"3 months" },
+  { value:"6", label:"6 months" },
+  { value:"9", label:"9 months" },
+];
+export const EMERGENCY_MONTHS_HINT = {
+  "3": "Suits a very secure job, or a second income in the household",
+  "6": "The usual target for most employed people",
+  "9": "Suits self-employed or variable income",
+};
+export function getBufferMonths(d) {
+  const n = +d.emergencyMonths;
+  if (n === 3 || n === 6 || n === 9) return n;
+  return d.higherBuffer === "yes" ? 9 : 6;
+}
+
 export function calcMetrics(d, marketRates = {}) {
   const { isaRate = 5.1, nonIsaRate = 5.1 } = marketRates;
   const salaryGrowthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
@@ -22,7 +41,7 @@ export function calcMetrics(d, marketRates = {}) {
   const cash = tiersTotal > 0 ? tiersTotal : (+d.cashSavings||0);
   const totalLiquid = cash + bonds,
         runwayMonths = expenses > 0 ? totalLiquid / expenses : 0,
-        bufferMonths = d.higherBuffer === "yes" ? 9 : 6,
+        bufferMonths = getBufferMonths(d),
         emergencyFund = totalLiquid,
         emergencyBuffer = expenses * bufferMonths,
         emergencyShortfall = Math.max(0, emergencyBuffer - emergencyFund),

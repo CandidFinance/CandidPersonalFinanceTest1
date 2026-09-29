@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Lock } from "lucide-react";
 import { fmt } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, getModuleProducts, OPPORTUNITY_TILE_BG } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProviderTile from "../MobileProviderTile.jsx";
 import GoToProviderButton from "../GoToProviderButton.jsx";
@@ -178,17 +178,17 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
     <div>
       {(m.isaHeadroom > 0 || m.crystallisable > 0) && (
         <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:800,color:"#8a6a24",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+          <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
           {totalOpp > 0 ? (
             <>
-              <div style={{fontFamily:SERIF,fontSize:"32px",color:TEXT,fontWeight:700,lineHeight:1.1}}>{fmt(totalOpp)}</div>
-              <div style={{fontSize:"12px",color:"#8a6a24",marginTop:"4px",fontWeight:600}}>CGT saving available this tax year</div>
+              <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(totalOpp)}</div>
+              <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>CGT saving available this tax year</div>
             </>
           ) : (
-            <div style={{fontSize:"13.5px",color:"#8a6a24",fontWeight:600}}>No CGT saving to bank this tax year</div>
+            <div style={{fontSize:"13.5px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:600}}>No CGT saving to bank this tax year</div>
           )}
           {m.isaHeadroom > 0 && (
-            <div style={{fontSize:"12px",color:TEXT,lineHeight:1.5,marginTop:"10px"}}>
+            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
               Plus {fmt(m.isaHeadroom)} of unused ISA allowance — not a guaranteed gain, but investing it shelters future growth from tax.
             </div>
           )}

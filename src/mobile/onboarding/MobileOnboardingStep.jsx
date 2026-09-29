@@ -6,6 +6,7 @@ import { capField, isaThisYearTotal } from "../../lib/onboarding.js";
 import { estimatePensionPot, CAREER_START_AGE } from "../../lib/pension.js";
 import { resolveSlRate } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
+import { EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "../../lib/metrics.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import MobileCashTiersList from "./MobileCashTiersList.jsx";
 import InfoButton from "../InfoButton.jsx";
@@ -27,7 +28,6 @@ const TRAJECTORY_HINT = {
 };
 
 const YES_NO_OPTIONS = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }];
-const EMERGENCY_FUND_OPTIONS = [{ value:"no", label:"6 months" }, { value:"yes", label:"9 months" }];
 const CASH_ACCESS_OPTIONS = [{ value:"yes", label:"Instant access" }, { value:"partial", label:"Partial" }, { value:"no", label:"No" }];
 const PENSION_STATUS_OPTIONS = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }, { value:"unsure", label:"Not sure" }];
 const PENSION_TYPE_OPTIONS = [{ value:"sacrifice", label:"Salary sacrifice" }, { value:"relief", label:"Relief at source" }, { value:"", label:"Not sure" }];
@@ -303,8 +303,8 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
         {paymentStaging.status==="error" && <p style={{fontSize:"12px",color:"#b3261e",marginTop:0,marginBottom:"20px"}}>Couldn't stage the sandbox payment — please try again.</p>}
 
         <label style={fieldLabel}>Emergency fund target</label>
-        <PillSlider value={d.higherBuffer||"no"} onChange={v=>set("higherBuffer",v)} options={EMERGENCY_FUND_OPTIONS}/>
-        <p style={{fontSize:"11px",color:MUT,marginTop:"6px",marginBottom:"20px"}}>9 months if self-employed or variable income</p>
+        <PillSlider value={String(getBufferMonths(d))} onChange={v=>set("emergencyMonths",v)} options={EMERGENCY_MONTHS_OPTIONS}/>
+        <p style={{fontSize:"11px",color:MUT,marginTop:"6px",marginBottom:"20px"}}>{EMERGENCY_MONTHS_HINT[getBufferMonths(d)]}</p>
 
         <label style={fieldLabel}>Cash savings accounts</label>
         <p style={{fontSize:"11.5px",color:MUT,marginTop:"-4px",marginBottom:"8px"}}>Add each account separately for an accurate blended rate</p>
