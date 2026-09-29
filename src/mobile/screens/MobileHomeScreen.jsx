@@ -224,8 +224,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
               </div>
               <div style={{fontSize:"15px",fontWeight:600,color:TEXT,lineHeight:1.3}}>{topWin.title}</div>
             </div>
-            <div style={{fontFamily:SERIF,fontWeight:700,fontSize:"23px",color:"#2d6b4a",marginTop:"12px"}}>
-              {fmtCompact(topWin.amount)}{topWin.amountIsLumpSum ? " by 18" : "/yr"}
+            {/* Same figure treatment as the Opportunity/Net worth tiles above. */}
+            <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginTop:"12px"}}>
+              <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:TEXT}}>{fmtCompact(topWin.amount)}</span>
+              <span style={{fontSize:"14px",color:MUT}}>{topWin.amountIsLumpSum ? "by 18" : "/yr"}</span>
             </div>
             <p style={{fontSize:"13px",color:MUT,marginTop:"4px",lineHeight:1.5}}>{topWin.summary}</p>
             <button onClick={() => navigate(`/app/module/${topWin.key}`)} style={{marginTop:"14px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:600,cursor:"pointer"}}>
