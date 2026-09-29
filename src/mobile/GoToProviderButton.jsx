@@ -33,14 +33,24 @@ export default function GoToProviderButton({ storageKey, defaultLabel }) {
     appearance:"none", WebkitAppearance:"none",
   };
 
+  // Both pickers below draw their visible label themselves and lay a
+  // transparent 16px <select> over it. iOS Safari zooms the page in on
+  // focusing any select under 16px; this keeps the smaller visible text while
+  // the tappable select stays at 16px.
+  const selectOverlay = {
+    position:"absolute", inset:0, width:"100%", height:"100%", opacity:0,
+    fontSize:"16px", cursor:"pointer", appearance:"none", WebkitAppearance:"none",
+  };
+
   if (!saved) {
     return (
       <div style={{position:"relative"}}>
-        <select value="" onChange={e => pick(e.target.value)} style={pillStyle}>
+        <div aria-hidden="true" style={pillStyle}>{defaultLabel}</div>
+        <ChevronDown size={14} color={WHITE} style={{position:"absolute",right:"16px",top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
+        <select value="" onChange={e => pick(e.target.value)} aria-label={defaultLabel} style={selectOverlay}>
           <option value="" disabled>{defaultLabel}</option>
           {INVESTMENT_PROVIDERS.map(p => <option key={p.key} value={p.key}>{p.name}</option>)}
         </select>
-        <ChevronDown size={14} color={WHITE} style={{position:"absolute",right:"16px",top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
       </div>
     );
   }
@@ -48,14 +58,13 @@ export default function GoToProviderButton({ storageKey, defaultLabel }) {
   return (
     <div>
       <button onClick={() => openInvestmentProvider(saved)} style={pillStyle}>Go to {saved.name}</button>
-      <select value="" onChange={e => pick(e.target.value)} style={{
-        display:"block", margin:"6px auto 0", background:"transparent", border:"none",
-        color:MUT, fontSize:FONT_SIZE.LABEL, fontWeight:600, textDecoration:"underline",
-        textAlign:"center", appearance:"none", WebkitAppearance:"none", cursor:"pointer",
-      }}>
-        <option value="" disabled>Change provider</option>
-        {INVESTMENT_PROVIDERS.map(p => <option key={p.key} value={p.key}>{p.name}</option>)}
-      </select>
+      <div style={{position:"relative",width:"fit-content",margin:"6px auto 0"}}>
+        <span aria-hidden="true" style={{display:"block",color:MUT,fontSize:FONT_SIZE.LABEL,fontWeight:600,textDecoration:"underline",textAlign:"center"}}>Change provider</span>
+        <select value="" onChange={e => pick(e.target.value)} aria-label="Change provider" style={selectOverlay}>
+          <option value="" disabled>Change provider</option>
+          {INVESTMENT_PROVIDERS.map(p => <option key={p.key} value={p.key}>{p.name}</option>)}
+        </select>
+      </div>
     </div>
   );
 }

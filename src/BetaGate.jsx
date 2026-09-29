@@ -85,7 +85,7 @@ export default function BetaGate() {
           type="password" autoFocus value={password}
           onChange={e => setPassword(e.target.value)}
           placeholder="Beta password"
-          style={{ width: "100%", padding: "12px 14px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "14px", fontFamily: SANS, marginBottom: "14px", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "12px 14px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "16px", fontFamily: SANS, marginBottom: "14px", boxSizing: "border-box" }}
         />
         <button type="submit" disabled={loading || !password} style={{
           width: "100%", padding: "13px", background: (loading || !password) ? "rgba(22,47,36,0.25)" : G,

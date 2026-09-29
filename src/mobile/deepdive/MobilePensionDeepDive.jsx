@@ -303,7 +303,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
                   <label style={{fontSize:"11.5px",color:MUT,flexShrink:0}}>Contributed (£)</label>
                   <input type="number" value={y.contribution} placeholder="0"
                     onChange={e => { const v = e.target.value; setCfYears(prev => prev.map((yy,idx) => idx===i ? {...yy, contribution:v} : yy)); }}
-                    style={{width:"90px",padding:"5px 8px",fontSize:"12.5px",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"6px",background:WHITE}}/>
+                    style={{width:"90px",padding:"5px 8px",fontSize:"16px",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"6px",background:WHITE}}/>
                   <span style={{fontSize:"11.5px",color:"#2d6b4a",fontWeight:600}}>{fmt(y.unused)} unused</span>
                 </div>
               )}

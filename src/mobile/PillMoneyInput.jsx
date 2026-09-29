@@ -30,7 +30,9 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
     <label style={{flex:1,background:CDARK,borderRadius:"100px",padding:"9px 16px",display:"flex",flexDirection:"column",cursor:"text"}}>
       <span style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>{label}</span>
       <div style={{display:"flex",alignItems:"center"}}>
-        {showPrefix && <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>£</span>}
+        {/* 16px, not smaller: iOS Safari zooms the page in on focusing any
+            input under 16px, which made the whole screen jump on every tap. */}
+        {showPrefix && <span style={{fontSize:"16px",color:TEXT,fontWeight:600}}>£</span>}
         <input
           type="text" inputMode={useThousands ? "numeric" : "decimal"} placeholder={placeholder}
           value={display}
@@ -42,10 +44,10 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
             onChange(raw === "" ? null : +raw);
           }}
           style={showSuffix
-            ? {border:"none",background:"none",fontSize:"14px",fontWeight:600,color:TEXT,width:"auto",minWidth:"1ch",maxWidth:"4em",flex:"0 1 auto",outline:"none",padding:0}
-            : {border:"none",background:"none",fontSize:"14px",fontWeight:600,color:TEXT,width:"100%",outline:"none",padding:0}}
+            ? {border:"none",background:"none",fontSize:"16px",fontWeight:600,color:TEXT,width:"auto",minWidth:"1ch",maxWidth:"4em",flex:"0 1 auto",outline:"none",padding:0}
+            : {border:"none",background:"none",fontSize:"16px",fontWeight:600,color:TEXT,width:"100%",outline:"none",padding:0}}
           size={showSuffix ? Math.max(1, (display || placeholder || "0").length) : undefined}/>
-        {showSuffix && <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>%</span>}
+        {showSuffix && <span style={{fontSize:"16px",color:TEXT,fontWeight:600}}>%</span>}
       </div>
     </label>
   );

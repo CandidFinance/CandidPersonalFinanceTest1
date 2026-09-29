@@ -3007,7 +3007,8 @@ function FeedbackModal({ onDismiss, onSubmit }) {
 
   const textareaStyle = {
     width:"100%", padding:"11px 14px", border:"1.5px solid rgba(22,47,36,0.18)", borderRadius:"8px",
-    fontSize:"14px", fontFamily:SANS, color:TEXT, resize:"vertical", minHeight:"64px", marginTop:"6px",
+    // 16px: iOS Safari zooms the page on focusing any field under 16px.
+    fontSize:"16px", fontFamily:SANS, color:TEXT, resize:"vertical", minHeight:"64px", marginTop:"6px",
   };
 
   return createPortal(

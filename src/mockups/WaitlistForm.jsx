@@ -71,7 +71,7 @@ export default function WaitlistForm({ id, source = "hero" }) {
         style={{
           flex: "1 1 280px", maxWidth: "340px", padding: "16px 20px",
           border: `1.5px solid ${status === "invalid" || status === "error" ? "#c0392b" : "rgba(22,47,36,0.18)"}`,
-          borderRadius: "100px", fontSize: "15px", fontFamily: SANS, color: G, background: WHITE,
+          borderRadius: "100px", fontSize: "16px", fontFamily: SANS, color: G, background: WHITE,
         }}
       />
       <motion.button
