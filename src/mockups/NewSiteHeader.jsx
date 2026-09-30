@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Lock, Menu, X } from "lucide-react";
+import posthog from "posthog-js";
+import { Menu, X } from "lucide-react";
 import { G, GOLD, MUT, SANS, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT } from "../CandidApp.jsx";
-import { isBetaUnlocked, destinationAfterUnlock } from "../BetaGate.jsx";
+import { appEntryPath } from "./StartCheckButton.jsx";
 import { EASE_STEADY } from "./motion.js";
 
 // Fixed header height, kept in sync with this file's own padding/font-size
@@ -18,7 +19,7 @@ const TABS = [
   { to: "/how-it-works", label: "How it works" },
 ];
 
-// Below this width the tabs + Beta Tester button (desktop's `display:flex`
+// Below this width the tabs + Start button (desktop's `display:flex`
 // row, sized for a wide screen) no longer fit and start overflowing the
 // viewport — this is the one new breakpoint this file introduces, purely to
 // swap that row for a hamburger toggle. Kept as a plain number (not the
@@ -29,7 +30,7 @@ const TABS = [
 const MOBILE_BREAKPOINT = 768;
 
 // Only ever true in dev/preview builds (see main.jsx's own SHOW_DEV_TOOLS) —
-// reserves room in the header so the Beta Tester button never sits under the
+// reserves room in the header so the Start button never sits under the
 // dev-tools toggle, which floats fixed at top:16/right:16 on top of
 // everything at this screen size. Folds to a literal `false` in production,
 // so this reserve (and the dead-code branch it guards) disappears there too.
@@ -64,7 +65,6 @@ export default function NewSiteHeader() {
   const visible = useNavVisibility(mobileOpen);
   const location = useLocation();
   const navigate = useNavigate();
-  const unlocked = isBetaUnlocked();
   const rootRef = useRef(null);
 
   // Belt-and-braces close triggers — none of these are reachable on desktop
@@ -89,9 +89,10 @@ export default function NewSiteHeader() {
     };
   }, [mobileOpen]);
 
-  function goToBeta() {
+  function startCheck() {
     setMobileOpen(false);
-    navigate(unlocked ? destinationAfterUnlock() : "/beta");
+    posthog.capture("start_check_clicked", { source: "header" });
+    navigate(appEntryPath());
   }
 
   return (
@@ -107,18 +108,18 @@ export default function NewSiteHeader() {
     >
       {/* Mobile-only rules. Everything above/below this stays exactly as it
           was for desktop — these three classes only ever change anything
-          at MOBILE_BREAKPOINT and below: the tabs and Beta Tester button
+          at MOBILE_BREAKPOINT and below: the tabs and Start button
           (too wide together to fit a phone screen) are swapped for a single
           toggle button, top-right, which opens a full-width dropdown
-          containing the same tabs plus Beta Tester, stacked vertically. */}
+          containing the same tabs plus the start button, stacked vertically. */}
       <style>{`
         .nsh-tabs { display: flex; }
-        .nsh-beta-btn { display: flex; }
+        .nsh-cta-btn { display: flex; }
         .nsh-toggle { display: none; }
         .nsh-mobile-panel { display: none; }
         @media (max-width: ${MOBILE_BREAKPOINT}px) {
           .nsh-tabs { display: none; }
-          .nsh-beta-btn { display: none; }
+          .nsh-cta-btn { display: none; }
           .nsh-toggle { display: flex; }
           .nsh-mobile-panel.nsh-mobile-panel--open { display: block; }
         }
@@ -147,8 +148,8 @@ export default function NewSiteHeader() {
         </nav>
         <button
           type="button"
-          className="nsh-beta-btn"
-          onClick={goToBeta}
+          className="nsh-cta-btn"
+          onClick={startCheck}
           style={{
             marginLeft: "auto", flexShrink: 0, alignItems: "center", gap: "7px",
             background: "transparent", border: `1.5px solid ${G}`, borderRadius: "100px",
@@ -156,13 +157,12 @@ export default function NewSiteHeader() {
             color: G, cursor: "pointer",
           }}
         >
-          <Lock size={13} />
-          Beta Tester
+          Start your free check
         </button>
 
         {/* Mobile menu toggle — invisible/unreachable on desktop
-            (.nsh-toggle above), takes over the far-right spot the Beta
-            Tester button occupies on desktop once that button is hidden. */}
+            (.nsh-toggle above), takes over the far-right spot the start
+            button occupies on desktop once that button is hidden. */}
         <button
           type="button"
           className="nsh-toggle"
@@ -173,7 +173,7 @@ export default function NewSiteHeader() {
           style={{
             alignItems: "center", justifyContent: "center",
             background: "transparent", border: "none", padding: "8px",
-            margin: "-8px 0 -8px auto", // negative top/bottom cancels the padding's added height (bigger tap target, same row height); auto-left pushes it to the far right, same trick the desktop Beta Tester button uses
+            margin: "-8px 0 -8px auto", // negative top/bottom cancels the padding's added height (bigger tap target, same row height); auto-left pushes it to the far right, same trick the desktop Start button uses
             color: G, cursor: "pointer",
           }}
         >
@@ -182,7 +182,7 @@ export default function NewSiteHeader() {
       </div>
 
       {/* Mobile dropdown — full-width, directly under the header, same tabs
-          plus Beta Tester stacked vertically. Reachable only via
+          plus the start button stacked vertically. Reachable only via
           .nsh-toggle (mobile-only) and hard-hidden again above
           MOBILE_BREAKPOINT regardless of `mobileOpen`, so a window resized
           wider mid-session (unlikely on a real phone, but possible when
@@ -216,7 +216,7 @@ export default function NewSiteHeader() {
           })}
           <button
             type="button"
-            onClick={goToBeta}
+            onClick={startCheck}
             style={{
               display: "flex", alignItems: "center", gap: "8px", marginTop: "14px",
               background: "transparent", border: `1.5px solid ${G}`, borderRadius: "100px",
@@ -224,8 +224,7 @@ export default function NewSiteHeader() {
               color: G, cursor: "pointer", alignSelf: "flex-start",
             }}
           >
-            <Lock size={14} />
-            Beta Tester
+            Start your free check
           </button>
         </nav>
       </div>

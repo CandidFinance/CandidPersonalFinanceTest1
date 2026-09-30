@@ -5,7 +5,7 @@ import posthog from "posthog-js"
 import { MotionConfig } from "framer-motion"
 import CandidApp, { PageWrap, NavBar, ContentWrap, G, GOLD, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "./CandidApp.jsx"
 import ErrorBoundary from "./ErrorBoundary.jsx"
-import BetaGate, { RequireBeta } from "./BetaGate.jsx"
+import { appEntryPath } from "./mockups/StartCheckButton.jsx"
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -332,10 +332,7 @@ function FeedbackAdmin() {
 // and forwards into the mobile-native wizard's Cash & savings step (route 5
 // — MobileOnboardingStep shares the same ALL_STEP_DEFS/step numbering as the
 // desktop wizard, and already has its own TrueLayer connect UI) with the
-// query string intact, instead of ever rendering the marketing page. Whoever
-// started that TrueLayer flow already unlocked the beta gate to get into the
-// assessment in the first place, so RequireBeta on /app/assessment/:step
-// passes straight through.
+// query string intact, instead of ever rendering the marketing page.
 function RootRoute() {
   const search = new URLSearchParams(window.location.search);
   const isTrueLayerBounce = search.get('truelayer') || search.get('truelayer_payment');
@@ -345,10 +342,8 @@ function RootRoute() {
   return <Suspense fallback={null}><NewLandingPage /></Suspense>;
 }
 
-// ── Returning-tester screen ── reached only once beta-unlocked, via
-// BetaGate's destinationAfterUnlock: a tester who already has a saved report
-// lands here instead of the confidence check. Same content/behaviour as the
-// old root route's "welcome back" branch, just relocated behind the gate.
+// ── Returning-visitor screen ── same content/behaviour as the old root
+// route's "welcome back" branch.
 function WelcomeBackRoute() {
   const navigate = useNavigate();
 
@@ -393,6 +388,10 @@ function WelcomeBackRoute() {
   );
 }
 
+function BetaRedirect() {
+  return <Navigate to={appEntryPath()} replace />;
+}
+
 // Wraps CandidApp with the scroll-target id its own "jump to top on module
 // open" logic looks for (document.getElementById("candid-app")).
 function CandidAppLayout() {
@@ -424,18 +423,18 @@ function AppRoutes() {
         <Route path="/" element={<RootRoute />} />
         <Route path="/the-problem" element={<Suspense fallback={null}><TheProblemPage /></Suspense>} />
         <Route path="/how-it-works" element={<Suspense fallback={null}><HowItWorksPage /></Suspense>} />
-        <Route path="/beta" element={<BetaGate />} />
-        <Route path="/welcome" element={<RequireBeta><ConfidenceCheck /></RequireBeta>} />
-        <Route path="/welcome-back" element={<RequireBeta><WelcomeBackRoute /></RequireBeta>} />
+        {/* The app used to sit behind a beta password here; old links now go
+            straight in. */}
+        <Route path="/beta" element={<BetaRedirect />} />
+        <Route path="/welcome" element={<ConfidenceCheck />} />
+        <Route path="/welcome-back" element={<WelcomeBackRoute />} />
         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
         {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
             holds — d, insights, completedModules, one-shot modal refs, etc.)
             stays mounted across navigation between all three of these paths,
             branching on the URL internally the same way it used to branch on
-            local `screen` state. RequireBeta wraps the whole layout so a
-            direct/bookmarked URL into any of these — not just the nav
-            button — is bounced to the password gate. */}
-        <Route element={<RequireBeta><CandidAppLayout key={devReloadKey} /></RequireBeta>}>
+            local `screen` state. */}
+        <Route element={<CandidAppLayout key={devReloadKey} />}>
           <Route path="/assessment/:step" />
           <Route path="/dashboard" />
           <Route path="/modules" />

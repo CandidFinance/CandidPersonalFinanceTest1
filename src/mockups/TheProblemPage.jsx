@@ -4,7 +4,7 @@ import { Layers, Clock, DoorClosed, TrendingUp, Home as HomeIcon, Users, CheckCi
 import posthog from "posthog-js";
 import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
 import NewSiteLayout from "./NewSiteLayout.jsx";
-import WaitlistForm from "./WaitlistForm.jsx";
+import StartCheckButton from "./StartCheckButton.jsx";
 import FinancesModuleTiles from "./FinancesModuleTiles.jsx";
 import { EASE_STEADY, riseIn, pullTogether } from "./motion.js";
 
@@ -204,9 +204,9 @@ export default function TheProblemPage() {
       {/* ── CTA ── */}
       <div style={{ padding: "0 24px 96px", textAlign: "center" }}>
         <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(22px,3.5vw,28px)", color: G, fontWeight: 700, marginBottom: "28px", lineHeight: 1.3 }}>
-          Be first to know when Candid launches.
+          See what your finances could be doing.
         </motion.h2>
-        <WaitlistForm source="the_problem_cta" />
+        <StartCheckButton source="the_problem_cta" />
       </div>
     </NewSiteLayout>
   );

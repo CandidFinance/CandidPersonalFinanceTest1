@@ -4,12 +4,12 @@ import { ClipboardList, Scale, Search, Compass, GraduationCap, PoundSterling, Ho
 import posthog from "posthog-js";
 import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
 import NewSiteLayout from "./NewSiteLayout.jsx";
-import WaitlistForm from "./WaitlistForm.jsx";
+import StartCheckButton from "./StartCheckButton.jsx";
 import { EASE_STEADY, riseIn, pullTogether, heroStagger, heroItem } from "./motion.js";
 import { useEqualHeights } from "./useEqualHeights.js";
 
 // ── Home tab of the rebuilt marketing site: same brand (green/gold/serif),
-// one new accent (Apple's #0071E3 blue, reserved for the waitlist CTA) and
+// one new accent (Apple's #0071E3 blue, reserved for the main CTA) and
 // one new idea — a single continuous page background (no more alternating
 // solid colour blocks), with content laid out as floating tiles over it
 // rather than full-bleed sections. The header/footer/background shell lives
@@ -167,7 +167,7 @@ export default function NewLandingPage() {
 
   return (
     <NewSiteLayout>
-      {/* ── HERO — a cascade, not one block: badge, headline, subhead, form
+      {/* ── HERO — a cascade, not one block: badge, headline, subhead, CTA
           and trust line each rise in slightly after the last. ── */}
       <div style={{ padding: "56px 24px 88px", textAlign: "center" }}>
         <motion.div
@@ -179,7 +179,7 @@ export default function NewLandingPage() {
             fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
             borderRadius: "100px", padding: "7px 16px", marginBottom: "24px",
           }}>
-            Coming soon
+            Free to use
           </motion.div>
           <motion.h1 variants={heroItem} style={{
             fontFamily: SERIF, fontSize: "clamp(38px,6vw,58px)", fontWeight: 700,
@@ -188,11 +188,11 @@ export default function NewLandingPage() {
             Your finances,<br />trending in the <span style={{ color: G, fontWeight: 800 }}>right</span> direction.
           </motion.h1>
           <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 auto 40px" }}>
-            Candid finds the gaps, inefficiencies and missed allowances costing you thousands – then shows you exactly how to fix it. Join the waitlist to be first in when we launch.
+            Candid finds the gaps, inefficiencies and missed allowances costing you thousands – then shows you exactly how to fix it.
           </motion.p>
           <motion.div variants={heroItem}>
-            <WaitlistForm id="waitlist" source="hero" />
-            <div style={{ fontSize: "12px", color: MUT, marginTop: "14px" }}>No spam. One email, the day we launch.</div>
+            <StartCheckButton source="hero" />
+            <div style={{ fontSize: "12px", color: MUT, marginTop: "14px" }}>No sign-up needed.</div>
           </motion.div>
         </motion.div>
       </div>
@@ -336,9 +336,9 @@ export default function NewLandingPage() {
       {/* ── FINAL CTA ── */}
       <div style={{ padding: "0 24px 96px", textAlign: "center" }}>
         <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(22px,3.5vw,28px)", color: G, fontWeight: 700, marginBottom: "28px", lineHeight: 1.3 }}>
-          Be first to know when Candid launches.
+          See what your finances could be doing.
         </motion.h2>
-        <WaitlistForm source="final_cta" />
+        <StartCheckButton source="final_cta" />
       </div>
     </NewSiteLayout>
   );
