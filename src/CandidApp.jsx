@@ -5638,6 +5638,15 @@ export default function AppShell() {
   const feedbackFired = useRef(false);
   const pdfModalFired = useRef(false);
   const supaRowId = useRef(null);
+  // Where a mobile edit started from a screen other than Home (e.g. the
+  // Property screen's "Add Cash & savings", see openMobileStep) returns to
+  // once the user regenerates or goes back to their report. Cleared if they
+  // leave the assessment any other way, so a stale path can't hijack a later
+  // edit started from Home.
+  const assessmentReturnPath = useRef(null);
+  useEffect(() => {
+    if (!pathname.startsWith("/app/assessment/")) assessmentReturnPath.current = null;
+  }, [pathname]);
   const prevScoreRef = useRef(null);
   // Modules visited via the "Next" chain since the user last picked one directly from
   // the dashboard — lets nextMod below cycle through every outstanding module once per
@@ -6163,7 +6172,15 @@ export default function AppShell() {
       set("selectedModules", selected);
     }
     const idx = getActiveSteps({ selectedModules: selected }).findIndex(s => s.id === stepId);
-    if (idx >= 0) navigate(`/app/assessment/${idx + 1}`);
+    if (idx >= 0) {
+      assessmentReturnPath.current = pathname;
+      navigate(`/app/assessment/${idx + 1}`);
+    }
+  }
+  function takeAssessmentReturnPath() {
+    const path = assessmentReturnPath.current || "/app/home";
+    assessmentReturnPath.current = null;
+    return path;
   }
 
   function clearSavedData() {
@@ -6247,13 +6264,13 @@ export default function AppShell() {
           posthog.capture("assessment_abandoned", { step: step + 1, step_name: activeSteps[step].label, reason: "back_to_welcome" });
           navigate("/welcome");
         }}
-        onBackToDashboard={() => navigate("/app/home")}
+        onBackToDashboard={() => navigate(takeAssessmentReturnPath())}
         onContinue={() => {
           posthog.capture("assessment_question_completed", { step: step + 1, step_name: activeSteps[step].label });
           if (step < activeSteps.length - 1) { navigate(`/app/assessment/${step+2}`); return; }
           assessmentCompletedRef.current = true;
           posthog.capture("assessment_completed");
-          generateDashboard("/app/home");
+          generateDashboard(takeAssessmentReturnPath());
         }}
       />
     );

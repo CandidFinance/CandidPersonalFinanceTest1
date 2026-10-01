@@ -1,5 +1,5 @@
 import { Home } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, PillSlider } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import DecisionWaterfall from "../property/DecisionWaterfall.jsx";
@@ -11,7 +11,6 @@ import BorrowingCheck from "../property/BorrowingCheck.jsx";
 // prompt and the PDF, and Property has no £ figure until the engine exists.
 
 const BUYING_MODE_OPTIONS = [{ value:"alone", label:"Buying alone" }, { value:"together", label:"Buying together" }];
-const card = { background:WHITE, borderRadius:"16px", boxShadow:"0 2px 10px rgba(22,47,36,0.06)", padding:"16px" };
 const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"26px 0 22px" };
 
 export default function MobilePropertyScreen({ d, m, set, onAddInputs }) {
@@ -35,9 +34,9 @@ export default function MobilePropertyScreen({ d, m, set, onAddInputs }) {
       <PillSlider value={together ? "together" : "alone"} onChange={v => set("propertyBuyingMode", v)} options={BUYING_MODE_OPTIONS}/>
 
       {together && (
-        <div style={{...card,marginTop:"14px"}}>
-          <div style={{fontSize:"15px",fontWeight:600,color:TEXT,marginBottom:"4px"}}>Your partner</div>
-          <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"0 0 12px"}}>
+        <div style={{marginTop:"20px"}}>
+          <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px"}}>Your partner</div>
+          <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:"0 0 10px"}}>
             Used to check their employer match and ISA allowance, and added to your income for the borrowing check.
           </p>
           <div style={{display:"flex",gap:"10px",marginBottom:"10px"}}>
