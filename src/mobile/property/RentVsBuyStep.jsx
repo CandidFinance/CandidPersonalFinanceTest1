@@ -94,7 +94,7 @@ function NetCostChart({ rows, buyingAtStart, selectedYear }) {
       <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:"4px 12px",fontSize:"11px",color:MUT,marginBottom:"6px"}}>
         <span style={{display:"flex",alignItems:"center",gap:"5px"}}>{swatch(G)}Buying</span>
         <span style={{display:"flex",alignItems:"center",gap:"5px"}}>{swatch(GOLD)}Renting</span>
-        <span>Net cost so far · lower is better</span>
+        <span>Cost of living there so far · lower is better</span>
       </div>
       <svg width={width} height={H} viewBox={`0 0 ${width} ${H}`} style={{display:"block",overflow:"visible"}}>
         {lo < 0 && <line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke="rgba(22,47,36,0.15)" strokeWidth="1"/>}
@@ -143,10 +143,12 @@ function RateChoice({ outcomes, ratePct, chosen, onChoose }) {
 }
 
 // One side's money not got back (red), what it earns (green, or red for a
-// fall in value), and the net of the two. Every figure is a running total
+// fall in value), and the net of the two: the cost of living there, also
+// shown as a monthly average. `ownMoney` is a line about the person's own
+// money that's still theirs (equity, or savings), which isn't a cost. Every figure is a running total
 // since the purchase. `info` is an optional { button, panel } pair for a
 // "?" on the earnings.
-function Ledger({ title, lines, costLabel, notRecovered, earnsLabel, earns, info, net }) {
+function Ledger({ title, lines, costLabel, notRecovered, earnsLabel, earns, info, net, months, ownMoney }) {
   const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13px", color:TEXT, padding:"3px 0" };
   return (
     <div>
@@ -159,9 +161,11 @@ function Ledger({ title, lines, costLabel, notRecovered, earnsLabel, earns, info
       </div>
       {info?.panel}
       <div style={{...row,alignItems:"baseline",marginTop:"2px"}}>
-        <span style={{fontWeight:700}}>{net >= 0 ? "Net cost" : "Net gain"}</span>
+        <span style={{fontWeight:700}}>{net >= 0 ? "Cost of living there" : "Net gain"}</span>
         <span style={{fontFamily:SERIF,fontSize:"18px",fontWeight:700}}>{fmt(Math.abs(net))}</span>
       </div>
+      <div style={{fontSize:"11.5px",color:MUT,textAlign:"right"}}>about {fmt(Math.abs(net) / months)} a month</div>
+      {ownMoney && <div style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginTop:"6px"}}>{ownMoney}</div>}
     </div>
   );
 }
@@ -298,7 +302,10 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
             <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 12px"}}/>
             <div style={figureLabel}>If you sold after {years(shown.year)}</div>
             <div style={{fontSize:"11.5px",color:MUT,marginTop:"2px"}}>Totals for {shown.year === 1 ? "year 1" : `years 1 to ${shown.year}`}</div>
-            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 14px"}}>{whyText(shown)}</p>
+            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 8px"}}>{whyText(shown)}</p>
+            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
+              Renting or buying, a home costs money to live in. Buying costs interest, upkeep and the costs of buying and selling, while the whole home rises in value. Renting costs rent, while your money grows elsewhere.
+            </p>
 
             <Ledger
               title="Buying"
@@ -314,7 +321,9 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
               notRecovered={shown.buying.notRecovered}
               earnsLabel={shown.buying.priceRise >= 0 ? "Rise in the home's value" : "Fall in the home's value"}
               earns={shown.buying.priceRise}
-              net={shown.buying.netCost}/>
+              net={shown.buying.netCost}
+              months={shown.year * 12}
+              ownMoney={`You'd also have ${fmt(shown.buying.ownMoneyIn)} of your own money in the home (your deposit and the loan paid off), which you get back when you sell.`}/>
 
             <div style={{height:"14px"}}/>
             <Ledger
@@ -342,10 +351,11 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
                   </div>
                 ),
               }}
-              net={shown.renting.netCost}/>
-            <div style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginTop:"10px"}}>
-              Money that's saved either way, the loan paid off or the renter's money put aside, is still yours, so it isn't counted as a cost.
-            </div>
+              net={shown.renting.netCost}
+              months={shown.year * 12}
+              ownMoney={shown.renting.ownMoneyIn > 0
+                ? `You'd also have ${fmt(shown.renting.ownMoneyIn)} of your own money saved (the ${fmt(input.upfront)} you didn't spend on buying, ${shown.renting.ownMoneyIn >= input.upfront ? "plus" : "less"} ${fmt(Math.abs(shown.renting.ownMoneyIn - input.upfront))} ${shown.renting.ownMoneyIn >= input.upfront ? "put aside" : "taken out to cover the higher rent"}).`
+                : "Paying the higher rent would have used up all of the renter's savings."}/>
           </>
         )}
       </div>

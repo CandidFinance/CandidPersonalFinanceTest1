@@ -25,6 +25,11 @@
 // either way (loan paid off, the renter's money put aside) drops out, and
 // the gap between the two net costs is exactly the gap in net wealth:
 //   buyerWealth - renterWealth = renting.netCost - buying.netCost
+// `ownMoneyIn` is that saved money on each side: the buyer's deposit and
+// loan paid off (equity), the renter's starting money and what they've put
+// aside. With it, each side's wealth rebuilds exactly:
+//   buyerWealth  = buying.ownMoneyIn + priceRise - sellingCosts
+//   renterWealth = renting.ownMoneyIn + earnings - tax
 import { mortgageSchedule, mortgageInputs } from "./mortgage.js";
 import { calcIncomeTax } from "./tax.js";
 import { borrowingInputs, calcBorrowingCheck, cashIsaBalance } from "./borrowing.js";
@@ -135,7 +140,7 @@ export function calcRentVsBuy(input) {
   // Stamp duty and fees: the upfront sum less the deposit.
   const oneOff = Math.max(0, input.upfront - (input.price - input.mortgage.loan));
   // Running totals since day one, for each year's money-not-got-back split.
-  const sum = { payments: 0, maintenance: 0, groundRent: 0, serviceCharge: 0, remortgageFees: 0, rent: 0, earnings: 0, taxPaid: 0 };
+  const sum = { payments: 0, maintenance: 0, groundRent: 0, serviceCharge: 0, remortgageFees: 0, rent: 0, earnings: 0, taxPaid: 0, putAside: 0 };
 
   // Upfront sum: money already in Cash ISAs stays sheltered; the rest fills
   // each person's remaining allowance for this tax year (it's existing
@@ -171,6 +176,7 @@ export function calcRentVsBuy(input) {
       if (month === 1) sum.remortgageFees += costs.remortgageFee;
       sum.rent += rent;
       const difference = costs.monthlyTotal + (month === 1 ? costs.remortgageFee : 0) - rent;
+      sum.putAside += difference;
       if (difference >= 0) {
         for (const p of people) {
           const amount = difference * p.share;
@@ -239,6 +245,7 @@ export function calcRentVsBuy(input) {
         notRecovered: buyingNotRecovered,
         priceRise: propertyValue - input.price,
         netCost: buyingNotRecovered - (propertyValue - input.price),
+        ownMoneyIn: (input.price - input.mortgage.loan) + loanPaidOff,
       },
       renting: {
         rent: sum.rent,
@@ -246,6 +253,8 @@ export function calcRentVsBuy(input) {
         earnings: sum.earnings,
         tax: renterTax,
         netCost: sum.rent - (sum.earnings - renterTax),
+        // Negative if the renter has drawn out more than they started with.
+        ownMoneyIn: input.upfront + sum.putAside,
       },
     });
   }

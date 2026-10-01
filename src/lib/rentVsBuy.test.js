@@ -234,8 +234,11 @@ test("money already in Cash ISAs stays sheltered without using new allowance", (
 
 // ── Money not got back vs what it earns ───────────────────────────────────
 
-const reconciles = r => r.years.forEach(y =>
-  near(y.buyerWealth - y.renterWealth, y.renting.netCost - y.buying.netCost, 0.01));
+const reconciles = r => r.years.forEach(y => {
+  near(y.buyerWealth - y.renterWealth, y.renting.netCost - y.buying.netCost, 0.01);
+  near(y.buyerWealth, y.buying.ownMoneyIn + y.buying.priceRise - y.buying.sellingCosts, 0.01);
+  near(y.renterWealth, y.renting.ownMoneyIn + y.renting.earnings - y.renting.tax, 0.01);
+});
 
 test("split: the net cost gap equals the net wealth gap, every year", () => {
   reconciles(calcRentVsBuy(base({ horizonYears: 12 })));
@@ -276,4 +279,11 @@ test('rates: higher rates at a remortgage before the sale make buying look worse
 test('rates: no remortgage before the sale means rates make no difference', () => {
   const run = scenario => calcRentVsBuy(base({ horizonYears: 5, mortgageScenario: scenario }));
   near(run('stress').gapAtHorizon, run('moderate').gapAtHorizon, 0.01);
+});
+
+test("own money: the buyer's is the deposit plus the loan paid off; the renter's the starting money plus what's put aside", () => {
+  const y = calcRentVsBuy(base()).years[0];
+  const s = mortgageSchedule(base().mortgage).years[0];
+  near(y.buying.ownMoneyIn, 30000 + (270000 - s.balance), 0.01);
+  near(y.renting.ownMoneyIn, 37500 + (y.buyerMonthlyCost - 1300) * 12, 0.01);
 });
