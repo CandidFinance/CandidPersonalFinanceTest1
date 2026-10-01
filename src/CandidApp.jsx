@@ -98,21 +98,29 @@ async function supaSelect(table, query = "") {
 }
 // PATCH one row by id, reporting failures like supaInsert does. Every column
 // in the patch needs its own anon column-level UPDATE grant on `test`, or
-// PostgREST rejects the whole update.
+// PostgREST rejects the whole update. Returns "ok", "missing" (no row with
+// that id: a PATCH that matches nothing still succeeds, so it's checked via
+// the returned ids, which anon can read), "failed" or "skipped" (no
+// Supabase config).
 async function supaUpdateRow(table, rowId, patch) {
-  if (!SUPA_URL || !SUPA_KEY || !rowId) return;
+  if (!SUPA_URL || !SUPA_KEY) return "skipped";
+  if (!rowId) return "missing";
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(rowId)}`, {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(rowId)}&select=id`, {
       method: "PATCH",
-      headers: { "Content-Type":"application/json", "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Prefer":"return=minimal" },
+      headers: { "Content-Type":"application/json", "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Prefer":"return=representation" },
       body: JSON.stringify(patch),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
       reportSupabaseFailure(table, "update", data?.message || `HTTP ${res.status}`, res.status);
+      return "failed";
     }
+    const rows = await res.json().catch(() => null);
+    return Array.isArray(rows) && rows.length === 0 ? "missing" : "ok";
   } catch(e) {
     reportSupabaseFailure(table, "update", e?.message || String(e));
+    return "failed";
   }
 }
 
@@ -5906,7 +5914,7 @@ export default function AppShell() {
     const num = v => (v === "" || v == null || isNaN(+v)) ? null : Math.round(+v);
     const pct = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
     const yesNo = v => v === "yes" ? true : v === "no" ? false : null;
-    const rvbInput = rentVsBuyInputs(d, m, regionalRates);
+    const rvbInput = rentVsBuyInputs(d, m, regionalRates, "moderate", marketRates);
     const rvb = rvbInput.monthlyRent > 0 && b.price > 0 ? calcRentVsBuy(rvbInput) : null;
     return {
       property_buying_mode: d.propertyBuyingMode === "together" ? "together" : "alone",
@@ -5948,18 +5956,36 @@ export default function AppShell() {
       // Buyer's net wealth less the renter's at the horizon (moderate).
       property_wealth_gap: rvb ? Math.round(rvb.gapAtHorizon) : null,
     };
-  }, [pathname, d, m, regionalRates]);
+  }, [pathname, d, m, regionalRates, marketRates]);
   const propertyBaseline = useRef(null);
   const pendingPropertyPatch = useRef(null);
+  // The insert in flight when a Property save has had to create the report
+  // row, so a second save in the meantime PATCHes it rather than inserting
+  // another.
+  const creatingReportRow = useRef(null);
   useEffect(() => {
-    function send() {
+    async function send() {
       const patch = pendingPropertyPatch.current;
       if (!patch) return;
       pendingPropertyPatch.current = null;
       propertyBaseline.current = JSON.stringify(patch);
+      const full = { ...patch, property_updated_at: new Date().toISOString() };
+      if (creatingReportRow.current) {
+        const id = await creatingReportRow.current;
+        if (id) supaUpdateRow("test", id, full);
+        return;
+      }
       let rowId = supaRowId.current;
       if (!rowId) { try { rowId = localStorage.getItem('candid_report_row_id'); } catch(e) {} }
-      supaUpdateRow("test", rowId, { ...patch, property_updated_at: new Date().toISOString() });
+      const outcome = await supaUpdateRow("test", rowId, full);
+      if (outcome === "missing") {
+        // This browser's report never got a row (it was made while report
+        // saves were failing, before 29 Sept 2026) or the row is gone. Create
+        // it now, with the Property fields, rather than lose them.
+        posthog.capture("property_save_without_report_row", { had_row_id: !!rowId });
+        creatingReportRow.current = insertReportRow(insights?.score ?? calcCandidScore(statuses), full);
+        try { await creatingReportRow.current; } finally { creatingReportRow.current = null; }
+      }
     }
     if (!propertyPatch) { send(); propertyBaseline.current = null; return; }
     const json = JSON.stringify(propertyPatch);
@@ -6055,6 +6081,90 @@ export default function AppShell() {
   }
 }
 
+  // Writes this report's row to `test` and remembers its id, in memory and
+  // in localStorage so a later visit can still PATCH it. Called for every
+  // generated report, AI or fallback, and by the Property screen's first save
+  // when this browser has no row (see propertyPatch). `extra` adds columns
+  // to the insert, the Property fields in that case.
+  async function insertReportRow(score, extra = {}) {
+    const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
+    const totalOpp = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
+    // Written once, ever, by main.jsx's getAcquisition()/handleStart() — read back
+    // here rather than re-derived, so the ORIGINAL first-touch source (not whatever
+    // UTM params happen to be in the URL right now) lands on the report row.
+    let acquisition = {};
+    try { acquisition = JSON.parse(localStorage.getItem('candid_acquisition') || '{}'); } catch(e) {}
+    // test table requires columns: email (text), name (text), interests (text) — all nullable
+    if (import.meta.env.DEV) {
+      console.log("[Candid] Supabase insert starting — score:", score, "session:", posthog.get_distinct_id?.());
+    }
+    const rowId = await supaInsert("test", {
+      ...extra,
+      session_id: posthog.get_distinct_id?.() || null,
+      email: d.email || null,
+      name: d.name || null,
+      interests: (d.interests || []).join(", ") || null,
+      age: +d.age||null,
+      salary: +d.salary||null,
+      other_income: +d.otherIncome||null,
+      tax_band: m.taxBandLabel,
+      salary_trajectory: d.salaryTrajectory||null,
+      monthly_expenses: +d.monthlyExpenses||null,
+      cash_savings: +d.cashSavings||null,
+      savings_rate: +d.savingsRate||null,
+      premium_bonds: +d.premiumBonds||null,
+      has_investments: d.hasInvestments === "yes",
+      isa_this_year: m.isaUsedThisYear||null,
+      isa_previous: (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0)||null,
+      isa_type: d.isaType||null,
+      unwrapped_investments: +d.unwrappedValue||null,
+      has_pension: d.hasPension === "yes",
+      pension_my_pct: +d.myContribution||null,
+      pension_employer_pct: +d.employerMatch||null,
+      pension_pot: +d.potValue||null,
+      retirement_age: +d.retirementAge||null,
+      has_student_loan: d.studentLoan !== "none",
+      student_loan_plan: d.studentLoan !== "none" ? d.studentLoan : null,
+      student_loan_balance: +d.loanBalance||null,
+      has_mortgage: d.hasMortgage === "yes",
+      mortgage_balance: +d.mortgageBalance||null,
+      mortgage_rate: +d.mortgageRate||null,
+      mortgage_provider: d.mortgageProvider||null,
+      has_personal_loan: d.hasPersonalLoan === "yes",
+      personal_loan_balance: +d.personalLoanBalance||null,
+      personal_loan_rate: +d.personalLoanRate||null,
+      personal_loan_provider: d.personalLoanProvider||null,
+      has_bonus: d.hasBonus === "yes",
+      bonus_amount: +d.bonusAmount||null,
+      has_kids: d.hasKids === "yes",
+      num_kids: +d.numKids||null,
+      candid_score: score,
+      total_opportunity_gbp: Math.round(totalOpp / 100) * 100,
+      critical_modules: criticals,
+      modules_completed: 0,
+      feedback_submitted: false,
+      acquisition_source: acquisition.source || "direct",
+      acquisition_medium: acquisition.medium || null,
+      acquisition_campaign: acquisition.campaign || null,
+      referred_by: acquisition.referred_by || null,
+      first_visit_at: acquisition.first_visit_at || null,
+      assessment_started_at: localStorage.getItem('candid_assessment_started_at') || null,
+      returned: false,
+      confidence_score: (() => { const v = localStorage.getItem('candid_confidence_score'); return v ? parseInt(v, 10) : null; })(),
+    });
+    if (import.meta.env.DEV) {
+      console.log("[Candid] Supabase insert complete — rowId:", rowId, "SUPA_URL set:", !!SUPA_URL, "SUPA_KEY set:", !!SUPA_KEY);
+    }
+    if (rowId) {
+      supaRowId.current = rowId;
+      // Mirrored to localStorage (not just the in-memory ref) so a later
+      // "welcome back" visit — a fresh AppShell mount — can still PATCH
+      // `returned` onto the same row.
+      try { localStorage.setItem('candid_report_row_id', rowId); } catch(e) {}
+    }
+    return rowId;
+  }
+
   async function generateDashboard(redirectPath = "/dashboard") {
     if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
     setGenerating(true);
@@ -6088,81 +6198,7 @@ export default function AppShell() {
       } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist insights to localStorage:", e); }
       setWhatChangedOpen(true);
       posthog.capture("report_generated", { score: result.score, tax_band: metrics.taxBandLabel });
-      // ── Supabase insert — reuse pre-computed statuses ──
-      const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
-      const totalOpp = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
-      // Written once, ever, by main.jsx's getAcquisition()/handleStart() — read back
-      // here rather than re-derived, so the ORIGINAL first-touch source (not whatever
-      // UTM params happen to be in the URL right now) lands on the report row.
-      let acquisition = {};
-      try { acquisition = JSON.parse(localStorage.getItem('candid_acquisition') || '{}'); } catch(e) {}
-      // test table requires columns: email (text), name (text), interests (text) — all nullable
-      if (import.meta.env.DEV) {
-        console.log("[Candid] Supabase insert starting — score:", result.score, "session:", posthog.get_distinct_id?.());
-      }
-      const rowId = await supaInsert("test", {
-        session_id: posthog.get_distinct_id?.() || null,
-        email: d.email || null,
-        name: d.name || null,
-        interests: (d.interests || []).join(", ") || null,
-        age: +d.age||null,
-        salary: +d.salary||null,
-        other_income: +d.otherIncome||null,
-        tax_band: metrics.taxBandLabel,
-        salary_trajectory: d.salaryTrajectory||null,
-        monthly_expenses: +d.monthlyExpenses||null,
-        cash_savings: +d.cashSavings||null,
-        savings_rate: +d.savingsRate||null,
-        premium_bonds: +d.premiumBonds||null,
-        has_investments: d.hasInvestments === "yes",
-        isa_this_year: metrics.isaUsedThisYear||null,
-        isa_previous: (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0)||null,
-        isa_type: d.isaType||null,
-        unwrapped_investments: +d.unwrappedValue||null,
-        has_pension: d.hasPension === "yes",
-        pension_my_pct: +d.myContribution||null,
-        pension_employer_pct: +d.employerMatch||null,
-        pension_pot: +d.potValue||null,
-        retirement_age: +d.retirementAge||null,
-        has_student_loan: d.studentLoan !== "none",
-        student_loan_plan: d.studentLoan !== "none" ? d.studentLoan : null,
-        student_loan_balance: +d.loanBalance||null,
-        has_mortgage: d.hasMortgage === "yes",
-        mortgage_balance: +d.mortgageBalance||null,
-        mortgage_rate: +d.mortgageRate||null,
-        mortgage_provider: d.mortgageProvider||null,
-        has_personal_loan: d.hasPersonalLoan === "yes",
-        personal_loan_balance: +d.personalLoanBalance||null,
-        personal_loan_rate: +d.personalLoanRate||null,
-        personal_loan_provider: d.personalLoanProvider||null,
-        has_bonus: d.hasBonus === "yes",
-        bonus_amount: +d.bonusAmount||null,
-        has_kids: d.hasKids === "yes",
-        num_kids: +d.numKids||null,
-        candid_score: result.score,
-        total_opportunity_gbp: Math.round(totalOpp / 100) * 100,
-        critical_modules: criticals,
-        modules_completed: 0,
-        feedback_submitted: false,
-        acquisition_source: acquisition.source || "direct",
-        acquisition_medium: acquisition.medium || null,
-        acquisition_campaign: acquisition.campaign || null,
-        referred_by: acquisition.referred_by || null,
-        first_visit_at: acquisition.first_visit_at || null,
-        assessment_started_at: localStorage.getItem('candid_assessment_started_at') || null,
-        returned: false,
-        confidence_score: (() => { const v = localStorage.getItem('candid_confidence_score'); return v ? parseInt(v, 10) : null; })(),
-      });
-      if (import.meta.env.DEV) {
-        console.log("[Candid] Supabase insert complete — rowId:", rowId, "SUPA_URL set:", !!SUPA_URL, "SUPA_KEY set:", !!SUPA_KEY);
-      }
-      if (rowId) {
-        supaRowId.current = rowId;
-        // Mirrored to localStorage (not just the in-memory ref) so a later
-        // "welcome back" visit — a fresh AppShell mount — can still PATCH
-        // `returned` onto the same row.
-        try { localStorage.setItem('candid_report_row_id', rowId); } catch(e) {}
-      }
+      await insertReportRow(result.score);
     }
     catch(e) {
       if (import.meta.env.DEV) console.error("[Candid] generateDashboard() caught an error — falling back:", e?.message, "\nstack:", e?.stack, "\nfull error object:", e);
@@ -6178,6 +6214,9 @@ export default function AppShell() {
         localStorage.setItem('candid_insights_date', new Date().toISOString());
       } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist fallback insights to localStorage:", e); }
       posthog.capture("report_generated", { score: insightsToUse.score, fallback: true, rate_limited: isRateLimit, error: e?.message });
+      // Fallback reports used to skip the insert entirely, so these users
+      // never reached Supabase.
+      await insertReportRow(insightsToUse.score);
       if (isRateLimit) {
         // Distinct from ai_generation_failed below — this is an intentional
         // protective block, not something broken, so it shouldn't pollute
@@ -6365,7 +6404,7 @@ export default function AppShell() {
         headerRight={
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
-        <MobilePropertyScreen step={propertyStep} d={d} m={m} set={set} regionalRows={regionalRates} onAddInputs={openMobileStep}
+        <MobilePropertyScreen step={propertyStep} d={d} m={m} set={set} regionalRows={regionalRates} marketRates={marketRates} onAddInputs={openMobileStep}
           onOpenModule={key => navigate(`/app/module/${key}`)}
           onSelectStep={next => {
             navigate(PROPERTY_STEP_PATHS[next] || "/app/property");

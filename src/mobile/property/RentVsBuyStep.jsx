@@ -185,7 +185,7 @@ function whyText(row) {
     : `Renting leaves you ${gap} better off.`;
 }
 
-export default function RentVsBuyStep({ d, m, set, regionalRows }) {
+export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) {
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState(null); // null: the last year
   const [earningsInfoOpen, setEarningsInfoOpen] = useState(false);
@@ -195,7 +195,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
 
-  const input = rentVsBuyInputs(d, m, regionalRows);
+  const input = rentVsBuyInputs(d, m, regionalRows, "moderate", marketRates);
   // The first remortgage, if the fix ends before the sale: the year the new
   // deal starts.
   const remortgageYear = input.mortgage.loan > 0 && input.mortgage.fixedYears < input.horizonYears ? input.mortgage.fixedYears + 1 : null;
@@ -260,6 +260,13 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
                 : <PillMoneyInput label="Investment return" unit="%" value={twoDp(input.investmentReturnPct) || null} onChange={v => set("propertyInvestmentReturn", v ?? "")}/>}
             </PillCell>
           </div>
+          {cash && (d.propertyCashReturn === "" || d.propertyCashReturn == null) && (
+            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+              {input.bestCashRatePct != null && input.bestCashRatePct > input.ownCashRatePct
+                ? `The best savings rate Candid tracks. Your own accounts average ${pct(input.ownCashRatePct)}.`
+                : "The average rate on your own cash savings, Premium Bonds and Cash ISAs."}
+            </p>
+          )}
           {!cash && (
             <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
               <PillCell><PillMoneyInput label="Of which dividends" unit="%" value={twoDp(input.dividendYieldPct) || null} onChange={v => set("propertyDividendYield", v ?? "")}/></PillCell>

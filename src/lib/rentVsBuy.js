@@ -41,8 +41,11 @@ const MAX_HORIZON_YEARS = 40;
 export const SELLING_COSTS_PCT = 1.5;
 // Candid's own assumption, not a published figure.
 export const MODERATE_HOUSE_PRICE_GROWTH_PCT = 3.0;
-// Where the renter's money sits. "cash" (the default) earns the blended rate
-// on the user's own cash savings, Premium Bonds and Cash ISAs (cashRate).
+// Where the renter's money sits. "cash" (the default) earns the better of
+// the blended rate on the user's own cash savings, Premium Bonds and Cash
+// ISAs (cashRate) and the best savings rate Candid tracks (savings_rates,
+// the same rates the Cash & savings module points users to): leaving money
+// in a poor account shouldn't count against renting.
 // "invested" earns 7% a year, the rate Candid uses for Stocks & Shares ISA
 // growth elsewhere (Forecast and the Investments module); the stress
 // scenario cuts it to 2%, all of it dividends.
@@ -293,9 +296,10 @@ export function cashRate(d, m) {
 // never more than the moderate figure (the latest figure is above 3% in some
 // regions, which would make "stress" the more optimistic case), and
 // remortgages 1.5 points higher. Rent growth is the region's ONS figure in
-// both, unless the user changes it. The renter's money earns the user's
-// blended cash rate (cashRate), or if invested 7% (2% in stress, all
-// dividends); either rate is editable.
+// both, unless the user changes it. The renter's money earns the better of
+// the user's own cash rate and the best rate Candid tracks
+// (`marketRates.nonIsaRate`, null while loading), or if invested 7% (2% in
+// stress, all dividends); either rate is editable.
 //
 // ISAs, per person: the upfront sum can fill this tax year's remaining
 // allowance; after that, each person can add up to what they could
@@ -303,7 +307,7 @@ export function cashRate(d, m) {
 // partnerSavingsEstimate for a partner), never more than £20,000 a year.
 // The money invested is split between partners by that same capacity to
 // save, and each person's money outside an ISA is taxed at their own rates.
-export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate") {
+export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marketRates = null) {
   const b = borrowingInputs(d, m);
   const r = calcBorrowingCheck(b);
   const regional = regionalRates(d.propertyRegion, regionalRows);
@@ -312,8 +316,10 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate") {
     ? Math.min(regional ? regional.housePriceGrowthPct : moderateGrowth, moderateGrowth)
     : moderateGrowth;
   const returnType = d.propertyRenterMoney === "invested" ? "invested" : "cash";
+  const ownCashRatePct = cashRate(d, m);
+  const bestCashRatePct = marketRates && marketRates.nonIsaRate != null && !isNaN(+marketRates.nonIsaRate) ? +marketRates.nonIsaRate : null;
   const investmentReturnPct = returnType === "cash"
-    ? (filled(d.propertyCashReturn) ? +d.propertyCashReturn : cashRate(d, m))
+    ? (filled(d.propertyCashReturn) ? +d.propertyCashReturn : Math.max(ownCashRatePct, bestCashRatePct ?? 0))
     : scenario === "stress" ? STRESS_INVESTED_RETURN_PCT
     : filled(d.propertyInvestmentReturn) ? +d.propertyInvestmentReturn : INVESTED_RETURN_PCT;
   const dividendYieldPct = returnType === "cash" ? investmentReturnPct
@@ -366,6 +372,8 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate") {
     monthlyRent: +d.propertyMonthlyRent || 0,
     rentGrowthPct: filled(d.propertyRentGrowth) ? +d.propertyRentGrowth : (regional ? regional.rentGrowthPct : UK_RENT_GROWTH_PCT),
     returnType,
+    ownCashRatePct,
+    bestCashRatePct,
     investmentReturnPct,
     dividendYieldPct,
     people,

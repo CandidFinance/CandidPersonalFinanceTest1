@@ -31,7 +31,7 @@ function listText(items) {
   return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
-export default function MobilePropertyScreen({ step, d, m, set, regionalRows, onAddInputs, onOpenModule, onSelectStep }) {
+export default function MobilePropertyScreen({ step, d, m, set, regionalRows, marketRates, onAddInputs, onOpenModule, onSelectStep }) {
   const missing = readinessMissing(d, m);
   const unlocked = missing.length === 0;
 
@@ -55,7 +55,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, on
         </div>
       ) : step === "rentVsBuy" ? (
         <div style={{marginTop:"20px"}}>
-          <RentVsBuyStep d={d} m={m} set={set} regionalRows={regionalRows}/>
+          <RentVsBuyStep d={d} m={m} set={set} regionalRows={regionalRows} marketRates={marketRates}/>
         </div>
       ) : (
         <>

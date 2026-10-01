@@ -287,3 +287,24 @@ test("own money: the buyer's is the deposit plus the loan paid off; the renter's
   near(y.buying.ownMoneyIn, 30000 + (270000 - s.balance), 0.01);
   near(y.renting.ownMoneyIn, 37500 + (y.buyerMonthlyCost - 1300) * 12, 0.01);
 });
+
+// ── Cash rate: the better of the user's own and the best tracked ──────────
+
+test("cash rate: the best tracked rate is used when it beats the user's own", () => {
+  const d = { ...saved, cashTiers: [{ amount: "40000", rate: "1.5" }], isaThisYearCash: "" };
+  const i = rentVsBuyInputs(d, calcMetrics(d), null, "moderate", { nonIsaRate: 5 });
+  assert.equal(i.investmentReturnPct, 5);
+  near(i.ownCashRatePct, 1.5, 1e-9);
+  assert.equal(i.bestCashRatePct, 5);
+});
+
+test("cash rate: the user's own rate is kept when it's better, or the best isn't loaded", () => {
+  const d = { ...saved, cashTiers: [{ amount: "40000", rate: "5.5" }], isaThisYearCash: "" };
+  near(rentVsBuyInputs(d, calcMetrics(d), null, "moderate", { nonIsaRate: 5 }).investmentReturnPct, 5.5, 1e-9);
+  near(rentVsBuyInputs(d, calcMetrics(d), null, "moderate", null).investmentReturnPct, 5.5, 1e-9);
+});
+
+test("cash rate: the user's own figure wins over both", () => {
+  const d = { ...saved, propertyCashReturn: "3" };
+  assert.equal(rentVsBuyInputs(d, calcMetrics(d), null, "moderate", { nonIsaRate: 5 }).investmentReturnPct, 3);
+});
