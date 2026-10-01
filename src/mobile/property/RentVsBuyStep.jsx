@@ -123,13 +123,13 @@ function NetCostChart({ rows, buyingAtStart, selectedYear }) {
 // fall in value), and the net of the two. Every figure is a running total
 // since the purchase. `info` is an optional { button, panel } pair for a
 // "?" on the earnings.
-function Ledger({ title, lines, notRecovered, earnsLabel, earns, info, net }) {
+function Ledger({ title, lines, costLabel, notRecovered, earnsLabel, earns, info, net }) {
   const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13px", color:TEXT, padding:"3px 0" };
   return (
     <div>
       <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"4px"}}>{title}</div>
       {lines.map(l => <div key={l.label} style={{...row,color:MUT}}><span>{l.label}</span><span>{fmt(l.value)}</span></div>)}
-      <div style={{...row,fontWeight:700}}><span>Money you don't get back</span><span style={{color:SC.critical}}>−{fmt(notRecovered)}</span></div>
+      <div style={{...row,fontWeight:700}}><span>{costLabel}</span><span style={{color:SC.critical}}>−{fmt(notRecovered)}</span></div>
       <div style={row}>
         <span style={{display:"flex",alignItems:"center",gap:"6px"}}>{earnsLabel}{info?.button}</span>
         <span style={{fontWeight:600,color:earns < 0 ? SC.critical : SC.ok}}>{earns < 0 ? "−" : "+"}{fmt(earns)}</span>
@@ -266,6 +266,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
                 ...(shown.buying.remortgageFees > 0 ? [{ label:"Remortgage fees", value:shown.buying.remortgageFees }] : []),
                 { label:"Selling costs", value:shown.buying.sellingCosts },
               ]}
+              costLabel="Ownership cost"
               notRecovered={shown.buying.notRecovered}
               earnsLabel={shown.buying.priceRise >= 0 ? "Rise in the home's value" : "Fall in the home's value"}
               earns={shown.buying.priceRise}
@@ -275,6 +276,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
             <Ledger
               title="Renting"
               lines={[]}
+              costLabel="Rental cost"
               notRecovered={shown.renting.notRecovered}
               earnsLabel="Growth in wealth"
               earns={shown.renting.earnings - shown.renting.tax}
