@@ -9,7 +9,8 @@ export const DEFAULT_REMORTGAGE_FEE = 1000;
 export const FIXED_PERIOD_OPTIONS = [2, 3, 5, 10];
 // Stress scenario: every remortgage is at today's rate plus 1.5 points. A
 // flat uplift, not cumulative (6% at each remortgage from 4.5%, not 6%,
-// 7.5%, 9%...).
+// 7.5%, 9%...). The mortgage step also shows the same shift downwards
+// ("lower" scenario, floored at 0%).
 export const STRESS_REMORTGAGE_UPLIFT = 1.5;
 const MAX_TERM_YEARS = 40;
 
@@ -24,7 +25,8 @@ export function monthlyPayment(principal, annualRatePct, months) {
 // One row per year. The rate is fixed for `fixedYears`; at the end of each
 // fixed period the buyer remortgages onto a new deal and the payment is
 // recalculated over the remaining term. Moderate remortgages at the same
-// rate; stress at the rate plus STRESS_REMORTGAGE_UPLIFT. The remortgage fee
+// rate; stress at the rate plus STRESS_REMORTGAGE_UPLIFT; lower at the rate
+// minus it (not below 0%). The remortgage fee
 // (paid in cash, not added to the loan) is charged in the first year of
 // each new deal, so a buyer who sells at the end of a fixed period doesn't
 // pay it.
@@ -37,7 +39,10 @@ export function mortgageSchedule({ loan, termYears, fixedYears, ratePct, remortg
     const newDeal = (year - 1) % fixedYears === 0;
     const remortgage = newDeal && year > 1 && balance > 0.005;
     if (newDeal) {
-      rate = remortgage && scenario === "stress" ? ratePct + STRESS_REMORTGAGE_UPLIFT : ratePct;
+      rate = !remortgage ? ratePct
+        : scenario === "stress" ? ratePct + STRESS_REMORTGAGE_UPLIFT
+        : scenario === "lower" ? Math.max(0, ratePct - STRESS_REMORTGAGE_UPLIFT)
+        : ratePct;
       payment = monthlyPayment(balance, rate, totalMonths - (year - 1) * 12);
     }
     let interest = 0, capital = 0;
@@ -74,16 +79,20 @@ export function mortgageInputs(d, loan) {
 }
 
 // The figures the mortgage step shows: the payment on the first deal, what
-// it would be from the first remortgage under stress, and the fees.
+// it would be from the first remortgage if rates are 1.5 points higher, the
+// same or 1.5 points lower (null when the fix covers the whole term), and
+// the fees.
 export function mortgageSummary(input) {
   const moderate = mortgageSchedule(input);
-  const stress = mortgageSchedule({ ...input, scenario: "stress" });
-  const firstRemortgage = stress.years.find(y => y.remortgage) || null;
+  const firstRemortgage = moderate.years.find(y => y.remortgage) || null;
+  const atFirstRemortgage = scenario => {
+    const row = mortgageSchedule({ ...input, scenario }).years[firstRemortgage.year - 1];
+    return { scenario, ratePct: row.ratePct, monthlyPayment: row.monthlyPayment };
+  };
   return {
     monthlyPayment: moderate.years[0]?.monthlyPayment ?? 0,
-    stressPayment: firstRemortgage ? firstRemortgage.monthlyPayment : null,
-    stressRatePct: firstRemortgage ? firstRemortgage.ratePct : null,
     firstRemortgageYear: firstRemortgage ? firstRemortgage.year : null,
+    remortgageOutcomes: firstRemortgage ? ["stress", "moderate", "lower"].map(atFirstRemortgage) : null,
     remortgages: moderate.remortgages,
     totalFees: moderate.totalFees,
     totalInterest: moderate.totalInterest,

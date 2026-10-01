@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
+import { ChevronDown } from "lucide-react";
+import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt } from "../../lib/format.js";
@@ -13,9 +14,15 @@ import PillSelect from "./PillSelect.jsx";
 
 const FIXED_OPTIONS = FIXED_PERIOD_OPTIONS.map(y => ({ value:String(y), label:`${y} years` }));
 const pctText = n => `${Math.round(n * 100) / 100}%`;
+const OUTCOME_TEXT = {
+  stress: `${STRESS_REMORTGAGE_UPLIFT} points higher`,
+  moderate: "The same",
+  lower: `${STRESS_REMORTGAGE_UPLIFT} points lower`,
+};
 
 export default function MortgageStep({ d, m, set }) {
   const [infoOpen, setInfoOpen] = useState(false);
+  const [outcomesOpen, setOutcomesOpen] = useState(false);
   const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
 
@@ -25,8 +32,7 @@ export default function MortgageStep({ d, m, set }) {
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"6px"}}>Your mortgage</div>
-      <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>A repayment mortgage on the {fmt(loan)} loan from step 1.</p>
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Your mortgage</div>
 
       <div style={{display:"flex",gap:"10px"}}>
         <PillCell><PillMoneyInput label="Term (years)" unit="" value={input.termYears} onChange={v => set("propertyMortgageTerm", v ?? "")}/></PillCell>
@@ -53,10 +59,30 @@ export default function MortgageStep({ d, m, set }) {
                 Capital and interest, so the loan is paid off over {input.termYears} years. At the end of each fixed period Candid assumes you remortgage at today's rate and pay the fee from cash.
               </p>
             )}
-            {s.stressPayment != null && (
-              <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"12px 0 0"}}>
-                If rates are {STRESS_REMORTGAGE_UPLIFT} points higher when you remortgage ({pctText(s.stressRatePct)}), it would be {fmt(s.stressPayment)} a month from year {s.firstRemortgageYear}.
-              </p>
+            {/* What the payment could be at the first remortgage, if rates have
+                moved 1.5 points either way or not at all. */}
+            {s.remortgageOutcomes && (
+              <>
+                <button type="button" onClick={() => setOutcomesOpen(o => !o)} aria-expanded={outcomesOpen} style={{
+                  marginTop:"12px", background:"transparent", border:"1.3px solid rgba(22,47,36,0.25)", borderRadius:"100px",
+                  padding:"6px 12px", fontSize:"12.5px", fontWeight:600, color:G, fontFamily:"inherit", cursor:"pointer",
+                  display:"inline-flex", alignItems:"center", gap:"4px",
+                }}>
+                  From year {s.firstRemortgageYear}
+                  <ChevronDown size={14} style={{transform:outcomesOpen ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
+                </button>
+                {outcomesOpen && (
+                  <div style={{...explainer,marginTop:"8px",color:TEXT}}>
+                    <div style={{color:MUT,marginBottom:"4px"}}>If rates have moved when you remortgage:</div>
+                    {s.remortgageOutcomes.map(o => (
+                      <div key={o.scenario} style={{display:"flex",justifyContent:"space-between",gap:"10px",padding:"3px 0",fontSize:"12.5px"}}>
+                        <span>{OUTCOME_TEXT[o.scenario]} ({pctText(o.ratePct)})</span>
+                        <span style={{fontWeight:600}}>{fmt(o.monthlyPayment)} a month</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
             <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>

@@ -123,6 +123,10 @@ export const HEADER_WORDMARK_LIGHT = { fontFamily: SERIF, fontWeight: 700, color
 // other radii are left untokenized rather than inventing a false
 // consistency.
 export const RADIUS_PILL  = "100px";
+// Every mobile input pill (PillMoneyInput, PillSelect, PillSlider) is this
+// tall, so a toggle, a dropdown and a £/% field sit level when they share a
+// row or stack.
+export const PILL_HEIGHT = "44px";
 export const RADIUS_CARD  = "14px"; // mobile card containers (WinTile, ProviderTile, ProductListTile, HomeScreen/ForecastScreen cards)
 export const RADIUS_MODAL = "18px"; // desktop modal shells + marketing/mockup cards
 

@@ -1,13 +1,10 @@
 import { Home, ChevronRight } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, PillSlider } from "../../CandidApp.jsx";
-import { capField } from "../../lib/onboarding.js";
+import { G, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
-import PillMoneyInput from "../PillMoneyInput.jsx";
 import DecisionWaterfall from "../property/DecisionWaterfall.jsx";
 import { PurchaseInputs, LoanTile } from "../property/BorrowingCheck.jsx";
 import MortgageStep from "../property/MortgageStep.jsx";
 import PropertySteps from "../property/PropertySteps.jsx";
-import PillCell from "../property/PillCell.jsx";
 
 // Property module, split into two steps so neither is one long page:
 //   1. Readiness (/app/property): the purchase inputs first, then the
@@ -18,7 +15,6 @@ import PillCell from "../property/PillCell.jsx";
 // that list drives scoring, the £-impact sort, the AI prompt and the PDF,
 // and Property has no £ figure until the engine exists.
 
-const BUYING_MODE_OPTIONS = [{ value:"alone", label:"Buying alone" }, { value:"together", label:"Buying together" }];
 const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"26px 0 22px" };
 
 const MISSING_TEXT = {
@@ -33,7 +29,6 @@ function listText(items) {
 }
 
 export default function MobilePropertyScreen({ step, d, m, set, onAddInputs, onOpenModule, onSelectStep }) {
-  const together = d.propertyBuyingMode === "together";
   const missing = readinessMissing(d, m);
   const unlocked = missing.length === 0;
 
@@ -61,31 +56,7 @@ export default function MobilePropertyScreen({ step, d, m, set, onAddInputs, onO
             Start with the purchase, then see what comes before a deposit and how much you'd need to borrow. Complete this step to unlock your mortgage.
           </p>
 
-          <PillSlider value={together ? "together" : "alone"} onChange={v => set("propertyBuyingMode", v)} options={BUYING_MODE_OPTIONS}/>
-
-          {together && (
-            <div style={{marginTop:"20px"}}>
-              <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px"}}>Your partner</div>
-              <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:"0 0 10px"}}>
-                Used to check their employer match and ISA allowance, and added to your income for the borrowing check.
-              </p>
-              <div style={{display:"flex",gap:"10px",marginBottom:"10px"}}>
-                <PillCell><PillMoneyInput label="Salary" value={+d.partnerSalary || null} onChange={v => set("partnerSalary", capField("salary", v ?? ""))}/></PillCell>
-                <PillCell><PillMoneyInput label="Other income" value={+d.partnerOtherIncome || null} onChange={v => set("partnerOtherIncome", capField("otherIncome", v ?? ""))}/></PillCell>
-              </div>
-              <div style={{display:"flex",gap:"10px",marginBottom:"10px"}}>
-                <PillCell><PillMoneyInput label="Pension contribution" unit="%" value={d.partnerMyContribution || null} onChange={v => set("partnerMyContribution", capField("myContribution", v ?? ""))}/></PillCell>
-                <PillCell><PillMoneyInput label="Employer match cap" unit="%" value={d.partnerEmployerMatch || null} onChange={v => set("partnerEmployerMatch", capField("employerMatch", v ?? ""))}/></PillCell>
-              </div>
-              <div style={{display:"flex",gap:"10px"}}>
-                <PillCell><PillMoneyInput label="ISA paid in this tax year" value={+d.partnerIsaThisYear || null} onChange={v => set("partnerIsaThisYear", capField("isaThisYearOther", v ?? ""))}/></PillCell>
-              </div>
-            </div>
-          )}
-
-          <div style={{marginTop:"20px"}}>
-            <PurchaseInputs d={d} m={m} set={set}/>
-          </div>
+          <PurchaseInputs d={d} m={m} set={set}/>
 
           <hr style={divider}/>
           <DecisionWaterfall d={d} m={m} set={set} onAddInputs={onAddInputs} onOpenModule={onOpenModule}/>

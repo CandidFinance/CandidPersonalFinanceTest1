@@ -13,7 +13,7 @@ import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sani
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
 import { simulateLoan, fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions } from "./lib/forecast.js";
 import { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
-import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK } from "./design-tokens.js";
+import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK, PILL_HEIGHT } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
@@ -152,7 +152,7 @@ button:active{transform:scale(0.98);}
 }
 `;
 
-export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK };
+export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK, PILL_HEIGHT };
 
 const INP = {
   width:"100%", padding:"11px 14px", border:"1.5px solid rgba(22,47,36,0.18)",
@@ -937,10 +937,10 @@ export function Toggle({ value, onChange, options }) {
 // used where horizontal space is tight (e.g. Forecast's time-horizon picker).
 export function PillSlider({ value, onChange, options }) {
   return (
-    <div style={{display:"flex",background:CDARK,borderRadius:RADIUS_PILL,padding:"3px",gap:"2px"}}>
+    <div style={{display:"flex",background:CDARK,borderRadius:RADIUS_PILL,padding:"3px",gap:"2px",height:PILL_HEIGHT,boxSizing:"border-box"}}>
       {options.map(o => (
         <button key={o.value} type="button" onClick={() => onChange(o.value)} style={{
-          flex:1, border:"none", borderRadius:RADIUS_PILL, padding:"9px 0",
+          flex:1, border:"none", borderRadius:RADIUS_PILL, padding:"0 6px", height:"100%", whiteSpace:"nowrap",
           background: value===o.value ? G : "transparent",
           color: value===o.value ? WHITE : MUT,
           fontSize:FONT_SIZE.BODY, fontWeight:600, cursor:"pointer", fontFamily:SANS, transition:"all 0.15s",
