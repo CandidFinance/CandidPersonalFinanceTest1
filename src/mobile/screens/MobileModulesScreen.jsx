@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Users, Coins, ChevronRight } from "lucide-react";
+import { Check, Users, Coins, ChevronRight, Home } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
 import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
@@ -53,13 +53,14 @@ function moduleInsights(mm, d, m) {
 // this teaser's own copy, not MODULE_META's (which is written for the real,
 // unlocked module elsewhere). An entry with no MODULE_META counterpart
 // (e.g. household) supplies its own `icon`.
+// The old "Mortgages" teaser is now the open Property entry above these
+// (Property absorbs mortgages).
 const LOCKED_MODULES = [
-  { key:"mortgage", title:"Mortgages", description:"Overpay-vs-invest analysis, remortgage timing, and rate-change impact." },
   { key:"kids", title:"Family tax planning", description:"Junior ISAs, Child Benefit tapering, and tax-efficient gifting for your children." },
   { key:"household", title:"Household finances", icon:Users, description:"Two people, one plan. Marriage or a civil partnership changes the advice, from shared allowances to how you hold savings and investments." },
 ];
 
-export default function MobileModulesScreen({ d, m, statuses, insights, completedModules, onMarkReviewed, onOpenModule }) {
+export default function MobileModulesScreen({ d, m, statuses, insights, completedModules, onMarkReviewed, onOpenModule, onOpenProperty }) {
   const [sortMode, setSortMode] = useState("amount");
   const [expandedKey, setExpandedKey] = useState(null);
   // Same celebration as the module deep dive (MobileModuleDeepDive) — coins
@@ -170,6 +171,23 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
           );
         })}
       </div>
+
+      {/* Property sits outside the ranked list above: it has no £ figure
+          until the rent vs buy engine exists, so it can't be sorted by impact
+          yet. See MobilePropertyScreen. */}
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>New</div>
+      <button type="button" onClick={onOpenProperty} style={{width:"100%",textAlign:"left",fontFamily:"inherit",background:WHITE,border:"none",borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",display:"flex",alignItems:"flex-start",gap:"14px",cursor:"pointer"}}>
+        <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
+          <Home size={18} color={G}/>
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+            <div style={{fontSize:"16px",fontWeight:600,color:TEXT}}>Property</div>
+            <ChevronRight size={18} color={MUT} style={{flexShrink:0}}/>
+          </div>
+          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:0}}>Buying a home: what usually comes before a deposit, and how much you'd need to borrow. A rent vs buy comparison is coming next.</p>
+        </div>
+      </button>
 
       <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Coming soon</div>
       <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>

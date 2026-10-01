@@ -21,6 +21,9 @@ import MobileForecastScreen from "./mobile/screens/MobileForecastScreen.jsx";
 import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
+import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
+import { rollTaxYear } from "./lib/taxYear.js";
+import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
 
 // Re-exported for existing external consumers (e.g. src/pdf/reportData.js)
 // now that these live in src/lib/ — see that file's own import for the
@@ -88,6 +91,25 @@ async function supaSelect(table, query = "") {
   } catch(e) {
     reportSupabaseFailure(table, "select", e?.message || String(e));
     return null;
+  }
+}
+// PATCH one row by id, reporting failures like supaInsert does. Every column
+// in the patch needs its own anon column-level UPDATE grant on `test`, or
+// PostgREST rejects the whole update.
+async function supaUpdateRow(table, rowId, patch) {
+  if (!SUPA_URL || !SUPA_KEY || !rowId) return;
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(rowId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type":"application/json", "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Prefer":"return=minimal" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      reportSupabaseFailure(table, "update", data?.message || `HTTP ${res.status}`, res.status);
+    }
+  } catch(e) {
+    reportSupabaseFailure(table, "update", e?.message || String(e));
   }
 }
 
@@ -5545,15 +5567,28 @@ const BLANK_DATA = {
   inheritDirection:"", estateValue:"", hasWill:"no",
   hasPersonalLoan:"no", personalLoanBalance:"", personalLoanRate:"", personalLoanMonthly:"", personalLoanTermRemaining:"", personalLoanAnnualExtra:"", personalLoanProvider:"",
   hasKids:"no", numKids:"", kidsAges:"", hasJISA:"no", juniorISAValue:"",
+  // Property module (MobilePropertyScreen). The partner figures are only asked
+  // when buying together: nothing else in Candid holds a second person's
+  // finances yet.
+  propertyBuyingMode:"alone", propertyPrice:"", propertyCashAvailable:"", propertyStampDuty:"", propertyFees:"",
+  partnerSalary:"", partnerOtherIncome:"", partnerMyContribution:"", partnerEmployerMatch:"", partnerIsaThisYear:"",
   // Supabase schema note: isa_this_year_other NUMERIC
 };
 
+// rollTaxYear (src/lib/taxYear.js) moves last tax year's ISA payments and
+// realised gains out of the "this tax year" fields once a new tax year has
+// started, and stamps the inputs with the current one (inputsTaxYear).
 function loadInitialData() {
+  const now = new Date();
   try {
     const saved = localStorage.getItem('candid_inputs');
-    if (saved) return { ...BLANK_DATA, ...JSON.parse(saved) };
+    if (saved) {
+      // Inputs saved before inputsTaxYear existed are dated by their last report.
+      const reportDate = localStorage.getItem('candid_insights_date');
+      return rollTaxYear({ ...BLANK_DATA, ...JSON.parse(saved) }, now, reportDate ? new Date(reportDate) : null);
+    }
   } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to load saved inputs from localStorage:", e); }
-  return BLANK_DATA;
+  return rollTaxYear(BLANK_DATA, now);
 }
 
 function loadSavedInsights() {
@@ -5821,6 +5856,56 @@ export default function AppShell() {
   const m = useMemo(() => calcMetrics(d, marketRates), [d, marketRates]);
   const statuses = useMemo(() => computeModuleStatuses(d, m, marketRates), [d, m, marketRates]);
 
+  // Property inputs → the report row. Only edits made on the Property screen
+  // are sent (not the values already there when it opens), once they've
+  // settled for 2 seconds so typing a price doesn't PATCH per keystroke; an
+  // edit still pending when the user leaves the screen is sent straight away.
+  // Includes the user's own pension figures, which the Property screen can
+  // ask for when the Pension module wasn't chosen.
+  const propertyPatch = useMemo(() => {
+    if (pathname !== "/app/property") return null;
+    const b = borrowingInputs(d, m);
+    const r = calcBorrowingCheck(b);
+    const num = v => (v === "" || v == null || isNaN(+v)) ? null : Math.round(+v);
+    const pct = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
+    return {
+      property_buying_mode: d.propertyBuyingMode === "together" ? "together" : "alone",
+      property_price: num(d.propertyPrice),
+      property_cash_available: Math.round(b.cashAvailable),
+      property_stamp_duty: num(d.propertyStampDuty),
+      property_fees: Math.round(b.fees),
+      property_loan_needed: b.price > 0 ? Math.round(r.loanNeeded) : null,
+      property_income_multiple: b.price > 0 && r.multiple != null ? Math.round(r.multiple * 100) / 100 : null,
+      partner_salary: num(d.partnerSalary),
+      partner_other_income: num(d.partnerOtherIncome),
+      partner_pension_my_pct: pct(d.partnerMyContribution),
+      partner_pension_employer_pct: pct(d.partnerEmployerMatch),
+      partner_isa_this_year: num(d.partnerIsaThisYear),
+      pension_my_pct: +d.myContribution||null,
+      pension_employer_pct: +d.employerMatch||null,
+    };
+  }, [pathname, d, m]);
+  const propertyBaseline = useRef(null);
+  const pendingPropertyPatch = useRef(null);
+  useEffect(() => {
+    function send() {
+      const patch = pendingPropertyPatch.current;
+      if (!patch) return;
+      pendingPropertyPatch.current = null;
+      propertyBaseline.current = JSON.stringify(patch);
+      let rowId = supaRowId.current;
+      if (!rowId) { try { rowId = localStorage.getItem('candid_report_row_id'); } catch(e) {} }
+      supaUpdateRow("test", rowId, { ...patch, property_updated_at: new Date().toISOString() });
+    }
+    if (!propertyPatch) { send(); propertyBaseline.current = null; return; }
+    const json = JSON.stringify(propertyPatch);
+    if (propertyBaseline.current === null) { propertyBaseline.current = json; return; }
+    if (json === propertyBaseline.current) { pendingPropertyPatch.current = null; return; }
+    pendingPropertyPatch.current = propertyPatch;
+    const t = setTimeout(send, 2000);
+    return () => clearTimeout(t);
+  }, [propertyPatch]);
+
   // Fires each time the dashboard route is entered — including revisits after
   // browsing into a module and back, or a later "welcome back" session.
   useEffect(() => {
@@ -6066,6 +6151,21 @@ export default function AppShell() {
     if (idx >= 0) navigate(`/assessment/${idx + 1}`);
   }
 
+  // Mobile twin of addModule: opens one onboarding step by id ("cash",
+  // "investments", "about"...), first adding its module to the user's
+  // selection if they skipped it. Used by the Property screen to send a
+  // missing figure to the step that normally asks for it.
+  function openMobileStep(stepId) {
+    const def = ALL_STEP_DEFS.find(s => s.id === stepId);
+    let selected = d.selectedModules || [];
+    if (def?.moduleKey && !selected.includes(def.moduleKey)) {
+      selected = [...selected, def.moduleKey];
+      set("selectedModules", selected);
+    }
+    const idx = getActiveSteps({ selectedModules: selected }).findIndex(s => s.id === stepId);
+    if (idx >= 0) navigate(`/app/assessment/${idx + 1}`);
+  }
+
   function clearSavedData() {
     posthog.capture("assessment_abandoned", {
       step: Number.isInteger(assessmentStepNum) ? assessmentStepNum : null,
@@ -6094,7 +6194,7 @@ export default function AppShell() {
   // once an assessment has produced a report — bounce home rather than show a
   // broken or empty page for a stale bookmark, shared link, or a bare reload with
   // no data.
-  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat", "/app/home", "/app/modules", "/app/forecast", "/app/chat"];
+  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat", "/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/property"];
   if ((REPORT_PATHS.includes(pathname) || pathname.startsWith("/module/") || pathname.startsWith("/app/module/")) && !insights) {
     return <Navigate to="/" replace />;
   }
@@ -6178,7 +6278,17 @@ export default function AppShell() {
       <MobileModulesScreen d={d} m={m} statuses={statuses} insights={insights}
         completedModules={completedModules}
         onMarkReviewed={markModuleComplete}
-        onOpenModule={key => navigate(`/app/module/${key}`)}/>
+        onOpenModule={key => navigate(`/app/module/${key}`)}
+        onOpenProperty={() => navigate("/app/property")}/>
+    </MobileLayout>
+  );
+
+  if (pathname === "/app/property") return (
+    <MobileLayout activeTab="modules"
+      headerRight={
+        <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+      }>
+      <MobilePropertyScreen d={d} m={m} set={set} onAddInputs={openMobileStep}/>
     </MobileLayout>
   );
 
