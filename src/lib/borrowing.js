@@ -4,6 +4,8 @@
 // borrowing.test.js.
 
 export const LENDER_INCOME_MULTIPLE = 4.5;
+// The top of what some lenders offer higher earners.
+export const HIGH_EARNER_MULTIPLE = 5.5;
 export const DEFAULT_PROPERTY_FEES = 2500;
 export const EMERGENCY_KEEP_BACK_MONTHS = 3;
 
@@ -50,11 +52,18 @@ export function calcBorrowingCheck({ price = 0, cashAvailable = 0, stampDuty = 0
   const loanAtMultiple = income * LENDER_INCOME_MULTIPLE;
   // Strictly above 4.5x. With no income recorded, any loan is above it.
   const warn = loanNeeded > 0 && (income > 0 ? loanNeeded > loanAtMultiple : true);
+  // "within" up to and including 4.5x, "stretch" above that up to and
+  // including 5.5x, "beyond" above 5.5x. Null with no income to compare.
+  const band = loanNeeded === 0 ? "within"
+    : multiple == null ? null
+    : multiple <= LENDER_INCOME_MULTIPLE ? "within"
+    : multiple <= HIGH_EARNER_MULTIPLE ? "stretch"
+    : "beyond";
   return {
     income, upfrontCosts, usableDeposit, upfrontShortfall, loanNeeded,
     loanToValue: price > 0 ? loanNeeded / price : null,
     multiple, loanAtMultiple,
     gapAboveMultiple: Math.max(0, loanNeeded - loanAtMultiple),
-    warn,
+    warn, band,
   };
 }

@@ -33,6 +33,25 @@ test("warning just over 4.5x income", () => {
   assert.equal(r.gapAboveMultiple, 1);
 });
 
+test("band: within up to and including 4.5x", () => {
+  assert.equal(calcBorrowingCheck({ price: 300000, cashAvailable: 30000, stampDuty: 0, fees: 0, incomes: [60000] }).band, "within");
+});
+
+test("band: stretch above 4.5x up to and including 5.5x", () => {
+  assert.equal(calcBorrowingCheck({ price: 300001, cashAvailable: 30000, stampDuty: 0, fees: 0, incomes: [60000] }).band, "stretch");
+  // Loan 330,000 = exactly 5.5 x 60,000.
+  assert.equal(calcBorrowingCheck({ price: 360000, cashAvailable: 30000, stampDuty: 0, fees: 0, incomes: [60000] }).band, "stretch");
+});
+
+test("band: beyond above 5.5x", () => {
+  assert.equal(calcBorrowingCheck({ price: 360001, cashAvailable: 30000, stampDuty: 0, fees: 0, incomes: [60000] }).band, "beyond");
+});
+
+test("band: a cash purchase is within, and no income gives no band", () => {
+  assert.equal(calcBorrowingCheck({ price: 150000, cashAvailable: 200000, incomes: [] }).band, "within");
+  assert.equal(calcBorrowingCheck({ price: 200000, cashAvailable: 20000, incomes: [] }).band, null);
+});
+
 test("stamp duty and fees can tip the loan over 4.5x", () => {
   const without = calcBorrowingCheck({ price: 300000, cashAvailable: 30000, stampDuty: 0, fees: 0, incomes: [60000] });
   const withCosts = calcBorrowingCheck({ price: 300000, cashAvailable: 30000, stampDuty: 5000, fees: 2500, incomes: [60000] });

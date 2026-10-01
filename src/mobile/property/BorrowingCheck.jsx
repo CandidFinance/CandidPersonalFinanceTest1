@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
-import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, LENDER_INCOME_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
+import { MUT, TEXT, SERIF, SC, WARNING, WHITE } from "../../CandidApp.jsx";
+import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
+import PillCell from "./PillCell.jsx";
 
 // Borrowing check: the loan a purchase needs against the 4.5x income most
 // lenders work to. A warning only, never a block. Logic in
@@ -15,27 +16,35 @@ const row = { display:"flex", justifyContent:"space-between", alignItems:"center
 const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
 const figure = { fontFamily:SERIF, fontSize:"26px", fontWeight:700, color:TEXT, lineHeight:1.2 };
 
-// The loan's income multiple on a bar with the 4.5x line marked: green fill
-// when within it, red when above. The bar and its caption are this
-// section's one state indicator.
-function MultipleBar({ multiple }) {
-  const above = multiple > LENDER_INCOME_MULTIPLE;
-  const color = above ? SC.critical : SC.ok;
-  const scaleMax = Math.max(6, multiple * 1.1);
+// Colour and caption for calcBorrowingCheck's band: green up to 4.5x,
+// orange to 5.5x, red above. Drives the times-income figure, the bar and
+// the result tile's border.
+const BAND = {
+  within:  { color: SC.ok,       caption: `Within the ${LENDER_INCOME_MULTIPLE}x most lenders use` },
+  stretch: { color: WARNING,     caption: `Above ${LENDER_INCOME_MULTIPLE}x, within the ${HIGH_EARNER_MULTIPLE}x some lenders offer higher earners` },
+  beyond:  { color: SC.critical, caption: `Above ${HIGH_EARNER_MULTIPLE}x, beyond what most lenders offer` },
+};
+
+// The loan's income multiple on a bar with the 4.5x and 5.5x lines marked.
+function MultipleBar({ multiple, band }) {
+  const { color, caption: text } = BAND[band];
+  const scaleMax = Math.max(7, multiple * 1.1);
   const fillPct = Math.min(100, (multiple / scaleMax) * 100);
-  const markerPct = (LENDER_INCOME_MULTIPLE / scaleMax) * 100;
+  const markers = [LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE].map(x => ({ x, pct: (x / scaleMax) * 100 }));
   return (
     <div style={{marginTop:"14px"}}>
       <div style={{position:"relative",height:"10px",borderRadius:"5px",background:"rgba(22,47,36,0.08)"}}>
         <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${fillPct}%`,borderRadius:"5px",background:color}}/>
-        <div style={{position:"absolute",left:`${markerPct}%`,top:"-4px",bottom:"-4px",width:"2px",marginLeft:"-1px",background:TEXT}}/>
+        {markers.map(mk => (
+          <div key={mk.x} style={{position:"absolute",left:`${mk.pct}%`,top:"-4px",bottom:"-4px",width:"2px",marginLeft:"-1px",background:TEXT}}/>
+        ))}
       </div>
       <div style={{position:"relative",height:"16px",marginTop:"4px"}}>
-        <span style={{position:"absolute",left:`${markerPct}%`,transform:"translateX(-50%)",fontSize:"10.5px",fontWeight:600,color:MUT,whiteSpace:"nowrap"}}>{LENDER_INCOME_MULTIPLE}x</span>
+        {markers.map(mk => (
+          <span key={mk.x} style={{position:"absolute",left:`${mk.pct}%`,transform:"translateX(-50%)",fontSize:"10.5px",fontWeight:600,color:MUT,whiteSpace:"nowrap"}}>{mk.x}x</span>
+        ))}
       </div>
-      <div style={{fontSize:"13px",fontWeight:700,color,marginTop:"4px"}}>
-        {above ? `Above the ${LENDER_INCOME_MULTIPLE}x most lenders use` : `Within the ${LENDER_INCOME_MULTIPLE}x most lenders use`}
-      </div>
+      <div style={{fontSize:"13px",fontWeight:700,color,marginTop:"4px"}}>{text}</div>
     </div>
   );
 }
@@ -47,10 +56,12 @@ export default function BorrowingCheck({ d, m, set }) {
   const r = calcBorrowingCheck(input);
   const together = input.incomes.length > 1;
   const suggested = suggestedCashAvailable(m.totalLiquid, m.expenses);
-  // One decimal normally, but a loan only just over 4.5x would round to
-  // "4.5" and read as within the limit, so show two there.
+  const bandColor = r.band ? BAND[r.band].color : null;
+  const incomePhrase = together ? "your combined income" : "your income";
+  // One decimal normally, but a multiple just over a band edge would round
+  // down onto it ("4.5", "5.5") and read as the band below, so show two there.
   const multipleText = r.multiple == null ? null
-    : (r.warn && r.multiple.toFixed(1) === LENDER_INCOME_MULTIPLE.toFixed(1)) ? r.multiple.toFixed(2) : r.multiple.toFixed(1);
+    : [LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE].some(x => r.multiple > x && r.multiple.toFixed(1) === x.toFixed(1)) ? r.multiple.toFixed(2) : r.multiple.toFixed(1);
 
   return (
     <div>
@@ -58,26 +69,24 @@ export default function BorrowingCheck({ d, m, set }) {
       <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>Cash left after stamp duty and fees is the deposit. The rest is the mortgage.</p>
 
       <div style={{display:"flex",gap:"10px"}}>
-        <PillMoneyInput label="Property price" value={+d.propertyPrice || null} onChange={v => set("propertyPrice", v ?? "")}/>
-        <PillMoneyInput label="Cash available" value={input.cashAvailable || null} onChange={v => set("propertyCashAvailable", v ?? "")}/>
-      </div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:"6px",margin:"8px 0"}}>
-        <span style={caption}>How cash available is worked out</span>
-        <InfoButton open={cashInfoOpen} onClick={() => setCashInfoOpen(o => !o)}/>
+        <PillCell><PillMoneyInput label="Property price" value={+d.propertyPrice || null} onChange={v => set("propertyPrice", v ?? "")}/></PillCell>
+        <PillCell info={<InfoButton open={cashInfoOpen} onClick={() => setCashInfoOpen(o => !o)}/>}>
+          <PillMoneyInput label="Cash available" value={input.cashAvailable || null} onChange={v => set("propertyCashAvailable", v ?? "")}/>
+        </PillCell>
       </div>
       {cashInfoOpen && (
-        <p style={{...explainer,marginBottom:"10px"}}>
+        <p style={{...explainer,marginTop:"8px"}}>
           Your cash savings and Premium Bonds ({fmt(m.totalLiquid)}) less {EMERGENCY_KEEP_BACK_MONTHS} months of expenses ({fmt(EMERGENCY_KEEP_BACK_MONTHS * m.expenses)}) kept back as an emergency fund: {fmt(suggested)}. Change it if some of that cash is set aside{together ? ", or to add your partner's savings" : ""}.
         </p>
       )}
-      <div style={{display:"flex",gap:"10px"}}>
-        <PillMoneyInput label="Stamp duty" value={+d.propertyStampDuty || null} onChange={v => set("propertyStampDuty", v ?? "")}/>
-        <PillMoneyInput label="Legal & survey fees" value={input.fees || null} onChange={v => set("propertyFees", v ?? "")}/>
+      <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
+        <PillCell><PillMoneyInput label="Stamp duty" value={+d.propertyStampDuty || null} onChange={v => set("propertyStampDuty", v ?? "")}/></PillCell>
+        <PillCell><PillMoneyInput label="Legal & survey fees" value={input.fees || null} onChange={v => set("propertyFees", v ?? "")}/></PillCell>
       </div>
       <p style={{...caption,marginTop:"8px"}}>Candid doesn't work out stamp duty yet. Enter it if you know it; until then it counts as £0.</p>
 
       {input.price > 0 && (
-        <div style={{marginTop:"18px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px"}}>
+        <div style={{marginTop:"18px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",border:bandColor ? `2px solid ${bandColor}` : "none"}}>
           <div style={{display:"flex",gap:"24px"}}>
             <div>
               <div style={figureLabel}>Loan needed</div>
@@ -86,7 +95,7 @@ export default function BorrowingCheck({ d, m, set }) {
             {multipleText && r.loanNeeded > 0 && (
               <div>
                 <div style={figureLabel}>Times income</div>
-                <div style={figure}>{multipleText}x</div>
+                <div style={{...figure,color:bandColor || TEXT}}>{multipleText}x</div>
               </div>
             )}
           </div>
@@ -97,10 +106,15 @@ export default function BorrowingCheck({ d, m, set }) {
             <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>Candid doesn't have an income figure to compare this against, and lenders base how much they'll lend on income.</p>
           ) : (
             <>
-              <MultipleBar multiple={r.multiple}/>
-              {r.warn && (
+              <MultipleBar multiple={r.multiple} band={r.band}/>
+              {r.band === "stretch" && (
                 <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
-                  That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {together ? "your combined income" : "your income"}. Some lenders go to 5 to 5.5x for higher earners.
+                  That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}. Some lenders go to 5 to {HIGH_EARNER_MULTIPLE}x for higher earners.
+                </p>
+              )}
+              {r.band === "beyond" && (
+                <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+                  That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}, and above the {HIGH_EARNER_MULTIPLE}x some lenders go to for higher earners.
                 </p>
               )}
             </>

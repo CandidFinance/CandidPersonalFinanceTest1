@@ -6305,7 +6305,7 @@ export default function AppShell() {
       headerRight={
         <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
       }>
-      <MobilePropertyScreen d={d} m={m} set={set} onAddInputs={openMobileStep}/>
+      <MobilePropertyScreen d={d} m={m} set={set} onAddInputs={openMobileStep} onOpenModule={key => navigate(`/app/module/${key}`)}/>
     </MobileLayout>
   );
 

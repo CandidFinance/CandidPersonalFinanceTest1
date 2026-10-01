@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CircleAlert, CircleCheck, CircleDashed, ChevronRight } from "lucide-react";
-import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, SC, WHITE, MODULE_META } from "../../CandidApp.jsx";
 import { runWaterfall, waterfallInputs, ISA_ALLOWANCE, EMERGENCY_RANGE_MONTHS } from "../../lib/waterfall.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt } from "../../lib/format.js";
@@ -77,10 +77,20 @@ function AddLink({ label, onClick }) {
   );
 }
 
+// The module an expanded tile links to, when the user has chosen it: the
+// match lives in Pension, ISAs in Investments (or Cash & savings for a
+// cash-only user).
+function linkedModule(key, selected) {
+  if (key === "match") return selected.has("pension") ? "pension" : null;
+  if (key === "isa") return selected.has("investments") ? "investments" : selected.has("cash") ? "cash" : null;
+  return null;
+}
+
 // `onAddInputs(stepId)` opens an existing onboarding step ("cash",
 // "investments", "about") so a missing figure is entered where it normally
-// lives, never asked twice.
-export default function DecisionWaterfall({ d, m, set, onAddInputs }) {
+// lives, never asked twice. `onOpenModule(key)` opens a module deep dive.
+export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule }) {
+  const selected = new Set(d.selectedModules || []);
   const input = waterfallInputs(d, m);
   const checks = runWaterfall(input).filter(c => SHOWN_CHECKS.includes(c.key));
   const [openKey, setOpenKey] = useState(null);
@@ -159,6 +169,11 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs }) {
               {isOpen && (
                 <div style={{background:"rgba(22,47,36,0.03)",padding:"14px 18px 18px",display:"flex",flexDirection:"column",gap:"8px"}}>
                   {details(c)}
+                  {onOpenModule && linkedModule(c.key, selected) && (
+                    <button type="button" onClick={() => onOpenModule(linkedModule(c.key, selected))} style={{marginTop:"4px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+                      Deep dive · {MODULE_META.find(mm => mm.key === linkedModule(c.key, selected))?.title}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
