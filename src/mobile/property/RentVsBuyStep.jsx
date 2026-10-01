@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { ArrowUp } from "lucide-react";
 import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC, PillSlider } from "../../CandidApp.jsx";
 import { rentVsBuyInputs, calcRentVsBuy, ISA_ALLOWANCE, SELLING_COSTS_PCT } from "../../lib/rentVsBuy.js";
 import { STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
@@ -15,19 +16,6 @@ const MONEY_OPTIONS = [{ value:"cash", label:"Cash" }, { value:"invested", label
 const pct = n => `${Math.round(n * 10) / 10}%`;
 const twoDp = n => Math.round(n * 100) / 100;
 const years = n => `${n} ${n === 1 ? "year" : "years"}`;
-
-// Consecutive years with the same side ahead, e.g. rent in years 1-2 then
-// buy in years 3-5.
-function runsOf(rows) {
-  const runs = [];
-  for (const r of rows) {
-    const side = r.buyerWealth > r.renterWealth ? "buy" : "rent";
-    const last = runs[runs.length - 1];
-    if (last && last.side === side) last.to = r.year;
-    else runs.push({ side, from: r.year, to: r.year });
-  }
-  return runs;
-}
 
 // One cell per year: buy or rent, whichever leaves more if you sold or
 // cashed in at the end of that year. Tap a year to see how it adds up.
@@ -183,14 +171,14 @@ function Ledger({ title, lines, costLabel, notRecovered, earnsLabel, earns, info
 function whyText(row) {
   const b = row.buying, r = row.renting;
   const buyAhead = row.buyerWealth > row.renterWealth;
-  const gap = fmt(Math.abs(r.netCost - b.netCost));
+  const gap = `~${fmtCompact(Math.abs(r.netCost - b.netCost))}`;
   const oneOffs = b.stampDutyAndFees + b.sellingCosts;
   if (!buyAhead && b.netCost - oneOffs < r.netCost) {
-    return `Compared with buying, renting leaves you ${gap} better off, because buying's one-off costs (${fmt(oneOffs)} in stamp duty, fees and selling costs) haven't been made back yet.`;
+    return `Renting leaves you ${gap} better off. Buying's one-off costs (${fmt(oneOffs)} in stamp duty, fees and selling costs) haven't been made back yet.`;
   }
   return buyAhead
-    ? `Compared with renting, buying leaves you ${gap} better off.`
-    : `Compared with buying, renting leaves you ${gap} better off.`;
+    ? `Buying leaves you ${gap} better off.`
+    : `Renting leaves you ${gap} better off.`;
 }
 
 export default function RentVsBuyStep({ d, m, set, regionalRows }) {
@@ -217,7 +205,6 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
   const last = result?.years.at(-1);
   const shown = result ? (result.years.find(y => y.year === selectedYear) || last) : null;
   const buyingAhead = result ? result.gapAtHorizon > 0 : false;
-  const runs = result ? runsOf(result.years) : [];
   const isaRoomNow = input.alreadyInIsa + input.people.reduce((s, p) => s + p.isaHeadroom, 0);
 
   return (
@@ -299,9 +286,9 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
             )}
             <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
             <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:TEXT,lineHeight:1.2}}>{buyingAhead ? "Buying" : "Renting"}</div>
-            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"2px 0 0"}}>
-              By {fmt(Math.abs(result.gapAtHorizon))} over {buyingAhead ? "renting" : "buying"}.
-              {runs.length > 1 && ` ${runs.map((r, i) => `${i === 0 ? (r.side === "buy" ? "Buying" : "Renting") : (r.side === "buy" ? "buying" : "renting")} is ahead ${r.from === r.to ? `in year ${r.from}` : `in years ${r.from} to ${r.to}`}`).join(", then ")}.`}
+            <p style={{display:"flex",alignItems:"center",gap:"4px",fontSize:"13px",color:TEXT,margin:"2px 0 0"}}>
+              <ArrowUp size={14} color={SC.ok} strokeWidth={2.6}/>
+              ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}
             </p>
 
             <NetCostChart rows={result.years} selectedYear={shown.year}
