@@ -37,9 +37,13 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
     <div>
       <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Rent vs buy</div>
 
+      {/* Own rows: "Years before you'd sell" is too long a caption to share a
+          row on a small phone without being cut off. */}
       <div style={{display:"flex",gap:"10px"}}>
         <PillCell><PillMoneyInput label="Monthly rent" value={+d.propertyMonthlyRent || null} onChange={v => set("propertyMonthlyRent", v ?? "")}/></PillCell>
-        <PillCell><PillMoneyInput label="Years you'd stay" unit="" value={input.horizonYears} onChange={v => set("propertyHorizonYears", v ?? "")}/></PillCell>
+      </div>
+      <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
+        <PillCell><PillMoneyInput label="Years before you'd sell" unit="" value={input.horizonYears} onChange={v => set("propertyHorizonYears", v ?? "")}/></PillCell>
       </div>
       <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
         <PillCell><div style={{flex:1,minWidth:0}}><PillSlider value={input.tenure} onChange={v => set("propertyTenure", v)} options={TENURE_OPTIONS}/></div></PillCell>
