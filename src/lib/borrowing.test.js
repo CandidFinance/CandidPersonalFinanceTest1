@@ -175,3 +175,8 @@ test("borrowingInputs: no location yet means no stamp duty and no breakdown", ()
   assert.equal(r.stampDuty, 0);
   assert.equal(r.stampDutyDetail, null);
 });
+
+test("borrowingInputs: suggested cash available includes Cash ISAs", () => {
+  const r = borrowingInputs({ propertyPrice: "250000", isaPrevCash: "8000", isaThisYearCash: "2000" }, m);
+  assert.equal(r.cashAvailable, 34000);
+});

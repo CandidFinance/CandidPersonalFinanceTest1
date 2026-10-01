@@ -5586,6 +5586,7 @@ const BLANK_DATA = {
   propertyMonthlyRent:"", propertyHorizonYears:"", propertyTenure:"freehold",
   propertyGroundRent:"", propertyGroundRentGrowth:"", propertyServiceCharge:"",
   propertyHousePriceGrowth:"", propertyRentGrowth:"", propertyInvestmentReturn:"", propertyDividendYield:"",
+  propertyRenterMoney:"cash", propertyCashReturn:"",
   // Supabase schema note: isa_this_year_other NUMERIC
 };
 
@@ -5942,7 +5943,7 @@ export default function AppShell() {
       property_house_price_growth: rvbInput.housePriceGrowthPct,
       property_rent_growth: rvbInput.rentGrowthPct,
       property_investment_return: rvbInput.investmentReturnPct,
-      property_dividend_yield: rvbInput.dividendYieldPct,
+      property_dividend_yield: rvbInput.returnType === "invested" ? rvbInput.dividendYieldPct : null,
       property_breakeven_year: rvb ? rvb.breakevenYear : null,
       // Buyer's net wealth less the renter's at the horizon (moderate).
       property_wealth_gap: rvb ? Math.round(rvb.gapAtHorizon) : null,

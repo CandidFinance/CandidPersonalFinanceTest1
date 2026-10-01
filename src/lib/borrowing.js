@@ -12,11 +12,17 @@ export const HIGH_EARNER_MULTIPLE = 5.5;
 export const DEFAULT_PROPERTY_FEES = 2500;
 export const EMERGENCY_KEEP_BACK_MONTHS = 3;
 
-// Starting value for "cash available": cash savings plus Premium Bonds, less
-// 3 months of expenses kept back as an emergency fund. Editable by the user,
-// e.g. to add a partner's savings.
-export function suggestedCashAvailable(totalLiquid, monthlyExpenses) {
-  return Math.max(0, Math.round((totalLiquid || 0) - EMERGENCY_KEEP_BACK_MONTHS * (monthlyExpenses || 0)));
+// Cash ISA balances (this year's payments and earlier years'), which a
+// buyer would usually draw on for a deposit alongside their other cash.
+export function cashIsaBalance(d) {
+  return (+d.isaThisYearCash || 0) + (+d.isaPrevCash || 0);
+}
+
+// Starting value for "cash available": cash savings, Premium Bonds and Cash
+// ISAs (`cashPot`), less 3 months of expenses kept back as an emergency
+// fund. Editable by the user, e.g. to add a partner's savings.
+export function suggestedCashAvailable(cashPot, monthlyExpenses) {
+  return Math.max(0, Math.round((cashPot || 0) - EMERGENCY_KEEP_BACK_MONTHS * (monthlyExpenses || 0)));
 }
 
 const filled = v => v !== "" && v !== null && v !== undefined && !isNaN(+v);
@@ -50,7 +56,7 @@ export function borrowingInputs(d, m) {
   }) : null;
   return {
     price,
-    cashAvailable: filled(d.propertyCashAvailable) ? +d.propertyCashAvailable : suggestedCashAvailable(m.totalLiquid, m.expenses),
+    cashAvailable: filled(d.propertyCashAvailable) ? +d.propertyCashAvailable : suggestedCashAvailable(m.totalLiquid + cashIsaBalance(d), m.expenses),
     stampDuty: stampDutyDetail?.supported ? stampDutyDetail.total : stampDutyDetail ? (+d.propertyStampDuty || 0) : 0,
     stampDutyDetail,
     fees: filled(d.propertyFees) ? +d.propertyFees : DEFAULT_PROPERTY_FEES,

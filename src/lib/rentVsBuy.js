@@ -8,17 +8,21 @@
 // year is what selling would leave: property value less selling costs, less
 // the mortgage still owed.
 //
-// Renter ("invest the difference"): invests the same upfront sum, then each
-// month invests the gap between the buyer's monthly cost and rent, or draws
-// on the investments when rent costs more. ISAs first, up to each person's
-// allowance; the rest is taxed: dividends each year, gains when sold. Net
-// wealth is what cashing in would leave, after capital gains tax.
+// Renter: puts the same upfront sum to work, then each month adds the gap
+// between the buyer's monthly cost and rent, or draws on it when rent costs
+// more. The money is either kept in cash (the default: someone saving to buy
+// usually holds their deposit in cash) or invested. ISAs first, up to each
+// person's allowance; outside them, cash interest is taxed each year above
+// the Personal Savings Allowance, and investments are taxed on dividends
+// each year and on gains when sold. Net wealth is what cashing in would
+// leave, after capital gains tax.
 //
 // Both sides spend the same cash each month. The part of the buyer's
 // mortgage payment that repays the loan isn't lost: it shows up as equity.
 import { mortgageSchedule, mortgageInputs } from "./mortgage.js";
 import { calcIncomeTax } from "./tax.js";
-import { borrowingInputs, calcBorrowingCheck } from "./borrowing.js";
+import { borrowingInputs, calcBorrowingCheck, cashIsaBalance } from "./borrowing.js";
+import { PB_RATE } from "./cash.js";
 import { regionalRates } from "./regionalRates.js";
 
 export const DEFAULT_HORIZON_YEARS = 5;
@@ -26,12 +30,18 @@ const MAX_HORIZON_YEARS = 40;
 export const SELLING_COSTS_PCT = 1.5;
 // Candid's own assumption, not a published figure.
 export const MODERATE_HOUSE_PRICE_GROWTH_PCT = 3.0;
-// Royal London's UK equity growth assumptions (mid 5%, low 2%): Royal
-// London's own figures, not FCA-prescribed rates.
-export const INVESTMENT_RETURN_PCT = { moderate: 5, stress: 2 };
-// The part of the investment return paid out as dividends (taxed each year
+// Where the renter's money sits. "cash" (the default) earns the blended rate
+// on the user's own cash savings, Premium Bonds and Cash ISAs (cashRate).
+// "invested" earns 7% a year, the rate Candid uses for Stocks & Shares ISA
+// growth elsewhere (Forecast and the Investments module); the stress
+// scenario cuts it to 2%, all of it dividends.
+export const INVESTED_RETURN_PCT = 7;
+export const STRESS_INVESTED_RETURN_PCT = 2;
+// The part of an invested return paid out as dividends (taxed each year
 // outside an ISA); the rest is growth (taxed on sale).
 export const DEFAULT_DIVIDEND_YIELD_PCT = 2;
+// Used only if the user has no cash figures at all.
+const DEFAULT_CASH_RATE_PCT = 4.5;
 export const FREEHOLD_MAINTENANCE_PCT = 1;
 // Leasehold flat: internal upkeep only, since the service charge covers the
 // building. Candid's estimate, rising with inflation at 2% (the Bank of
@@ -47,6 +57,9 @@ export const DIVIDEND_ALLOWANCE = 500;
 export const CGT_ALLOWANCE = 3000;
 const DIVIDEND_TAX = { basic: 0.0875, higher: 0.3375, additional: 0.3935 };
 const CGT_RATE = { basic: 0.18, higher: 0.24, additional: 0.24 };
+// Cash interest outside an ISA: income tax above the Personal Savings Allowance.
+const SAVINGS_ALLOWANCE = { basic: 1000, higher: 500, additional: 0 };
+const SAVINGS_TAX = { basic: 0.20, higher: 0.40, additional: 0.45 };
 
 const filled = v => v !== "" && v !== null && v !== undefined && !isNaN(+v);
 const monthlyRate = annualPct => Math.pow(1 + annualPct / 100, 1 / 12) - 1;
@@ -96,21 +109,30 @@ function buyerYearCosts(input, scheduleRow, year) {
 //   mortgageScenario ("moderate" | "stress"), housePriceGrowthPct,
 //   tenure ("freehold" | "leasehold"), groundRent, groundRentGrowthPct,
 //   serviceCharge (both £ a year), monthlyRent, rentGrowthPct,
-//   investmentReturnPct, dividendYieldPct,
+//   returnType ("cash" | "invested"), investmentReturnPct, dividendYieldPct
+//   (the part paid as income: all of it for cash), alreadyInIsa (the part
+//   of the upfront sum already in Cash ISAs, so needing no new allowance),
 //   people: [{ who, isaHeadroom (this tax year), isaCapacity (a year, from
 //     income), share (of the money invested), taxBand }]
 export function calcRentVsBuy(input) {
   const years = Math.max(1, Math.min(MAX_HORIZON_YEARS, Math.round(input.horizonYears || DEFAULT_HORIZON_YEARS)));
   const schedule = mortgageSchedule({ ...input.mortgage, scenario: input.mortgageScenario || "moderate" });
-  const growthPct = input.investmentReturnPct - input.dividendYieldPct;
-  const growthM = monthlyRate(growthPct);
-  const dividendM = input.dividendYieldPct / 100 / 12;
-  const people = input.people.map(p => ({ ...p, isa: 0, gia: 0, basis: 0, dividends: 0, realised: 0, isaRoom: 0, isaPaidIn: 0, giaPaidIn: 0 }));
+  const cash = input.returnType === "cash";
+  // Cash: the whole return is interest. Invested: dividends plus growth.
+  const incomePct = cash ? input.investmentReturnPct : input.dividendYieldPct;
+  const growthM = monthlyRate(cash ? 0 : input.investmentReturnPct - input.dividendYieldPct);
+  const incomeM = incomePct / 100 / 12;
+  const incomeAllowance = band => cash ? SAVINGS_ALLOWANCE[band] : DIVIDEND_ALLOWANCE;
+  const incomeTaxRate = band => cash ? SAVINGS_TAX[band] : DIVIDEND_TAX[band];
+  const people = input.people.map(p => ({ ...p, isa: 0, gia: 0, basis: 0, income: 0, realised: 0, isaRoom: 0, isaPaidIn: 0, giaPaidIn: 0 }));
   let shortfall = 0; // rent the investments couldn't cover
 
-  // Upfront sum: fills each person's remaining allowance for this tax year
-  // (it's existing savings, so not limited by income), the rest outside.
+  // Upfront sum: money already in Cash ISAs stays sheltered; the rest fills
+  // each person's remaining allowance for this tax year (it's existing
+  // savings, so not limited by income), then goes outside.
   let lump = Math.max(0, input.upfront);
+  const alreadyInIsa = Math.min(lump, Math.max(0, input.alreadyInIsa || 0));
+  people[0].isa += alreadyInIsa; people[0].isaPaidIn += alreadyInIsa; lump -= alreadyInIsa;
   for (const p of people) {
     const toIsa = Math.min(lump, Math.max(0, p.isaHeadroom));
     p.isa += toIsa; p.isaPaidIn += toIsa; lump -= toIsa;
@@ -125,11 +147,11 @@ export function calcRentVsBuy(input) {
     const rent = input.monthlyRent * Math.pow(1 + input.rentGrowthPct / 100, year - 1);
     for (let month = 1; month <= 12; month++) {
       for (const p of people) {
-        const isaDiv = p.isa * dividendM, giaDiv = p.gia * dividendM;
-        p.isa = p.isa * (1 + growthM) + isaDiv;
-        p.gia = p.gia * (1 + growthM) + giaDiv;
-        p.basis += giaDiv;
-        p.dividends += giaDiv;
+        const isaIncome = p.isa * incomeM, giaIncome = p.gia * incomeM;
+        p.isa = p.isa * (1 + growthM) + isaIncome;
+        p.gia = p.gia * (1 + growthM) + giaIncome;
+        p.basis += giaIncome;
+        p.income += giaIncome;
       }
       const difference = costs.monthlyTotal + (month === 1 ? costs.remortgageFee : 0) - rent;
       if (difference >= 0) {
@@ -164,14 +186,14 @@ export function calcRentVsBuy(input) {
     let renterWealth = -shortfall;
     let taxPaid = 0;
     for (const p of people) {
-      const dividendTax = Math.max(0, p.dividends - DIVIDEND_ALLOWANCE) * DIVIDEND_TAX[p.taxBand];
+      const incomeTax = Math.max(0, p.income - incomeAllowance(p.taxBand)) * incomeTaxRate(p.taxBand);
       const realisedTax = Math.max(0, p.realised - CGT_ALLOWANCE) * CGT_RATE[p.taxBand];
       const allowanceLeft = Math.max(0, CGT_ALLOWANCE - p.realised);
       const unrealisedTax = Math.max(0, p.gia - p.basis - allowanceLeft) * CGT_RATE[p.taxBand];
-      p.gia -= dividendTax + realisedTax;
-      taxPaid += dividendTax + realisedTax;
+      p.gia -= incomeTax + realisedTax;
+      taxPaid += incomeTax + realisedTax;
       renterWealth += p.isa + p.gia - unrealisedTax;
-      p.dividends = 0; p.realised = 0;
+      p.income = 0; p.realised = 0;
       p.isaRoom = Math.min(ISA_ALLOWANCE, p.isaCapacity);
     }
     const propertyValue = input.price * Math.pow(1 + input.housePriceGrowthPct / 100, year);
@@ -200,16 +222,28 @@ export function calcRentVsBuy(input) {
   };
 }
 
+// The blended rate on the user's cash: savings accounts at their own rates,
+// Premium Bonds at NS&I's prize-fund average, and Cash ISAs at the user's
+// savings rate (Candid doesn't ask for a Cash ISA rate).
+export function cashRate(d, m) {
+  const cashIsa = cashIsaBalance(d);
+  const savingsRate = m.effectiveSavingsRate || 0;
+  const total = (m.cash || 0) + (m.bonds || 0) + cashIsa;
+  if (!(total > 0)) return savingsRate || DEFAULT_CASH_RATE_PCT;
+  return ((m.cash || 0) * savingsRate + (m.bonds || 0) * PB_RATE * 100 + cashIsa * savingsRate) / total;
+}
+
 // Builds calcRentVsBuy's input from Candid's saved inputs (`d`), calcMetrics'
 // output (`m`) and the regional rates rows (null while loading).
 //
-// Scenarios: moderate uses house price growth of 3% (Candid's assumption)
-// and a 5% investment return, both editable. Stress uses the region's latest
-// ONS house price figure, but never more than the moderate figure (the
-// latest figure is above 3% in some regions, which would make "stress" the
-// more optimistic case), a 2% return paid entirely as dividends, and
+// Scenarios: moderate uses house price growth of 3% (Candid's assumption),
+// editable. Stress uses the region's latest ONS house price figure, but
+// never more than the moderate figure (the latest figure is above 3% in some
+// regions, which would make "stress" the more optimistic case), and
 // remortgages 1.5 points higher. Rent growth is the region's ONS figure in
-// both, unless the user changes it.
+// both, unless the user changes it. The renter's money earns the user's
+// blended cash rate (cashRate), or if invested 7% (2% in stress, all
+// dividends); either rate is editable.
 //
 // ISAs, per person: the upfront sum can fill this tax year's remaining
 // allowance; after that, each person can add up to what they could
@@ -225,9 +259,18 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate") {
   const housePriceGrowthPct = scenario === "stress"
     ? Math.min(regional ? regional.housePriceGrowthPct : moderateGrowth, moderateGrowth)
     : moderateGrowth;
-  const investmentReturnPct = scenario === "stress" ? INVESTMENT_RETURN_PCT.stress
-    : filled(d.propertyInvestmentReturn) ? +d.propertyInvestmentReturn : INVESTMENT_RETURN_PCT.moderate;
-  const dividendYieldPct = Math.min(filled(d.propertyDividendYield) ? +d.propertyDividendYield : DEFAULT_DIVIDEND_YIELD_PCT, investmentReturnPct);
+  const returnType = d.propertyRenterMoney === "invested" ? "invested" : "cash";
+  const investmentReturnPct = returnType === "cash"
+    ? (filled(d.propertyCashReturn) ? +d.propertyCashReturn : cashRate(d, m))
+    : scenario === "stress" ? STRESS_INVESTED_RETURN_PCT
+    : filled(d.propertyInvestmentReturn) ? +d.propertyInvestmentReturn : INVESTED_RETURN_PCT;
+  const dividendYieldPct = returnType === "cash" ? investmentReturnPct
+    : Math.min(filled(d.propertyDividendYield) ? +d.propertyDividendYield : DEFAULT_DIVIDEND_YIELD_PCT, investmentReturnPct);
+  const upfront = r.usableDeposit + b.stampDuty + b.fees;
+  // The share of the upfront sum coming out of Cash ISAs, in proportion to
+  // the cash pot the suggested cash available is drawn from.
+  const cashIsa = cashIsaBalance(d);
+  const cashPot = m.totalLiquid + cashIsa;
 
   const selected = new Set(d.selectedModules || []);
   const people = [{
@@ -259,7 +302,8 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate") {
   return {
     horizonYears: filled(d.propertyHorizonYears) && +d.propertyHorizonYears >= 1 ? Math.min(MAX_HORIZON_YEARS, Math.round(+d.propertyHorizonYears)) : DEFAULT_HORIZON_YEARS,
     price: b.price,
-    upfront: r.usableDeposit + b.stampDuty + b.fees,
+    upfront,
+    alreadyInIsa: cashPot > 0 ? Math.min(cashIsa, upfront * cashIsa / cashPot) : 0,
     mortgage: mortgageInputs(d, r.loanNeeded),
     mortgageScenario: scenario,
     housePriceGrowthPct,
@@ -269,6 +313,7 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate") {
     serviceCharge: +d.propertyServiceCharge || 0,
     monthlyRent: +d.propertyMonthlyRent || 0,
     rentGrowthPct: filled(d.propertyRentGrowth) ? +d.propertyRentGrowth : (regional ? regional.rentGrowthPct : UK_RENT_GROWTH_PCT),
+    returnType,
     investmentReturnPct,
     dividendYieldPct,
     people,

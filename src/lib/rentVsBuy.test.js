@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcRentVsBuy, rentVsBuyInputs, partnerSavingsEstimate, SELLING_COSTS_PCT } from "./rentVsBuy.js";
+import { calcRentVsBuy, rentVsBuyInputs, partnerSavingsEstimate, cashRate, SELLING_COSTS_PCT } from "./rentVsBuy.js";
 import { mortgageSchedule } from "./mortgage.js";
 import { calcMetrics } from "./metrics.js";
 
@@ -138,14 +138,28 @@ const saved = {
 };
 const inputs = (over = {}, scenario) => { const d = { ...saved, ...over }; return rentVsBuyInputs(d, calcMetrics(d), null, scenario); };
 
-test("inputs: moderate uses 3% house prices, a 5% return and the region's rent growth", () => {
+test("inputs: by default the renter's money stays in cash at the user's blended cash rate", () => {
   const i = inputs();
   assert.equal(i.housePriceGrowthPct, 3);
-  assert.equal(i.investmentReturnPct, 5);
-  assert.equal(i.dividendYieldPct, 2);
+  assert.equal(i.returnType, "cash");
+  // £40,000 at 4% and a £5,000 Cash ISA at the same rate.
+  near(i.investmentReturnPct, 4, 1e-9);
+  near(i.dividendYieldPct, 4, 1e-9);
   assert.equal(i.rentGrowthPct, 5.8);
   assert.equal(i.horizonYears, 5);
   assert.equal(i.people[0].isaHeadroom, 15000);
+});
+
+test("inputs: the blended cash rate weights Premium Bonds at 4.4%", () => {
+  const d = { ...saved, cashTiers: [{ amount: "30000", rate: "3" }], premiumBonds: "10000", isaThisYearCash: "" };
+  near(cashRate(d, calcMetrics(d)), (30000 * 3 + 10000 * 4.4) / 40000, 1e-9);
+});
+
+test("inputs: invested uses 7%, the rate used for Stocks & Shares ISAs elsewhere", () => {
+  const i = inputs({ propertyRenterMoney: "invested" });
+  assert.equal(i.returnType, "invested");
+  assert.equal(i.investmentReturnPct, 7);
+  assert.equal(i.dividendYieldPct, 2);
 });
 
 test("inputs: stress never uses a house price figure above the moderate one", () => {
@@ -154,14 +168,15 @@ test("inputs: stress never uses a house price figure above the moderate one", ()
 });
 
 test("inputs: stress returns 2%, all of it dividends", () => {
-  const i = inputs({ propertyInvestmentReturn: "7" }, "stress");
+  const i = inputs({ propertyRenterMoney: "invested", propertyInvestmentReturn: "7" }, "stress");
   assert.equal(i.investmentReturnPct, 2);
   assert.equal(i.dividendYieldPct, 2);
 });
 
 test("inputs: the user's own assumptions win in moderate", () => {
-  const i = inputs({ propertyHousePriceGrowth: "1.5", propertyRentGrowth: "2", propertyInvestmentReturn: "6", propertyDividendYield: "3", propertyHorizonYears: "8" });
+  const i = inputs({ propertyRenterMoney: "invested", propertyHousePriceGrowth: "1.5", propertyRentGrowth: "2", propertyInvestmentReturn: "6", propertyDividendYield: "3", propertyHorizonYears: "8" });
   assert.deepEqual([i.housePriceGrowthPct, i.rentGrowthPct, i.investmentReturnPct, i.dividendYieldPct, i.horizonYears], [1.5, 2, 6, 3, 8]);
+  assert.equal(inputs({ propertyCashReturn: "3.2" }).investmentReturnPct, 3.2);
 });
 
 test("inputs: the regional table wins over the snapshot when loaded", () => {
@@ -181,7 +196,38 @@ test("inputs: buying together splits the money by each person's capacity to save
 test("inputs: the upfront sum is the deposit plus stamp duty and fees", () => {
   const d = saved, m = calcMetrics(d);
   const i = rentVsBuyInputs(d, m, null);
-  // Cash available 34,000 (40,000 less 3 months' expenses), first-time buyer at £300k: no stamp duty.
-  near(i.upfront, 34000, 0.5);
-  assert.equal(i.mortgage.loan, 300000 - 31500);
+  // Cash available 39,000 (40,000 cash and a 5,000 Cash ISA, less 3 months'
+  // expenses), first-time buyer at £300k: no stamp duty.
+  near(i.upfront, 39000, 0.5);
+  assert.equal(i.mortgage.loan, 300000 - 36500);
+  // The Cash ISA's share of the pot is already sheltered.
+  near(i.alreadyInIsa, 39000 * 5000 / 45000, 0.5);
+});
+
+// ── Cash ─────────────────────────────────────────────────────────────────
+
+const cashBase = over => base({ returnType: "cash", investmentReturnPct: 4, dividendYieldPct: 4, ...over });
+
+test("cash: interest is taxed above the Personal Savings Allowance, at income tax rates", () => {
+  const big = over => calcRentVsBuy(cashBase({ upfront: 100000, people: [you({ isaHeadroom: 0, isaCapacity: 0, ...over })] }));
+  // About £4,000 of interest: basic rate pays 20% above £1,000, higher 40% above £500.
+  const basic = big({ taxBand: "basic" }).years[0].taxPaid;
+  const higher = big({ taxBand: "higher" }).years[0].taxPaid;
+  assert.ok(basic > 500 && basic < 700, String(basic));
+  assert.ok(higher > 1300 && higher < 1500, String(higher));
+});
+
+test("cash: no capital gains, so below the allowance it's worth the same in or out of an ISA", () => {
+  // £10,000 plus monthly additions at 4% earns well under the £1,000 allowance.
+  const run = people => calcRentVsBuy(cashBase({ upfront: 10000, horizonYears: 1, people }));
+  const outside = run([you({ isaHeadroom: 0, isaCapacity: 0 })]);
+  const inside = run([you({ isaHeadroom: 1e9, isaCapacity: 1e9 })]);
+  assert.equal(outside.years[0].taxPaid, 0);
+  near(outside.years[0].renterWealth, inside.years[0].renterWealth, 0.01);
+});
+
+test("money already in Cash ISAs stays sheltered without using new allowance", () => {
+  const r = calcRentVsBuy(cashBase({ upfront: 40000, alreadyInIsa: 10000, monthlyRent: 99999, people: [you({ isaHeadroom: 20000 })] }));
+  near(r.isaPaidIn, 30000, 0.001);
+  near(r.outsideIsaPaidIn, 10000, 0.001);
 });

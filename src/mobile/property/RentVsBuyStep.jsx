@@ -1,37 +1,88 @@
 import { useState } from "react";
-import { MUT, TEXT, SERIF, WHITE, PillSlider } from "../../CandidApp.jsx";
+import { G, GOLD, MUT, TEXT, SERIF, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { rentVsBuyInputs, calcRentVsBuy, ISA_ALLOWANCE } from "../../lib/rentVsBuy.js";
-import { PROPERTY_REGIONS } from "../../lib/regions.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillCell from "./PillCell.jsx";
 
-// Property step 3: rent vs buy over the years the buyer expects to stay
+// Property step 3: rent vs buy over the years before the buyer would sell
 // (logic in src/lib/rentVsBuy.js). Moderate scenario only for now.
 
 const TENURE_OPTIONS = [{ value:"freehold", label:"Freehold" }, { value:"leasehold", label:"Leasehold" }];
+const MONEY_OPTIONS = [{ value:"cash", label:"Cash" }, { value:"invested", label:"Invested" }];
 const pct = n => `${Math.round(n * 10) / 10}%`;
+const twoDp = n => Math.round(n * 100) / 100;
 const years = n => `${n} ${n === 1 ? "year" : "years"}`;
+
+// Consecutive years with the same side ahead, e.g. rent in years 1-2 then
+// buy in years 3-5.
+function runsOf(rows) {
+  const runs = [];
+  for (const r of rows) {
+    const side = r.buyerWealth > r.renterWealth ? "buy" : "rent";
+    const last = runs[runs.length - 1];
+    if (last && last.side === side) last.to = r.year;
+    else runs.push({ side, from: r.year, to: r.year });
+  }
+  return runs;
+}
+
+// One cell per year, buy or rent, whichever leaves more if you sold or
+// cashed in at the end of that year. Labelled while the cells are wide
+// enough; past 8 years, colour only, with a key. The colours are each
+// year's one state indicator.
+function Timeline({ rows }) {
+  const labelled = rows.length <= 8;
+  const colour = side => side === "buy" ? G : GOLD;
+  return (
+    <div style={{marginTop:"14px"}}>
+      <div style={{display:"flex",gap:"3px"}}>
+        {rows.map(r => {
+          const side = r.buyerWealth > r.renterWealth ? "buy" : "rent";
+          return (
+            <div key={r.year} style={{flex:1,minWidth:0,textAlign:"center"}}>
+              {labelled && <div style={{fontSize:"10px",fontWeight:600,color:MUT,marginBottom:"3px"}}>Y{r.year}</div>}
+              <div style={{height:labelled ? "26px" : "14px",borderRadius:"6px",background:colour(side),color:WHITE,fontSize:"11px",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                {labelled ? (side === "buy" ? "Buy" : "Rent") : ""}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {!labelled && (
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:"5px",fontSize:"10.5px",color:MUT}}>
+          <span>Year 1</span>
+          <span style={{display:"flex",gap:"10px"}}>
+            <span style={{display:"flex",alignItems:"center",gap:"4px"}}><span style={{width:"9px",height:"9px",borderRadius:"2px",background:G}}/>Buy</span>
+            <span style={{display:"flex",alignItems:"center",gap:"4px"}}><span style={{width:"9px",height:"9px",borderRadius:"2px",background:GOLD}}/>Rent</span>
+          </span>
+          <span>Year {rows.length}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function RentVsBuyStep({ d, m, set, regionalRows }) {
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
-  const [costInfoOpen, setCostInfoOpen] = useState(false);
-  const [investInfoOpen, setInvestInfoOpen] = useState(false);
+  const [workingsOpen, setWorkingsOpen] = useState(false);
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
-  const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
   const lineRow = { display:"flex", justifyContent:"space-between", gap:"10px" };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
 
   const input = rentVsBuyInputs(d, m, regionalRows);
   const result = input.monthlyRent > 0 ? calcRentVsBuy(input) : null;
   const leasehold = input.tenure === "leasehold";
-  const regionLabel = PROPERTY_REGIONS.find(r => r.value === d.propertyRegion)?.label;
+  const cash = input.returnType === "cash";
   const together = input.people.length > 1;
   const c = result?.firstYearCosts;
   const last = result?.years.at(-1);
+  const buyingAhead = result ? result.gapAtHorizon > 0 : false;
+  const runs = result ? runsOf(result.years) : [];
   const monthlyGap = c ? c.monthlyTotal - input.monthlyRent : 0;
+  const isaRoomNow = input.alreadyInIsa + input.people.reduce((s, p) => s + p.isaHeadroom, 0);
 
   return (
     <div>
@@ -66,21 +117,28 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
         <InfoButton open={assumptionsOpen} onClick={() => setAssumptionsOpen(o => !o)}/>
       </div>
       <p style={{fontSize:"12.5px",color:TEXT,margin:"6px 0 0"}}>
-        Home values {pct(input.housePriceGrowthPct)} a year · rents {pct(input.rentGrowthPct)} · investments {pct(input.investmentReturnPct)}
+        House prices {pct(input.housePriceGrowthPct)} a year · rents {pct(input.rentGrowthPct)} · {cash ? `cash ${pct(input.investmentReturnPct)}` : `invested ${pct(input.investmentReturnPct)}`}
       </p>
       {assumptionsOpen && (
         <div style={{marginTop:"10px"}}>
           <div style={{display:"flex",gap:"10px"}}>
-            <PillCell><PillMoneyInput label="Home values a year" unit="%" value={input.housePriceGrowthPct || null} onChange={v => set("propertyHousePriceGrowth", v ?? "")}/></PillCell>
-            <PillCell><PillMoneyInput label="Rents a year" unit="%" value={input.rentGrowthPct || null} onChange={v => set("propertyRentGrowth", v ?? "")}/></PillCell>
+            <PillCell><PillMoneyInput label="House price growth" unit="%" value={input.housePriceGrowthPct || null} onChange={v => set("propertyHousePriceGrowth", v ?? "")}/></PillCell>
+            <PillCell><PillMoneyInput label="Rent growth" unit="%" value={input.rentGrowthPct || null} onChange={v => set("propertyRentGrowth", v ?? "")}/></PillCell>
           </div>
           <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
-            <PillCell><PillMoneyInput label="Investment return" unit="%" value={input.investmentReturnPct || null} onChange={v => set("propertyInvestmentReturn", v ?? "")}/></PillCell>
-            <PillCell><PillMoneyInput label="Of which dividends" unit="%" value={input.dividendYieldPct || null} onChange={v => set("propertyDividendYield", v ?? "")}/></PillCell>
+            <PillCell><div style={{flex:1,minWidth:0}}><PillSlider value={input.returnType} onChange={v => set("propertyRenterMoney", v)} options={MONEY_OPTIONS}/></div></PillCell>
+            <PillCell>
+              {cash
+                ? <PillMoneyInput label="Cash rate" unit="%" value={twoDp(input.investmentReturnPct) || null} onChange={v => set("propertyCashReturn", v ?? "")}/>
+                : <PillMoneyInput label="Investment return" unit="%" value={twoDp(input.investmentReturnPct) || null} onChange={v => set("propertyInvestmentReturn", v ?? "")}/>}
+            </PillCell>
           </div>
-          <p style={{...explainer,marginTop:"10px"}}>
-            Home values: Candid assumes 3% a year unless you change it. Rents: the latest ONS figure for {regionLabel || "your region"}. Investments: Royal London's mid growth assumption for UK shares (5%), which is Royal London's own figure, not an FCA-prescribed rate. Dividends are taxed each year outside an ISA; the rest of the return is growth, taxed when sold.
-          </p>
+          {!cash && (
+            <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
+              <PillCell><PillMoneyInput label="Of which dividends" unit="%" value={twoDp(input.dividendYieldPct) || null} onChange={v => set("propertyDividendYield", v ?? "")}/></PillCell>
+              <div style={{flex:1}}/>
+            </div>
+          )}
         </div>
       )}
 
@@ -89,67 +147,41 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
           <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:0}}>Add your current monthly rent to compare renting with buying.</p>
         ) : (
           <>
-            <div style={figureLabel}>{result.breakevenYear ? "Buying pulls ahead" : "Renting stays ahead"}</div>
-            <div style={{fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:TEXT,lineHeight:1.2}}>
-              {result.breakevenYear ? `From year ${result.breakevenYear}` : `For all ${years(result.horizonYears)}`}
-            </div>
-            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"4px 0 0"}}>
-              {result.gapAtHorizon >= 0
-                ? `After ${years(result.horizonYears)}, buying leaves you ${fmt(result.gapAtHorizon)} better off.`
-                : `After ${years(result.horizonYears)}, renting leaves you ${fmt(-result.gapAtHorizon)} better off.`}
+            <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
+            <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:TEXT,lineHeight:1.2}}>{buyingAhead ? "Buying" : "Renting"}</div>
+            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"2px 0 0"}}>
+              By {fmt(Math.abs(result.gapAtHorizon))} over {buyingAhead ? "renting" : "buying"}.
+              {runs.length > 1 && ` ${runs.map((r, i) => `${i === 0 ? (r.side === "buy" ? "Buying" : "Renting") : (r.side === "buy" ? "buying" : "renting")} is ahead ${r.from === r.to ? `in year ${r.from}` : `in years ${r.from} to ${r.to}`}`).join(", then ")}.`}
             </p>
 
-            <div style={{display:"flex",gap:"24px",marginTop:"14px"}}>
-              <div>
-                <div style={figureLabel}>Buying</div>
-                <div style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:TEXT}}>{fmt(last.buyerWealth)}</div>
-              </div>
-              <div>
-                <div style={figureLabel}>Renting</div>
-                <div style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:TEXT}}>{fmt(last.renterWealth)}</div>
-              </div>
-            </div>
-            <div style={{fontSize:"11.5px",color:MUT,marginTop:"2px"}}>What each would leave after {years(result.horizonYears)}, after selling costs and tax</div>
+            <Timeline rows={result.years}/>
 
-            <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>
-            <div style={row}>
-              <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                Buyer's monthly cost
-                <InfoButton open={costInfoOpen} onClick={() => setCostInfoOpen(o => !o)}/>
-              </span>
-              <span>{fmt(c.monthlyTotal)}</span>
+            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>
+              After {years(result.horizonYears)}, buying leaves {fmt(last.buyerWealth)} and renting {fmt(last.renterWealth)}, after selling costs and tax.
+            </p>
+
+            <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"14px 0 10px"}}/>
+            <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",color:TEXT}}>
+              How this is worked out
+              <InfoButton open={workingsOpen} onClick={() => setWorkingsOpen(o => !o)}/>
             </div>
-            {costInfoOpen && (
-              <div style={{...explainer,margin:"2px 0 6px"}}>
+            {workingsOpen && (
+              <div style={{...explainer,marginTop:"8px"}}>
+                <div style={{fontWeight:600,color:TEXT,marginBottom:"2px"}}>Buyer's monthly cost, year 1</div>
                 <div style={lineRow}><span>Mortgage</span><span>{fmt(c.mortgagePayment)}</span></div>
                 <div style={lineRow}><span>Maintenance</span><span>{fmt(c.maintenance)}</span></div>
                 {leasehold && <div style={lineRow}><span>Ground rent</span><span>{fmt(c.groundRent)}</span></div>}
                 {leasehold && <div style={lineRow}><span>Service charge</span><span>{fmt(c.serviceCharge)}</span></div>}
+                <div style={{...lineRow,fontWeight:600,color:TEXT}}><span>Total</span><span>{fmt(c.monthlyTotal)}</span></div>
+                <div style={lineRow}><span>Rent</span><span>{fmt(input.monthlyRent)}</span></div>
                 <p style={{margin:"6px 0 0"}}>
-                  First-year figures. {leasehold ? "Maintenance is £1,200 a year for a flat's own upkeep, rising 2% a year; the service charge rises 5% a year." : "Maintenance is 1% of the home's value a year."} A remortgage fee is added at the start of each new deal. The part of the mortgage that repays the loan isn't lost: it's in the buyer's equity.
+                  {monthlyGap >= 0
+                    ? `Renting leaves ${fmt(monthlyGap)} a month to put aside in year 1.`
+                    : `Renting costs ${fmt(-monthlyGap)} a month more in year 1, taken from the renter's savings.`}
+                  {" "}The part of the mortgage that repays the loan isn't lost: it's in the buyer's equity.
                 </p>
-              </div>
-            )}
-            <div style={row}><span>Rent</span><span>{fmt(input.monthlyRent)}</span></div>
-            <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"2px 0 6px"}}>
-              {monthlyGap >= 0
-                ? `Renting leaves ${fmt(monthlyGap)} a month to invest in year 1.`
-                : `Renting costs ${fmt(-monthlyGap)} a month more in year 1, drawn from the renter's investments.`}
-            </p>
-            <div style={row}>
-              <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                Renter invests upfront
-                <InfoButton open={investInfoOpen} onClick={() => setInvestInfoOpen(o => !o)}/>
-              </span>
-              <span>{fmt(input.upfront)}</span>
-            </div>
-            {investInfoOpen && (
-              <div style={{...explainer,margin:"2px 0 6px"}}>
-                <p style={{margin:0}}>
-                  The same as the buyer's deposit, stamp duty and fees. Of that, {fmt(Math.min(input.upfront, input.people.reduce((s, p) => s + p.isaHeadroom, 0)))} fits in {together ? "your ISAs" : "your ISA"} this tax year; the rest is invested outside an ISA, where dividends above £500 and gains above £3,000 a year are taxed.
-                </p>
-                <p style={{margin:"6px 0 0"}}>
-                  After that, Candid assumes {together ? "each of you adds" : "you add"} to ISAs only what {together ? "you each" : "you"} could save from income, up to {fmt(ISA_ALLOWANCE)} a year: about {fmt(input.people[0].isaCapacity)} a year for you{together ? ` and ${fmt(input.people[1].isaCapacity)} for your partner` : ""}.
+                <p style={{margin:"8px 0 0"}}>
+                  The renter starts with {fmt(input.upfront)}, the same as the buyer's deposit, stamp duty and fees, {cash ? "kept in cash" : "invested"}. About {fmt(Math.min(input.upfront, isaRoomNow))} of it sits in ISAs; the rest is taxed each year{cash ? " on interest above the Personal Savings Allowance" : " on dividends, and on gains when sold"}. After this year, Candid assumes {together ? "each of you adds" : "you add"} to ISAs only what {together ? "you each" : "you"} could save from income, up to {fmt(ISA_ALLOWANCE)} a year: about {fmt(input.people[0].isaCapacity)} for you{together ? ` and ${fmt(input.people[1].isaCapacity)} for your partner` : ""}.
                 </p>
                 {together && input.partnerEstimate && (
                   <p style={{margin:"6px 0 0"}}>

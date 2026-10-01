@@ -5,6 +5,10 @@
 // Dashboard and the module page never show two different numbers for the same
 // underlying opportunity. isaRatePct/nonIsaRatePct are percentage numbers (e.g.
 // 5.1) or null/undefined, in which case the same pre-data-load fallbacks apply.
+// NS&I's long-run prize-fund average — the same figure used everywhere else in
+// this file for Premium Bonds' effective tax-free return.
+export const PB_RATE = 0.044;
+
 export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
   const bondsVal = m.bonds || 0;
   const psaLimit = m.taxBandLabel === "basic" ? 1000 : m.taxBandLabel === "higher" ? 500 : 0;
@@ -13,9 +17,6 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
   const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
   const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
   const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
-  // NS&I's long-run prize-fund average — the same figure used everywhere else in
-  // this file for Premium Bonds' effective tax-free return.
-  const PB_RATE = 0.044;
 
   const currentTaxableInterest = Math.round(m.cash * m.savingsRate / 100);
   const currentPbInterest = Math.round(bondsVal * PB_RATE);

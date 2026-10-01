@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { G, MUT, TEXT, SERIF, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
-import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
+import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
@@ -108,7 +108,8 @@ export function PurchaseInputs({ d, m, set }) {
   const whoLabel = { fontSize:"11px", color:MUT, marginBottom:"5px" };
   const input = borrowingInputs(d, m);
   const together = input.incomes.length > 1;
-  const suggested = suggestedCashAvailable(m.totalLiquid, m.expenses);
+  const cashPot = m.totalLiquid + cashIsaBalance(d);
+  const suggested = suggestedCashAvailable(cashPot, m.expenses);
   const sd = input.stampDutyDetail;
   // Scotland and Wales: Candid doesn't calculate LBTT or LTT, so ask.
   const manualStampDuty = sd && !sd.supported;
@@ -176,7 +177,7 @@ export function PurchaseInputs({ d, m, set }) {
       </div>
       {cashInfoOpen && (
         <p style={{...explainer,marginTop:"8px"}}>
-          Your cash savings and Premium Bonds ({fmt(m.totalLiquid)}) less {EMERGENCY_KEEP_BACK_MONTHS} months of expenses ({fmt(EMERGENCY_KEEP_BACK_MONTHS * m.expenses)}) kept back as an emergency fund: {fmt(suggested)}. Change it if some of that cash is set aside{together ? ", or to add your partner's savings" : ""}.
+          Your cash savings, Premium Bonds and Cash ISAs ({fmt(cashPot)}) less {EMERGENCY_KEEP_BACK_MONTHS} months of expenses ({fmt(EMERGENCY_KEEP_BACK_MONTHS * m.expenses)}) kept back as an emergency fund: {fmt(suggested)}. Change it if some of that cash is set aside{together ? ", or to add your partner's savings" : ""}.
         </p>
       )}
       <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
