@@ -39,6 +39,31 @@ export function borrowingInputs(d, m) {
   };
 }
 
+// Geometry for the times-income bar, as percentages of its width. The scale
+// grows with the multiple (always showing past 5.5x) but stops at 10x:
+// beyond that the bar is simply full and labelled "10x+". The fill is split
+// into its green (to 4.5x), orange (to 5.5x) and red (above) stretches, each
+// named by the band it belongs to.
+export const BAR_MAX_MULTIPLE = 10;
+export function multipleBar(multiple) {
+  const scaleMax = Math.min(BAR_MAX_MULTIPLE, Math.max(7, multiple * 1.1));
+  const shown = Math.min(Math.max(0, multiple), scaleMax);
+  const pct = x => (x / scaleMax) * 100;
+  const stretches = [
+    ["within", 0, LENDER_INCOME_MULTIPLE],
+    ["stretch", LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE],
+    ["beyond", HIGH_EARNER_MULTIPLE, scaleMax],
+  ];
+  return {
+    scaleMax,
+    capped: multiple > BAR_MAX_MULTIPLE,
+    segments: stretches
+      .filter(([, from]) => shown > from)
+      .map(([band, from, to]) => ({ band, left: pct(from), width: pct(Math.min(shown, to) - from) })),
+    markers: [LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE].map(x => ({ x, pct: pct(x) })),
+  };
+}
+
 // `incomes` is one entry per buyer (salary plus other income). Stamp duty is
 // entered by the user for now; the stamp duty rules come in a later phase.
 export function calcBorrowingCheck({ price = 0, cashAvailable = 0, stampDuty = 0, fees = DEFAULT_PROPERTY_FEES, incomes = [] }) {

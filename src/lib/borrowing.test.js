@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcBorrowingCheck, suggestedCashAvailable, borrowingInputs, DEFAULT_PROPERTY_FEES } from "./borrowing.js";
+import { calcBorrowingCheck, suggestedCashAvailable, borrowingInputs, multipleBar, DEFAULT_PROPERTY_FEES } from "./borrowing.js";
 
 test("usable deposit is cash available less stamp duty and fees", () => {
   const r = calcBorrowingCheck({ price: 300000, cashAvailable: 40000, stampDuty: 5000, fees: 2500, incomes: [60000] });
@@ -50,6 +50,41 @@ test("band: beyond above 5.5x", () => {
 test("band: a cash purchase is within, and no income gives no band", () => {
   assert.equal(calcBorrowingCheck({ price: 150000, cashAvailable: 200000, incomes: [] }).band, "within");
   assert.equal(calcBorrowingCheck({ price: 200000, cashAvailable: 20000, incomes: [] }).band, null);
+});
+
+const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`);
+
+test("bar: within 4.5x fills green only", () => {
+  const b = multipleBar(3);
+  assert.equal(b.scaleMax, 7);
+  assert.deepEqual(b.segments.map(s => s.band), ["within"]);
+  close(b.segments[0].width, (3 / 7) * 100);
+});
+
+test("bar: between 4.5x and 5.5x fills green then orange", () => {
+  const b = multipleBar(5);
+  assert.deepEqual(b.segments.map(s => s.band), ["within", "stretch"]);
+  close(b.segments[0].width, (4.5 / 7) * 100);
+  close(b.segments[1].left, (4.5 / 7) * 100);
+  close(b.segments[1].width, (0.5 / 7) * 100);
+});
+
+test("bar: above 5.5x fills green, orange then red", () => {
+  const b = multipleBar(8);
+  close(b.scaleMax, 8.8);
+  assert.deepEqual(b.segments.map(s => s.band), ["within", "stretch", "beyond"]);
+  close(b.segments[2].left + b.segments[2].width, (8 / 8.8) * 100);
+  assert.equal(b.capped, false);
+});
+
+test("bar: the scale stops at 10x and anything above is full and capped", () => {
+  const b = multipleBar(14);
+  assert.equal(b.scaleMax, 10);
+  assert.equal(b.capped, true);
+  close(b.segments[2].left + b.segments[2].width, 100);
+  close(b.markers[0].pct, 45);
+  close(b.markers[1].pct, 55);
+  assert.equal(multipleBar(10).capped, false);
 });
 
 test("stamp duty and fees can tip the loan over 4.5x", () => {

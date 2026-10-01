@@ -25,11 +25,16 @@ const TITLES = {
 };
 
 // Each tile's single state indicator.
-const STATE_ICON = {
-  attention: { Icon: CircleAlert, color: SC.attention },
-  ok: { Icon: CircleCheck, color: SC.ok },
-  missing: { Icon: CircleDashed, color: MUT },
-};
+// Built at render time, not module scope: this file is part of the
+// circular import with CandidApp.jsx (via MobilePropertyScreen), so tokens
+// imported from it can't be relied on while the module first evaluates.
+function stateIcon(state) {
+  return {
+    attention: { Icon: CircleAlert, color: SC.attention },
+    ok: { Icon: CircleCheck, color: SC.ok },
+    missing: { Icon: CircleDashed, color: MUT },
+  }[state];
+}
 
 const oneDecimal = n => String(Math.round(n * 10) / 10);
 const monthsText = n => `${oneDecimal(n)} ${oneDecimal(n) === "1" ? "month" : "months"}`;
@@ -66,9 +71,6 @@ function emergencyLine(c) {
   return `Your cash covers ${monthsText(c.months)} of expenses, ${where}.${c.belowOwnTarget ? ` That's below your own ${c.targetMonths}-month target.` : ""}`;
 }
 
-const line = { fontSize:"13.5px", color:TEXT, lineHeight:1.5, margin:0 };
-const why = { fontSize:"12.5px", color:MUT, lineHeight:1.5, margin:0 };
-
 function AddLink({ label, onClick }) {
   return (
     <button type="button" onClick={onClick} style={{alignSelf:"flex-start",background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"2px"}}>
@@ -91,6 +93,8 @@ function linkedModule(key, selected) {
 // lives, never asked twice. `onOpenModule(key)` opens a module deep dive.
 export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule }) {
   const selected = new Set(d.selectedModules || []);
+  const line = { fontSize:"13.5px", color:TEXT, lineHeight:1.5, margin:0 };
+  const why = { fontSize:"12.5px", color:MUT, lineHeight:1.5, margin:0 };
   const input = waterfallInputs(d, m);
   const checks = runWaterfall(input).filter(c => SHOWN_CHECKS.includes(c.key));
   const [openKey, setOpenKey] = useState(null);
@@ -155,7 +159,7 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
       <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 12px"}}>Worth checking first, in this order.</p>
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
         {checks.map(c => {
-          const { Icon, color } = STATE_ICON[c.state];
+          const { Icon, color } = stateIcon(c.state);
           const value = tileValue(c);
           const isOpen = openKey === c.key;
           return (

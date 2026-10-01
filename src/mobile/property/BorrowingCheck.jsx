@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MUT, TEXT, SERIF, SC, WARNING, WHITE } from "../../CandidApp.jsx";
-import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
+import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
@@ -10,39 +10,44 @@ import PillCell from "./PillCell.jsx";
 // lenders work to. A warning only, never a block. Logic in
 // src/lib/borrowing.js.
 
-const caption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, margin:0 };
-const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
-const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
-const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
-const figure = { fontFamily:SERIF, fontSize:"26px", fontWeight:700, color:TEXT, lineHeight:1.2 };
-
 // Colour and caption for calcBorrowingCheck's band: green up to 4.5x,
 // orange to 5.5x, red above. Drives the times-income figure, the bar and
 // the result tile's border.
-const BAND = {
-  within:  { color: SC.ok,       caption: `Within the ${LENDER_INCOME_MULTIPLE}x most lenders use` },
-  stretch: { color: WARNING,     caption: `Above ${LENDER_INCOME_MULTIPLE}x, within the ${HIGH_EARNER_MULTIPLE}x some lenders offer higher earners` },
-  beyond:  { color: SC.critical, caption: `Above ${HIGH_EARNER_MULTIPLE}x, beyond what most lenders offer` },
-};
+// Built at render time, not module scope: this file is part of the
+// circular import with CandidApp.jsx (via MobilePropertyScreen), so tokens
+// imported from it can't be relied on while the module first evaluates.
+function bandStyle(band) {
+  return {
+    within:  { color: SC.ok,       caption: `Within the ${LENDER_INCOME_MULTIPLE}x most lenders use` },
+    stretch: { color: WARNING,     caption: `Above ${LENDER_INCOME_MULTIPLE}x, within the ${HIGH_EARNER_MULTIPLE}x some lenders offer higher earners` },
+    beyond:  { color: SC.critical, caption: `Above ${HIGH_EARNER_MULTIPLE}x, beyond what most lenders offer` },
+  }[band];
+}
 
 // The loan's income multiple on a bar with the 4.5x and 5.5x lines marked.
+// The fill is green up to 4.5x, orange to 5.5x and red beyond; the scale
+// stops at 10x (geometry in multipleBar, src/lib/borrowing.js).
 function MultipleBar({ multiple, band }) {
-  const { color, caption: text } = BAND[band];
-  const scaleMax = Math.max(7, multiple * 1.1);
-  const fillPct = Math.min(100, (multiple / scaleMax) * 100);
-  const markers = [LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE].map(x => ({ x, pct: (x / scaleMax) * 100 }));
+  const { color, caption: text } = bandStyle(band);
+  const { capped, segments, markers } = multipleBar(multiple);
+  const markerLabel = { position:"absolute", fontSize:"10.5px", fontWeight:600, color:MUT, whiteSpace:"nowrap" };
   return (
     <div style={{marginTop:"14px"}}>
-      <div style={{position:"relative",height:"10px",borderRadius:"5px",background:"rgba(22,47,36,0.08)"}}>
-        <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${fillPct}%`,borderRadius:"5px",background:color}}/>
+      <div style={{position:"relative",height:"10px"}}>
+        <div style={{position:"absolute",inset:0,borderRadius:"5px",background:"rgba(22,47,36,0.08)",overflow:"hidden"}}>
+          {segments.map(s => (
+            <div key={s.band} style={{position:"absolute",top:0,bottom:0,left:`${s.left}%`,width:`${s.width}%`,background:bandStyle(s.band).color}}/>
+          ))}
+        </div>
         {markers.map(mk => (
           <div key={mk.x} style={{position:"absolute",left:`${mk.pct}%`,top:"-4px",bottom:"-4px",width:"2px",marginLeft:"-1px",background:TEXT}}/>
         ))}
       </div>
       <div style={{position:"relative",height:"16px",marginTop:"4px"}}>
         {markers.map(mk => (
-          <span key={mk.x} style={{position:"absolute",left:`${mk.pct}%`,transform:"translateX(-50%)",fontSize:"10.5px",fontWeight:600,color:MUT,whiteSpace:"nowrap"}}>{mk.x}x</span>
+          <span key={mk.x} style={{...markerLabel,left:`${mk.pct}%`,transform:"translateX(-50%)"}}>{mk.x}x</span>
         ))}
+        {capped && <span style={{...markerLabel,right:0}}>{BAR_MAX_MULTIPLE}x+</span>}
       </div>
       <div style={{fontSize:"13px",fontWeight:700,color,marginTop:"4px"}}>{text}</div>
     </div>
@@ -51,12 +56,17 @@ function MultipleBar({ multiple, band }) {
 
 export default function BorrowingCheck({ d, m, set }) {
   const [cashInfoOpen, setCashInfoOpen] = useState(false);
+  const caption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, margin:0 };
+  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
+  const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
+  const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
+  const figure = { fontFamily:SERIF, fontSize:"26px", fontWeight:700, color:TEXT, lineHeight:1.2 };
   const [incomeInfoOpen, setIncomeInfoOpen] = useState(false);
   const input = borrowingInputs(d, m);
   const r = calcBorrowingCheck(input);
   const together = input.incomes.length > 1;
   const suggested = suggestedCashAvailable(m.totalLiquid, m.expenses);
-  const bandColor = r.band ? BAND[r.band].color : null;
+  const bandColor = r.band ? bandStyle(r.band).color : null;
   const incomePhrase = together ? "your combined income" : "your income";
   // One decimal normally, but a multiple just over a band edge would round
   // down onto it ("4.5", "5.5") and read as the band below, so show two there.
