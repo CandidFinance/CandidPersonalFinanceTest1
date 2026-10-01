@@ -138,7 +138,7 @@ test("borrowingInputs: blank cash available and fees use their starting values",
 });
 
 test("borrowingInputs: the user's own figures win, including zero", () => {
-  const r = borrowingInputs({ propertyPrice: "250000", propertyCashAvailable: "40000", propertyFees: "0", propertyStampDuty: "2500" }, m);
+  const r = borrowingInputs({ propertyPrice: "250000", propertyRegion: "scotland", propertyCashAvailable: "40000", propertyFees: "0", propertyStampDuty: "2500" }, m);
   assert.equal(r.cashAvailable, 40000);
   assert.equal(r.fees, 0);
   assert.equal(r.stampDuty, 2500);
@@ -148,4 +148,30 @@ test("borrowingInputs: buying together adds the partner's income", () => {
   const d = { propertyBuyingMode: "together", partnerSalary: "35000", partnerOtherIncome: "2000" };
   assert.deepEqual(borrowingInputs(d, m).incomes, [50000, 37000]);
   assert.deepEqual(borrowingInputs({ ...d, propertyBuyingMode: "alone" }, m).incomes, [50000]);
+});
+
+test("borrowingInputs: stamp duty is calculated in England, ignoring any typed figure", () => {
+  const r = borrowingInputs({ propertyPrice: "300000", propertyRegion: "london", propertyFirstTimeBuyer: "no", propertyStampDuty: "999" }, m);
+  assert.equal(r.stampDuty, 5000);
+  assert.equal(r.stampDutyDetail.supported, true);
+});
+
+test("borrowingInputs: first-time buyer relief needs both joint buyers to qualify", () => {
+  const d = { propertyPrice: "300000", propertyRegion: "north_west", propertyBuyingMode: "together", propertyFirstTimeBuyer: "yes", partnerFirstTimeBuyer: "yes" };
+  assert.equal(borrowingInputs(d, m).stampDuty, 0);
+  assert.equal(borrowingInputs({ ...d, partnerFirstTimeBuyer: "no" }, m).stampDuty, 5000);
+});
+
+test("borrowingInputs: unanswered first-time buyer status never assumes relief", () => {
+  assert.equal(borrowingInputs({ propertyPrice: "300000", propertyRegion: "london" }, m).stampDuty, 5000);
+});
+
+test("borrowingInputs: not the only property adds the surcharge", () => {
+  assert.equal(borrowingInputs({ propertyPrice: "300000", propertyRegion: "london", propertyFirstTimeBuyer: "no", propertySoleProperty: "no" }, m).stampDuty, 20000);
+});
+
+test("borrowingInputs: no location yet means no stamp duty and no breakdown", () => {
+  const r = borrowingInputs({ propertyPrice: "300000", propertyStampDuty: "4000" }, m);
+  assert.equal(r.stampDuty, 0);
+  assert.equal(r.stampDutyDetail, null);
 });

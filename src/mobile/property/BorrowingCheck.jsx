@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { MUT, TEXT, SERIF, SC, WARNING, WHITE } from "../../CandidApp.jsx";
+import { MUT, TEXT, SERIF, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillCell from "./PillCell.jsx";
+import PillSelect from "./PillSelect.jsx";
+import { PROPERTY_REGIONS } from "../../lib/regions.js";
 
 // Borrowing check: the loan a purchase needs against the 4.5x income most
 // lenders work to. A warning only, never a block. Logic in
@@ -54,6 +56,39 @@ function MultipleBar({ multiple, band }) {
   );
 }
 
+const YES_NO = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }];
+
+// A cost taken off cash available: red with a minus sign when there is one.
+function Cost({ value }) {
+  return value > 0 ? <span style={{color:SC.critical}}>−{fmt(value)}</span> : <span>{fmt(0)}</span>;
+}
+
+// The "?" under Stamp duty: band by band for England and Northern Ireland,
+// plus which relief or surcharge applied.
+function StampDutyBreakdown({ sd, style }) {
+  if (!sd.supported) {
+    return <p style={style}>Candid works out stamp duty for England and Northern Ireland. Scotland (LBTT) and Wales (LTT) have their own rules, so this is the figure you entered.</p>;
+  }
+  const pct = rate => `${Math.round(rate * 1000) / 10}%`;
+  const notes = [];
+  if (sd.reliefApplies) notes.push("First-time buyer relief applied.");
+  if (sd.reliefLostOverCap) notes.push("First-time buyer relief only covers homes of £500,000 or less, so standard rates apply.");
+  if (sd.reliefNeedsAllBuyers) notes.push("First-time buyer relief needs both of you to be first-time buyers, so standard rates apply.");
+  if (sd.surcharge > 0) notes.push(`Includes the ${pct(sd.surcharge)} surcharge for buying a home while keeping another.`);
+  notes.push("Doesn't include the 2% surcharge for buyers not resident in the UK.");
+  return (
+    <div style={style}>
+      {sd.breakdown.map(b => (
+        <div key={b.from} style={{display:"flex",justifyContent:"space-between",gap:"10px"}}>
+          <span>{b.from === 0 ? "Up to" : `${fmt(b.from + 1)} to`} {fmt(b.to)} at {pct(b.rate)}</span>
+          <span>{fmt(b.tax)}</span>
+        </div>
+      ))}
+      {notes.map(n => <p key={n} style={{margin:"6px 0 0"}}>{n}</p>)}
+    </div>
+  );
+}
+
 export default function BorrowingCheck({ d, m, set }) {
   const [cashInfoOpen, setCashInfoOpen] = useState(false);
   const caption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, margin:0 };
@@ -61,11 +96,16 @@ export default function BorrowingCheck({ d, m, set }) {
   const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
   const figure = { fontFamily:SERIF, fontSize:"26px", fontWeight:700, color:TEXT, lineHeight:1.2 };
+  const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
   const [incomeInfoOpen, setIncomeInfoOpen] = useState(false);
+  const [stampDutyInfoOpen, setStampDutyInfoOpen] = useState(false);
   const input = borrowingInputs(d, m);
   const r = calcBorrowingCheck(input);
   const together = input.incomes.length > 1;
   const suggested = suggestedCashAvailable(m.totalLiquid, m.expenses);
+  const sd = input.stampDutyDetail;
+  // Scotland and Wales: Candid doesn't calculate LBTT or LTT, so ask.
+  const manualStampDuty = sd && !sd.supported;
   const bandColor = r.band ? bandStyle(r.band).color : null;
   const incomePhrase = together ? "your combined income" : "your income";
   // One decimal normally, but a multiple just over a band edge would round
@@ -79,6 +119,23 @@ export default function BorrowingCheck({ d, m, set }) {
       <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>Cash left after stamp duty and fees is the deposit. The rest is the mortgage.</p>
 
       <div style={{display:"flex",gap:"10px"}}>
+        <PillCell><PillSelect label="Where you're buying" value={d.propertyRegion} onChange={v => set("propertyRegion", v)} options={PROPERTY_REGIONS}/></PillCell>
+      </div>
+
+      <label style={{...fieldLabel,marginTop:"18px"}}>Are you a first-time buyer?</label>
+      <PillSlider value={d.propertyFirstTimeBuyer || ""} onChange={v => set("propertyFirstTimeBuyer", v)} options={YES_NO}/>
+      {together && (
+        <>
+          <label style={{...fieldLabel,marginTop:"14px"}}>Is your partner a first-time buyer?</label>
+          <PillSlider value={d.partnerFirstTimeBuyer || ""} onChange={v => set("partnerFirstTimeBuyer", v)} options={YES_NO}/>
+        </>
+      )}
+      <p style={{...caption,marginTop:"6px"}}>Someone who has never owned a home, in the UK or anywhere else.</p>
+
+      <label style={{...fieldLabel,marginTop:"18px"}}>Will this be the only home {together ? "either of you owns" : "you own"}?</label>
+      <PillSlider value={d.propertySoleProperty || "yes"} onChange={v => set("propertySoleProperty", v)} options={YES_NO}/>
+
+      <div style={{display:"flex",gap:"10px",marginTop:"20px"}}>
         <PillCell><PillMoneyInput label="Property price" value={+d.propertyPrice || null} onChange={v => set("propertyPrice", v ?? "")}/></PillCell>
         <PillCell info={<InfoButton open={cashInfoOpen} onClick={() => setCashInfoOpen(o => !o)}/>}>
           <PillMoneyInput label="Cash available" value={input.cashAvailable || null} onChange={v => set("propertyCashAvailable", v ?? "")}/>
@@ -90,10 +147,12 @@ export default function BorrowingCheck({ d, m, set }) {
         </p>
       )}
       <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
-        <PillCell><PillMoneyInput label="Stamp duty" value={+d.propertyStampDuty || null} onChange={v => set("propertyStampDuty", v ?? "")}/></PillCell>
         <PillCell><PillMoneyInput label="Legal & survey fees" value={input.fees || null} onChange={v => set("propertyFees", v ?? "")}/></PillCell>
+        {manualStampDuty
+          ? <PillCell><PillMoneyInput label="Stamp duty" value={+d.propertyStampDuty || null} onChange={v => set("propertyStampDuty", v ?? "")}/></PillCell>
+          : <div style={{flex:1}}/>}
       </div>
-      <p style={{...caption,marginTop:"8px"}}>Candid doesn't work out stamp duty yet. Enter it if you know it; until then it counts as £0.</p>
+      {manualStampDuty && <p style={{...caption,marginTop:"8px"}}>Candid works out stamp duty for England and Northern Ireland. Scotland and Wales have their own taxes, so enter yours if you know it.</p>}
 
       {input.price > 0 && (
         <div style={{marginTop:"18px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",border:bandColor ? `2px solid ${bandColor}` : "none"}}>
@@ -132,7 +191,15 @@ export default function BorrowingCheck({ d, m, set }) {
 
           <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>
           <div style={row}><span>Cash available</span><span>{fmt(input.cashAvailable)}</span></div>
-          <div style={row}><span>Stamp duty and fees</span><span style={r.upfrontCosts > 0 ? {color:SC.critical} : undefined}>{r.upfrontCosts > 0 ? "−" : ""}{fmt(r.upfrontCosts)}</span></div>
+          <div style={row}>
+            <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
+              Stamp duty
+              {sd && <InfoButton open={stampDutyInfoOpen} onClick={() => setStampDutyInfoOpen(o => !o)}/>}
+            </span>
+            {sd ? <Cost value={input.stampDuty}/> : <span style={{color:MUT}}>Add location</span>}
+          </div>
+          {sd && stampDutyInfoOpen && <StampDutyBreakdown sd={sd} style={{...explainer,margin:"4px 0 6px"}}/>}
+          <div style={row}><span>Legal and survey fees</span><Cost value={input.fees}/></div>
           <div style={{...row,fontWeight:700}}><span>Deposit</span><span>{fmt(r.usableDeposit)}</span></div>
           <div style={row}>
             <span style={{display:"flex",alignItems:"center",gap:"6px"}}>

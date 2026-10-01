@@ -11,6 +11,12 @@
 // Every check has a state: "attention" (worth a look), "ok", or "missing"
 // (Candid doesn't have the figures to run it yet).
 
+// The checks the app shows. The high-interest debt check runs (and is
+// tested) but stays hidden: Candid has no debts input yet (the personal-loan
+// step is hidden for MVP, see HIDE_MVP_MODULES), so it would always read as
+// "missing". Add "debt" here once a debts input exists.
+export const VISIBLE_CHECKS = ["match", "emergency", "isa"];
+
 export const ISA_ALLOWANCE = 20000;
 export const HIGH_INTEREST_APR = 6;
 export const EMERGENCY_FLOOR_MONTHS = 3;

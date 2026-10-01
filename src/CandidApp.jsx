@@ -24,6 +24,8 @@ import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx"
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
+import { mortgageInputs, mortgageSummary } from "./lib/mortgage.js";
+import { readinessMissing } from "./lib/propertyReadiness.js";
 
 // Re-exported for existing external consumers (e.g. src/pdf/reportData.js)
 // now that these live in src/lib/ — see that file's own import for the
@@ -5572,6 +5574,12 @@ const BLANK_DATA = {
   // finances yet.
   propertyBuyingMode:"alone", propertyPrice:"", propertyCashAvailable:"", propertyStampDuty:"", propertyFees:"",
   partnerSalary:"", partnerOtherIncome:"", partnerMyContribution:"", partnerEmployerMatch:"", partnerIsaThisYear:"",
+  // propertyRegion is a PROPERTY_REGIONS value (src/lib/regions.js). Stamp
+  // duty is calculated from it in England/NI; propertyStampDuty is only the
+  // user's own figure for Scotland and Wales. Blank mortgage fields use the
+  // defaults in src/lib/mortgage.js.
+  propertyRegion:"", propertyFirstTimeBuyer:"", partnerFirstTimeBuyer:"", propertySoleProperty:"yes",
+  propertyMortgageTerm:"", propertyFixedYears:"", propertyMortgageRate:"", propertyRemortgageFee:"",
   // Supabase schema note: isa_this_year_other NUMERIC
 };
 
@@ -5872,16 +5880,18 @@ export default function AppShell() {
   // Includes the user's own pension figures, which the Property screen can
   // ask for when the Pension module wasn't chosen.
   const propertyPatch = useMemo(() => {
-    if (pathname !== "/app/property") return null;
+    if (!pathname.startsWith("/app/property")) return null;
     const b = borrowingInputs(d, m);
     const r = calcBorrowingCheck(b);
+    const mi = mortgageInputs(d, r.loanNeeded);
     const num = v => (v === "" || v == null || isNaN(+v)) ? null : Math.round(+v);
     const pct = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
+    const yesNo = v => v === "yes" ? true : v === "no" ? false : null;
     return {
       property_buying_mode: d.propertyBuyingMode === "together" ? "together" : "alone",
       property_price: num(d.propertyPrice),
       property_cash_available: Math.round(b.cashAvailable),
-      property_stamp_duty: num(d.propertyStampDuty),
+      property_stamp_duty: b.price > 0 && b.stampDutyDetail ? Math.round(b.stampDuty) : null,
       property_fees: Math.round(b.fees),
       property_loan_needed: b.price > 0 ? Math.round(r.loanNeeded) : null,
       property_income_multiple: b.price > 0 && r.multiple != null ? Math.round(r.multiple * 100) / 100 : null,
@@ -5892,6 +5902,16 @@ export default function AppShell() {
       partner_isa_this_year: num(d.partnerIsaThisYear),
       pension_my_pct: +d.myContribution||null,
       pension_employer_pct: +d.employerMatch||null,
+      property_region: d.propertyRegion || null,
+      property_first_time_buyer: yesNo(d.propertyFirstTimeBuyer),
+      partner_first_time_buyer: yesNo(d.partnerFirstTimeBuyer),
+      property_sole_property: yesNo(d.propertySoleProperty),
+      // The mortgage figures the calculation used (the user's or the defaults).
+      property_mortgage_term_years: mi.termYears,
+      property_mortgage_fixed_years: mi.fixedYears,
+      property_mortgage_rate: mi.ratePct,
+      property_remortgage_fee: Math.round(mi.remortgageFee),
+      property_monthly_repayment: r.loanNeeded > 0 ? Math.round(mortgageSummary(mi).monthlyPayment) : null,
     };
   }, [pathname, d, m]);
   const propertyBaseline = useRef(null);
@@ -6211,7 +6231,7 @@ export default function AppShell() {
   // once an assessment has produced a report — bounce home rather than show a
   // broken or empty page for a stale bookmark, shared link, or a bare reload with
   // no data.
-  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat", "/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/property"];
+  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat", "/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/property", "/app/property/mortgage"];
   if ((REPORT_PATHS.includes(pathname) || pathname.startsWith("/module/") || pathname.startsWith("/app/module/")) && !insights) {
     return <Navigate to="/" replace />;
   }
@@ -6300,14 +6320,24 @@ export default function AppShell() {
     </MobileLayout>
   );
 
-  if (pathname === "/app/property") return (
-    <MobileLayout activeTab="modules"
-      headerRight={
-        <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
-      }>
-      <MobilePropertyScreen d={d} m={m} set={set} onAddInputs={openMobileStep} onOpenModule={key => navigate(`/app/module/${key}`)}/>
-    </MobileLayout>
-  );
+  if (pathname === "/app/property" || pathname === "/app/property/mortgage") {
+    const propertyStep = pathname === "/app/property/mortgage" ? "mortgage" : "readiness";
+    // Step 2 stays locked until step 1 is complete, including for a direct link.
+    if (propertyStep === "mortgage" && readinessMissing(d, m).length > 0) return <Navigate to="/app/property" replace />;
+    return (
+      <MobileLayout activeTab="modules"
+        headerRight={
+          <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+        }>
+        <MobilePropertyScreen step={propertyStep} d={d} m={m} set={set} onAddInputs={openMobileStep}
+          onOpenModule={key => navigate(`/app/module/${key}`)}
+          onSelectStep={next => {
+            navigate(next === "mortgage" ? "/app/property/mortgage" : "/app/property");
+            window.scrollTo({ top: 0, behavior: "instant" });
+          }}/>
+      </MobileLayout>
+    );
+  }
 
   if (pathname === "/app/forecast") return (
     <MobileLayout activeTab="forecast" headerRight={editInputsButton}>

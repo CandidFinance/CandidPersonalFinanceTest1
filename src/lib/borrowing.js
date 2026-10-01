@@ -3,6 +3,9 @@
 // warning only, never a block. Pure functions, unit tested in
 // borrowing.test.js.
 
+import { calcStampDuty } from "./stampDuty.js";
+import { regionNation } from "./regions.js";
+
 export const LENDER_INCOME_MULTIPLE = 4.5;
 // The top of what some lenders offer higher earners.
 export const HIGH_EARNER_MULTIPLE = 5.5;
@@ -27,13 +30,29 @@ export function lenderIncome(salary, otherIncome) {
 // Builds calcBorrowingCheck's input from Candid's saved inputs (`d`) and
 // calcMetrics' output (`m`). Cash available and fees fall back to their
 // starting values until the user changes them.
+//
+// Stamp duty is worked out for England and Northern Ireland once the user
+// says where they're buying (`stampDutyDetail` holds the breakdown). For
+// Scotland and Wales, which have their own taxes Candid doesn't calculate
+// yet, it's the user's own figure. With no location yet, it's £0 and
+// `stampDutyDetail` is null. First-time buyer status not yet answered counts
+// as "no", so relief is never assumed.
 export function borrowingInputs(d, m) {
+  const together = d.propertyBuyingMode === "together";
   const incomes = [lenderIncome(m.salary, d.otherIncome)];
-  if (d.propertyBuyingMode === "together") incomes.push(lenderIncome(d.partnerSalary, d.partnerOtherIncome));
+  if (together) incomes.push(lenderIncome(d.partnerSalary, d.partnerOtherIncome));
+  const price = +d.propertyPrice || 0;
+  const nation = regionNation(d.propertyRegion);
+  const stampDutyDetail = nation ? calcStampDuty({
+    price, nation,
+    firstTimeBuyers: together ? [d.propertyFirstTimeBuyer === "yes", d.partnerFirstTimeBuyer === "yes"] : [d.propertyFirstTimeBuyer === "yes"],
+    additionalProperty: d.propertySoleProperty === "no",
+  }) : null;
   return {
-    price: +d.propertyPrice || 0,
+    price,
     cashAvailable: filled(d.propertyCashAvailable) ? +d.propertyCashAvailable : suggestedCashAvailable(m.totalLiquid, m.expenses),
-    stampDuty: +d.propertyStampDuty || 0,
+    stampDuty: stampDutyDetail?.supported ? stampDutyDetail.total : stampDutyDetail ? (+d.propertyStampDuty || 0) : 0,
+    stampDutyDetail,
     fees: filled(d.propertyFees) ? +d.propertyFees : DEFAULT_PROPERTY_FEES,
     incomes,
   };
@@ -64,8 +83,8 @@ export function multipleBar(multiple) {
   };
 }
 
-// `incomes` is one entry per buyer (salary plus other income). Stamp duty is
-// entered by the user for now; the stamp duty rules come in a later phase.
+// `incomes` is one entry per buyer (salary plus other income). Stamp duty
+// comes from borrowingInputs.
 export function calcBorrowingCheck({ price = 0, cashAvailable = 0, stampDuty = 0, fees = DEFAULT_PROPERTY_FEES, incomes = [] }) {
   const income = incomes.reduce((s, x) => s + Math.max(0, +x || 0), 0);
   const upfrontCosts = Math.max(0, stampDuty) + Math.max(0, fees);

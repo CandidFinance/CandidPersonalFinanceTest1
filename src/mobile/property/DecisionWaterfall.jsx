@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CircleAlert, CircleCheck, CircleDashed, ChevronRight } from "lucide-react";
 import { G, MUT, TEXT, SERIF, SC, WHITE, MODULE_META } from "../../CandidApp.jsx";
-import { runWaterfall, waterfallInputs, ISA_ALLOWANCE, EMERGENCY_RANGE_MONTHS } from "../../lib/waterfall.js";
+import { runWaterfall, waterfallInputs, VISIBLE_CHECKS, ISA_ALLOWANCE, EMERGENCY_RANGE_MONTHS } from "../../lib/waterfall.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -12,11 +12,8 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 // screen can mount it, and removing it is a matter of deleting the one place
 // it's used.
 //
-// The high-interest debt check (step 2) runs in lib/waterfall.js but isn't
-// shown here: Candid has no debts input yet (the personal-loan step is hidden
-// for MVP, see HIDE_MVP_MODULES), so it would always read as "missing". Add
-// "debt" to SHOWN_CHECKS once a debts input exists.
-const SHOWN_CHECKS = ["match", "emergency", "isa"];
+// Which checks are shown is VISIBLE_CHECKS in lib/waterfall.js (the debt
+// check runs but stays hidden until Candid has a debts input).
 
 const TITLES = {
   match: "Employer pension match",
@@ -96,7 +93,7 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
   const line = { fontSize:"13.5px", color:TEXT, lineHeight:1.5, margin:0 };
   const why = { fontSize:"12.5px", color:MUT, lineHeight:1.5, margin:0 };
   const input = waterfallInputs(d, m);
-  const checks = runWaterfall(input).filter(c => SHOWN_CHECKS.includes(c.key));
+  const checks = runWaterfall(input).filter(c => VISIBLE_CHECKS.includes(c.key));
   const [openKey, setOpenKey] = useState(null);
   // Your pension match is the one figure asked here rather than in its own
   // step: it's needed even when the Pension module wasn't chosen. Once the
