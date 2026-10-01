@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC, PillSlider } from "../../CandidApp.jsx";
 import { rentVsBuyInputs, calcRentVsBuy, ISA_ALLOWANCE, SELLING_COSTS_PCT } from "../../lib/rentVsBuy.js";
-import { fmt } from "../../lib/format.js";
+import { STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
+import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillCell from "./PillCell.jsx";
@@ -119,6 +120,40 @@ function NetCostChart({ rows, buyingAtStart, selectedYear }) {
   );
 }
 
+// What the answer would be if mortgage rates have moved by the time the
+// fix ends, 1.5 points either way or not at all. Each option shows its own
+// outcome; the one chosen drives everything else in the tile. Only shown
+// when the fix ends before the sale; otherwise rates can't change the
+// answer.
+const RATE_OPTIONS = [
+  { scenario:"stress", label:"Rates up" },
+  { scenario:"moderate", label:"No change" },
+  { scenario:"lower", label:"Rates down" },
+];
+function RateChoice({ outcomes, ratePct, chosen, onChoose }) {
+  const rateFor = scenario => scenario === "stress" ? ratePct + STRESS_REMORTGAGE_UPLIFT
+    : scenario === "lower" ? Math.max(0, ratePct - STRESS_REMORTGAGE_UPLIFT) : ratePct;
+  return (
+    <div style={{display:"flex",gap:"6px"}}>
+      {RATE_OPTIONS.map(o => {
+        const result = outcomes[o.scenario];
+        const buyAhead = result.gapAtHorizon > 0;
+        const active = o.scenario === chosen;
+        return (
+          <button key={o.scenario} type="button" onClick={() => onChoose(o.scenario)} aria-pressed={active} style={{
+            flex:1, minWidth:0, border:"none", borderRadius:"12px", padding:"8px 4px", fontFamily:"inherit", cursor:"pointer",
+            background:active ? G : "#ede7db", color:active ? WHITE : TEXT, textAlign:"center",
+          }}>
+            <div style={{fontSize:"10.5px",fontWeight:600,color:active ? "rgba(255,255,255,0.8)" : MUT}}>{o.label}</div>
+            <div style={{fontSize:"14px",fontWeight:700,margin:"1px 0"}}>{Math.round(rateFor(o.scenario) * 100) / 100}%</div>
+            <div style={{fontSize:"11px",fontWeight:600}}>{buyAhead ? "Buy" : "Rent"} +{fmtCompact(Math.abs(result.gapAtHorizon))}</div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // One side's money not got back (red), what it earns (green, or red for a
 // fall in value), and the net of the two. Every figure is a running total
 // since the purchase. `info` is an optional { button, panel } pair for a
@@ -162,12 +197,20 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState(null); // null: the last year
   const [earningsInfoOpen, setEarningsInfoOpen] = useState(false);
+  const [rateScenario, setRateScenario] = useState("moderate");
+  const [rateInfoOpen, setRateInfoOpen] = useState(false);
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
 
   const input = rentVsBuyInputs(d, m, regionalRows);
-  const result = input.monthlyRent > 0 ? calcRentVsBuy(input) : null;
+  // The first remortgage, if the fix ends before the sale: the year the new
+  // deal starts.
+  const remortgageYear = input.mortgage.loan > 0 && input.mortgage.fixedYears < input.horizonYears ? input.mortgage.fixedYears + 1 : null;
+  const outcomes = input.monthlyRent > 0 && remortgageYear
+    ? Object.fromEntries(RATE_OPTIONS.map(o => [o.scenario, calcRentVsBuy({ ...input, mortgageScenario: o.scenario })]))
+    : null;
+  const result = input.monthlyRent > 0 ? (outcomes ? outcomes[rateScenario] : calcRentVsBuy(input)) : null;
   const leasehold = input.tenure === "leasehold";
   const cash = input.returnType === "cash";
   const together = input.people.length > 1;
@@ -240,6 +283,20 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
           <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:0}}>Add your current monthly rent to compare renting with buying.</p>
         ) : (
           <>
+            {outcomes && (
+              <div style={{marginBottom:"16px"}}>
+                <div style={{...figureLabel,display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px"}}>
+                  Mortgage rate from year {remortgageYear}
+                  <InfoButton open={rateInfoOpen} onClick={() => setRateInfoOpen(o => !o)}/>
+                </div>
+                {rateInfoOpen && (
+                  <p style={{...explainer,marginBottom:"8px"}}>
+                    Your {input.mortgage.fixedYears}-year fix ends before you'd sell, so you'd remortgage at whatever rates are then. Each option shows the result if they're {STRESS_REMORTGAGE_UPLIFT} points higher, the same or {STRESS_REMORTGAGE_UPLIFT} points lower. Higher payments mean the renter puts aside more each month; lower payments, less.
+                  </p>
+                )}
+                <RateChoice outcomes={outcomes} ratePct={input.mortgage.ratePct} chosen={rateScenario} onChoose={setRateScenario}/>
+              </div>
+            )}
             <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
             <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:TEXT,lineHeight:1.2}}>{buyingAhead ? "Buying" : "Renting"}</div>
             <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"2px 0 0"}}>

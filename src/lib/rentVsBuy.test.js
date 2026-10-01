@@ -260,3 +260,20 @@ test("split: the loan paid off isn't counted as a cost", () => {
   near(y.buying.mortgageInterest, s.interest, 1);
   near(y.renting.rent, 1300 * 12, 0.01);
 });
+
+// ── Mortgage rate at the remortgage ───────────────────────────────────────
+
+test('rates: higher rates at a remortgage before the sale make buying look worse, lower better', () => {
+  const run = scenario => calcRentVsBuy(base({ horizonYears: 5, mortgage: { loan: 270000, termYears: 30, fixedYears: 3, ratePct: 4.5, remortgageFee: 1000 }, mortgageScenario: scenario }));
+  const higher = run('stress').gapAtHorizon, same = run('moderate').gapAtHorizon, lower = run('lower').gapAtHorizon;
+  assert.ok(higher < same && same < lower, [higher, same, lower].join(', '));
+  // Nothing changes before the fix ends.
+  near(run('stress').years[2].buyerWealth - run('stress').years[2].renterWealth, run('moderate').years[2].buyerWealth - run('moderate').years[2].renterWealth, 0.01);
+  reconciles(run('stress'));
+  reconciles(run('lower'));
+});
+
+test('rates: no remortgage before the sale means rates make no difference', () => {
+  const run = scenario => calcRentVsBuy(base({ horizonYears: 5, mortgageScenario: scenario }));
+  near(run('stress').gapAtHorizon, run('moderate').gapAtHorizon, 0.01);
+});
