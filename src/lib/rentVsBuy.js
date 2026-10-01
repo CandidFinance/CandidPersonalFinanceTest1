@@ -19,6 +19,12 @@
 //
 // Both sides spend the same cash each month. The part of the buyer's
 // mortgage payment that repays the loan isn't lost: it shows up as equity.
+//
+// Each year's row also splits both sides into money spent and never got
+// back, and what each earns (`buying` and `renting`). Money that's saved
+// either way (loan paid off, the renter's money put aside) drops out, and
+// the gap between the two net costs is exactly the gap in net wealth:
+//   buyerWealth - renterWealth = renting.netCost - buying.netCost
 import { mortgageSchedule, mortgageInputs } from "./mortgage.js";
 import { calcIncomeTax } from "./tax.js";
 import { borrowingInputs, calcBorrowingCheck, cashIsaBalance } from "./borrowing.js";
@@ -126,6 +132,10 @@ export function calcRentVsBuy(input) {
   const incomeTaxRate = band => cash ? SAVINGS_TAX[band] : DIVIDEND_TAX[band];
   const people = input.people.map(p => ({ ...p, isa: 0, gia: 0, basis: 0, income: 0, realised: 0, isaRoom: 0, isaPaidIn: 0, giaPaidIn: 0 }));
   let shortfall = 0; // rent the investments couldn't cover
+  // Stamp duty and fees: the upfront sum less the deposit.
+  const oneOff = Math.max(0, input.upfront - (input.price - input.mortgage.loan));
+  // Running totals since day one, for each year's money-not-got-back split.
+  const sum = { payments: 0, maintenance: 0, groundRent: 0, serviceCharge: 0, remortgageFees: 0, rent: 0, earnings: 0, taxPaid: 0 };
 
   // Upfront sum: money already in Cash ISAs stays sheltered; the rest fills
   // each person's remaining allowance for this tax year (it's existing
@@ -148,11 +158,18 @@ export function calcRentVsBuy(input) {
     for (let month = 1; month <= 12; month++) {
       for (const p of people) {
         const isaIncome = p.isa * incomeM, giaIncome = p.gia * incomeM;
+        sum.earnings += (p.isa + p.gia) * growthM + isaIncome + giaIncome;
         p.isa = p.isa * (1 + growthM) + isaIncome;
         p.gia = p.gia * (1 + growthM) + giaIncome;
         p.basis += giaIncome;
         p.income += giaIncome;
       }
+      sum.payments += costs.mortgagePayment;
+      sum.maintenance += costs.maintenance;
+      sum.groundRent += costs.groundRent;
+      sum.serviceCharge += costs.serviceCharge;
+      if (month === 1) sum.remortgageFees += costs.remortgageFee;
+      sum.rent += rent;
       const difference = costs.monthlyTotal + (month === 1 ? costs.remortgageFee : 0) - rent;
       if (difference >= 0) {
         for (const p of people) {
@@ -184,7 +201,7 @@ export function calcRentVsBuy(input) {
     // Year end: what cashing in now would leave, then pay this year's tax and
     // start a fresh allowance year.
     let renterWealth = -shortfall;
-    let taxPaid = 0;
+    let taxPaid = 0, unrealisedTaxTotal = 0;
     for (const p of people) {
       const incomeTax = Math.max(0, p.income - incomeAllowance(p.taxBand)) * incomeTaxRate(p.taxBand);
       const realisedTax = Math.max(0, p.realised - CGT_ALLOWANCE) * CGT_RATE[p.taxBand];
@@ -193,17 +210,43 @@ export function calcRentVsBuy(input) {
       p.gia -= incomeTax + realisedTax;
       taxPaid += incomeTax + realisedTax;
       renterWealth += p.isa + p.gia - unrealisedTax;
+      unrealisedTaxTotal += unrealisedTax;
       p.income = 0; p.realised = 0;
       p.isaRoom = Math.min(ISA_ALLOWANCE, p.isaCapacity);
     }
+    sum.taxPaid += taxPaid;
     const propertyValue = input.price * Math.pow(1 + input.housePriceGrowthPct / 100, year);
     const mortgageBalance = scheduleRow ? scheduleRow.balance : 0;
+    const sellingCosts = propertyValue * SELLING_COSTS_PCT / 100;
+    // Interest is every mortgage payment so far less the loan it paid off.
+    const loanPaidOff = Math.max(0, input.mortgage.loan) - mortgageBalance;
+    const buyingNotRecovered = oneOff + (sum.payments - loanPaidOff) + sum.maintenance + sum.groundRent + sum.serviceCharge + sum.remortgageFees + sellingCosts;
+    const renterTax = sum.taxPaid + unrealisedTaxTotal;
     rows.push({
       year,
       buyerWealth: propertyValue * (1 - SELLING_COSTS_PCT / 100) - mortgageBalance,
       renterWealth,
       propertyValue, mortgageBalance,
       buyerMonthlyCost: costs.monthlyTotal, monthlyRent: rent, taxPaid,
+      buying: {
+        stampDutyAndFees: oneOff,
+        mortgageInterest: sum.payments - loanPaidOff,
+        maintenance: sum.maintenance,
+        groundRent: sum.groundRent,
+        serviceCharge: sum.serviceCharge,
+        remortgageFees: sum.remortgageFees,
+        sellingCosts,
+        notRecovered: buyingNotRecovered,
+        priceRise: propertyValue - input.price,
+        netCost: buyingNotRecovered - (propertyValue - input.price),
+      },
+      renting: {
+        rent: sum.rent,
+        notRecovered: sum.rent,
+        earnings: sum.earnings,
+        tax: renterTax,
+        netCost: sum.rent - (sum.earnings - renterTax),
+      },
     });
   }
 

@@ -28,48 +28,87 @@ function runsOf(rows) {
   return runs;
 }
 
-// One cell per year, buy or rent, whichever leaves more if you sold or
-// cashed in at the end of that year. Labelled while the cells are wide
-// enough; past 8 years, colour only, with a key. The colours are each
-// year's one state indicator.
-function Timeline({ rows }) {
+// One cell per year: buy or rent, whichever leaves more if you sold or
+// cashed in at the end of that year. Tap a year to see how it adds up.
+// Labelled while the cells are wide enough; past 8 years, colour only, with
+// a key. The colour is each year's one state indicator; the outline marks
+// the year shown in the breakdown below.
+function Timeline({ rows, selectedYear, onSelect }) {
   const labelled = rows.length <= 8;
   const colour = side => side === "buy" ? G : GOLD;
+  const key = (
+    <span style={{display:"flex",gap:"10px"}}>
+      <span style={{display:"flex",alignItems:"center",gap:"4px"}}><span style={{width:"9px",height:"9px",borderRadius:"2px",background:G}}/>Buy</span>
+      <span style={{display:"flex",alignItems:"center",gap:"4px"}}><span style={{width:"9px",height:"9px",borderRadius:"2px",background:GOLD}}/>Rent</span>
+    </span>
+  );
   return (
     <div style={{marginTop:"14px"}}>
       <div style={{display:"flex",gap:"3px"}}>
         {rows.map(r => {
           const side = r.buyerWealth > r.renterWealth ? "buy" : "rent";
+          const selected = r.year === selectedYear;
           return (
-            <div key={r.year} style={{flex:1,minWidth:0,textAlign:"center"}}>
-              {labelled && <div style={{fontSize:"10px",fontWeight:600,color:MUT,marginBottom:"3px"}}>Y{r.year}</div>}
-              <div style={{height:labelled ? "26px" : "14px",borderRadius:"6px",background:colour(side),color:WHITE,fontSize:"11px",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <button key={r.year} type="button" onClick={() => onSelect(r.year)} aria-pressed={selected}
+              aria-label={`Year ${r.year}: ${side === "buy" ? "buying" : "renting"} ahead`}
+              style={{flex:1,minWidth:0,padding:0,background:"none",border:"none",fontFamily:"inherit",cursor:"pointer",textAlign:"center"}}>
+              {labelled && <div style={{fontSize:"10px",fontWeight:selected ? 800 : 600,color:selected ? TEXT : MUT,marginBottom:"3px"}}>Y{r.year}</div>}
+              <div style={{height:labelled ? "26px" : "20px",borderRadius:"6px",background:colour(side),color:WHITE,fontSize:"11px",fontWeight:700,
+                display:"flex",alignItems:"center",justifyContent:"center",outline:selected ? `2px solid ${TEXT}` : "none",outlineOffset:"1px"}}>
                 {labelled ? (side === "buy" ? "Buy" : "Rent") : ""}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
-      {!labelled && (
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:"5px",fontSize:"10.5px",color:MUT}}>
-          <span>Year 1</span>
-          <span style={{display:"flex",gap:"10px"}}>
-            <span style={{display:"flex",alignItems:"center",gap:"4px"}}><span style={{width:"9px",height:"9px",borderRadius:"2px",background:G}}/>Buy</span>
-            <span style={{display:"flex",alignItems:"center",gap:"4px"}}><span style={{width:"9px",height:"9px",borderRadius:"2px",background:GOLD}}/>Rent</span>
-          </span>
-          <span>Year {rows.length}</span>
-        </div>
-      )}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px",marginTop:"6px",fontSize:"10.5px",color:MUT}}>
+        {labelled ? <span>Tap a year to see how it adds up</span> : <><span>Year 1</span>{key}<span>Year {rows.length}</span></>}
+      </div>
+      {!labelled && <div style={{fontSize:"10.5px",color:MUT,marginTop:"2px"}}>Tap a year to see how it adds up</div>}
     </div>
   );
 }
 
+// One side's money not got back, what it earns, and the net of the two.
+// `info` is an optional { button, panel } pair for a "?" on the earnings.
+function Ledger({ title, lines, notRecovered, earnsLabel, earns, info, net }) {
+  const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13px", color:TEXT, padding:"3px 0" };
+  return (
+    <div>
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"4px"}}>{title}</div>
+      {lines.map(l => <div key={l.label} style={{...row,color:MUT}}><span>{l.label}</span><span>{fmt(l.value)}</span></div>)}
+      <div style={{...row,fontWeight:700}}><span>Money you don't get back</span><span>{fmt(notRecovered)}</span></div>
+      <div style={row}>
+        <span style={{display:"flex",alignItems:"center",gap:"6px"}}>{earnsLabel}{info?.button}</span>
+        <span>{earns < 0 ? "−" : ""}{fmt(earns)}</span>
+      </div>
+      {info?.panel}
+      <div style={{...row,alignItems:"baseline",marginTop:"2px"}}>
+        <span style={{fontWeight:700}}>{net >= 0 ? "Net cost" : "Net gain"}</span>
+        <span style={{fontFamily:SERIF,fontSize:"18px",fontWeight:700}}>{fmt(Math.abs(net))}</span>
+      </div>
+    </div>
+  );
+}
+
+// Why the side ahead in a given year is ahead, in one line (the heading
+// above it already says which year).
+function whyText(row) {
+  const b = row.buying, r = row.renting;
+  const buyAhead = row.buyerWealth > row.renterWealth;
+  const oneOffs = b.stampDutyAndFees + b.sellingCosts;
+  if (!buyAhead && b.netCost - oneOffs < r.netCost) {
+    return `Renting is ahead because buying's one-off costs (${fmt(oneOffs)} in stamp duty, fees and selling costs) haven't been made back yet.`;
+  }
+  return `${buyAhead ? "Buying" : "Renting"} costs you ${fmt(Math.abs(r.netCost - b.netCost))} less, once what each earns is counted.`;
+}
+
 export default function RentVsBuyStep({ d, m, set, regionalRows }) {
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
-  const [workingsOpen, setWorkingsOpen] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(null); // null: the last year
+  const [earningsInfoOpen, setEarningsInfoOpen] = useState(false);
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
-  const lineRow = { display:"flex", justifyContent:"space-between", gap:"10px" };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
 
   const input = rentVsBuyInputs(d, m, regionalRows);
@@ -77,11 +116,10 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
   const leasehold = input.tenure === "leasehold";
   const cash = input.returnType === "cash";
   const together = input.people.length > 1;
-  const c = result?.firstYearCosts;
   const last = result?.years.at(-1);
+  const shown = result ? (result.years.find(y => y.year === selectedYear) || last) : null;
   const buyingAhead = result ? result.gapAtHorizon > 0 : false;
   const runs = result ? runsOf(result.years) : [];
-  const monthlyGap = c ? c.monthlyTotal - input.monthlyRent : 0;
   const isaRoomNow = input.alreadyInIsa + input.people.reduce((s, p) => s + p.isaHeadroom, 0);
 
   return (
@@ -154,42 +192,56 @@ export default function RentVsBuyStep({ d, m, set, regionalRows }) {
               {runs.length > 1 && ` ${runs.map((r, i) => `${i === 0 ? (r.side === "buy" ? "Buying" : "Renting") : (r.side === "buy" ? "buying" : "renting")} is ahead ${r.from === r.to ? `in year ${r.from}` : `in years ${r.from} to ${r.to}`}`).join(", then ")}.`}
             </p>
 
-            <Timeline rows={result.years}/>
+            <Timeline rows={result.years} selectedYear={shown.year} onSelect={y => setSelectedYear(y)}/>
 
-            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>
-              After {years(result.horizonYears)}, buying leaves {fmt(last.buyerWealth)} and renting {fmt(last.renterWealth)}, after selling costs and tax.
-            </p>
+            <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 12px"}}/>
+            <div style={figureLabel}>{shown.year === 1 ? "In year 1" : `Over ${years(shown.year)}`}</div>
+            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"4px 0 14px"}}>{whyText(shown)}</p>
 
-            <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"14px 0 10px"}}/>
-            <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",color:TEXT}}>
-              How this is worked out
-              <InfoButton open={workingsOpen} onClick={() => setWorkingsOpen(o => !o)}/>
+            <Ledger
+              title="Buying"
+              lines={[
+                { label:"Mortgage interest", value:shown.buying.mortgageInterest },
+                { label:"Maintenance", value:shown.buying.maintenance },
+                ...(leasehold ? [{ label:"Ground rent", value:shown.buying.groundRent }, { label:"Service charge", value:shown.buying.serviceCharge }] : []),
+                ...(shown.buying.stampDutyAndFees > 0 ? [{ label:"Stamp duty and fees", value:shown.buying.stampDutyAndFees }] : []),
+                ...(shown.buying.remortgageFees > 0 ? [{ label:"Remortgage fees", value:shown.buying.remortgageFees }] : []),
+                { label:"Selling costs", value:shown.buying.sellingCosts },
+              ]}
+              notRecovered={shown.buying.notRecovered}
+              earnsLabel={shown.buying.priceRise >= 0 ? "Rise in the home's value" : "Fall in the home's value"}
+              earns={shown.buying.priceRise}
+              net={shown.buying.netCost}/>
+
+            <div style={{height:"14px"}}/>
+            <Ledger
+              title="Renting"
+              lines={[]}
+              notRecovered={shown.renting.notRecovered}
+              earnsLabel={cash ? "Interest, after tax" : "Investment returns, after tax"}
+              earns={shown.renting.earnings - shown.renting.tax}
+              info={{
+                button: <InfoButton open={earningsInfoOpen} onClick={() => setEarningsInfoOpen(o => !o)}/>,
+                panel: earningsInfoOpen && (
+                  <div style={{...explainer,margin:"2px 0 4px"}}>
+                    <p style={{margin:0}}>
+                      {cash ? "Interest" : "Returns"} of {fmt(shown.renting.earnings)}, less {fmt(shown.renting.tax)} in tax, on the {fmt(input.upfront)} the renter keeps instead of buying ({cash ? "in cash" : "invested"}) and the money they put aside each month instead of the buyer's higher costs.
+                    </p>
+                    <p style={{margin:"6px 0 0"}}>
+                      About {fmt(Math.min(input.upfront, isaRoomNow))} of the starting money sits in ISAs, tax-free. After this year, Candid assumes {together ? "each of you adds" : "you add"} to ISAs only what {together ? "you each" : "you"} could save from income, up to {fmt(ISA_ALLOWANCE)} a year: about {fmt(input.people[0].isaCapacity)} for you{together ? ` and ${fmt(input.people[1].isaCapacity)} for your partner` : ""}.
+                    </p>
+                    {together && input.partnerEstimate && (
+                      <p style={{margin:"6px 0 0"}}>
+                        Your partner's take-home pay is roughly {fmt(input.partnerEstimate.takeHome)} a year. Scaling your monthly costs to their salary puts theirs at about {fmt(input.partnerEstimate.costs)}, leaving around {fmt(input.partnerEstimate.surplus)} a year to save.
+                      </p>
+                    )}
+                  </div>
+                ),
+              }}
+              net={shown.renting.netCost}/>
+            <div style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginTop:"10px"}}>
+              Money that's saved either way, the loan paid off or the renter's money put aside, is still yours, so it isn't counted as a cost.
             </div>
-            {workingsOpen && (
-              <div style={{...explainer,marginTop:"8px"}}>
-                <div style={{fontWeight:600,color:TEXT,marginBottom:"2px"}}>Buyer's monthly cost, year 1</div>
-                <div style={lineRow}><span>Mortgage</span><span>{fmt(c.mortgagePayment)}</span></div>
-                <div style={lineRow}><span>Maintenance</span><span>{fmt(c.maintenance)}</span></div>
-                {leasehold && <div style={lineRow}><span>Ground rent</span><span>{fmt(c.groundRent)}</span></div>}
-                {leasehold && <div style={lineRow}><span>Service charge</span><span>{fmt(c.serviceCharge)}</span></div>}
-                <div style={{...lineRow,fontWeight:600,color:TEXT}}><span>Total</span><span>{fmt(c.monthlyTotal)}</span></div>
-                <div style={lineRow}><span>Rent</span><span>{fmt(input.monthlyRent)}</span></div>
-                <p style={{margin:"6px 0 0"}}>
-                  {monthlyGap >= 0
-                    ? `Renting leaves ${fmt(monthlyGap)} a month to put aside in year 1.`
-                    : `Renting costs ${fmt(-monthlyGap)} a month more in year 1, taken from the renter's savings.`}
-                  {" "}The part of the mortgage that repays the loan isn't lost: it's in the buyer's equity.
-                </p>
-                <p style={{margin:"8px 0 0"}}>
-                  The renter starts with {fmt(input.upfront)}, the same as the buyer's deposit, stamp duty and fees, {cash ? "kept in cash" : "invested"}. About {fmt(Math.min(input.upfront, isaRoomNow))} of it sits in ISAs; the rest is taxed each year{cash ? " on interest above the Personal Savings Allowance" : " on dividends, and on gains when sold"}. After this year, Candid assumes {together ? "each of you adds" : "you add"} to ISAs only what {together ? "you each" : "you"} could save from income, up to {fmt(ISA_ALLOWANCE)} a year: about {fmt(input.people[0].isaCapacity)} for you{together ? ` and ${fmt(input.people[1].isaCapacity)} for your partner` : ""}.
-                </p>
-                {together && input.partnerEstimate && (
-                  <p style={{margin:"6px 0 0"}}>
-                    Your partner's take-home pay is roughly {fmt(input.partnerEstimate.takeHome)} a year. Scaling your monthly costs to their salary puts theirs at about {fmt(input.partnerEstimate.costs)}, leaving around {fmt(input.partnerEstimate.surplus)} a year to save.
-                  </p>
-                )}
-              </div>
-            )}
           </>
         )}
       </div>

@@ -231,3 +231,32 @@ test("money already in Cash ISAs stays sheltered without using new allowance", (
   near(r.isaPaidIn, 30000, 0.001);
   near(r.outsideIsaPaidIn, 10000, 0.001);
 });
+
+// ── Money not got back vs what it earns ───────────────────────────────────
+
+const reconciles = r => r.years.forEach(y =>
+  near(y.buyerWealth - y.renterWealth, y.renting.netCost - y.buying.netCost, 0.01));
+
+test("split: the net cost gap equals the net wealth gap, every year", () => {
+  reconciles(calcRentVsBuy(base({ horizonYears: 12 })));
+  reconciles(calcRentVsBuy(base({ horizonYears: 12, tenure: "leasehold", groundRent: 250, groundRentGrowthPct: 2, serviceCharge: 1800 })));
+  reconciles(calcRentVsBuy(cashBase({ horizonYears: 8, upfront: 200000, people: [you({ isaHeadroom: 0, isaCapacity: 0, taxBand: "higher" })] })));
+  reconciles(calcRentVsBuy(base({ monthlyRent: 3000, horizonYears: 6 })));
+  // Savings run out: a £2,500 deposit on a £300,000 home, with £2,500 of fees.
+  reconciles(calcRentVsBuy(base({ upfront: 5000, monthlyRent: 5000, mortgage: { loan: 297500, termYears: 30, fixedYears: 5, ratePct: 4.5, remortgageFee: 1000 } })));
+  // Mortgage paid off before the sale: £250,000 deposit plus £7,500 of fees.
+  reconciles(calcRentVsBuy(base({ horizonYears: 7, upfront: 257500, mortgage: { loan: 50000, termYears: 5, fixedYears: 5, ratePct: 4.5, remortgageFee: 0 } })));
+  reconciles(calcRentVsBuy(base({ upfront: 37500, people: [you({ share: 0.6 }), you({ who: "partner", share: 0.4, taxBand: "higher" })] })));
+});
+
+test("split: buying's one-off costs are the upfront sum less the deposit", () => {
+  // Price 300,000, loan 270,000: deposit 30,000, so 7,500 of the 37,500 is stamp duty and fees.
+  near(calcRentVsBuy(base()).years[0].buying.stampDutyAndFees, 7500, 0.001);
+});
+
+test("split: the loan paid off isn't counted as a cost", () => {
+  const y = calcRentVsBuy(base()).years[0];
+  const s = mortgageSchedule(base().mortgage).years[0];
+  near(y.buying.mortgageInterest, s.interest, 1);
+  near(y.renting.rent, 1300 * 12, 0.01);
+});
