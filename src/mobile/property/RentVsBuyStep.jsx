@@ -148,11 +148,14 @@ function Ledger({ title, lines, notRecovered, earnsLabel, earns, info, net }) {
 function whyText(row) {
   const b = row.buying, r = row.renting;
   const buyAhead = row.buyerWealth > row.renterWealth;
+  const gap = fmt(Math.abs(r.netCost - b.netCost));
   const oneOffs = b.stampDutyAndFees + b.sellingCosts;
   if (!buyAhead && b.netCost - oneOffs < r.netCost) {
-    return `Renting is ahead because buying's one-off costs (${fmt(oneOffs)} in stamp duty, fees and selling costs) haven't been made back yet.`;
+    return `Compared with buying, renting leaves you ${gap} better off, because buying's one-off costs (${fmt(oneOffs)} in stamp duty, fees and selling costs) haven't been made back yet.`;
   }
-  return `${buyAhead ? "Buying" : "Renting"} costs you ${fmt(Math.abs(r.netCost - b.netCost))} less, once what each earns is counted.`;
+  return buyAhead
+    ? `Compared with renting, buying leaves you ${gap} better off.`
+    : `Compared with buying, renting leaves you ${gap} better off.`;
 }
 
 export default function RentVsBuyStep({ d, m, set, regionalRows }) {
