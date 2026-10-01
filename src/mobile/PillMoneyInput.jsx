@@ -9,6 +9,16 @@ import { MUT, TEXT, CDARK } from "../CandidApp.jsx";
 // "Lump sum today"/"Monthly surplus" pills, Pension's bonus-amount pill, and
 // the mobile onboarding wizard's % fields (contribution rate, employer
 // match), so every mobile £/% input looks and behaves identically.
+// Width of the % variant's input, so the % sits right after the digits. The
+// old `size` attribute sized the box by an average character width, which
+// left a visible gap before the % whenever the value had a narrow "." (e.g.
+// "4.5"). `ch` is the width of a digit in the input's own font, so digits
+// are exact; a "." gets half a ch, plus 2px for the caret.
+function suffixInputWidth(text) {
+  const dots = (text.match(/\./g) || []).length;
+  return `calc(${Math.max(1, text.length - dots)}ch + ${dots * 0.5}ch + 2px)`;
+}
+
 export default function PillMoneyInput({ label, value, onChange, unit = "£", placeholder = "0" }) {
   // Thousands-formatting only makes sense for money; % and plain-number
   // fields (e.g. onboarding's Age) are always small values typed digit by
@@ -44,9 +54,8 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
             onChange(raw === "" ? null : +raw);
           }}
           style={showSuffix
-            ? {border:"none",background:"none",fontSize:"16px",fontWeight:600,color:TEXT,width:"auto",minWidth:"1ch",maxWidth:"4em",flex:"0 1 auto",outline:"none",padding:0}
-            : {border:"none",background:"none",fontSize:"16px",fontWeight:600,color:TEXT,width:"100%",outline:"none",padding:0}}
-          size={showSuffix ? Math.max(1, (display || placeholder || "0").length) : undefined}/>
+            ? {border:"none",background:"none",fontSize:"16px",fontWeight:600,color:TEXT,width:suffixInputWidth(display || placeholder || "0"),maxWidth:"6ch",flex:"0 0 auto",outline:"none",padding:0}
+            : {border:"none",background:"none",fontSize:"16px",fontWeight:600,color:TEXT,width:"100%",outline:"none",padding:0}}/>
         {showSuffix && <span style={{fontSize:"16px",color:TEXT,fontWeight:600}}>%</span>}
       </div>
     </label>

@@ -1,21 +1,21 @@
 import { useState } from "react";
-import { MUT, TEXT, SERIF, SC, WHITE, PillSlider } from "../../CandidApp.jsx";
+import { MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillCell from "./PillCell.jsx";
+import PillSelect from "./PillSelect.jsx";
 
 // Property step 2: the repayment mortgage on the loan from step 1 (logic in
 // src/lib/mortgage.js). Only reachable once step 1 is complete.
 
-const FIXED_OPTIONS = FIXED_PERIOD_OPTIONS.map(y => ({ value:String(y), label:`${y} yrs` }));
+const FIXED_OPTIONS = FIXED_PERIOD_OPTIONS.map(y => ({ value:String(y), label:`${y} years` }));
 const pctText = n => `${Math.round(n * 100) / 100}%`;
 
 export default function MortgageStep({ d, m, set }) {
   const [infoOpen, setInfoOpen] = useState(false);
-  const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
   const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
 
@@ -32,14 +32,12 @@ export default function MortgageStep({ d, m, set }) {
         <PillCell><PillMoneyInput label="Term (years)" unit="" value={input.termYears} onChange={v => set("propertyMortgageTerm", v ?? "")}/></PillCell>
         <PillCell><PillMoneyInput label="Mortgage rate" unit="%" value={input.ratePct || null} onChange={v => set("propertyMortgageRate", v ?? "")}/></PillCell>
       </div>
-      <label style={{...fieldLabel,marginTop:"18px"}}>Fixed for</label>
-      <PillSlider value={String(input.fixedYears)} onChange={v => set("propertyFixedYears", v)} options={FIXED_OPTIONS}/>
-      <div style={{display:"flex",gap:"10px",marginTop:"18px"}}>
+      <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
+        <PillCell><PillSelect label="Fixed for" value={String(input.fixedYears)} onChange={v => set("propertyFixedYears", v)} options={FIXED_OPTIONS}/></PillCell>
         <PillCell><PillMoneyInput label="Remortgage fee" value={input.remortgageFee || null} onChange={v => set("propertyRemortgageFee", v ?? "")}/></PillCell>
-        <div style={{flex:1}}/>
       </div>
 
-      <div style={{marginTop:"18px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px"}}>
+      <div style={{marginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px"}}>
         {loan === 0 ? (
           <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:0}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
         ) : (

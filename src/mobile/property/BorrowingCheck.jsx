@@ -8,9 +8,10 @@ import PillCell from "./PillCell.jsx";
 import PillSelect from "./PillSelect.jsx";
 import { PROPERTY_REGIONS } from "../../lib/regions.js";
 
-// Borrowing check: the loan a purchase needs against the 4.5x income most
-// lenders work to. A warning only, never a block. Logic in
-// src/lib/borrowing.js.
+// Borrowing check, in two parts so the Property screen can put the
+// purchase inputs first and the loan result after the waterfall: the loan a
+// purchase needs against the 4.5x income most lenders work to. A warning
+// only, never a block. Logic in src/lib/borrowing.js.
 
 // Colour and caption for calcBorrowingCheck's band: green up to 4.5x,
 // orange to 5.5x, red above. Drives the times-income figure, the bar and
@@ -89,35 +90,24 @@ function StampDutyBreakdown({ sd, style }) {
   );
 }
 
-export default function BorrowingCheck({ d, m, set }) {
+// Step 1's purchase inputs: where, first-time buyer status, whether it's
+// the only home, price, cash available and fees (plus stamp duty by hand
+// for Scotland and Wales). The loan they produce is LoanTile, further down
+// the screen.
+export function PurchaseInputs({ d, m, set }) {
   const [cashInfoOpen, setCashInfoOpen] = useState(false);
   const caption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, margin:0 };
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
-  const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
-  const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
-  const figure = { fontFamily:SERIF, fontSize:"26px", fontWeight:700, color:TEXT, lineHeight:1.2 };
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
-  const [incomeInfoOpen, setIncomeInfoOpen] = useState(false);
-  const [stampDutyInfoOpen, setStampDutyInfoOpen] = useState(false);
   const input = borrowingInputs(d, m);
-  const r = calcBorrowingCheck(input);
   const together = input.incomes.length > 1;
   const suggested = suggestedCashAvailable(m.totalLiquid, m.expenses);
   const sd = input.stampDutyDetail;
   // Scotland and Wales: Candid doesn't calculate LBTT or LTT, so ask.
   const manualStampDuty = sd && !sd.supported;
-  const bandColor = r.band ? bandStyle(r.band).color : null;
-  const incomePhrase = together ? "your combined income" : "your income";
-  // One decimal normally, but a multiple just over a band edge would round
-  // down onto it ("4.5", "5.5") and read as the band below, so show two there.
-  const multipleText = r.multiple == null ? null
-    : [LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE].some(x => r.multiple > x && r.multiple.toFixed(1) === x.toFixed(1)) ? r.multiple.toFixed(2) : r.multiple.toFixed(1);
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"6px"}}>How much you'd need to borrow</div>
-      <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>Cash left after stamp duty and fees is the deposit. The rest is the mortgage.</p>
-
       <div style={{display:"flex",gap:"10px"}}>
         <PillCell><PillSelect label="Where you're buying" value={d.propertyRegion} onChange={v => set("propertyRegion", v)} options={PROPERTY_REGIONS}/></PillCell>
       </div>
@@ -153,72 +143,101 @@ export default function BorrowingCheck({ d, m, set }) {
           : <div style={{flex:1}}/>}
       </div>
       {manualStampDuty && <p style={{...caption,marginTop:"8px"}}>Candid works out stamp duty for England and Northern Ireland. Scotland and Wales have their own taxes, so enter yours if you know it.</p>}
+    </div>
+  );
+}
 
-      {input.price > 0 && (
-        <div style={{marginTop:"18px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",border:bandColor ? `2px solid ${bandColor}` : "none"}}>
-          <div style={{display:"flex",gap:"24px"}}>
-            <div>
-              <div style={figureLabel}>Loan needed</div>
-              <div style={figure}>{fmt(r.loanNeeded)}</div>
-            </div>
-            {multipleText && r.loanNeeded > 0 && (
+// The loan the purchase needs against the 4.5x most lenders use, with the
+// cash-to-deposit step-through.
+export function LoanTile({ d, m }) {
+  const [incomeInfoOpen, setIncomeInfoOpen] = useState(false);
+  const [stampDutyInfoOpen, setStampDutyInfoOpen] = useState(false);
+  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
+  const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
+  const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
+  const figure = { fontFamily:SERIF, fontSize:"26px", fontWeight:700, color:TEXT, lineHeight:1.2 };
+  const input = borrowingInputs(d, m);
+  const r = calcBorrowingCheck(input);
+  const together = input.incomes.length > 1;
+  const sd = input.stampDutyDetail;
+  const bandColor = r.band ? bandStyle(r.band).color : null;
+  const incomePhrase = together ? "your combined income" : "your income";
+  // One decimal normally, but a multiple just over a band edge would round
+  // down onto it ("4.5", "5.5") and read as the band below, so show two there.
+  const multipleText = r.multiple == null ? null
+    : [LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE].some(x => r.multiple > x && r.multiple.toFixed(1) === x.toFixed(1)) ? r.multiple.toFixed(2) : r.multiple.toFixed(1);
+
+  return (
+    <div>
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"6px"}}>How much you'd need to borrow</div>
+      <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>Cash left after stamp duty and fees is the deposit. The rest is the mortgage.</p>
+      {input.price > 0 ? (
+          <div style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",border:bandColor ? `2px solid ${bandColor}` : "none"}}>
+            <div style={{display:"flex",gap:"24px"}}>
               <div>
-                <div style={figureLabel}>Times income</div>
-                <div style={{...figure,color:bandColor || TEXT}}>{multipleText}x</div>
+                <div style={figureLabel}>Loan needed</div>
+                <div style={figure}>{fmt(r.loanNeeded)}</div>
               </div>
+              {multipleText && r.loanNeeded > 0 && (
+                <div>
+                  <div style={figureLabel}>Times income</div>
+                  <div style={{...figure,color:bandColor || TEXT}}>{multipleText}x</div>
+                </div>
+              )}
+            </div>
+
+            {r.loanNeeded === 0 ? (
+              <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:"10px 0 0"}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
+            ) : r.multiple == null ? (
+              <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>Candid doesn't have an income figure to compare this against, and lenders base how much they'll lend on income.</p>
+            ) : (
+              <>
+                <MultipleBar multiple={r.multiple} band={r.band}/>
+                {r.band === "stretch" && (
+                  <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+                    That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}. Some lenders go to 5 to {HIGH_EARNER_MULTIPLE}x for higher earners.
+                  </p>
+                )}
+                {r.band === "beyond" && (
+                  <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+                    That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}, and above the {HIGH_EARNER_MULTIPLE}x some lenders go to for higher earners.
+                  </p>
+                )}
+              </>
+            )}
+
+            <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>
+            <div style={row}><span>Cash available</span><span>{fmt(input.cashAvailable)}</span></div>
+            <div style={row}>
+              <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                Stamp duty
+                {sd && <InfoButton open={stampDutyInfoOpen} onClick={() => setStampDutyInfoOpen(o => !o)}/>}
+              </span>
+              {sd ? <Cost value={input.stampDuty}/> : <span style={{color:MUT}}>Add location</span>}
+            </div>
+            {sd && stampDutyInfoOpen && <StampDutyBreakdown sd={sd} style={{...explainer,margin:"4px 0 6px"}}/>}
+            <div style={row}><span>Legal and survey fees</span><Cost value={input.fees}/></div>
+            <div style={{...row,fontWeight:700}}><span>Deposit</span><span>{fmt(r.usableDeposit)}</span></div>
+            <div style={row}>
+              <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                {together ? "Combined income" : "Income"}
+                <InfoButton open={incomeInfoOpen} onClick={() => setIncomeInfoOpen(o => !o)}/>
+              </span>
+              <span>{fmt(r.income)}</span>
+            </div>
+            {incomeInfoOpen && (
+              <p style={{...explainer,marginTop:"4px"}}>
+                Salary plus other income{together ? ", for both of you" : ""}. Bonuses and dividends aren't included, as lenders treat them case by case. This is a guide, not a lending decision.
+              </p>
+            )}
+            {r.upfrontShortfall > 0 && (
+              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>
+                Cash available is {fmt(r.upfrontShortfall)} short of covering stamp duty and fees, so none of it is left for a deposit.
+              </p>
             )}
           </div>
-
-          {r.loanNeeded === 0 ? (
-            <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:"10px 0 0"}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
-          ) : r.multiple == null ? (
-            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>Candid doesn't have an income figure to compare this against, and lenders base how much they'll lend on income.</p>
-          ) : (
-            <>
-              <MultipleBar multiple={r.multiple} band={r.band}/>
-              {r.band === "stretch" && (
-                <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
-                  That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}. Some lenders go to 5 to {HIGH_EARNER_MULTIPLE}x for higher earners.
-                </p>
-              )}
-              {r.band === "beyond" && (
-                <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
-                  That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}, and above the {HIGH_EARNER_MULTIPLE}x some lenders go to for higher earners.
-                </p>
-              )}
-            </>
-          )}
-
-          <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>
-          <div style={row}><span>Cash available</span><span>{fmt(input.cashAvailable)}</span></div>
-          <div style={row}>
-            <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
-              Stamp duty
-              {sd && <InfoButton open={stampDutyInfoOpen} onClick={() => setStampDutyInfoOpen(o => !o)}/>}
-            </span>
-            {sd ? <Cost value={input.stampDuty}/> : <span style={{color:MUT}}>Add location</span>}
-          </div>
-          {sd && stampDutyInfoOpen && <StampDutyBreakdown sd={sd} style={{...explainer,margin:"4px 0 6px"}}/>}
-          <div style={row}><span>Legal and survey fees</span><Cost value={input.fees}/></div>
-          <div style={{...row,fontWeight:700}}><span>Deposit</span><span>{fmt(r.usableDeposit)}</span></div>
-          <div style={row}>
-            <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
-              {together ? "Combined income" : "Income"}
-              <InfoButton open={incomeInfoOpen} onClick={() => setIncomeInfoOpen(o => !o)}/>
-            </span>
-            <span>{fmt(r.income)}</span>
-          </div>
-          {incomeInfoOpen && (
-            <p style={{...explainer,marginTop:"4px"}}>
-              Salary plus other income{together ? ", for both of you" : ""}. Bonuses and dividends aren't included, as lenders treat them case by case. This is a guide, not a lending decision.
-            </p>
-          )}
-          {r.upfrontShortfall > 0 && (
-            <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>
-              Cash available is {fmt(r.upfrontShortfall)} short of covering stamp duty and fees, so none of it is left for a deposit.
-            </p>
-          )}
-        </div>
+      ) : (
+        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:0}}>Add a property price above to see the loan it needs.</p>
       )}
     </div>
   );

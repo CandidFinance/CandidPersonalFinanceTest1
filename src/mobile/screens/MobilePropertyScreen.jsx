@@ -4,14 +4,14 @@ import { capField } from "../../lib/onboarding.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import DecisionWaterfall from "../property/DecisionWaterfall.jsx";
-import BorrowingCheck from "../property/BorrowingCheck.jsx";
+import { PurchaseInputs, LoanTile } from "../property/BorrowingCheck.jsx";
 import MortgageStep from "../property/MortgageStep.jsx";
 import PropertySteps from "../property/PropertySteps.jsx";
 import PillCell from "../property/PillCell.jsx";
 
 // Property module, split into two steps so neither is one long page:
-//   1. Readiness (/app/property): the decision waterfall and the borrowing
-//      check, including stamp duty.
+//   1. Readiness (/app/property): the purchase inputs first, then the
+//      decision waterfall, then the loan the purchase needs.
 //   2. Mortgage (/app/property/mortgage): repayments and remortgaging,
 //      locked until step 1 is complete (readinessMissing is empty).
 // The year-by-year rent vs buy engine comes later. Not in MODULE_META yet:
@@ -58,7 +58,7 @@ export default function MobilePropertyScreen({ step, d, m, set, onAddInputs, onO
       ) : (
         <>
           <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"16px 0"}}>
-            What usually comes before a deposit, and how much you'd need to borrow. Complete this step to unlock your mortgage.
+            Start with the purchase, then see what comes before a deposit and how much you'd need to borrow. Complete this step to unlock your mortgage.
           </p>
 
           <PillSlider value={together ? "together" : "alone"} onChange={v => set("propertyBuyingMode", v)} options={BUYING_MODE_OPTIONS}/>
@@ -83,11 +83,15 @@ export default function MobilePropertyScreen({ step, d, m, set, onAddInputs, onO
             </div>
           )}
 
+          <div style={{marginTop:"20px"}}>
+            <PurchaseInputs d={d} m={m} set={set}/>
+          </div>
+
           <hr style={divider}/>
           <DecisionWaterfall d={d} m={m} set={set} onAddInputs={onAddInputs} onOpenModule={onOpenModule}/>
 
           <hr style={divider}/>
-          <BorrowingCheck d={d} m={m} set={set}/>
+          <LoanTile d={d} m={m}/>
 
           <div style={{marginTop:"24px"}}>
             {!unlocked && (
