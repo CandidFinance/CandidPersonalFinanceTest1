@@ -4,16 +4,19 @@ import { readinessMissing } from "../../lib/propertyReadiness.js";
 import DecisionWaterfall from "../property/DecisionWaterfall.jsx";
 import { PurchaseInputs, LoanTile } from "../property/BorrowingCheck.jsx";
 import MortgageStep from "../property/MortgageStep.jsx";
+import RentVsBuyStep from "../property/RentVsBuyStep.jsx";
 import PropertySteps from "../property/PropertySteps.jsx";
 
 // Property module, split into two steps so neither is one long page:
 //   1. Readiness (/app/property): the purchase inputs first, then the
 //      decision waterfall, then the loan the purchase needs.
-//   2. Mortgage (/app/property/mortgage): repayments and remortgaging,
-//      locked until step 1 is complete (readinessMissing is empty).
-// The year-by-year rent vs buy engine comes later. Not in MODULE_META yet:
-// that list drives scoring, the £-impact sort, the AI prompt and the PDF,
-// and Property has no £ figure until the engine exists.
+//   2. Mortgage (/app/property/mortgage): repayments and remortgaging.
+//   3. Rent vs buy (/app/property/rent-vs-buy): net wealth either way over
+//      the years the buyer expects to stay.
+// Steps 2 and 3 are locked until step 1 is complete (readinessMissing is
+// empty). Not in MODULE_META yet: that list drives scoring, the £-impact
+// sort, the AI prompt and the PDF, and Property's £ figure is still to be
+// defined.
 
 const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"26px 0 22px" };
 
@@ -28,7 +31,7 @@ function listText(items) {
   return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
-export default function MobilePropertyScreen({ step, d, m, set, onAddInputs, onOpenModule, onSelectStep }) {
+export default function MobilePropertyScreen({ step, d, m, set, regionalRows, onAddInputs, onOpenModule, onSelectStep }) {
   const missing = readinessMissing(d, m);
   const unlocked = missing.length === 0;
 
@@ -44,16 +47,20 @@ export default function MobilePropertyScreen({ step, d, m, set, onAddInputs, onO
         </div>
       </div>
 
-      <PropertySteps step={step} mortgageUnlocked={unlocked} onSelect={onSelectStep}/>
+      <PropertySteps step={step} unlocked={unlocked} onSelect={onSelectStep}/>
 
       {step === "mortgage" ? (
         <div style={{marginTop:"20px"}}>
-          <MortgageStep d={d} m={m} set={set}/>
+          <MortgageStep d={d} m={m} set={set} onContinue={() => onSelectStep("rentVsBuy")}/>
+        </div>
+      ) : step === "rentVsBuy" ? (
+        <div style={{marginTop:"20px"}}>
+          <RentVsBuyStep d={d} m={m} set={set} regionalRows={regionalRows}/>
         </div>
       ) : (
         <>
           <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"16px 0"}}>
-            Start with the purchase, then see what comes before a deposit and how much you'd need to borrow. Complete this step to unlock your mortgage.
+            Start with the purchase, then see what comes before a deposit and how much you'd need to borrow. Complete this step to unlock your mortgage and rent vs buy.
           </p>
 
           <PurchaseInputs d={d} m={m} set={set}/>
@@ -67,7 +74,7 @@ export default function MobilePropertyScreen({ step, d, m, set, onAddInputs, onO
           <div style={{marginTop:"24px"}}>
             {!unlocked && (
               <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"0 0 10px"}}>
-                To unlock step 2, add {listText(missing.map(k => MISSING_TEXT[k]))}.
+                To unlock steps 2 and 3, add {listText(missing.map(k => MISSING_TEXT[k]))}.
               </p>
             )}
             <button type="button" disabled={!unlocked} onClick={() => onSelectStep("mortgage")} style={{

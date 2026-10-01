@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
@@ -20,7 +20,7 @@ const OUTCOME_TEXT = {
   lower: `${STRESS_REMORTGAGE_UPLIFT} points lower`,
 };
 
-export default function MortgageStep({ d, m, set }) {
+export default function MortgageStep({ d, m, set, onContinue }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [outcomesOpen, setOutcomesOpen] = useState(false);
   const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
@@ -93,6 +93,16 @@ export default function MortgageStep({ d, m, set }) {
           </>
         )}
       </div>
+
+      {onContinue && (
+        <button type="button" onClick={onContinue} style={{
+          width:"100%", marginTop:"24px", background:G, color:WHITE, border:"none", borderRadius:"100px",
+          padding:"13px", fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
+          display:"flex", alignItems:"center", justifyContent:"center", gap:"4px",
+        }}>
+          Continue to rent vs buy<ChevronRight size={16}/>
+        </button>
+      )}
     </div>
   );
 }

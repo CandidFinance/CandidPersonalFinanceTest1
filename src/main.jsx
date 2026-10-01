@@ -448,6 +448,7 @@ function AppRoutes() {
           <Route path="/app/module/:moduleKey" />
           <Route path="/app/property" />
           <Route path="/app/property/mortgage" />
+          <Route path="/app/property/rent-vs-buy" />
           <Route path="/app/assessment/:step" />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

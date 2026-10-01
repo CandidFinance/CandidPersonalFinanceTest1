@@ -26,6 +26,7 @@ import { rollTaxYear } from "./lib/taxYear.js";
 import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
 import { mortgageInputs, mortgageSummary } from "./lib/mortgage.js";
 import { readinessMissing } from "./lib/propertyReadiness.js";
+import { rentVsBuyInputs, calcRentVsBuy } from "./lib/rentVsBuy.js";
 
 // Re-exported for existing external consumers (e.g. src/pdf/reportData.js)
 // now that these live in src/lib/ — see that file's own import for the
@@ -5580,6 +5581,11 @@ const BLANK_DATA = {
   // defaults in src/lib/mortgage.js.
   propertyRegion:"", propertyFirstTimeBuyer:"", partnerFirstTimeBuyer:"", propertySoleProperty:"yes",
   propertyMortgageTerm:"", propertyFixedYears:"", propertyMortgageRate:"", propertyRemortgageFee:"",
+  // Rent vs buy (step 3). Blank assumptions use the defaults and regional
+  // figures in src/lib/rentVsBuy.js.
+  propertyMonthlyRent:"", propertyHorizonYears:"", propertyTenure:"freehold",
+  propertyGroundRent:"", propertyGroundRentGrowth:"", propertyServiceCharge:"",
+  propertyHousePriceGrowth:"", propertyRentGrowth:"", propertyInvestmentReturn:"", propertyDividendYield:"",
   // Supabase schema note: isa_this_year_other NUMERIC
 };
 
@@ -5814,6 +5820,18 @@ export default function AppShell() {
     return () => { cancelled = true; };
   }, []);
 
+  // ── Regional rent and house price growth (Property's rent vs buy) — from
+  // property_regional_rates, updated by hand with each ONS release. null
+  // while loading or if it fails; src/lib/regionalRates.js then falls back
+  // to its snapshot.
+  const [regionalRates, setRegionalRates] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    supaSelect("property_regional_rates", "?select=region,rent_growth_pct,house_price_growth_pct")
+      .then(rows => { if (!cancelled) setRegionalRates(rows); });
+    return () => { cancelled = true; };
+  }, []);
+
   // ── Return from TrueLayer bank-connect redirect — runs once on mount ─────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -5887,6 +5905,8 @@ export default function AppShell() {
     const num = v => (v === "" || v == null || isNaN(+v)) ? null : Math.round(+v);
     const pct = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
     const yesNo = v => v === "yes" ? true : v === "no" ? false : null;
+    const rvbInput = rentVsBuyInputs(d, m, regionalRates);
+    const rvb = rvbInput.monthlyRent > 0 && b.price > 0 ? calcRentVsBuy(rvbInput) : null;
     return {
       property_buying_mode: d.propertyBuyingMode === "together" ? "together" : "alone",
       property_price: num(d.propertyPrice),
@@ -5912,8 +5932,22 @@ export default function AppShell() {
       property_mortgage_rate: mi.ratePct,
       property_remortgage_fee: Math.round(mi.remortgageFee),
       property_monthly_repayment: r.loanNeeded > 0 ? Math.round(mortgageSummary(mi).monthlyPayment) : null,
+      property_monthly_rent: num(d.propertyMonthlyRent),
+      property_horizon_years: rvbInput.horizonYears,
+      property_tenure: rvbInput.tenure,
+      property_ground_rent: rvbInput.tenure === "leasehold" ? num(d.propertyGroundRent) : null,
+      property_ground_rent_growth: rvbInput.tenure === "leasehold" ? pct(d.propertyGroundRentGrowth) : null,
+      property_service_charge: rvbInput.tenure === "leasehold" ? num(d.propertyServiceCharge) : null,
+      // The assumptions the calculation used (the user's or the defaults).
+      property_house_price_growth: rvbInput.housePriceGrowthPct,
+      property_rent_growth: rvbInput.rentGrowthPct,
+      property_investment_return: rvbInput.investmentReturnPct,
+      property_dividend_yield: rvbInput.dividendYieldPct,
+      property_breakeven_year: rvb ? rvb.breakevenYear : null,
+      // Buyer's net wealth less the renter's at the horizon (moderate).
+      property_wealth_gap: rvb ? Math.round(rvb.gapAtHorizon) : null,
     };
-  }, [pathname, d, m]);
+  }, [pathname, d, m, regionalRates]);
   const propertyBaseline = useRef(null);
   const pendingPropertyPatch = useRef(null);
   useEffect(() => {
@@ -6231,7 +6265,7 @@ export default function AppShell() {
   // once an assessment has produced a report — bounce home rather than show a
   // broken or empty page for a stale bookmark, shared link, or a bare reload with
   // no data.
-  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat", "/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/property", "/app/property/mortgage"];
+  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat", "/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
   if ((REPORT_PATHS.includes(pathname) || pathname.startsWith("/module/") || pathname.startsWith("/app/module/")) && !insights) {
     return <Navigate to="/" replace />;
   }
@@ -6320,19 +6354,20 @@ export default function AppShell() {
     </MobileLayout>
   );
 
-  if (pathname === "/app/property" || pathname === "/app/property/mortgage") {
-    const propertyStep = pathname === "/app/property/mortgage" ? "mortgage" : "readiness";
-    // Step 2 stays locked until step 1 is complete, including for a direct link.
-    if (propertyStep === "mortgage" && readinessMissing(d, m).length > 0) return <Navigate to="/app/property" replace />;
+  const PROPERTY_STEP_PATHS = { readiness:"/app/property", mortgage:"/app/property/mortgage", rentVsBuy:"/app/property/rent-vs-buy" };
+  const propertyStep = Object.keys(PROPERTY_STEP_PATHS).find(k => PROPERTY_STEP_PATHS[k] === pathname);
+  if (propertyStep) {
+    // Steps 2 and 3 stay locked until step 1 is complete, including for a direct link.
+    if (propertyStep !== "readiness" && readinessMissing(d, m).length > 0) return <Navigate to="/app/property" replace />;
     return (
       <MobileLayout activeTab="modules"
         headerRight={
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
-        <MobilePropertyScreen step={propertyStep} d={d} m={m} set={set} onAddInputs={openMobileStep}
+        <MobilePropertyScreen step={propertyStep} d={d} m={m} set={set} regionalRows={regionalRates} onAddInputs={openMobileStep}
           onOpenModule={key => navigate(`/app/module/${key}`)}
           onSelectStep={next => {
-            navigate(next === "mortgage" ? "/app/property/mortgage" : "/app/property");
+            navigate(PROPERTY_STEP_PATHS[next] || "/app/property");
             window.scrollTo({ top: 0, behavior: "instant" });
           }}/>
       </MobileLayout>
