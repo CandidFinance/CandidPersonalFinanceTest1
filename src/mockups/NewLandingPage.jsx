@@ -245,7 +245,7 @@ export default function NewLandingPage() {
             Connect your finances in under 3 minutes to pinpoint exact tax-drag points and get a prioritised, calculation-first action plan.
           </motion.p>
           <motion.div variants={heroItem}>
-            <StartCheckButton source="hero" label="Optimise my money" />
+            <StartCheckButton source="hero" />
             <div style={{ fontSize: "12px", color: MUT, marginTop: "14px" }}>Free • No credit card required • Open Banking encrypted</div>
           </motion.div>
         </motion.div>

@@ -210,7 +210,7 @@ export default function NewSiteHeader() {
               color: G, cursor: "pointer", alignSelf: "flex-start",
             }}
           >
-            Start your free check
+            Optimise my money
           </button>
         </nav>
       </div>
