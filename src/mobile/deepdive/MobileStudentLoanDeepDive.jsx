@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ExternalLink, Wrench } from "lucide-react";
-import { calcStudentLoanScenario, calcOverpaymentScenarios } from "../../lib/studentLoan.js";
+import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension } from "../../lib/studentLoan.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
@@ -18,51 +18,13 @@ function buildOverpayOptions(loanBal) {
   return [...round, bal];
 }
 
-// Candid Score bands mirror ScoreRing's own thresholds (CandidApp.jsx) — kept
-// local rather than exported/shared since this is presentation copy, not a
-// financial figure other screens need to agree on.
-function scoreTier(score) {
-  if (typeof score !== "number") return null;
-  if (score >= 86) return "strong";
-  if (score >= 66) return "solid";
-  if (score >= 41) return "developing";
-  return "early";
-}
-
-// Personalised verdict for the marginal-return chart — how the loan's return
-// compares to the pension's, and (when there's a genuine crossover point) how
-// hard to lean into repaying based on how sorted the rest of the user's
-// finances are (their Candid Score) — the better covered their other bases,
-// the more reasonable it is to prioritise debt reduction with spare cash.
-function buildRepaymentVerdict({ pensionReturn, crossAmt, data, score }) {
-  const lastRatio = data[data.length - 1]?.ratio ?? 1;
-  if (crossAmt === null && data[0].ratio < pensionReturn) {
-    return `Your pension return (${pensionReturn.toFixed(2)}×) beats this loan's return at every level — every £1 works harder in your pension than paid toward this loan.`;
-  }
-  if (crossAmt === null && lastRatio > pensionReturn) {
-    return `This loan's return beats your ${pensionReturn.toFixed(2)}× pension return at every level modelled — worth clearing before maximising pension contributions.`;
-  }
-  if (crossAmt !== null) {
-    const base = `Overpaying has a weaker return than your pension (${pensionReturn.toFixed(2)}×) beyond about ${fmtK(crossAmt)} — but up to that point, repaying still beats your pension return.`;
-    const tier = scoreTier(score);
-    if (tier === "strong" || tier === "solid") {
-      return `${base} With the rest of your finances in good shape, repaying up to ${fmtK(crossAmt)} is a reasonable use of spare cash if reducing debt matters to you.`;
-    }
-    if (tier === "developing" || tier === "early") {
-      return `${base} With other priorities still to sort first, it's worth tackling those before directing spare cash here.`;
-    }
-    return base;
-  }
-  return null;
-}
-
 // Full mobile version of desktop's Student Loan deep dive (ModuleDeepDive,
 // moduleKey==="studentLoan" — CandidApp.jsx): the opportunity strip, the loan-
 // trajectory summary, the "does overpaying beat cash" walkthrough (Win tile —
 // unnumbered, since there's only ever one Win here), a separate overpayment-
 // scenario tile (amount slider instead of desktop's fixed £5k/£10k/£20k
-// cards), and a separate "marginal return per £1 overpaid" chart tile with a
-// personalised repay-vs-pension verdict. calcStudentLoanScenario/
+// cards), and a separate "return per £1 overpaid" chart tile with a
+// like-for-like repay-vs-pension verdict. calcStudentLoanScenario/
 // calcOverpaymentScenarios/calcLoanMarginalReturnCurve are the same single
 // source of truth desktop and computeModuleStatuses use, so the numbers
 // can't drift between mobile and desktop.
@@ -102,7 +64,7 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
   }
 
   const sl = calcStudentLoanScenario(d, m);
-  const worthOverpaying = sl.willClear && sl.effectiveBenefit > 0;
+  const worthOverpaying = sl.worthOverpaying;
   const surplusCash = m.surplusCash || 0;
   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
 
@@ -141,7 +103,7 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
         <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
           <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
-          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Effective benefit from overpaying vs cash</div>
+          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Effective benefit from overpaying vs the best savings rate</div>
         </div>
       )}
 
@@ -190,19 +152,23 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
             : !sl.willClear
               ? "Projected to be written off before you'd clear it — overpaying mostly reduces the write-off, not your repayments."
               : sl.effectiveBenefit <= 0
-                ? `On track to clear in ~${sl.clearYr} years. Your savings rate (${sl.cashRate}%) beats your loan rate (${sl.slRatePct}%) — saving beats overpaying here.`
-                : "See the win below for what overpaying could save you."}
+                ? `On track to clear in ~${sl.clearYr} years. The best savings rate (${sl.cashRate}%) beats your loan rate (${sl.slRatePct}%) — saving beats overpaying here.`
+                : !sl.beatsPension
+                  ? `On track to clear in ~${sl.clearYr} years. Your pension is assumed to grow ${sl.pensionGrowthPct}% a year, faster than your loan's ${sl.slRatePct}% — so it beats overpaying here.`
+                  : "See the win below for what overpaying could save you."}
         </p>
       </div>
 
       {sl.willClear && (
         <MobileWinTile
           title={sl.balanceGrowing ? "Your loan balance is growing" : worthOverpaying ? "Overpay your student loan" : "What overpaying would do"}
-          headline={sl.balanceGrowing
-            ? `Growing by ${fmt(sl.netAnnualChange)}/yr — overpaying could still save ${fmt(sl.overpayAnnualBenefit)}/yr`
-            : worthOverpaying
-              ? `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit vs cash`
-              : `Your ${sl.cashRate}% savings rate beats your ${sl.slRatePct}% loan rate`}
+          headline={worthOverpaying
+            ? (sl.balanceGrowing
+                ? `Growing by ${fmt(sl.netAnnualChange)}/yr — overpaying could still save ${fmt(sl.overpayAnnualBenefit)}/yr`
+                : `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit vs the best savings rate`)
+            : sl.effectiveBenefit <= 0
+              ? `The best savings rate (${sl.cashRate}%) beats your ${sl.slRatePct}% loan rate`
+              : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your ${sl.slRatePct}% loan rate`}
           tagLabel={worthOverpaying ? "Today" : "Not optimal"} tagColor={worthOverpaying ? GOLD : "#c0392b"}>
           {sl.balanceGrowing && (
             <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
@@ -218,10 +184,17 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
           ) : (
             <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0"}}>Step 2 — You don't currently hold cash above your emergency buffer; the comparison still applies to any spare cash you build up.</p>
           )}
-          <div style={{...rowStyle,fontWeight:700,color:worthOverpaying?"#2d6b4a":"#c0392b"}}>
-            <span>Step 3 — {sl.slRatePct}% loan vs {sl.cashRate}% cash</span>
-            <span>{worthOverpaying ? `Repay wins by ${sl.effectiveBenefit}%` : `Cash wins by ${Math.abs(sl.effectiveBenefit)}%`}</span>
+          <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0?"#2d6b4a":"#c0392b"}}>
+            <span>Step 3 — {sl.slRatePct}% loan vs {sl.cashRate}% best savings</span>
+            <span>{sl.effectiveBenefit > 0 ? `Repay wins by ${sl.effectiveBenefit}%` : `Savings win by ${Math.abs(sl.effectiveBenefit)}%`}</span>
           </div>
+          <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?"#2d6b4a":"#c0392b"}}>
+            <span>Step 4 — {sl.slRatePct}% loan vs {sl.pensionGrowthPct}% pension growth</span>
+            <span>{sl.pensionGap > 0 ? `Repay wins by ${sl.pensionGap}%` : sl.pensionGap === 0 ? "Level — repaying is guaranteed" : `Pension wins by ${Math.abs(sl.pensionGap)}%`}</span>
+          </div>
+          <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
+            Tax relief isn't part of step 4: overpaying clears the loan sooner, and the money that frees up gets the same relief when it goes into your pension then.
+          </p>
         </MobileWinTile>
       )}
 
@@ -267,17 +240,14 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
       )}
 
       {curve && (() => {
-        const { pensionReturn, data, VW, VH, PL, PR, PT, PB, sx, sy, path, crossAmt, crossX, crossY, yTicks, xTicks } = curve;
-        const verdict = buildRepaymentVerdict({ pensionReturn, crossAmt, data, score: insights?.score });
+        const { VW, VH, PL, PR, PT, PB, sx, sy, path, pensionPath, yTicks, xTicks } = curve;
         return (
           <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px"}}>
             <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Return per £1 overpaid vs your pension</div>
 
-            {verdict && (
-              <div style={{borderLeft:`4px solid ${GOLD}`,background:"rgba(196,150,58,0.07)",borderRadius:"0 8px 8px 0",padding:"12px 14px",marginBottom:"14px"}}>
-                <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0,fontWeight:500}}>{verdict}</p>
-              </div>
-            )}
+            <div style={{borderLeft:`4px solid ${GOLD}`,background:"rgba(196,150,58,0.07)",borderRadius:"0 8px 8px 0",padding:"12px 14px",marginBottom:"14px"}}>
+              <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0,fontWeight:500}}>{describeLoanVsPension(sl)}</p>
+            </div>
 
             <div ref={chartWrapRef} style={{width:"100%"}}>
               <svg width={VW} height={VH} viewBox={`0 0 ${VW} ${VH}`} style={{display:"block"}}>
@@ -287,14 +257,9 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
                     <text x={PL-6} y={sy(r)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{r.toFixed(2)}×</text>
                   </g>
                 ))}
-                <line x1={PL} x2={VW-PR} y1={sy(pensionReturn)} y2={sy(pensionReturn)} stroke={GOLD} strokeWidth="1.6" strokeDasharray="5,3"/>
                 <path d={path} fill="none" stroke={G} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                {crossX !== null && (
-                  <>
-                    <line x1={crossX} x2={crossX} y1={PT} y2={VH-PB} stroke={GOLD} strokeWidth="1" strokeDasharray="4,3" opacity="0.5"/>
-                    <circle cx={crossX} cy={crossY} r="4" fill={GOLD}/>
-                  </>
-                )}
+                {/* Drawn over the loan line, dashed, so it stays visible where the two coincide */}
+                <path d={pensionPath} fill="none" stroke={GOLD} strokeWidth="1.6" strokeDasharray="5,3"/>
                 <line x1={PL} x2={VW-PR} y1={VH-PB} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.3"/>
                 {xTicks.map((amt,i) => (
                   <text key={i} x={sx(amt)} y={VH-PB+13} fontSize="9" fontWeight="700" fill={MUT} textAnchor={i===0?"start":i===xTicks.length-1?"end":"middle"}>{fmtK(amt)}</text>
@@ -302,10 +267,17 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
                 <line x1={PL} x2={PL} y1={PT} y2={VH-PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.3"/>
               </svg>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"8px"}}>
-              <span style={{width:"14px",height:"2px",background:GOLD,display:"inline-block"}}/>
-              <span style={{fontSize:"11px",color:MUT}}>Your pension return — {pensionReturn.toFixed(2)}×</span>
+            <div style={{display:"flex",flexWrap:"wrap",gap:"6px 14px",marginTop:"8px"}}>
+              <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                <span style={{width:"14px",height:"2px",background:G,display:"inline-block"}}/>
+                <span style={{fontSize:"11px",color:MUT}}>Overpaying</span>
+              </span>
+              <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                <span style={{width:"14px",height:"2px",background:GOLD,display:"inline-block"}}/>
+                <span style={{fontSize:"11px",color:MUT}}>Your pension over the same years — {sl.pensionGrowthPct}% a year</span>
+              </span>
             </div>
+            <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:0}}>Tax relief isn't included: you'd get it whether you pay in now or once the loan clears.</p>
           </div>
         );
       })()}

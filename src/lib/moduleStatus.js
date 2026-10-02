@@ -207,23 +207,23 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Student loan — calcStudentLoanScenario is the single source of truth, shared
   // with the module's own Win/info tile (see there for the full scenario logic).
   // Overpaying only genuinely matters when the loan will actually clear before
-  // write-off AND beats the user's cash rate — that's the only case with a
-  // non-zero £/yr amount; everything else (written off regardless, or clears
-  // but saving beats overpaying, or below threshold) has nothing actionable.
+  // write-off AND beats both the best savings rate and the pension's assumed
+  // growth — that's the only case with a non-zero £/yr amount; everything else
+  // (written off regardless, clears but saving or the pension beats
+  // overpaying, or below threshold) has nothing actionable.
   const sl = calcStudentLoanScenario(d, m);
-  const slWorthOverpaying = sl.willClear && sl.effectiveBenefit > 0;
-  const slAmount = slWorthOverpaying ? sl.overpayAnnualBenefit : 0;
+  const slAmount = sl.worthOverpaying ? sl.overpayAnnualBenefit : 0;
   s.studentLoan = {
     status: d.studentLoan === "none" ? "na"
-          : slWorthOverpaying ? (sl.balanceGrowing ? "critical" : "attention")
+          : sl.worthOverpaying ? (sl.balanceGrowing ? "critical" : "attention")
           : sl.belowThreshold ? "attention"
           : "ok",
     impact: slAmount,
     impactLabel: sl.belowThreshold
       ? "Below repayment threshold — no deductions currently"
-      : slWorthOverpaying
-        ? `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit from overpaying vs your cash rate`
-        : sl.balanceGrowing
+      : sl.worthOverpaying
+        ? `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit from overpaying vs the best savings rate`
+        : sl.balanceGrowing && !sl.willClear
           ? `${fmt(Math.round(sl.netAnnualChange))}/yr, balance growing — but will be written off regardless`
           : null,
     belowThreshold: sl.belowThreshold,

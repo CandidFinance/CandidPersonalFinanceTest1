@@ -187,5 +187,8 @@ export function calcMetrics(d, marketRates = {}) {
     propertyEquity, propertyValue, ltv,
     pensionStatus, personalLoanAnnualRepayment, personalLoanPayoffMonths,
     monthlySurplus,
+    // The best savings rate available (the live best Cash ISA rate) — what
+    // overpaying a student loan is weighed against (calcStudentLoanScenario).
+    bestSavingsRate: isaRate,
   };
 }

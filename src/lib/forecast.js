@@ -74,59 +74,63 @@ export function simulateAmortisation(balance, annualRatePct, monthlyPayment, max
   return { totalInterest, monthsToClear, cleared: monthsToClear !== null };
 }
 
-// ── Marginal return per £1 overpaid — where the loan's return crosses the
-// user's pension (and, if applicable, mortgage) return. Ported from desktop's
-// ModuleDeepDive `loanCurve` useMemo (CandidApp.jsx), the only place this
-// currently lives, so the mobile deep dive can share the same maths. `sl` is
-// calcStudentLoanScenario(d, m); `chartWidth` lets the caller pass a
-// measured container width so the returned coordinates match the rendered
-// SVG 1:1 (see mobile Forecast chart for the same pattern).
-export function calcLoanMarginalReturnCurve(d, m, sl, chartWidth = 340) {
-  if (!sl?.willClear || m.loanBal <= 0) return null;
+// ── Return per £1 overpaid vs the pension, like for like. For each overpayment
+// amount, the loan's return is the repayments it saves per £1 — its interest
+// rate compounded over an effective number of years. The pension line
+// compounds the pension's assumed growth over those same years. Tax relief
+// isn't in it: it applies whether the money goes in now or once the loan
+// clears (see calcStudentLoanScenario). So when the two rates match the lines
+// sit together, and when they don't one sits above the other throughout.
+// Shared by desktop's and mobile's student loan deep dives. `sl` is
+// calcStudentLoanScenario(d, m); `chartWidth` lets the caller pass a measured
+// container width so the returned coordinates match the rendered SVG 1:1 (see
+// mobile Forecast chart for the same pattern); `layout` overrides the height,
+// padding and x-axis tick positions (fractions of the balance).
+export function calcLoanMarginalReturnCurve(d, m, sl, chartWidth = 340, layout = {}) {
+  const loanRate = sl?.slInterestRate || 0;
+  if (!sl?.willClear || m.loanBal <= 0 || loanRate <= 0) return null;
   const writeOffYr = sl.writeOffYr;
-  const pensionReturn = pensionReturnRatio(d, m);
+  const pensionGrowth = sl.pensionGrowthPct / 100;
   const mortRate = d.hasMortgage === "yes" && +d.mortgageRate > 0 ? +d.mortgageRate : 4.5;
   const mortReturn = 1 + mortRate / 100;
-  const planRate = d.studentLoan === "plan1" ? 0.05 : 0.075;
   const planThreshold = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
   const growthRate = m.salaryGrowthRate;
-  const baseCase = simulateLoan(m.loanBal, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
-  const tiny = simulateLoan(Math.max(0, m.loanBal - 100), m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+  // simulateLoan compounds monthly, so the pension compounds monthly too —
+  // equal rates then give identical lines.
+  const pensionExponent = Math.log(1 + pensionGrowth / 12) / Math.log(1 + loanRate / 12);
+  const point = (amt, ratio) => ({ amt, ratio, pension: Math.pow(ratio, pensionExponent) });
+  const baseCase = simulateLoan(m.loanBal, m.salary, growthRate, loanRate, planThreshold, 0.09, writeOffYr);
+  const tiny = simulateLoan(Math.max(0, m.loanBal - 100), m.salary, growthRate, loanRate, planThreshold, 0.09, writeOffYr);
   const tinyIntSaved = Math.max(0, baseCase.totalInterest - tiny.totalInterest);
-  const yIntercept = 1 + tinyIntSaved / 100;
   const STEPS = 36;
-  const data = [{ amt: 0, ratio: yIntercept }, ...Array.from({ length: STEPS }, (_, i) => {
+  const data = [point(0, 1 + tinyIntSaved / 100), ...Array.from({ length: STEPS }, (_, i) => {
     const amt = (m.loanBal * (i + 1)) / STEPS;
-    if (amt >= m.loanBal) return { amt: m.loanBal, ratio: 1.0 };
-    const oc = simulateLoan(m.loanBal - amt, m.salary, growthRate, planRate, planThreshold, 0.09, writeOffYr);
+    const oc = simulateLoan(Math.max(0, m.loanBal - amt), m.salary, growthRate, loanRate, planThreshold, 0.09, writeOffYr);
     const intSaved = Math.max(0, baseCase.totalInterest - oc.totalInterest);
-    return { amt, ratio: (amt + intSaved) / amt };
+    return point(amt, (amt + intSaved) / amt);
   })];
-  // Base yMax on the pension/mortgage reference lines, not data[0].ratio — the marginal
-  // return at amt≈0 can spike to 4-8x+ for loans that stay outstanding almost the entire
-  // write-off window, which would compress every tick into a sliver near the axis floor.
-  const yMax = Math.max(pensionReturn + 0.3, 1.6);
+  // Scale to the curves from the second point on, capped — the return at amt≈0
+  // can spike to 4-8x+ for loans that stay outstanding almost the entire
+  // write-off window, which would compress every tick into a sliver near the
+  // axis floor.
+  const peak = Math.max(...data.slice(1).map(p => Math.max(p.ratio, p.pension)));
+  const yMax = Math.max(1.6, Math.min(peak, 2.5) + 0.15);
   const yMin = 0.92;
-  const VW = chartWidth, VH = 170, PL = 38, PR = 8, PT = 14, PB = 26;
+  const { VH = 170, PL = 38, PR = 8, PT = 14, PB = 26, xTickFractions = [0, 0.5, 1] } = layout;
+  const VW = chartWidth;
   const cW = VW - PL - PR, cH = VH - PT - PB;
   const sx = a => PL + (a / m.loanBal) * cW;
   const sy = r => PT + cH - ((r - yMin) / (yMax - yMin)) * cH;
-  // Clamp plotted points to yMax so an outlier ratio flattens visually at the top of the
-  // chart instead of stretching the axis (crossover detection below still uses raw ratios).
-  const path = data.map((p,i) => `${i===0?"M":"L"}${sx(p.amt).toFixed(1)},${sy(Math.min(p.ratio, yMax)).toFixed(1)}`).join(" ");
-  let crossAmt = null;
-  for (let i = 0; i < data.length - 1; i++) {
-    if (data[i].ratio >= pensionReturn && data[i+1].ratio < pensionReturn) {
-      const t = (pensionReturn - data[i].ratio) / (data[i+1].ratio - data[i].ratio);
-      crossAmt = data[i].amt + t * (data[i+1].amt - data[i].amt);
-      break;
-    }
-  }
+  // Clamp plotted points to yMax so an outlier flattens visually at the top of
+  // the chart instead of stretching the axis.
+  const toPath = key => data.map((p,i) => `${i===0?"M":"L"}${sx(p.amt).toFixed(1)},${sy(Math.min(p[key], yMax)).toFixed(1)}`).join(" ");
   const yTicks = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5].filter(r => r >= yMin && r <= yMax + 0.05);
-  const xTicks = [0, 0.5, 1].map(f => m.loanBal * f);
-  const crossX = crossAmt !== null ? sx(crossAmt) : null;
-  const crossY = sy(pensionReturn);
-  return { writeOffYr, pensionReturn, mortRate, mortReturn, data, yMax, yMin, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, crossAmt, crossX, crossY, yTicks, xTicks };
+  const xTicks = xTickFractions.map(f => m.loanBal * f);
+  return {
+    writeOffYr, loanRatePct: sl.slRatePct, pensionGrowthPct: sl.pensionGrowthPct, mortRate, mortReturn,
+    data, yMax, yMin, VW, VH, PL, PR, PT, PB, cW, cH, sx, sy,
+    path: toPath("ratio"), pensionPath: toPath("pension"), yTicks, xTicks,
+  };
 }
 
 // Projects low/central/high values at `horizonYears` for each way the user's

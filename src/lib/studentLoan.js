@@ -24,6 +24,10 @@ const PLAN2_MAX_VARIABLE = 0.03; // percentage points added by the time income r
 const PLAN2_RATE_CAP = 0.06;
 const PLAN5_RATE = 0.041; // = 2026/27 RPI, same figure as Plan 2's base
 const PLAN1_RATE = 0.032; // last published: 1 Sept 2025 – 31 Aug 2026 — verify against https://www.gov.uk/guidance/how-interest-is-calculated-plan-1
+// The same 6% a year the pension projections assume (pension.js) — duplicated
+// rather than imported, since pension.js → metrics.js → this file would make
+// the import circular. Keep in sync.
+const PENSION_GROWTH_PCT = 6;
 
 export function resolveSlRate(d, grossSalary) {
   if (+d.studentLoanRate > 0) return +d.studentLoanRate / 100;
@@ -78,19 +82,46 @@ export function calcStudentLoanScenario(d, m) {
   const willClear = clearYr !== null;
   totalRepaidProjected = Math.round(totalRepaidProjected);
 
-  const cashRate = +d.savingsRate || 4.2;
-  const effectiveBenefit = Math.round((slInterestRate*100 - cashRate) * 10) / 10; // % — overpaying vs holding cash
+  // Overpaying a loan that will clear anyway earns its interest rate,
+  // guaranteed, until the date it would have cleared. It's weighed against:
+  //  - Savings: the best rate available (m.bestSavingsRate — the live best
+  //    Cash ISA rate, tax-free like the interest overpaying saves), or the
+  //    user's own rate if that's higher. Not their own rate alone: Cash &
+  //    savings already counts the gain from moving to a better account, so a
+  //    poor current rate would count that gain twice.
+  //  - Pension: tax relief doesn't decide it. £1 paid into a pension now gets
+  //    relief now; overpay instead and the loan clears sooner, freeing up money
+  //    that gets the same relief when it goes into the pension then. With the
+  //    same tax rate either way the relief cancels out, leaving the pension's
+  //    assumed growth against the loan's rate. A tie goes to overpaying — its
+  //    return is guaranteed, the pension's isn't.
+  const cashRate = Math.round(Math.max(m.bestSavingsRate ?? 0, m.effectiveSavingsRate || 0) * 100) / 100;
+  const effectiveBenefit = Math.round((slInterestRate*100 - cashRate) * 10) / 10; // % — overpaying vs the best savings rate
+  const pensionGap = Math.round((slRatePct - PENSION_GROWTH_PCT) * 10) / 10; // % — overpaying vs the pension's growth
+  const beatsPension = pensionGap >= 0;
+  const worthOverpaying = willClear && effectiveBenefit > 0 && beatsPension;
   // A genuine £/yr figure: the rate differential applied to the current balance
   // — same shape as Cash's annualYieldGap (rate gap × principal) — rather than a
   // one-off lump sum, so it stays comparable to every other module's £/yr amount.
-  const overpayAnnualBenefit = (willClear && effectiveBenefit > 0) ? Math.round(m.loanBal * effectiveBenefit / 100) : 0;
+  const overpayAnnualBenefit = worthOverpaying ? Math.round(m.loanBal * effectiveBenefit / 100) : 0;
 
   return {
     writeOffYr, threshold, slInterestRate, slRatePct, annualInterest, annualRep,
     belowThreshold, netAnnualChange, balanceGrowing, inflectionSalary, salaryGapToInflection,
     clearYr, writeOffBal: Math.round(writeOffBal), willClear, totalRepaidProjected,
-    cashRate, effectiveBenefit, overpayAnnualBenefit,
+    cashRate, effectiveBenefit, pensionGrowthPct: PENSION_GROWTH_PCT, pensionGap, beatsPension,
+    worthOverpaying, overpayAnnualBenefit,
   };
+}
+
+// One-line verdict on overpaying vs the pension, like for like (see
+// calcStudentLoanScenario for why tax relief cancels out) — shared by the
+// desktop and mobile deep dives' repay-vs-pension charts.
+export function describeLoanVsPension(sl) {
+  const { slRatePct: loan, pensionGrowthPct: pension, pensionGap } = sl;
+  if (pensionGap > 0) return `This loan's ${loan}% beats the ${pension}% a year your pension is assumed to grow — and overpaying's return is guaranteed.`;
+  if (pensionGap === 0) return `Level: this loan's ${loan}% matches the ${pension}% a year your pension is assumed to grow. Overpaying's return is guaranteed; the pension's isn't.`;
+  return `Your pension is assumed to grow ${pension}% a year — faster than this loan's ${loan}%, so it beats overpaying.`;
 }
 
 // ── Overpayment scenario cards — "what would repaying £5k/£10k/£20k today
