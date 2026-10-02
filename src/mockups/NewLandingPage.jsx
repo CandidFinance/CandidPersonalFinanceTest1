@@ -187,7 +187,7 @@ export default function NewLandingPage() {
       if (!el) return;
       const docTop = el.getBoundingClientRect().top + window.scrollY;
       const h = el.offsetHeight;
-      phoneFade.current = { start: Math.max(0, docTop + h - window.innerHeight), length: Math.max(h * 1.8, 1) };
+      phoneFade.current = { start: Math.max(0, docTop + h - window.innerHeight), length: Math.max(h * 1.5, 1) };
     }
     measure();
     window.addEventListener("resize", measure);
