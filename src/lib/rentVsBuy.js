@@ -41,6 +41,10 @@ const MAX_HORIZON_YEARS = 40;
 export const SELLING_COSTS_PCT = 1.5;
 // Candid's own assumption, not a published figure.
 export const MODERATE_HOUSE_PRICE_GROWTH_PCT = 3.0;
+// House price and rent growth can be negative, to see what falling prices
+// or rents do, but not below this: at -100% or less the compounding stops
+// meaning anything.
+export const MIN_GROWTH_PCT = -50;
 // Where the renter's money sits. "cash" (the default) earns the better of
 // the blended rate on the user's own cash savings, Premium Bonds and Cash
 // ISAs (cashRate) and the best savings rate Candid tracks (savings_rates,
@@ -236,6 +240,11 @@ export function calcRentVsBuy(input) {
       buyerWealth: propertyValue * (1 - SELLING_COSTS_PCT / 100) - mortgageBalance,
       renterWealth,
       propertyValue, mortgageBalance,
+      // Below zero is negative equity: the home is worth less than the loan.
+      equity: propertyValue - mortgageBalance,
+      // What selling would leave to pay from savings, after the mortgage and
+      // selling costs: nothing unless buyerWealth is below zero.
+      saleShortfall: Math.max(0, -(propertyValue * (1 - SELLING_COSTS_PCT / 100) - mortgageBalance)),
       buyerMonthlyCost: costs.monthlyTotal, monthlyRent: rent, taxPaid,
       buying: {
         stampDutyAndFees: oneOff,
@@ -268,6 +277,7 @@ export function calcRentVsBuy(input) {
     years: rows,
     horizonYears: years,
     breakevenYear: breakeven ? breakeven.year : null,
+    negativeEquityYears: rows.filter(r => r.equity < 0).map(r => r.year),
     // Positive: buying ahead at the horizon; negative: renting ahead.
     gapAtHorizon: last.buyerWealth - last.renterWealth,
     firstYearCosts: buyerYearCosts(input, schedule.years[0] || null, 1),
@@ -311,7 +321,7 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
   const b = borrowingInputs(d, m);
   const r = calcBorrowingCheck(b);
   const regional = regionalRates(d.propertyRegion, regionalRows);
-  const moderateGrowth = filled(d.propertyHousePriceGrowth) ? +d.propertyHousePriceGrowth : MODERATE_HOUSE_PRICE_GROWTH_PCT;
+  const moderateGrowth = filled(d.propertyHousePriceGrowth) ? Math.max(MIN_GROWTH_PCT, +d.propertyHousePriceGrowth) : MODERATE_HOUSE_PRICE_GROWTH_PCT;
   const housePriceGrowthPct = scenario === "stress"
     ? Math.min(regional ? regional.housePriceGrowthPct : moderateGrowth, moderateGrowth)
     : moderateGrowth;
@@ -370,7 +380,7 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
     groundRentGrowthPct: +d.propertyGroundRentGrowth || 0,
     serviceCharge: +d.propertyServiceCharge || 0,
     monthlyRent: +d.propertyMonthlyRent || 0,
-    rentGrowthPct: filled(d.propertyRentGrowth) ? +d.propertyRentGrowth : (regional ? regional.rentGrowthPct : UK_RENT_GROWTH_PCT),
+    rentGrowthPct: filled(d.propertyRentGrowth) ? Math.max(MIN_GROWTH_PCT, +d.propertyRentGrowth) : (regional ? regional.rentGrowthPct : UK_RENT_GROWTH_PCT),
     returnType,
     ownCashRatePct,
     bestCashRatePct,

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcRentVsBuy, rentVsBuyInputs, partnerSavingsEstimate, cashRate, SELLING_COSTS_PCT } from "./rentVsBuy.js";
+import { calcRentVsBuy, rentVsBuyInputs, partnerSavingsEstimate, cashRate, SELLING_COSTS_PCT, MIN_GROWTH_PCT } from "./rentVsBuy.js";
 import { mortgageSchedule } from "./mortgage.js";
 import { calcMetrics } from "./metrics.js";
 
@@ -307,4 +307,40 @@ test("cash rate: the user's own rate is kept when it's better, or the best isn't
 test("cash rate: the user's own figure wins over both", () => {
   const d = { ...saved, propertyCashReturn: "3" };
   assert.equal(rentVsBuyInputs(d, calcMetrics(d), null, "moderate", { nonIsaRate: 5 }).investmentReturnPct, 3);
+});
+
+// ── Falling prices and negative equity ─────────────────────────────────────
+
+test("falling prices: negative growth is allowed, floored at MIN_GROWTH_PCT", () => {
+  const fall = { ...saved, propertyHousePriceGrowth: "-5", propertyRentGrowth: "-2" };
+  const i = rentVsBuyInputs(fall, calcMetrics(fall), null);
+  assert.equal(i.housePriceGrowthPct, -5);
+  assert.equal(i.rentGrowthPct, -2);
+  const extreme = { ...saved, propertyHousePriceGrowth: "-150", propertyRentGrowth: "-120" };
+  const j = rentVsBuyInputs(extreme, calcMetrics(extreme), null);
+  assert.equal(j.housePriceGrowthPct, MIN_GROWTH_PCT);
+  assert.equal(j.rentGrowthPct, MIN_GROWTH_PCT);
+});
+
+test("negative equity: flagged when the home is worth less than the loan, with the shortfall on selling", () => {
+  // 10% deposit, prices falling 5% a year. Years 1-2: enough equity to
+  // sell. Year 3: still some equity, but not enough to cover selling costs.
+  // Years 4-5: worth less than the loan.
+  const r = calcRentVsBuy(base({ upfront: 30000 + 2500, housePriceGrowthPct: -5 }));
+  assert.deepEqual(r.negativeEquityYears, [4, 5]);
+  for (const y of r.years) {
+    near(y.equity, y.propertyValue - y.mortgageBalance, 1e-6);
+    near(y.saleShortfall, Math.max(0, -y.buyerWealth), 1e-6);
+  }
+  assert.deepEqual(r.years.map(y => y.saleShortfall > 0), [false, false, true, true, true]);
+  assert.ok(r.years[2].equity > 0);
+  // The fall shows as negative growth, so it's part of the cost of living there.
+  assert.ok(r.years[4].buying.priceRise < 0);
+  near(r.years[4].buying.netCost, r.years[4].buying.notRecovered - r.years[4].buying.priceRise, 1e-6);
+});
+
+test("negative equity: none when prices rise", () => {
+  const r = calcRentVsBuy(base());
+  assert.deepEqual(r.negativeEquityYears, []);
+  for (const y of r.years) assert.equal(y.saleShortfall, 0);
 });

@@ -19,7 +19,11 @@ function suffixInputWidth(text) {
   return `calc(${Math.max(1, text.length - dots)}ch + ${dots * 0.5}ch + 2px)`;
 }
 
-export default function PillMoneyInput({ label, value, onChange, unit = "£", placeholder = "0" }) {
+// `allowNegative` (% fields only) accepts a leading minus and adds a "±"
+// button at the pill's right end, since iOS's decimal keypad has no minus
+// key. The button sits after the input so the <label> still focuses the
+// input, not the button, when the pill is tapped.
+export default function PillMoneyInput({ label, value, onChange, unit = "£", placeholder = "0", allowNegative = false }) {
   // Thousands-formatting only makes sense for money; % and plain-number
   // fields (e.g. onboarding's Age) are always small values typed digit by
   // digit, so they skip it and allow a decimal point instead.
@@ -49,14 +53,26 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
           onFocus={() => { focused.current = true; }}
           onBlur={() => { focused.current = false; setDisplay(displayValue(value)); }}
           onChange={e => {
-            const raw = useThousands ? e.target.value.replace(/[^0-9]/g, "") : e.target.value.replace(/[^0-9.]/g, "");
+            let raw = useThousands ? e.target.value.replace(/[^0-9]/g, "") : e.target.value.replace(/[^0-9.-]/g, "");
+            if (!useThousands) raw = (allowNegative && raw.startsWith("-") ? "-" : "") + raw.replace(/-/g, "");
             setDisplay(useThousands ? (raw === "" ? "" : formatThousands(raw)) : raw);
-            onChange(raw === "" ? null : +raw);
+            onChange(raw === "" || isNaN(+raw) ? null : +raw);
           }}
           style={showSuffix
-            ? {border:"none",background:"none",fontSize:"16px",fontWeight:600,color:TEXT,width:suffixInputWidth(display || placeholder || "0"),maxWidth:"6ch",flex:"0 0 auto",outline:"none",padding:0}
+            ? {border:"none",background:"none",fontSize:"16px",fontWeight:600,color:TEXT,width:suffixInputWidth(display || placeholder || "0"),maxWidth:"7ch",flex:"0 0 auto",outline:"none",padding:0}
             : {border:"none",background:"none",fontSize:"16px",fontWeight:600,color:TEXT,width:"100%",outline:"none",padding:0}}/>
         {showSuffix && <span style={{fontSize:"16px",color:TEXT,fontWeight:600}}>%</span>}
+        {allowNegative && !useThousands && (
+          <button type="button" aria-label="Switch between a rise and a fall"
+            onClick={e => {
+              e.preventDefault();
+              const next = display.startsWith("-") ? display.slice(1) : `-${display}`;
+              setDisplay(next);
+              // A lone "-" waits for digits rather than clearing the field.
+              if (next !== "-" && !isNaN(+next)) onChange(next === "" ? null : +next);
+            }}
+            style={{marginLeft:"auto",flexShrink:0,background:"rgba(22,47,36,0.1)",color:TEXT,border:"none",borderRadius:"100px",padding:"1px 8px",fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",lineHeight:1.4}}>±</button>
+        )}
       </div>
     </label>
   );

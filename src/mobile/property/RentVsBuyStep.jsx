@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, CircleAlert } from "lucide-react";
 import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC, PillSlider } from "../../CandidApp.jsx";
 import { rentVsBuyInputs, calcRentVsBuy, ISA_ALLOWANCE, SELLING_COSTS_PCT } from "../../lib/rentVsBuy.js";
 import { STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
@@ -13,7 +13,7 @@ import PillCell from "./PillCell.jsx";
 
 const TENURE_OPTIONS = [{ value:"freehold", label:"Freehold" }, { value:"leasehold", label:"Leasehold" }];
 const MONEY_OPTIONS = [{ value:"cash", label:"Cash" }, { value:"invested", label:"Invested" }];
-const pct = n => `${Math.round(n * 10) / 10}%`;
+const pct = n => `${n < 0 ? "−" : ""}${Math.round(Math.abs(n) * 10) / 10}%`;
 const twoDp = n => Math.round(n * 100) / 100;
 const years = n => `${n} ${n === 1 ? "year" : "years"}`;
 
@@ -180,6 +180,47 @@ function Comparison({ heading, rows }) {
   );
 }
 
+// Shown when prices fall far enough that selling wouldn't clear the
+// mortgage: in negative equity (the home worth less than the loan) or with
+// too little equity left to cover selling costs. Names every year in
+// negative equity, so it shows even when the year selected isn't one of
+// them, then what selling in the selected year would leave to pay. A red
+// rule and icon, not a card: it's information, not a control.
+function NegativeEquity({ result, shown, fixedYears, rateOptionsShown }) {
+  const ne = result.negativeEquityYears;
+  if (!ne.length && !(shown.saleShortfall > 0)) return null;
+  const first = ne[0], last = ne[ne.length - 1];
+  const which = !ne.length ? null
+    : first === last ? `year ${first}`
+    : last - first === 1 ? `years ${first} and ${last}`
+    : `years ${first} to ${last}`;
+  const body = { fontSize:"12.5px", color:TEXT, lineHeight:1.5, margin:"4px 0 0" };
+  return (
+    <div style={{borderLeft:`3px solid ${SC.critical}`,padding:"2px 0 2px 10px",margin:"0 0 14px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",fontWeight:700,color:SC.critical}}>
+        <CircleAlert size={15} style={{flexShrink:0}}/>
+        {which ? `Negative equity in ${which}` : "Selling wouldn't clear the mortgage"}
+      </div>
+      {shown.equity < 0 ? (
+        <p style={body}>
+          After {years(shown.year)} the home would be worth {fmt(shown.propertyValue)}, {fmt(-shown.equity)} less than the {fmt(shown.mortgageBalance)} left on the mortgage. Selling then would mean paying {fmt(shown.saleShortfall)} from savings to clear the mortgage and selling costs.
+        </p>
+      ) : shown.saleShortfall > 0 ? (
+        <p style={body}>
+          After {years(shown.year)} the home would be worth {fmt(shown.propertyValue)}, only {fmt(shown.equity)} more than the mortgage. Selling costs would take that and more, leaving {fmt(shown.saleShortfall)} to pay from savings.
+        </p>
+      ) : (
+        <p style={body}>Tap {ne.length === 1 ? "that year" : "one of those years"} on the timeline to see what selling then would cost.</p>
+      )}
+      {ne.includes(fixedYears) && fixedYears < result.horizonYears && (
+        <p style={body}>
+          Your fix ends in year {fixedYears}, while the home is worth less than the loan. Lenders price new deals on the loan against the home's value, so the next rate is likely to be higher{rateOptionsShown ? ": Rates up shows the effect" : ""}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // Why the side ahead in a given year is ahead, in one line (the heading
 // above it already says which year).
 function whyText(row) {
@@ -270,8 +311,8 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
       {assumptionsOpen && (
         <div style={{marginTop:"10px"}}>
           <div style={{display:"flex",gap:"10px"}}>
-            <PillCell><PillMoneyInput label="House price growth" unit="%" value={input.housePriceGrowthPct || null} onChange={v => set("propertyHousePriceGrowth", v ?? "")}/></PillCell>
-            <PillCell><PillMoneyInput label="Rent growth" unit="%" value={input.rentGrowthPct || null} onChange={v => set("propertyRentGrowth", v ?? "")}/></PillCell>
+            <PillCell><PillMoneyInput label="House price growth" unit="%" allowNegative value={input.housePriceGrowthPct || null} onChange={v => set("propertyHousePriceGrowth", v ?? "")}/></PillCell>
+            <PillCell><PillMoneyInput label="Rent growth" unit="%" allowNegative value={input.rentGrowthPct || null} onChange={v => set("propertyRentGrowth", v ?? "")}/></PillCell>
           </div>
           <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
             <PillCell><div style={{flex:1,minWidth:0}}><PillSlider value={input.returnType} onChange={v => set("propertyRenterMoney", v)} options={MONEY_OPTIONS}/></div></PillCell>
@@ -334,10 +375,11 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
             </div>
             {framingOpen && (
               <p style={{...explainer,marginTop:"6px"}}>
-                Renting or buying, a home costs money to live in. Buying costs interest, upkeep and the costs of buying and selling, while the whole home rises in value. Renting costs rent, while your money grows elsewhere. Every figure is a total since the day you'd buy.
+                Renting or buying, a home costs money to live in. Buying costs interest, upkeep and the costs of buying and selling, while the whole home {input.housePriceGrowthPct < 0 ? "falls" : "rises"} in value. Renting costs rent, while your money grows elsewhere. Every figure is a total since the day you'd buy.
               </p>
             )}
             <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 12px"}}>{whyText(shown)}</p>
+            <NegativeEquity result={result} shown={shown} fixedYears={input.mortgage.fixedYears} rateOptionsShown={!!outcomes}/>
 
             <Comparison
               heading={shown.year === 1 ? "Year 1" : `Years 1 to ${shown.year}`}
@@ -362,7 +404,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
                     panel: earningsInfoOpen && (
                       <div style={explainer}>
                         <p style={{margin:0}}>
-                          Buying: the {shown.buying.priceRise >= 0 ? "rise" : "fall"} in the whole home's value, at {pct(input.housePriceGrowthPct)} a year.
+                          Buying: the {shown.buying.priceRise >= 0 ? "rise" : "fall"} in the whole home's value, at {pct(Math.abs(input.housePriceGrowthPct))} a year.
                         </p>
                         <p style={{margin:"6px 0 0"}}>
                           Renting: the growth in wealth from money not going into the property, {cash ? "interest" : "investment returns"} of {fmt(shown.renting.earnings)}, less {fmt(shown.renting.tax)} in tax. That's on the {fmt(input.upfront)} kept {cash ? "in cash" : "invested"} instead of spent on the deposit, stamp duty and fees, plus what's put aside each month instead of the buyer's higher costs.
@@ -386,7 +428,11 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
                     panel: ownInfoOpen && (
                       <div style={explainer}>
                         <p style={{margin:0}}>Still yours either way, so not a cost.</p>
-                        <p style={{margin:"6px 0 0"}}>Buying: your deposit and the loan paid off, which you get back when you sell.</p>
+                        <p style={{margin:"6px 0 0"}}>
+                          {shown.buying.priceRise >= 0
+                            ? "Buying: your deposit and the loan paid off, which you get back when you sell."
+                            : "Buying: your deposit and the loan paid off. The fall in the home's value comes out of this when you sell, which is why it's counted under Growth."}
+                        </p>
                         <p style={{margin:"6px 0 0"}}>
                           {shown.renting.ownMoneyIn > 0
                             ? `Renting: the ${fmt(input.upfront)} you didn't spend on buying, ${shown.renting.ownMoneyIn >= input.upfront ? "plus" : "less"} ${fmt(Math.abs(shown.renting.ownMoneyIn - input.upfront))} ${shown.renting.ownMoneyIn >= input.upfront ? "put aside" : "taken out to cover the higher rent"}.`
