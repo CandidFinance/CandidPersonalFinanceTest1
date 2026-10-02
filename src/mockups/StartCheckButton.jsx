@@ -21,7 +21,7 @@ export function appEntryPath() {
 
 // Main marketing CTA: one click straight into the app, no sign-up. `source`
 // tags which section of the site it was clicked from in analytics.
-export default function StartCheckButton({ source }) {
+export default function StartCheckButton({ source, label = "Start your free check" }) {
   const navigate = useNavigate();
 
   function start() {
@@ -39,7 +39,7 @@ export default function StartCheckButton({ source }) {
         fontSize: "15px", fontWeight: 700, color: WHITE, fontFamily: SANS, cursor: "pointer",
       }}
     >
-      Start your free check
+      {label}
     </motion.button>
   );
 }

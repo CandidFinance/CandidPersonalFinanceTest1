@@ -146,20 +146,6 @@ export default function NewSiteHeader() {
             );
           })}
         </nav>
-        <button
-          type="button"
-          className="nsh-cta-btn"
-          onClick={startCheck}
-          style={{
-            marginLeft: "auto", flexShrink: 0, alignItems: "center", gap: "7px",
-            background: "transparent", border: `1.5px solid ${G}`, borderRadius: "100px",
-            padding: "8px 18px", fontFamily: SANS, fontSize: "13px", fontWeight: 700,
-            color: G, cursor: "pointer",
-          }}
-        >
-          Start your free check
-        </button>
-
         {/* Mobile menu toggle — invisible/unreachable on desktop
             (.nsh-toggle above), takes over the far-right spot the start
             button occupies on desktop once that button is hidden. */}

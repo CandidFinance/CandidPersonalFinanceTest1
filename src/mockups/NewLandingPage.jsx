@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion, useInView, animate } from "framer-motion";
+import { motion, useReducedMotion, useInView, useScroll, useTransform, animate } from "framer-motion";
 import { ClipboardList, Scale, Search, Compass, GraduationCap, PoundSterling, Home as HomeIcon } from "lucide-react";
 import posthog from "posthog-js";
 import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
@@ -19,6 +19,14 @@ import { useEqualHeights } from "./useEqualHeights.js";
 // Every entrance animation on this page comes from ./motion.js, which
 // encodes the site's three themes — continual upward growth, slow and
 // steady, and simplicity emerging from complexity — see that file's comment.
+
+// Hero phone render edges: feathered sides intersected with feathered
+// top/bottom (see the hero's app render below). Stops are tuned to the crop
+// there, where the phone sits at roughly 28–72% across and 9–81% down.
+const PHONE_MASK = [
+  "linear-gradient(to right, transparent 0%, #000 12%, #000 90%, transparent 100%)",
+  "linear-gradient(to bottom, transparent 0%, #000 7%, #000 83%, transparent 100%)",
+].join(", ");
 
 const tileHover = {
   whileHover: { y: -4, boxShadow: "0 18px 40px rgba(22,47,36,0.14)", transition: { duration: 0.2, ease: EASE_STEADY } },
@@ -165,14 +173,53 @@ export default function NewLandingPage() {
 
   useEffect(() => { posthog.capture("landing_page_viewed"); }, []);
 
+  // Hero phone scroll-out: fades and blurs from the moment the render is
+  // fully on screen and the visitor scrolls further. On desktop it's fully
+  // visible on load, so the fade begins with the very first scroll; stacked
+  // under the copy on mobile, it waits until the phone has scrolled fully
+  // into view. Measured into a ref (re-measured on resize) rather than state,
+  // so the transforms below always read the latest value without re-binding.
+  const phoneRef = useRef(null);
+  const phoneFade = useRef({ start: 0, length: 500 });
+  useEffect(() => {
+    function measure() {
+      const el = phoneRef.current;
+      if (!el) return;
+      const docTop = el.getBoundingClientRect().top + window.scrollY;
+      const h = el.offsetHeight;
+      phoneFade.current = { start: Math.max(0, docTop + h - window.innerHeight), length: Math.max(h * 1.8, 1) };
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+  const { scrollY } = useScroll();
+  const phoneFadeProgress = useTransform(scrollY, v => {
+    const { start, length } = phoneFade.current;
+    return Math.min(Math.max((v - start) / length, 0), 1);
+  });
+  const phoneY = useTransform(phoneFadeProgress, [0, 1], [0, 160]);
+  const phoneOpacity = useTransform(phoneFadeProgress, [0, 1], [1, 0]);
+  const phoneFilter = useTransform(phoneFadeProgress, [0, 1], ["blur(0px)", "blur(14px)"]);
+
   return (
     <NewSiteLayout>
-      {/* ── HERO — a cascade, not one block: badge, headline, subhead, CTA
-          and trust line each rise in slightly after the last. ── */}
-      <div style={{ padding: "56px 24px 88px", textAlign: "center" }}>
+      {/* ── HERO — copy on the left, app render on the right (stacked on
+          narrow screens). The copy is a cascade, not one block: badge,
+          headline, subhead, CTA and trust line each rise in slightly after
+          the last. ── */}
+      <style>{`
+        .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+        @media (max-width: 860px) {
+          .hero-grid { grid-template-columns: 1fr; gap: 8px; }
+          .hero-phone { max-width: 440px; margin: 0 auto; width: 100%; }
+        }
+      `}</style>
+      <div style={{ padding: "56px 24px 88px" }}>
+        <div className="hero-grid" style={{ maxWidth: "1120px", margin: "0 auto" }}>
         <motion.div
           variants={heroStagger} initial={reduceMotion ? "visible" : "hidden"} animate="visible"
-          style={{ maxWidth: "680px", margin: "0 auto" }}
+          style={{ maxWidth: "580px" }}
         >
           <motion.div variants={heroItem} style={{
             display: "inline-block", background: "rgba(196,150,58,0.14)", color: "#8a6a24",
@@ -182,19 +229,52 @@ export default function NewLandingPage() {
             Free to use
           </motion.div>
           <motion.h1 variants={heroItem} style={{
-            fontFamily: SERIF, fontSize: "clamp(38px,6vw,58px)", fontWeight: 700,
+            fontFamily: SERIF, fontSize: "clamp(36px,5vw,54px)", fontWeight: 700,
             color: G, lineHeight: 1.12, letterSpacing: "-0.01em", marginBottom: "20px",
           }}>
-            Your finances,<br />trending in the <span style={{ color: G, fontWeight: 800 }}>right</span> direction.
+            Stop leaking wealth to tax traps and idle cash.
           </motion.h1>
-          <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 auto 40px" }}>
-            Candid finds the gaps, inefficiencies and missed allowances costing you thousands – then shows you exactly how to fix it.
+          <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 0 40px" }}>
+            Connect your finances in under 3 minutes to pinpoint exact tax-drag points and get a prioritised, calculation-first action plan.
           </motion.p>
           <motion.div variants={heroItem}>
-            <StartCheckButton source="hero" />
-            <div style={{ fontSize: "12px", color: MUT, marginTop: "14px" }}>No sign-up needed.</div>
+            <StartCheckButton source="hero" label="Optimise my money" />
+            <div style={{ fontSize: "12px", color: MUT, marginTop: "14px" }}>Free • No credit card required • Open Banking encrypted</div>
           </motion.div>
         </motion.div>
+
+        {/* App render. The PNG is a hand holding the phone on a cream
+            backdrop, so two masks stop it reading as a rectangle: one
+            feathers the sides into the page background, the other the top
+            and bottom, so the wrist never ends in a hard edge. On
+            scroll it lags behind the page (near-fixed), then blurs and fades
+            out before the stats section reaches it. */}
+        <motion.div
+          ref={phoneRef}
+          className="hero-phone"
+          initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.3, ease: EASE_STEADY }}
+        >
+          <motion.div style={reduceMotion ? undefined : { y: phoneY, opacity: phoneOpacity, filter: phoneFilter }}>
+            <div style={{
+              aspectRatio: "0.8", overflow: "hidden",
+              WebkitMaskImage: PHONE_MASK, maskImage: PHONE_MASK,
+              WebkitMaskComposite: "source-in", maskComposite: "intersect",
+            }}>
+              <img
+                src="/hero-phone.png" alt="The Candid app on an iPhone, showing the 'Tell us about you' step"
+                style={{
+                  width: "100%", height: "100%", objectFit: "cover", display: "block",
+                  // Zooms in on the phone, cropping the render's empty backdrop:
+                  // shows roughly x 360–1000, y 200–1000 of the 1600x1200 PNG.
+                  transform: "scale(1.5)", transformOrigin: "12.5% 50%",
+                }}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
+        </div>
       </div>
 
       {/* ── PROBLEM STATS ── */}
