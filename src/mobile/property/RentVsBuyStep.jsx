@@ -186,7 +186,13 @@ function Comparison({ heading, rows }) {
 // negative equity, so it shows even when the year selected isn't one of
 // them, then what selling in the selected year would leave to pay. A red
 // rule and icon, not a card: it's information, not a control.
-function NegativeEquity({ result, shown, fixedYears, rateOptionsShown }) {
+//
+// A fix ending in negative equity doesn't raise the remortgage rate by
+// itself: staying with the same lender on a new deal is usually possible,
+// and how much more it costs varies too much to pick one figure. Instead the
+// note links to the Rates up option (onShowRatesUp, null when there's no
+// rate choice), which the user can see applied above.
+function NegativeEquity({ result, shown, fixedYears, onShowRatesUp, ratesUpShown }) {
   const ne = result.negativeEquityYears;
   if (!ne.length && !(shown.saleShortfall > 0)) return null;
   const first = ne[0], last = ne[ne.length - 1];
@@ -214,7 +220,10 @@ function NegativeEquity({ result, shown, fixedYears, rateOptionsShown }) {
       )}
       {ne.includes(fixedYears) && fixedYears < result.horizonYears && (
         <p style={body}>
-          Your fix ends in year {fixedYears}, while the home is worth less than the loan. Lenders price new deals on the loan against the home's value, so the next rate is likely to be higher{rateOptionsShown ? ": Rates up shows the effect" : ""}.
+          Your fix ends in year {fixedYears}, while the home is worth less than the loan. Staying with your lender on a new deal is usually possible, but rates for loans above the home's value tend to be higher.
+          {onShowRatesUp && (ratesUpShown
+            ? " The figures above assume rates up."
+            : <> <button type="button" onClick={onShowRatesUp} style={{background:"none",border:"none",padding:0,color:G,fontSize:"inherit",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>See it with rates up</button></>)}
         </p>
       )}
     </div>
@@ -379,7 +388,8 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
               </p>
             )}
             <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 12px"}}>{whyText(shown)}</p>
-            <NegativeEquity result={result} shown={shown} fixedYears={input.mortgage.fixedYears} rateOptionsShown={!!outcomes}/>
+            <NegativeEquity result={result} shown={shown} fixedYears={input.mortgage.fixedYears}
+              onShowRatesUp={outcomes ? () => setRateScenario("stress") : null} ratesUpShown={rateScenario === "stress"}/>
 
             <Comparison
               heading={shown.year === 1 ? "Year 1" : `Years 1 to ${shown.year}`}
