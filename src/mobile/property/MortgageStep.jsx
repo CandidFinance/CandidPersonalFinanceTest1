@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ChevronRight } from "lucide-react";
 import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
@@ -14,33 +14,93 @@ import PillSelect from "./PillSelect.jsx";
 
 const FIXED_OPTIONS = FIXED_PERIOD_OPTIONS.map(y => ({ value:String(y), label:`${y} years` }));
 const pctText = n => `${Math.round(n * 100) / 100}%`;
-const OUTCOME_TEXT = {
-  stress: `${STRESS_REMORTGAGE_UPLIFT} points higher`,
-  moderate: "The same",
-  lower: `${STRESS_REMORTGAGE_UPLIFT} points lower`,
-};
+const COLUMN_MIN = "140px";
+
+// The monthly repayment over the term: flat for the fixed period, then
+// three lines from the first remortgage, for rates 1.5 points higher, the
+// same, or 1.5 points lower by then. Each scenario keeps that rate for every
+// later remortgage, so its payment stays flat (mortgageSchedule). The
+// figures sit in a right-hand gutter, nudged apart so they never overlap.
+// Measured in real pixels so the viewBox matches the rendered width 1:1
+// (same approach as NetCostChart in RentVsBuyStep).
+function RepaymentPath({ payment, fixedYears, termYears, outcomes }) {
+  const wrapRef = useRef(null);
+  const [width, setWidth] = useState(320);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const update = () => setWidth(el.clientWidth || 320);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const colour = { stress: SC.critical, moderate: TEXT, lower: SC.ok };
+  const H = 112, PT = 14, PB = 14, GUTTER = 66, LABEL_GAP = 30;
+  const plotW = Math.max(60, width - GUTTER);
+  const vals = [payment, ...outcomes.map(o => o.monthlyPayment)];
+  const hi = Math.max(...vals), lo = Math.min(...vals);
+  const span = Math.max(hi - lo, hi * 0.1);
+  const top = hi + span * 0.08, bottom = lo - span * 0.08;
+  const y = v => PT + (1 - (v - bottom) / (top - bottom)) * (H - PT - PB);
+  const fx = (fixedYears / termYears) * plotW;
+  // Label positions, highest payment first, pushed down until 30px apart.
+  const labels = [...outcomes].sort((a, b) => b.monthlyPayment - a.monthlyPayment).map(o => ({ ...o, top: y(o.monthlyPayment) }));
+  labels.forEach((l, i) => { if (i > 0) l.top = Math.max(l.top, labels[i - 1].top + LABEL_GAP); });
+  const axis = { position:"absolute", top:0, fontSize:"10.5px", color:MUT, whiteSpace:"nowrap" };
+  return (
+    <div ref={wrapRef} style={{marginTop:"14px"}}>
+      <div style={{fontSize:"11.5px",color:MUT,marginBottom:"4px"}}>If rates have moved when you remortgage</div>
+      <div style={{position:"relative",height:`${Math.max(H, labels.at(-1).top + 22)}px`}}>
+        <svg width={plotW} height={H} viewBox={`0 0 ${plotW} ${H}`} style={{display:"block",overflow:"visible"}}>
+          <line x1={fx} x2={fx} y1={4} y2={H - 4} stroke="rgba(22,47,36,0.2)" strokeWidth="1" strokeDasharray="3 3"/>
+          {outcomes.map(o => (
+            <path key={o.scenario} d={`M${fx},${y(payment)} L${fx + 8},${y(o.monthlyPayment)} L${plotW},${y(o.monthlyPayment)}`}
+              fill="none" stroke={colour[o.scenario]} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+          ))}
+          <path d={`M0,${y(payment)} L${fx},${y(payment)}`} fill="none" stroke={G} strokeWidth="3" strokeLinecap="round"/>
+        </svg>
+        {labels.map(l => (
+          <div key={l.scenario} style={{position:"absolute",left:`${plotW + 8}px`,top:`${l.top - 9}px`,lineHeight:1.15}}>
+            <div style={{fontSize:"13px",fontWeight:700,color:colour[l.scenario]}}>{fmt(l.monthlyPayment)}</div>
+            <div style={{fontSize:"10.5px",color:MUT}}>at {pctText(l.ratePct)}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{position:"relative",height:"14px",width:`${plotW}px`,marginTop:"2px"}}>
+        {/* The remortgage year always shows; "Now" only if there's room
+            before it. */}
+        {fx > 60 && <span style={{...axis,left:0}}>Now</span>}
+        <span style={{...axis,left:`${Math.max(fx, 20)}px`,transform:"translateX(-50%)"}}>Year {fixedYears + 1}</span>
+        {plotW - fx > 70 && <span style={{...axis,right:0}}>Year {termYears}</span>}
+      </div>
+    </div>
+  );
+}
 
 export default function MortgageStep({ d, m, set, onContinue }) {
   const [infoOpen, setInfoOpen] = useState(false);
-  const [outcomesOpen, setOutcomesOpen] = useState(false);
-  const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
+  const [totalInfoOpen, setTotalInfoOpen] = useState(false);
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
+  const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
+  const columns = { display:"flex", gap:"10px", flexWrap:"wrap" };
 
   const loan = calcBorrowingCheck(borrowingInputs(d, m)).loanNeeded;
   const input = mortgageInputs(d, loan);
   const s = mortgageSummary(input);
+  const totalCost = loan + s.totalInterest + s.totalFees;
 
   return (
     <div>
       <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Your mortgage</div>
 
-      <div style={{display:"flex",gap:"10px"}}>
-        <PillCell><PillMoneyInput label="Term (years)" unit="" value={input.termYears} onChange={v => set("propertyMortgageTerm", v ?? "")}/></PillCell>
-        <PillCell><PillMoneyInput label="Mortgage rate" unit="%" value={input.ratePct || null} onChange={v => set("propertyMortgageRate", v ?? "")}/></PillCell>
+      <div style={columns}>
+        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Term (years)" unit="" value={input.termYears} onChange={v => set("propertyMortgageTerm", v ?? "")}/></PillCell>
+        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Mortgage rate" unit="%" value={input.ratePct || null} onChange={v => set("propertyMortgageRate", v ?? "")}/></PillCell>
       </div>
-      <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
-        <PillCell><PillSelect label="Fixed for" value={String(input.fixedYears)} onChange={v => set("propertyFixedYears", v)} options={FIXED_OPTIONS}/></PillCell>
-        <PillCell><PillMoneyInput label="Remortgage fee" value={input.remortgageFee || null} onChange={v => set("propertyRemortgageFee", v ?? "")}/></PillCell>
+      <div style={{...columns,marginTop:"10px"}}>
+        <PillCell min={COLUMN_MIN}><PillSelect label="Fixed for" value={String(input.fixedYears)} onChange={v => set("propertyFixedYears", v)} options={FIXED_OPTIONS}/></PillCell>
+        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Remortgage fee" value={input.remortgageFee || null} onChange={v => set("propertyRemortgageFee", v ?? "")}/></PillCell>
       </div>
 
       <div style={{marginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px"}}>
@@ -48,48 +108,41 @@ export default function MortgageStep({ d, m, set, onContinue }) {
           <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:0}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
         ) : (
           <>
-            <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"10px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+            <div style={figureLabel}>
               Monthly repayment
               <InfoButton open={infoOpen} onClick={() => setInfoOpen(o => !o)}/>
             </div>
             <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:TEXT,lineHeight:1.2}}>{fmt(s.monthlyPayment)}</div>
-            <div style={{fontSize:"12.5px",color:MUT,marginTop:"2px"}}>For the first {input.fixedYears} years at {pctText(input.ratePct)}</div>
+            <div style={{fontSize:"12.5px",color:MUT,marginTop:"2px"}}>
+              {s.remortgageOutcomes ? `For the first ${input.fixedYears} years at ${pctText(input.ratePct)}` : `At ${pctText(input.ratePct)}, fixed for the whole term`}
+            </div>
             {infoOpen && (
               <p style={{...explainer,marginTop:"10px"}}>
-                Capital and interest, so the loan is paid off over {input.termYears} years. At the end of each fixed period Candid assumes you remortgage at today's rate and pay the fee from cash.
+                Capital and interest, so the loan is paid off over {input.termYears} years.{s.remortgageOutcomes ? ` When each fix ends, Candid assumes you remortgage onto a new ${input.fixedYears}-year deal and pay the fee from cash. The lines show the repayment from year ${s.firstRemortgageYear} if rates are then ${STRESS_REMORTGAGE_UPLIFT} points higher, the same, or ${STRESS_REMORTGAGE_UPLIFT} points lower.` : ""}
               </p>
             )}
-            {/* What the payment could be at the first remortgage, if rates have
-                moved 1.5 points either way or not at all. */}
             {s.remortgageOutcomes && (
-              <>
-                <button type="button" onClick={() => setOutcomesOpen(o => !o)} aria-expanded={outcomesOpen} style={{
-                  marginTop:"12px", background:"transparent", border:"1.3px solid rgba(22,47,36,0.25)", borderRadius:"100px",
-                  padding:"6px 12px", fontSize:"12.5px", fontWeight:600, color:G, fontFamily:"inherit", cursor:"pointer",
-                  display:"inline-flex", alignItems:"center", gap:"4px",
-                }}>
-                  From year {s.firstRemortgageYear}
-                  <ChevronDown size={14} style={{transform:outcomesOpen ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
-                </button>
-                {outcomesOpen && (
-                  <div style={{...explainer,marginTop:"8px",color:TEXT}}>
-                    <div style={{color:MUT,marginBottom:"4px"}}>If rates have moved when you remortgage:</div>
-                    {s.remortgageOutcomes.map(o => (
-                      <div key={o.scenario} style={{display:"flex",justifyContent:"space-between",gap:"10px",padding:"3px 0",fontSize:"12.5px"}}>
-                        <span>{OUTCOME_TEXT[o.scenario]} ({pctText(o.ratePct)})</span>
-                        <span style={{fontWeight:600}}>{fmt(o.monthlyPayment)} a month</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
+              <RepaymentPath payment={s.monthlyPayment} fixedYears={input.fixedYears} termYears={input.termYears} outcomes={s.remortgageOutcomes}/>
             )}
 
-            <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>
-            <div style={row}><span>Loan</span><span>{fmt(loan)}</span></div>
-            <div style={row}><span>Term</span><span>{input.termYears} years</span></div>
-            <div style={row}><span>Remortgages</span><span>{s.remortgages > 0 ? `${s.remortgages}, ${fmt(s.totalFees)} in fees` : "None"}</span></div>
-            <div style={row}><span>Interest over the term</span><span>{fmt(s.totalInterest)}</span></div>
+            <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 12px"}}/>
+            <div style={{display:"flex",gap:"12px"}}>
+              {[
+                { label:"Loan", value:loan },
+                { label:"Interest", value:s.totalInterest },
+                { label:"Total cost", value:totalCost, info:<InfoButton open={totalInfoOpen} onClick={() => setTotalInfoOpen(o => !o)}/> },
+              ].map(c => (
+                <div key={c.label} style={{flex:1,minWidth:0}}>
+                  <div style={figureLabel}>{c.label}{c.info}</div>
+                  <div style={{fontSize:"15px",fontWeight:700,color:TEXT,marginTop:"2px"}}>{fmt(c.value)}</div>
+                </div>
+              ))}
+            </div>
+            {totalInfoOpen && (
+              <p style={{...explainer,marginTop:"10px"}}>
+                The {fmt(loan)} loan plus {fmt(s.totalInterest)} of interest over {input.termYears} years{s.remortgages > 0 ? `, and ${s.remortgages} remortgage ${s.remortgages === 1 ? "fee" : "fees"} of ${fmt(input.remortgageFee)} (${fmt(s.totalFees)})` : ""}.{s.remortgages > 0 ? ` This assumes rates stay at ${pctText(input.ratePct)}; higher or lower rates at each remortgage change the interest.` : ""}
+              </p>
+            )}
           </>
         )}
       </div>
