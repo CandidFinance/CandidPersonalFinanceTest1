@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Plus, Minus } from "lucide-react";
 import { G, MUT, TEXT, SERIF, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
@@ -93,19 +94,28 @@ function StampDutyBreakdown({ sd, style }) {
 
 const BUYING_MODE_OPTIONS = [{ value:"alone", label:"Alone" }, { value:"together", label:"Together" }];
 
+// The narrowest a column gets before a two-column row wraps to one: two
+// columns and the gap between them fit on any phone 360px or wider.
+const COLUMN_MIN = "140px";
+
 // All of step 1's inputs, in order: alone or together and where (one row),
-// the partner's figures when buying together, first-time buyer status,
-// whether it's the only home, then price, cash available and fees (plus
-// stamp duty by hand for Scotland and Wales). The loan they produce is
-// LoanTile, further down the screen. Every row sits in PillCells so right
-// edges line up with the "?" slot.
+// first-time buyer and sole property (one row), the partner's figures when
+// buying together (their first-time buyer answer among them), then price
+// and cash available, with stamp duty by hand for Scotland and Wales. Fees
+// sit in a collapsed "Advanced settings", defaulting to
+// DEFAULT_PROPERTY_FEES. The loan they produce is LoanTile, further down the
+// screen. Every row sits in PillCells so right edges line up with the "?"
+// slot.
 export function PurchaseInputs({ d, m, set }) {
   const [cashInfoOpen, setCashInfoOpen] = useState(false);
   const [firstTimeInfoOpen, setFirstTimeInfoOpen] = useState(false);
+  const [soleInfoOpen, setSoleInfoOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const caption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, margin:0 };
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"flex", alignItems:"center", gap:"6px" };
-  const whoLabel = { fontSize:"11px", color:MUT, marginBottom:"5px" };
+  const columns = { display:"flex", gap:"10px", flexWrap:"wrap" };
+  const column = { flex:1, minWidth:COLUMN_MIN };
   const input = borrowingInputs(d, m);
   const together = input.incomes.length > 1;
   const cashPot = m.totalLiquid + cashIsaBalance(d);
@@ -124,54 +134,62 @@ export function PurchaseInputs({ d, m, set }) {
         <PillCell grow={2}><PillSelect value={d.propertyRegion} onChange={v => set("propertyRegion", v)} options={PROPERTY_REGIONS} placeholder="Location"/></PillCell>
       </div>
 
+      <div style={{...columns,marginTop:"18px"}}>
+        <div style={column}>
+          <div style={fieldLabel}>
+            First-time buyer?
+            <InfoButton open={firstTimeInfoOpen} onClick={() => setFirstTimeInfoOpen(o => !o)}/>
+          </div>
+          <PillCell>{toggle(d.propertyFirstTimeBuyer || "", v => set("propertyFirstTimeBuyer", v))}</PillCell>
+        </div>
+        <div style={column}>
+          <div style={fieldLabel}>
+            Sole property?
+            <InfoButton open={soleInfoOpen} onClick={() => setSoleInfoOpen(o => !o)}/>
+          </div>
+          <PillCell>{toggle(d.propertySoleProperty || "yes", v => set("propertySoleProperty", v))}</PillCell>
+        </div>
+      </div>
+      {firstTimeInfoOpen && (
+        <p style={{...explainer,marginTop:"8px"}}>
+          Someone who has never owned a home, in the UK or anywhere else. In England and Northern Ireland, first-time buyers pay no stamp duty up to £300,000 and 5% on the part from £300,001 to £500,000, on homes of £500,000 or less.{together ? " Buying together, you both need to be first-time buyers to get this." : ""}
+        </p>
+      )}
+      {soleInfoOpen && (
+        <p style={{...explainer,marginTop:"8px"}}>
+          Whether this will be the only home {together ? "either of you owns" : "you own"}, in the UK or anywhere else. Keeping another home means stamp duty in England and Northern Ireland includes a 5% surcharge on the whole price.
+        </p>
+      )}
+
       {together && (
         <div style={{marginTop:"18px"}}>
           <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px"}}>Your partner</div>
           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:"0 0 10px"}}>
             Used to check their employer match and ISA allowance, and added to your income for the borrowing check.
           </p>
-          <div style={{display:"flex",gap:"10px",marginBottom:"10px"}}>
-            <PillCell><PillMoneyInput label="Salary" value={+d.partnerSalary || null} onChange={v => set("partnerSalary", capField("salary", v ?? ""))}/></PillCell>
-            <PillCell><PillMoneyInput label="Other income" value={+d.partnerOtherIncome || null} onChange={v => set("partnerOtherIncome", capField("otherIncome", v ?? ""))}/></PillCell>
+          <div style={{...columns,marginBottom:"10px"}}>
+            <PillCell min={COLUMN_MIN}><PillMoneyInput label="Salary" value={+d.partnerSalary || null} onChange={v => set("partnerSalary", capField("salary", v ?? ""))}/></PillCell>
+            <PillCell min={COLUMN_MIN}><PillMoneyInput label="Other income" value={+d.partnerOtherIncome || null} onChange={v => set("partnerOtherIncome", capField("otherIncome", v ?? ""))}/></PillCell>
           </div>
-          <div style={{display:"flex",gap:"10px",marginBottom:"10px"}}>
-            <PillCell><PillMoneyInput label="Pension contribution" unit="%" value={d.partnerMyContribution || null} onChange={v => set("partnerMyContribution", capField("myContribution", v ?? ""))}/></PillCell>
-            <PillCell><PillMoneyInput label="Employer match cap" unit="%" value={d.partnerEmployerMatch || null} onChange={v => set("partnerEmployerMatch", capField("employerMatch", v ?? ""))}/></PillCell>
+          <div style={{...columns,marginBottom:"10px"}}>
+            <PillCell min={COLUMN_MIN}><PillMoneyInput label="Pension contribution" unit="%" value={d.partnerMyContribution || null} onChange={v => set("partnerMyContribution", capField("myContribution", v ?? ""))}/></PillCell>
+            <PillCell min={COLUMN_MIN}><PillMoneyInput label="Employer match cap" unit="%" value={d.partnerEmployerMatch || null} onChange={v => set("partnerEmployerMatch", capField("employerMatch", v ?? ""))}/></PillCell>
           </div>
-          <div style={{display:"flex",gap:"10px"}}>
-            <PillCell><PillMoneyInput label="ISA paid in this tax year" value={+d.partnerIsaThisYear || null} onChange={v => set("partnerIsaThisYear", capField("isaThisYearOther", v ?? ""))}/></PillCell>
+          {/* Bottom-aligned, so the ISA pill lines up with the toggle under
+              its label. */}
+          <div style={{...columns,alignItems:"flex-end"}}>
+            <PillCell min={COLUMN_MIN}><PillMoneyInput label="ISA paid in this tax year" value={+d.partnerIsaThisYear || null} onChange={v => set("partnerIsaThisYear", capField("isaThisYearOther", v ?? ""))}/></PillCell>
+            <div style={column}>
+              <div style={fieldLabel}>First-time buyer?</div>
+              <PillCell>{toggle(d.partnerFirstTimeBuyer || "", v => set("partnerFirstTimeBuyer", v))}</PillCell>
+            </div>
           </div>
         </div>
       )}
 
-      <div style={{...fieldLabel,marginTop:"18px"}}>
-        {together ? "First-time buyers?" : "First-time buyer?"}
-        <InfoButton open={firstTimeInfoOpen} onClick={() => setFirstTimeInfoOpen(o => !o)}/>
-      </div>
-      {firstTimeInfoOpen && (
-        <p style={{...explainer,marginBottom:"8px"}}>
-          Someone who has never owned a home, in the UK or anywhere else. In England and Northern Ireland, first-time buyers pay no stamp duty up to £300,000 and 5% on the part from £300,001 to £500,000, on homes of £500,000 or less.{together ? " Buying together, you both need to be first-time buyers to get this." : ""}
-        </p>
-      )}
-      <div style={{display:"flex",gap:"10px"}}>
-        {together ? (
-          <>
-            <PillCell><div style={{flex:1,minWidth:0}}><div style={whoLabel}>You</div>{toggle(d.propertyFirstTimeBuyer || "", v => set("propertyFirstTimeBuyer", v))}</div></PillCell>
-            <PillCell><div style={{flex:1,minWidth:0}}><div style={whoLabel}>Your partner</div>{toggle(d.partnerFirstTimeBuyer || "", v => set("partnerFirstTimeBuyer", v))}</div></PillCell>
-          </>
-        ) : (
-          <PillCell>{toggle(d.propertyFirstTimeBuyer || "", v => set("propertyFirstTimeBuyer", v))}</PillCell>
-        )}
-      </div>
-
-      <div style={{...fieldLabel,marginTop:"18px"}}>Will this be the only home {together ? "either of you owns" : "you own"}?</div>
-      <div style={{display:"flex",gap:"10px"}}>
-        <PillCell>{toggle(d.propertySoleProperty || "yes", v => set("propertySoleProperty", v))}</PillCell>
-      </div>
-
-      <div style={{display:"flex",gap:"10px",marginTop:"20px"}}>
-        <PillCell><PillMoneyInput label="Property price" value={+d.propertyPrice || null} onChange={v => set("propertyPrice", v ?? "")}/></PillCell>
-        <PillCell info={<InfoButton open={cashInfoOpen} onClick={() => setCashInfoOpen(o => !o)}/>}>
+      <div style={{...columns,marginTop:"20px"}}>
+        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Property price" value={+d.propertyPrice || null} onChange={v => set("propertyPrice", v ?? "")}/></PillCell>
+        <PillCell min={COLUMN_MIN} info={<InfoButton open={cashInfoOpen} onClick={() => setCashInfoOpen(o => !o)}/>}>
           <PillMoneyInput label="Cash available" value={input.cashAvailable || null} onChange={v => set("propertyCashAvailable", v ?? "")}/>
         </PillCell>
       </div>
@@ -180,13 +198,27 @@ export function PurchaseInputs({ d, m, set }) {
           Your cash savings, Premium Bonds and Cash ISAs ({fmt(cashPot)}) less {EMERGENCY_KEEP_BACK_MONTHS} months of expenses ({fmt(EMERGENCY_KEEP_BACK_MONTHS * m.expenses)}) kept back as an emergency fund: {fmt(suggested)}. Change it if some of that cash is set aside{together ? ", or to add your partner's savings" : ""}.
         </p>
       )}
-      <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
-        <PillCell><PillMoneyInput label="Legal & survey fees" value={input.fees || null} onChange={v => set("propertyFees", v ?? "")}/></PillCell>
-        {manualStampDuty
-          ? <PillCell><PillMoneyInput label="Stamp duty" value={+d.propertyStampDuty || null} onChange={v => set("propertyStampDuty", v ?? "")}/></PillCell>
-          : <div style={{flex:1}}/>}
+      {manualStampDuty && (
+        <>
+          <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
+            <PillCell><PillMoneyInput label="Stamp duty" value={+d.propertyStampDuty || null} onChange={v => set("propertyStampDuty", v ?? "")}/></PillCell>
+            <div style={{flex:1}}/>
+          </div>
+          <p style={{...caption,marginTop:"8px"}}>Candid works out stamp duty for England and Northern Ireland. Scotland and Wales have their own taxes, so enter yours if you know it.</p>
+        </>
+      )}
+
+      <div style={{display:"flex",justifyContent:"flex-end",marginTop:"8px"}}>
+        <button type="button" onClick={() => setAdvancedOpen(o => !o)} aria-expanded={advancedOpen} style={{background:"none",border:"none",padding:"4px 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"4px"}}>
+          {advancedOpen ? <Minus size={14}/> : <Plus size={14}/>}Advanced settings
+        </button>
       </div>
-      {manualStampDuty && <p style={{...caption,marginTop:"8px"}}>Candid works out stamp duty for England and Northern Ireland. Scotland and Wales have their own taxes, so enter yours if you know it.</p>}
+      {advancedOpen && (
+        <div style={{display:"flex",gap:"10px",marginTop:"6px"}}>
+          <PillCell><PillMoneyInput label="Legal & survey fees" value={input.fees || null} onChange={v => set("propertyFees", v ?? "")}/></PillCell>
+          <div style={{flex:1}}/>
+        </div>
+      )}
     </div>
   );
 }

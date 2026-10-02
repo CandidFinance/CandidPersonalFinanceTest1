@@ -152,8 +152,7 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"6px"}}>Before a deposit</div>
-      <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 12px"}}>Worth checking first, in this order.</p>
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Before a deposit</div>
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
         {checks.map(c => {
           const { Icon, color } = stateIcon(c.state);

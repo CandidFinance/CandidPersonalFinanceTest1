@@ -59,9 +59,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
         </div>
       ) : (
         <>
-          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"16px 0"}}>
-            Start with the purchase, then see what comes before a deposit and how much you'd need to borrow. Complete this step to unlock your mortgage and rent vs buy.
-          </p>
+          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"16px 0"}}>Set your baseline home purchase assumptions.</p>
 
           <PurchaseInputs d={d} m={m} set={set}/>
 
