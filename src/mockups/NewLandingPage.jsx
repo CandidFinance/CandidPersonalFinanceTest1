@@ -209,15 +209,22 @@ export default function NewLandingPage() {
           headline, subhead, CTA and trust line each rise in slightly after
           the last. ── */}
       <style>{`
-        .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+        .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+        /* Lines the top of the copy up with the top of the phone, which sits
+           11.25% of the column's width down the render (percentage padding on
+           a grid item resolves against its column's width, so this holds at
+           any desktop size). */
+        .hero-copy { padding-top: 11.25%; }
         @media (max-width: 860px) {
           .hero-grid { grid-template-columns: 1fr; gap: 8px; }
+          .hero-copy { padding-top: 0; }
           .hero-phone { max-width: 440px; margin: 0 auto; width: 100%; }
         }
       `}</style>
       <div style={{ padding: "56px 24px 88px" }}>
         <div className="hero-grid" style={{ maxWidth: "1120px", margin: "0 auto" }}>
         <motion.div
+          className="hero-copy"
           variants={heroStagger} initial={reduceMotion ? "visible" : "hidden"} animate="visible"
           style={{ maxWidth: "580px" }}
         >
