@@ -1,4 +1,4 @@
-import { calcBonusTaxBreakdown } from "./tax.js";
+import { calcBonusTaxBreakdown, calcIncomeTax } from "./tax.js";
 import { SALARY_GROWTH_RATES } from "./metrics.js";
 
 // ── User contributing to pension ────────────────────────────────────────────────────────
@@ -62,14 +62,20 @@ export function pensionReturnLabel(d, m) {
 // £125,140 60% marginal-rate zone maths, shared by computeModuleStatuses
 // (Dashboard figure) and the module's own opportunity strip/Win tile, so the
 // two can't disagree (same pattern as calcStudentLoanScenario above).
-// NB: taperSacrificeNeeded/taperNiSaving are only meaningful when inTaper is
-// true — outside the taper zone they're repurposed to describe "how far below
-// £100k you are" for messaging, so taperTotalSaving must always be gated on
-// inTaper before being treated as a real £/yr saving.
-export function calcPensionTaperSaving(m) {
+// NB: taperSacrificeNeeded/taperNiSaving are only meaningful when recoverable is
+// true — otherwise they're repurposed to describe "how far below £100k you are"
+// for messaging, so taperTotalSaving must always be gated on recoverable before
+// being treated as a real £/yr saving.
+// aaRoom: Annual Allowance left this tax year (calcAnnualAllowanceRoom) — the
+// recovery is only offered when the sacrifice it needs fits inside it.
+export function calcPensionTaperSaving(m, aaRoom = Infinity) {
   const taperStart = 100000, taperEnd = 125140;
   const ani = m.adjustedNetIncome;
   const inTaper = ani > taperStart && ani < taperEnd;
+  // Above £125,140 the allowance is already gone in full. Recovering it still
+  // means sacrificing all the way back to £100,000: 45% saved on the slice above
+  // £125,140, plus the 60% taper slice beneath it.
+  const aboveTaper = ani >= taperEnd;
   // Sacrifice needed to fully recover the Personal Allowance is the FULL gap back to
   // £100,000, 1-for-1 — not half of it. Every £1 sacrificed while ANI is still above
   // £100,000 saves 40% tax directly AND restores 50p of Personal Allowance (itself
@@ -78,11 +84,12 @@ export function calcPensionTaperSaving(m) {
   // not half of it. (Previously halved here, which underclaimed "recovers your full
   // Personal Allowance" by 2x — sacrificing half the gap only recovers half the
   // withdrawn allowance.)
-  const taperSacrificeNeeded = inTaper ? Math.ceil(ani - taperStart) : Math.max(0, taperStart - ani);
+  const taperSacrificeNeeded = (inTaper || aboveTaper) ? Math.ceil(ani - taperStart) : Math.max(0, taperStart - ani);
+  const recoverable = (inTaper || aboveTaper) && taperSacrificeNeeded <= aaRoom;
   const taperNiSaving = Math.round(taperSacrificeNeeded * 0.02);
-  const taperTaxSaving = inTaper ? Math.round(taperSacrificeNeeded * 0.60) : 0;
+  const taperTaxSaving = (inTaper || aboveTaper) ? calcIncomeTax(ani) - calcIncomeTax(taperStart) : 0;
   const taperTotalSaving = taperNiSaving + taperTaxSaving;
-  return { taperStart, taperEnd, ani, inTaper, taperSacrificeNeeded, taperNiSaving, taperTaxSaving, taperTotalSaving };
+  return { taperStart, taperEnd, ani, inTaper, aboveTaper, recoverable, taperSacrificeNeeded, taperNiSaving, taperTaxSaving, taperTotalSaving };
 }
 
 // ── Annual Allowance taper (high earners, £200k+ threshold income) — how far
@@ -119,6 +126,50 @@ export function calcAnnualAllowanceTaper(d, m) {
   const thresholdIncomeSacrificeToEscape = inAATaper ? Math.max(0, thresholdIncome - AA_THRESHOLD_INCOME_LIMIT) : 0;
   const showVctEis = inAATaper && (approxAA <= 20000 || thresholdIncomeSacrificeToEscape > salary * 0.3);
   return { thresholdIncome, adjustedIncome, inAATaper, approxAA, AA_THRESHOLD_INCOME_LIMIT, AA_ADJUSTED_INCOME_LIMIT, showVctEis };
+}
+
+// ── Annual Allowance room — how much more can go into a pension this tax year
+// without an allowance charge: the (possibly tapered) allowance minus what
+// regular contributions already put in (the user's own plus the employer's
+// matched share, as calcAnnualAllowanceTaper counts them). Carry forward isn't
+// included — it needs the last 3 years' contributions, which only the deep
+// dive's calculator asks for.
+export function calcAnnualAllowanceRoom(d, m) {
+  const aa = calcAnnualAllowanceTaper(d, m);
+  const myPct = isPensionContributing(d) ? (+d.myContribution || 0) : 0;
+  const employerPct = Math.min(myPct, +d.employerMatch || 0);
+  const currentInputs = Math.round(m.salary * (myPct + employerPct) / 100);
+  return {
+    approxAA: aa.approxAA, inAATaper: aa.inAATaper, currentInputs,
+    room: Math.max(0, aa.approxAA - currentInputs),
+    excess: Math.max(0, currentInputs - aa.approxAA),
+  };
+}
+
+// ── Bonus sacrifice — the income tax saved by sacrificing the stated bonus
+// into the pension, worked out band by band (a bonus can straddle the 40%,
+// 60% taper and 45% slices), and capped at the Annual Allowance room left,
+// since sacrificing past it just triggers an allowance charge.
+//   standalone:  sacrificing the bonus on its own (the deep dives' bonus win).
+//   beyondTaper: only the part not already counted in a recoverable Personal
+//                Allowance recovery (calcPensionTaperSaving), assuming that
+//                recovery comes out of the bonus first — what the Dashboard
+//                adds as potential on top of it, so the two never double count.
+export function calcBonusSacrificePotential(d, m) {
+  const bonus = Math.max(0, +d.bonusAmount || 0);
+  const { room } = calcAnnualAllowanceRoom(d, m);
+  const taper = calcPensionTaperSaving(m, room);
+  const ani = m.adjustedNetIncome;
+  const taxSaved = (from, amount) => amount > 0 ? calcIncomeTax(from) - calcIncomeTax(from - amount) : 0;
+
+  const standaloneSacrifice = Math.min(bonus, room);
+  const taperSacrifice = taper.recoverable ? taper.taperSacrificeNeeded : 0;
+  const beyondTaperSacrifice = Math.min(Math.max(0, bonus - taperSacrifice), Math.max(0, room - taperSacrifice));
+  return {
+    bonus, room, standaloneSacrifice,
+    standalone: taxSaved(ani, standaloneSacrifice),
+    beyondTaper: taxSaved(ani - taperSacrifice, beyondTaperSacrifice),
+  };
 }
 
 // ── Annual Allowance carry-forward — a member of a UK-registered pension

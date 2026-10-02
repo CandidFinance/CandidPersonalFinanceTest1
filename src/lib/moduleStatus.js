@@ -1,7 +1,7 @@
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby } from "lucide-react";
 import { fmt } from "./format.js";
 import { calcCashOptimisation } from "./cash.js";
-import { isPensionContributing, calcPensionTaperSaving } from "./pension.js";
+import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential } from "./pension.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
 
 export const MODULE_META = [
@@ -72,7 +72,10 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // same pattern).
   const cashSortPriority = cashImpact + Math.round(m.isaHeadroom * (isaRate / 100) * (isaUrgencyBoost - 1));
   const tooMuchCash = m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
-  const genuinelyLowCash = m.emergencyFund === 0 && m.expenses > 0;
+  // Emergency fund: any shortfall against the chosen buffer needs attention;
+  // less than one month of essential costs covered is critical.
+  const emergencyShort = m.emergencyShortfall > 0;
+  const emergencyCritical = m.expenses > 0 && m.emergencyFund < m.expenses;
   const accessType = d.cashAccessType || "partial";
   const accessOk = m.emergencyFund >= m.emergencyBuffer;
   // Emergency access warnings — only critical when truly no cash at all
@@ -92,6 +95,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     cashImpactLabel = cashImpact > 0
       ? `${fmt(cashImpact)}/yr in tax-efficiency gain available — ${fmt(Math.round(m.emergencyExcess))} of it sits above your buffer`
       : `${fmt(Math.round(m.emergencyExcess))} sits above your buffer, earning below its potential`;
+  } else if (emergencyShort) {
+    cashImpactLabel = `${fmt(Math.round(m.emergencyShortfall))} short of your ${m.bufferMonths}-month emergency fund`;
   } else if (accessLabel) {
     cashImpactLabel = accessLabel;
   } else if (cashImpact > 0) {
@@ -106,8 +111,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // is a principal, not an annual figure, and must never be used as the £/yr amount.
   const cashAmount = cashImpact > 0 ? cashImpact : 0; // accessLabel-only attention has no £ figure
   s.cash = {
-    status: tooMuchCash || cashImpact > 800 ? "critical"
-          : cashImpact > 200 || (genuinelyLowCash && accessType !== "yes") || (accessType === "no" && !accessOk) ? "attention" : "ok",
+    status: tooMuchCash || cashImpact > 800 || emergencyCritical ? "critical"
+          : cashImpact > 200 || emergencyShort ? "attention" : "ok",
     impact: cashSortPriority,
     impactLabel: cashImpactLabel,
     amount: cashAmount,
@@ -120,16 +125,26 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // (sort priority only, weighted by the same tax-year-end urgency multiplier as
   // Cash's cashSortPriority) and status/impactLabel, so a large unused allowance
   // still surfaces on the dashboard even with no CGT saving to report.
-  const isaSortWeight = Math.round(m.isaHeadroom * 0.07 * m.tr * isaUrgencyBoost);
+  // Unused allowance only counts as a gap when there's money that could fill it
+  // before 5 April: investments held outside an ISA, cash above the emergency
+  // buffer, or spare monthly income once any buffer shortfall is topped up.
+  // (The shortfall is only known when Cash & savings was picked — otherwise
+  // spare income is taken at face value.)
+  const cashSelected = (d.selectedModules || []).includes("cash");
+  const spareIncomeToTaxEnd = Math.max(0, m.monthlySurplus * (daysToTaxEnd / 30.44) - (cashSelected ? m.emergencyShortfall : 0));
+  const unwrappedInvestments = d.hasInvestments === "yes" ? (+d.unwrappedValue||0) : 0;
+  const isaFillable = Math.min(m.isaHeadroom, unwrappedInvestments + m.emergencyExcess + spareIncomeToTaxEnd);
+  const isaGap = isaFillable > 2000;
+  const isaSortWeight = Math.round(isaFillable * 0.07 * m.tr * isaUrgencyBoost);
   s.investments = {
-    status: (m.isaHeadroom > 10000 && daysToTaxEnd < 60) ? "critical"
-          : m.isaHeadroom > 2000 || m.cgtSaving > 0 ? "attention" : "ok",
+    status: (isaFillable > 10000 && daysToTaxEnd < 60) ? "critical"
+          : isaGap || m.cgtSaving > 0 ? "attention" : "ok",
     impact: isaSortWeight + m.cgtSaving,
-    impactLabel: m.cgtSaving > 0 && m.isaHeadroom > 0
+    impactLabel: m.cgtSaving > 0 && isaGap
       ? `${fmt(m.cgtSaving)} CGT saving + ${fmt(m.isaHeadroom)} ISA headroom`
       : m.cgtSaving > 0
         ? `${fmt(m.cgtSaving)} CGT saving available`
-        : m.isaHeadroom > 0
+        : isaGap
           ? `${fmt(m.isaHeadroom)} ISA headroom unused`
           : null,
     amount: m.cgtSaving > 0 ? m.cgtSaving : 0,
@@ -143,16 +158,21 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // yet — so it's kept out of `amount` (mirrors Investments excluding ISA
   // headroom from its definitive total) and exposed separately as
   // `potentialAmount` for the module's own "+ up to £X" signal.
+  // Both the taper recovery and the bonus figure are limited to the Annual
+  // Allowance room left (calcAnnualAllowanceRoom) — contributing past it just
+  // triggers an allowance charge, which is what very high earners on a
+  // tapered allowance would otherwise have been nudged towards.
   const contributing = isPensionContributing(d);
-  const bonusSacrificeOpportunity = (+d.bonusAmount||0) * m.tr;
-  const pensionTaper = calcPensionTaperSaving(m);
-  const pensionTaperAmount = pensionTaper.inTaper ? pensionTaper.taperTotalSaving : 0;
+  const aaRoom = calcAnnualAllowanceRoom(d, m);
+  const pensionTaper = calcPensionTaperSaving(m, aaRoom.room);
+  const pensionTaperAmount = pensionTaper.recoverable ? pensionTaper.taperTotalSaving : 0;
+  const bonusSacrifice = calcBonusSacrificePotential(d, m);
   // "Not contributing" and "missed employer match" are mutually exclusive (the
   // latter only applies once you're contributing) — taper is an independent
   // opportunity that can stack on top of either.
   const pensionPrimaryAmount = !contributing ? Math.round(m.salary * 0.05 * m.tr) : m.missedMatch;
   const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount); // definitive only
-  const pensionPotentialAmount = Math.round(bonusSacrificeOpportunity); // potential — not in amount
+  const pensionPotentialAmount = Math.round(bonusSacrifice.beyondTaper); // potential — not in amount
   // Sort priority still weighs the potential upside too, so a large bonus-sacrifice
   // opportunity isn't buried in the module ordering just because it's not "definitive".
   const pensionImpact = (!contributing ? pensionAmount + 99999 : pensionAmount) + pensionPotentialAmount;
@@ -162,6 +182,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
       : m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr missed employer match` : null,
     pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr Personal Allowance recovery` : null,
     pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} bonus sacrifice saving` : null,
+    aaRoom.excess > 0 ? `Contributions may exceed your reduced ${fmt(aaRoom.approxAA)} annual allowance` : null,
   ].filter(Boolean);
 
   s.pension = m.pensionStatus === "unknown" ? {
@@ -173,8 +194,10 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     amount: 0,
     potentialAmount: 0,
   } : {
-    // Only "critical" when genuinely missing match or not contributing at all
-    status: !contributing ? "critical" : m.missedMatch > 0 ? "critical" : "attention",
+    // "critical" when genuinely missing match or not contributing at all;
+    // "attention" only when there's still something to act on; otherwise "ok".
+    status: !contributing ? "critical" : m.missedMatch > 0 ? "critical"
+          : pensionTaperAmount > 0 || pensionPotentialAmount > 0 || aaRoom.excess > 0 ? "attention" : "ok",
     impact: pensionImpact,
     impactLabel: pensionLabelParts.join(" + ") || null,
     amount: pensionAmount,
@@ -302,14 +325,15 @@ export function getModuleSummary(mm, d, m, statuses, insights) {
 // the full "Edit inputs" wizard, or a per-recommendation quick-update inside
 // a module deep dive (see ModuleDeepDive's QuickUpdate control).
 // Starts at 100 and takes a flat deduction per flagged module. "na" (not
-// selected/applicable) and "unknown" (e.g. pension status not known) are
-// excluded entirely — both are already treated as neutral, not a scored
-// missed opportunity, everywhere else in this file.
-const SCORE_PENALTY = { critical: 18, attention: 8, ok: 0 };
+// selected/applicable) is excluded entirely. "unknown" (e.g. pension status
+// not known) costs the same as "attention" — not knowing is a real gap, so
+// answering "Not sure" can't score better than an honest answer with nothing
+// to fix — while still costing less than a confirmed critical one.
+const SCORE_PENALTY = { critical: 18, attention: 8, unknown: 8, ok: 0 };
 export function calcCandidScore(statuses) {
   let score = 100;
   for (const s of Object.values(statuses || {})) {
-    if (s.status === "na" || s.status === "unknown") continue;
+    if (s.status === "na") continue;
     score -= SCORE_PENALTY[s.status] ?? 0;
   }
   return Math.max(0, Math.min(100, Math.round(score)));

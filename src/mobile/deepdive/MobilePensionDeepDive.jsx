@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, PartyPopper, Banknote, Lock, Check } from "lucide-react";
 import {
   isPensionContributing,
-  calcPensionTaperSaving, calcAnnualAllowanceTaper,
+  calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
   calcCarryForward, defaultCarryForwardYears, calcBonusSacrifice, calcPensionGrowthTrajectory,
 } from "../../lib/pension.js";
 import { capField } from "../../lib/onboarding.js";
@@ -105,14 +105,18 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   const illustrativeRelief = Math.round(illustrativeAmount * m.tr);
   const illustrativeNetCost = Math.round(illustrativeAmount - illustrativeRelief);
 
-  const taper = calcPensionTaperSaving(m);
-  const showSacrificeCalc = m.adjustedNetIncome >= 80000 && m.adjustedNetIncome <= 125140;
+  // Same taper and bonus figures as the Dashboard (computeModuleStatuses),
+  // both limited to the Annual Allowance room left this year.
+  const aaRoom = calcAnnualAllowanceRoom(d, m);
+  const taper = calcPensionTaperSaving(m, aaRoom.room);
+  const showSacrificeCalc = taper.recoverable || (m.adjustedNetIncome >= 80000 && m.adjustedNetIncome <= 100000);
 
   const aa = calcAnnualAllowanceTaper(d, m);
   const cf = calcCarryForward(d, m, aa.approxAA, cfYears);
 
   const hasStatedBonus = (+d.bonusAmount||0) > 0;
-  const bonusPotential = hasStatedBonus ? Math.round((+d.bonusAmount||0) * m.tr) : 0;
+  const bonusSacrifice = calcBonusSacrificePotential(d, m);
+  const bonusPotential = bonusSacrifice.standalone;
   const bs = calcBonusSacrifice(d, m, bonusInput, sacrificePct);
 
   const traj = calcPensionGrowthTrajectory(d, m, extraPct);
@@ -139,7 +143,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   const opportunityCols = [];
   if (!contributing) opportunityCols.push({ label:"Tax relief foregone", value: fmtCompact(Math.round(m.salary*0.05*m.tr)) });
   else if (m.missedMatch > 0) opportunityCols.push({ label:"Missed employer match", value: fmtCompact(m.missedMatch) });
-  if (taper.inTaper && taper.taperTotalSaving > 0) opportunityCols.push({ label:"Personal Allowance recoverable", value: fmtCompact(taper.taperTotalSaving) });
+  if (taper.recoverable && taper.taperTotalSaving > 0) opportunityCols.push({ label:"Personal Allowance recoverable", value: fmtCompact(taper.taperTotalSaving) });
 
   let winCounter = 0;
   const win1Num = showMatchWin ? ++winCounter : null;
@@ -160,9 +164,9 @@ export default function MobilePensionDeepDive({ d, m, set }) {
               </div>
             ))}
           </div>
-          {hasStatedBonus && (
+          {bonusSacrifice.beyondTaper > 0 && (
             <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
-              Plus up to {fmt(bonusPotential)} potential from sacrificing your full bonus — see below.
+              Plus up to {fmt(bonusSacrifice.beyondTaper)} potential from sacrificing your full bonus — see below.
             </div>
           )}
         </div>
@@ -216,16 +220,18 @@ export default function MobilePensionDeepDive({ d, m, set }) {
       {showSacrificeCalc && (
         <MobileWinTile number={win2Num}
           title="Salary sacrifice tax saver"
-          headline={taper.inTaper
+          headline={taper.recoverable
             ? `Sacrificing ${fmt(taper.taperSacrificeNeeded)} recovers your full Personal Allowance — worth ~${fmt(taper.taperTotalSaving)}`
             : `You're ${fmt(Math.max(0, taper.taperStart - taper.ani))} below the £100k taper — sacrifice now to stay ahead of it`}
           tagLabel="Today">
-          <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:taper.inTaper&&taper.taperTotalSaving>0?"12px":0}}>
-            {taper.inTaper
-              ? `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taper.taperTotalSaving)} in tax and NI.`
-              : `Your income sits in the £80k–£100k zone. Sacrificing now builds wealth efficiently — and softens the taper if a bonus or rise pushes you over £100k later.`}
+          <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:taper.recoverable&&taper.taperTotalSaving>0?"12px":0}}>
+            {!taper.recoverable
+              ? `Your income sits in the £80k–£100k zone. Sacrificing now builds wealth efficiently — and softens the taper if a bonus or rise pushes you over £100k later.`
+              : taper.aboveTaper
+                ? `Above £125,140 your Personal Allowance is gone entirely. Sacrificing back down to £100k saves 45% on everything above £125,140 and an effective 60% on the £100k–£125,140 slice — roughly ${fmt(taper.taperTotalSaving)} in tax and NI.`
+                : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taper.taperTotalSaving)} in tax and NI.`}
           </p>
-          {taper.inTaper && taper.taperTotalSaving > 0 && (
+          {taper.recoverable && taper.taperTotalSaving > 0 && (
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"10px",textAlign:"center"}}>
               <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 6px"}}>
                 <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700}}>{fmt(taper.taperSacrificeNeeded)}</div>
@@ -251,7 +257,9 @@ export default function MobilePensionDeepDive({ d, m, set }) {
           )}
           <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",marginBottom:"12px"}}>
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
-              Your Personal Savings Allowance is {psaAmount>0?fmt(psaAmount):"£0"} as a {m.taxBandLabel}-rate taxpayer{psaAmount>0?" — savings interest above that is taxed at your marginal rate":""}. This doesn't move within the £100k–£125,140 taper zone itself — it only shrinks further if you cross into additional-rate above £125,140, or would recover to £1,000 if sacrifice took you all the way back under £50,270.
+              Your Personal Savings Allowance is {psaAmount>0?fmt(psaAmount):"£0"} as a {m.taxBandLabel}-rate taxpayer{psaAmount>0?" — savings interest above that is taxed at your marginal rate":""}. {taper.aboveTaper
+                ? "Sacrificing back below £125,140 would also restore £500 of it."
+                : "This doesn't move within the £100k–£125,140 taper zone itself — it only shrinks further if you cross into additional-rate above £125,140, or would recover to £1,000 if sacrifice took you all the way back under £50,270."}
             </p>
           </div>
 
@@ -332,7 +340,11 @@ export default function MobilePensionDeepDive({ d, m, set }) {
 
       {hasStatedBonus ? (
         <MobileWinTile number={win4Num} title="Model bonus sacrifice"
-          headline={`Sacrificing your ${fmt(+d.bonusAmount)} bonus could save up to ${fmt(bonusPotential)} in tax`}
+          headline={bonusSacrifice.room <= 0
+            ? "Your pension allowance has no room left this year — sacrificing your bonus could trigger a tax charge"
+            : bonusSacrifice.standaloneSacrifice < bonusSacrifice.bonus
+              ? `Your allowance has room for ${fmt(bonusSacrifice.standaloneSacrifice)} of your ${fmt(bonusSacrifice.bonus)} bonus — saving up to ${fmt(bonusPotential)} in tax`
+              : `Sacrificing your ${fmt(+d.bonusAmount)} bonus could save up to ${fmt(bonusPotential)} in tax`}
           tagLabel="Today"
           reminder={bonusPotential > 0 ? {
             id: "pension-bonus-sacrifice",

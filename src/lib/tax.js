@@ -7,9 +7,11 @@ export function calcIncomeTax(gross) {
   const pa = Math.max(0, paBase - taperReduction);
   const taxable = Math.max(0, g - pa);
   let tax = 0;
+  // The 45% rate starts at £125,140 of taxable income — the Personal Allowance
+  // is fully withdrawn by then, so that's also £125,140 of gross income.
   tax += Math.min(taxable, 37700) * 0.20;
-  if (taxable > 37700) tax += Math.min(taxable - 37700, 74870) * 0.40;
-  if (taxable > 112570) tax += (taxable - 112570) * 0.45;
+  if (taxable > 37700) tax += (Math.min(taxable, 125140) - 37700) * 0.40;
+  if (taxable > 125140) tax += (taxable - 125140) * 0.45;
   return Math.round(tax);
 }
 

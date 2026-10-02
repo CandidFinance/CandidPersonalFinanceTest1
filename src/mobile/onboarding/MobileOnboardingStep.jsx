@@ -220,7 +220,7 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
   );
 
   if (stepId === "about") {
-    const totalIncome = (+d.salary||0) + (+d.otherIncome||0) + (+d.dividendIncome||0);
+    const totalIncome = (+d.salary||0) + (+d.bonusAmount||0) + (+d.otherIncome||0) + (+d.dividendIncome||0);
     const taxBand = totalIncome > 125140 ? "Additional rate (45%)" : totalIncome > 50270 ? "Higher rate (40%)" : "Basic rate (20%)";
     return (
       <div>
@@ -407,7 +407,7 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
 
         {d.pensionUnknown ? (
           <div style={{background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
-            <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}>No problem — this is really common. Your report will walk you through how to find out, and it won't count against your score.</p>
+            <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}>No problem — this is really common. Your report will walk you through how to find out. Until you know, it takes a few points off your score.</p>
           </div>
         ) : contributing ? (
           <div style={{marginTop:"18px"}}>

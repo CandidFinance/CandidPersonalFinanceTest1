@@ -6,7 +6,7 @@ import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCa
 import { fmt, fmtK, fmtCompact } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, calcStudentLoanScenario } from "./lib/studentLoan.js";
-import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
+import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation } from "./lib/cash.js";
 import { calcMetrics, SALARY_GROWTH_RATES, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
 import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown, calcCandidScore } from "./lib/moduleStatus.js";
@@ -1505,12 +1505,12 @@ function OnboardingStep({ stepId, d, set }) {
           <div>
             <div style={{fontSize:"11px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"3px"}}>Tax band (calculated)</div>
             <div style={{fontSize:"15px",fontWeight:600,color:G}}>
-              {+d.salary + (+d.otherIncome||0) + (+d.dividendIncome||0) > 125140 ? "Additional rate (45%)" :
-               +d.salary + (+d.otherIncome||0) + (+d.dividendIncome||0) > 50270  ? "Higher rate (40%)" : "Basic rate (20%)"}
+              {+d.salary + (+d.bonusAmount||0) + (+d.otherIncome||0) + (+d.dividendIncome||0) > 125140 ? "Additional rate (45%)" :
+               +d.salary + (+d.bonusAmount||0) + (+d.otherIncome||0) + (+d.dividendIncome||0) > 50270  ? "Higher rate (40%)" : "Basic rate (20%)"}
             </div>
           </div>
           <div style={{fontSize:FONT_SIZE.LABEL,color:MUT,textAlign:"right",maxWidth:"180px",lineHeight:1.5}}>
-            Based on £{(+d.salary+(+d.otherIncome||0)+(+d.dividendIncome||0)).toLocaleString()} total income
+            Based on £{(+d.salary+(+d.bonusAmount||0)+(+d.otherIncome||0)+(+d.dividendIncome||0)).toLocaleString()} total income
           </div>
         </div>
       )}
@@ -1712,7 +1712,7 @@ function OnboardingStep({ stepId, d, set }) {
       </Field>
       {d.pensionUnknown ? (
         <div style={{background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"16px",marginTop:"4px"}}>
-          <p style={{fontSize:"14px",color:G,lineHeight:1.6}}>No problem — this is really common. Your full report will walk you through exactly how to find out, and we won't hold it against your score.</p>
+          <p style={{fontSize:"14px",color:G,lineHeight:1.6}}>No problem — this is really common. Your full report will walk you through exactly how to find out. Until you know, it takes a few points off your score.</p>
         </div>
       ) : d.hasPension === "yes" ? (
         <div>
@@ -3656,14 +3656,15 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   const slRepaymentFromBonus = Math.round(bonus * bonusSlRate);
   const slInterestRate = d.studentLoan==="plan2" ? 0.075 : d.studentLoan==="plan5" ? 0.075 : 0.05;
   const slInterestSaved = Math.round(slRepaymentFromBonus * slInterestRate * Math.max(1, loanBal/Math.max(1,m.annualRepayment)));
-  const showSacrificeCalc = moduleKey === "pension" && m.adjustedNetIncome >= 80000 && m.adjustedNetIncome <= 125140;
   // ── Personal Allowance taper maths (Win 2 + opportunity strip) ──────────────
   // Every £2 of adjusted net income above £100,000 withdraws £1 of Personal
   // Allowance, up to the full withdrawal at £125,140 — an effective 60% marginal
   // rate across that band. Pension sacrifice reduces adjusted net income, so it
   // can restore some or all of the allowance. calcPensionTaperSaving is the same
-  // shared calc computeModuleStatuses uses for the Dashboard's pension figure.
-  const { taperStart, taperEnd, ani, inTaper, taperSacrificeNeeded, taperNiSaving, taperTaxSaving, taperTotalSaving } = calcPensionTaperSaving(m);
+  // shared calc computeModuleStatuses uses for the Dashboard's pension figure,
+  // limited the same way to the Annual Allowance room left.
+  const { taperStart, taperEnd, ani, inTaper, aboveTaper, recoverable: taperRecoverable, taperSacrificeNeeded, taperNiSaving, taperTaxSaving, taperTotalSaving } = calcPensionTaperSaving(m, calcAnnualAllowanceRoom(d, m).room);
+  const showSacrificeCalc = moduleKey === "pension" && (taperRecoverable || (m.adjustedNetIncome >= 80000 && m.adjustedNetIncome <= 100000));
 
   return (
     <PageWrap>
@@ -3813,11 +3814,15 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
           } else if (m.missedMatch > 0) {
             definitiveCols.push({ label:"Missed employer match", amount: m.missedMatch });
           }
-          if (inTaper && taperTotalSaving > 0) {
+          if (taperRecoverable && taperTotalSaving > 0) {
             definitiveCols.push({ label:"Personal Allowance recoverable", amount: taperTotalSaving });
           }
           const totalOpp = statuses.pension.amount;
-          const bonusPotential = hasStatedBonus ? Math.round(statedBonus*m.tr) : 0;
+          // Same figures as the Dashboard: the strip adds only the part of the
+          // bonus not already inside the taper recovery; the bonus win shows it
+          // on its own. Both capped at the Annual Allowance room left.
+          const bonusSacrifice = calcBonusSacrificePotential(d, m);
+          const bonusPotential = bonusSacrifice.beyondTaper;
 
           // ── Growth trajectory chart data (unchanged maths, now inside the info tile) ──
           const salary = m.salary, potVal = +d.potValue||0;
@@ -4092,18 +4097,20 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
               {showSacrificeCalc && (
                 <ExpandableInvestmentItem
                   number={win2Num}
-                  title={inTaper ? "Recover your Personal Allowance" : "Get ahead of the £100k taper"}
-                  headline={inTaper
+                  title={taperRecoverable ? "Recover your Personal Allowance" : "Get ahead of the £100k taper"}
+                  headline={taperRecoverable
                     ? `Sacrificing ${fmt(taperSacrificeNeeded)} recovers your full Personal Allowance — worth ~${fmt(taperTotalSaving)}`
                     : `You're ${fmt(Math.max(0, taperStart - ani))} below the £100k taper — sacrifice now to stay ahead of it`}
                   tag={{ label:"Today", color:GOLD }}
                 >
                   <p style={{fontSize:"14px",color:TEXT,lineHeight:1.7,marginBottom:"14px"}}>
-                    {inTaper
-                      ? `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taperTotalSaving)} in tax and NI.`
-                      : `Your income sits in the £80k–£100k zone. Sacrificing now builds wealth efficiently — and softens the taper if a bonus or rise pushes you over £100k later.`}
+                    {!taperRecoverable
+                      ? `Your income sits in the £80k–£100k zone. Sacrificing now builds wealth efficiently — and softens the taper if a bonus or rise pushes you over £100k later.`
+                      : aboveTaper
+                        ? `Above £125,140 your Personal Allowance is gone entirely. Sacrificing back down to £100k saves 45% on everything above £125,140 and an effective 60% on the £100k–£125,140 slice — roughly ${fmt(taperTotalSaving)} in tax and NI.`
+                        : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taperTotalSaving)} in tax and NI.`}
                   </p>
-                  {inTaper && taperTotalSaving > 0 && (
+                  {taperRecoverable && taperTotalSaving > 0 && (
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"16px",textAlign:"center"}}>
                       <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"12px 8px"}}>
                         <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(taperSacrificeNeeded)}</div>
@@ -4222,7 +4229,11 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                   <ExpandableInvestmentItem
                     number={win4Num}
                     title="Model bonus sacrifice"
-                    headline={`Sacrificing your ${fmt(statedBonus)} bonus could save up to ${fmt(Math.round(statedBonus*m.tr))} in tax`}
+                    headline={bonusSacrifice.room <= 0
+                      ? "Your pension allowance has no room left this year — sacrificing your bonus could trigger a tax charge"
+                      : bonusSacrifice.standaloneSacrifice < statedBonus
+                        ? `Your allowance has room for ${fmt(bonusSacrifice.standaloneSacrifice)} of your ${fmt(statedBonus)} bonus — saving up to ${fmt(bonusSacrifice.standalone)} in tax`
+                        : `Sacrificing your ${fmt(statedBonus)} bonus could save up to ${fmt(bonusSacrifice.standalone)} in tax`}
                     tag={{ label:"Today", color:GOLD }}
                     defaultOpen={openSection === "bonusSacrifice"}
                   >

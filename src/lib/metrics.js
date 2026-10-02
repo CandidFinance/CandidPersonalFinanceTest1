@@ -73,8 +73,11 @@ export function calcMetrics(d, marketRates = {}) {
   }
   const otherIncome = +d.otherIncome||0;
   const dividendIncome = +d.dividendIncome||0;
+  // The stated annual bonus counts: in a year it's paid, it's part of what sets
+  // the tax band, the £100k taper and the Personal Savings Allowance.
+  const bonusIncome = +d.bonusAmount||0;
   const pensionSacrifice = salary * myPct / 100;
-  const adjustedNetIncome = salary + otherIncome + dividendIncome - pensionSacrifice;
+  const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome - pensionSacrifice;
   const tr = adjustedNetIncome > 125140 ? 0.45
            : adjustedNetIncome > 50270  ? 0.40
            : 0.20;
@@ -160,9 +163,12 @@ export function calcMetrics(d, marketRates = {}) {
   // Monthly surplus — rough "free cash" per month after estimated income tax,
   // NI, pension contributions, living expenses, and existing debt repayments.
   // Used as the default monthly contribution for forecasting (see calcForecast).
+  // Regular income only — the bonus is irregular, so it's left out of this
+  // monthly figure.
   const niAnnual = 0.08 * Math.min(Math.max(0, salary - 12570), 37700) + 0.02 * Math.max(0, salary - 50270);
-  const incomeTaxAnnual = calcIncomeTax(adjustedNetIncome);
-  const netAnnualIncome = adjustedNetIncome - incomeTaxAnnual - niAnnual;
+  const regularIncome = adjustedNetIncome - bonusIncome;
+  const incomeTaxAnnual = calcIncomeTax(regularIncome);
+  const netAnnualIncome = regularIncome - incomeTaxAnnual - niAnnual;
   const existingMortgagePmt = hasMortgage ? (+d.monthlyMortgage||0) : 0;
   const existingPersonalLoanPmt = d.hasPersonalLoan === "yes" ? plMonthly : 0;
   const monthlySurplus = Math.max(0, netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - annualRepayment / 12);
