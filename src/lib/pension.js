@@ -1,5 +1,6 @@
 import { calcBonusTaxBreakdown, calcIncomeTax } from "./tax.js";
 import { SALARY_GROWTH_RATES } from "./metrics.js";
+import { slRepaymentThreshold } from "./studentLoan.js";
 
 // ── User contributing to pension ────────────────────────────────────────────────────────
 export function isPensionContributing(d) {
@@ -219,7 +220,7 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   // bonus sits on top of salary, so if salary is already above threshold,
   // all of the bonus falls at 2%.
   const niRateOnBonus = m.salary >= 50270 ? 0.02 : 0.08;
-  const slThreshold = d.studentLoan==="plan2" ? 27295 : d.studentLoan==="plan5" ? 25000 : d.studentLoan==="plan1" ? 24990 : 0;
+  const slThreshold = slRepaymentThreshold(d.studentLoan);
   const bonusSlRate = (d.studentLoan !== "none" && m.salary > slThreshold) ? 0.09 : 0;
 
   // Full bonus, no sacrifice — effective income tax rate on the whole amount.

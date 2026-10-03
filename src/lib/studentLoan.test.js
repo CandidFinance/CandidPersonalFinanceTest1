@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
-import { calcStudentLoanScenario, describeLoanVsPension } from "./studentLoan.js";
+import { calcStudentLoanScenario, describeLoanVsPension, slRepaymentThreshold, studentLoanPlanConstants, SL_REPAYMENT_THRESHOLDS } from "./studentLoan.js";
 import { calcLoanMarginalReturnCurve } from "./forecast.js";
 
 const RATES = { isaRate: 4.5, nonIsaRate: 4.6 };
@@ -16,6 +16,15 @@ const borrower = (overrides, rates = RATES) => {
   const m = calcMetrics(d, rates);
   return { d, m, sl: calcStudentLoanScenario(d, m) };
 };
+
+test("repayments use the 2026/27 thresholds: 9% of pay above them", () => {
+  assert.equal(borrower({ salary: "85000" }).m.annualRepayment, (85000 - 29385) * 0.09);
+  assert.equal(borrower({ salary: "40000", studentLoan: "plan1" }).m.annualRepayment, (40000 - 26900) * 0.09);
+  assert.equal(borrower({ salary: "40000", studentLoan: "plan5" }).m.annualRepayment, (40000 - 25000) * 0.09);
+  assert.equal(borrower({ salary: "29000" }).m.annualRepayment, 0);
+  assert.equal(slRepaymentThreshold("none"), 0);
+  assert.equal(studentLoanPlanConstants("plan2").threshold, SL_REPAYMENT_THRESHOLDS.plan2);
+});
 
 test("overpaying is weighed against the best savings rate, not a poorer current one", () => {
   const { sl } = borrower({});

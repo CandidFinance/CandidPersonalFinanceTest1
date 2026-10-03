@@ -5,7 +5,7 @@ import posthog from "posthog-js";
 import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart, Wrench, ChevronRight, ChevronDown } from "lucide-react";
 import { fmt, fmtK, fmtCompact } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
-import { resolveSlRate, studentLoanPlanConstants, calcStudentLoanScenario, describeLoanVsPension } from "./lib/studentLoan.js";
+import { resolveSlRate, studentLoanPlanConstants, slRepaymentThreshold, calcStudentLoanScenario, describeLoanVsPension } from "./lib/studentLoan.js";
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation } from "./lib/cash.js";
 import { calcMetrics, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
@@ -414,9 +414,8 @@ function getModuleInsights(key, d, m, savingsRates) {
       ].filter(Boolean);
     }
     case "studentLoan": {
-      const writeOffYr = d.studentLoan==="plan2" ? 30 : d.studentLoan==="plan5" ? 40 : 25;
+      const { writeOffYr, threshold } = studentLoanPlanConstants(d.studentLoan);
       const slInterestRate = resolveSlRate(d, m.salary);
-      const threshold = d.studentLoan==="plan2" ? 27295 : d.studentLoan==="plan5" ? 25000 : 24990;
       const annualInterest = Math.round(m.loanBal * slInterestRate);
       const annualRep = m.annualRepayment;
       const netAnnualChange = annualInterest - annualRep; // positive = balance GROWING
@@ -3585,7 +3584,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // Bonus sits on top of salary, so if salary already above threshold, all bonus at 2%
   const niRateOnBonus = m.salary >= 50270 ? 0.02 : 0.08;
   // Student loan on bonus
-  const slThreshold = d.studentLoan==="plan2" ? 27295 : d.studentLoan==="plan5" ? 25000 : d.studentLoan==="plan1" ? 24990 : 0;
+  const slThreshold = slRepaymentThreshold(d.studentLoan);
   const bonusSlRate = (d.studentLoan !== "none" && m.salary > slThreshold) ? 0.09 : 0;
   // Full bonus (no sacrifice) — effective income tax rate
   const fullBonusTax = calcBonusTaxBreakdown(taxableSalary, bonus);

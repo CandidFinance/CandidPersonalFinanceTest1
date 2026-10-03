@@ -1,5 +1,5 @@
 import { calcIncomeTax } from "./tax.js";
-import { resolveSlRate } from "./studentLoan.js";
+import { resolveSlRate, slRepaymentThreshold } from "./studentLoan.js";
 
 export const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
 
@@ -61,15 +61,16 @@ export function calcMetrics(d, marketRates = {}) {
   let annualRepayment = 0, willClear = false;
   const loanBal = +d.loanBalance||0;
   const slGrow = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
+  const slThreshold = slRepaymentThreshold(d.studentLoan);
   if (d.studentLoan === "plan2") {
-    annualRepayment = Math.max(0, (salary - 27295) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=30; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-27295)*0.09); if(b<=0) return true; } return false; })();
+    annualRepayment = Math.max(0, (salary - slThreshold) * 0.09);
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=30; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
   } else if (d.studentLoan === "plan5") {
-    annualRepayment = Math.max(0, (salary - 25000) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=40; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-25000)*0.09); if(b<=0) return true; } return false; })();
+    annualRepayment = Math.max(0, (salary - slThreshold) * 0.09);
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=40; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
   } else if (d.studentLoan === "plan1") {
-    annualRepayment = Math.max(0, (salary - 24990) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=25; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-24990)*0.09); if(b<=0) return true; } return false; })();
+    annualRepayment = Math.max(0, (salary - slThreshold) * 0.09);
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=25; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
   }
   const otherIncome = +d.otherIncome||0;
   const dividendIncome = +d.dividendIncome||0;

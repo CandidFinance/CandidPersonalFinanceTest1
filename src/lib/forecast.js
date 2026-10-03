@@ -1,4 +1,4 @@
-import { resolveSlRate } from "./studentLoan.js";
+import { resolveSlRate, studentLoanPlanConstants } from "./studentLoan.js";
 import { pensionReturnRatio } from "./pension.js";
 
 // Static defaults — replace with live Moneyfacts API rates in future
@@ -93,7 +93,7 @@ export function calcLoanMarginalReturnCurve(d, m, sl, chartWidth = 340, layout =
   const pensionGrowth = sl.pensionGrowthPct / 100;
   const mortRate = d.hasMortgage === "yes" && +d.mortgageRate > 0 ? +d.mortgageRate : 4.5;
   const mortReturn = 1 + mortRate / 100;
-  const planThreshold = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
+  const planThreshold = studentLoanPlanConstants(d.studentLoan).threshold;
   const growthRate = m.salaryGrowthRate;
   // simulateLoan compounds monthly, so the pension compounds monthly too —
   // equal rates then give identical lines.
@@ -173,8 +173,7 @@ export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverrid
 
   // ── 2. Student loan overpayment ────────────────────────────────────────
   if (m.loanBal > 0) {
-    const writeOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
-    const threshold  = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
+    const { writeOffYr, threshold } = studentLoanPlanConstants(d.studentLoan);
     const baseSlRate = resolveSlRate(d, m.salary);
     // Cap simulation at write-off year — no point modelling interest past when the loan is forgiven
     const simYears = Math.min(horizonYears, writeOffYr);
@@ -283,8 +282,7 @@ export function calcForecastSeries(d, m, surplusOverride, horizonYears, lumpSumO
       // All-zero if written off in both scenarios
       if (opt.writtenOffAnyway) return { label: opt.label, values: years.map(() => 0) };
 
-      const writeOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
-      const threshold  = d.studentLoan === "plan2" ? 27295 : d.studentLoan === "plan5" ? 25000 : 24990;
+      const { writeOffYr, threshold } = studentLoanPlanConstants(d.studentLoan);
       const baseSlRate = resolveSlRate(d, m.salary);
       const overBal = Math.max(0, m.loanBal - lump);
       // Simulate both scenarios once, capturing yearly cumulative interest snapshots

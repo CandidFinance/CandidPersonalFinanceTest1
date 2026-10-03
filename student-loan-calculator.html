@@ -128,9 +128,9 @@
     <p>The plan you're on determines your interest rate, your repayment threshold, and — critically — how long until any remaining balance is wiped clean regardless of what you've repaid.</p>
     <table>
       <tr><th>Plan</th><th>Interest rate</th><th>Repay above</th><th>Repayment rate</th><th>Written off after</th></tr>
-      <tr><td>Plan 1 (pre-2012 / NI)</td><td>6.25% (current floor)</td><td>£24,990/yr</td><td>9%</td><td>25 years</td></tr>
-      <tr><td>Plan 2 (2012–2023 starters)</td><td>3.2%–6.2%, ramped by income</td><td>£27,295/yr</td><td>9%</td><td>30 years</td></tr>
-      <tr><td>Plan 4 (Scotland)</td><td>6.25% (current floor)</td><td>£31,395/yr</td><td>9%</td><td>30 years</td></tr>
+      <tr><td>Plan 1 (pre-2012 / NI)</td><td>6.25% (current floor)</td><td>£26,900/yr</td><td>9%</td><td>25 years</td></tr>
+      <tr><td>Plan 2 (2012–2023 starters)</td><td>3.2%–6.2%, ramped by income</td><td>£29,385/yr</td><td>9%</td><td>30 years</td></tr>
+      <tr><td>Plan 4 (Scotland)</td><td>6.25% (current floor)</td><td>£33,795/yr</td><td>9%</td><td>30 years</td></tr>
       <tr><td>Plan 5 (2023 onwards)</td><td>7.3% flat</td><td>£25,000/yr</td><td>9%</td><td>40 years</td></tr>
       <tr><td>Postgraduate Loan</td><td>7.3% flat</td><td>£21,000/yr</td><td>6%</td><td>30 years</td></tr>
     </table>
@@ -224,9 +224,10 @@
   <script>
     var GROWTH_RATES = { stable: 0.02, moderate: 0.05, high: 0.15 }; // matches CandidApp.jsx's salaryTrajectory options
     var PLAN_CONSTANTS = {
-      plan1:    { writeOffYr: 25, threshold: 24990, repayRate: 0.09 },
-      plan2:    { writeOffYr: 30, threshold: 27295, repayRate: 0.09 },
-      plan4:    { writeOffYr: 30, threshold: 31395, repayRate: 0.09 },
+      // Repayment thresholds: 2026/27, matching SL_REPAYMENT_THRESHOLDS in src/lib/studentLoan.js
+      plan1:    { writeOffYr: 25, threshold: 26900, repayRate: 0.09 },
+      plan2:    { writeOffYr: 30, threshold: 29385, repayRate: 0.09 },
+      plan4:    { writeOffYr: 30, threshold: 33795, repayRate: 0.09 },
       plan5:    { writeOffYr: 40, threshold: 25000, repayRate: 0.09 },
       postgrad: { writeOffYr: 30, threshold: 21000, repayRate: 0.06 },
     };

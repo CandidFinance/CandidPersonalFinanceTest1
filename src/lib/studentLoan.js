@@ -40,12 +40,23 @@ export function resolveSlRate(d, grossSalary) {
   return PLAN1_RATE; // plan1
 }
 
+// ── Repayment thresholds (2026/27) — 9% of gross pay above these is repaid.
+// The ONLY place these figures live: every repayment, forecast and bonus
+// calculation reads them from here. They change most Aprils — check
+// https://www.gov.uk/repaying-your-student-loan/what-you-pay each tax year.
+export const SL_REPAYMENT_THRESHOLDS = { plan1: 26900, plan2: 29385, plan5: 25000 };
+
+// Threshold for a plan, or 0 for no loan / an unrecognised plan.
+export function slRepaymentThreshold(studentLoanType) {
+  return SL_REPAYMENT_THRESHOLDS[studentLoanType] ?? 0;
+}
+
 // ── Student loan plan constants — single source for write-off year + repayment
 // threshold, previously duplicated independently in getModuleInsights,
 // getModuleProducts, and the marginal-return chart memo.
 export function studentLoanPlanConstants(studentLoanType) {
   const writeOffYr = studentLoanType==="plan2" ? 30 : studentLoanType==="plan5" ? 40 : 25;
-  const threshold = studentLoanType==="plan2" ? 27295 : studentLoanType==="plan5" ? 25000 : 24990;
+  const threshold = SL_REPAYMENT_THRESHOLDS[studentLoanType] ?? SL_REPAYMENT_THRESHOLDS.plan1;
   return { writeOffYr, threshold };
 }
 
