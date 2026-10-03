@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
-import { calcStudentLoanScenario, describeLoanVsPension, slRepaymentThreshold, studentLoanPlanConstants, SL_REPAYMENT_THRESHOLDS } from "./studentLoan.js";
+import { calcStudentLoanScenario, describeLoanVsPension, resolveSlRate, slRepaymentThreshold, studentLoanPlanConstants, SL_REPAYMENT_THRESHOLDS } from "./studentLoan.js";
 import { calcLoanMarginalReturnCurve } from "./forecast.js";
 
 const RATES = { isaRate: 4.5, nonIsaRate: 4.6 };
@@ -24,6 +24,14 @@ test("repayments use the 2026/27 thresholds: 9% of pay above them", () => {
   assert.equal(borrower({ salary: "29000" }).m.annualRepayment, 0);
   assert.equal(slRepaymentThreshold("none"), 0);
   assert.equal(studentLoanPlanConstants("plan2").threshold, SL_REPAYMENT_THRESHOLDS.plan2);
+});
+
+test("interest uses the 2026/27 rates: RPI 4.1%, Plan 2 ramp capped at 6%", () => {
+  assert.equal(resolveSlRate({ studentLoan: "plan1" }, 40000), 0.041);
+  assert.equal(resolveSlRate({ studentLoan: "plan5" }, 40000), 0.041);
+  assert.equal(resolveSlRate({ studentLoan: "plan2" }, 29000), 0.041);
+  assert.equal(resolveSlRate({ studentLoan: "plan2" }, 45000), 0.06); // gov.uk: 6.09%, capped at 6%
+  assert.equal(resolveSlRate({ studentLoan: "plan2", studentLoanRate: "5" }, 45000), 0.05);
 });
 
 test("overpaying is weighed against the best savings rate, not a poorer current one", () => {

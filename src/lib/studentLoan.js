@@ -10,20 +10,19 @@
 // mathematically reaches the 6.0% cap at salary ≈ £44,268, then Math.min
 // holds it flat at 6.0% for every salary above that (rather than a separate
 // branch) — same numeric result, one less special case.
-// Plan 5: rate = RPI directly (no ramp) — set 1 September each year. Using
-// the same 2026/27 RPI figure as Plan 2 since gov.uk hasn't published a
-// separate reference for Plan 5; confirm they match if this matters.
+// Plan 5: rate = RPI directly (no ramp) — set 1 September each year.
 // Plan 1: lower of RPI or Bank of England base rate + 1%, set 1 September
-// each year — see gov.uk's "How interest is calculated - Plan 1". Value
-// below is the last one that page had published (1 Sept 2025 – 31 Aug 2026)
-// as of this update; re-check it once SLC publishes the 2026/27 Plan 1 rate,
-// since this app's "today" is already past that 1 September reset date.
+// each year.
+// All three checked 3 Oct 2026 against https://www.gov.uk/repaying-your-student-loan/what-you-pay,
+// which carries the 1 Sept 2026 – 31 Aug 2027 rates (Plan 1/5: 4.1%; Plan 2:
+// 4.1% plus up to 3%, capped at 6%). The per-plan "How interest is
+// calculated" guidance pages lagged behind and still showed 2025/26 rates.
 const PLAN2_RPI_BASE = 0.041; // 2026/27 RPI
 const PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
 const PLAN2_MAX_VARIABLE = 0.03; // percentage points added by the time income reaches PLAN2_INCOME_UPPER, before capping
 const PLAN2_RATE_CAP = 0.06;
 const PLAN5_RATE = 0.041; // = 2026/27 RPI, same figure as Plan 2's base
-const PLAN1_RATE = 0.032; // last published: 1 Sept 2025 – 31 Aug 2026 — verify against https://www.gov.uk/guidance/how-interest-is-calculated-plan-1
+const PLAN1_RATE = 0.041; // 1 Sept 2026 – 31 Aug 2027: RPI, as RPI is below base rate + 1%
 // The same 6% a year the pension projections assume (pension.js) — duplicated
 // rather than imported, since pension.js → metrics.js → this file would make
 // the import circular. Keep in sync.
