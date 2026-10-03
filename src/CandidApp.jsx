@@ -6,6 +6,7 @@ import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCa
 import { fmt, fmtK, fmtCompact } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, slRepaymentThreshold, calcStudentLoanScenario, describeLoanVsPension } from "./lib/studentLoan.js";
+import { topRate } from "./lib/savingsRates.js";
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation } from "./lib/cash.js";
 import { calcMetrics, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
@@ -586,14 +587,9 @@ function getModuleInsightsExtended(key, d, m) {
   }
 }
 
-// Highest-rate row for a given ISA/non-ISA category — returns the whole row
-// (not just the number) so display keeps the DB's own "X.XX" string formatting
-// rather than reformatting a coerced float. Null if no row of that category.
-export function topRate(rows, isIsa) {
-  const filtered = (rows || []).filter(r => r.is_isa === isIsa);
-  if (!filtered.length) return null;
-  return filtered.reduce((best, r) => (!best || +r.rate_aer > +best.rate_aer) ? r : best, null);
-}
+// topRate lives in src/lib/savingsRates.js (shared with the public calculator
+// pages); re-exported here for the screens that import it from this file.
+export { topRate };
 
 // Splits a £ amount into "fits within remaining ISA headroom" vs "the rest", and
 // whether that rest is actually worth moving to a non-ISA account (only if its rate

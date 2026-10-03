@@ -128,13 +128,13 @@
     <p>The plan you're on determines your interest rate, your repayment threshold, and — critically — how long until any remaining balance is wiped clean regardless of what you've repaid.</p>
     <table>
       <tr><th>Plan</th><th>Interest rate</th><th>Repay above</th><th>Repayment rate</th><th>Written off after</th></tr>
-      <tr><td>Plan 1 (pre-2012 / NI)</td><td>4.1%</td><td>£26,900/yr</td><td>9%</td><td>25 years</td></tr>
-      <tr><td>Plan 2 (2012–2023 starters)</td><td>4.1%–6%, ramped by income</td><td>£29,385/yr</td><td>9%</td><td>30 years</td></tr>
-      <tr><td>Plan 4 (Scotland)</td><td>4.1%</td><td>£33,795/yr</td><td>9%</td><td>30 years</td></tr>
-      <tr><td>Plan 5 (2023 onwards)</td><td>4.1%</td><td>£25,000/yr</td><td>9%</td><td>40 years</td></tr>
-      <tr><td>Postgraduate Loan</td><td>6% (capped)</td><td>£21,000/yr</td><td>6%</td><td>30 years</td></tr>
+      <tr><td>Plan 1 (pre-2012 / NI)</td><td>{{SL_RATE_PLAN1}}</td><td>{{SL_THRESHOLD_PLAN1}}/yr</td><td>{{SL_REPAY_RATE_PLAN}}</td><td>{{SL_WRITE_OFF_PLAN1}} years</td></tr>
+      <tr><td>Plan 2 (2012–2023 starters)</td><td>{{SL_PLAN2_RATE_LOWEST}}–{{SL_PLAN2_RATE_CAP}}, ramped by income</td><td>{{SL_THRESHOLD_PLAN2}}/yr</td><td>{{SL_REPAY_RATE_PLAN}}</td><td>{{SL_WRITE_OFF_PLAN2}} years</td></tr>
+      <tr><td>Plan 4 (Scotland)</td><td>{{SL_RATE_PLAN4}}</td><td>{{SL_THRESHOLD_PLAN4}}/yr</td><td>{{SL_REPAY_RATE_PLAN}}</td><td>{{SL_WRITE_OFF_PLAN4}} years</td></tr>
+      <tr><td>Plan 5 (2023 onwards)</td><td>{{SL_RATE_PLAN5}}</td><td>{{SL_THRESHOLD_PLAN5}}/yr</td><td>{{SL_REPAY_RATE_PLAN}}</td><td>{{SL_WRITE_OFF_PLAN5}} years</td></tr>
+      <tr><td>Postgraduate Loan</td><td>{{SL_RATE_POSTGRAD}}</td><td>{{SL_THRESHOLD_POSTGRAD}}/yr</td><td>{{SL_REPAY_RATE_POSTGRAD}}</td><td>{{SL_WRITE_OFF_POSTGRAD}} years</td></tr>
     </table>
-    <p style="font-size:12px;color:#8a8a8a;">Plan 2's rate isn't a single figure — it ramps <strong>linearly</strong> from RPI (4.1%) towards RPI+3% as your income rises from £29,385 to £52,885, and it's a straight-line scale, not a step. Below £29,385 you pay 4.1%. Between 1 September 2026 and 31 August 2027 the rate is capped at 6%, which the scale reaches at an income of about £44,270, so everyone above that pays 6%. The rates in this table apply from 1 September 2026 to 31 August 2027. Rates and thresholds are reviewed annually — check <a href="https://www.gov.uk/repaying-your-student-loan" target="_blank" rel="noopener">gov.uk</a> for the current year if you're close to a decision. If you know your exact rate, enter it above to override the plan default.</p>
+    <p style="font-size:12px;color:#8a8a8a;">Plan 2's rate isn't a single figure — it ramps <strong>linearly</strong> from RPI ({{SL_PLAN2_RATE_LOWEST}}) towards RPI+{{SL_PLAN2_MAX_VARIABLE}} as your income rises from {{SL_PLAN2_INCOME_LOWER}} to {{SL_PLAN2_INCOME_UPPER}}, and it's a straight-line scale, not a step. Below {{SL_PLAN2_INCOME_LOWER}} you pay {{SL_PLAN2_RATE_LOWEST}}. The rate is currently capped at {{SL_PLAN2_RATE_CAP}}, which the scale reaches at an income of about {{SL_PLAN2_CAP_INCOME}}, so everyone above that pays {{SL_PLAN2_RATE_CAP}}. The rates in this table apply from {{SL_RATES_PERIOD}}. Rates and thresholds are reviewed annually — check <a href="https://www.gov.uk/repaying-your-student-loan" target="_blank" rel="noopener">gov.uk</a> for the current year if you're close to a decision. If you know your exact rate, enter it above to override the plan default.</p>
 
     <h2>Why write-off changes the maths</h2>
     <p>If your projected balance is heading to zero at write-off anyway — because your income growth is outpacing interest — then overpaying genuinely saves you money: it clears the loan sooner and cuts the interest you'd otherwise pay.</p>
@@ -210,45 +210,18 @@
   </script>
 
   <!-- ── Calculator logic ──────────────────────────────────────────────
-       Mirrors simulateLoan() / resolveSlRate() in src/CandidApp.jsx (monthly
-       compounding, repayment = max(0,(salary-threshold))*repayRate/12, extra
-       overpayment on top). Kept as a plain duplicate — this page is static
-       HTML, not part of the React build — so if plan rates/thresholds change
-       (the annual SLC update each September), update PLAN_CONSTANTS below.
-       CandidApp.jsx currently only models Plan 1/2/5 — Plan 4 and Postgraduate
-       are additions specific to this page.
-       Plan 2's rate ramps LINEARLY between PLAN2_INCOME_LOWER/_UPPER, per
-       gov.uk's "How interest is calculated - Plan 2" — not a single cliff at
-       one salary figure, which is what this used to do (and got the salary
-       figure wrong on top of using the wrong mechanism). -->
-  <script>
-    var GROWTH_RATES = { stable: 0.02, moderate: 0.05, high: 0.15 }; // matches CandidApp.jsx's salaryTrajectory options
-    var PLAN_CONSTANTS = {
-      // Repayment thresholds: 2026/27, matching SL_REPAYMENT_THRESHOLDS in src/lib/studentLoan.js
-      plan1:    { writeOffYr: 25, threshold: 26900, repayRate: 0.09 },
-      plan2:    { writeOffYr: 30, threshold: 29385, repayRate: 0.09 },
-      plan4:    { writeOffYr: 30, threshold: 33795, repayRate: 0.09 },
-      plan5:    { writeOffYr: 40, threshold: 25000, repayRate: 0.09 },
-      postgrad: { writeOffYr: 30, threshold: 21000, repayRate: 0.06 },
-    };
-    var PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
-    // Interest rates 1 Sept 2026 – 31 Aug 2027, checked 3 Oct 2026 against
-    // https://www.gov.uk/repaying-your-student-loan/what-you-pay. Plan 2
-    // matches resolveSlRate() in src/lib/studentLoan.js: RPI plus up to 3%,
-    // capped at 6% this year (the cap applies to the postgraduate loan too).
-    var PLAN2_RATE_LOWER = 0.041, PLAN2_RATE_UPPER = 0.071, RATE_CAP = 0.06;
-    var RPI_RATE = 0.041; // Plan 1, 4 and 5: RPI (below base rate + 1% for Plan 1/4)
+       Mirrors simulateLoan() in the app (monthly compounding, repayment =
+       max(0,(salary-threshold))*repayRate/12, extra overpayment on top).
+       Built by Vite with the app (see vite.config.js), so the thresholds,
+       repayment rates, write-off years and interest rates (resolveSlRate,
+       including Plan 2's income-linked rate) all come from
+       src/lib/studentLoan.js, and salary growth options from metrics.js. -->
+  <script type="module">
+    import { resolveSlRate as resolveAppSlRate, studentLoanPlanConstants } from '/src/lib/studentLoan.js';
+    import { SALARY_GROWTH_RATES as GROWTH_RATES } from '/src/lib/metrics.js';
 
     function resolveSlRate(plan, salary, exactRatePct) {
-      if (exactRatePct > 0) return exactRatePct / 100;
-      if (plan === 'plan2') {
-        if (salary <= PLAN2_INCOME_LOWER) return PLAN2_RATE_LOWER;
-        if (salary >= PLAN2_INCOME_UPPER) return Math.min(PLAN2_RATE_UPPER, RATE_CAP);
-        var frac = (salary - PLAN2_INCOME_LOWER) / (PLAN2_INCOME_UPPER - PLAN2_INCOME_LOWER);
-        return Math.min(PLAN2_RATE_LOWER + frac * (PLAN2_RATE_UPPER - PLAN2_RATE_LOWER), RATE_CAP);
-      }
-      if (plan === 'postgrad') return RATE_CAP; // RPI + 3% = 7.1%, capped
-      return RPI_RATE; // plan1, plan4, plan5
+      return resolveAppSlRate({ studentLoan: plan, studentLoanRate: exactRatePct }, salary);
     }
 
     function fmt(n) {
@@ -303,13 +276,14 @@
         return;
       }
 
-      var c = PLAN_CONSTANTS[plan];
+      var c = studentLoanPlanConstants(plan);
       var rate = resolveSlRate(plan, salary, exactRatePct);
       var baseline = simulateLoan(loanBal, salary, growthRate, rate, c.threshold, c.repayRate, c.writeOffYr, 0);
       var over = simulateLoan(loanBal, salary, growthRate, rate, c.threshold, c.repayRate, c.writeOffYr, surplus);
 
       var html, bridgeLabel, bridgeText;
       var BRIDGE_BAD = "Instead of overpaying a loan that gets written off, see how that cash performs across your ISAs, Pension, and Savings.";
+      var BRIDGE_MORE = "This only checks your student loan. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, or approaching the £100,000 tax trap — any of which could be a better home for that same monthly amount. Candid checks your whole picture, free, in about 5 minutes.";
 
       if (!baseline.cleared && !over.cleared) {
         // State 1: written off either way — overpaying buys nothing.
@@ -324,8 +298,24 @@
           '</div>';
         bridgeLabel = "You're handing cash to the government that would've been forgiven";
         bridgeText = BRIDGE_BAD;
+      } else if (!baseline.cleared && over.cleared && over.totalPaid < baseline.totalPaid) {
+        // State 2a: the loan would only just be written off, so years of
+        // repayments would still come first. Clearing it early costs less in
+        // total than repaying until write-off.
+        var totalSaved = baseline.totalPaid - over.totalPaid;
+        html =
+          '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#2d6b4a;font-weight:700;line-height:1.3;">Overpaying saves you roughly ' + fmt(totalSaved) + ' in total repayments.</div>' +
+          '<p style="margin-top:12px;">Without overpaying, you\'d keep repaying until the loan is written off after ' + c.writeOffYr + ' years, paying ' + fmt(baseline.totalPaid) + ' in total. Overpaying clears it in full sooner, for ' + fmt(over.totalPaid) + ' in total, so here clearing it costs less than waiting for the write-off.</p>' +
+          '<div class="statgrid">' +
+            '<div class="stat"><div class="v">' + fmt(totalSaved) + '</div><div class="l">Saved by overpaying</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(baseline.totalPaid) + '</div><div class="l">Repaid until write-off</div></div>' +
+            '<div class="stat"><div class="v">' + fmt(over.totalPaid) + '</div><div class="l">Repaid if you overpay</div></div>' +
+          '</div>';
+        bridgeLabel = "There's more to this than your loan";
+        bridgeText = BRIDGE_MORE;
       } else if (!baseline.cleared && over.cleared) {
-        // State 2: overpaying tips you from forgiveness into full repayment.
+        // State 2b: overpaying tips you from forgiveness into full repayment,
+        // and costs more in total than letting the balance be written off.
         var extraPaid2 = over.totalPaid - baseline.totalPaid;
         html =
           '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#c0392b;font-weight:700;line-height:1.3;">Overpaying clears this loan in full instead of leaving it to be written off.</div>' +
@@ -351,7 +341,7 @@
             '<div class="stat"><div class="v">' + fmt(over.totalPaid) + '</div><div class="l">Total repaid if you overpay</div></div>' +
           '</div>';
         bridgeLabel = "There's more to this than your loan";
-        bridgeText = "This only checks your student loan. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, or approaching the £100,000 tax trap — any of which could be a better home for that same monthly amount. Candid checks your whole picture, free, in about 5 minutes.";
+        bridgeText = BRIDGE_MORE;
       }
 
       resultEl.innerHTML = html;

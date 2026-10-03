@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && for f in *.html; do [ \"$f\" = \"index.html\" ] || cp \"$f\" \"dist/$f\"; done",
+    "build": "vite build && for f in *.html; do [ -e \"dist/$f\" ] || cp \"$f\" \"dist/$f\"; done",
     "preview": "vite preview",
     "test": "node --test \"src/lib/*.test.js\""
   },

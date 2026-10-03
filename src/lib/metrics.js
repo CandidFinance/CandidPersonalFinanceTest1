@@ -1,4 +1,4 @@
-import { calcIncomeTax } from "./tax.js";
+import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE } from "./tax.js";
 import { resolveSlRate, slRepaymentThreshold } from "./studentLoan.js";
 
 export const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
@@ -49,7 +49,7 @@ export function calcMetrics(d, marketRates = {}) {
         surplusCash = emergencyExcess,
         // ISA: always derived from granular breakdown fields
         isaUsedThisYearCalc = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0),
-        isaHeadroom = Math.max(0, 20000 - isaUsedThisYearCalc),
+        isaHeadroom = Math.max(0, ISA_ALLOWANCE - isaUsedThisYearCalc),
         myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0,
         missedMatch = Math.max(0, empCapPct - myPct) * salary / 100,
         potVal = (+d.potValue||0) + (+d.potValue2||0),
@@ -79,10 +79,8 @@ export function calcMetrics(d, marketRates = {}) {
   const bonusIncome = +d.bonusAmount||0;
   const pensionSacrifice = salary * myPct / 100;
   const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome - pensionSacrifice;
-  const tr = adjustedNetIncome > 125140 ? 0.45
-           : adjustedNetIncome > 50270  ? 0.40
-           : 0.20;
-  const taxBandLabel = adjustedNetIncome > 125140 ? "additional" : adjustedNetIncome > 50270 ? "higher" : "basic";
+  const taxBandLabel = adjustedNetIncome > ADDITIONAL_RATE_THRESHOLD ? "additional" : adjustedNetIncome > HIGHER_RATE_THRESHOLD ? "higher" : "basic";
+  const tr = INCOME_TAX_RATES[taxBandLabel];
   // CGT rates on shares/other assets (non-property): 18% basic, 24% higher/additional —
   // aligned with residential property rates from the 30 Oct 2024 Budget. Not 10%/20%,
   // which were the pre-Budget rates.

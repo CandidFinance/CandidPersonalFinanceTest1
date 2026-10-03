@@ -17,7 +17,8 @@
 // "missing". Add "debt" here once a debts input exists.
 export const VISIBLE_CHECKS = ["match", "emergency", "isa"];
 
-export const ISA_ALLOWANCE = 20000;
+import { ISA_ALLOWANCE } from "./tax.js";
+export { ISA_ALLOWANCE };
 export const HIGH_INTEREST_APR = 6;
 export const EMERGENCY_FLOOR_MONTHS = 3;
 // The usual target range, quoted in copy. Only the floor is flagged.

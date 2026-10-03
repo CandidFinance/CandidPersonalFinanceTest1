@@ -1,3 +1,5 @@
+import { PSA_BY_BAND } from "./tax.js";
+
 // ── Cash waterfall optimiser: ISA → Personal Savings Allowance → Premium Bonds ──
 // Single source of truth for "what could this cash + Premium Bonds pot earn if
 // optimally allocated, vs what it earns today" — shared by the Cash & Savings
@@ -11,7 +13,7 @@ export const PB_RATE = 0.044;
 
 export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
   const bondsVal = m.bonds || 0;
-  const psaLimit = m.taxBandLabel === "basic" ? 1000 : m.taxBandLabel === "higher" ? 500 : 0;
+  const psaLimit = PSA_BY_BAND[m.taxBandLabel] ?? 0;
   // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
   const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
   const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";

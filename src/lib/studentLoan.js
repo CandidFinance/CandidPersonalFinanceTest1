@@ -17,12 +17,16 @@
 // which carries the 1 Sept 2026 – 31 Aug 2027 rates (Plan 1/5: 4.1%; Plan 2:
 // 4.1% plus up to 3%, capped at 6%). The per-plan "How interest is
 // calculated" guidance pages lagged behind and still showed 2025/26 rates.
-const PLAN2_RPI_BASE = 0.041; // 2026/27 RPI
-const PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
-const PLAN2_MAX_VARIABLE = 0.03; // percentage points added by the time income reaches PLAN2_INCOME_UPPER, before capping
-const PLAN2_RATE_CAP = 0.06;
-const PLAN5_RATE = 0.041; // = 2026/27 RPI, same figure as Plan 2's base
-const PLAN1_RATE = 0.041; // 1 Sept 2026 – 31 Aug 2027: RPI, as RPI is below base rate + 1%
+// Plan 4 and the Postgraduate Loan aren't offered in the app's onboarding;
+// they're here so the public student loan calculator reads the same figures.
+export const PLAN2_RPI_BASE = 0.041; // 2026/27 RPI
+export const PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
+export const PLAN2_MAX_VARIABLE = 0.03; // percentage points added by the time income reaches PLAN2_INCOME_UPPER, before capping
+export const PLAN2_RATE_CAP = 0.06;
+export const PLAN5_RATE = 0.041; // = 2026/27 RPI, same figure as Plan 2's base
+export const PLAN1_RATE = 0.041; // 1 Sept 2026 – 31 Aug 2027: RPI, as RPI is below base rate + 1%
+export const PLAN4_RATE = 0.041; // same rule as Plan 1
+export const POSTGRAD_RATE = 0.06; // RPI + 3% = 7.1%, capped at 6% for 2026/27
 // The same 6% a year the pension projections assume (pension.js) — duplicated
 // rather than imported, since pension.js → metrics.js → this file would make
 // the import circular. Keep in sync.
@@ -32,18 +36,23 @@ export function resolveSlRate(d, grossSalary) {
   if (+d.studentLoanRate > 0) return +d.studentLoanRate / 100;
   if (d.studentLoan === "plan2") {
     if (grossSalary <= PLAN2_INCOME_LOWER) return PLAN2_RPI_BASE;
-    const frac = (grossSalary - PLAN2_INCOME_LOWER) / (PLAN2_INCOME_UPPER - PLAN2_INCOME_LOWER);
+    const frac = Math.min(1, (grossSalary - PLAN2_INCOME_LOWER) / (PLAN2_INCOME_UPPER - PLAN2_INCOME_LOWER));
     return Math.min(PLAN2_RPI_BASE + frac * PLAN2_MAX_VARIABLE, PLAN2_RATE_CAP);
   }
   if (d.studentLoan === "plan5") return PLAN5_RATE;
+  if (d.studentLoan === "plan4") return PLAN4_RATE;
+  if (d.studentLoan === "postgrad") return POSTGRAD_RATE;
   return PLAN1_RATE; // plan1
 }
 
-// ── Repayment thresholds (2026/27) — 9% of gross pay above these is repaid.
-// The ONLY place these figures live: every repayment, forecast and bonus
-// calculation reads them from here. They change most Aprils — check
+// ── Repayment thresholds (2026/27) — the repayment rate below applies to
+// gross pay above these. The ONLY place these figures live: every repayment,
+// forecast and bonus calculation, and the public calculator pages, read them
+// from here. They change most Aprils — check
 // https://www.gov.uk/repaying-your-student-loan/what-you-pay each tax year.
-export const SL_REPAYMENT_THRESHOLDS = { plan1: 26900, plan2: 29385, plan5: 25000 };
+export const SL_REPAYMENT_THRESHOLDS = { plan1: 26900, plan2: 29385, plan4: 33795, plan5: 25000, postgrad: 21000 };
+export const SL_REPAYMENT_RATES = { plan1: 0.09, plan2: 0.09, plan4: 0.09, plan5: 0.09, postgrad: 0.06 };
+export const SL_WRITE_OFF_YEARS = { plan1: 25, plan2: 30, plan4: 30, plan5: 40, postgrad: 30 };
 
 // Threshold for a plan, or 0 for no loan / an unrecognised plan.
 export function slRepaymentThreshold(studentLoanType) {
@@ -54,9 +63,10 @@ export function slRepaymentThreshold(studentLoanType) {
 // threshold, previously duplicated independently in getModuleInsights,
 // getModuleProducts, and the marginal-return chart memo.
 export function studentLoanPlanConstants(studentLoanType) {
-  const writeOffYr = studentLoanType==="plan2" ? 30 : studentLoanType==="plan5" ? 40 : 25;
+  const writeOffYr = SL_WRITE_OFF_YEARS[studentLoanType] ?? SL_WRITE_OFF_YEARS.plan1;
   const threshold = SL_REPAYMENT_THRESHOLDS[studentLoanType] ?? SL_REPAYMENT_THRESHOLDS.plan1;
-  return { writeOffYr, threshold };
+  const repayRate = SL_REPAYMENT_RATES[studentLoanType] ?? SL_REPAYMENT_RATES.plan1;
+  return { writeOffYr, threshold, repayRate };
 }
 
 // ── Student loan core scenario — single source of truth for "is this loan
