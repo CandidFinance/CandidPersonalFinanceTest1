@@ -7,6 +7,10 @@ import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillCell from "./PillCell.jsx";
+import { motion } from "framer-motion";
+import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
+import EmptyResultCard from "./EmptyResultCard.jsx";
+import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
 
 // Property step 3: rent vs buy over the years before the buyer would sell
 // (logic in src/lib/rentVsBuy.js). Moderate scenario only for now.
@@ -195,17 +199,12 @@ function Comparison({ heading, rows }) {
 function NegativeEquity({ result, shown, fixedYears, onShowRatesUp, ratesUpShown }) {
   const ne = result.negativeEquityYears;
   if (!ne.length && !(shown.saleShortfall > 0)) return null;
-  const first = ne[0], last = ne[ne.length - 1];
-  const which = !ne.length ? null
-    : first === last ? `year ${first}`
-    : last - first === 1 ? `years ${first} and ${last}`
-    : `years ${first} to ${last}`;
   const body = { fontSize:"12.5px", color:TEXT, lineHeight:1.5, margin:"4px 0 0" };
   return (
     <div style={{borderLeft:`3px solid ${SC.critical}`,padding:"2px 0 2px 10px",margin:"0 0 14px"}}>
       <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",fontWeight:700,color:SC.critical}}>
         <CircleAlert size={15} style={{flexShrink:0}}/>
-        {which ? `Negative equity in ${which}` : "Selling wouldn't clear the mortgage"}
+        {ne.length ? negativeEquityText(ne) : "Selling wouldn't clear the mortgage"}
       </div>
       {shown.equity < 0 ? (
         <p style={body}>
@@ -245,7 +244,21 @@ function whyText(row) {
     : `Renting leaves you ${gap} better off.`;
 }
 
+// "Years 3 to 5" style, for the one-line negative equity warning.
+function negativeEquityText(ne) {
+  const first = ne[0], last = ne[ne.length - 1];
+  return first === last ? `Negative equity in year ${first}`
+    : last - first === 1 ? `Negative equity in years ${first} and ${last}`
+    : `Negative equity in years ${first} to ${last}`;
+}
+
+// Laid out like steps 1 and 2: the result first (the answer and the rate
+// options, with the chart, timeline and breakdown behind a chevron so the
+// result and the inputs fit on one screen), then the inputs that drive it,
+// with a sticky bar keeping the answer in view while they're edited.
 export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const resultRef = useRef(null);
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState(null); // null: the last year
   const [earningsInfoOpen, setEarningsInfoOpen] = useState(false);
@@ -282,10 +295,9 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
     { label:"Selling costs", value:shown.buying.sellingCosts },
   ] : [];
 
-  return (
-    <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Rent vs buy</div>
-
+  // The inputs, below the result (see the layout note above the component).
+  const inputs = (
+    <>
       {/* Own rows: "Years before you'd sell" is too long a caption to share a
           row on a small phone without being cut off. */}
       <div style={{display:"flex",gap:"10px"}}>
@@ -346,14 +358,26 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
           )}
         </div>
       )}
+    </>
+  );
 
-      <div style={{marginTop:"18px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px"}}>
-        {!result ? (
-          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:0}}>Add your current monthly rent to compare renting with buying.</p>
-        ) : (
-          <>
+  return (
+    <div>
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Which leaves you better off</div>
+      {!result ? (
+        <EmptyResultCard text="Add your monthly rent below to compare renting with buying."/>
+      ) : (
+        <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
+          style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON}}>
+            <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
+            <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:TEXT,lineHeight:1.2}}>{buyingAhead ? "Buying" : "Renting"}</div>
+            <p style={{display:"flex",alignItems:"center",gap:"4px",fontSize:"13px",color:TEXT,margin:"2px 0 0"}}>
+              <ArrowUp size={14} color={SC.ok} strokeWidth={2.6}/>
+              ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}
+            </p>
+
             {outcomes && (
-              <div style={{marginBottom:"16px"}}>
+              <div style={{marginTop:"14px"}}>
                 <div style={{...figureLabel,display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px"}}>
                   Mortgage rate from year {remortgageYear}
                   <InfoButton open={rateInfoOpen} onClick={() => setRateInfoOpen(o => !o)}/>
@@ -366,13 +390,19 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
                 <RateChoice outcomes={outcomes} ratePct={input.mortgage.ratePct} chosen={rateScenario} onChoose={setRateScenario}/>
               </div>
             )}
-            <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
-            <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:TEXT,lineHeight:1.2}}>{buyingAhead ? "Buying" : "Renting"}</div>
-            <p style={{display:"flex",alignItems:"center",gap:"4px",fontSize:"13px",color:TEXT,margin:"2px 0 0"}}>
-              <ArrowUp size={14} color={SC.ok} strokeWidth={2.6}/>
-              ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}
-            </p>
 
+            {/* Collapsed, a negative-equity warning still shows in one line,
+                so it can't be missed; the full note is in the details. */}
+            {!detailsOpen && result.negativeEquityYears.length > 0 && (
+              <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"12px",fontSize:"13px",fontWeight:700,color:SC.critical}}>
+                <CircleAlert size={15} style={{flexShrink:0}}/>
+                {negativeEquityText(result.negativeEquityYears)}
+              </div>
+            )}
+
+            {/* The chart, timeline and year-by-year breakdown, collapsed by
+                default so the result and the inputs below fit on one screen. */}
+            {detailsOpen && (<>
             <NetCostChart rows={result.years} selectedYear={shown.year}
               buyingAtStart={result.years[0].buying.stampDutyAndFees + input.price * SELLING_COSTS_PCT / 100}/>
             <Timeline rows={result.years} selectedYear={shown.year} onSelect={y => setSelectedYear(y)}/>
@@ -452,9 +482,21 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
                     ),
                   } },
               ]}/>
-          </>
-        )}
-      </div>
+            </>)}
+            <ExpandChevron open={detailsOpen} onToggle={() => setDetailsOpen(o => !o)} label="the details"/>
+        </motion.div>
+      )}
+      {result && (
+        <StickySummaryBar watchRef={resultRef} label="Back to which leaves you better off">
+          <SummaryLabel>After {years(result.horizonYears)}</SummaryLabel>
+          <SummaryFigure color={TEXT}>{buyingAhead ? "Buying" : "Renting"}</SummaryFigure>
+          <span style={{fontSize:"12.5px",fontWeight:600,color:MUT}}>~{fmtCompact(Math.abs(result.gapAtHorizon))} ahead</span>
+        </StickySummaryBar>
+      )}
+
+      <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"18px 0 14px"}}/>
+      <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"0 0 6px"}}>Set your rent vs buy assumptions.</p>
+      {inputs}
     </div>
   );
 }

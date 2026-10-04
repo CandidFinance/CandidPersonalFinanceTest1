@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
 import { Plus, Minus } from "lucide-react";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
+import EmptyResultCard from "./EmptyResultCard.jsx";
 import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
@@ -331,33 +332,8 @@ export function LoanTile({ d, m }) {
             <ExpandChevron open={breakdownOpen} onToggle={() => setBreakdownOpen(o => !o)} label="the breakdown"/>
           </motion.div>
       ) : (
-        <EmptyLoanCard/>
+        <EmptyResultCard text="Update your assumptions below to see what you could borrow."/>
       )}
-    </div>
-  );
-}
-
-// Before there's a property price: the result card's shape in grey,
-// blurred, with one line saying what fills it in. Placeholder bars only, no
-// made-up figures.
-function EmptyLoanCard() {
-  const bar = (width, height = 8) => <div style={{width,height,borderRadius:"4px",background:"rgba(22,47,36,0.12)"}}/>;
-  return (
-    <div style={{position:"relative",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",overflow:"hidden"}}>
-      <div aria-hidden="true" style={{filter:"blur(3px)",opacity:0.7}}>
-        <div style={{display:"flex",gap:"24px"}}>
-          <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>{bar("70px")}{bar("130px",26)}</div>
-          <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>{bar("70px")}{bar("56px",26)}</div>
-        </div>
-        <div style={{marginTop:"18px"}}>{bar("100%",10)}</div>
-        <div style={{marginTop:"12px"}}>{bar("75%")}</div>
-        <div style={{marginTop:"8px",marginBottom:"8px"}}>{bar("55%")}</div>
-      </div>
-      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-        <p style={{fontSize:"13.5px",fontWeight:600,color:TEXT,lineHeight:1.5,margin:0,textAlign:"center",background:"rgba(255,255,255,0.85)",borderRadius:"10px",padding:"10px 14px"}}>
-          Update your assumptions below to see what you could borrow.
-        </p>
-      </div>
     </div>
   );
 }
