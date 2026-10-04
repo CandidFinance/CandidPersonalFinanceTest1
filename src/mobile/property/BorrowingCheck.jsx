@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
 import { Plus, Minus, ChevronDown } from "lucide-react";
 import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
@@ -364,47 +365,26 @@ function EmptyLoanCard() {
   );
 }
 
-// A slim bar fixed to the top of the screen showing the loan and times
-// income, there only while the full result (`watchRef`) is scrolled up out
-// of view, so editing the inputs below still shows the answer moving.
-// Tapping it scrolls back to the full result. Nothing until there's a price.
+// The sticky bar for this step: the loan and times income, while the full
+// result is scrolled out of view. Nothing until there's a price.
 export function LoanSummaryBar({ d, m, watchRef }) {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const el = watchRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(([entry]) => setShow(!entry.isIntersecting && entry.boundingClientRect.top < 0));
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [watchRef]);
-
   const input = borrowingInputs(d, m);
   if (!(input.price > 0)) return null;
   const r = calcBorrowingCheck(input);
   const times = multipleText(r);
   const bandColor = r.band ? bandStyle(r.band).color : TEXT;
-  const figure = { fontFamily:SERIF, fontSize:"17px", fontWeight:700, lineHeight:1.2 };
 
   return (
-    <AnimatePresence>
-      {show && (
-        <motion.button type="button" onClick={() => watchRef.current?.scrollIntoView({ behavior:"smooth", block:"start" })}
-          initial={{y:"-100%"}} animate={{y:0}} exit={{y:"-100%"}} transition={{duration:0.2}}
-          aria-label="Back to how much you'd need to borrow"
-          style={{position:"fixed",top:0,left:0,right:0,zIndex:3000,background:WHITE,border:"none",borderBottom:"1px solid rgba(22,47,36,0.1)",boxShadow:"0 4px 12px rgba(22,47,36,0.08)",paddingTop:"env(safe-area-inset-top, 0px)",fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
-          <div style={{maxWidth:"580px",margin:"0 auto",padding:"10px 20px",display:"flex",alignItems:"baseline",gap:"10px",boxSizing:"border-box"}}>
-            {r.loanNeeded === 0 ? (
-              <span style={{fontSize:"13px",fontWeight:700,color:SC.ok}}>No mortgage needed</span>
-            ) : (
-              <>
-                <span style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Loan needed</span>
-                <span style={{...figure,color:TEXT}}>{fmt(r.loanNeeded)}</span>
-                {times && <span style={{...figure,color:bandColor}}>{times}x <span style={{fontFamily:SANS,fontSize:"12px",fontWeight:600,color:MUT}}>income</span></span>}
-              </>
-            )}
-          </div>
-        </motion.button>
+    <StickySummaryBar watchRef={watchRef} label="Back to how much you'd need to borrow">
+      {r.loanNeeded === 0 ? (
+        <span style={{fontSize:"13px",fontWeight:700,color:SC.ok}}>No mortgage needed</span>
+      ) : (
+        <>
+          <SummaryLabel>Loan needed</SummaryLabel>
+          <SummaryFigure color={TEXT}>{fmt(r.loanNeeded)}</SummaryFigure>
+          {times && <SummaryFigure color={bandColor}>{times}x <span style={{fontFamily:SANS,fontSize:"12px",fontWeight:600,color:MUT}}>income</span></SummaryFigure>}
+        </>
       )}
-    </AnimatePresence>
+    </StickySummaryBar>
   );
 }

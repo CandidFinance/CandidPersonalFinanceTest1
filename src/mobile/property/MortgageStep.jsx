@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
@@ -8,6 +8,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillCell from "./PillCell.jsx";
 import PillSelect from "./PillSelect.jsx";
+import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
 
 // Property step 2: the repayment mortgage on the loan from step 1 (logic in
 // src/lib/mortgage.js). Only reachable once step 1 is complete.
@@ -78,32 +79,32 @@ function RepaymentPath({ payment, fixedYears, termYears, outcomes }) {
   );
 }
 
+// Laid out like step 1: the result first (the repayment, with the rate
+// scenarios and totals behind a chevron so the result and the inputs fit on
+// one screen), then the inputs that drive it, with a sticky bar keeping the
+// repayment in view while they're edited.
 export default function MortgageStep({ d, m, set, onContinue }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [totalInfoOpen, setTotalInfoOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const resultRef = useRef(null);
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
+  const sectionHeading = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"10px" };
+  const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"18px 0 14px" };
   const columns = { display:"flex", gap:"10px", flexWrap:"wrap" };
 
   const loan = calcBorrowingCheck(borrowingInputs(d, m)).loanNeeded;
   const input = mortgageInputs(d, loan);
   const s = mortgageSummary(input);
   const totalCost = loan + s.totalInterest + s.totalFees;
+  // The remortgage range, shown in one line while the chart is collapsed.
+  const outcomePayments = (s.remortgageOutcomes || []).map(o => o.monthlyPayment);
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Your mortgage</div>
-
-      <div style={columns}>
-        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Term (years)" unit="" value={input.termYears} onChange={v => set("propertyMortgageTerm", v ?? "")}/></PillCell>
-        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Mortgage rate" unit="%" value={input.ratePct || null} onChange={v => set("propertyMortgageRate", v ?? "")}/></PillCell>
-      </div>
-      <div style={{...columns,marginTop:"10px"}}>
-        <PillCell min={COLUMN_MIN}><PillSelect label="Fixed for" value={String(input.fixedYears)} onChange={v => set("propertyFixedYears", v)} options={FIXED_OPTIONS}/></PillCell>
-        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Remortgage fee" value={input.remortgageFee || null} onChange={v => set("propertyRemortgageFee", v ?? "")}/></PillCell>
-      </div>
-
-      <div style={{marginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px"}}>
+      <div style={sectionHeading}>What you'd repay</div>
+      <div ref={resultRef} style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px"}}>
         {loan === 0 ? (
           <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:0}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
         ) : (
@@ -118,9 +119,18 @@ export default function MortgageStep({ d, m, set, onContinue }) {
             </div>
             {infoOpen && (
               <p style={{...explainer,marginTop:"10px"}}>
-                Capital and interest, so the loan is paid off over {input.termYears} years.{s.remortgageOutcomes ? ` When each fix ends, Candid assumes you remortgage onto a new ${input.fixedYears}-year deal and pay the fee from cash. The lines show the repayment from year ${s.firstRemortgageYear} if rates are then ${STRESS_REMORTGAGE_UPLIFT} points higher, the same, or ${STRESS_REMORTGAGE_UPLIFT} points lower.` : ""}
+                Capital and interest, so the loan is paid off over {input.termYears} years.{s.remortgageOutcomes ? ` When each fix ends, Candid assumes you remortgage onto a new ${input.fixedYears}-year deal and pay the fee from cash. From year ${s.firstRemortgageYear}, the repayment depends on whether rates are then ${STRESS_REMORTGAGE_UPLIFT} points higher, the same, or ${STRESS_REMORTGAGE_UPLIFT} points lower.` : ""}
               </p>
             )}
+            {s.remortgageOutcomes && !detailsOpen && (
+              <div style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,marginTop:"10px"}}>
+                From year {s.firstRemortgageYear}: {fmt(Math.min(...outcomePayments))} to {fmt(Math.max(...outcomePayments))} a month, if rates move {STRESS_REMORTGAGE_UPLIFT} points either way.
+              </div>
+            )}
+
+            {/* The rate scenarios and totals, collapsed by default so the
+                result and the inputs below fit on one screen. */}
+            {detailsOpen && (<>
             {s.remortgageOutcomes && (
               <RepaymentPath payment={s.monthlyPayment} fixedYears={input.fixedYears} termYears={input.termYears} outcomes={s.remortgageOutcomes}/>
             )}
@@ -143,8 +153,31 @@ export default function MortgageStep({ d, m, set, onContinue }) {
                 The {fmt(loan)} loan plus {fmt(s.totalInterest)} of interest over {input.termYears} years{s.remortgages > 0 ? `, and ${s.remortgages} remortgage ${s.remortgages === 1 ? "fee" : "fees"} of ${fmt(input.remortgageFee)} (${fmt(s.totalFees)})` : ""}.{s.remortgages > 0 ? ` This assumes rates stay at ${pctText(input.ratePct)}; higher or lower rates at each remortgage change the interest.` : ""}
               </p>
             )}
+            </>)}
+            <button type="button" onClick={() => setDetailsOpen(o => !o)} aria-expanded={detailsOpen}
+              aria-label={detailsOpen ? "Hide the details" : "Show the details"}
+              style={{display:"flex",justifyContent:"center",width:"100%",background:"none",border:"none",padding:"8px 0 0",margin:"6px 0 -6px",cursor:"pointer"}}>
+              <ChevronDown size={20} color={MUT} style={{transform:detailsOpen ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
+            </button>
           </>
         )}
+      </div>
+      {loan > 0 && (
+        <StickySummaryBar watchRef={resultRef} label="Back to what you'd repay">
+          <SummaryLabel>Monthly repayment</SummaryLabel>
+          <SummaryFigure color={TEXT}>{fmt(s.monthlyPayment)}</SummaryFigure>
+        </StickySummaryBar>
+      )}
+
+      <hr style={divider}/>
+      <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"0 0 6px"}}>Set your mortgage assumptions.</p>
+      <div style={columns}>
+        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Term (years)" unit="" value={input.termYears} onChange={v => set("propertyMortgageTerm", v ?? "")}/></PillCell>
+        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Mortgage rate" unit="%" value={input.ratePct || null} onChange={v => set("propertyMortgageRate", v ?? "")}/></PillCell>
+      </div>
+      <div style={{...columns,marginTop:"10px"}}>
+        <PillCell min={COLUMN_MIN}><PillSelect label="Fixed for" value={String(input.fixedYears)} onChange={v => set("propertyFixedYears", v)} options={FIXED_OPTIONS}/></PillCell>
+        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Remortgage fee" value={input.remortgageFee || null} onChange={v => set("propertyRemortgageFee", v ?? "")}/></PillCell>
       </div>
 
       {onContinue && (
