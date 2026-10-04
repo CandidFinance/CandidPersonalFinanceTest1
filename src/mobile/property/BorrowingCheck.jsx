@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, ChevronDown } from "lucide-react";
 import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
@@ -239,6 +239,7 @@ export function PurchaseInputs({ d, m, set }) {
 export function LoanTile({ d, m }) {
   const [incomeInfoOpen, setIncomeInfoOpen] = useState(false);
   const [stampDutyInfoOpen, setStampDutyInfoOpen] = useState(false);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
   const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
@@ -253,8 +254,7 @@ export function LoanTile({ d, m }) {
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"6px"}}>How much you'd need to borrow</div>
-      <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>Cash left after stamp duty and fees is the deposit. The rest is the mortgage.</p>
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>How much you'd need to borrow</div>
       {input.price > 0 ? (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
             style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",border:bandColor ? `2px solid ${bandColor}` : "none"}}>
@@ -291,6 +291,9 @@ export function LoanTile({ d, m }) {
               </>
             )}
 
+            {/* The cash-to-deposit breakdown, collapsed by default so the
+                headline result and the inputs below fit on one screen. */}
+            {breakdownOpen && (<>
             <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>
             <div style={row}><span>Cash available</span><span>{fmt(input.cashAvailable)}</span></div>
             <div style={row}>
@@ -320,6 +323,12 @@ export function LoanTile({ d, m }) {
                 Cash available is {fmt(r.upfrontShortfall)} short of covering stamp duty and fees, so none of it is left for a deposit.
               </p>
             )}
+            </>)}
+            <button type="button" onClick={() => setBreakdownOpen(o => !o)} aria-expanded={breakdownOpen}
+              aria-label={breakdownOpen ? "Hide the breakdown" : "Show the breakdown"}
+              style={{display:"flex",justifyContent:"center",width:"100%",background:"none",border:"none",padding:"8px 0 0",margin:"6px 0 -6px",cursor:"pointer"}}>
+              <ChevronDown size={20} color={MUT} style={{transform:breakdownOpen ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
+            </button>
           </motion.div>
       ) : (
         <EmptyLoanCard/>
@@ -333,7 +342,6 @@ export function LoanTile({ d, m }) {
 // made-up figures.
 function EmptyLoanCard() {
   const bar = (width, height = 8) => <div style={{width,height,borderRadius:"4px",background:"rgba(22,47,36,0.12)"}}/>;
-  const row = <div style={{display:"flex",justifyContent:"space-between",padding:"7px 0"}}>{bar("38%")}{bar("18%")}</div>;
   return (
     <div style={{position:"relative",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",overflow:"hidden"}}>
       <div aria-hidden="true" style={{filter:"blur(3px)",opacity:0.7}}>
@@ -342,11 +350,12 @@ function EmptyLoanCard() {
           <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>{bar("70px")}{bar("56px",26)}</div>
         </div>
         <div style={{marginTop:"18px"}}>{bar("100%",10)}</div>
-        <div style={{marginTop:"18px"}}>{row}{row}{row}{row}</div>
+        <div style={{marginTop:"12px"}}>{bar("75%")}</div>
+        <div style={{marginTop:"8px",marginBottom:"8px"}}>{bar("55%")}</div>
       </div>
       <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
         <p style={{fontSize:"13.5px",fontWeight:600,color:TEXT,lineHeight:1.5,margin:0,textAlign:"center",background:"rgba(255,255,255,0.85)",borderRadius:"10px",padding:"10px 14px"}}>
-          Add a property price below to see what you'd need to borrow.
+          Update your assumptions below to see what you could borrow.
         </p>
       </div>
     </div>
