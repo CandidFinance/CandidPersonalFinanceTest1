@@ -1,15 +1,18 @@
+import { useRef } from "react";
 import { Home, ChevronRight } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
+import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "../../lib/waterfall.js";
 import DecisionWaterfall from "../property/DecisionWaterfall.jsx";
-import { PurchaseInputs, LoanTile } from "../property/BorrowingCheck.jsx";
+import { PurchaseInputs, LoanTile, LoanSummaryBar } from "../property/BorrowingCheck.jsx";
 import MortgageStep from "../property/MortgageStep.jsx";
 import RentVsBuyStep from "../property/RentVsBuyStep.jsx";
 import PropertySteps from "../property/PropertySteps.jsx";
 
 // Property module, split into two steps so neither is one long page:
-//   1. Readiness (/app/property): the purchase inputs first, then the
-//      decision waterfall, then the loan the purchase needs.
+//   1. Readiness (/app/property): the loan the purchase needs first (the
+//      answer people come back for), then the purchase inputs that drive it,
+//      then the decision waterfall, passed on the way to Continue.
 //   2. Mortgage (/app/property/mortgage): repayments and remortgaging.
 //   3. Rent vs buy (/app/property/rent-vs-buy): net wealth either way over
 //      the years the buyer expects to stay.
@@ -34,6 +37,9 @@ function listText(items) {
 export default function MobilePropertyScreen({ step, d, m, set, regionalRows, marketRates, onAddInputs, onOpenModule, onSelectStep }) {
   const missing = readinessMissing(d, m);
   const unlocked = missing.length === 0;
+  const loanRef = useRef(null);
+  const checksToReview = runWaterfall(waterfallInputs(d, m))
+    .filter(c => VISIBLE_CHECKS.includes(c.key) && c.state === "attention").length;
 
   return (
     <div>
@@ -59,15 +65,17 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
         </div>
       ) : (
         <>
-          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"16px 0"}}>Set your baseline home purchase assumptions.</p>
+          <div ref={loanRef} style={{marginTop:"20px",scrollMarginTop:"16px"}}>
+            <LoanTile d={d} m={m}/>
+          </div>
+          <LoanSummaryBar d={d} m={m} watchRef={loanRef}/>
 
+          <hr style={divider}/>
+          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"0 0 16px"}}>Set your baseline home purchase assumptions.</p>
           <PurchaseInputs d={d} m={m} set={set}/>
 
           <hr style={divider}/>
           <DecisionWaterfall d={d} m={m} set={set} onAddInputs={onAddInputs} onOpenModule={onOpenModule}/>
-
-          <hr style={divider}/>
-          <LoanTile d={d} m={m}/>
 
           <div style={{marginTop:"24px"}}>
             {!unlocked && (
@@ -78,9 +86,16 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
             <button type="button" disabled={!unlocked} onClick={() => onSelectStep("mortgage")} style={{
               width:"100%", background:unlocked ? G : "rgba(22,47,36,0.2)", color:WHITE, border:"none", borderRadius:"100px",
               padding:"13px", fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:unlocked ? "pointer" : "not-allowed",
-              display:"flex", alignItems:"center", justifyContent:"center", gap:"4px",
+              display:"flex", flexDirection:"column", alignItems:"center", gap:"2px",
             }}>
-              Continue to your mortgage{unlocked && <ChevronRight size={16}/>}
+              <span style={{display:"flex",alignItems:"center",gap:"4px"}}>Continue to your mortgage{unlocked && <ChevronRight size={16}/>}</span>
+              {/* Not a block: the checks are worth settling before a deposit,
+                  but moving on to the mortgage is still the user's call. */}
+              {unlocked && checksToReview > 0 && (
+                <span style={{fontSize:"11.5px",fontWeight:600,opacity:0.8}}>
+                  {checksToReview} {checksToReview === 1 ? "check" : "checks"} above to review first
+                </span>
+              )}
             </button>
           </div>
         </>

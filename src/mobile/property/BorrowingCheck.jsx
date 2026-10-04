@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
-import { G, MUT, TEXT, SERIF, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
 import { fmt } from "../../lib/format.js";
@@ -10,10 +11,20 @@ import PillCell from "./PillCell.jsx";
 import PillSelect from "./PillSelect.jsx";
 import { PROPERTY_REGIONS } from "../../lib/regions.js";
 
-// Borrowing check, in two parts so the Property screen can put the
-// purchase inputs first and the loan result after the waterfall: the loan a
-// purchase needs against the 4.5x income most lenders work to. A warning
-// only, never a block. Logic in src/lib/borrowing.js.
+// Borrowing check: the loan a purchase needs against the 4.5x income most
+// lenders work to. A warning only, never a block. Logic in
+// src/lib/borrowing.js. In parts so the Property screen can lead with the
+// result (LoanTile), then the inputs that drive it (PurchaseInputs), with
+// LoanSummaryBar keeping the result in view while those inputs are edited.
+
+// The times-income figure as shown: one decimal normally, but a multiple just
+// over a band edge would round down onto it ("4.5", "5.5") and read as the
+// band below, so show two there. Null when there's no income to compare.
+function multipleText(r) {
+  if (r.multiple == null) return null;
+  const nearEdge = [LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE].some(x => r.multiple > x && r.multiple.toFixed(1) === x.toFixed(1));
+  return nearEdge ? r.multiple.toFixed(2) : r.multiple.toFixed(1);
+}
 
 // Colour and caption for calcBorrowingCheck's band: green up to 4.5x,
 // orange to 5.5x, red above. Drives the times-income figure, the bar and
@@ -103,9 +114,9 @@ const COLUMN_MIN = "140px";
 // buying together (their first-time buyer answer among them), then price
 // and cash available, with stamp duty by hand for Scotland and Wales. Fees
 // sit in a collapsed "Advanced settings", defaulting to
-// DEFAULT_PROPERTY_FEES. The loan they produce is LoanTile, further down the
-// screen. Every row sits in PillCells so right edges line up with the "?"
-// slot.
+// DEFAULT_PROPERTY_FEES. The loan they produce is LoanTile, above them on
+// the screen. Every row sits in PillCells so right edges line up with the
+// "?" slot.
 export function PurchaseInputs({ d, m, set }) {
   const [cashInfoOpen, setCashInfoOpen] = useState(false);
   const [firstTimeInfoOpen, setFirstTimeInfoOpen] = useState(false);
@@ -238,26 +249,24 @@ export function LoanTile({ d, m }) {
   const sd = input.stampDutyDetail;
   const bandColor = r.band ? bandStyle(r.band).color : null;
   const incomePhrase = together ? "your combined income" : "your income";
-  // One decimal normally, but a multiple just over a band edge would round
-  // down onto it ("4.5", "5.5") and read as the band below, so show two there.
-  const multipleText = r.multiple == null ? null
-    : [LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE].some(x => r.multiple > x && r.multiple.toFixed(1) === x.toFixed(1)) ? r.multiple.toFixed(2) : r.multiple.toFixed(1);
+  const times = multipleText(r);
 
   return (
     <div>
       <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"6px"}}>How much you'd need to borrow</div>
       <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>Cash left after stamp duty and fees is the deposit. The rest is the mortgage.</p>
       {input.price > 0 ? (
-          <div style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",border:bandColor ? `2px solid ${bandColor}` : "none"}}>
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
+            style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",border:bandColor ? `2px solid ${bandColor}` : "none"}}>
             <div style={{display:"flex",gap:"24px"}}>
               <div>
                 <div style={figureLabel}>Loan needed</div>
                 <div style={figure}>{fmt(r.loanNeeded)}</div>
               </div>
-              {multipleText && r.loanNeeded > 0 && (
+              {times && r.loanNeeded > 0 && (
                 <div>
                   <div style={figureLabel}>Times income</div>
-                  <div style={{...figure,color:bandColor || TEXT}}>{multipleText}x</div>
+                  <div style={{...figure,color:bandColor || TEXT}}>{times}x</div>
                 </div>
               )}
             </div>
@@ -311,10 +320,80 @@ export function LoanTile({ d, m }) {
                 Cash available is {fmt(r.upfrontShortfall)} short of covering stamp duty and fees, so none of it is left for a deposit.
               </p>
             )}
-          </div>
+          </motion.div>
       ) : (
-        <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:0}}>Add a property price above to see the loan it needs.</p>
+        <EmptyLoanCard/>
       )}
     </div>
+  );
+}
+
+// Before there's a property price: the result card's shape in grey,
+// blurred, with one line saying what fills it in. Placeholder bars only, no
+// made-up figures.
+function EmptyLoanCard() {
+  const bar = (width, height = 8) => <div style={{width,height,borderRadius:"4px",background:"rgba(22,47,36,0.12)"}}/>;
+  const row = <div style={{display:"flex",justifyContent:"space-between",padding:"7px 0"}}>{bar("38%")}{bar("18%")}</div>;
+  return (
+    <div style={{position:"relative",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",overflow:"hidden"}}>
+      <div aria-hidden="true" style={{filter:"blur(3px)",opacity:0.7}}>
+        <div style={{display:"flex",gap:"24px"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>{bar("70px")}{bar("130px",26)}</div>
+          <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>{bar("70px")}{bar("56px",26)}</div>
+        </div>
+        <div style={{marginTop:"18px"}}>{bar("100%",10)}</div>
+        <div style={{marginTop:"18px"}}>{row}{row}{row}{row}</div>
+      </div>
+      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+        <p style={{fontSize:"13.5px",fontWeight:600,color:TEXT,lineHeight:1.5,margin:0,textAlign:"center",background:"rgba(255,255,255,0.85)",borderRadius:"10px",padding:"10px 14px"}}>
+          Add a property price below to see what you'd need to borrow.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// A slim bar fixed to the top of the screen showing the loan and times
+// income, there only while the full result (`watchRef`) is scrolled up out
+// of view, so editing the inputs below still shows the answer moving.
+// Tapping it scrolls back to the full result. Nothing until there's a price.
+export function LoanSummaryBar({ d, m, watchRef }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const el = watchRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => setShow(!entry.isIntersecting && entry.boundingClientRect.top < 0));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [watchRef]);
+
+  const input = borrowingInputs(d, m);
+  if (!(input.price > 0)) return null;
+  const r = calcBorrowingCheck(input);
+  const times = multipleText(r);
+  const bandColor = r.band ? bandStyle(r.band).color : TEXT;
+  const figure = { fontFamily:SERIF, fontSize:"17px", fontWeight:700, lineHeight:1.2 };
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.button type="button" onClick={() => watchRef.current?.scrollIntoView({ behavior:"smooth", block:"start" })}
+          initial={{y:"-100%"}} animate={{y:0}} exit={{y:"-100%"}} transition={{duration:0.2}}
+          aria-label="Back to how much you'd need to borrow"
+          style={{position:"fixed",top:0,left:0,right:0,zIndex:3000,background:WHITE,border:"none",borderBottom:"1px solid rgba(22,47,36,0.1)",boxShadow:"0 4px 12px rgba(22,47,36,0.08)",paddingTop:"env(safe-area-inset-top, 0px)",fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
+          <div style={{maxWidth:"580px",margin:"0 auto",padding:"10px 20px",display:"flex",alignItems:"baseline",gap:"10px",boxSizing:"border-box"}}>
+            {r.loanNeeded === 0 ? (
+              <span style={{fontSize:"13px",fontWeight:700,color:SC.ok}}>No mortgage needed</span>
+            ) : (
+              <>
+                <span style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Loan needed</span>
+                <span style={{...figure,color:TEXT}}>{fmt(r.loanNeeded)}</span>
+                {times && <span style={{...figure,color:bandColor}}>{times}x <span style={{fontFamily:SANS,fontSize:"12px",fontWeight:600,color:MUT}}>income</span></span>}
+              </>
+            )}
+          </div>
+        </motion.button>
+      )}
+    </AnimatePresence>
   );
 }
