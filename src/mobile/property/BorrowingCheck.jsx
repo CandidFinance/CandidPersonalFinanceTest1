@@ -124,7 +124,7 @@ export function PurchaseInputs({ d, m, set }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const caption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, margin:0 };
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
-  const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"flex", alignItems:"center", gap:"6px" };
+  const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"6px", display:"flex", alignItems:"center", gap:"6px" };
   const columns = { display:"flex", gap:"10px", flexWrap:"wrap" };
   const column = { flex:1, minWidth:COLUMN_MIN };
   const input = borrowingInputs(d, m);
@@ -219,7 +219,9 @@ export function PurchaseInputs({ d, m, set }) {
         </>
       )}
 
-      <div style={{display:"flex",justifyContent:"flex-end",marginTop:"8px"}}>
+      {/* Negative bottom margin cancels the button's tap padding, so the
+          text sits the same distance from the divider below as a tile does. */}
+      <div style={{display:"flex",justifyContent:"flex-end",marginTop:"8px",marginBottom:advancedOpen ? 0 : "-4px"}}>
         <button type="button" onClick={() => setAdvancedOpen(o => !o)} aria-expanded={advancedOpen} style={{background:"none",border:"none",padding:"4px 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"4px"}}>
           {advancedOpen ? <Minus size={14}/> : <Plus size={14}/>}Advanced settings
         </button>

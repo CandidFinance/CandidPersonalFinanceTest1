@@ -21,7 +21,7 @@ import PropertySteps from "../property/PropertySteps.jsx";
 // sort, the AI prompt and the PDF, and Property's £ figure is still to be
 // defined.
 
-const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"26px 0 22px" };
+const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"18px 0 14px" };
 
 const MISSING_TEXT = {
   checks: "the figures for each check",
@@ -71,7 +71,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
           <LoanSummaryBar d={d} m={m} watchRef={loanRef}/>
 
           <hr style={divider}/>
-          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"0 0 16px"}}>Set your baseline home purchase assumptions.</p>
+          <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"0 0 6px"}}>Set your baseline home purchase assumptions.</p>
           <PurchaseInputs d={d} m={m} set={set}/>
 
           <hr style={divider}/>
