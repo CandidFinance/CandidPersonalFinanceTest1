@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
-import { Plus, Minus, ChevronDown } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
+import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
@@ -260,7 +261,7 @@ export function LoanTile({ d, m }) {
       <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>How much you'd need to borrow</div>
       {input.price > 0 ? (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
-            style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px",border:bandColor ? `2px solid ${bandColor}` : "none"}}>
+            style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON,border:bandColor ? `2px solid ${bandColor}` : "none"}}>
             <div style={{display:"flex",gap:"24px"}}>
               <div>
                 <div style={figureLabel}>Loan needed</div>
@@ -327,11 +328,7 @@ export function LoanTile({ d, m }) {
               </p>
             )}
             </>)}
-            <button type="button" onClick={() => setBreakdownOpen(o => !o)} aria-expanded={breakdownOpen}
-              aria-label={breakdownOpen ? "Hide the breakdown" : "Show the breakdown"}
-              style={{display:"flex",justifyContent:"center",width:"100%",background:"none",border:"none",padding:"8px 0 0",margin:"6px 0 -6px",cursor:"pointer"}}>
-              <ChevronDown size={20} color={MUT} style={{transform:breakdownOpen ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
-            </button>
+            <ExpandChevron open={breakdownOpen} onToggle={() => setBreakdownOpen(o => !o)} label="the breakdown"/>
           </motion.div>
       ) : (
         <EmptyLoanCard/>

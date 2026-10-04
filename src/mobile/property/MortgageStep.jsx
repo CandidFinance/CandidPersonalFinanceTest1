@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
@@ -104,7 +105,7 @@ export default function MortgageStep({ d, m, set, onContinue }) {
   return (
     <div>
       <div style={sectionHeading}>What you'd repay</div>
-      <div ref={resultRef} style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"18px"}}>
+      <div ref={resultRef} style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:loan === 0 ? "18px" : CARD_PADDING_WITH_CHEVRON}}>
         {loan === 0 ? (
           <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:0}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
         ) : (
@@ -154,11 +155,7 @@ export default function MortgageStep({ d, m, set, onContinue }) {
               </p>
             )}
             </>)}
-            <button type="button" onClick={() => setDetailsOpen(o => !o)} aria-expanded={detailsOpen}
-              aria-label={detailsOpen ? "Hide the details" : "Show the details"}
-              style={{display:"flex",justifyContent:"center",width:"100%",background:"none",border:"none",padding:"8px 0 0",margin:"6px 0 -6px",cursor:"pointer"}}>
-              <ChevronDown size={20} color={MUT} style={{transform:detailsOpen ? "rotate(180deg)" : "none",transition:"transform 0.15s"}}/>
-            </button>
+            <ExpandChevron open={detailsOpen} onToggle={() => setDetailsOpen(o => !o)} label="the details"/>
           </>
         )}
       </div>
