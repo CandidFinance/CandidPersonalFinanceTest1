@@ -82,7 +82,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   // The question's own field, plus any others its answer sets (`also`).
   const write = (field, value) => {
     set(field, value);
-    if (q.also) Object.entries(q.also(value)).forEach(([k, v]) => set(k, v));
+    if (q.also) Object.entries(q.also(value, ctx)).forEach(([k, v]) => set(k, v));
   };
 
   const choose = value => { write(q.field, value); next({ [q.field]: value }); };

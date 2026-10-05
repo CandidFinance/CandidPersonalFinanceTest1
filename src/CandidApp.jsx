@@ -25,7 +25,8 @@ import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx"
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
-import { appUnlocked } from "./lib/appEntry.js";
+import MobileReportStartScreen from "./mobile/screens/MobileReportStartScreen.jsx";
+import { appUnlocked, doneModules, reportReady } from "./lib/appEntry.js";
 import { MODULE_GUIDES, moduleGuideStarts } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
@@ -5511,6 +5512,10 @@ const BLANK_DATA = {
   // (src/lib/appEntry.js), plus "property" or "exploring". `appEntered`:
   // they've been through that entry, which opens the app before any report.
   name:"", email:"", interests:[], appEntered:false,
+  // `reportGoalPicks`: the answer to the question before the first report
+  // (merged into financialGoals). `reportModules`: the modules the last
+  // report covered, null for reports made before this was recorded.
+  reportGoalPicks:[], reportModules:null,
   // Which of the 4 active MVP modules (cash, investments, pension, studentLoan —
   // matching MODULE_META keys) the user picked on the "Focus" onboarding step.
   // Drives which subsequent steps are shown (getActiveSteps) and which modules
@@ -6172,11 +6177,17 @@ export default function AppShell() {
   const [rowSaveTick, setRowSaveTick] = useState(0);
   // The module whose walk-through is being rerun ("Walk me through it").
   const [moduleRerun, setModuleRerun] = useState(null);
+  // The module whose answer made the overall report available: its screen
+  // offers the report, once, until the user moves on.
+  const [reportOfferFor, setReportOfferFor] = useState(null);
   useEffect(() => { if (rowSaveTick) saveRow(rowInputFields()); }, [rowSaveTick]);
 
   async function generateDashboard(redirectPath = "/dashboard") {
     if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
     setGenerating(true);
+    // Which modules this report covers, so home can offer to update it once
+    // more are answered (modulesSinceReport).
+    set("reportModules", doneModules(d, readinessMissing(d, m).length === 0));
 
     // ── Reuse the metrics/statuses already computed for this render — no need to recalculate ──
     const metrics = m;
@@ -6329,6 +6340,19 @@ export default function AppShell() {
     return <Navigate to="/" replace />;
   }
 
+  // Before the first overall report: its one question (the goals), then the
+  // report. Only for a user who has answered enough and has no report yet.
+  if (pathname === "/app/report-start") {
+    if (!appUnlocked(d, insights)) return <Navigate to="/" replace />;
+    if (insights || !reportReady(d, readinessMissing(d, m).length === 0)) return <Navigate to="/app/home" replace />;
+    return (
+      <MobileReportStartScreen d={d} m={m} set={set} onDone={() => {
+        posthog.capture("report_started", { goals: (d.financialGoals || []).join(",") });
+        generateDashboard("/app/home");
+      }}/>
+    );
+  }
+
   // The two-question entry. Anyone the app is already open to goes home.
   if (pathname === "/app/start") {
     if (appUnlocked(d, insights)) return <Navigate to="/app/home" replace />;
@@ -6415,7 +6439,9 @@ export default function AppShell() {
   if (pathname === "/app/home") return (
     <MobileLayout activeTab="home" headerRight={editInputsButton}>
       <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} completedModules={completedModules}
-        onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}/>
+        onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}
+        onSeeReport={() => navigate("/app/report-start")}
+        onUpdateReport={() => { posthog.capture("report_update_requested"); generateDashboard("/app/home"); }}/>
     </MobileLayout>
   );
 
@@ -6479,7 +6505,15 @@ export default function AppShell() {
           <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} rerun={moduleRerun === mobileActiveModule}
             onDone={(how, at) => {
               const selected = d.selectedModules || [];
-              if (!selected.includes(mobileActiveModule)) set("selectedModules", [...selected, mobileActiveModule]);
+              if (!selected.includes(mobileActiveModule)) {
+                const next = [...selected, mobileActiveModule];
+                set("selectedModules", next);
+                const propertyDone = readinessMissing(d, m).length === 0;
+                if (!insights && !reportReady(d, propertyDone) && reportReady({ ...d, selectedModules: next }, propertyDone)) {
+                  setReportOfferFor(mobileActiveModule);
+                  posthog.capture("report_offered", { where: "module", module: mobileActiveModule });
+                }
+              }
               posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at, rerun: moduleRerun === mobileActiveModule });
               posthog.capture("module_answer_shown", { module: mobileActiveModule });
               setModuleRerun(null);
@@ -6496,6 +6530,7 @@ export default function AppShell() {
         }>
         <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
           onWalkThrough={MODULE_GUIDES[mobileActiveModule] ? () => { setModuleRerun(mobileActiveModule); posthog.capture("guide_restarted", { module: mobileActiveModule }); } : null}
+          onSeeReport={!insights && reportOfferFor === mobileActiveModule ? () => { setReportOfferFor(null); navigate("/app/report-start"); } : null}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
           onBack={() => navigate("/app/modules")}

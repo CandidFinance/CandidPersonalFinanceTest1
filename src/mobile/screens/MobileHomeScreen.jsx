@@ -6,6 +6,9 @@ import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
+import { MODULE_META } from "../../lib/moduleStatus.js";
+import { modulesSinceReport } from "../../lib/appEntry.js";
+import { readinessMissing } from "../../lib/propertyReadiness.js";
 
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
 // (score progress bar, Opportunity pill, expandable Net Worth card, Biggest
@@ -41,7 +44,9 @@ function netWorthBreakdown(d, m) {
 // load just shows the score with no animation.
 let lastShownScore = null;
 
-export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule }) {
+// `onSeeReport` makes the first report (no report yet); `onUpdateReport`
+// remakes it with modules answered since.
+export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, onSeeReport, onUpdateReport }) {
   const navigate = useNavigate();
   const [scoreDetailOpen, setScoreDetailOpen] = useState(false);
   const [netWorthOpen, setNetWorthOpen] = useState(false);
@@ -82,7 +87,13 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
   // No report yet (a user who came in through the two-question entry): the
   // modules to start with instead of the score.
-  if (!insights) return <MobileStartHome d={d} m={m} onStartModule={onStartModule}/>;
+  if (!insights) return <MobileStartHome d={d} m={m} onStartModule={onStartModule} onSeeReport={onSeeReport}/>;
+
+  // Modules answered since the report: offered as an update, never made
+  // automatically, since each report is an AI call.
+  const sinceReport = modulesSinceReport(d, readinessMissing(d, m).length === 0)
+    .map(k => k === "property" ? "Property" : (MODULE_META.find(mm => mm.key === k)?.title || k));
+  const sinceText = sinceReport.length < 2 ? sinceReport.join("") : `${sinceReport.slice(0, -1).join(", ")} and ${sinceReport.at(-1)}`;
 
   const { color: scoreColor, label: scoreLabel } = scoreBand(score);
   const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, insights, "amount");
@@ -100,6 +111,15 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginBottom:"20px",lineHeight:1.2}}>
         {mobileGreeting(d)}
       </h1>
+
+      {sinceReport.length > 0 && (
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"12px 14px",marginBottom:"18px"}}>
+          <span style={{fontSize:"13px",color:TEXT,lineHeight:1.4}}>You've added {sinceText} since your report.</span>
+          <button type="button" onClick={onUpdateReport} style={{flexShrink:0,background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"8px 14px",fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+            Update my report
+          </button>
+        </div>
+      )}
 
       {/* Score — tap opens the full breakdown sheet. */}
       <div onClick={() => setScoreDetailOpen(true)} style={{cursor:"pointer",marginBottom:"4px"}}>

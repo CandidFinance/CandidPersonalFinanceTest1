@@ -148,9 +148,17 @@ The first module opened then asks 3 to 8 questions, including shared figures. La
 ## Decisions
 
 1. **The overall report:** offered once two modules are done, as "See what to do first", then regenerated only on request.
-2. **Email:** asked in both places:
-   - After the first module answer: "Want this sent to you?"
-   - When the overall report is made.
+   - Where it's offered: in the score's place on the home screen, and once on the answer screen of the module that makes it two.
+   - What comes first: one question ("Are you working towards any of these?"), then the existing AI report.
+   - After the report: home shows "You've added X since your report" with "Update my report".
+   - The score itself is worked out live from the answers, as before, so it moves before the report's wording does.
+   - PostHog records `report_offered`, `report_started` (with the goals), `report_generated` and `report_update_requested`.
+   - The goals aren't saved to Supabase, because the table has no column for them; they're on `report_started`.
+2. **Email:** parked (5 October 2026), along with the PDF report. The app is mobile-native, so a PDF isn't needed, and without it there's nothing to send. Email comes back when there's something behind it, such as allowance reminders or accounts. Until then:
+   - the email field stays in the data;
+   - the old desktop PDF pop-up is left as it is (the mobile app never shows it).
+
+   This replaces the earlier plan to ask after the first module answer and when the report is made.
 3. **The other goals** (big purchase, future generations, consolidating): asked when the overall report is made.
 4. **Home score:** hidden until the report. In its place, a plain line such as "Finish two modules and we'll work out how well you're doing", with the two modules to try next.
 5. **Savings rate "not sure":** leave it blank. The answer then shows without the rate comparison.
@@ -182,9 +190,10 @@ The first module opened then asks 3 to 8 questions, including shared figures. La
    - The shared figures.
    - Cash, Investments, Pension and Student loan, using the same walk-through and question registry as Property.
    - Each module's answer card, blurred until its answers are in.
-3. **The overall report and email.**
+3. **The overall report.**
    - "See what to do first" after two modules, with the other goals asked there.
-   - "Want this sent to you?" after the first module.
+   - The score shown once the report exists.
+   - "Update my report" when a module is answered after it.
 4. **The student loan plan helper.**
 
 Phases 1 and 2 go to main together, since phase 1 alone opens an app with no way to answer modules. Each phase is committed to the feature branch as it's finished.
