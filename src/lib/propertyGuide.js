@@ -37,6 +37,7 @@ import { runWaterfall, waterfallInputs } from "./waterfall.js";
 import { regionalAveragePrice } from "./regionalRates.js";
 import { firstTimeBuyerNeeded, readinessMissing } from "./propertyReadiness.js";
 import { ISA_ALLOWANCE } from "./tax.js";
+import { SALARY_QUESTION } from "./sharedQuestions.js";
 
 const together = ({ d }) => d.propertyBuyingMode === "together";
 const sdlt = ({ d }) => sdltApplies(regionNation(d.propertyRegion));
@@ -58,9 +59,15 @@ function expensesMissing({ d, m }) {
 
 export const GROUP_LEADS = {
   checks: "Before you put money into a deposit",
+  // The figures several modules share (src/lib/sharedQuestions.js).
+  you: "First, a bit about you",
 };
 
 export const READINESS_QUESTIONS = [
+  // Only for someone who hasn't given a salary in another module yet: the
+  // borrowing check measures the loan against income. Its own reason here,
+  // since what it changes in Property is the borrowing.
+  { ...SALARY_QUESTION, id:"borrowingSalary", why: () => "Lenders work out what you could borrow from your income." },
   {
     id:"buyingMode", field:"propertyBuyingMode", kind:"choice",
     ask: () => "Are you buying on your own or with someone?",

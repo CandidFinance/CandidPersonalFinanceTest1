@@ -34,7 +34,10 @@ const SHIFT_PX = 30;
 // confidence check). `animateFirst` has the first question rise in too, for
 // a flow arrived at from another page of questions (the entry, after the
 // confidence check), so the movement carries on across the page change.
-export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered, skipLabel = "Skip to the full view", showProgress = true, animateFirst = false }) {
+// A "custom" question (e.g. the list of savings accounts) is drawn by
+// `renderers[q.render]({ d, set })`, with q.answered(ctx) saying whether
+// Continue can be pressed.
+export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered, skipLabel = "Skip to the full view", showProgress = true, animateFirst = false, renderers = {} }) {
   const ctx = { d, m, regionalRows };
   // Which questions with `ifMissing` to ask is decided once, at the start.
   const [needed] = useState(() => neededAtStart(questions, ctx));
@@ -100,6 +103,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   const raw = d[q.field];
   const hasAnswer = q.kind === "multi" ? picked.length > 0
     : q.kind === "text" ? typeof raw === "string" && raw.trim() !== ""
+    : q.kind === "custom" ? (q.answered ? q.answered(ctx) : true)
     : raw !== "" && raw != null && !isNaN(+raw);
   const continueButton = (
     <button type="submit" disabled={q.required && !hasAnswer} style={{
@@ -165,6 +169,12 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
                 })}
                 {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>{note}</p>}
               </div>
+              {continueButton}
+            </form>
+          ) : q.kind === "custom" ? (
+            <form onSubmit={submit}>
+              {renderers[q.render]?.({ d, set })}
+              {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>{note}</p>}
               {continueButton}
             </form>
           ) : q.kind === "text" ? (

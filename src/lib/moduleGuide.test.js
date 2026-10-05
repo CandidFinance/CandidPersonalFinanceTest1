@@ -1,0 +1,85 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { MODULE_GUIDES, moduleGuideStarts } from "./moduleGuide.js";
+import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions } from "./propertyGuide.js";
+import { calcMetrics } from "./metrics.js";
+
+// Straight from the two-question entry: a blank profile with a name.
+const fresh = { name: "Sam", appEntered: true, interests: ["pension"], selectedModules: [], employmentStatus: "employed", retirementAge: "65",
+  hasInvestments: "no", hasPension: "no", studentLoan: "none", cashTiers: [{ amount: "", rate: "" }] };
+const ctxFor = d => ({ d, m: calcMetrics(d), regionalRows: null });
+const ids = (key, d, needAt = d) => {
+  const questions = MODULE_GUIDES[key].questions;
+  return visibleQuestions(questions, ctxFor(d), neededAtStart(questions, ctxFor(needAt))).map(q => q.id);
+};
+const aboutYou = ["employment", "salary", "extraIncome"];
+
+test("the first module asks about you first, led by one line", () => {
+  const ctx = ctxFor(fresh);
+  const qs = visibleQuestions(MODULE_GUIDES.pension.questions, ctx, neededAtStart(MODULE_GUIDES.pension.questions, ctx));
+  assert.deepEqual(qs.slice(0, 4).map(q => q.id), [...aboutYou, "age"]);
+  assert.deepEqual(qs.filter(q => q.lead).map(q => q.id), ["employment"]);
+});
+
+test("a later module doesn't ask about you again", () => {
+  const answered = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", age: "31" };
+  assert.deepEqual(ids("investments", answered), ["hasInvestments"]);
+  assert.deepEqual(ids("pension", answered), ["pensionStatus"]);
+});
+
+test("other income opens its three questions only when there is some", () => {
+  const yes = { ...fresh, hasExtraIncome: "yes" };
+  assert.deepEqual(ids("studentLoan", yes, fresh).slice(0, 6), [...aboutYou, "bonus", "dividends", "otherIncome"]);
+});
+
+test("someone not working isn't asked for a salary", () => {
+  assert.ok(!ids("cash", { ...fresh, employmentStatus: "not_working" }, fresh).includes("salary"));
+});
+
+test("cash asks spending, accounts, then gated bonds and ISA amounts", () => {
+  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no" };
+  assert.deepEqual(ids("cash", known), ["spending", "cashAccounts", "hasPremiumBonds", "hasCashIsa", "cashIsaEarlier", "cashAccess"]);
+  assert.deepEqual(ids("cash", { ...known, hasPremiumBonds: "yes", hasCashIsaThisYear: "yes" }, known),
+    ["spending", "cashAccounts", "hasPremiumBonds", "premiumBonds", "hasCashIsa", "cashIsaThisYear", "cashIsaEarlier", "cashAccess"]);
+});
+
+test("investments: no investments ends after one question; outside an ISA opens gains", () => {
+  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no" };
+  assert.deepEqual(ids("investments", known), ["hasInvestments"]);
+  assert.deepEqual(ids("investments", { ...known, hasInvestments: "yes", hasUnwrapped: "yes", hasSoldAssetsOutsideWrapper: "yes" }, known), [
+    "hasInvestments", "ssIsaEarlier", "ssIsaThisYear", "hasLisa", "hasUnwrapped", "unwrappedValue", "unrealisedGains", "soldThisYear", "realisedGains",
+  ]);
+});
+
+test("pension: the match question is skipped for the self-employed, or if Property already asked it", () => {
+  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", age: "31", pensionStatus: "yes" };
+  assert.ok(ids("pension", known).includes("pensionMatch"));
+  assert.ok(!ids("pension", { ...known, employmentStatus: "self_employed" }).includes("pensionMatch"));
+  assert.ok(!ids("pension", { ...known, myContribution: "5", employerMatch: "5" }).includes("pensionMatch"));
+});
+
+test("pension 'not sure' keeps the unknown flag the module reads; yes and no set hasPension", () => {
+  const status = MODULE_GUIDES.pension.questions.find(q => q.id === "pensionStatus");
+  assert.deepEqual(status.also("unsure"), { pensionUnknown: true });
+  assert.deepEqual(status.also("yes"), { pensionUnknown: false, hasPension: "yes" });
+});
+
+test("student loan rate shows the rate the calculations would use", () => {
+  const rate = MODULE_GUIDES.studentLoan.questions.find(q => q.id === "loanRate");
+  assert.equal(rate.prefill(ctxFor({ ...fresh, studentLoan: "plan2", salary: "29385" })), 4.1);
+  assert.equal(rate.prefill(ctxFor({ ...fresh, studentLoan: "postgrad", salary: "40000" })), 6);
+});
+
+test("a module's walk-through starts until the module is selected", () => {
+  assert.equal(moduleGuideStarts("cash", fresh), true);
+  assert.equal(moduleGuideStarts("cash", { ...fresh, selectedModules: ["cash"] }), false);
+  assert.equal(moduleGuideStarts("property", fresh), false);
+});
+
+test("every question has a short reason, and ids are unique across every walk-through", () => {
+  const all = [...Object.values(MODULE_GUIDES).flatMap(g => g.questions), ...READINESS_QUESTIONS, ...MORTGAGE_QUESTIONS, ...RENT_VS_BUY_QUESTIONS];
+  const ctx = ctxFor({ ...fresh, propertyRegion: "london", propertyPrice: "300000" });
+  for (const q of all) assert.ok(q.why(ctx).split(/\s+/).length <= 15, `${q.id}: ${q.why(ctx)}`);
+  const unique = new Map(all.map(q => [q.id, q]));
+  for (const q of all) assert.equal(unique.get(q.id), q, `duplicate id ${q.id}`);
+});

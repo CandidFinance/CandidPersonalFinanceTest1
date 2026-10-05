@@ -24,7 +24,9 @@ import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
+import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
 import { appUnlocked } from "./lib/appEntry.js";
+import { MODULE_GUIDES, moduleGuideStarts } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
 import { mortgageInputs, mortgageSummary } from "./lib/mortgage.js";
@@ -6054,26 +6056,12 @@ export default function AppShell() {
   }
 }
 
-  // Writes this report's row to `test` and remembers its id, in memory and
-  // in localStorage so a later visit can still PATCH it. Called for every
-  // generated report, AI or fallback, and by the Property screen's first save
-  // when this browser has no row (see propertyPatch). `extra` adds columns
-  // to the insert, the Property fields in that case.
-  async function insertReportRow(score, extra = {}) {
-    const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
-    const totalOpp = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
-    // Written once, ever, by main.jsx's getAcquisition()/handleStart() — read back
-    // here rather than re-derived, so the ORIGINAL first-touch source (not whatever
-    // UTM params happen to be in the URL right now) lands on the report row.
-    let acquisition = {};
-    try { acquisition = JSON.parse(localStorage.getItem('candid_acquisition') || '{}'); } catch(e) {}
-    // test table requires columns: email (text), name (text), interests (text) — all nullable
-    if (import.meta.env.DEV) {
-      console.log("[Candid] Supabase insert starting — score:", score, "session:", posthog.get_distinct_id?.());
-    }
-    const rowId = await supaInsert("test", {
-      ...extra,
-      session_id: posthog.get_distinct_id?.() || null,
+  // The user's inputs as `test` columns. Written when the row is inserted,
+  // and PATCHed as each module's questions are answered and when a report is
+  // made: every one has an anon UPDATE grant (supabase_entry_row_migration.sql),
+  // or the whole PATCH would be refused.
+  function rowInputFields() {
+    return {
       email: d.email || null,
       name: d.name || null,
       interests: (d.interests || []).join(", ") || null,
@@ -6111,9 +6099,39 @@ export default function AppShell() {
       bonus_amount: +d.bonusAmount||null,
       has_kids: d.hasKids === "yes",
       num_kids: +d.numKids||null,
+    };
+  }
+  // The report's own columns: its score, and the modules' total opportunity
+  // and critical ones at the time.
+  function rowReportFields(score) {
+    const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
+    const totalOpp = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
+    return {
       candid_score: score,
       total_opportunity_gbp: Math.round(totalOpp / 100) * 100,
       critical_modules: criticals,
+    };
+  }
+
+  // Writes the user's row to `test` and remembers its id, in memory and in
+  // localStorage so a later visit can still PATCH it. Called at the app's
+  // two-question entry (no score yet), and when a report or a Property save
+  // finds this browser has no row yet (see saveRow, propertyPatch). `extra`
+  // adds columns to the insert, the Property fields in that case.
+  async function insertReportRow(score, extra = {}) {
+    // Written once, ever, by main.jsx's getAcquisition()/handleStart() — read back
+    // here rather than re-derived, so the ORIGINAL first-touch source (not whatever
+    // UTM params happen to be in the URL right now) lands on the report row.
+    let acquisition = {};
+    try { acquisition = JSON.parse(localStorage.getItem('candid_acquisition') || '{}'); } catch(e) {}
+    if (import.meta.env.DEV) {
+      console.log("[Candid] Supabase insert starting — score:", score, "session:", posthog.get_distinct_id?.());
+    }
+    const rowId = await supaInsert("test", {
+      ...extra,
+      session_id: posthog.get_distinct_id?.() || null,
+      ...rowInputFields(),
+      ...rowReportFields(score),
       modules_completed: 0,
       feedback_submitted: false,
       acquisition_source: acquisition.source || "direct",
@@ -6137,6 +6155,24 @@ export default function AppShell() {
     }
     return rowId;
   }
+
+  // One row per user: PATCH this browser's row with `fields`, or insert it
+  // if there isn't one (made before rows were created at entry, or gone).
+  // `score` is for that insert.
+  async function saveRow(fields, score = null) {
+    let rowId = supaRowId.current;
+    if (!rowId) { try { rowId = localStorage.getItem('candid_report_row_id'); } catch(e) {} }
+    const outcome = await supaUpdateRow("test", rowId, fields);
+    if (outcome === "missing") return insertReportRow(score);
+    return rowId;
+  }
+
+  // Saving a module's answers waits a render (rowSaveTick), so the last
+  // answer, set the moment before the walk-through ended, is in `d`.
+  const [rowSaveTick, setRowSaveTick] = useState(0);
+  // The module whose walk-through is being rerun ("Walk me through it").
+  const [moduleRerun, setModuleRerun] = useState(null);
+  useEffect(() => { if (rowSaveTick) saveRow(rowInputFields()); }, [rowSaveTick]);
 
   async function generateDashboard(redirectPath = "/dashboard") {
     if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
@@ -6171,7 +6207,7 @@ export default function AppShell() {
       } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist insights to localStorage:", e); }
       setWhatChangedOpen(true);
       posthog.capture("report_generated", { score: result.score, tax_band: metrics.taxBandLabel });
-      await insertReportRow(result.score);
+      await saveRow({ ...rowInputFields(), ...rowReportFields(result.score) }, result.score);
     }
     catch(e) {
       if (import.meta.env.DEV) console.error("[Candid] generateDashboard() caught an error — falling back:", e?.message, "\nstack:", e?.stack, "\nfull error object:", e);
@@ -6189,7 +6225,7 @@ export default function AppShell() {
       posthog.capture("report_generated", { score: insightsToUse.score, fallback: true, rate_limited: isRateLimit, error: e?.message });
       // Fallback reports used to skip the insert entirely, so these users
       // never reached Supabase.
-      await insertReportRow(insightsToUse.score);
+      await saveRow({ ...rowInputFields(), ...rowReportFields(insightsToUse.score) }, insightsToUse.score);
       if (isRateLimit) {
         // Distinct from ai_generation_failed below — this is an intentional
         // protective block, not something broken, so it shouldn't pollute
@@ -6232,6 +6268,10 @@ export default function AppShell() {
   // selection if they skipped it. Used by the Property screen to send a
   // missing figure to the step that normally asks for it.
   function openMobileStep(stepId) {
+    // A module not answered yet opens on its walk-through, which ends on the
+    // module's own screen, rather than the old step, which ends by making a
+    // report.
+    if (moduleGuideStarts(stepId, d)) { navigate(`/app/module/${stepId}`); return; }
     const def = ALL_STEP_DEFS.find(s => s.id === stepId);
     let selected = d.selectedModules || [];
     if (def?.moduleKey && !selected.includes(def.moduleKey)) {
@@ -6375,7 +6415,7 @@ export default function AppShell() {
   if (pathname === "/app/home") return (
     <MobileLayout activeTab="home" headerRight={editInputsButton}>
       <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} completedModules={completedModules}
-        onStartModule={key => key === "property" ? navigate("/app/property") : openMobileStep(key)}/>
+        onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}/>
     </MobileLayout>
   );
 
@@ -6426,12 +6466,36 @@ export default function AppShell() {
     if (!mobileActiveModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(mobileActiveModule)) || !MODULE_META.some(mm => mm.key === mobileActiveModule)) {
       return <Navigate to="/app/modules" replace />;
     }
+    // Until a module's questions are answered (or skipped) it opens on its
+    // walk-through; "Walk me through it" reruns it (moduleRerun). Either way
+    // the module then joins selectedModules, so its own screen, the answer,
+    // takes over, and its answers are saved to the user's row.
+    if (moduleGuideStarts(mobileActiveModule, d) || moduleRerun === mobileActiveModule) {
+      return (
+        <MobileLayout activeTab="modules"
+          headerRight={
+            <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+          }>
+          <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} rerun={moduleRerun === mobileActiveModule}
+            onDone={(how, at) => {
+              const selected = d.selectedModules || [];
+              if (!selected.includes(mobileActiveModule)) set("selectedModules", [...selected, mobileActiveModule]);
+              posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at, rerun: moduleRerun === mobileActiveModule });
+              posthog.capture("module_answer_shown", { module: mobileActiveModule });
+              setModuleRerun(null);
+              setRowSaveTick(t => t + 1);
+              window.scrollTo({ top: 0, behavior: "instant" });
+            }}/>
+        </MobileLayout>
+      );
+    }
     return (
       <MobileLayout activeTab="modules"
         headerRight={
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
         <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
+          onWalkThrough={MODULE_GUIDES[mobileActiveModule] ? () => { setModuleRerun(mobileActiveModule); posthog.capture("guide_restarted", { module: mobileActiveModule }); } : null}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
           onBack={() => navigate("/app/modules")}

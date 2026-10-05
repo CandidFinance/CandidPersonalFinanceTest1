@@ -19,7 +19,8 @@ const CONTENT_BY_KEY = {
   pension: MobilePensionDeepDive,
 };
 
-export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain }) {
+// `onWalkThrough` reruns the module's guided walk-through (MobileModuleGuide).
+export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain, onWalkThrough }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
   // Status has exactly one visual indicator here — the dot below. The
@@ -54,6 +55,11 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
             <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel({status}, isComplete)}</span>
           </div>
         </div>
+        {onWalkThrough && (
+          <button type="button" onClick={onWalkThrough} style={{background:"none",border:"none",padding:0,color:G,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap",alignSelf:"flex-start",marginTop:"4px"}}>
+            Walk me through it
+          </button>
+        )}
       </div>
 
       {Content ? (
