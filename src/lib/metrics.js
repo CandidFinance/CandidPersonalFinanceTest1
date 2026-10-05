@@ -171,6 +171,11 @@ export function calcMetrics(d, marketRates = {}) {
   const existingMortgagePmt = hasMortgage ? (+d.monthlyMortgage||0) : 0;
   const existingPersonalLoanPmt = d.hasPersonalLoan === "yes" ? plMonthly : 0;
   const monthlySurplus = Math.max(0, netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - annualRepayment / 12);
+  // Take-home pay a month after tax, NI, student loan and personal loan
+  // repayments, before living costs. Not less any current mortgage: the
+  // Property module's budget check (monthlyBudget.js) is for a purchase that
+  // replaces it.
+  const monthlyTakeHome = netAnnualIncome / 12 - existingPersonalLoanPmt - annualRepayment / 12;
 
   return {
     salary, expenses, totalLiquid, runwayMonths,
@@ -185,7 +190,7 @@ export function calcMetrics(d, marketRates = {}) {
     daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate,
     propertyEquity, propertyValue, ltv,
     pensionStatus, personalLoanAnnualRepayment, personalLoanPayoffMonths,
-    monthlySurplus,
+    monthlySurplus, monthlyTakeHome,
     // The best savings rate available (the live best Cash ISA rate) — what
     // overpaying a student loan is weighed against (calcStudentLoanScenario).
     bestSavingsRate: isaRate,

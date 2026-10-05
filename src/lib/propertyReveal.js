@@ -7,7 +7,8 @@
 // yet. Pure, unit tested in propertyReveal.test.js.
 
 import { fmt, fmtCompact } from "./format.js";
-import { borrowingInputs, calcBorrowingCheck, maxPriceFor, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, MIN_DEPOSIT_PCT } from "./borrowing.js";
+import { borrowingInputs, calcBorrowingCheck, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, MIN_DEPOSIT_PCT } from "./borrowing.js";
+import { affordableMaxPrice, monthlyBudget, TIGHT_BUDGET } from "./monthlyBudget.js";
 import { mortgageInputs, mortgageSummary, STRESS_REMORTGAGE_UPLIFT } from "./mortgage.js";
 import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, MAX_HORIZON_YEARS } from "./rentVsBuy.js";
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "./waterfall.js";
@@ -37,8 +38,8 @@ export function readinessReveal(d, m) {
   const answer = { label: ANSWER, figure: fmt(r.loanNeeded), title: r.multiple != null ? `to borrow, ${times(r.multiple)} your income.` : "to borrow." };
   // The most they could afford (the card's figure), and at the 5.5x some
   // lenders offer higher earners, for the explanation only.
-  const most = maxPriceFor(d, m);
-  const stretchMost = maxPriceFor(d, m, HIGH_EARNER_MULTIPLE);
+  const most = affordableMaxPrice(d, m);
+  const stretchMost = affordableMaxPrice(d, m, HIGH_EARNER_MULTIPLE);
   const fits = most?.price > 0 ? `A home up to ${fmt(most.price)} would fit.` : null;
   const higherEarners = stretchMost?.price > most?.price
     ? `Some lenders go to ${HIGH_EARNER_MULTIPLE}x for higher earners, which would allow up to ${fmt(stretchMost.price)}.`
@@ -60,6 +61,17 @@ export function readinessReveal(d, m) {
   return [answer, why, action];
 }
 
+// What's left each month once they own the home (monthlyBudget), in a
+// sentence. Shared by the mortgage card and its explanation.
+export function budgetLine(b) {
+  if (!b) return null;
+  if (b.status === "short") return `After your other spending, you'd be ${fmt(-b.left)} short each month.`;
+  const rise = b.leftIfRatesRise;
+  const ifRise = rise == null ? "" : rise < 0 ? `, and ${fmt(-rise)} short if rates are higher from year ${b.ratesRise.year}`
+    : `, or ${fmt(rise)} if rates are higher from year ${b.ratesRise.year}`;
+  return `You'd have ${b.left < TIGHT_BUDGET ? "only " : "about "}${fmt(b.left)} left each month after your other spending${ifRise}.`;
+}
+
 export function mortgageReveal(d, m) {
   const loan = calcBorrowingCheck(borrowingInputs(d, m)).loanNeeded;
   if (!(loan > 0)) return null;
@@ -68,14 +80,21 @@ export function mortgageReveal(d, m) {
   const answer = { label: ANSWER, figure: `${fmt(s.monthlyPayment)} a month`,
     title: s.remortgageOutcomes ? `for the first ${input.fixedYears} years, at ${pct(input.ratePct)}.` : `at ${pct(input.ratePct)}, fixed for the whole term.` };
   const why = { label: WHY, title: `A ${fmt(loan)} loan, repaid in full over ${input.termYears} years.` };
+  // Not enough left each month leads, whatever the rates do.
+  const budget = monthlyBudget(d, m);
+  const left = budgetLine(budget);
+  if (budget?.status === "short") {
+    return [answer, why, { label: ACTION, title: `Buying at this price would leave you ${fmt(-budget.left)} short each month.`,
+      body: "A lower price, a bigger deposit or a longer term would bring the payment down." }];
+  }
   if (!s.remortgageOutcomes) {
-    return [answer, why, { label: ACTION, title: "Nothing to plan for: the payment stays the same until it's paid off." }];
+    return [answer, why, { label: ACTION, title: "Nothing to plan for: the payment stays the same until it's paid off.", body: left || undefined }];
   }
   const payments = s.remortgageOutcomes.map(o => o.monthlyPayment);
   return [answer, why, {
     label: ACTION,
     title: `Plan for ${fmt(Math.min(...payments))} to ${fmt(Math.max(...payments))} a month from year ${s.firstRemortgageYear}, if rates move ${STRESS_REMORTGAGE_UPLIFT} points either way.`,
-    body: "A longer fix keeps the payment the same for longer.",
+    body: left || "A longer fix keeps the payment the same for longer.",
   }];
 }
 

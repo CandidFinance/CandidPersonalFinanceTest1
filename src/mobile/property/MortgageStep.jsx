@@ -3,10 +3,12 @@ import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
-import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, SC, WHITE, WARNING } from "../../CandidApp.jsx";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt } from "../../lib/format.js";
+import { monthlyBudget, TIGHT_BUDGET } from "../../lib/monthlyBudget.js";
+import { capField } from "../../lib/onboarding.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillCell from "./PillCell.jsx";
@@ -95,6 +97,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
   const [infoOpen, setInfoOpen] = useState(false);
   const [totalInfoOpen, setTotalInfoOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [budgetInfoOpen, setBudgetInfoOpen] = useState(false);
   const resultRef = useRef(null);
   const why = useWhyInfo({ d, m });
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
@@ -109,6 +112,17 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
   const totalCost = loan + s.totalInterest + s.totalFees;
   // The remortgage range, shown in one line while the chart is collapsed.
   const outcomePayments = (s.remortgageOutcomes || []).map(o => o.monthlyPayment);
+  // What's left each month once they own it (src/lib/monthlyBudget.js). The
+  // card's border is its status: amber when tight, red when short.
+  const budget = monthlyBudget(d, m);
+  const borderColor = budget?.status === "short" ? SC.critical : budget?.status === "tight" ? WARNING : null;
+  const rise = budget?.ratesRise;
+  const budgetNote = !budget ? null
+    : budget.status === "short" ? "Buying at this price would cost more than you have each month."
+    : budget.leftIfRatesRise != null && budget.leftIfRatesRise < 0 ? `If rates are ${pctText(rise.ratePct)} from year ${rise.year}, you'd be ${fmt(-budget.leftIfRatesRise)} short each month.`
+    : budget.left < TIGHT_BUDGET ? `That's tight: under ${fmt(TIGHT_BUDGET)} a month for anything unexpected.`
+    : rise ? `${fmt(budget.leftIfRatesRise)} if rates are ${pctText(rise.ratePct)} from year ${rise.year}.`
+    : null;
 
   return (
     <div>
@@ -121,7 +135,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
         <EmptyResultCard text="Answer the questions below to see what you'd repay."/>
       ) : (
       <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
-        style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:loan === 0 ? "18px" : CARD_PADDING_WITH_CHEVRON}}>
+        style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:loan === 0 ? "18px" : CARD_PADDING_WITH_CHEVRON,border:borderColor ? `2px solid ${borderColor}` : "none"}}>
         {loan === 0 ? (
           <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:0}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
         ) : (
@@ -144,6 +158,28 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
                 From year {s.firstRemortgageYear}: {fmt(Math.min(...outcomePayments))} to {fmt(Math.max(...outcomePayments))} a month, if rates move {STRESS_REMORTGAGE_UPLIFT} points either way.
               </div>
             )}
+
+            {/* Whether they could live on what's left: the 4.5x check in step
+                1 doesn't look at spending. */}
+            <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
+              <div style={figureLabel}>
+                Left each month
+                {budget && <InfoButton open={budgetInfoOpen} onClick={() => setBudgetInfoOpen(o => !o)}/>}
+              </div>
+              {budget ? (<>
+                <div style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:TEXT,lineHeight:1.2}}>
+                  {budget.left < 0 ? `${fmt(-budget.left)} short` : fmt(budget.left)}
+                </div>
+                {budgetNote && <p style={{fontSize:"12.5px",color:budget.status === "ok" ? MUT : TEXT,lineHeight:1.5,margin:"2px 0 0"}}>{budgetNote}</p>}
+                {budgetInfoOpen && (
+                  <p style={{...explainer,marginTop:"8px"}}>
+                    {budget.together ? "Your take-home pay and your partner's estimated take-home pay" : "Your take-home pay"} ({fmt(budget.takeHome)}), less your spending other than rent ({fmt(budget.otherSpending)}{budget.together ? ", your partner's estimated from yours" : ""}), less the mortgage ({fmt(budget.mortgage)}) and the home's running costs ({fmt(budget.homeCosts)}: upkeep{d.propertyTenure === "leasehold" ? ", ground rent and service charge" : ""}). Buying replaces your rent, so it comes off your spending. Lenders run their own check, at a higher rate than you'd pay.
+                  </p>
+                )}
+              </>) : (
+                <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>Add your rent and monthly spending below to see what you'd have left.</p>
+              )}
+            </div>
 
             {/* The rate scenarios and totals, collapsed by default so the
                 result and the inputs below fit on one screen. */}
@@ -196,6 +232,13 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
         <PillCell min={COLUMN_MIN}><PillMoneyInput label="Remortgage fee" value={input.remortgageFee || null} onChange={v => set("propertyRemortgageFee", v ?? "")}/></PillCell>
       </div>
       {why.panel("fixedYears")}
+      {/* Shared with Rent vs buy and the rest of Candid: what's left each
+          month needs both. */}
+      <div style={{...columns,marginTop:"10px"}}>
+        <PillCell min={COLUMN_MIN} info={why.button("budgetRent")}><PillMoneyInput label="Rent now" value={+d.propertyMonthlyRent || null} onChange={v => set("propertyMonthlyRent", v ?? "")}/></PillCell>
+        <PillCell min={COLUMN_MIN} info={why.button("budgetSpending")}><PillMoneyInput label="Monthly spending" value={+d.monthlyExpenses || null} onChange={v => set("monthlyExpenses", capField("monthlyExpenses", v ?? ""))}/></PillCell>
+      </div>
+      {why.panel("budgetRent", "budgetSpending")}
 
       {onContinue && (
         <button type="button" onClick={onContinue} style={{

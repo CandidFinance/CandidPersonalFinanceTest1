@@ -87,7 +87,10 @@ const stepIds = (questions, d) => {
 };
 
 test("mortgage: term, rate and fix, the rate's reason priced on their own loan", () => {
-  assert.deepEqual(stepIds(MORTGAGE_QUESTIONS, purchased), ["term", "rate", "fixedYears"]);
+  // Then rent, for what they'd have left each month; spending too if it's missing.
+  assert.deepEqual(stepIds(MORTGAGE_QUESTIONS, purchased), ["term", "rate", "fixedYears", "budgetRent"]);
+  assert.deepEqual(stepIds(MORTGAGE_QUESTIONS, { ...purchased, monthlyExpenses: "" }), ["term", "rate", "fixedYears", "budgetSpending", "budgetRent"]);
+  assert.deepEqual(stepIds(MORTGAGE_QUESTIONS, { ...purchased, propertyMonthlyRent: "0" }), ["term", "rate", "fixedYears"]);
   const why = MORTGAGE_QUESTIONS.find(q => q.id === "rate").why;
   // A £272,500 loan (£30,000 less £2,500 fees) over 30 years: about £1,381
   // a month at 4.5% and £1,547 at 5.5%, so £170 to the nearest £10.
@@ -124,6 +127,10 @@ test("each walk-through starts by itself only on a blank step not yet walked thr
   assert.equal(guideStarts("mortgage", purchased, m), true);
   assert.equal(guideStarts("mortgage", { ...purchased, propertyFixedYears: "2" }, m), false);
   assert.equal(guideStarts("rentVsBuy", purchased, m), true);
-  assert.equal(guideStarts("rentVsBuy", { ...purchased, propertyMonthlyRent: "0" }, m), false);
+  // Rent alone may have come from step 2: still its own walk-through, which
+  // then doesn't ask the rent again.
+  assert.equal(guideStarts("rentVsBuy", { ...purchased, propertyMonthlyRent: "0" }, m), true);
+  assert.deepEqual(stepIds(RENT_VS_BUY_QUESTIONS, { ...purchased, propertyMonthlyRent: "900" })[0], "horizon");
+  assert.equal(guideStarts("rentVsBuy", { ...purchased, propertyMonthlyRent: "0", propertyHorizonYears: "5" }, m), false);
   assert.equal(guideStarts("rentVsBuy", { ...purchased, propertyGuideRentVsBuyDone: true }, m), false);
 });

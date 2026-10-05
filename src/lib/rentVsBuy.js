@@ -110,7 +110,7 @@ export function partnerSavingsEstimate({ salary = 0, otherIncome = 0, pensionPct
 }
 
 // Buyer's costs in a given year (1-based), from that year's mortgage row.
-function buyerYearCosts(input, scheduleRow, year) {
+export function buyerYearCosts(input, scheduleRow, year) {
   const valueAtStart = input.price * Math.pow(1 + input.housePriceGrowthPct / 100, year - 1);
   const maintenance = input.tenure === "leasehold"
     ? (input.leaseholdMaintenance ?? LEASEHOLD_MAINTENANCE) * Math.pow(1 + MAINTENANCE_INFLATION_PCT / 100, year - 1)

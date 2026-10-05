@@ -31,14 +31,15 @@
 import { fmt } from "./format.js";
 import { PROPERTY_REGIONS, regionNation } from "./regions.js";
 import { sdltApplies, FIRST_TIME_BUYER_NIL_BAND, ADDITIONAL_PROPERTY_SURCHARGE } from "./stampDuty.js";
-import { EMERGENCY_KEEP_BACK_MONTHS, suggestedCashAvailable, cashIsaBalance, borrowingInputs, calcBorrowingCheck, maxPriceFor } from "./borrowing.js";
+import { EMERGENCY_KEEP_BACK_MONTHS, suggestedCashAvailable, cashIsaBalance, borrowingInputs, calcBorrowingCheck } from "./borrowing.js";
+import { affordableMaxPrice } from "./monthlyBudget.js";
 import { mortgageInputs, monthlyPayment, FIXED_PERIOD_OPTIONS, DEFAULT_MORTGAGE_TERM_YEARS, DEFAULT_MORTGAGE_RATE_PCT } from "./mortgage.js";
 import { DEFAULT_HORIZON_YEARS } from "./rentVsBuy.js";
 import { runWaterfall, waterfallInputs } from "./waterfall.js";
 import { regionalAveragePrice } from "./regionalRates.js";
 import { firstTimeBuyerNeeded, readinessMissing } from "./propertyReadiness.js";
 import { ISA_ALLOWANCE } from "./tax.js";
-import { SALARY_QUESTION } from "./sharedQuestions.js";
+import { SALARY_QUESTION, SPENDING_QUESTION } from "./sharedQuestions.js";
 
 const together = ({ d }) => d.propertyBuyingMode === "together";
 const sdlt = ({ d }) => sdltApplies(regionNation(d.propertyRegion));
@@ -146,7 +147,7 @@ export const READINESS_QUESTIONS = [
     ask: () => "Roughly what price are you looking at?",
     why: ctx => sdlt(ctx) ? "Sets your stamp duty and how much you'd need to borrow." : "Sets how much you'd need to borrow.",
     notSure: ({ d, m, regionalRows }) => {
-      const most = maxPriceFor(d, m);
+      const most = affordableMaxPrice(d, m);
       const average = regionalAveragePrice(d.propertyRegion, regionalRows);
       const region = PROPERTY_REGIONS.find(r => r.value === d.propertyRegion);
       return [
@@ -193,6 +194,16 @@ export const READINESS_QUESTIONS = [
   },
 ];
 
+// Rent, asked in step 2 (for the monthly budget) or step 3, whichever comes
+// first; only while Candid doesn't have it. £0 is an answer.
+const RENT_QUESTION = ({ id, why }) => ({
+  id, field:"propertyMonthlyRent", kind:"money", label:"Monthly rent", required:true,
+  ask: () => "What do you pay in rent each month?",
+  why,
+  notSure: () => ({ label:"I don't pay rent", value:"0" }),
+  ifMissing: ({ d }) => blank(d.propertyMonthlyRent),
+});
+
 // Step 2. The card above shows the repayment from the start (step 1 is done
 // by then), so each answer moves a figure that's already there.
 const loanFor = ({ d, m }) => calcBorrowingCheck(borrowingInputs(d, m)).loanNeeded;
@@ -225,18 +236,19 @@ export const MORTGAGE_QUESTIONS = [
     why: () => "Your payment stays the same until the fix ends, then you'd remortgage.",
     options: () => FIXED_PERIOD_OPTIONS.map(y => ({ value:String(y), label:`${y} years` })),
   },
+  // What they'd have left each month once they own it (monthlyBudget.js):
+  // their spending, which includes rent, and the rent buying replaces. Rent
+  // vs buy then doesn't ask the rent again.
+  { ...SPENDING_QUESTION, id:"budgetSpending", group:undefined,
+    why: () => "Shows what you'd have left each month after the mortgage." },
+  RENT_QUESTION({ id:"budgetRent", why: () => "Buying replaces it, so it comes off your spending." }),
 ];
 
 // Step 3.
 const leasehold = ({ d }) => d.propertyTenure === "leasehold";
 
 export const RENT_VS_BUY_QUESTIONS = [
-  {
-    id:"rent", field:"propertyMonthlyRent", kind:"money", label:"Monthly rent", required:true,
-    ask: () => "What do you pay in rent each month?",
-    why: () => "Buying is compared against what you'd keep paying in rent.",
-    notSure: () => ({ label:"I don't pay rent", value:"0" }),
-  },
+  RENT_QUESTION({ id:"rent", why: () => "Buying is compared against what you'd keep paying in rent." }),
   {
     id:"horizon", field:"propertyHorizonYears", kind:"years", label:"Years",
     ask: () => "How many years would you stay before selling?",
@@ -298,7 +310,9 @@ export const STEP_GUIDES = {
   },
   rentVsBuy: {
     questions: RENT_VS_BUY_QUESTIONS, doneField: "propertyGuideRentVsBuyDone",
-    blank: d => blank(d.propertyMonthlyRent),
+    // Rent may already be in from step 2, so the step counts as blank until
+    // its own figures are set.
+    blank: d => blank(d.propertyMonthlyRent) || (blank(d.propertyHorizonYears) && blank(d.propertyTenure)),
     holdResultUntil: "end",
   },
 };

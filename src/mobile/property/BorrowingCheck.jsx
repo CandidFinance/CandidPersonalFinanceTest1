@@ -6,7 +6,8 @@ import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
-import { borrowingInputs, calcBorrowingCheck, maxPriceFor, MIN_DEPOSIT_PCT, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
+import { affordableMaxPrice } from "../../lib/monthlyBudget.js";
+import { borrowingInputs, calcBorrowingCheck, MIN_DEPOSIT_PCT, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
@@ -279,7 +280,7 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
   const borderColor = r.band === "within" && r.depositShort > 0 ? WARNING : bandColor;
   const incomePhrase = together ? "your combined income" : "your income";
   const times = multipleText(r);
-  const most = maxPriceFor(d, m);
+  const most = affordableMaxPrice(d, m);
   const minDeposit = `${Math.round(MIN_DEPOSIT_PCT * 100)}%`;
 
   return (
@@ -339,10 +340,16 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
                   <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>
                     {most.limit === "deposit"
                       ? `Your deposit sets this: most lenders need at least ${minDeposit} of the price. Your income alone would allow more.`
-                      : `Where the loan reaches ${LENDER_INCOME_MULTIPLE}x ${incomePhrase}.`}
+                      : most.limit === "budget"
+                        ? `Your monthly budget sets this: at ${Math.round(most.testRatePct * 100) / 100}%, the mortgage and upkeep would use what's left after your other spending.`
+                        : `Where the loan reaches ${LENDER_INCOME_MULTIPLE}x ${incomePhrase}.`}
                   </p>
                 </>) : (
-                  <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"4px 0 0"}}>Your cash needs to cover the fees and a {minDeposit} deposit first.</p>
+                  <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"4px 0 0"}}>
+                    {most.limit === "budget"
+                      ? "Your spending already uses your take-home pay, so there's no room for a mortgage."
+                      : `Your cash needs to cover the fees and a ${minDeposit} deposit first.`}
+                  </p>
                 )}
               </div>
             )}

@@ -88,6 +88,10 @@ function stampDutyOf(d, detail) {
 // halving the range. Rounded down to the £1,000, which still passes.
 // `limit` says which one sets it: "income" or "deposit". Null with no
 // income, as lenders lend against income.
+//
+// `budget`, when given, adds a third limit, "budget": the monthly cost of the
+// home at that price, `costAt(price, loan)`, can't be more than `room`, the
+// money left each month after other spending (src/lib/monthlyBudget.js).
 const PRICE_SEARCH_MAX = 20000000;
 const PRICE_ROUND = 1000;
 function highestPassing(passes) {
@@ -99,26 +103,28 @@ function highestPassing(passes) {
   }
   return Math.floor(lo / PRICE_ROUND) * PRICE_ROUND;
 }
-export function calcMaxPrice({ cashAvailable = 0, fees = DEFAULT_PROPERTY_FEES, incomes = [], stampDutyAt = () => 0, multiple = LENDER_INCOME_MULTIPLE }) {
+export function calcMaxPrice({ cashAvailable = 0, fees = DEFAULT_PROPERTY_FEES, incomes = [], stampDutyAt = () => 0, multiple = LENDER_INCOME_MULTIPLE, budget = null }) {
   const income = incomes.reduce((s, x) => s + Math.max(0, +x || 0), 0);
   if (!(income > 0)) return null;
   const maxLoan = income * multiple;
   const check = p => calcBorrowingCheck({ price: p, cashAvailable, stampDuty: stampDutyAt(p), fees, incomes });
   const byIncome = highestPassing(p => check(p).loanNeeded <= maxLoan);
   const byDeposit = highestPassing(p => p - check(p).loanNeeded >= p * MIN_DEPOSIT_PCT && check(p).upfrontShortfall === 0);
-  const price = Math.min(byIncome, byDeposit);
+  const byBudget = budget ? highestPassing(p => budget.costAt(p, check(p).loanNeeded) <= budget.room) : Infinity;
+  const price = Math.min(byIncome, byDeposit, byBudget);
   const r = check(price);
   return {
     price, multiple, maxLoan,
-    limit: byDeposit < byIncome ? "deposit" : "income",
+    limit: byBudget < Math.min(byIncome, byDeposit) ? "budget" : byDeposit < byIncome ? "deposit" : "income",
     loan: r.loanNeeded, deposit: r.usableDeposit, stampDuty: stampDutyAt(price),
   };
 }
 
-// calcMaxPrice from Candid's saved inputs, as borrowingInputs.
-export function maxPriceFor(d, m, multiple = LENDER_INCOME_MULTIPLE) {
+// calcMaxPrice from Candid's saved inputs, as borrowingInputs. The screens
+// use affordableMaxPrice (monthlyBudget.js), which adds the budget limit.
+export function maxPriceFor(d, m, multiple = LENDER_INCOME_MULTIPLE, budget = null) {
   const { cashAvailable, fees, incomes } = borrowingInputs(d, m);
-  return calcMaxPrice({ cashAvailable, fees, incomes, multiple, stampDutyAt: p => stampDutyOf(d, stampDutyDetailAt(d, p)) });
+  return calcMaxPrice({ cashAvailable, fees, incomes, multiple, budget, stampDutyAt: p => stampDutyOf(d, stampDutyDetailAt(d, p)) });
 }
 
 // Geometry for the times-income bar, as percentages of its width. The scale

@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowUp, CircleAlert } from "lucide-react";
-import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC, PillSlider } from "../../CandidApp.jsx";
+import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC, WARNING, PillSlider } from "../../CandidApp.jsx";
 import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, ISA_ALLOWANCE } from "../../lib/rentVsBuy.js";
 import { breakevenLine } from "../../lib/propertyReveal.js";
+import { monthlyBudget } from "../../lib/monthlyBudget.js";
 import { STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -314,6 +315,13 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
   const shown = result ? (result.years.find(y => y.year === selectedYear) || last) : null;
   const buyingAhead = result ? result.gapAtHorizon > 0 : false;
   // How much the answer leans on house prices, for the rate option chosen.
+  // Buying the user can't afford month to month: the comparison assumes they
+  // pay it, so it says so above the answer (src/lib/monthlyBudget.js).
+  const budget = result ? monthlyBudget(d, m) : null;
+  const budgetWarning = !budget ? null
+    : budget.status === "short" ? { color: SC.critical, text: `Buying would leave you ${fmt(-budget.left)} short each month, so this assumes money you don't have.` }
+    : budget.leftIfRatesRise != null && budget.leftIfRatesRise < 0 ? { color: WARNING, text: `If rates are higher from year ${budget.ratesRise.year}, buying would leave you ${fmt(-budget.leftIfRatesRise)} short each month.` }
+    : null;
   const leans = result ? breakevenLine(breakevenGrowthPct(outcomes ? { ...input, mortgageScenario: rateScenario } : input), buyingAhead) : null;
   const isaRoomNow = input.alreadyInIsa + input.people.reduce((s, p) => s + p.isaHeadroom, 0);
   const buyingCostLines = shown ? [
@@ -425,6 +433,12 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
       ) : (
         <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
           style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON}}>
+            {budgetWarning && (
+              <div style={{display:"flex",alignItems:"flex-start",gap:"6px",fontSize:"12.5px",fontWeight:600,color:TEXT,lineHeight:1.45,marginBottom:"12px"}}>
+                <CircleAlert size={15} color={budgetWarning.color} style={{flexShrink:0,marginTop:"1px"}}/>
+                {budgetWarning.text}
+              </div>
+            )}
             {/* The answer, centred: buying or renting, larger, with by how
                 much on the same line at its usual size. */}
             <div style={{textAlign:"center"}}>
