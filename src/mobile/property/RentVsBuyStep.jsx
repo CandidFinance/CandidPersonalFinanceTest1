@@ -12,6 +12,7 @@ import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
 import AssumptionsHeading from "./AssumptionsHeading.jsx";
+import useWhyInfo from "./useWhyInfo.jsx";
 
 // Property step 3: rent vs buy over the years before the buyer would sell
 // (logic in src/lib/rentVsBuy.js). Moderate scenario only for now.
@@ -270,6 +271,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
   const [framingOpen, setFramingOpen] = useState(false);
   const [costsInfoOpen, setCostsInfoOpen] = useState(false);
   const [ownInfoOpen, setOwnInfoOpen] = useState(false);
+  const why = useWhyInfo({ d, m, regionalRows });
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
@@ -307,20 +309,24 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
       {/* Own rows: "Years before you'd sell" is too long a caption to share a
           row on a small phone without being cut off. */}
       <div style={{display:"flex",gap:"10px"}}>
-        <PillCell><PillMoneyInput label="Monthly rent" value={+d.propertyMonthlyRent || null} onChange={v => set("propertyMonthlyRent", v ?? "")}/></PillCell>
+        <PillCell info={why.button("rent")}><PillMoneyInput label="Monthly rent" value={+d.propertyMonthlyRent || null} onChange={v => set("propertyMonthlyRent", v ?? "")}/></PillCell>
       </div>
+      {why.panel("rent")}
       <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
-        <PillCell><PillMoneyInput label="Years before you'd sell" unit="" value={input.horizonYears} onChange={v => set("propertyHorizonYears", v ?? "")}/></PillCell>
+        <PillCell info={why.button("horizon")}><PillMoneyInput label="Years before you'd sell" unit="" value={input.horizonYears} onChange={v => set("propertyHorizonYears", v ?? "")}/></PillCell>
       </div>
+      {why.panel("horizon")}
       <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
-        <PillCell><div style={{flex:1,minWidth:0}}><PillSlider value={input.tenure} onChange={v => set("propertyTenure", v)} options={TENURE_OPTIONS}/></div></PillCell>
+        <PillCell info={why.button("tenure")}><div style={{flex:1,minWidth:0}}><PillSlider value={input.tenure} onChange={v => set("propertyTenure", v)} options={TENURE_OPTIONS}/></div></PillCell>
       </div>
+      {why.panel("tenure")}
       {leasehold && (
         <>
           <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
-            <PillCell><PillMoneyInput label="Ground rent a year" value={+d.propertyGroundRent || null} onChange={v => set("propertyGroundRent", v ?? "")}/></PillCell>
-            <PillCell><PillMoneyInput label="Service charge a year" value={+d.propertyServiceCharge || null} onChange={v => set("propertyServiceCharge", v ?? "")}/></PillCell>
+            <PillCell info={why.button("groundRent")}><PillMoneyInput label="Ground rent a year" value={+d.propertyGroundRent || null} onChange={v => set("propertyGroundRent", v ?? "")}/></PillCell>
+            <PillCell info={why.button("serviceCharge")}><PillMoneyInput label="Service charge a year" value={+d.propertyServiceCharge || null} onChange={v => set("propertyServiceCharge", v ?? "")}/></PillCell>
           </div>
+          {why.panel("groundRent", "serviceCharge")}
           <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
             <PillCell><PillMoneyInput label="Ground rent rise a year" unit="%" value={+d.propertyGroundRentGrowth || null} onChange={v => set("propertyGroundRentGrowth", v ?? "")}/></PillCell>
             <div style={{flex:1}}/>
@@ -342,13 +348,14 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
             <PillCell><PillMoneyInput label="Rent growth" unit="%" allowNegative value={input.rentGrowthPct || null} onChange={v => set("propertyRentGrowth", v ?? "")}/></PillCell>
           </div>
           <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
-            <PillCell><div style={{flex:1,minWidth:0}}><PillSlider value={input.returnType} onChange={v => set("propertyRenterMoney", v)} options={MONEY_OPTIONS}/></div></PillCell>
+            <PillCell info={why.button("renterMoney")}><div style={{flex:1,minWidth:0}}><PillSlider value={input.returnType} onChange={v => set("propertyRenterMoney", v)} options={MONEY_OPTIONS}/></div></PillCell>
             <PillCell>
               {cash
                 ? <PillMoneyInput label="Cash rate" unit="%" value={twoDp(input.investmentReturnPct) || null} onChange={v => set("propertyCashReturn", v ?? "")}/>
                 : <PillMoneyInput label="Investment return" unit="%" value={twoDp(input.investmentReturnPct) || null} onChange={v => set("propertyInvestmentReturn", v ?? "")}/>}
             </PillCell>
           </div>
+          {why.panel("renterMoney")}
           {cash && (d.propertyCashReturn === "" || d.propertyCashReturn == null) && (
             <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
               {input.bestCashRatePct != null && input.bestCashRatePct > input.ownCashRatePct

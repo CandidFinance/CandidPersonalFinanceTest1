@@ -19,7 +19,7 @@ A plain-English, one-question-per-screen walk-through the first time someone ope
 - **Back and skip.** Back is always available. "Skip to the full view" leaves the walk-through at any point.
 - **Again later.** After the walk-through, the step shows the current dense inputs. A "Walk me through it" link can rerun it.
 - **One progress indicator only** (e.g. "3 of 6"). No second progress marker.
-- **Single source.** The question, the why line, the input, the default and the skip rule are defined once. Answers save to the same inputs the dense view uses. Still to do: the dense view's info buttons should reuse the why lines.
+- **Single source.** The question, the why line, the input, the default and the skip rule are defined once. Answers save to the same inputs the dense view uses. In the dense view, the "?" beside each of those fields shows the same why line. Fields that already had a fuller explainer keep it: first-time buyer, sole property and cash available.
 - **Measured.** PostHog records `property_guide_finished`, `property_guide_skipped` (with the question it was left at) and `property_guide_restarted`.
 
 ## Answers and movement

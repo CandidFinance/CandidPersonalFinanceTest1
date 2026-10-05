@@ -281,6 +281,14 @@ export function guideStarts(step, d, m) {
   return !!g && !d[g.doneField] && g.blank(d, m);
 }
 
+// A question's "why it matters" line by its id, for the "?" beside the same
+// field in a step's full view, so the reason stays after the walk-through.
+const ALL_QUESTIONS = [...READINESS_QUESTIONS, ...MORTGAGE_QUESTIONS, ...RENT_VS_BUY_QUESTIONS];
+export function whyLine(id, ctx) {
+  const q = ALL_QUESTIONS.find(x => x.id === id);
+  return q ? q.why(ctx) : null;
+}
+
 // The ids of questions to ask this time through, decided once at the start:
 // a question with `ifMissing` is dropped when Candid already has its figure.
 export function neededAtStart(questions, ctx) {

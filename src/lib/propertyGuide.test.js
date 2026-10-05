@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions, guideStarts } from "./propertyGuide.js";
+import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions, guideStarts, whyLine } from "./propertyGuide.js";
 import { calcMetrics } from "./metrics.js";
 
 // Someone who did core onboarding with Cash & savings and Pension.
@@ -93,6 +93,13 @@ test("rent vs buy: leasehold adds ground rent and service charge, and £0 rent i
   assert.deepEqual(stepIds(RENT_VS_BUY_QUESTIONS, { ...purchased, propertyTenure: "leasehold" }),
     ["rent", "horizon", "tenure", "groundRent", "serviceCharge", "renterMoney"]);
   assert.deepEqual(RENT_VS_BUY_QUESTIONS[0].notSure(), { label: "I don't pay rent", value: "0" });
+});
+
+test("question ids are unique across the steps, so the full view's reasons find the right one", () => {
+  const ids = [...READINESS_QUESTIONS, ...MORTGAGE_QUESTIONS, ...RENT_VS_BUY_QUESTIONS].map(q => q.id);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.equal(whyLine("tenure", ctxFor(purchased)), "Leasehold adds ground rent and a service charge every year.");
+  assert.equal(whyLine("nope", ctxFor(purchased)), null);
 });
 
 test("each walk-through starts by itself only on a blank step not yet walked through", () => {

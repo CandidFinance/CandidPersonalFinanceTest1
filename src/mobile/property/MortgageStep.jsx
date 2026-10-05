@@ -11,6 +11,7 @@ import PillCell from "./PillCell.jsx";
 import PillSelect from "./PillSelect.jsx";
 import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
 import AssumptionsHeading from "./AssumptionsHeading.jsx";
+import useWhyInfo from "./useWhyInfo.jsx";
 
 // Property step 2: the repayment mortgage on the loan from step 1 (logic in
 // src/lib/mortgage.js). Only reachable once step 1 is complete.
@@ -91,6 +92,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, onWalkThrou
   const [totalInfoOpen, setTotalInfoOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const resultRef = useRef(null);
+  const why = useWhyInfo({ d, m });
   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
   const sectionHeading = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"10px" };
@@ -172,13 +174,15 @@ export default function MortgageStep({ d, m, set, onContinue, guide, onWalkThrou
       {guide || (<>
       <AssumptionsHeading text="Set your mortgage assumptions." onWalkThrough={onWalkThrough}/>
       <div style={columns}>
-        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Term (years)" unit="" value={input.termYears} onChange={v => set("propertyMortgageTerm", v ?? "")}/></PillCell>
-        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Mortgage rate" unit="%" value={input.ratePct || null} onChange={v => set("propertyMortgageRate", v ?? "")}/></PillCell>
+        <PillCell min={COLUMN_MIN} info={why.button("term")}><PillMoneyInput label="Term (years)" unit="" value={input.termYears} onChange={v => set("propertyMortgageTerm", v ?? "")}/></PillCell>
+        <PillCell min={COLUMN_MIN} info={why.button("rate")}><PillMoneyInput label="Mortgage rate" unit="%" value={input.ratePct || null} onChange={v => set("propertyMortgageRate", v ?? "")}/></PillCell>
       </div>
+      {why.panel("term", "rate")}
       <div style={{...columns,marginTop:"10px"}}>
-        <PillCell min={COLUMN_MIN}><PillSelect label="Fixed for" value={String(input.fixedYears)} onChange={v => set("propertyFixedYears", v)} options={FIXED_OPTIONS}/></PillCell>
+        <PillCell min={COLUMN_MIN} info={why.button("fixedYears")}><PillSelect label="Fixed for" value={String(input.fixedYears)} onChange={v => set("propertyFixedYears", v)} options={FIXED_OPTIONS}/></PillCell>
         <PillCell min={COLUMN_MIN}><PillMoneyInput label="Remortgage fee" value={input.remortgageFee || null} onChange={v => set("propertyRemortgageFee", v ?? "")}/></PillCell>
       </div>
+      {why.panel("fixedYears")}
 
       {onContinue && (
         <button type="button" onClick={onContinue} style={{

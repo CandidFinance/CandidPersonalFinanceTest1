@@ -14,6 +14,7 @@ import PillCell from "./PillCell.jsx";
 import PillSelect from "./PillSelect.jsx";
 import { PROPERTY_REGIONS } from "../../lib/regions.js";
 import { firstTimeBuyerNeeded } from "../../lib/propertyReadiness.js";
+import useWhyInfo from "./useWhyInfo.jsx";
 
 // Borrowing check: the loan a purchase needs against the 4.5x income most
 // lenders work to. A warning only, never a block. Logic in
@@ -139,6 +140,9 @@ export function PurchaseInputs({ d, m, set }) {
   // Scotland and Wales: Candid doesn't calculate LBTT or LTT, so ask.
   const manualStampDuty = sd && !sd.supported;
   const askFirstTime = firstTimeBuyerNeeded(d);
+  // The "?" for fields without a fuller explainer of their own: the reason
+  // their walk-through question gives.
+  const why = useWhyInfo({ d, m });
   const toggle = (value, onChange, options = YES_NO) => (
     <div style={{flex:1,minWidth:0}}><PillSlider value={value} onChange={onChange} options={options}/></div>
   );
@@ -146,9 +150,10 @@ export function PurchaseInputs({ d, m, set }) {
   return (
     <div>
       <div style={{display:"flex",gap:"10px"}}>
-        <PillCell grow={3}>{toggle(together ? "together" : "alone", v => set("propertyBuyingMode", v), BUYING_MODE_OPTIONS)}</PillCell>
-        <PillCell grow={2}><PillSelect value={d.propertyRegion} onChange={v => set("propertyRegion", v)} options={PROPERTY_REGIONS} placeholder="Location"/></PillCell>
+        <PillCell grow={3} info={why.button("buyingMode")}>{toggle(together ? "together" : "alone", v => set("propertyBuyingMode", v), BUYING_MODE_OPTIONS)}</PillCell>
+        <PillCell grow={2} info={why.button("region")}><PillSelect value={d.propertyRegion} onChange={v => set("propertyRegion", v)} options={PROPERTY_REGIONS} placeholder="Location"/></PillCell>
       </div>
+      {why.panel("buyingMode", "region")}
 
       {/* Both only change stamp duty, so not shown in Scotland or Wales. */}
       {askFirstTime && (<>
@@ -186,18 +191,20 @@ export function PurchaseInputs({ d, m, set }) {
           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,margin:"0 0 10px"}}>
             Used to check their employer match and ISA allowance, and added to your income for the borrowing check.
           </p>
-          <div style={{...columns,marginBottom:"10px"}}>
-            <PillCell min={COLUMN_MIN}><PillMoneyInput label="Salary" value={+d.partnerSalary || null} onChange={v => set("partnerSalary", capField("salary", v ?? ""))}/></PillCell>
-            <PillCell min={COLUMN_MIN}><PillMoneyInput label="Other income" value={+d.partnerOtherIncome || null} onChange={v => set("partnerOtherIncome", capField("otherIncome", v ?? ""))}/></PillCell>
+          <div style={columns}>
+            <PillCell min={COLUMN_MIN} info={why.button("partnerSalary")}><PillMoneyInput label="Salary" value={+d.partnerSalary || null} onChange={v => set("partnerSalary", capField("salary", v ?? ""))}/></PillCell>
+            <PillCell min={COLUMN_MIN} info={why.button("partnerOtherIncome")}><PillMoneyInput label="Other income" value={+d.partnerOtherIncome || null} onChange={v => set("partnerOtherIncome", capField("otherIncome", v ?? ""))}/></PillCell>
           </div>
-          <div style={{...columns,marginBottom:"10px"}}>
-            <PillCell min={COLUMN_MIN}><PillMoneyInput label="Pension contribution" unit="%" value={d.partnerMyContribution || null} onChange={v => set("partnerMyContribution", capField("myContribution", v ?? ""))}/></PillCell>
-            <PillCell min={COLUMN_MIN}><PillMoneyInput label="Employer match cap" unit="%" value={d.partnerEmployerMatch || null} onChange={v => set("partnerEmployerMatch", capField("employerMatch", v ?? ""))}/></PillCell>
+          {why.panel("partnerSalary", "partnerOtherIncome")}
+          <div style={{...columns,marginTop:"10px"}}>
+            <PillCell min={COLUMN_MIN} info={why.button("partnerMyContribution")}><PillMoneyInput label="Pension contribution" unit="%" value={d.partnerMyContribution || null} onChange={v => set("partnerMyContribution", capField("myContribution", v ?? ""))}/></PillCell>
+            <PillCell min={COLUMN_MIN} info={why.button("partnerEmployerMatch")}><PillMoneyInput label="Employer match cap" unit="%" value={d.partnerEmployerMatch || null} onChange={v => set("partnerEmployerMatch", capField("employerMatch", v ?? ""))}/></PillCell>
           </div>
+          {why.panel("partnerMyContribution", "partnerEmployerMatch")}
           {/* Bottom-aligned, so the ISA pill lines up with the toggle under
               its label. */}
-          <div style={{...columns,alignItems:"flex-end"}}>
-            <PillCell min={COLUMN_MIN}><PillMoneyInput label="ISA paid in this tax year" value={+d.partnerIsaThisYear || null} onChange={v => set("partnerIsaThisYear", capField("isaThisYearOther", v ?? ""))}/></PillCell>
+          <div style={{...columns,alignItems:"flex-end",marginTop:"10px"}}>
+            <PillCell min={COLUMN_MIN} info={why.button("partnerIsa")}><PillMoneyInput label="ISA paid in this tax year" value={+d.partnerIsaThisYear || null} onChange={v => set("partnerIsaThisYear", capField("isaThisYearOther", v ?? ""))}/></PillCell>
             {askFirstTime ? (
               <div style={column}>
                 <div style={fieldLabel}>First-time buyer?</div>
@@ -205,15 +212,17 @@ export function PurchaseInputs({ d, m, set }) {
               </div>
             ) : <div style={column}/>}
           </div>
+          {why.panel("partnerIsa")}
         </div>
       )}
 
       <div style={{...columns,marginTop:"20px"}}>
-        <PillCell min={COLUMN_MIN}><PillMoneyInput label="Property price" value={+d.propertyPrice || null} onChange={v => set("propertyPrice", v ?? "")}/></PillCell>
+        <PillCell min={COLUMN_MIN} info={why.button("price")}><PillMoneyInput label="Property price" value={+d.propertyPrice || null} onChange={v => set("propertyPrice", v ?? "")}/></PillCell>
         <PillCell min={COLUMN_MIN} info={<InfoButton open={cashInfoOpen} onClick={() => setCashInfoOpen(o => !o)}/>}>
           <PillMoneyInput label="Cash available" value={input.cashAvailable || null} onChange={v => set("propertyCashAvailable", v ?? "")}/>
         </PillCell>
       </div>
+      {why.panel("price")}
       {cashInfoOpen && (
         <p style={{...explainer,marginTop:"8px"}}>
           Your cash savings, Premium Bonds and Cash ISAs ({fmt(cashPot)}) less {EMERGENCY_KEEP_BACK_MONTHS} months of expenses ({fmt(EMERGENCY_KEEP_BACK_MONTHS * m.expenses)}) kept back as an emergency fund: {fmt(suggested)}. Change it if some of that cash is set aside{together ? ", or to add your partner's savings" : ""}.
