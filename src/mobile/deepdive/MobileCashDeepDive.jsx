@@ -7,6 +7,7 @@ import MobileProductListTile from "../MobileProductListTile.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
+import { ExplainLink } from "../ModuleScreenParts.jsx";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
 // moduleKey==="cash" — CandidApp.jsx). Keeps the opportunity strip, the
@@ -17,7 +18,9 @@ import { buildReminderSubject } from "../reminders.js";
 // desktop's account-by-account allocation list, the Step 4 GIA growth
 // illustration, and the "other cash-like options" section — v1 scope per the
 // mobile deep-dive plan.
-export default function MobileCashDeepDive({ d, m, savingsRates }) {
+// `onShowReveal` replays the answer step by step ("Explain this", in the
+// opportunity tile, or at the top when there's none).
+export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal }) {
   const [openInfo, setOpenInfo] = useState(null); // "step1" | "step2" | null
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const stepLabelRow = { display:"flex", alignItems:"center", gap:"6px", marginTop:"8px", marginBottom:"2px" };
@@ -42,8 +45,8 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
   const optimiseWinNumber = ++winCounter;
 
   const opportunityCols = [];
-  if (showEmergencyWin) opportunityCols.push({ label:"Emergency fund shortfall", value: fmtCompact(m.emergencyShortfall) });
-  if (optimisationGain > 50) opportunityCols.push({ label:"Tax-efficiency gain available", value: `${fmtCompact(optimisationGain)}/yr` });
+  if (showEmergencyWin) opportunityCols.push({ label:"Short of your emergency fund", value: fmtCompact(m.emergencyShortfall) });
+  if (optimisationGain > 50) opportunityCols.push({ label:"More your savings could earn", value: `${fmtCompact(optimisationGain)}/yr` });
 
   const runwayTarget = m.emergencyBuffer;
   const runwayCurrent = m.totalLiquid;
@@ -54,9 +57,13 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
 
   return (
     <div>
+      {opportunityCols.length === 0 && onShowReveal && <div style={{marginBottom:"14px"}}><ExplainLink onClick={onShowReveal}/></div>}
       {opportunityCols.length > 0 && (
         <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
+            <ExplainLink onClick={onShowReveal} color={OPPORTUNITY_TILE_FIGURE}/>
+          </div>
           <div style={{display:"flex",gap:"24px",flexWrap:"wrap"}}>
             {opportunityCols.map((c,i) => (
               <div key={i}>
@@ -83,8 +90,8 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
         </MobileWinTile>
       )}
 
-      <MobileWinTile number={optimiseWinNumber} title="Optimise your cash"
-        headline={totalPot<=0 ? "Add your cash details to see this" : optimisationGain>50 ? `You can earn ${fmt(optimisationGain)}/yr more, tax-efficiently` : "Your cash is already well-placed for tax."}
+      <MobileWinTile number={optimiseWinNumber} title="Earn more on your savings"
+        headline={totalPot<=0 ? "Add your cash details to see this" : optimisationGain>50 ? `Your savings could earn ${fmt(optimisationGain)}/yr more` : "Your savings are already on good rates."}
         tagLabel="Today"
         reminder={optimisationGain > 50 ? {
           id: "cash-move-surplus",
@@ -96,7 +103,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
         } : null}>
         {totalPot > 0 ? (
           <div>
-            <div style={rowStyle}><span>Gross interest today</span><span style={{fontWeight:600}}>{fmt(currentGrossTotal)}/yr</span></div>
+            <div style={rowStyle}><span>Interest you earn now, before tax</span><span style={{fontWeight:600}}>{fmt(currentGrossTotal)}/yr</span></div>
             {m.cash > 0 && currentTaxCost > 0 && (
               <div style={{...rowStyle,color:"#c0392b"}}><span>Tax due at {trPct}%</span><span>{fmt(currentTaxCost)}</span></div>
             )}
@@ -117,12 +124,12 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
             {step2Savings > 0 && (
               <div>
                 <div style={stepLabelRow}>
-                  <span style={stepLabel}>Step 2 — Fill your Personal Savings Allowance</span>
+                  <span style={stepLabel}>Step 2 — Use your tax-free savings interest</span>
                   <InfoButton onClick={() => setOpenInfo(o => o==="step2"?null:"step2")} open={openInfo==="step2"}/>
                 </div>
                 <div style={rowStyle}><span>{fmt(step2Savings)} at your current rate</span><span>{fmt(step2CurrentInterest)}/yr</span></div>
                 <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (best rate)</span><span style={{fontWeight:600}}>{fmt(step2SavingsInterest)}/yr</span></div>
-                <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?"#2d6b4a":TEXT}}><span>Extra from switching — the actual step to make</span><span>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
+                <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?"#2d6b4a":TEXT}}><span>Extra from switching</span><span>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
                 {openInfo === "step2" && (
                   <p style={stepCaption}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band. You're already earning {fmt(step2CurrentInterest)}/yr on this money at your current rate; moving it to today's best non-ISA rate ({nonIsaRateDisplay}) is worth an extra {fmt(Math.max(0,step2Delta))}/yr on top — not {fmt(step2SavingsInterest)}/yr from scratch.</p>
                 )}
@@ -137,11 +144,11 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
 
             <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"10px 0"}}/>
             <div style={{fontSize:"11px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"4px"}}>
-              Optimal cash allocation (on {fmt(keptAmount)} kept as cash)
+              Where your savings could sit ({fmt(keptAmount)} kept as cash)
             </div>
-            <div style={rowStyle}><span>{fmt(keptAmount)} @ {(todayBlendedRate*100).toFixed(2)}% — today's blended rate</span><span>{fmt(currentInterestOnKeptAmount)}/yr</span></div>
+            <div style={rowStyle}><span>{fmt(keptAmount)} @ {(todayBlendedRate*100).toFixed(2)}% — your average rate today</span><span>{fmt(currentInterestOnKeptAmount)}/yr</span></div>
             <p style={{fontSize:"10.5px",color:MUT,marginTop:"-2px",marginBottom:"8px"}}>= {m.savingsRate}% on your cash + {(PB_RATE*100).toFixed(1)}% on Premium Bonds, blended</p>
-            <div style={rowStyle}><span>{fmt(keptAmount)} @ {optimalBlendedRatePct.toFixed(2)}% — optimal blended rate</span><span>{fmt(optimisedTotal)}/yr</span></div>
+            <div style={rowStyle}><span>{fmt(keptAmount)} @ {optimalBlendedRatePct.toFixed(2)}% — the best average rate</span><span>{fmt(optimisedTotal)}/yr</span></div>
             <p style={{fontSize:"10.5px",color:MUT,marginTop:"-2px",marginBottom:"8px"}}>= {isaRateDisplay} ISA + {nonIsaRateDisplay} savings + {(PB_RATE*100).toFixed(1)}% Premium Bonds, blended</p>
             <div style={{...rowStyle,fontWeight:700,color:optimisationGain>0?"#2d6b4a":TEXT}}>
               <span>{optimisationGain>0?"You can earn":"Difference"}</span><span>{optimisationGain>0?"+":""}{fmt(optimisationGain)}/yr</span>
@@ -156,7 +163,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px",flexWrap:"wrap",gap:"6px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
             <span style={{width:"8px",height:"8px",borderRadius:"50%",background:runwayTierColor,display:"inline-block"}}/>
-            <span style={{fontSize:"13px",fontWeight:600,color:G}}>Cash runway — {runwayLabel}</span>
+            <span style={{fontSize:"13px",fontWeight:600,color:G}}>Months of spending covered — {runwayLabel}</span>
           </div>
           <span style={{fontSize:"12.5px",color:MUT}}>{m.runwayMonths.toFixed(1)} mo</span>
         </div>

@@ -6531,8 +6531,8 @@ export default function AppShell() {
               posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at, rerun: moduleRerun === mobileActiveModule });
               posthog.capture("module_answer_shown", { module: mobileActiveModule });
               // A first walk-through, finished, goes on to the answer step
-              // by step where the module has one (pilot: Pension).
-              if (how === "finished" && moduleRerun !== mobileActiveModule && MODULE_REVEALS[mobileActiveModule]) {
+              // by step (MODULE_REVEALS), when there's one to give.
+              if (how === "finished" && moduleRerun !== mobileActiveModule && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
                 setRevealModule(mobileActiveModule);
                 posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
               }
@@ -6543,13 +6543,16 @@ export default function AppShell() {
         </MobileLayout>
       );
     }
-    if (revealModule === mobileActiveModule && MODULE_REVEALS[mobileActiveModule]) {
+    // The module's answer in three steps, or null when there's nothing to
+    // explain (no student loan, say): then no reveal and no "Explain this".
+    const revealSteps = MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates }) ?? null;
+    if (revealModule === mobileActiveModule && revealSteps) {
       return (
         <MobileLayout activeTab="modules"
           headerRight={
             <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
           }>
-          <MobileModuleReveal moduleKey={mobileActiveModule} steps={MODULE_REVEALS[mobileActiveModule](d, m)}
+          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps}
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
               setRevealModule(null);
@@ -6564,7 +6567,7 @@ export default function AppShell() {
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
         <MobileModuleDeepDive moduleKey={mobileActiveModule}
-          onShowReveal={MODULE_REVEALS[mobileActiveModule] ? () => { setRevealModule(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
+          onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
           onWalkThrough={MODULE_GUIDES[mobileActiveModule] ? () => { setModuleRerun(mobileActiveModule); posthog.capture("guide_restarted", { module: mobileActiveModule }); } : null}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}

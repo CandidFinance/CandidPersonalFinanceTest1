@@ -6,6 +6,7 @@ import { fmt, fmtK } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
+import { ExplainLink, ExploreToggle } from "../ModuleScreenParts.jsx";
 
 // Overpayment slider stops — round amounts, dropping any that sit within 10%
 // of the full balance (e.g. a £20,500 loan shouldn't show both "£20k" and
@@ -28,8 +29,12 @@ function buildOverpayOptions(loanBal) {
 // calcOverpaymentScenarios/calcLoanMarginalReturnCurve are the same single
 // source of truth desktop and computeModuleStatuses use, so the numbers
 // can't drift between mobile and desktop.
-export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoanOverpayment }) {
+// Leads with the answer and the comparison behind it; the overpayment model
+// and the return chart sit under "Explore what-ifs", closed at first.
+// `onShowReveal` replays the answer step by step ("Explain this").
+export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoanOverpayment, onShowReveal }) {
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
+  const [exploreOpen, setExploreOpen] = useState(false); // before the chart's measuring effect, which waits for it
   const [editingBalance, setEditingBalance] = useState(false);
   // null = still following the overpayment slider automatically; a number
   // once the user types their own value into the editor, which then stops
@@ -47,7 +52,8 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+    // The chart sits under "Explore what-ifs": measure it once that's open.
+  }, [exploreOpen]);
   // Default overpayment slider position: the largest round amount the user's
   // spare cash could actually cover, falling back to the smallest option.
   // Computed from `m` alone (no `sl`/guard dependency) so this hook can stay
@@ -99,11 +105,15 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
 
   return (
     <div>
+      {!worthOverpaying && onShowReveal && <div style={{marginBottom:"14px"}}><ExplainLink onClick={onShowReveal}/></div>}
       {worthOverpaying && (
         <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
+            <ExplainLink onClick={onShowReveal} color={OPPORTUNITY_TILE_FIGURE}/>
+          </div>
           <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
-          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Effective benefit from overpaying vs the best savings rate</div>
+          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Better off overpaying than saving the money</div>
         </div>
       )}
 
@@ -165,16 +175,16 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
           headline={worthOverpaying
             ? (sl.balanceGrowing
                 ? `Growing by ${fmt(sl.netAnnualChange)}/yr — overpaying could still save ${fmt(sl.overpayAnnualBenefit)}/yr`
-                : `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit vs the best savings rate`)
+                : `${fmt(sl.overpayAnnualBenefit)}/yr better off than saving at the best rate`)
             : sl.effectiveBenefit <= 0
               ? `The best savings rate (${sl.cashRate}%) beats your ${sl.slRatePct}% loan rate`
               : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your ${sl.slRatePct}% loan rate`}
           tagLabel={worthOverpaying ? "Today" : "Not optimal"} tagColor={worthOverpaying ? GOLD : "#c0392b"}>
           {sl.balanceGrowing && (
             <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
-              <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Effective 9% income surcharge</div>
+              <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Why your balance is growing</div>
               <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-                Your balance grows because repayments haven't caught up with interest yet. At {fmt(sl.inflectionSalary)} salary, repayments would exactly match interest — above that, your balance starts shrinking.
+                Repayments (9% of what you earn over the threshold) haven't caught up with the interest yet. At a {fmt(sl.inflectionSalary)} salary they'd match it, and above that your balance starts falling.
               </p>
             </div>
           )}
@@ -198,6 +208,11 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
         </MobileWinTile>
       )}
 
+      {(sl.willClear && overpayOptions.length > 0 && selectedScenario || curve) && (
+        <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="overpaying, and loan vs pension"/>
+      )}
+
+      {exploreOpen && (<>
       {sl.willClear && overpayOptions.length > 0 && selectedScenario && (
         <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"14px"}}>Model a lump sum overpayment</div>
@@ -220,7 +235,7 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
           </div>
           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,marginTop:"12px",marginBottom:"14px"}}>
             vs {baseProjection.clearYr ? `clearing in ${baseProjection.clearYr} yrs` : `${fmt(baseProjection.writeOffBal)} written off`} and {fmt(baseProjection.totalPaid)} repaid with no overpayment.
-            {selectedScenario.crossesInflection && <span style={{color:"#2d6b4a",fontWeight:600}}> This reaches the inflection point — your balance starts shrinking from here.</span>}
+            {selectedScenario.crossesInflection && <span style={{color:"#2d6b4a",fontWeight:600}}> From here your balance starts falling.</span>}
           </p>
           <PillSlider value={overpayAmt} onChange={setOverpayAmt} options={overpayOptions.map(amt => ({ value:amt, label: amt===fullAmt ? "Full" : fmtK(amt) }))}/>
 
@@ -281,6 +296,7 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
           </div>
         );
       })()}
+      </>)}
     </div>
   );
 }

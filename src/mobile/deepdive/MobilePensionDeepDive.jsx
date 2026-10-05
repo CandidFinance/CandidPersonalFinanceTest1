@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { AlertTriangle, PartyPopper, Banknote, Check, Plus, Minus } from "lucide-react";
+import { AlertTriangle, PartyPopper, Banknote, Check } from "lucide-react";
+import { ExplainLink, ExploreToggle } from "../ModuleScreenParts.jsx";
 import {
   isPensionContributing,
   calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
@@ -217,20 +218,14 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
     </MobileWinTile>
   );
 
-  const explainLink = color => onShowReveal && (
-    <button type="button" onClick={onShowReveal} style={{background:"none",border:"none",padding:0,color,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
-      Explain this
-    </button>
-  );
-
   return (
     <div>
-      {opportunityCols.length === 0 && onShowReveal && <div style={{marginBottom:"14px"}}>{explainLink(G)}</div>}
+      {opportunityCols.length === 0 && onShowReveal && <div style={{marginBottom:"14px"}}><ExplainLink onClick={onShowReveal}/></div>}
       {opportunityCols.length > 0 && (
         <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
             <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
-            {explainLink(OPPORTUNITY_TILE_FIGURE)}
+            <ExplainLink onClick={onShowReveal} color={OPPORTUNITY_TILE_FIGURE}/>
           </div>
           <div style={{display:"flex",gap:"22px",flexWrap:"wrap"}}>
             {opportunityCols.map((c,i) => (
@@ -311,13 +306,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
       )}
 
       {/* The what-if tools, closed at first. */}
-      <button type="button" onClick={() => setExploreOpen(o => !o)} aria-expanded={exploreOpen} style={{
-        display:"flex", alignItems:"center", gap:"6px", background:"none", border:"none", padding:"4px 0", margin:"4px 0 14px",
-        color:G, fontSize:"13.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
-      }}>
-        {exploreOpen ? <Minus size={15}/> : <Plus size={15}/>}Explore what-ifs
-        <span style={{fontWeight:500,color:MUT,fontSize:"12.5px"}}>{exploreOpen ? "" : "bonus, growth and more"}</span>
-      </button>
+      <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="bonus, growth and more"/>
 
       {exploreOpen && (<>
       {showSacrificeCalc && !taper.recoverable && sacrificeTile}

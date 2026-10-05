@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Lock } from "lucide-react";
 import { fmt } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
@@ -9,105 +8,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
-
-// Portfolio breakdown preview — not a real feature yet (no holdings-level
-// data exists anywhere in the app: no geography/sector/asset-type split, no
-// per-fund valuation or growth). Shown as an illustrative, locked mockup
-// (static placeholder figures, greyed out, non-interactive, with a lock
-// overlay) so the design is visible without pretending it's live — matches
-// the "How do I compare to my peers?" Coming Soon tile on the Forecast tab.
-function PortfolioBreakdownTile() {
-  const view = "geo";
-  const SEGMENTS_BY_VIEW = {
-    geo: [
-      { label:"UK", pct:38, color:"#2d6b4a" },
-      { label:"North America", pct:32, color:GOLD },
-      { label:"Europe", pct:18, color:"#8a4fae" },
-      { label:"Emerging markets", pct:12, color:MUT },
-    ],
-    sector: [
-      { label:"Technology", pct:28, color:"#2d6b4a" },
-      { label:"Financials", pct:22, color:GOLD },
-      { label:"Healthcare", pct:16, color:"#8a4fae" },
-      { label:"Other", pct:34, color:MUT },
-    ],
-    asset: [
-      { label:"Equities", pct:70, color:"#2d6b4a" },
-      { label:"Bonds", pct:18, color:GOLD },
-      { label:"Property", pct:7, color:"#8a4fae" },
-      { label:"Cash", pct:5, color:MUT },
-    ],
-  };
-  const holdings = [
-    { name:"Vanguard FTSE Global All Cap", value:"£12,450", growth:"+8.2%" },
-    { name:"iShares Core S&P 500", value:"£9,200", growth:"+11.4%" },
-    { name:"Fundsmith Equity", value:"£5,100", growth:"+6.7%" },
-    { name:"Cash (uninvested)", value:"£1,250", growth:"—" },
-  ];
-  const segments = SEGMENTS_BY_VIEW[view];
-  const r = 46, cx = 60, cy = 60, circumference = 2 * Math.PI * r;
-  let cumulative = 0;
-
-  return (
-    <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginTop:"16px",position:"relative",overflow:"hidden"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
-        <div style={{fontSize:"13px",fontWeight:600,color:G}}>Portfolio breakdown</div>
-        <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Coming soon</span>
-      </div>
-
-      <div style={{opacity:0.4,filter:"grayscale(35%)",pointerEvents:"none"}}>
-        <div style={{display:"flex",gap:"5px",background:"#ede7db",borderRadius:"100px",padding:"3px"}}>
-          {[{value:"geo",label:"Geography"},{value:"sector",label:"Sector"},{value:"asset",label:"Asset type"}].map(o => (
-            <div key={o.value} style={{flex:1,textAlign:"center",padding:"7px 0",borderRadius:"100px",background:view===o.value?G:"transparent",color:view===o.value?WHITE:MUT,fontSize:"11.5px",fontWeight:600}}>{o.label}</div>
-          ))}
-        </div>
-
-        <div style={{display:"flex",justifyContent:"center",marginTop:"20px"}}>
-          <svg width="120" height="120" viewBox="0 0 120 120">
-            {segments.map((seg,i) => {
-              const dash = (seg.pct/100) * circumference;
-              const el = (
-                <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={seg.color} strokeWidth="16"
-                  strokeDasharray={`${dash} ${circumference-dash}`} strokeDashoffset={-cumulative}
-                  transform={`rotate(-90 ${cx} ${cy})`}/>
-              );
-              cumulative += dash;
-              return el;
-            })}
-          </svg>
-        </div>
-
-        <div style={{display:"flex",flexWrap:"wrap",gap:"10px",justifyContent:"center",marginTop:"14px"}}>
-          {segments.map((seg,i) => (
-            <div key={i} style={{display:"flex",alignItems:"center",gap:"5px"}}>
-              <span style={{width:"8px",height:"8px",borderRadius:"50%",background:seg.color,display:"inline-block"}}/>
-              <span style={{fontSize:"11px",color:TEXT}}>{seg.label} {seg.pct}%</span>
-            </div>
-          ))}
-        </div>
-
-        <div style={{marginTop:"18px"}}>
-          {holdings.map((h,i) => (
-            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"1px solid rgba(22,47,36,0.06)"}}>
-              <span style={{fontSize:"13px",color:TEXT}}>{h.name}</span>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontFamily:SERIF,fontSize:"14px",fontWeight:700,color:G}}>{h.value}</div>
-                <div style={{fontSize:"11px",color:"#2d6b4a"}}>{h.growth}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"10px",background:"rgba(246,240,230,0.6)",padding:"0 30px",textAlign:"center"}}>
-        <div style={{width:"42px",height:"42px",borderRadius:"50%",background:WHITE,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(22,47,36,0.15)"}}>
-          <Lock size={18} color={G}/>
-        </div>
-        <p style={{fontSize:"12.5px",color:G,fontWeight:600,lineHeight:1.5,margin:0}}>Connect your investment accounts to see a full breakdown by geography, sector and asset type</p>
-      </div>
-    </div>
-  );
-}
+import { ExplainLink } from "../ModuleScreenParts.jsx";
 
 // Trimmed mobile version of desktop's Investments deep dive (ModuleDeepDive,
 // moduleKey==="investments" — CandidApp.jsx). Keeps both wins (crystallise
@@ -118,7 +19,10 @@ function PortfolioBreakdownTile() {
 // cards for this v1 — same trim rationale as Cash/Student Loan (no
 // savingsRates wired into the mobile route yet, and inline charts need
 // mobile-specific redesign, not a direct port).
-export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrystallisedGain }) {
+// Leads with the answer: the tax-free profit tile only when there's profit to
+// talk about, otherwise the ISA allowance first. `onShowReveal` replays the
+// answer step by step ("Explain this").
+export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrystallisedGain, onShowReveal }) {
   const [openInfo, setOpenInfo] = useState(null); // "bnb" | "useit" | "isa" | null
   const [loggingGain, setLoggingGain] = useState(false);
   const [amountSoldInput, setAmountSoldInput] = useState(null);
@@ -173,34 +77,49 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
     .map((amt, i) => i === 0 ? `${fmt(Math.round(amt))} today` : i === 1 ? `${fmt(Math.round(amt))} after April 5` : `${fmt(Math.round(amt))} in tax year ${i+1}`)
     .join(", ");
   const products = getModuleProducts("investments", d, m);
+  const showGains = m.crystallisable > 0 || totalGains > 0;
+  const hasOpportunity = m.isaHeadroom > 0 || m.crystallisable > 0;
 
   return (
     <div>
-      {(m.isaHeadroom > 0 || m.crystallisable > 0) && (
+      {!hasOpportunity && onShowReveal && <div style={{marginBottom:"14px"}}><ExplainLink onClick={onShowReveal}/></div>}
+      {hasOpportunity && (
         <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
+            <ExplainLink onClick={onShowReveal} color={OPPORTUNITY_TILE_FIGURE}/>
+          </div>
+          {/* The same lead figure as the answer step by step: tax-free profit
+              when there is some, otherwise the unused ISA allowance. */}
           {totalOpp > 0 ? (
             <>
               <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(totalOpp)}</div>
-              <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>CGT saving available this tax year</div>
+              <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Capital gains tax you could avoid this year</div>
+              {m.isaHeadroom > 0 && (
+                <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
+                  Plus {fmt(m.isaHeadroom)} of unused ISA allowance — not a guaranteed gain, but investing it shelters future growth from tax.
+                </div>
+              )}
             </>
           ) : (
-            <div style={{fontSize:"13.5px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:600}}>No CGT saving to bank this tax year</div>
-          )}
-          {m.isaHeadroom > 0 && (
-            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
-              Plus {fmt(m.isaHeadroom)} of unused ISA allowance — not a guaranteed gain, but investing it shelters future growth from tax.
-            </div>
+            <>
+              <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(m.isaHeadroom)}</div>
+              <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Of this year's ISA allowance unused</div>
+              <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
+                Not a guaranteed gain, but investing it shelters future growth from tax.
+              </div>
+            </>
           )}
         </div>
       )}
 
-      <MobileWinTile number={1} title="Crystallise paper gains"
+      {showGains && (
+      <MobileWinTile number={1} title="Take profit tax-free"
         headline={m.crystallisable > 0
           ? (m.remainingCgtAllowance >= 3000
-              ? "Your full £3,000 CGT allowance is available this year."
-              : `You have ${fmt(m.remainingCgtAllowance)} of your £3,000 CGT allowance left this year.`)
-          : "No unrealised gains to crystallise this tax year."}
+              ? "Your full £3,000 tax-free gains allowance is available this year."
+              : `You have ${fmt(m.remainingCgtAllowance)} of your £3,000 tax-free gains allowance left this year.`)
+          : "No profit to take tax-free this tax year."}
         tagLabel="Harvest gains" tagColor={GOLD}
         reminder={m.crystallisable > 0 ? {
           id: "investments-crystallise-gains",
@@ -213,10 +132,10 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
         {m.crystallisable > 0 ? (
           <div>
             <div style={{background:"#f8f7f4",border:"1px solid rgba(22,47,36,0.1)",borderRadius:"10px",padding:"4px 14px",marginBottom:"12px"}}>
-              <div style={rowStyle}><span>Total unrealised gain</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
-              <div style={rowStyle}><span>Less: allowance available</span><span>−{fmt(m.crystallisable)}</span></div>
-              <div style={{...rowStyle,borderTop:"1px solid rgba(22,47,36,0.1)",fontWeight:600}}><span>Taxable surplus</span><span>{fmt(taxableSurplus)}</span></div>
-              <div style={{...rowStyle,fontWeight:700,color:instantSellTax>0?"#c0392b":G}}><span>Instant-sell tax bill ({cgtRatePct}%)</span><span>{fmt(instantSellTax)}</span></div>
+              <div style={rowStyle}><span>Profit so far</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
+              <div style={rowStyle}><span>Less: tax-free allowance left</span><span>−{fmt(m.crystallisable)}</span></div>
+              <div style={{...rowStyle,borderTop:"1px solid rgba(22,47,36,0.1)",fontWeight:600}}><span>Profit above the allowance</span><span>{fmt(taxableSurplus)}</span></div>
+              <div style={{...rowStyle,fontWeight:700,color:instantSellTax>0?"#c0392b":G}}><span>Tax if you sold it all today ({cgtRatePct}%)</span><span>{fmt(instantSellTax)}</span></div>
             </div>
 
             {instantSellTax > 0 ? (
@@ -228,7 +147,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
                     <div style={{fontSize:"10.5px",color:MUT,marginTop:"2px"}}>Tax due</div>
                   </div>
                   <div style={{flex:1,background:"rgba(196,150,58,0.1)",border:`1.5px solid ${GOLD}`,borderRadius:"10px",padding:"10px 12px"}}>
-                    <div style={{fontSize:"9.5px",fontWeight:700,color:"#8a6a24",letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Spread over {spreadYears.length} tax yrs · optimal</div>
+                    <div style={{fontSize:"9.5px",fontWeight:700,color:"#8a6a24",letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Spread over {spreadYears.length} tax years</div>
                     <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G}}>{fmt(0)}</div>
                     <div style={{fontSize:"10.5px",color:"#8a6a24",fontWeight:600,marginTop:"2px"}}>Saves {fmt(instantSellTax)}</div>
                   </div>
@@ -239,7 +158,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
               <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,marginBottom:"12px"}}>Fully shielded by this year's allowance — no CGT due either way.</p>
             )}
 
-            <GoToProviderButton storageKey="candid_gia_provider_pref" defaultLabel={`Bank ${fmt(m.crystallisable)} tax-free now`}/>
+            <GoToProviderButton storageKey="candid_gia_provider_pref" defaultLabel={`Take ${fmt(m.crystallisable)} of profit tax-free`}/>
 
             {onRecordCrystallisedGain && (
               <div style={{marginTop:"10px"}}>
@@ -269,7 +188,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
             <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                  <span style={{fontSize:"12.5px",fontWeight:600,color:GOLD}}>Bed &amp; breakfasting</span>
+                  <span style={{fontSize:"12.5px",fontWeight:600,color:GOLD}}>Buying back in (bed and breakfasting)</span>
                   <InfoButton onClick={() => setOpenInfo(o => o==="bnb"?null:"bnb")} open={openInfo==="bnb"}/>
                 </div>
                 {openInfo === "bnb" && (
@@ -294,13 +213,14 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
         ) : (
           <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>
             {m.remainingCgtAllowance === 0
-              ? "You've used your full £3,000 CGT allowance this tax year — further gains outside an ISA or pension will be taxed at your marginal rate."
-              : "No unrealised gains recorded outside an ISA or pension this year — nothing to crystallise. If that changes, come back before April 5th to use your £3,000 exempt amount."}
+              ? "You've used your full £3,000 tax-free gains allowance this tax year — further profit outside an ISA or pension will be taxed at your marginal rate."
+              : "No profit recorded outside an ISA or pension this year — nothing to take tax-free. If that changes, come back before April 5th to use your £3,000 allowance."}
           </p>
         )}
       </MobileWinTile>
+      )}
 
-      <MobileWinTile number={2} title="Utilise unused ISA allowance"
+      <MobileWinTile number={showGains ? 2 : 1} title="Use your ISA allowance"
         headline={m.isaHeadroom > 0
           ? `${fmt(m.isaHeadroom)} remaining.`
           : "You've used your full £20,000 ISA allowance this tax year."}
@@ -342,8 +262,6 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
       </MobileWinTile>
 
       <MobileProviderTile heading="Where to open one" products={products.products} disclaimer={products.disclaimer}/>
-
-      <PortfolioBreakdownTile/>
     </div>
   );
 }
