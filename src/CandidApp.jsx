@@ -25,6 +25,8 @@ import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx"
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
+import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
+import { MODULE_REVEALS } from "./lib/moduleReveal.js";
 import { appUnlocked, scoreUnlocked } from "./lib/appEntry.js";
 import { MODULE_GUIDES, moduleGuideStarts } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
@@ -6189,6 +6191,9 @@ export default function AppShell() {
   const [rowSaveTick, setRowSaveTick] = useState(0);
   // The module whose walk-through is being rerun ("Walk me through it").
   const [moduleRerun, setModuleRerun] = useState(null);
+  // The module whose answer is being shown step by step (MODULE_REVEALS):
+  // after its first walk-through, or replayed from its screen.
+  const [revealModule, setRevealModule] = useState(null);
   // Whether the Candid score is showing: once every module picked at the
   // entry is answered (scoreUnlocked), or for a user with an old report.
   // It's worked out by the code, so the row gets the score with the inputs.
@@ -6525,8 +6530,29 @@ export default function AppShell() {
               if (!selected.includes(mobileActiveModule)) set("selectedModules", [...selected, mobileActiveModule]);
               posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at, rerun: moduleRerun === mobileActiveModule });
               posthog.capture("module_answer_shown", { module: mobileActiveModule });
+              // A first walk-through, finished, goes on to the answer step
+              // by step where the module has one (pilot: Pension).
+              if (how === "finished" && moduleRerun !== mobileActiveModule && MODULE_REVEALS[mobileActiveModule]) {
+                setRevealModule(mobileActiveModule);
+                posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
+              }
               setModuleRerun(null);
               setRowSaveTick(t => t + 1);
+              window.scrollTo({ top: 0, behavior: "instant" });
+            }}/>
+        </MobileLayout>
+      );
+    }
+    if (revealModule === mobileActiveModule && MODULE_REVEALS[mobileActiveModule]) {
+      return (
+        <MobileLayout activeTab="modules"
+          headerRight={
+            <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+          }>
+          <MobileModuleReveal moduleKey={mobileActiveModule} steps={MODULE_REVEALS[mobileActiveModule](d, m)}
+            onDone={(how, step) => {
+              posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
+              setRevealModule(null);
               window.scrollTo({ top: 0, behavior: "instant" });
             }}/>
         </MobileLayout>
@@ -6537,7 +6563,8 @@ export default function AppShell() {
         headerRight={
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
-        <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
+        <MobileModuleDeepDive moduleKey={mobileActiveModule}
+          onShowReveal={MODULE_REVEALS[mobileActiveModule] ? () => { setRevealModule(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
           onWalkThrough={MODULE_GUIDES[mobileActiveModule] ? () => { setModuleRerun(mobileActiveModule); posthog.capture("guide_restarted", { module: mobileActiveModule }); } : null}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}

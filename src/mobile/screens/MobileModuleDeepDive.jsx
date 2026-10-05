@@ -20,7 +20,9 @@ const CONTENT_BY_KEY = {
 };
 
 // `onWalkThrough` reruns the module's guided walk-through (MobileModuleGuide).
-export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain, onWalkThrough }) {
+// `onShowReveal` replays its answer step by step (MobileModuleReveal), where
+// the module has one.
+export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain, onWalkThrough, onShowReveal }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
   // Status has exactly one visual indicator here — the dot below. The
@@ -61,6 +63,12 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
           </button>
         )}
       </div>
+
+      {onShowReveal && (
+        <button type="button" onClick={onShowReveal} style={{display:"block",background:"none",border:"none",padding:0,margin:"-8px 0 16px",color:G,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+          See your answer step by step
+        </button>
+      )}
 
       {Content ? (
         <Content d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain}/>

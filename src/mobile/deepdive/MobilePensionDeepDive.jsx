@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, PartyPopper, Banknote, Lock, Check } from "lucide-react";
+import { AlertTriangle, PartyPopper, Banknote, Check, Plus, Minus } from "lucide-react";
 import {
   isPensionContributing,
   calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
@@ -83,6 +83,10 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   const [sacrificePct, setSacrificePct] = useState(100);
   const [extraPct, setExtraPct] = useState(1);
   const [showFVInfo, setShowFVInfo] = useState(false);
+  // The what-if tools (bonus sacrifice, carry forward, the growth chart and
+  // the £80k-£100k sacrifice explorer) sit under "Explore", closed at first,
+  // so the screen leads with the answer and its one action.
+  const [exploreOpen, setExploreOpen] = useState(false);
 
   if (m.pensionStatus === "unknown") {
     return <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>You told us you're not sure about your pension situation — find out your contribution rate and employer match, then come back to see your options here.</p>;
@@ -93,7 +97,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   const myPct = +d.myContribution || 0;
   const empCapPct = +d.employerMatch || 0;
   const showMatchWin = !contributing || m.missedMatch > 0;
-  const matchWinTitle = !contributing ? "Start your pension" : "Capture full employer match";
+  const matchWinTitle = !contributing ? "Start your pension" : "Get your full employer match";
   const matchWinHeadline = !contributing
     ? `Every £${100-trPct} becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
     : `Up to ${fmt(m.missedMatch)}/yr`;
@@ -141,15 +145,74 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   const psaAmount = m.taxBandLabel === "additional" ? 0 : m.taxBandLabel === "higher" ? 500 : 1000;
 
   const opportunityCols = [];
-  if (!contributing) opportunityCols.push({ label:"Tax relief foregone", value: fmtCompact(Math.round(m.salary*0.05*m.tr)) });
-  else if (m.missedMatch > 0) opportunityCols.push({ label:"Missed employer match", value: fmtCompact(m.missedMatch) });
-  if (taper.recoverable && taper.taperTotalSaving > 0) opportunityCols.push({ label:"Personal Allowance recoverable", value: fmtCompact(taper.taperTotalSaving) });
+  if (!contributing) opportunityCols.push({ label:"Tax relief you're missing", value: fmtCompact(Math.round(m.salary*0.05*m.tr)) });
+  else if (m.missedMatch > 0) opportunityCols.push({ label:"Employer match you're not getting", value: fmtCompact(m.missedMatch) });
+  if (taper.recoverable && taper.taperTotalSaving > 0) opportunityCols.push({ label:"Tax-free allowance you could win back", value: fmtCompact(taper.taperTotalSaving) });
 
   let winCounter = 0;
   const win1Num = showMatchWin ? ++winCounter : null;
   const win2Num = showSacrificeCalc ? ++winCounter : null;
   const win3Num = cf.showCarryForward ? ++winCounter : null;
   const win4Num = ++winCounter; // bonus-sacrifice win always rendered (calculator or prompt)
+
+  const sacrificeTile = (
+    <MobileWinTile number={win2Num}
+      title="Pay less tax with salary sacrifice"
+      headline={taper.recoverable
+        ? `Sacrificing ${fmt(taper.taperSacrificeNeeded)} recovers your full Personal Allowance — worth ~${fmt(taper.taperTotalSaving)}`
+        : `You're ${fmt(Math.max(0, taper.taperStart - taper.ani))} below the £100k taper — sacrifice now to stay ahead of it`}
+      tagLabel="Today">
+      <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:taper.recoverable&&taper.taperTotalSaving>0?"12px":0}}>
+        {!taper.recoverable
+          ? `Your income sits in the £80k–£100k zone. Sacrificing now builds wealth efficiently — and softens the taper if a bonus or rise pushes you over £100k later.`
+          : taper.aboveTaper
+            ? `Above £125,140 your Personal Allowance is gone entirely. Sacrificing back down to £100k saves 45% on everything above £125,140 and an effective 60% on the £100k–£125,140 slice — roughly ${fmt(taper.taperTotalSaving)} in tax and NI.`
+            : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taper.taperTotalSaving)} in tax and NI.`}
+      </p>
+      {taper.recoverable && taper.taperTotalSaving > 0 && (
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"10px",textAlign:"center"}}>
+          <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 6px"}}>
+            <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700}}>{fmt(taper.taperSacrificeNeeded)}</div>
+            <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>sacrifice needed</div>
+          </div>
+          <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 6px"}}>
+            <div style={{fontFamily:SERIF,fontSize:"16px",color:"#2d6b4a",fontWeight:700}}>{fmt(taper.taperTaxSaving)}</div>
+            <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax saved</div>
+          </div>
+          <div style={{background:"rgba(196,150,58,0.18)",borderRadius:"8px",padding:"10px 6px"}}>
+            <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700}}>{fmt(taper.taperTotalSaving)}</div>
+            <div style={{fontSize:"10px",color:G,marginTop:"2px",fontWeight:600}}>total saving</div>
+          </div>
+        </div>
+      )}
+      {d.hasKids === "yes" && (
+        <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"10px",padding:"12px 14px",marginBottom:"8px"}}>
+          <div style={{fontSize:"10.5px",fontWeight:700,color:"#c0392b",letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"6px"}}>Also at stake: your childcare support</div>
+          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
+            Tax-Free Childcare and free childcare hours are lost entirely — not tapered — the moment either parent crosses £100,000. Staying under it can be worth £5,000–£7,500 per child a year.
+          </p>
+        </div>
+      )}
+      <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",marginBottom:"12px"}}>
+        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
+          Your Personal Savings Allowance is {psaAmount>0?fmt(psaAmount):"£0"} as a {m.taxBandLabel}-rate taxpayer{psaAmount>0?" — savings interest above that is taxed at your marginal rate":""}. {taper.aboveTaper
+            ? "Sacrificing back below £125,140 would also restore £500 of it."
+            : "This doesn't move within the £100k–£125,140 taper zone itself — it only shrinks further if you cross into additional-rate above £125,140, or would recover to £1,000 if sacrifice took you all the way back under £50,270."}
+        </p>
+      </div>
+
+      <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px"}}>
+        <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"8px"}}>Or try your own amount — sacrifice an extra {extraPct}% of salary</div>
+        <div style={rowStyle}><span>Comes off your taxable income</span><span style={{fontWeight:600}}>−{fmt(Math.round(illustrativeExtraAmt))}</span></div>
+        <div style={rowStyle}><span>Tax{niSavingPct>0?" + NI":""} relief at {totalReliefPct}%</span><span>−{fmt(illustrativeExtraRelief)}</span></div>
+        <div style={{...rowStyle,fontWeight:700}}><span>Net cost to your take-home</span><span>{fmt(illustrativeExtraNetCost)}</span></div>
+      </div>
+      <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"10px",marginBottom:0}}>
+        That leaves your taxable income at ~{fmt(Math.round(newAdjustedIncome))}
+        {newBandLabel !== m.taxBandLabel ? `, dropping you into the ${newBandLabel}-rate band.` : `, still within the ${m.taxBandLabel}-rate band.`} Use the "What if you contributed more?" stepper further down to try a different percentage.
+      </p>
+    </MobileWinTile>
+  );
 
   return (
     <div>
@@ -217,64 +280,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
         </MobileWinTile>
       )}
 
-      {showSacrificeCalc && (
-        <MobileWinTile number={win2Num}
-          title="Salary sacrifice tax saver"
-          headline={taper.recoverable
-            ? `Sacrificing ${fmt(taper.taperSacrificeNeeded)} recovers your full Personal Allowance — worth ~${fmt(taper.taperTotalSaving)}`
-            : `You're ${fmt(Math.max(0, taper.taperStart - taper.ani))} below the £100k taper — sacrifice now to stay ahead of it`}
-          tagLabel="Today">
-          <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:taper.recoverable&&taper.taperTotalSaving>0?"12px":0}}>
-            {!taper.recoverable
-              ? `Your income sits in the £80k–£100k zone. Sacrificing now builds wealth efficiently — and softens the taper if a bonus or rise pushes you over £100k later.`
-              : taper.aboveTaper
-                ? `Above £125,140 your Personal Allowance is gone entirely. Sacrificing back down to £100k saves 45% on everything above £125,140 and an effective 60% on the £100k–£125,140 slice — roughly ${fmt(taper.taperTotalSaving)} in tax and NI.`
-                : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taper.taperTotalSaving)} in tax and NI.`}
-          </p>
-          {taper.recoverable && taper.taperTotalSaving > 0 && (
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"10px",textAlign:"center"}}>
-              <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 6px"}}>
-                <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700}}>{fmt(taper.taperSacrificeNeeded)}</div>
-                <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>sacrifice needed</div>
-              </div>
-              <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 6px"}}>
-                <div style={{fontFamily:SERIF,fontSize:"16px",color:"#2d6b4a",fontWeight:700}}>{fmt(taper.taperTaxSaving)}</div>
-                <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax saved</div>
-              </div>
-              <div style={{background:"rgba(196,150,58,0.18)",borderRadius:"8px",padding:"10px 6px"}}>
-                <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700}}>{fmt(taper.taperTotalSaving)}</div>
-                <div style={{fontSize:"10px",color:G,marginTop:"2px",fontWeight:600}}>total saving</div>
-              </div>
-            </div>
-          )}
-          {d.hasKids === "yes" && (
-            <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"10px",padding:"12px 14px",marginBottom:"8px"}}>
-              <div style={{fontSize:"10.5px",fontWeight:700,color:"#c0392b",letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"6px"}}>Also at stake: your childcare support</div>
-              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-                Tax-Free Childcare and free childcare hours are lost entirely — not tapered — the moment either parent crosses £100,000. Staying under it can be worth £5,000–£7,500 per child a year.
-              </p>
-            </div>
-          )}
-          <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",marginBottom:"12px"}}>
-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
-              Your Personal Savings Allowance is {psaAmount>0?fmt(psaAmount):"£0"} as a {m.taxBandLabel}-rate taxpayer{psaAmount>0?" — savings interest above that is taxed at your marginal rate":""}. {taper.aboveTaper
-                ? "Sacrificing back below £125,140 would also restore £500 of it."
-                : "This doesn't move within the £100k–£125,140 taper zone itself — it only shrinks further if you cross into additional-rate above £125,140, or would recover to £1,000 if sacrifice took you all the way back under £50,270."}
-            </p>
-          </div>
-
-          <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px"}}>
-            <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"8px"}}>Or try your own amount — sacrifice an extra {extraPct}% of salary</div>
-            <div style={rowStyle}><span>Comes off your taxable income</span><span style={{fontWeight:600}}>−{fmt(Math.round(illustrativeExtraAmt))}</span></div>
-            <div style={rowStyle}><span>Tax{niSavingPct>0?" + NI":""} relief at {totalReliefPct}%</span><span>−{fmt(illustrativeExtraRelief)}</span></div>
-            <div style={{...rowStyle,fontWeight:700}}><span>Net cost to your take-home</span><span>{fmt(illustrativeExtraNetCost)}</span></div>
-          </div>
-          <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"10px",marginBottom:0}}>
-            That leaves your taxable income at ~{fmt(Math.round(newAdjustedIncome))}
-            {newBandLabel !== m.taxBandLabel ? `, dropping you into the ${newBandLabel}-rate band.` : `, still within the ${m.taxBandLabel}-rate band.`} Use the "What if you contributed more?" stepper further down to try a different percentage.
-          </p>
-        </MobileWinTile>
-      )}
+      {showSacrificeCalc && taper.recoverable && sacrificeTile}
 
       {aa.inAATaper && (
         <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
@@ -291,8 +297,20 @@ export default function MobilePensionDeepDive({ d, m, set }) {
         </div>
       )}
 
+      {/* The what-if tools, closed at first. */}
+      <button type="button" onClick={() => setExploreOpen(o => !o)} aria-expanded={exploreOpen} style={{
+        display:"flex", alignItems:"center", gap:"6px", background:"none", border:"none", padding:"4px 0", margin:"4px 0 14px",
+        color:G, fontSize:"13.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
+      }}>
+        {exploreOpen ? <Minus size={15}/> : <Plus size={15}/>}Explore what-ifs
+        <span style={{fontWeight:500,color:MUT,fontSize:"12.5px"}}>{exploreOpen ? "" : "bonus, growth and more"}</span>
+      </button>
+
+      {exploreOpen && (<>
+      {showSacrificeCalc && !taper.recoverable && sacrificeTile}
+
       {cf.showCarryForward && (
-        <MobileWinTile number={win3Num} title="Carry forward unused allowance"
+        <MobileWinTile number={win3Num} title="Pay in more using past years' allowance"
           headline={cf.cfTotalUnused > 0
             ? `Up to ${fmt(cf.cfMaxContributable)} could go into your pension this tax year using carry forward`
             : "Fill in your last 3 tax years below to see how much you could inject in one go"}
@@ -339,7 +357,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
       )}
 
       {hasStatedBonus ? (
-        <MobileWinTile number={win4Num} title="Model bonus sacrifice"
+        <MobileWinTile number={win4Num} title="Pay your bonus into your pension"
           headline={bonusSacrifice.room <= 0
             ? "Your pension allowance has no room left this year — sacrificing your bonus could trigger a tax charge"
             : bonusSacrifice.standaloneSacrifice < bonusSacrifice.bonus
@@ -498,20 +516,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
         );
       })()}
 
-      <div style={{background:"rgba(255,255,255,0.55)",borderRadius:"14px",border:"1.5px dashed rgba(22,47,36,0.15)",padding:"18px",display:"flex",alignItems:"flex-start",gap:"14px",marginTop:"16px"}}>
-        <div style={{width:"38px",height:"38px",borderRadius:"10px",background:"rgba(22,47,36,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <Lock size={16} color={MUT}/>
-        </div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-            <div style={{fontSize:"14px",fontWeight:600,color:MUT}}>Old pension pot tracing</div>
-            <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"3px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0,whiteSpace:"nowrap"}}>Coming soon</span>
-          </div>
-          <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.55,marginTop:"6px",marginBottom:0}}>
-            Lost track of a pension from an old employer? We'll help you find and consolidate it here.
-          </p>
-        </div>
-      </div>
+      </>)}
 
       <MobileProviderTile heading={d.hasPension === "yes" ? "Consolidate or top up" : "Get started"} products={products.products} disclaimer={products.disclaimer}/>
     </div>
