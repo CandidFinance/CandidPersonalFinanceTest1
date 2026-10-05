@@ -273,6 +273,10 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
   const together = input.incomes.length > 1;
   const sd = input.stampDutyDetail;
   const bandColor = r.band ? bandStyle(r.band).color : null;
+  // The card's border is its overall status: amber when the loan is within
+  // 4.5x but the deposit is under the 5% most lenders need, so it doesn't
+  // read as fine beside that warning. The times-income figure keeps its band.
+  const borderColor = r.band === "within" && r.depositShort > 0 ? WARNING : bandColor;
   const incomePhrase = together ? "your combined income" : "your income";
   const times = multipleText(r);
   const most = maxPriceFor(d, m);
@@ -286,7 +290,7 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
       </div>
       {input.price > 0 ? (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
-            style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON,border:bandColor ? `2px solid ${bandColor}` : "none"}}>
+            style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON,border:borderColor ? `2px solid ${borderColor}` : "none"}}>
             <div style={{display:"flex",gap:"24px"}}>
               <div>
                 <div style={figureLabel}>Loan needed</div>
