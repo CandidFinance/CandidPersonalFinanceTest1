@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MODULE_GUIDES, moduleGuideStarts } from "./moduleGuide.js";
-import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions } from "./propertyGuide.js";
+import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions, countSettled } from "./propertyGuide.js";
 import { calcMetrics } from "./metrics.js";
 
 // Straight from the two-question entry: a blank profile with a name.
@@ -83,6 +83,21 @@ test("each helper answer sets the plan once there's enough to tell, and the resu
   assert.deepEqual(q("studentLoanPlan").also("unsure"), {});
   assert.deepEqual(q("studentLoanPlan").also("plan2"), { studentLoan: "plan2" });
   assert.equal(q("slPlanResult").ask(ctxFor({ ...fresh, slCountry: "england", slCourse: "postgrad" })), "You're on the Postgraduate Loan plan.");
+});
+
+test("the question count shows only once no answer still to come can change it", () => {
+  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no" };
+  const settled = (key, d, id) => {
+    const qs = MODULE_GUIDES[key].questions;
+    return countSettled(qs, ctxFor(d), neededAtStart(qs, ctxFor(known)), id);
+  };
+  // The plan question decides whether the helper and loan questions come.
+  assert.equal(settled("studentLoan", known, "studentLoanPlan"), false);
+  // On plan 2: balance and rate always follow, so it's settled.
+  assert.equal(settled("studentLoan", { ...known, slPlanAnswer: "plan2", studentLoan: "plan2" }, "loanBalance"), true);
+  // Cash: the Premium Bonds and Cash ISA yes/nos are still to come.
+  assert.equal(settled("cash", known, "spending"), false);
+  assert.equal(settled("cash", { ...known, hasPremiumBonds: "no", hasCashIsaThisYear: "yes" }, "cashIsaEarlier"), true);
 });
 
 test("student loan rate shows the rate the calculations would use", () => {

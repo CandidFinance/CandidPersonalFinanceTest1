@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
-import { neededAtStart, visibleQuestions } from "../../lib/propertyGuide.js";
+import { neededAtStart, visibleQuestions, countSettled } from "../../lib/propertyGuide.js";
 import PillMoneyInput, { pillFieldStyle } from "../PillMoneyInput.jsx";
 
 // A step's guided first pass: one question per screen under the step's
@@ -133,7 +133,8 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
       {result}
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:result ? "22px" : 0}}>
-        <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{showProgress ? `${position} of ${visible.length}` : ""}</span>
+        {/* Only once the total can't change with answers still to come. */}
+        <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{showProgress && countSettled(questions, ctx, needed, q.id) ? `${position} of ${visible.length}` : ""}</span>
         {skipLabel && <button type="button" onClick={() => onDone("skipped", q.id)} style={{...textLink,fontSize:"12.5px"}}>{skipLabel}</button>}
       </div>
 

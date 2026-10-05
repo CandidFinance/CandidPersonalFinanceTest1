@@ -308,6 +308,20 @@ export function whyLine(id, ctx) {
   return q ? q.why(ctx) : null;
 }
 
+// Whether "N of M" can be shown at question `id`: only once M is settled,
+// i.e. no choice from here on would change how many questions are asked
+// (a yes/no that opens or skips a group, say). Until then the total would
+// jump as the user answers, so it isn't shown.
+export function countSettled(questions, ctx, needed, id) {
+  const visible = visibleQuestions(questions, ctx, needed);
+  const total = patch => visibleQuestions(questions, { ...ctx, d: { ...ctx.d, ...patch } }, needed).length;
+  return visible.slice(visible.findIndex(q => q.id === id)).every(q => {
+    if (q.kind !== "choice") return true;
+    const totals = q.options(ctx).map(o => total({ [q.field]: o.value, ...(q.also ? q.also(o.value, ctx) : {}) }));
+    return new Set(totals).size <= 1;
+  });
+}
+
 // The ids of questions to ask this time through, decided once at the start:
 // a question with `ifMissing` is dropped when Candid already has its figure.
 export function neededAtStart(questions, ctx) {
