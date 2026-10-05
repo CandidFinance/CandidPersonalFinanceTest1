@@ -68,6 +68,23 @@ export const ENTRY_QUESTIONS = [
   },
 ];
 
+// The confidence check before the entry (/welcome), in the same walk-through
+// format but kept apart from it, so it reads as a quick aside rather than
+// part of the questions. Saved to localStorage (candid_confidence_score) and
+// onto the user's row, not to the inputs.
+export const CONFIDENCE_QUESTION = {
+  id:"confidence", field:"confidence", kind:"choice",
+  ask: () => "How confident are you managing your money?",
+  why: () => "There's no wrong answer. It helps us pitch things right for you.",
+  options: () => [
+    { value:"1", label:"Not at all confident" },
+    { value:"2", label:"Not very confident" },
+    { value:"3", label:"Fairly confident" },
+    { value:"4", label:"Confident" },
+    { value:"5", label:"Very confident" },
+  ],
+};
+
 // Whether the app is open to this user: they've had a report (everyone who
 // used Candid before the two-question entry) or they've been through it.
 export function appUnlocked(d, insights) {

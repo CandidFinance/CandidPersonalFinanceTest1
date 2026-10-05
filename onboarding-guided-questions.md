@@ -168,6 +168,9 @@ The first module opened then asks 3 to 8 questions, including shared figures. La
    - Last 90 days (PostHog `module_opened`, first module per person): Pension 20, Cash 19, Investments 12, Student loan 7.
    - Pension leads, but only by one person, so the default is a single setting that's easy to change as more data comes in.
 
+9. **Supabase:** one row per user. It's created at entry, then updated as modules are answered and when the report is made. The anon update permissions were applied on 5 October 2026 (`supabase_entry_row_migration.sql`). Only the fixed columns stay insert-only: id, created_at, session, acquisition fields and confidence score.
+10. **Confidence check:** kept as its own screen before the entry, in the same walk-through format. One tap answers and moves on, and the entry's first question then rises in, so the movement carries across.
+
 ## Build order
 
 1. **Foundations.**

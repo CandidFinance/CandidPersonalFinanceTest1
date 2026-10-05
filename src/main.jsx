@@ -6,6 +6,8 @@ import { MotionConfig } from "framer-motion"
 import CandidApp, { PageWrap, NavBar, ContentWrap, G, GOLD, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "./CandidApp.jsx"
 import ErrorBoundary from "./ErrorBoundary.jsx"
 import { appEntryPath } from "./mockups/StartCheckButton.jsx"
+import GuidedFlow from "./mobile/property/GuidedFlow.jsx"
+import { CONFIDENCE_QUESTION } from "./lib/appEntry.js"
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -162,65 +164,33 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
 }
 
 // ── Pre-assessment confidence check ────────────────────────────────────────────
-// Deliberately not one of CandidApp's 8 onboarding STEPS — this is a single,
-// separate, low-stakes question shown once before the real assessment begins,
-// so it doesn't read as part of "the test" and doesn't shift the step numbers
-// the assessment_question_* analytics events already reference.
-const CONFIDENCE_LABELS = { 1: "Not confident", 5: "Very confident" };
-
+// Deliberately not one of the entry's questions — a single, separate,
+// low-stakes question shown once before the entry, so it doesn't read as part
+// of "the test". Same walk-through format as the entry and modules
+// (GuidedFlow, question in src/lib/appEntry.js): one tap answers and moves on
+// to the entry (/app/start). Always the mobile-native app, regardless of
+// viewport.
 function ConfidenceCheck() {
   const navigate = useNavigate();
   const [score, setScore] = useState(() => {
-    try {
-      const saved = localStorage.getItem('candid_confidence_score');
-      return saved ? parseInt(saved, 10) : null;
-    } catch (e) { reportStorageFailure("confidence_check_load", e); return null; }
+    try { return localStorage.getItem('candid_confidence_score') || ""; }
+    catch (e) { reportStorageFailure("confidence_check_load", e); return ""; }
   });
-
-  function handleContinue() {
-    try { localStorage.setItem('candid_confidence_score', String(score)); } catch (e) { reportStorageFailure("confidence_check_save", e); }
-    // Always the mobile-native app, regardless of viewport — the product is
-    // the mobile-native app; there's no separate desktop destination to
-    // branch to any more. Its two-question entry, then each module asks its
-    // own questions when opened.
-    navigate("/app/start");
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }
+  const save = (field, value) => {
+    setScore(value);
+    try { localStorage.setItem('candid_confidence_score', String(value)); } catch (e) { reportStorageFailure("confidence_check_save", e); }
+  };
 
   return (
-    <PageWrap>
+    <div style={{minHeight:"100vh",background:"#f6f0e6",display:"flex",flexDirection:"column"}}>
       <NavBar light center="Before you start" right={<button type="button" onClick={() => navigate("/")} style={{background:"transparent",border:`1px solid rgba(22,47,36,0.2)`,borderRadius:"6px",padding:"6px 14px",color:"rgba(22,47,36,0.6)",fontSize:"12px",cursor:"pointer"}}>← Back</button>}/>
-      <ContentWrap maxWidth="480px">
-        <div style={{textAlign:"center", marginTop:"32px"}}>
-          <div style={{fontFamily:SERIF, fontSize:"clamp(22px,4vw,26px)", fontWeight:700, color:G, marginBottom:"12px"}}>
-            Quick one before we start
-          </div>
-          <p style={{fontSize:"14px", color:MUT, lineHeight:1.65, marginBottom:"36px", maxWidth:"380px", margin:"0 auto 36px"}}>
-            How confident are you managing your finances? There's no wrong answer here — it just helps us tailor what we show you.
-          </p>
-          <div style={{display:"flex", justifyContent:"center", gap:"10px", marginBottom:"10px", flexWrap:"wrap"}}>
-            {[1,2,3,4,5].map(n => (
-              <button key={n} type="button" onClick={() => setScore(n)} style={{
-                width:"52px", height:"52px", borderRadius:"50%",
-                border:`1.5px solid ${score===n ? G : "rgba(22,47,36,0.18)"}`,
-                background: score===n ? G : WHITE,
-                color: score===n ? WHITE : TEXT,
-                fontSize:"18px", fontWeight:700, cursor:"pointer",
-                fontFamily:SANS, transition:"all 0.15s",
-              }}>{n}</button>
-            ))}
-          </div>
-          <div style={{display:"flex", justifyContent:"space-between", fontSize:"11px", color:MUT, marginBottom:"40px"}}>
-            <span>{CONFIDENCE_LABELS[1]}</span><span>{CONFIDENCE_LABELS[5]}</span>
-          </div>
-          <button type="button" onClick={handleContinue} disabled={!score} style={{
-            width:"100%", padding:"14px", background:score?G:"rgba(22,47,36,0.25)", border:"none",
-            borderRadius:"8px", fontSize:"15px", fontWeight:600, color:WHITE,
-            cursor:score?"pointer":"not-allowed", fontFamily:SANS,
-          }}>Continue →</button>
-        </div>
-      </ContentWrap>
-    </PageWrap>
+      <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
+        <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Quick one before we start</div>
+        <GuidedFlow questions={[CONFIDENCE_QUESTION]} d={{ confidence: score }} m={{}} set={save}
+          skipLabel={null} showProgress={false}
+          onDone={() => { navigate("/app/start"); window.scrollTo({ top: 0, behavior: "instant" }); }}/>
+      </div>
+    </div>
   );
 }
 

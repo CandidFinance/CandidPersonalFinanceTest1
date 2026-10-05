@@ -30,7 +30,11 @@ const SHIFT_PX = 30;
 // Besides "choice", "money", "percent" and "years", the app's entry uses
 // "multi" (several answers, then Continue; an `exclusive` option clears the
 // rest) and "text" (a typed answer such as a name).
-export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered, skipLabel = "Skip to the full view" }) {
+// `showProgress` hides "1 of N" for a single question asked on its own (the
+// confidence check). `animateFirst` has the first question rise in too, for
+// a flow arrived at from another page of questions (the entry, after the
+// confidence check), so the movement carries on across the page change.
+export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered, skipLabel = "Skip to the full view", showProgress = true, animateFirst = false }) {
   const ctx = { d, m, regionalRows };
   // Which questions with `ifMissing` to ask is decided once, at the start.
   const [needed] = useState(() => neededAtStart(questions, ctx));
@@ -122,11 +126,11 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
       {result}
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:result ? "22px" : 0}}>
-        <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{position} of {visible.length}</span>
+        <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{showProgress ? `${position} of ${visible.length}` : ""}</span>
         {skipLabel && <button type="button" onClick={() => onDone("skipped", q.id)} style={{...textLink,fontSize:"12.5px"}}>{skipLabel}</button>}
       </div>
 
-      <AnimatePresence mode="wait" custom={direction} initial={false}>
+      <AnimatePresence mode="wait" custom={direction} initial={animateFirst}>
         <motion.div key={q.id} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" style={{marginTop:"10px"}}>
           {q.lead && (
             <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"8px"}}>{q.lead}</div>

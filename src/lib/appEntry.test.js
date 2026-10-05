@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { entryGoals, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS } from "./appEntry.js";
+import { entryGoals, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -12,6 +12,11 @@ test("the entry asks two questions, each with a short reason", () => {
   assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["interests", "name"]);
   for (const q of ENTRY_QUESTIONS) assert.ok(q.why().split(/\s+/).length <= 15, q.id);
   assert.deepEqual(ENTRY_QUESTIONS[0].also(["property"]), { financialGoals: ["buy_house"] });
+});
+
+test("the confidence check keeps the 1 to 5 scale its saved scores use", () => {
+  assert.deepEqual(CONFIDENCE_QUESTION.options().map(o => o.value), ["1", "2", "3", "4", "5"]);
+  assert.ok(CONFIDENCE_QUESTION.why().split(/\s+/).length <= 15);
 });
 
 test("the app opens with a report, or after the two-question entry", () => {
