@@ -1,11 +1,10 @@
 import { useEffect } from "react";
 import posthog from "posthog-js";
-import { Check, ChevronRight, Home } from "lucide-react";
 import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../CandidApp.jsx";
-import { MODULE_META } from "../../lib/moduleStatus.js";
 import { moduleOrder, moduleDone, reportReady, MODULE_PITCH, REPORT_AFTER_MODULES } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { mobileGreeting } from "../copy.js";
+import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
 
 // Home for a user without a report yet: the modules to start with, their
 // picks from the entry first. The Candid score waits until enough modules
@@ -14,8 +13,6 @@ import { mobileGreeting } from "../copy.js";
 // the report ("See what to do first").
 
 const NUMBER_WORDS = { 2:"two", 3:"three", 4:"four" };
-const PROPERTY_META ={ key:"property", icon:Home, title:"Property" };
-const metaFor = key => key === "property" ? PROPERTY_META : MODULE_META.find(mm => mm.key === key);
 
 export default function MobileStartHome({ d, m, onStartModule, onSeeReport }) {
   const propertyDone = readinessMissing(d, m).length === 0;
@@ -32,7 +29,7 @@ export default function MobileStartHome({ d, m, onStartModule, onSeeReport }) {
       <Icon size={size * 0.47} color={G}/>
     </div>
   );
-  const startMeta = start ? metaFor(start) : null;
+  const startMeta = start ? moduleMeta(start) : null;
 
   return (
     <div>
@@ -84,22 +81,7 @@ export default function MobileStartHome({ d, m, onStartModule, onSeeReport }) {
       <div style={{marginTop:"24px"}}>
         <div style={label}>{startMeta ? "Then" : "Your modules"}</div>
         <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
-          {rest.map(key => {
-            const mm = metaFor(key);
-            const isDone = done.includes(key);
-            return (
-              <button key={key} type="button" onClick={() => onStartModule(key)} style={{...card,padding:"14px 16px",display:"flex",alignItems:"center",gap:"12px",textAlign:"left",fontFamily:"inherit",cursor:"pointer",width:"100%"}}>
-                {iconTile(mm.icon, 30)}
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:"14.5px",fontWeight:600,color:TEXT}}>{mm.title}</div>
-                  <div style={{fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>{MODULE_PITCH[key]}</div>
-                </div>
-                {isDone
-                  ? <span style={{display:"flex",alignItems:"center",gap:"4px",fontSize:"12px",fontWeight:700,color:G}}><Check size={14}/>Done</span>
-                  : <ChevronRight size={16} color={MUT}/>}
-              </button>
-            );
-          })}
+          {rest.map(key => <ModuleStartRow key={key} moduleKey={key} done={done.includes(key)} onOpen={onStartModule}/>)}
         </div>
       </div>
     </div>

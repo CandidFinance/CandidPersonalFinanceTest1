@@ -109,6 +109,19 @@ export function reportReady(d, propertyDone = false) {
   return doneModules(d, propertyDone).length >= REPORT_AFTER_MODULES;
 }
 
+// Modules picked at the entry but not answered yet, in the order offered:
+// home's "Still to do" once there's a report, each dropping off as it's
+// answered.
+export function unfinishedPicks(d, propertyDone = false) {
+  return START_MODULES.filter(k => (d.interests || []).includes(k) && !moduleDone(k, d, propertyDone));
+}
+
+// Every module not answered yet, picks first: the Modules tab's "Not
+// started", so a module is never unreachable just because it has no answers.
+export function notStarted(d, propertyDone = false) {
+  return moduleOrder(d).filter(k => !moduleDone(k, d, propertyDone));
+}
+
 // Modules answered since the last report (`reportModules`, recorded when a
 // report is made), for "Update my report". Empty for a report made before
 // that was recorded: there's nothing to compare against.

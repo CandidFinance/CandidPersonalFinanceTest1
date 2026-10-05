@@ -7,7 +7,8 @@ import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
 import { MODULE_META } from "../../lib/moduleStatus.js";
-import { modulesSinceReport } from "../../lib/appEntry.js";
+import { modulesSinceReport, unfinishedPicks } from "../../lib/appEntry.js";
+import ModuleStartRow from "../ModuleStartRow.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
@@ -94,6 +95,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   const sinceReport = modulesSinceReport(d, readinessMissing(d, m).length === 0)
     .map(k => k === "property" ? "Property" : (MODULE_META.find(mm => mm.key === k)?.title || k));
   const sinceText = sinceReport.length < 2 ? sinceReport.join("") : `${sinceReport.slice(0, -1).join(", ")} and ${sinceReport.at(-1)}`;
+  // Modules picked at the entry but not answered yet: kept on home, each
+  // dropping off once answered.
+  const stillToDo = unfinishedPicks(d, readinessMissing(d, m).length === 0);
 
   const { color: scoreColor, label: scoreLabel } = scoreBand(score);
   const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, insights, "amount");
@@ -171,6 +175,15 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         <ScoreDetailSheet insights={insights} displayScore={score} isMobile={false}
           onClose={() => setScoreDetailOpen(false)}
           onReviewModules={() => { setScoreDetailOpen(false); navigate("/app/modules"); }}/>
+      )}
+
+      {stillToDo.length > 0 && (
+        <div style={{marginTop:"22px"}}>
+          <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Still to do</div>
+          <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
+            {stillToDo.map(key => <ModuleStartRow key={key} moduleKey={key} onOpen={onStartModule}/>)}
+          </div>
+        </div>
       )}
 
       {/* Opportunity — taps through to the full module ranking. Same card,

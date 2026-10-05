@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { entryGoals, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION,
-  doneModules, reportReady, modulesSinceReport, reportGoals, REPORT_GOAL_QUESTION } from "./appEntry.js";
+  doneModules, reportReady, modulesSinceReport, reportGoals, REPORT_GOAL_QUESTION, unfinishedPicks, notStarted } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -20,6 +20,17 @@ test("the report is offered once two modules are answered, Property included", (
   assert.equal(reportReady({ selectedModules: ["cash", "pension"] }), true);
   assert.equal(reportReady({ selectedModules: ["cash"] }, true), true);
   assert.deepEqual(doneModules({ selectedModules: ["studentLoan", "cash"] }, true), ["cash", "studentLoan", "property"]);
+});
+
+test("picks not answered yet stay on home until they are", () => {
+  const d = { interests: ["cash", "studentLoan", "property"], selectedModules: ["cash"] };
+  assert.deepEqual(unfinishedPicks(d), ["studentLoan", "property"]);
+  assert.deepEqual(unfinishedPicks(d, true), ["studentLoan"]);
+  assert.deepEqual(unfinishedPicks({ ...d, selectedModules: ["cash", "studentLoan"] }, true), []);
+});
+
+test("the Modules tab lists every module not answered, picks first", () => {
+  assert.deepEqual(notStarted({ interests: ["studentLoan"], selectedModules: ["pension"] }), ["studentLoan", "cash", "investments", "property"]);
 });
 
 test("modules answered since the report are the ones to update it with", () => {

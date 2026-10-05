@@ -5,6 +5,8 @@ import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel } from "../statusLabel.js";
+import { notStarted } from "../../lib/appEntry.js";
+import ModuleStartRow from "../ModuleStartRow.jsx";
 
 // Mobile Modules screen — matches the "Claude Design" mockup's Modules tab
 // (count header, category/impact sort toggle, expandable module cards with a
@@ -70,6 +72,7 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
   // at a time from a tap.
   const [celebratingKey, setCelebratingKey] = useState(null);
   const { moduleList, modulesWithRec, needActionCount, totalOpp } = getModuleBreakdown(d, m, statuses, insights, sortMode);
+  const waiting = notStarted(d).filter(k => k !== "property");
 
   return (
     <div>
@@ -171,6 +174,16 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
           );
         })}
       </div>
+
+      {/* Modules with no answers yet: not in the ranking above (they read as
+          not applicable until answered), so listed here, picks first, each
+          opening its walk-through. Property has its own entry below. */}
+      {waiting.length > 0 && (<>
+        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:moduleList.length ? "22px" : "16px",marginBottom:"10px"}}>Not started</div>
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          {waiting.map(key => <ModuleStartRow key={key} moduleKey={key} onOpen={onOpenModule}/>)}
+        </div>
+      </>)}
 
       {/* Property sits outside the ranked list above: it has no £ figure
           until the rent vs buy engine exists, so it can't be sorted by impact
