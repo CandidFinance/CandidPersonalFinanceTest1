@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcRentVsBuy, rentVsBuyInputs, partnerSavingsEstimate, cashRate, SELLING_COSTS_PCT, MIN_GROWTH_PCT } from "./rentVsBuy.js";
+import { calcRentVsBuy, rentVsBuyInputs, partnerSavingsEstimate, cashRate, breakevenGrowthPct, SELLING_COSTS_PCT, MIN_GROWTH_PCT } from "./rentVsBuy.js";
 import { mortgageSchedule } from "./mortgage.js";
 import { calcMetrics } from "./metrics.js";
 
@@ -343,4 +343,42 @@ test("negative equity: none when prices rise", () => {
   const r = calcRentVsBuy(base());
   assert.deepEqual(r.negativeEquityYears, []);
   for (const y of r.years) assert.equal(y.saleShortfall, 0);
+});
+
+const londonBuyer = {
+  salary: "45000", monthlyExpenses: "2000", cashTiers: [{ amount: "30000", rate: "4" }], selectedModules: ["cash"],
+  propertyBuyingMode: "alone", propertyRegion: "london", propertyFirstTimeBuyer: "yes", propertyPrice: "300000",
+  propertyCashAvailable: "30000", propertyMonthlyRent: "1300", propertyHorizonYears: "5",
+};
+const inputsFor = d => rentVsBuyInputs(d, calcMetrics(d), null);
+
+test("break-even growth: buying is ahead just above it and behind just below", () => {
+  const input = inputsFor(londonBuyer);
+  const g = breakevenGrowthPct(input);
+  assert.equal(g, 0.5);
+  assert.ok(calcRentVsBuy({ ...input, housePriceGrowthPct: g }).gapAtHorizon > 0);
+  assert.ok(calcRentVsBuy({ ...input, housePriceGrowthPct: g - 0.1 }).gapAtHorizon < 0);
+  // Staying longer spreads the one-off costs: buying holds up to a small fall.
+  assert.equal(breakevenGrowthPct(inputsFor({ ...londonBuyer, propertyHorizonYears: "10" })), -0.4);
+});
+
+test("break-even growth: none when one side is ahead whatever prices do", () => {
+  // £6,000 a month in rent for 10 years: buying is ahead even if prices
+  // halve every year.
+  assert.equal(breakevenGrowthPct(inputsFor({ ...londonBuyer, propertyMonthlyRent: "6000", propertyHorizonYears: "10" })), null);
+  // £0 rent still has a point where buying wins: prices rising fast enough.
+  assert.equal(breakevenGrowthPct(inputsFor({ ...londonBuyer, propertyMonthlyRent: "0" })), 6.1);
+});
+
+test("selling costs default to 2% and upkeep to 1% a year; both can be changed", () => {
+  const input = inputsFor(londonBuyer);
+  assert.equal(SELLING_COSTS_PCT, 2);
+  assert.deepEqual([input.sellingCostsPct, input.maintenancePct], [2, 1]);
+  const own = inputsFor({ ...londonBuyer, propertySellingCosts: "3", propertyMaintenancePct: "2" });
+  const a = calcRentVsBuy(input).years.at(-1), b = calcRentVsBuy(own).years.at(-1);
+  near(b.buying.sellingCosts, a.buying.sellingCosts * 1.5);
+  near(b.buying.maintenance, a.buying.maintenance * 2);
+  // Leasehold upkeep is a yearly sum.
+  const flat = inputsFor({ ...londonBuyer, propertyTenure: "leasehold", propertyLeaseholdMaintenance: "2400" });
+  near(calcRentVsBuy({ ...flat, horizonYears: 1 }).years[0].buying.maintenance, 2400);
 });

@@ -9,7 +9,7 @@
 import { fmt, fmtCompact } from "./format.js";
 import { borrowingInputs, calcBorrowingCheck, maxPriceFor, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, MIN_DEPOSIT_PCT } from "./borrowing.js";
 import { mortgageInputs, mortgageSummary, STRESS_REMORTGAGE_UPLIFT } from "./mortgage.js";
-import { rentVsBuyInputs, calcRentVsBuy, SELLING_COSTS_PCT, MAX_HORIZON_YEARS } from "./rentVsBuy.js";
+import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, MAX_HORIZON_YEARS } from "./rentVsBuy.js";
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "./waterfall.js";
 
 const ANSWER = "Your answer", WHY = "Why", ACTION = "What you could do";
@@ -79,6 +79,20 @@ export function mortgageReveal(d, m) {
   }];
 }
 
+// How much the answer leans on house prices: the yearly growth where buying
+// and renting come out even (breakevenGrowthPct), in a sentence. Shared by
+// the Rent vs buy card and its explanation. Null with no even point.
+export function breakevenLine(growthPct, buyingAhead) {
+  if (growthPct == null) return null;
+  if (buyingAhead) {
+    return growthPct > 0 ? `Buying needs house prices to rise more than ${pct(growthPct)} a year to stay ahead.`
+      : growthPct === 0 ? "Buying stays ahead as long as house prices don't fall."
+      : `Buying stays ahead unless house prices fall more than ${pct(-growthPct)} a year.`;
+  }
+  return growthPct > 0 ? `Buying would come out ahead if house prices rose more than ${pct(growthPct)} a year.`
+    : "Buying would come out ahead if house prices held steady.";
+}
+
 export function rentVsBuyReveal(d, m, { regionalRows = null, marketRates = null } = {}) {
   const rent = d.propertyMonthlyRent;
   if (rent === "" || rent == null || isNaN(+rent)) return null;
@@ -94,13 +108,14 @@ export function rentVsBuyReveal(d, m, { regionalRows = null, marketRates = null 
   const why = buyingAhead
     ? { label: WHY, title: "The home's rise in value, and the loan you've paid off, outweigh the costs of buying, owning and selling." }
     : last.buying.netCost - oneOffs < last.renting.netCost
-      ? { label: WHY, title: `Buying's one-off costs (${fmt(oneOffs)} in stamp duty, fees and ${SELLING_COSTS_PCT}% selling costs) haven't been made back after ${years(result.horizonYears)}.` }
+      ? { label: WHY, title: `Buying's one-off costs (${fmt(oneOffs)} in stamp duty, fees and ${pct(input.sellingCostsPct)} selling costs) haven't been made back after ${years(result.horizonYears)}.` }
       : { label: WHY, title: "Renting, and putting aside what buying would have cost, grows your money faster here." };
 
   // When buying would first come out ahead, over the longest stay the model
   // allows: the same comparison, just run for longer.
   const longRun = calcRentVsBuy({ ...input, horizonYears: MAX_HORIZON_YEARS });
-  const assumptions = `Assumes house prices rise ${pct(input.housePriceGrowthPct)} and rents ${pct(input.rentGrowthPct)} a year. You can change these below.`;
+  const leans = breakevenLine(breakevenGrowthPct(input), buyingAhead);
+  const assumptions = [leans, `Candid assumes house prices rise ${pct(input.housePriceGrowthPct)} and rents ${pct(input.rentGrowthPct)} a year. You can change these below.`].filter(Boolean).join(" ");
   const action = buyingAhead
     ? { label: ACTION, title: result.breakevenYear && result.breakevenYear > 1
           ? `Buying pulls ahead from year ${result.breakevenYear}, so moving before then would favour renting.`

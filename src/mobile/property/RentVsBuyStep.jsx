@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowUp, CircleAlert } from "lucide-react";
 import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC, PillSlider } from "../../CandidApp.jsx";
-import { rentVsBuyInputs, calcRentVsBuy, ISA_ALLOWANCE, SELLING_COSTS_PCT } from "../../lib/rentVsBuy.js";
+import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, ISA_ALLOWANCE } from "../../lib/rentVsBuy.js";
+import { breakevenLine } from "../../lib/propertyReveal.js";
 import { STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -312,6 +313,8 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
   const last = result?.years.at(-1);
   const shown = result ? (result.years.find(y => y.year === selectedYear) || last) : null;
   const buyingAhead = result ? result.gapAtHorizon > 0 : false;
+  // How much the answer leans on house prices, for the rate option chosen.
+  const leans = result ? breakevenLine(breakevenGrowthPct(outcomes ? { ...input, mortgageScenario: rateScenario } : input), buyingAhead) : null;
   const isaRoomNow = input.alreadyInIsa + input.people.reduce((s, p) => s + p.isaHeadroom, 0);
   const buyingCostLines = shown ? [
     { label:"Mortgage interest", value:shown.buying.mortgageInterest },
@@ -353,19 +356,36 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
         </>
       )}
 
+      {/* Out from under Assumptions: it moves the answer more than anything
+          else (the line under the answer says by how much). */}
+      <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
+        <PillCell><PillMoneyInput label="House price growth a year" unit="%" allowNegative value={input.housePriceGrowthPct || null} onChange={v => set("propertyHousePriceGrowth", v ?? "")}/></PillCell>
+      </div>
+
       <div style={{...fieldLabel,marginTop:"18px"}}>
         Assumptions
         <InfoButton open={assumptionsOpen} onClick={() => setAssumptionsOpen(o => !o)}/>
       </div>
       <p style={{fontSize:"12.5px",color:TEXT,margin:"6px 0 0"}}>
-        House prices {pct(input.housePriceGrowthPct)} a year · rents {pct(input.rentGrowthPct)} · {cash ? `cash ${pct(input.investmentReturnPct)}` : `invested ${pct(input.investmentReturnPct)}`}
+        Rents {pct(input.rentGrowthPct)} a year · upkeep {leasehold ? `${fmt(input.leaseholdMaintenance)} a year` : `${pct(input.maintenancePct)} of the value a year`} · selling costs {pct(input.sellingCostsPct)} · {cash ? `cash ${pct(input.investmentReturnPct)}` : `invested ${pct(input.investmentReturnPct)}`}
       </p>
       {assumptionsOpen && (
         <div style={{marginTop:"10px"}}>
           <div style={{display:"flex",gap:"10px"}}>
-            <PillCell><PillMoneyInput label="House price growth" unit="%" allowNegative value={input.housePriceGrowthPct || null} onChange={v => set("propertyHousePriceGrowth", v ?? "")}/></PillCell>
             <PillCell><PillMoneyInput label="Rent growth" unit="%" allowNegative value={input.rentGrowthPct || null} onChange={v => set("propertyRentGrowth", v ?? "")}/></PillCell>
+            <PillCell>
+              {leasehold
+                ? <PillMoneyInput label="Upkeep a year" value={input.leaseholdMaintenance || null} onChange={v => set("propertyLeaseholdMaintenance", v ?? "")}/>
+                : <PillMoneyInput label="Upkeep, % of value" unit="%" value={input.maintenancePct || null} onChange={v => set("propertyMaintenancePct", v ?? "")}/>}
+            </PillCell>
           </div>
+          <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
+            <PillCell><PillMoneyInput label="Selling costs" unit="%" value={input.sellingCostsPct || null} onChange={v => set("propertySellingCosts", v ?? "")}/></PillCell>
+            <div style={{flex:1}}/>
+          </div>
+          <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+            Selling costs cover the estate agent (about 1.4% with VAT), legal fees and moving. Upkeep is repairs and maintenance{leasehold ? " inside the flat; the service charge covers the building" : ""}.
+          </p>
           <div style={{display:"flex",gap:"10px",marginTop:"10px"}}>
             <PillCell info={why.button("renterMoney")}><div style={{flex:1,minWidth:0}}><PillSlider value={input.returnType} onChange={v => set("propertyRenterMoney", v)} options={MONEY_OPTIONS}/></div></PillCell>
             <PillCell>
@@ -416,6 +436,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
                   ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}
                 </span>
               </div>
+              {leans && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>{leans}</p>}
             </div>
 
             {outcomes && (
@@ -446,7 +467,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
                 default so the result and the inputs below fit on one screen. */}
             {detailsOpen && (<>
             <NetCostChart rows={result.years} selectedYear={shown.year}
-              buyingAtStart={result.years[0].buying.stampDutyAndFees + input.price * SELLING_COSTS_PCT / 100}/>
+              buyingAtStart={result.years[0].buying.stampDutyAndFees + input.price * input.sellingCostsPct / 100}/>
             <Timeline rows={result.years} selectedYear={shown.year} onSelect={y => setSelectedYear(y)}/>
 
             <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 12px"}}/>

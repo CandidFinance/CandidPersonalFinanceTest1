@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readinessReveal, mortgageReveal, rentVsBuyReveal } from "./propertyReveal.js";
+import { readinessReveal, mortgageReveal, rentVsBuyReveal, breakevenLine } from "./propertyReveal.js";
 import { calcMetrics } from "./metrics.js";
 import { borrowingInputs, calcBorrowingCheck } from "./borrowing.js";
 import { mortgageInputs, mortgageSummary } from "./mortgage.js";
@@ -74,8 +74,19 @@ test("rent vs buy: the verdict matches the step's result, and break-even comes f
   // £700 rent for 1 year: renting ahead, the one-off costs not yet made back.
   const short = reveal("700", "1");
   assert.equal(short.steps[0].figure, "Renting");
-  assert.match(short.steps[1].title, /^Buying's one-off costs \(£[\d,]+ in stamp duty, fees and 1\.5% selling costs\) haven't been made back after 1 year\.$/);
+  assert.match(short.steps[1].title, /^Buying's one-off costs \(£[\d,]+ in stamp duty, fees and 2% selling costs\) haven't been made back after 1 year\.$/);
   assert.match(short.steps[2].title, /^Buying would come out ahead if you stayed \d+ years or more\.$/);
   // £0 rent: buying never catches up.
   assert.equal(reveal("0", "5").steps[2].title, "On these assumptions, buying doesn't come out ahead even over 40 years.");
+});
+
+test("rent vs buy: how much the answer leans on house prices, in a sentence", () => {
+  assert.equal(breakevenLine(0.5, true), "Buying needs house prices to rise more than 0.5% a year to stay ahead.");
+  assert.equal(breakevenLine(-0.4, true), "Buying stays ahead unless house prices fall more than 0.4% a year.");
+  assert.equal(breakevenLine(0, true), "Buying stays ahead as long as house prices don't fall.");
+  assert.equal(breakevenLine(4.1, false), "Buying would come out ahead if house prices rose more than 4.1% a year.");
+  assert.equal(breakevenLine(null, true), null);
+  // The explanation's last step leads with it.
+  const d = { ...buyer, propertyMonthlyRent: "900", propertyHorizonYears: "5" };
+  assert.match(rentVsBuyReveal(d, calcMetrics(d))[2].body, /^Buying needs house prices to rise more than -?[\d.]+% a year to stay ahead\. Candid assumes house prices rise 3% and rents/);
 });

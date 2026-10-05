@@ -38,13 +38,19 @@ import { regionalRates } from "./regionalRates.js";
 
 export const DEFAULT_HORIZON_YEARS = 5;
 export const MAX_HORIZON_YEARS = 40;
-export const SELLING_COSTS_PCT = 1.5;
+// Selling costs, as a share of the sale price: an estate agent's 1.42%
+// including VAT (the UK high-street average for a sole agency), plus legal
+// fees (£929), an EPC and removals (about £800 for three bedrooms), which
+// come to about 2% on an average £290,000 home. HomeOwners Alliance, "Cost
+// of selling a home", October 2026. The user can change it.
+export const SELLING_COSTS_PCT = 2;
 // Candid's own assumption, not a published figure.
 export const MODERATE_HOUSE_PRICE_GROWTH_PCT = 3.0;
 // House price and rent growth can be negative, to see what falling prices
 // or rents do, but not below this: at -100% or less the compounding stops
 // meaning anything.
 export const MIN_GROWTH_PCT = -50;
+export const MAX_SELLING_COSTS_PCT = 20;
 // Where the renter's money sits. "cash" (the default) earns the better of
 // the blended rate on the user's own cash savings, Premium Bonds and Cash
 // ISAs (cashRate) and the best savings rate Candid tracks (savings_rates,
@@ -60,6 +66,8 @@ export const STRESS_INVESTED_RETURN_PCT = 2;
 export const DEFAULT_DIVIDEND_YIELD_PCT = 2;
 // Used only if the user has no cash figures at all.
 const DEFAULT_CASH_RATE_PCT = 4.5;
+// Upkeep a year: a freehold house at 1% of its value (a common rule of
+// thumb), a leasehold flat at a fixed sum. Both can be changed by the user.
 export const FREEHOLD_MAINTENANCE_PCT = 1;
 // Leasehold flat: internal upkeep only, since the service charge covers the
 // building. Candid's estimate, rising with inflation at 2% (the Bank of
@@ -105,8 +113,8 @@ export function partnerSavingsEstimate({ salary = 0, otherIncome = 0, pensionPct
 function buyerYearCosts(input, scheduleRow, year) {
   const valueAtStart = input.price * Math.pow(1 + input.housePriceGrowthPct / 100, year - 1);
   const maintenance = input.tenure === "leasehold"
-    ? LEASEHOLD_MAINTENANCE * Math.pow(1 + MAINTENANCE_INFLATION_PCT / 100, year - 1)
-    : valueAtStart * FREEHOLD_MAINTENANCE_PCT / 100;
+    ? (input.leaseholdMaintenance ?? LEASEHOLD_MAINTENANCE) * Math.pow(1 + MAINTENANCE_INFLATION_PCT / 100, year - 1)
+    : valueAtStart * (input.maintenancePct ?? FREEHOLD_MAINTENANCE_PCT) / 100;
   const leasehold = input.tenure === "leasehold";
   const groundRent = leasehold ? (input.groundRent || 0) * Math.pow(1 + (input.groundRentGrowthPct || 0) / 100, year - 1) : 0;
   const serviceCharge = leasehold ? (input.serviceCharge || 0) * Math.pow(1 + SERVICE_CHARGE_GROWTH_PCT / 100, year - 1) : 0;
@@ -125,6 +133,8 @@ function buyerYearCosts(input, scheduleRow, year) {
 //   horizonYears, price, upfront (deposit + stamp duty + fees),
 //   mortgage { loan, termYears, fixedYears, ratePct, remortgageFee },
 //   mortgageScenario ("moderate" | "stress"), housePriceGrowthPct,
+//   maintenancePct (freehold, % of value a year), leaseholdMaintenance
+//   (£ a year), sellingCostsPct (% of the sale price),
 //   tenure ("freehold" | "leasehold"), groundRent, groundRentGrowthPct,
 //   serviceCharge (both £ a year), monthlyRent, rentGrowthPct,
 //   returnType ("cash" | "invested"), investmentReturnPct, dividendYieldPct
@@ -162,6 +172,7 @@ export function calcRentVsBuy(input) {
   }
   for (const p of people) { const out = lump * p.share; p.gia += out; p.basis += out; p.giaPaidIn += out; }
 
+  const sellingPct = input.sellingCostsPct ?? SELLING_COSTS_PCT;
   const rows = [];
   for (let year = 1; year <= years; year++) {
     const scheduleRow = schedule.years[year - 1] || null;
@@ -230,21 +241,21 @@ export function calcRentVsBuy(input) {
     sum.taxPaid += taxPaid;
     const propertyValue = input.price * Math.pow(1 + input.housePriceGrowthPct / 100, year);
     const mortgageBalance = scheduleRow ? scheduleRow.balance : 0;
-    const sellingCosts = propertyValue * SELLING_COSTS_PCT / 100;
+    const sellingCosts = propertyValue * sellingPct / 100;
     // Interest is every mortgage payment so far less the loan it paid off.
     const loanPaidOff = Math.max(0, input.mortgage.loan) - mortgageBalance;
     const buyingNotRecovered = oneOff + (sum.payments - loanPaidOff) + sum.maintenance + sum.groundRent + sum.serviceCharge + sum.remortgageFees + sellingCosts;
     const renterTax = sum.taxPaid + unrealisedTaxTotal;
     rows.push({
       year,
-      buyerWealth: propertyValue * (1 - SELLING_COSTS_PCT / 100) - mortgageBalance,
+      buyerWealth: propertyValue * (1 - sellingPct / 100) - mortgageBalance,
       renterWealth,
       propertyValue, mortgageBalance,
       // Below zero is negative equity: the home is worth less than the loan.
       equity: propertyValue - mortgageBalance,
       // What selling would leave to pay from savings, after the mortgage and
       // selling costs: nothing unless buyerWealth is below zero.
-      saleShortfall: Math.max(0, -(propertyValue * (1 - SELLING_COSTS_PCT / 100) - mortgageBalance)),
+      saleShortfall: Math.max(0, -(propertyValue * (1 - sellingPct / 100) - mortgageBalance)),
       buyerMonthlyCost: costs.monthlyTotal, monthlyRent: rent, taxPaid,
       buying: {
         stampDutyAndFees: oneOff,
@@ -285,6 +296,25 @@ export function calcRentVsBuy(input) {
     isaPaidIn: people.reduce((s, p) => s + p.isaPaidIn, 0),
     outsideIsaPaidIn: people.reduce((s, p) => s + p.giaPaidIn, 0),
   };
+}
+
+// The yearly house price growth at which buying and renting come out even
+// at the horizon: above it buying is ahead, below it renting. The answer
+// leans on house prices more than anything else, so this says how much.
+// Buying only gains as prices rise, so the even point is found by halving
+// the range. Null when one side is ahead across the whole range (prices
+// falling MIN_GROWTH_PCT a year to rising BREAKEVEN_SEARCH_MAX_PCT).
+// Rounded up to 0.1%, so prices rising by the figure shown are enough.
+const BREAKEVEN_SEARCH_MAX_PCT = 30;
+export function breakevenGrowthPct(input) {
+  const gap = g => calcRentVsBuy({ ...input, housePriceGrowthPct: g }).gapAtHorizon;
+  let lo = MIN_GROWTH_PCT, hi = BREAKEVEN_SEARCH_MAX_PCT;
+  if (gap(lo) > 0 || gap(hi) <= 0) return null;
+  while (hi - lo > 0.01) {
+    const mid = (lo + hi) / 2;
+    if (gap(mid) > 0) hi = mid; else lo = mid;
+  }
+  return Math.ceil(hi * 10 - 1e-9) / 10;
 }
 
 // The blended rate on the user's cash: savings accounts at their own rates,
@@ -375,6 +405,9 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
     mortgage: mortgageInputs(d, r.loanNeeded),
     mortgageScenario: scenario,
     housePriceGrowthPct,
+    maintenancePct: filled(d.propertyMaintenancePct) ? Math.max(0, +d.propertyMaintenancePct) : FREEHOLD_MAINTENANCE_PCT,
+    leaseholdMaintenance: filled(d.propertyLeaseholdMaintenance) ? Math.max(0, +d.propertyLeaseholdMaintenance) : LEASEHOLD_MAINTENANCE,
+    sellingCostsPct: filled(d.propertySellingCosts) ? Math.min(MAX_SELLING_COSTS_PCT, Math.max(0, +d.propertySellingCosts)) : SELLING_COSTS_PCT,
     tenure: d.propertyTenure === "leasehold" ? "leasehold" : "freehold",
     groundRent: +d.propertyGroundRent || 0,
     groundRentGrowthPct: +d.propertyGroundRentGrowth || 0,
