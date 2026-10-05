@@ -76,7 +76,10 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
   );
 }
 
-export default function MobilePensionDeepDive({ d, m, set }) {
+// `onShowReveal` replays the answer step by step: its "Explain this" link sits
+// in the opportunity tile, beside the figure it explains, or at the top when
+// there's no opportunity to show.
+export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const [cfYears, setCfYears] = useState(defaultCarryForwardYears());
   const [bonusInput, setBonusInput] = useState(+d.bonusAmount || null);
@@ -214,11 +217,21 @@ export default function MobilePensionDeepDive({ d, m, set }) {
     </MobileWinTile>
   );
 
+  const explainLink = color => onShowReveal && (
+    <button type="button" onClick={onShowReveal} style={{background:"none",border:"none",padding:0,color,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
+      Explain this
+    </button>
+  );
+
   return (
     <div>
+      {opportunityCols.length === 0 && onShowReveal && <div style={{marginBottom:"14px"}}>{explainLink(G)}</div>}
       {opportunityCols.length > 0 && (
         <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
+            {explainLink(OPPORTUNITY_TILE_FIGURE)}
+          </div>
           <div style={{display:"flex",gap:"22px",flexWrap:"wrap"}}>
             {opportunityCols.map((c,i) => (
               <div key={i}>

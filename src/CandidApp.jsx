@@ -6189,7 +6189,7 @@ export default function AppShell() {
   // Saving a module's answers waits a render (rowSaveTick), so the last
   // answer, set the moment before the walk-through ended, is in `d`.
   const [rowSaveTick, setRowSaveTick] = useState(0);
-  // The module whose walk-through is being rerun ("Walk me through it").
+  // The module whose walk-through is being rerun ("Edit answers").
   const [moduleRerun, setModuleRerun] = useState(null);
   // The module whose answer is being shown step by step (MODULE_REVEALS):
   // after its first walk-through, or replayed from its screen.
@@ -6515,7 +6515,7 @@ export default function AppShell() {
       return <Navigate to="/app/modules" replace />;
     }
     // Until a module's questions are answered (or skipped) it opens on its
-    // walk-through; "Walk me through it" reruns it (moduleRerun). Either way
+    // walk-through; "Edit answers" reruns it (moduleRerun). Either way
     // the module then joins selectedModules, so its own screen, the answer,
     // takes over, and its answers are saved to the user's row.
     if (moduleGuideStarts(mobileActiveModule, d) || moduleRerun === mobileActiveModule) {

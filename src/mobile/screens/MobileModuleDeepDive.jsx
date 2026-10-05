@@ -19,9 +19,11 @@ const CONTENT_BY_KEY = {
   pension: MobilePensionDeepDive,
 };
 
-// `onWalkThrough` reruns the module's guided walk-through (MobileModuleGuide).
+// `onWalkThrough` reruns the module's questions (MobileModuleGuide): with no
+// inputs on this screen, that's how answers are edited, hence "Edit answers".
 // `onShowReveal` replays its answer step by step (MobileModuleReveal), where
-// the module has one.
+// the module has one; the module's own screen places that "Explain this"
+// link next to the figure it explains.
 export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain, onWalkThrough, onShowReveal }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
@@ -59,19 +61,13 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
         </div>
         {onWalkThrough && (
           <button type="button" onClick={onWalkThrough} style={{background:"none",border:"none",padding:0,color:G,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap",alignSelf:"flex-start",marginTop:"4px"}}>
-            Walk me through it
+            Edit answers
           </button>
         )}
       </div>
 
-      {onShowReveal && (
-        <button type="button" onClick={onShowReveal} style={{display:"block",background:"none",border:"none",padding:0,margin:"-8px 0 16px",color:G,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
-          See your answer step by step
-        </button>
-      )}
-
       {Content ? (
-        <Content d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain}/>
+        <Content d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set} onShowReveal={onShowReveal} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain}/>
       ) : (
         <p style={{fontSize:"14px",color:MUT,lineHeight:1.6}}>This deep dive isn't built for mobile yet — check back soon, or view it on desktop.</p>
       )}

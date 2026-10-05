@@ -36,7 +36,7 @@ These sit alongside the existing `assessment_*` events.
 
 1. **Entry, 2 screens:** what they'd like help with, and their name. Then the app opens.
 2. **Home:** the modules they picked come first. Each tile says what it needs, e.g. "5 questions, about 2 minutes", and shows a blurred result like Property's cards. The other modules sit below.
-3. **Opening a module:** its walk-through runs, then its answer appears. After that, the module shows its normal full view, with "Walk me through it" to rerun.
+3. **Opening a module:** its walk-through runs, then its answer appears. After that, the module shows its normal full view, with "Edit answers" to rerun the questions. (Property keeps "Walk me through it": its inputs are editable on its own screen, so there the walk-through is a guided alternative.)
 4. **Shared figures** (salary, spending, age) are asked by the first module that needs them, then never again.
 5. **The overall "what to do first" report** is offered once enough modules are done (decision 1).
 
