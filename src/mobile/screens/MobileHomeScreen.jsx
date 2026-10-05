@@ -6,9 +6,10 @@ import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
-import { MODULE_META } from "../../lib/moduleStatus.js";
-import { modulesSinceReport, unfinishedPicks } from "../../lib/appEntry.js";
+import { unfinishedPicks, scoreUnlocked } from "../../lib/appEntry.js";
+import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
+import GoalsCard from "./GoalsCard.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
@@ -45,9 +46,12 @@ function netWorthBreakdown(d, m) {
 // load just shows the score with no animation.
 let lastShownScore = null;
 
-// `onSeeReport` makes the first report (no report yet); `onUpdateReport`
-// remakes it with modules answered since.
-export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, onSeeReport, onUpdateReport }) {
+// The score shows once every module picked at the entry is answered
+// (scoreUnlocked), or for a user with an old report; until then, the modules
+// to start with (MobileStartHome). Everything here is worked out by the
+// code: no AI report (score-without-ai-plan.md). `onGoalsDone(how, goals)`
+// records the goals card being answered or dismissed.
+export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, onGoalsDone, set }) {
   const navigate = useNavigate();
   const [scoreDetailOpen, setScoreDetailOpen] = useState(false);
   const [netWorthOpen, setNetWorthOpen] = useState(false);
@@ -64,9 +68,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   // fills, and a "+N pts" badge floats up. Hooks sit above the early return.
   const [shownScore, setShownScore] = useState(() => (lastShownScore !== null && lastShownScore < score) ? lastShownScore : score);
   const [gain, setGain] = useState(0);
-  const hasInsights = !!insights;
+  const propertyDone = readinessMissing(d, m).length === 0;
+  const showing = !!insights || scoreUnlocked(d, propertyDone);
   useEffect(() => {
-    if (!hasInsights) return;
+    if (!showing) return;
     const from = shownScore;
     const prev = lastShownScore;
     lastShownScore = score;
@@ -84,23 +89,21 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
     raf = requestAnimationFrame(tick);
     const timer = setTimeout(() => setGain(0), 2600);
     return () => { cancelAnimationFrame(raf); clearTimeout(timer); };
-  }, [score, hasInsights]);
+  }, [score, showing]);
 
-  // No report yet (a user who came in through the two-question entry): the
-  // modules to start with instead of the score.
-  if (!insights) return <MobileStartHome d={d} m={m} onStartModule={onStartModule} onSeeReport={onSeeReport}/>;
+  if (!showing) return <MobileStartHome d={d} m={m} onStartModule={onStartModule}/>;
 
-  // Modules answered since the report: offered as an update, never made
-  // automatically, since each report is an AI call.
-  const sinceReport = modulesSinceReport(d, readinessMissing(d, m).length === 0)
-    .map(k => k === "property" ? "Property" : (MODULE_META.find(mm => mm.key === k)?.title || k));
-  const sinceText = sinceReport.length < 2 ? sinceReport.join("") : `${sinceReport.slice(0, -1).join(", ")} and ${sinceReport.at(-1)}`;
-  // Modules picked at the entry but not answered yet: kept on home, each
-  // dropping off once answered.
-  const stillToDo = unfinishedPicks(d, readinessMissing(d, m).length === 0);
+  // Modules picked at the entry but not answered yet (someone with an old
+  // report who has since picked more): kept on home, each dropping off once
+  // answered.
+  const stillToDo = unfinishedPicks(d, propertyDone);
+  // "What to do first", the line under the score and what's on track, all
+  // from the code (src/lib/priorities.js).
+  const priorities = whatToDoFirst(d, m, statuses);
+  const report = { headline: scoreHeadline(priorities), priorities, onTrack: onTrackModules(d, m, statuses) };
 
   const { color: scoreColor, label: scoreLabel } = scoreBand(score);
-  const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, insights, "amount");
+  const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
   const topWin = modulesWithRec[0] || null;
   // "Reviewed" tracks engagement with the report, not your actual financial
   // position — its own line, never folded into the score above.
@@ -116,15 +119,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         {mobileGreeting(d)}
       </h1>
 
-      {sinceReport.length > 0 && (
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"12px 14px",marginBottom:"18px"}}>
-          <span style={{fontSize:"13px",color:TEXT,lineHeight:1.4}}>You've added {sinceText} since your report.</span>
-          <button type="button" onClick={onUpdateReport} style={{flexShrink:0,background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"8px 14px",fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
-            Update my report
-          </button>
-        </div>
-      )}
-
       {/* Score — tap opens the full breakdown sheet. */}
       <div onClick={() => setScoreDetailOpen(true)} style={{cursor:"pointer",marginBottom:"4px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -138,9 +132,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
             <span style={{fontSize:"12px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"3px 10px",marginBottom:"8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain} pts</span>
           )}
         </div>
-        {insights.headline && (
-          <p style={{fontSize:"13px",color:MUT,marginTop:"6px",lineHeight:1.5}}>{insights.headline}</p>
-        )}
+        <p style={{fontSize:"13px",color:MUT,marginTop:"6px",lineHeight:1.5}}>{report.headline}</p>
         {/* Solid fill, coloured by scoreBand — five flat bands (red through
             Candid green) rather than a continuous gradient, so the colour
             reads as "which zone am I in" at a glance. Gold flash while a
@@ -172,10 +164,13 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         // browser) it rendered detached from the app's own centred content
         // column instead of appearing over the Candid Score tile. The
         // centred-modal mode is the closer match here.
-        <ScoreDetailSheet insights={insights} displayScore={score} isMobile={false}
+        <ScoreDetailSheet report={report} displayScore={score} isMobile={false}
           onClose={() => setScoreDetailOpen(false)}
           onReviewModules={() => { setScoreDetailOpen(false); navigate("/app/modules"); }}/>
       )}
+
+      {/* Asked once, after the score appears; never blocks anything. */}
+      {!d.goalsAsked && <GoalsCard d={d} set={set} onDone={onGoalsDone}/>}
 
       {stillToDo.length > 0 && (
         <div style={{marginTop:"22px"}}>

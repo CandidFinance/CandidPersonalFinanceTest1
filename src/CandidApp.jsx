@@ -25,8 +25,7 @@ import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx"
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
-import MobileReportStartScreen from "./mobile/screens/MobileReportStartScreen.jsx";
-import { appUnlocked, doneModules, reportReady } from "./lib/appEntry.js";
+import { appUnlocked, scoreUnlocked } from "./lib/appEntry.js";
 import { MODULE_GUIDES, moduleGuideStarts } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
@@ -2007,9 +2006,19 @@ export function ScoreRing({ score, delta = 0 }) {
 // Shortcomings come straight from insights.priorities (same array driving the
 // Modules ranking); strengths are any module the AI marked "ok", using its
 // own one-line summary rather than restating priorities in reverse.
-export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, onReviewModules }) {
+// `report` is Candid's own "what to do first", worked out by the code
+// (src/lib/priorities.js): { headline, priorities: [{ title, line }],
+// onTrack: [module titles] }. The mobile app passes it; the old desktop
+// screens still pass an AI report as `insights`.
+export function ScoreDetailSheet({ insights, report, displayScore, isMobile, onClose, onReviewModules }) {
   const { color: col, label: lb } = scoreBand(displayScore);
-  const strengths = Object.values(insights.modules||{}).filter(mo => mo?.status === "ok" && mo.summary);
+  const narrative = report ? report.headline : insights.narrative;
+  const priorities = report
+    ? report.priorities.map(p => ({ title: p.title, description: p.line }))
+    : insights.priorities;
+  const strengths = report
+    ? report.onTrack.map(title => `${title}: on track.`)
+    : Object.values(insights.modules||{}).filter(mo => mo?.status === "ok" && mo.summary).map(mo => mo.summary);
 
   return createPortal(
     <div onClick={onClose} style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"rgba(22,47,36,0.55)",display:"flex",alignItems:isMobile?"flex-end":"center",justifyContent:"center",padding:isMobile?0:"24px",overflowY:"auto"}}>
@@ -2023,16 +2032,16 @@ export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, on
             <span style={{fontFamily:SERIF,fontSize:"42px",fontWeight:700,color:col}}>{displayScore}</span>
             <span style={{fontSize:FONT_SIZE.BODY,color:MUT}}>/100 · {lb}</span>
           </div>
-          {!insights.isFallback && (
+          {!report && !insights.isFallback && (
             <div style={{marginTop:"12px",display:"inline-block",background:"rgba(196,150,58,0.16)",color:"#8a6a24",fontSize:"10.5px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",padding:"5px 12px",borderRadius:RADIUS_PILL}}>AI-generated summary</div>
           )}
-          <p style={{fontSize:"14px",color:TEXT,lineHeight:1.6,marginTop:"14px"}}>{insights.narrative}</p>
+          <p style={{fontSize:"14px",color:TEXT,lineHeight:1.6,marginTop:"14px"}}>{narrative}</p>
 
-          {insights.priorities?.length > 0 && (
+          {priorities?.length > 0 && (
             <>
-              <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.07em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Shortcomings</div>
+              <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.07em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>{report ? "What to do first" : "Shortcomings"}</div>
               <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-                {insights.priorities.map((p,i) => (
+                {priorities.map((p,i) => (
                   <div key={i} style={{background:WHITE,borderRadius:"12px",padding:"12px 14px"}}>
                     <div style={{fontSize:"13.5px",fontWeight:700,color:G}}>{p.title}</div>
                     <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px",lineHeight:1.5}}>
@@ -2049,9 +2058,9 @@ export function ScoreDetailSheet({ insights, displayScore, isMobile, onClose, on
             <>
               <div style={{fontSize:"11px",fontWeight:700,color:SUCCESS,letterSpacing:"0.07em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Strengths</div>
               <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-                {strengths.map((mo,i) => (
+                {strengths.map((line,i) => (
                   <div key={i} style={{background:WHITE,borderRadius:"12px",padding:"12px 14px"}}>
-                    <div style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.5}}>{mo.summary}</div>
+                    <div style={{fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.5}}>{line}</div>
                   </div>
                 ))}
               </div>
@@ -5512,10 +5521,11 @@ const BLANK_DATA = {
   // (src/lib/appEntry.js), plus "property" or "exploring". `appEntered`:
   // they've been through that entry, which opens the app before any report.
   name:"", email:"", interests:[], appEntered:false,
-  // `reportGoalPicks`: the answer to the question before the first report
-  // (merged into financialGoals). `reportModules`: the modules the last
-  // report covered, null for reports made before this was recorded.
-  reportGoalPicks:[], reportModules:null,
+  // `goalPicks`: the answer to the goals card on home (merged into
+  // financialGoals); `goalsAsked`: that card has been answered or dismissed.
+  // `scoreShown`: the Candid score has appeared (src/lib/appEntry.js
+  // scoreUnlocked), so its first appearance is recorded once.
+  goalPicks:[], goalsAsked:false, scoreShown:false,
   // Which of the 4 active MVP modules (cash, investments, pension, studentLoan —
   // matching MODULE_META keys) the user picked on the "Focus" onboarding step.
   // Drives which subsequent steps are shown (getActiveSteps) and which modules
@@ -6179,17 +6189,25 @@ export default function AppShell() {
   const [rowSaveTick, setRowSaveTick] = useState(0);
   // The module whose walk-through is being rerun ("Walk me through it").
   const [moduleRerun, setModuleRerun] = useState(null);
-  // The module whose answer made the overall report available: its screen
-  // offers the report, once, until the user moves on.
-  const [reportOfferFor, setReportOfferFor] = useState(null);
-  useEffect(() => { if (rowSaveTick) saveRow(rowInputFields()); }, [rowSaveTick]);
+  // Whether the Candid score is showing: once every module picked at the
+  // entry is answered (scoreUnlocked), or for a user with an old report.
+  // It's worked out by the code, so the row gets the score with the inputs.
+  const scoreShowing = !!insights || scoreUnlocked(d, readinessMissing(d, m).length === 0);
+  useEffect(() => {
+    if (rowSaveTick) saveRow({ ...rowInputFields(), ...(scoreShowing ? rowReportFields(calcCandidScore(statuses)) : {}) });
+  }, [rowSaveTick]);
+  // The score's first appearance, recorded once: an event in place of the
+  // old report_generated, and the score on the user's row.
+  useEffect(() => {
+    if (!scoreShowing || d.scoreShown || !d.appEntered) return;
+    set("scoreShown", true);
+    posthog.capture("score_unlocked", { score: calcCandidScore(statuses), modules: (d.selectedModules || []).join(",") });
+    saveRow({ ...rowInputFields(), ...rowReportFields(calcCandidScore(statuses)) });
+  }, [scoreShowing]);
 
   async function generateDashboard(redirectPath = "/dashboard") {
     if (insights) { setPrevInsights(insights); prevScoreRef.current = insights.score; }
     setGenerating(true);
-    // Which modules this report covers, so home can offer to update it once
-    // more are answered (modulesSinceReport).
-    set("reportModules", doneModules(d, readinessMissing(d, m).length === 0));
 
     // ── Reuse the metrics/statuses already computed for this render — no need to recalculate ──
     const metrics = m;
@@ -6342,19 +6360,6 @@ export default function AppShell() {
     return <Navigate to="/" replace />;
   }
 
-  // Before the first overall report: its one question (the goals), then the
-  // report. Only for a user who has answered enough and has no report yet.
-  if (pathname === "/app/report-start") {
-    if (!appUnlocked(d, insights)) return <Navigate to="/" replace />;
-    if (insights || !reportReady(d, readinessMissing(d, m).length === 0)) return <Navigate to="/app/home" replace />;
-    return (
-      <MobileReportStartScreen d={d} m={m} set={set} onDone={() => {
-        posthog.capture("report_started", { goals: (d.financialGoals || []).join(",") });
-        generateDashboard("/app/home");
-      }}/>
-    );
-  }
-
   // The two-question entry. Anyone the app is already open to goes home.
   if (pathname === "/app/start") {
     if (appUnlocked(d, insights)) return <Navigate to="/app/home" replace />;
@@ -6422,9 +6427,16 @@ export default function AppShell() {
         onContinue={() => {
           posthog.capture("assessment_question_completed", { step: step + 1, step_name: activeSteps[step].label });
           if (step < activeSteps.length - 1) { navigate(`/app/assessment/${step+2}`); return; }
+          // Saves and goes back, with no AI report: the score and "what to
+          // do first" are worked out by the code (score-without-ai-plan.md).
+          // appEntered keeps the app open for someone whose old report was
+          // cleared ("Update my inputs" on the welcome-back screen).
           assessmentCompletedRef.current = true;
           posthog.capture("assessment_completed");
-          generateDashboard(takeAssessmentReturnPath());
+          set("appEntered", true);
+          setRowSaveTick(t => t + 1);
+          navigate(takeAssessmentReturnPath());
+          window.scrollTo({ top: 0, behavior: "instant" });
         }}
       />
     );
@@ -6440,10 +6452,13 @@ export default function AppShell() {
 
   if (pathname === "/app/home") return (
     <MobileLayout activeTab="home" headerRight={editInputsButton}>
-      <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} completedModules={completedModules}
+      <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules}
         onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}
-        onSeeReport={() => navigate("/app/report-start")}
-        onUpdateReport={() => { posthog.capture("report_update_requested"); generateDashboard("/app/home"); }}/>
+        onGoalsDone={(how, goals) => {
+          set("goalsAsked", true);
+          posthog.capture(how === "answered" ? "goals_answered" : "goals_dismissed", { goals: (goals || []).join(",") });
+          if (how === "answered") setRowSaveTick(t => t + 1);
+        }}/>
     </MobileLayout>
   );
 
@@ -6507,15 +6522,7 @@ export default function AppShell() {
           <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} rerun={moduleRerun === mobileActiveModule}
             onDone={(how, at) => {
               const selected = d.selectedModules || [];
-              if (!selected.includes(mobileActiveModule)) {
-                const next = [...selected, mobileActiveModule];
-                set("selectedModules", next);
-                const propertyDone = readinessMissing(d, m).length === 0;
-                if (!insights && !reportReady(d, propertyDone) && reportReady({ ...d, selectedModules: next }, propertyDone)) {
-                  setReportOfferFor(mobileActiveModule);
-                  posthog.capture("report_offered", { where: "module", module: mobileActiveModule });
-                }
-              }
+              if (!selected.includes(mobileActiveModule)) set("selectedModules", [...selected, mobileActiveModule]);
               posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at, rerun: moduleRerun === mobileActiveModule });
               posthog.capture("module_answer_shown", { module: mobileActiveModule });
               setModuleRerun(null);
@@ -6532,7 +6539,6 @@ export default function AppShell() {
         }>
         <MobileModuleDeepDive moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
           onWalkThrough={MODULE_GUIDES[mobileActiveModule] ? () => { setModuleRerun(mobileActiveModule); posthog.capture("guide_restarted", { module: mobileActiveModule }); } : null}
-          onSeeReport={!insights && reportOfferFor === mobileActiveModule ? () => { setReportOfferFor(null); navigate("/app/report-start"); } : null}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
           onBack={() => navigate("/app/modules")}

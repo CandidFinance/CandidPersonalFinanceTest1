@@ -81,9 +81,9 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Emergency access warnings — only critical when truly no cash at all
   let accessLabel = null;
   if (accessType === "no" && accessOk) {
-    accessLabel = `Cash not in easy-access — consider keeping ${m.bufferMonths} months in instant-access`;
+    accessLabel = `Your savings aren't instant access. Keep ${m.bufferMonths} months' spending where you can reach it quickly`;
   } else if (accessType === "partial") {
-    accessLabel = accessOk ? "Some cash may not be immediately accessible" : null;
+    accessLabel = accessOk ? "Some of your savings may not be reachable quickly" : null;
   }
 
   let cashImpactLabel;
@@ -93,14 +93,16 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     // benefit is the same optimisation-gain figure used below, just called out
     // alongside the excess for context.
     cashImpactLabel = cashImpact > 0
-      ? `${fmt(cashImpact)}/yr in tax-efficiency gain available — ${fmt(Math.round(m.emergencyExcess))} of it sits above your buffer`
-      : `${fmt(Math.round(m.emergencyExcess))} sits above your buffer, earning below its potential`;
+      ? `${fmt(cashImpact)}/yr more your savings could earn, with ${fmt(Math.round(m.emergencyExcess))} more than your emergency fund needs`
+      : `${fmt(Math.round(m.emergencyExcess))} more than your emergency fund needs, earning less than it could`;
   } else if (emergencyShort) {
     cashImpactLabel = `${fmt(Math.round(m.emergencyShortfall))} short of your ${m.bufferMonths}-month emergency fund`;
+  } else if (cashImpact > 0) {
+    // The £ figure's own explanation comes first, since that's the figure
+    // shown beside it (cash's `amount`); an access concern follows it.
+    cashImpactLabel = `${fmt(cashImpact)}/yr more your savings could earn${accessLabel ? `. ${accessLabel}` : ""}`;
   } else if (accessLabel) {
     cashImpactLabel = accessLabel;
-  } else if (cashImpact > 0) {
-    cashImpactLabel = `${fmt(cashImpact)}/yr in tax-efficiency gain available`;
   } else {
     cashImpactLabel = null;
   }
@@ -141,11 +143,11 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
           : isaGap || m.cgtSaving > 0 ? "attention" : "ok",
     impact: isaSortWeight + m.cgtSaving,
     impactLabel: m.cgtSaving > 0 && isaGap
-      ? `${fmt(m.cgtSaving)} CGT saving + ${fmt(m.isaHeadroom)} ISA headroom`
+      ? `${fmt(m.cgtSaving)} less capital gains tax, and ${fmt(m.isaHeadroom)} of this year's ISA allowance unused`
       : m.cgtSaving > 0
-        ? `${fmt(m.cgtSaving)} CGT saving available`
+        ? `${fmt(m.cgtSaving)} less capital gains tax available`
         : isaGap
-          ? `${fmt(m.isaHeadroom)} ISA headroom unused`
+          ? `${fmt(m.isaHeadroom)} of this year's ISA allowance unused`
           : null,
     amount: m.cgtSaving > 0 ? m.cgtSaving : 0,
   };
@@ -178,11 +180,11 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const pensionImpact = (!contributing ? pensionAmount + 99999 : pensionAmount) + pensionPotentialAmount;
   const pensionLabelParts = [
     !contributing
-      ? `No pension — ${fmt(pensionPrimaryAmount)}/yr tax relief foregone`
-      : m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr missed employer match` : null,
-    pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr Personal Allowance recovery` : null,
-    pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} bonus sacrifice saving` : null,
-    aaRoom.excess > 0 ? `Contributions may exceed your reduced ${fmt(aaRoom.approxAA)} annual allowance` : null,
+      ? `No pension: ${fmt(pensionPrimaryAmount)}/yr of tax relief missed`
+      : m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of employer match unclaimed` : null,
+    pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr of tax-free allowance you could win back` : null,
+    pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} saved by paying your bonus into your pension` : null,
+    aaRoom.excess > 0 ? `Payments in may go over your reduced ${fmt(aaRoom.approxAA)} pension annual allowance` : null,
   ].filter(Boolean);
 
   s.pension = m.pensionStatus === "unknown" ? {
@@ -220,11 +222,11 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
           : "ok",
     impact: slAmount,
     impactLabel: sl.belowThreshold
-      ? "Below repayment threshold — no deductions currently"
+      ? "You earn below the repayment threshold, so nothing comes off your pay"
       : sl.worthOverpaying
-        ? `${fmt(sl.overpayAnnualBenefit)}/yr effective benefit from overpaying vs the best savings rate`
+        ? `${fmt(sl.overpayAnnualBenefit)}/yr better off overpaying than saving the money`
         : sl.balanceGrowing && !sl.willClear
-          ? `${fmt(Math.round(sl.netAnnualChange))}/yr, balance growing — but will be written off regardless`
+          ? `Balance growing by ${fmt(Math.round(sl.netAnnualChange))}/yr, but it'll be written off before you clear it`
           : null,
     belowThreshold: sl.belowThreshold,
     amount: slAmount,
@@ -283,34 +285,21 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   return s;
 }
 
-// Merges a module's local (deterministic) status with the AI-generated narrative summary,
-// applying the pension false-positive guard. Single source of truth for the explainer copy
-// shown in the "Module breakdown" cards, ModuleDeepDive's header, and the PDF report.
+// A module's status and one-line summary, both worked out by the code
+// (computeModuleStatuses): the AI report no longer has a say, so a module's
+// colour and wording always match its figures (score-without-ai-plan.md).
+// Single source of truth for the copy in the Modules list, the score sheet
+// and the module headers. `insights` is no longer read; kept in the
+// signature for existing callers.
+export const ON_TRACK_LINE = "On track: nothing to act on right now.";
 export function getModuleSummary(mm, d, m, statuses, insights) {
   const local = statuses[mm.key] || { status:"na", impact:0 };
-  const aiMod = insights?.modules?.[mm.key];
-  // A local "na" is authoritative and must never be overridden by the AI (or its
-  // offline fallback, which has no awareness of module selection at all) — this
-  // is what's now hidden-for-MVP, opted out of module selection, or otherwise
-  // genuinely not applicable, regardless of what a stale/generic AI status says.
-  // Pension + personalLoan additionally always trust local even when it's NOT
-  // "na" — a separate, pre-existing guard against stale AI data on those two.
-  const status = local.status === "na" ? "na"
-    : (mm.key === "pension" || mm.key === "personalLoan")
-    ? local.status
-    : (aiMod?.status && aiMod.status !== "na") ? aiMod.status : local.status;
-  const rawSummary = aiMod?.summary || (local.status !== "na" ? `Review your ${mm.title.toLowerCase()} situation.` : "N/A");
-  // For pension: if contributing, never show AI copy that says "no pension" or "start contributions"
-  const pensionContrib = mm.key === "pension" && isPensionContributing(d);
-  const aiHasFalsePositive = pensionContrib && (
-    rawSummary.toLowerCase().includes("no pension") ||
-    rawSummary.toLowerCase().includes("start contribution") ||
-    rawSummary.toLowerCase().includes("not contributing")
-  );
-  const summary = aiHasFalsePositive
-    ? `Contributing ${d.myContribution||""}% with ${d.employerMatch||"0"}% employer match. ${m.missedMatch > 0 ? `Increase to ${d.employerMatch}% to capture ${fmt(m.missedMatch)}/yr in free employer match.` : "Review your projected pot and bonus sacrifice options."}`
-    : rawSummary;
-  // Always use local impact for sorting — AI doesn't provide numeric impact
+  const status = local.status;
+  const summary = status === "na" ? "N/A"
+    : local.impactLabel ? local.impactLabel
+    : status === "unknown" ? "Find out what you pay into your pension to see where you stand."
+    : status === "ok" ? ON_TRACK_LINE
+    : `Review your ${mm.title.toLowerCase()} situation.`;
   const impact = local.impact || 0;
   return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum };
 }

@@ -35,7 +35,7 @@ export default function MobileOnboardingScreen({ step, steps, d, set, insights, 
             flex:2,padding:"13px",background:G,border:"none",borderRadius:"100px",fontSize:"14px",fontWeight:700,color:WHITE,
             opacity:continueDisabled ? 0.45 : 1,cursor:continueDisabled ? "not-allowed" : "pointer",
           }}>
-            {isLastStep ? (insights ? "Regenerate my report" : "Generate my Candid report") : "Continue"}
+            {isLastStep ? "Save and go back" : "Continue"}
           </button>
         </div>
         {stepId === "email" && (

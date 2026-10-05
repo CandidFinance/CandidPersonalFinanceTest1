@@ -147,7 +147,7 @@ The first module opened then asks 3 to 8 questions, including shared figures. La
 
 ## Decisions
 
-1. **The overall report:** offered once two modules are done, as "See what to do first", then regenerated only on request.
+1. **Superseded (5 October 2026) by `score-without-ai-plan.md`:** there's no AI report any more. The score appears once every pick is answered, and the goals question is a card on home. What follows is the earlier design, kept for the record. **The overall report:** offered once two modules are done, as "See what to do first", then regenerated only on request.
    - Where it's offered: in the score's place on the home screen, and once on the answer screen of the module that makes it two.
    - What comes first: one question ("Are you working towards any of these?"), then the existing AI report.
    - After the report: home shows "You've added X since your report" with "Update my report".

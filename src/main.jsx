@@ -422,7 +422,6 @@ function AppRoutes() {
           <Route path="/app/property/rent-vs-buy" />
           <Route path="/app/assessment/:step" />
           <Route path="/app/start" />
-          <Route path="/app/report-start" />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

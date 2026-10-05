@@ -1,25 +1,26 @@
-import { useEffect } from "react";
-import posthog from "posthog-js";
 import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../CandidApp.jsx";
-import { moduleOrder, moduleDone, reportReady, MODULE_PITCH, REPORT_AFTER_MODULES } from "../../lib/appEntry.js";
+import { moduleOrder, moduleDone, picks, unfinishedPicks, MODULE_PITCH } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { mobileGreeting } from "../copy.js";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
 
-// Home for a user without a report yet: the modules to start with, their
-// picks from the entry first. The Candid score waits until enough modules
-// are done for the overall report (REPORT_AFTER_MODULES), and says so,
-// rather than scoring a picture that's mostly blank; then its place offers
-// the report ("See what to do first").
+// Home before the Candid score appears: the modules to start with, their
+// picks from the entry first. The score waits until every pick is answered
+// (scoreUnlocked; for "Just exploring", the first module), and its place says
+// which are left, rather than scoring a picture that's mostly blank.
 
-const NUMBER_WORDS = { 2:"two", 3:"three", 4:"four" };
+const listText = items => items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 
-export default function MobileStartHome({ d, m, onStartModule, onSeeReport }) {
+export default function MobileStartHome({ d, m, onStartModule }) {
   const propertyDone = readinessMissing(d, m).length === 0;
   const order = moduleOrder(d);
   const done = order.filter(k => moduleDone(k, d, propertyDone));
-  const ready = reportReady(d, propertyDone);
-  useEffect(() => { if (ready) posthog.capture("report_offered", { where: "home", modules: done.join(",") }); }, [ready]);
+  const chosen = picks(d);
+  const left = unfinishedPicks(d, propertyDone);
+  // Progress towards the score: picks answered of picks made, or the first
+  // module for "Just exploring".
+  const target = chosen.length || 1;
+  const reached = chosen.length ? chosen.length - left.length : Math.min(done.length, 1);
   const start = order.find(k => !done.includes(k));
   const rest = order.filter(k => k !== start);
   const label = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
@@ -37,30 +38,20 @@ export default function MobileStartHome({ d, m, onStartModule, onSeeReport }) {
         {mobileGreeting(d)}
       </h1>
 
-      {/* The score's place, held until the report. Before enough modules
-          are done, the bar is its one progress indicator; after, the way to
-          the report. */}
+      {/* The score's place, held until every pick is answered. The bar is
+          its one progress indicator. */}
       <div style={label}>Candid Score</div>
-      {ready ? (
-        <div style={{...card,padding:"18px",marginTop:"10px"}}>
-          <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:0}}>
-            You've answered enough for Candid to work out how well you're doing, and what to do first.
-          </p>
-          <button type="button" onClick={onSeeReport} style={{marginTop:"14px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
-            See what to do first
-          </button>
+      <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+        {chosen.length
+          ? `Finish ${listText(left.map(k => moduleMeta(k).title))} to see your Candid score.`
+          : "Finish your first module to see your Candid score."}
+      </p>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",marginTop:"10px"}}>
+        <div style={{flex:1,height:"5px",borderRadius:"100px",background:CDARK,overflow:"hidden"}}>
+          <div style={{height:"100%",borderRadius:"100px",background:G,width:`${(reached / target) * 100}%`,transition:"width 0.4s ease"}}/>
         </div>
-      ) : (<>
-        <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
-          Finish {NUMBER_WORDS[REPORT_AFTER_MODULES] || REPORT_AFTER_MODULES} modules and we'll work out how well you're doing.
-        </p>
-        <div style={{display:"flex",alignItems:"center",gap:"10px",marginTop:"10px"}}>
-          <div style={{flex:1,height:"5px",borderRadius:"100px",background:CDARK,overflow:"hidden"}}>
-            <div style={{height:"100%",borderRadius:"100px",background:G,width:`${Math.min(100, (done.length / REPORT_AFTER_MODULES) * 100)}%`,transition:"width 0.4s ease"}}/>
-          </div>
-          <span style={{fontSize:"11px",color:MUT,whiteSpace:"nowrap"}}>{done.length} of {REPORT_AFTER_MODULES} done</span>
-        </div>
-      </>)}
+        <span style={{fontSize:"11px",color:MUT,whiteSpace:"nowrap"}}>{reached} of {target} done</span>
+      </div>
 
       {startMeta && (
         <div style={{marginTop:"24px"}}>

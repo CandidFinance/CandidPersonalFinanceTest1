@@ -27,10 +27,6 @@ export const MODULE_PITCH = {
 // this is one setting, to change as more data comes in.
 export const DEFAULT_FIRST_MODULE = "pension";
 
-// The overall "what to do first" report is offered once this many modules
-// are done, and the Candid score waits for it.
-export const REPORT_AFTER_MODULES = 2;
-
 // E1's answers. `goal` is the financialGoals entry the pick also sets.
 export const ENTRY_CHOICES = [
   { value:"cash",        label:"Savings and emergency cash", goal:"emergency_fund" },
@@ -103,17 +99,27 @@ export function doneModules(d, propertyDone = false) {
   return START_MODULES.filter(k => moduleDone(k, d, propertyDone));
 }
 
-// Whether enough is answered for the overall report ("See what to do
-// first"), which is also when the Candid score appears.
-export function reportReady(d, propertyDone = false) {
-  return doneModules(d, propertyDone).length >= REPORT_AFTER_MODULES;
+// The modules picked at the entry (no "exploring"), in the order offered.
+export function picks(d) {
+  return START_MODULES.filter(k => (d.interests || []).includes(k));
+}
+
+// When the Candid score appears: once every module picked at the entry is
+// answered, so it covers everything the user said they cared about; for
+// "Just exploring" (no picks), after their first module. Worked out by the
+// code, no AI report (score-without-ai-plan.md).
+export function scoreUnlocked(d, propertyDone = false) {
+  const chosen = picks(d);
+  return chosen.length
+    ? chosen.every(k => moduleDone(k, d, propertyDone))
+    : doneModules(d, propertyDone).length > 0;
 }
 
 // Modules picked at the entry but not answered yet, in the order offered:
-// home's "Still to do" once there's a report, each dropping off as it's
-// answered.
+// what stands between the user and their score, and home's "Still to do",
+// each dropping off as it's answered.
 export function unfinishedPicks(d, propertyDone = false) {
-  return START_MODULES.filter(k => (d.interests || []).includes(k) && !moduleDone(k, d, propertyDone));
+  return picks(d).filter(k => !moduleDone(k, d, propertyDone));
 }
 
 // Every module not answered yet, picks first: the Modules tab's "Not
@@ -122,36 +128,21 @@ export function notStarted(d, propertyDone = false) {
   return moduleOrder(d).filter(k => !moduleDone(k, d, propertyDone));
 }
 
-// Modules answered since the last report (`reportModules`, recorded when a
-// report is made), for "Update my report". Empty for a report made before
-// that was recorded: there's nothing to compare against.
-export function modulesSinceReport(d, propertyDone = false) {
-  if (!Array.isArray(d.reportModules)) return [];
-  return doneModules(d, propertyDone).filter(k => !d.reportModules.includes(k));
-}
-
-// The one question before the first report: the goals that only shape the
-// report, which the entry doesn't ask. Added to the goals the entry's picks
-// already set (entryGoals).
-export const REPORT_GOAL_CHOICES = [
+// Goals the entry doesn't ask, asked once on home after the score appears
+// (a card the user can dismiss), for product insight: nothing in the
+// calculations reads them. Added to the goals the entry's picks already set
+// (entryGoals), and saved to the user's row (financial_goals).
+export const GOAL_CHOICES = [
   { value:"big_purchase",       label:"A big purchase" },
   { value:"future_generations", label:"Money for future generations" },
   { value:"consolidate",        label:"Bringing my money together" },
   { value:"none",               label:"None of these", exclusive:true },
 ];
-export function reportGoals(interests, picks) {
-  const chosen = (picks || []).filter(v => v !== "none");
+export function goalsWith(interests, chosenGoals) {
+  const chosen = (chosenGoals || []).filter(v => v !== "none");
   const fromEntry = entryGoals(interests).filter(g => !(chosen.length && g === "exploring"));
   return [...fromEntry, ...chosen];
 }
-export const REPORT_GOAL_QUESTION = {
-  id:"reportGoals", field:"reportGoalPicks", kind:"multi", required:true,
-  ask: () => "Are you working towards any of these?",
-  why: () => "Candid weighs what to do first against what you're aiming for.",
-  options: () => REPORT_GOAL_CHOICES,
-  note: () => "Pick as many as you like.",
-  also: (value, { d }) => ({ financialGoals: reportGoals(d.interests, value) }),
-};
 
 // The home screen's module order for a user without a report: their picks
 // first, in the order offered, then the rest. With no picks ("Just

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { entryGoals, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION,
-  doneModules, reportReady, modulesSinceReport, reportGoals, REPORT_GOAL_QUESTION, unfinishedPicks, notStarted } from "./appEntry.js";
+  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -15,10 +15,13 @@ test("the entry asks two questions, each with a short reason", () => {
   assert.deepEqual(ENTRY_QUESTIONS[0].also(["property"]), { financialGoals: ["buy_house"] });
 });
 
-test("the report is offered once two modules are answered, Property included", () => {
-  assert.equal(reportReady({ selectedModules: ["cash"] }), false);
-  assert.equal(reportReady({ selectedModules: ["cash", "pension"] }), true);
-  assert.equal(reportReady({ selectedModules: ["cash"] }, true), true);
+test("the score appears once every pick is answered; for just exploring, after the first module", () => {
+  assert.equal(scoreUnlocked({ interests: ["cash", "pension"], selectedModules: ["cash"] }), false);
+  assert.equal(scoreUnlocked({ interests: ["cash", "pension"], selectedModules: ["cash", "pension"] }), true);
+  assert.equal(scoreUnlocked({ interests: ["cash", "property"], selectedModules: ["cash"] }), false);
+  assert.equal(scoreUnlocked({ interests: ["cash", "property"], selectedModules: ["cash"] }, true), true);
+  assert.equal(scoreUnlocked({ interests: ["exploring"], selectedModules: [] }), false);
+  assert.equal(scoreUnlocked({ interests: ["exploring"], selectedModules: ["investments"] }), true);
   assert.deepEqual(doneModules({ selectedModules: ["studentLoan", "cash"] }, true), ["cash", "studentLoan", "property"]);
 });
 
@@ -33,16 +36,10 @@ test("the Modules tab lists every module not answered, picks first", () => {
   assert.deepEqual(notStarted({ interests: ["studentLoan"], selectedModules: ["pension"] }), ["studentLoan", "cash", "investments", "property"]);
 });
 
-test("modules answered since the report are the ones to update it with", () => {
-  assert.deepEqual(modulesSinceReport({ selectedModules: ["cash", "pension"], reportModules: ["cash"] }), ["pension"]);
-  assert.deepEqual(modulesSinceReport({ selectedModules: ["cash", "pension"] }), []);
-});
-
-test("report goals add to the entry's goals; none of these adds nothing", () => {
-  assert.deepEqual(reportGoals(["property"], ["big_purchase"]), ["buy_house", "big_purchase"]);
-  assert.deepEqual(reportGoals(["exploring"], ["consolidate"]), ["consolidate"]);
-  assert.deepEqual(reportGoals(["cash"], ["none"]), ["emergency_fund"]);
-  assert.deepEqual(REPORT_GOAL_QUESTION.also(["future_generations"], { d: { interests: ["pension"] } }), { financialGoals: ["future_generations"] });
+test("goals add to the entry's goals; none of these adds nothing", () => {
+  assert.deepEqual(goalsWith(["property"], ["big_purchase"]), ["buy_house", "big_purchase"]);
+  assert.deepEqual(goalsWith(["exploring"], ["consolidate"]), ["consolidate"]);
+  assert.deepEqual(goalsWith(["cash"], ["none"]), ["emergency_fund"]);
 });
 
 test("the confidence check keeps the 1 to 5 scale its saved scores use", () => {

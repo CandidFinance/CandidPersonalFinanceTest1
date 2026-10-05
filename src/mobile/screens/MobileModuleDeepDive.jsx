@@ -20,9 +20,7 @@ const CONTENT_BY_KEY = {
 };
 
 // `onWalkThrough` reruns the module's guided walk-through (MobileModuleGuide).
-// `onSeeReport`, given only on the answer of the module that makes the
-// overall report available, offers it there.
-export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain, onWalkThrough, onSeeReport }) {
+export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain, onWalkThrough }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
   // Status has exactly one visual indicator here — the dot below. The
@@ -63,17 +61,6 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
           </button>
         )}
       </div>
-
-      {onSeeReport && (
-        <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",padding:"16px 18px",marginBottom:"18px"}}>
-          <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:0}}>
-            That's two modules done. Candid can now work out how well you're doing, and what to do first.
-          </p>
-          <button type="button" onClick={onSeeReport} style={{marginTop:"12px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
-            See what to do first
-          </button>
-        </div>
-      )}
 
       {Content ? (
         <Content d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain}/>
