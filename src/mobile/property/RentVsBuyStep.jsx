@@ -125,7 +125,24 @@ const RATE_OPTIONS = [
   { scenario:"moderate", label:"No change" },
   { scenario:"lower", label:"Rates down" },
 ];
+// Whether the screen is wider than a phone. The rate tiles' "Buy +£46k" line
+// fits beside the rate on a wider screen, but crowds three tiles on a phone,
+// where tapping a tile shows its result anyway.
+const WIDE_PX = 600;
+function useWideScreen() {
+  const query = `(min-width: ${WIDE_PX}px)`;
+  const [wide, setWide] = useState(() => typeof window !== "undefined" && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const update = () => setWide(mq.matches);
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [query]);
+  return wide;
+}
+
 function RateChoice({ outcomes, ratePct, chosen, onChoose }) {
+  const wide = useWideScreen();
   const rateFor = scenario => scenario === "stress" ? ratePct + STRESS_REMORTGAGE_UPLIFT
     : scenario === "lower" ? Math.max(0, ratePct - STRESS_REMORTGAGE_UPLIFT) : ratePct;
   return (
@@ -141,7 +158,7 @@ function RateChoice({ outcomes, ratePct, chosen, onChoose }) {
           }}>
             <div style={{fontSize:"10.5px",fontWeight:600,color:active ? "rgba(255,255,255,0.8)" : MUT}}>{o.label}</div>
             <div style={{fontSize:"14px",fontWeight:700,margin:"1px 0"}}>{Math.round(rateFor(o.scenario) * 100) / 100}%</div>
-            <div style={{fontSize:"11px",fontWeight:600}}>{buyAhead ? "Buy" : "Rent"} +{fmtCompact(Math.abs(result.gapAtHorizon))}</div>
+            {wide && <div style={{fontSize:"11px",fontWeight:600}}>{buyAhead ? "Buy" : "Rent"} +{fmtCompact(Math.abs(result.gapAtHorizon))}</div>}
           </button>
         );
       })}
@@ -388,12 +405,18 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
       ) : (
         <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
           style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON}}>
-            <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
-            <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:TEXT,lineHeight:1.2}}>{buyingAhead ? "Buying" : "Renting"}</div>
-            <p style={{display:"flex",alignItems:"center",gap:"4px",fontSize:"13px",color:TEXT,margin:"2px 0 0"}}>
-              <ArrowUp size={14} color={SC.ok} strokeWidth={2.6}/>
-              ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}
-            </p>
+            {/* The answer, centred: buying or renting, larger, with by how
+                much on the same line at its usual size. */}
+            <div style={{textAlign:"center"}}>
+              <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
+              <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:"10px",flexWrap:"wrap",marginTop:"2px"}}>
+                <span style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:TEXT,lineHeight:1.15}}>{buyingAhead ? "Buying" : "Renting"}</span>
+                <span style={{display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"13px",color:TEXT}}>
+                  <ArrowUp size={14} color={SC.ok} strokeWidth={2.6}/>
+                  ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}
+                </span>
+              </div>
+            </div>
 
             {outcomes && (
               <div style={{marginTop:"14px"}}>
