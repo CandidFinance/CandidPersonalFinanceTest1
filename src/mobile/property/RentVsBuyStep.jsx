@@ -258,9 +258,10 @@ function negativeEquityText(ne) {
 // options, with the chart, timeline and breakdown behind a chevron so the
 // result and the inputs fit on one screen), then the inputs that drive it,
 // with a sticky bar keeping the answer in view while they're edited. While
-// its guided walk-through runs, `guide` takes the inputs' place;
-// `onWalkThrough` reruns it.
-export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, guide, onWalkThrough }) {
+// its guided walk-through runs, `guide` takes the inputs' place, and
+// `holdResult` blurs the card until every answer is in; `onWalkThrough`
+// reruns it.
+export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, guide, holdResult = false, onWalkThrough }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const resultRef = useRef(null);
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
@@ -377,7 +378,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
   return (
     <div>
       <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Which leaves you better off</div>
-      {!result ? (
+      {!result || holdResult ? (
         <EmptyResultCard text={guide ? "Answer a few questions below to compare renting with buying." : "Add your monthly rent below to compare renting with buying."}/>
       ) : (
         <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
@@ -499,7 +500,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
             <ExpandChevron open={detailsOpen} onToggle={() => setDetailsOpen(o => !o)} label="the details"/>
         </motion.div>
       )}
-      {result && (
+      {result && !holdResult && (
         <StickySummaryBar watchRef={resultRef} label="Back to which leaves you better off">
           <SummaryLabel>After {years(result.horizonYears)}</SummaryLabel>
           <SummaryFigure color={TEXT}>{buyingAhead ? "Buying" : "Renting"}</SummaryFigure>

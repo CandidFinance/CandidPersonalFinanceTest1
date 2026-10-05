@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions, guideStarts, whyLine } from "./propertyGuide.js";
+import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions, guideStarts, whyLine, STEP_GUIDES } from "./propertyGuide.js";
 import { calcMetrics } from "./metrics.js";
 
 // Someone who did core onboarding with Cash & savings and Pension.
@@ -100,6 +100,13 @@ test("question ids are unique across the steps, so the full view's reasons find 
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(whyLine("tenure", ctxFor(purchased)), "Leasehold adds ground rent and a service charge every year.");
   assert.equal(whyLine("nope", ctxFor(purchased)), null);
+});
+
+test("a held result card waits for a question the step actually asks", () => {
+  for (const g of Object.values(STEP_GUIDES)) {
+    const hold = g.holdResultUntil;
+    assert.ok(hold === null || hold === "end" || g.questions.some(q => q.id === hold), String(hold));
+  }
 });
 
 test("each walk-through starts by itself only on a blank step not yet walked through", () => {

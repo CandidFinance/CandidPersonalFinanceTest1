@@ -261,19 +261,31 @@ export const RENT_VS_BUY_QUESTIONS = [
 // Each step's questions, the saved input recording that its walk-through was
 // finished or skipped, and when it starts by itself: on arriving at a step
 // that's still blank (Readiness: still incomplete), unless already done.
+//
+// `holdResultUntil`: on a first walk-through, the result card stays blurred
+// until this question is answered ("end": until the walk-through is over),
+// so the first figure seen is built on the user's own answers, not Candid's
+// defaults. Mortgage shows once term and rate are in; the fix only moves the
+// remortgage line after that. Rent vs buy's headline is a verdict that later
+// answers can flip, so it waits for all of them. Readiness needs no hold:
+// its card stays blurred until there's a price anyway. A walk-through rerun
+// from "Walk me through it" never hides a result the user has already seen.
 const blank = v => v === "" || v == null;
 export const STEP_GUIDES = {
   readiness: {
     questions: READINESS_QUESTIONS, doneField: "propertyGuideReadinessDone",
     blank: (d, m) => readinessMissing(d, m).length > 0,
+    holdResultUntil: null,
   },
   mortgage: {
     questions: MORTGAGE_QUESTIONS, doneField: "propertyGuideMortgageDone",
     blank: d => ["propertyMortgageTerm", "propertyMortgageRate", "propertyFixedYears"].every(f => blank(d[f])),
+    holdResultUntil: "rate",
   },
   rentVsBuy: {
     questions: RENT_VS_BUY_QUESTIONS, doneField: "propertyGuideRentVsBuyDone",
     blank: d => blank(d.propertyMonthlyRent),
+    holdResultUntil: "end",
   },
 };
 export function guideStarts(step, d, m) {

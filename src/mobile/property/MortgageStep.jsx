@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
+import EmptyResultCard from "./EmptyResultCard.jsx";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
@@ -86,8 +88,9 @@ function RepaymentPath({ payment, fixedYears, termYears, outcomes }) {
 // scenarios and totals behind a chevron so the result and the inputs fit on
 // one screen), then the inputs that drive it, with a sticky bar keeping the
 // repayment in view while they're edited. While its guided walk-through runs,
-// `guide` takes the inputs' place; `onWalkThrough` reruns it.
-export default function MortgageStep({ d, m, set, onContinue, guide, onWalkThrough }) {
+// `guide` takes the inputs' place, and `holdResult` blurs the card until the
+// user's own term and rate are in; `onWalkThrough` reruns it.
+export default function MortgageStep({ d, m, set, onContinue, guide, holdResult = false, onWalkThrough }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [totalInfoOpen, setTotalInfoOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -109,7 +112,11 @@ export default function MortgageStep({ d, m, set, onContinue, guide, onWalkThrou
   return (
     <div>
       <div style={sectionHeading}>What you'd repay</div>
-      <div ref={resultRef} style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:loan === 0 ? "18px" : CARD_PADDING_WITH_CHEVRON}}>
+      {holdResult ? (
+        <EmptyResultCard text="Answer the questions below to see what you'd repay."/>
+      ) : (
+      <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
+        style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:loan === 0 ? "18px" : CARD_PADDING_WITH_CHEVRON}}>
         {loan === 0 ? (
           <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:0}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
         ) : (
@@ -162,8 +169,9 @@ export default function MortgageStep({ d, m, set, onContinue, guide, onWalkThrou
             <ExpandChevron open={detailsOpen} onToggle={() => setDetailsOpen(o => !o)} label="the details"/>
           </>
         )}
-      </div>
-      {loan > 0 && (
+      </motion.div>
+      )}
+      {loan > 0 && !holdResult && (
         <StickySummaryBar watchRef={resultRef} label="Back to what you'd repay">
           <SummaryLabel>Monthly repayment</SummaryLabel>
           <SummaryFigure color={TEXT}>{fmt(s.monthlyPayment)}</SummaryFigure>

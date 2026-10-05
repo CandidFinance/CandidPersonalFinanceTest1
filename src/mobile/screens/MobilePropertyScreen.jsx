@@ -52,22 +52,28 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
   // and then held: answering the last few questions can complete a step,
   // which mustn't end its walk-through early. Reset during render (not in an
   // effect) when the step changes, so the inputs never flash up first.
-  const [guide, setGuide] = useState(() => ({ step, on: guideStarts(step, d, m) }));
-  if (guide.step !== step) setGuide({ step, on: guideStarts(step, d, m) });
+  // `firstRun`: started by itself rather than from "Walk me through it";
+  // only a first run holds the result card back, until `revealed`.
+  const arrive = () => ({ step, on: guideStarts(step, d, m), firstRun: true, revealed: false });
+  const [guide, setGuide] = useState(arrive);
+  if (guide.step !== step) setGuide(arrive());
   const guiding = guide.step === step && guide.on;
+  const holdUntil = STEP_GUIDES[step].holdResultUntil;
+  const holdResult = guiding && guide.firstRun && !guide.revealed && !!holdUntil;
   const endGuide = (how, at) => {
     set(STEP_GUIDES[step].doneField, true);
-    setGuide({ step, on: false });
+    setGuide(g => ({ ...g, on: false }));
     posthog.capture(how === "finished" ? "property_guide_finished" : "property_guide_skipped", { step, at });
     window.scrollTo({ top: 0 });
   };
   const startGuide = () => {
-    setGuide({ step, on: true });
+    setGuide({ step, on: true, firstRun: false, revealed: true });
     posthog.capture("property_guide_restarted", { step });
     window.scrollTo({ top: 0 });
   };
+  const answered = id => { if (id === holdUntil) setGuide(g => ({ ...g, revealed: true })); };
   const guideFlow = guiding && (
-    <GuidedFlow key={step} questions={STEP_GUIDES[step].questions} d={d} m={m} set={set} regionalRows={regionalRows} onDone={endGuide}
+    <GuidedFlow key={step} questions={STEP_GUIDES[step].questions} d={d} m={m} set={set} regionalRows={regionalRows} onDone={endGuide} onAnswered={answered}
       result={step === "readiness" ? <LoanTile d={d} m={m} emptyText="Answer a few questions below to see what you could borrow."/> : null}/>
   );
 
@@ -87,11 +93,11 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
 
       {step === "mortgage" ? (
         <div style={{marginTop:"20px"}}>
-          <MortgageStep d={d} m={m} set={set} onContinue={() => onSelectStep("rentVsBuy")} guide={guideFlow} onWalkThrough={startGuide}/>
+          <MortgageStep d={d} m={m} set={set} onContinue={() => onSelectStep("rentVsBuy")} guide={guideFlow} holdResult={holdResult} onWalkThrough={startGuide}/>
         </div>
       ) : step === "rentVsBuy" ? (
         <div style={{marginTop:"20px"}}>
-          <RentVsBuyStep d={d} m={m} set={set} regionalRows={regionalRows} marketRates={marketRates} guide={guideFlow} onWalkThrough={startGuide}/>
+          <RentVsBuyStep d={d} m={m} set={set} regionalRows={regionalRows} marketRates={marketRates} guide={guideFlow} holdResult={holdResult} onWalkThrough={startGuide}/>
         </div>
       ) : guiding ? (
         <div style={{marginTop:"20px"}}>{guideFlow}</div>

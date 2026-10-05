@@ -7,7 +7,12 @@ A plain-English, one-question-per-screen walk-through the first time someone ope
 ## How it works
 
 - **One question per screen.** The question is the headline, with one input below it and one "why it matters" line under that.
-- **The result fills in as they answer.** The blurred result card sits at the top, so each answer visibly moves it closer to a figure.
+- **The result fills in as they answer.** The blurred result card sits at the top, so each answer visibly moves it closer to a figure. On a first walk-through, the card stays blurred until the user's own answers can carry it, rather than showing Candid's defaults from the start:
+  - Readiness: until there's a price.
+  - Mortgage: until the term and rate are in. The fix then moves the remortgage line.
+  - Rent vs buy: until the last answer. Its headline is a verdict that later answers can flip.
+
+  A rerun from "Walk me through it" never hides a result the user has already seen.
 - **Never ask twice.** Anything Candid already has, from onboarding or another module, is skipped. Someone who did core onboarding with Cash & savings and Pension sees 4 to 6 questions in Readiness.
 - **Short bites.** Each step has its own walk-through on its first visit, not one long flow. It starts by itself only on a blank step:
   - Readiness: still incomplete.

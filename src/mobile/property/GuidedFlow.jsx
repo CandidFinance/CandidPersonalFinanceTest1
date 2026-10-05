@@ -22,7 +22,9 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 
 const SHIFT_PX = 30;
 
-export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone }) {
+// `onAnswered(id)` runs as each question is answered, so the screen can
+// reveal a result card it's holding back (STEP_GUIDES.holdResultUntil).
+export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered }) {
   const ctx = { d, m, regionalRows };
   // Which questions with `ifMissing` to ask is decided once, at the start.
   const [needed] = useState(() => neededAtStart(questions, ctx));
@@ -46,6 +48,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   // next question is chosen as if it already had.
   const next = patch => {
     setAnswered(a => new Set(a).add(q.id));
+    onAnswered?.(q.id);
     const after = visibleQuestions(questions, { ...ctx, d: { ...d, ...patch } }, needed);
     const following = after[after.findIndex(x => x.id === q.id) + 1];
     if (!following) { onDone("finished"); return; }
