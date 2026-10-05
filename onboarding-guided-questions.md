@@ -153,7 +153,7 @@ The first module opened then asks 3 to 8 questions, including shared figures. La
    - After the report: home shows "You've added X since your report" with "Update my report".
    - The score itself is worked out live from the answers, as before, so it moves before the report's wording does.
    - PostHog records `report_offered`, `report_started` (with the goals), `report_generated` and `report_update_requested`.
-   - The goals aren't saved to Supabase, because the table has no column for them; they're on `report_started`.
+   - The goals are saved to the user's row as `financial_goals` (`supabase_financial_goals_migration.sql`, applied 5 October 2026). They're also on `report_started`.
 2. **Email:** parked (5 October 2026), along with the PDF report. The app is mobile-native, so a PDF isn't needed, and without it there's nothing to send. Email comes back when there's something behind it, such as allowance reminders or accounts. Until then:
    - the email field stays in the data;
    - the old desktop PDF pop-up is left as it is (the mobile app never shows it).

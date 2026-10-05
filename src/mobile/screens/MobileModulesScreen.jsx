@@ -5,7 +5,7 @@ import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel } from "../statusLabel.js";
-import { notStarted } from "../../lib/appEntry.js";
+import { notStarted, MODULE_PITCH } from "../../lib/appEntry.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 
 // Mobile Modules screen — matches the "Claude Design" mockup's Modules tab
@@ -198,7 +198,7 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
             <div style={{fontSize:"16px",fontWeight:600,color:TEXT}}>Property</div>
             <ChevronRight size={18} color={MUT} style={{flexShrink:0}}/>
           </div>
-          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:0}}>Buying a home: what usually comes before a deposit, and how much you'd need to borrow. A rent vs buy comparison is coming next.</p>
+          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:0}}>{MODULE_PITCH.property}</p>
         </div>
       </button>
 

@@ -6070,6 +6070,8 @@ export default function AppShell() {
       email: d.email || null,
       name: d.name || null,
       interests: (d.interests || []).join(", ") || null,
+      // supabase_financial_goals_migration.sql
+      financial_goals: (d.financialGoals || []).join(", ") || null,
       age: +d.age||null,
       salary: +d.salary||null,
       other_income: +d.otherIncome||null,
