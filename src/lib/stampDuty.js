@@ -12,18 +12,25 @@ const STANDARD_BANDS = [[125000, 0], [250000, 0.02], [925000, 0.05], [1500000, 0
 // that the relief is lost entirely and the standard bands apply.
 const FIRST_TIME_BUYER_BANDS = [[300000, 0], [500000, 0.05]];
 export const FIRST_TIME_BUYER_MAX_PRICE = 500000;
+// The part of the price a first-time buyer pays no stamp duty on.
+export const FIRST_TIME_BUYER_NIL_BAND = FIRST_TIME_BUYER_BANDS[0][0];
 // Higher rates for additional dwellings: +5 points on every band, on
 // purchases of £40,000 or more.
 export const ADDITIONAL_PROPERTY_SURCHARGE = 0.05;
 export const ADDITIONAL_PROPERTY_MIN_PRICE = 40000;
 
 const SDLT_NATIONS = ["england", "northern_ireland"];
+// Whether Candid works out the purchase tax for this nation. Scotland (LBTT)
+// and Wales (LTT) have their own taxes Candid doesn't calculate yet.
+export function sdltApplies(nation) {
+  return SDLT_NATIONS.includes(nation);
+}
 
 // `firstTimeBuyers` has one entry per buyer; relief needs every buyer to be
 // a first-time buyer. `additionalProperty` is true when the buyer(s) will
 // own another home after this purchase.
 export function calcStampDuty({ price = 0, nation, firstTimeBuyers = [], additionalProperty = false }) {
-  if (!SDLT_NATIONS.includes(nation)) return { supported: false, nation };
+  if (!sdltApplies(nation)) return { supported: false, nation };
   const allFirstTime = firstTimeBuyers.length > 0 && firstTimeBuyers.every(Boolean);
   const reliefApplies = allFirstTime && !additionalProperty && price <= FIRST_TIME_BUYER_MAX_PRICE;
   const surcharge = additionalProperty && price >= ADDITIONAL_PROPERTY_MIN_PRICE ? ADDITIONAL_PROPERTY_SURCHARGE : 0;

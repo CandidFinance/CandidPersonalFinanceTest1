@@ -28,6 +28,12 @@ test("price, location and first-time buyer status are each needed", () => {
   assert.deepEqual(missing({ ...complete, propertyPrice: "", propertyRegion: "", propertyFirstTimeBuyer: "" }), ["price", "region", "firstTimeBuyer"]);
 });
 
+test("first-time buyer status isn't needed in Scotland or Wales", () => {
+  assert.deepEqual(missing({ ...complete, propertyRegion: "wales", propertyFirstTimeBuyer: "" }), []);
+  assert.deepEqual(missing({ ...complete, propertyRegion: "scotland", propertyBuyingMode: "together", partnerEmployerMatch: "4", partnerIsaThisYear: "0", propertyFirstTimeBuyer: "" }), []);
+  assert.deepEqual(missing({ ...complete, propertyRegion: "northern_ireland", propertyFirstTimeBuyer: "" }), ["firstTimeBuyer"]);
+});
+
 test("buying together also needs the partner's figures and first-time buyer status", () => {
   const d = { ...complete, propertyBuyingMode: "together" };
   assert.deepEqual(missing(d), ["checks", "partnerFirstTimeBuyer"]);

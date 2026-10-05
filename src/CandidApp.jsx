@@ -5558,6 +5558,9 @@ const BLANK_DATA = {
   propertyGroundRent:"", propertyGroundRentGrowth:"", propertyServiceCharge:"",
   propertyHousePriceGrowth:"", propertyRentGrowth:"", propertyInvestmentReturn:"", propertyDividendYield:"",
   propertyRenterMoney:"cash", propertyCashReturn:"",
+  // Whether Readiness's guided walk-through has been finished or skipped.
+  // Kept on this device only, not sent to Supabase.
+  propertyGuideReadinessDone:false,
   // Supabase schema note: isa_this_year_other NUMERIC
 };
 

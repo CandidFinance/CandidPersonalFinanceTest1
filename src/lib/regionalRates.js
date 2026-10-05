@@ -23,6 +23,25 @@ export const REGIONAL_RATES_SNAPSHOT = {
   wales:            { rentGrowthPct: 4.3, housePriceGrowthPct: 2.6 },
 };
 
+// Average house price for each region, offered as the price when someone
+// isn't sure yet. Source: UK House Price Index (HM Land Registry, ONS), July
+// 2026, Northern Ireland Q2 2026: the same release as the growth figures
+// above, rounded to the nearest £1,000 as published.
+export const REGIONAL_AVERAGE_PRICES = {
+  london: 550000, south_east: 381000, east_of_england: 338000, south_west: 302000,
+  east_midlands: 242000, west_midlands: 251000, yorkshire_humber: 209000,
+  north_west: 221000, north_east: 167000, northern_ireland: 202000,
+  scotland: 196000, wales: 215000,
+};
+
+// From the table's average_price when it has one, else the snapshot. Null
+// for an unknown or unset region.
+export function regionalAveragePrice(region, rows) {
+  const row = Array.isArray(rows) ? rows.find(r => r.region === region) : null;
+  if (row && +row.average_price > 0) return +row.average_price;
+  return REGIONAL_AVERAGE_PRICES[region] ?? null;
+}
+
 // The region's figures from the table rows when they're loaded, else the
 // snapshot. Null for an unknown or unset region.
 export function regionalRates(region, rows) {

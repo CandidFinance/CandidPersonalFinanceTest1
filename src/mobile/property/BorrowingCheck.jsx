@@ -13,6 +13,7 @@ import InfoButton from "../InfoButton.jsx";
 import PillCell from "./PillCell.jsx";
 import PillSelect from "./PillSelect.jsx";
 import { PROPERTY_REGIONS } from "../../lib/regions.js";
+import { firstTimeBuyerNeeded } from "../../lib/propertyReadiness.js";
 
 // Borrowing check: the loan a purchase needs against the 4.5x income most
 // lenders work to. A warning only, never a block. Logic in
@@ -84,7 +85,7 @@ function Cost({ value }) {
 // plus which relief or surcharge applied.
 function StampDutyBreakdown({ sd, style }) {
   if (!sd.supported) {
-    return <p style={style}>Candid works out stamp duty for England and Northern Ireland. Scotland (LBTT) and Wales (LTT) have their own rules, so this is the figure you entered.</p>;
+    return <p style={style}>Candid works out stamp duty for England and Northern Ireland. Scotland (LBTT) and Wales (LTT) have their own rules, so it's left out unless you enter your own figure.</p>;
   }
   const pct = rate => `${Math.round(rate * 1000) / 10}%`;
   const notes = [];
@@ -137,6 +138,7 @@ export function PurchaseInputs({ d, m, set }) {
   const sd = input.stampDutyDetail;
   // Scotland and Wales: Candid doesn't calculate LBTT or LTT, so ask.
   const manualStampDuty = sd && !sd.supported;
+  const askFirstTime = firstTimeBuyerNeeded(d);
   const toggle = (value, onChange, options = YES_NO) => (
     <div style={{flex:1,minWidth:0}}><PillSlider value={value} onChange={onChange} options={options}/></div>
   );
@@ -148,6 +150,8 @@ export function PurchaseInputs({ d, m, set }) {
         <PillCell grow={2}><PillSelect value={d.propertyRegion} onChange={v => set("propertyRegion", v)} options={PROPERTY_REGIONS} placeholder="Location"/></PillCell>
       </div>
 
+      {/* Both only change stamp duty, so not shown in Scotland or Wales. */}
+      {askFirstTime && (<>
       <div style={{...columns,marginTop:"18px"}}>
         <div style={column}>
           <div style={fieldLabel}>
@@ -174,6 +178,7 @@ export function PurchaseInputs({ d, m, set }) {
           Whether this will be the only home {together ? "either of you owns" : "you own"}, in the UK or anywhere else. Keeping another home means stamp duty in England and Northern Ireland includes a 5% surcharge on the whole price.
         </p>
       )}
+      </>)}
 
       {together && (
         <div style={{marginTop:"18px"}}>
@@ -193,10 +198,12 @@ export function PurchaseInputs({ d, m, set }) {
               its label. */}
           <div style={{...columns,alignItems:"flex-end"}}>
             <PillCell min={COLUMN_MIN}><PillMoneyInput label="ISA paid in this tax year" value={+d.partnerIsaThisYear || null} onChange={v => set("partnerIsaThisYear", capField("isaThisYearOther", v ?? ""))}/></PillCell>
-            <div style={column}>
-              <div style={fieldLabel}>First-time buyer?</div>
-              <PillCell>{toggle(d.partnerFirstTimeBuyer || "", v => set("partnerFirstTimeBuyer", v))}</PillCell>
-            </div>
+            {askFirstTime ? (
+              <div style={column}>
+                <div style={fieldLabel}>First-time buyer?</div>
+                <PillCell>{toggle(d.partnerFirstTimeBuyer || "", v => set("partnerFirstTimeBuyer", v))}</PillCell>
+              </div>
+            ) : <div style={column}/>}
           </div>
         </div>
       )}
@@ -240,8 +247,9 @@ export function PurchaseInputs({ d, m, set }) {
 }
 
 // The loan the purchase needs against the 4.5x most lenders use, with the
-// cash-to-deposit step-through.
-export function LoanTile({ d, m }) {
+// cash-to-deposit step-through. `emptyText` is the line on the blurred card
+// before there's a price.
+export function LoanTile({ d, m, emptyText = "Update your assumptions below to see what you could borrow." }) {
   const [incomeInfoOpen, setIncomeInfoOpen] = useState(false);
   const [stampDutyInfoOpen, setStampDutyInfoOpen] = useState(false);
   const [breakdownOpen, setBreakdownOpen] = useState(false);
@@ -306,7 +314,11 @@ export function LoanTile({ d, m }) {
                 Stamp duty
                 {sd && <InfoButton open={stampDutyInfoOpen} onClick={() => setStampDutyInfoOpen(o => !o)}/>}
               </span>
-              {sd ? <Cost value={input.stampDuty}/> : <span style={{color:MUT}}>Add location</span>}
+              {/* Scotland and Wales: nothing to subtract until they enter
+                  their own figure, so say it's left out rather than £0. */}
+              {!sd ? <span style={{color:MUT}}>Add location</span>
+                : !sd.supported && !(input.stampDuty > 0) ? <span style={{color:MUT}}>Not included</span>
+                : <Cost value={input.stampDuty}/>}
             </div>
             {sd && stampDutyInfoOpen && <StampDutyBreakdown sd={sd} style={{...explainer,margin:"4px 0 6px"}}/>}
             <div style={row}><span>Legal and survey fees</span><Cost value={input.fees}/></div>
@@ -332,7 +344,7 @@ export function LoanTile({ d, m }) {
             <ExpandChevron open={breakdownOpen} onToggle={() => setBreakdownOpen(o => !o)} label="the breakdown"/>
           </motion.div>
       ) : (
-        <EmptyResultCard text="Update your assumptions below to see what you could borrow."/>
+        <EmptyResultCard text={emptyText}/>
       )}
     </div>
   );

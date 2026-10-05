@@ -4,6 +4,15 @@
 // loan, including stamp duty. Being complete is about having the figures,
 // not about every check being green. Unit tested in propertyReadiness.test.js.
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "./waterfall.js";
+import { regionNation } from "./regions.js";
+import { sdltApplies } from "./stampDuty.js";
+
+// First-time buyer status only changes stamp duty, which Candid works out
+// for England and Northern Ireland only, so it isn't needed in Scotland or
+// Wales. Still needed while no location is set.
+export function firstTimeBuyerNeeded(d) {
+  return !d.propertyRegion || sdltApplies(regionNation(d.propertyRegion));
+}
 
 export function readinessMissing(d, m) {
   const missing = [];
@@ -14,7 +23,10 @@ export function readinessMissing(d, m) {
   if (checks.some(c => c.state === "missing" || (c.people || []).some(p => p.state === "missing"))) missing.push("checks");
   if (!(+d.propertyPrice > 0)) missing.push("price");
   if (!d.propertyRegion) missing.push("region");
-  if (d.propertyFirstTimeBuyer !== "yes" && d.propertyFirstTimeBuyer !== "no") missing.push("firstTimeBuyer");
-  if (d.propertyBuyingMode === "together" && d.partnerFirstTimeBuyer !== "yes" && d.partnerFirstTimeBuyer !== "no") missing.push("partnerFirstTimeBuyer");
+  const answered = v => v === "yes" || v === "no";
+  if (firstTimeBuyerNeeded(d)) {
+    if (!answered(d.propertyFirstTimeBuyer)) missing.push("firstTimeBuyer");
+    if (d.propertyBuyingMode === "together" && !answered(d.partnerFirstTimeBuyer)) missing.push("partnerFirstTimeBuyer");
+  }
   return missing;
 }
