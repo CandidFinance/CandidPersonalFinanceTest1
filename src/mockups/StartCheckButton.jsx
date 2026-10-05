@@ -7,14 +7,15 @@ import { WHITE, SANS } from "../CandidApp.jsx";
 // departs from Candid's usual green/gold, reserved for the main CTA.
 export const CTA_BLUE = "#0071E3";
 
-// Where a visitor lands on entering the app: someone with a saved report goes
-// straight back into it; everyone else starts the pre-assessment confidence
-// check. Always the mobile-native app (/app/...), regardless of viewport.
+// Where a visitor lands on entering the app: someone with a saved report, or
+// who has been through the app's two-question entry, goes straight back in;
+// everyone else starts the pre-assessment confidence check. Always the
+// mobile-native app (/app/...), regardless of viewport.
 export function appEntryPath() {
   try {
-    const hasSavedInputs = !!localStorage.getItem('candid_inputs');
+    const savedInputs = localStorage.getItem('candid_inputs');
     const hasSavedInsights = !!localStorage.getItem('candid_insights');
-    if (hasSavedInputs && hasSavedInsights) return "/app/home";
+    if (savedInputs && (hasSavedInsights || JSON.parse(savedInputs).appEntered)) return "/app/home";
   } catch (e) {}
   return "/welcome";
 }

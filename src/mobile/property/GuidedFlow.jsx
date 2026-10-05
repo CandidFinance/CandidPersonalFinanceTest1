@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { neededAtStart, visibleQuestions } from "../../lib/propertyGuide.js";
-import PillMoneyInput from "../PillMoneyInput.jsx";
+import PillMoneyInput, { pillFieldStyle } from "../PillMoneyInput.jsx";
 
 // A step's guided first pass: one question per screen under the step's
 // result card, which fills in as the answers go in. The card is `result`
@@ -24,7 +24,13 @@ const SHIFT_PX = 30;
 
 // `onAnswered(id)` runs as each question is answered, so the screen can
 // reveal a result card it's holding back (STEP_GUIDES.holdResultUntil).
-export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered }) {
+// `skipLabel` is the link for leaving early; null for a flow that can't be
+// skipped (the app's entry questions).
+//
+// Besides "choice", "money", "percent" and "years", the app's entry uses
+// "multi" (several answers, then Continue; an `exclusive` option clears the
+// rest) and "text" (a typed answer such as a name).
+export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered, skipLabel = "Skip to the full view" }) {
   const ctx = { d, m, regionalRows };
   // Which questions with `ifMissing` to ask is decided once, at the start.
   const [needed] = useState(() => neededAtStart(questions, ctx));
@@ -33,6 +39,12 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   const [direction, setDirection] = useState(1);
   const [answered, setAnswered] = useState(() => new Set());
   const reduceMotion = useReducedMotion();
+
+  const textLink = { background:"none", border:"none", padding:"6px 0", color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
+  const primary = {
+    width:"100%", background:G, color:WHITE, border:"none", borderRadius:"100px", padding:"13px",
+    fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
+  };
 
   const currentId = history[history.length - 1];
   const q = visible.find(x => x.id === currentId) || visible[0];
@@ -60,7 +72,11 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     setDirection(-1);
     setHistory(h => h.slice(0, -1));
   };
-  const write = (field, value) => set(field, value);
+  // The question's own field, plus any others its answer sets (`also`).
+  const write = (field, value) => {
+    set(field, value);
+    if (q.also) Object.entries(q.also(value)).forEach(([k, v]) => set(k, v));
+  };
 
   const choose = value => { write(q.field, value); next({ [q.field]: value }); };
   const notSure = q.notSure ? q.notSure(ctx) : null;
@@ -68,9 +84,26 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     if (notSure.value !== undefined) write(q.field, notSure.value);
     next(notSure.value !== undefined ? { [q.field]: notSure.value } : {});
   };
+  const picked = Array.isArray(d[q.field]) ? d[q.field] : [];
+  const toggle = o => {
+    const on = picked.includes(o.value);
+    const exclusive = q.options(ctx).filter(x => x.exclusive).map(x => x.value);
+    write(q.field, on ? picked.filter(v => v !== o.value)
+      : o.exclusive ? [o.value]
+      : [...picked.filter(v => !exclusive.includes(v)), o.value]);
+  };
 
   const raw = d[q.field];
-  const hasAnswer = raw !== "" && raw != null && !isNaN(+raw);
+  const hasAnswer = q.kind === "multi" ? picked.length > 0
+    : q.kind === "text" ? typeof raw === "string" && raw.trim() !== ""
+    : raw !== "" && raw != null && !isNaN(+raw);
+  const continueButton = (
+    <button type="submit" disabled={q.required && !hasAnswer} style={{
+      ...primary, marginTop:"16px",
+      background:q.required && !hasAnswer ? "rgba(22,47,36,0.2)" : G, cursor:q.required && !hasAnswer ? "not-allowed" : "pointer",
+    }}>Continue</button>
+  );
+  const submit = e => { e.preventDefault(); if (hasAnswer || !q.required) next({}); };
   const note = q.note ? q.note(ctx) : null;
   const shift = reduceMotion ? 0 : SHIFT_PX;
   const variants = {
@@ -78,11 +111,11 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     center: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
     exit: dir => ({ opacity: 0, y: -dir * shift, transition: { duration: 0.15, ease: "easeIn" } }),
   };
-  const textLink = { background:"none", border:"none", padding:"6px 0", color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
-  const primary = {
-    width:"100%", background:G, color:WHITE, border:"none", borderRadius:"100px", padding:"13px",
-    fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
-  };
+  const answerButton = selected => ({
+    display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px", textAlign:"left", width:"100%",
+    background:selected ? "rgba(22,47,36,0.06)" : WHITE, border:`1.5px solid ${selected ? G : "rgba(22,47,36,0.15)"}`,
+    borderRadius:"14px", padding:"13px 16px", fontSize:"14.5px", fontWeight:600, color:TEXT, fontFamily:"inherit", cursor:"pointer",
+  });
 
   return (
     <div>
@@ -90,7 +123,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:result ? "22px" : 0}}>
         <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{position} of {visible.length}</span>
-        <button type="button" onClick={() => onDone("skipped", q.id)} style={{...textLink,fontSize:"12.5px"}}>Skip to the full view</button>
+        {skipLabel && <button type="button" onClick={() => onDone("skipped", q.id)} style={{...textLink,fontSize:"12.5px"}}>{skipLabel}</button>}
       </div>
 
       <AnimatePresence mode="wait" custom={direction} initial={false}>
@@ -106,11 +139,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
               {q.options(ctx).map(o => {
                 const selected = answered.has(q.id) && d[q.field] === o.value;
                 return (
-                  <button key={o.value} type="button" onClick={() => choose(o.value)} style={{
-                    display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px", textAlign:"left",
-                    background:selected ? "rgba(22,47,36,0.06)" : WHITE, border:`1.5px solid ${selected ? G : "rgba(22,47,36,0.15)"}`,
-                    borderRadius:"14px", padding:"13px 16px", fontSize:"14.5px", fontWeight:600, color:TEXT, fontFamily:"inherit", cursor:"pointer",
-                  }}>
+                  <button key={o.value} type="button" onClick={() => choose(o.value)} style={answerButton(selected)}>
                     {o.label}
                     {selected && <Check size={16} color={G}/>}
                   </button>
@@ -118,16 +147,38 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
               })}
               {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>{note}</p>}
             </div>
+          ) : q.kind === "multi" ? (
+            <form onSubmit={submit}>
+              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                {q.options(ctx).map(o => {
+                  const selected = picked.includes(o.value);
+                  return (
+                    <button key={o.value} type="button" aria-pressed={selected} onClick={() => toggle(o)} style={answerButton(selected)}>
+                      {o.label}
+                      {selected && <Check size={16} color={G}/>}
+                    </button>
+                  );
+                })}
+                {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>{note}</p>}
+              </div>
+              {continueButton}
+            </form>
+          ) : q.kind === "text" ? (
+            <form onSubmit={submit}>
+              <label style={{background:CDARK,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",display:"flex",flexDirection:"column",justifyContent:"center",cursor:"text"}}>
+                <span style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>{q.label}</span>
+                <input type="text" autoFocus autoComplete="given-name" value={raw || ""} onChange={e => write(q.field, e.target.value)}
+                  style={{border:"none",background:"none",color:TEXT,outline:"none",padding:0,...pillFieldStyle("100%")}}/>
+              </label>
+              {continueButton}
+            </form>
           ) : (
-            <form onSubmit={e => { e.preventDefault(); if (hasAnswer || !q.required) next({}); }}>
+            <form onSubmit={submit}>
               <PillMoneyInput label={q.label} unit={{ percent:"%", years:"" }[q.kind] ?? "£"}
                 value={hasAnswer ? +raw : (q.prefill ? q.prefill(ctx) : null)}
                 onChange={v => write(q.field, q.cap ? capField(q.cap, v ?? "") : (v ?? ""))}/>
               {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>{note}</p>}
-              <button type="submit" disabled={q.required && !hasAnswer} style={{
-                ...primary, marginTop:"16px",
-                background:q.required && !hasAnswer ? "rgba(22,47,36,0.2)" : G, cursor:q.required && !hasAnswer ? "not-allowed" : "pointer",
-              }}>Continue</button>
+              {continueButton}
             </form>
           )}
 

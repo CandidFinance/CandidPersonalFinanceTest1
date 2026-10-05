@@ -179,10 +179,11 @@ function ConfidenceCheck() {
 
   function handleContinue() {
     try { localStorage.setItem('candid_confidence_score', String(score)); } catch (e) { reportStorageFailure("confidence_check_save", e); }
-    // Always the mobile-native wizard, regardless of viewport — the product
-    // is the mobile-native app; there's no separate desktop destination to
-    // branch to any more.
-    navigate("/app/assessment/1");
+    // Always the mobile-native app, regardless of viewport — the product is
+    // the mobile-native app; there's no separate desktop destination to
+    // branch to any more. Its two-question entry, then each module asks its
+    // own questions when opened.
+    navigate("/app/start");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
@@ -450,6 +451,7 @@ function AppRoutes() {
           <Route path="/app/property/mortgage" />
           <Route path="/app/property/rent-vs-buy" />
           <Route path="/app/assessment/:step" />
+          <Route path="/app/start" />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

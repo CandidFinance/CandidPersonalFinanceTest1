@@ -23,6 +23,8 @@ import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
+import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
+import { appUnlocked } from "./lib/appEntry.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
 import { mortgageInputs, mortgageSummary } from "./lib/mortgage.js";
@@ -5503,7 +5505,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
 // ── Main app ──────────────────────────────────────────────────────────────────
 const BLANK_DATA = {
-  name:"", email:"", interests:[],
+  // `interests`: the modules picked at the app's two-question entry
+  // (src/lib/appEntry.js), plus "property" or "exploring". `appEntered`:
+  // they've been through that entry, which opens the app before any report.
+  name:"", email:"", interests:[], appEntered:false,
   // Which of the 4 active MVP modules (cash, investments, pension, studentLoan —
   // matching MODULE_META keys) the user picked on the "Focus" onboarding step.
   // Drives which subsequent steps are shown (getActiveSteps) and which modules
@@ -6269,13 +6274,34 @@ export default function AppShell() {
   // Transient overlay while generateDashboard() awaits Claude — not a real route.
   if (generating) return <LoadingScreen name={d.name} msgs={["Analysing your cash position...","Calculating pension tax relief...","Reviewing ISA headroom...","Modelling your student loan...","Building your Candid report..."]}/>;
 
-  // Deep-link guard: the 4 report screens and /module/:key only render meaningfully
-  // once an assessment has produced a report — bounce home rather than show a
-  // broken or empty page for a stale bookmark, shared link, or a bare reload with
-  // no data.
-  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat", "/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
-  if ((REPORT_PATHS.includes(pathname) || pathname.startsWith("/module/") || pathname.startsWith("/app/module/")) && !insights) {
+  // Deep-link guard: the desktop report screens and /module/:key only render
+  // meaningfully once an assessment has produced a report — bounce home rather
+  // than show a broken or empty page for a stale bookmark, shared link, or a
+  // bare reload with no data. The mobile app opens earlier, once the user has
+  // been through its two-question entry (appUnlocked), so its screens cope
+  // without a report.
+  const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat"];
+  const APP_PATHS = ["/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
+  if ((REPORT_PATHS.includes(pathname) || pathname.startsWith("/module/")) && !insights) {
     return <Navigate to="/" replace />;
+  }
+  if ((APP_PATHS.includes(pathname) || pathname.startsWith("/app/module/")) && !appUnlocked(d, insights)) {
+    return <Navigate to="/" replace />;
+  }
+
+  // The two-question entry. Anyone the app is already open to goes home.
+  if (pathname === "/app/start") {
+    if (appUnlocked(d, insights)) return <Navigate to="/app/home" replace />;
+    return (
+      <MobileEntryScreen d={d} m={m} set={set} onDone={() => {
+        set("appEntered", true);
+        posthog.capture("app_entered", { interests: (d.interests || []).join(",") });
+        // The user's row from the start (name and interests), not only once
+        // a report exists. The report still adds its own row when it's made.
+        insertReportRow(null);
+        navigate("/app/home");
+      }}/>
+    );
   }
 
   if (pathname.startsWith("/assessment/")) {
@@ -6348,7 +6374,8 @@ export default function AppShell() {
 
   if (pathname === "/app/home") return (
     <MobileLayout activeTab="home" headerRight={editInputsButton}>
-      <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} completedModules={completedModules}/>
+      <MobileHomeScreen insights={insights} d={d} m={m} statuses={statuses} completedModules={completedModules}
+        onStartModule={key => key === "property" ? navigate("/app/property") : openMobileStep(key)}/>
     </MobileLayout>
   );
 

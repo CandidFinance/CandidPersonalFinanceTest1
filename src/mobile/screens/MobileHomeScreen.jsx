@@ -5,6 +5,7 @@ import { ScoreDetailSheet, scoreBand, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, S
 import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
+import MobileStartHome from "./MobileStartHome.jsx";
 
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
 // (score progress bar, Opportunity pill, expandable Net Worth card, Biggest
@@ -40,7 +41,7 @@ function netWorthBreakdown(d, m) {
 // load just shows the score with no animation.
 let lastShownScore = null;
 
-export default function MobileHomeScreen({ insights, d, m, statuses, completedModules }) {
+export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule }) {
   const navigate = useNavigate();
   const [scoreDetailOpen, setScoreDetailOpen] = useState(false);
   const [netWorthOpen, setNetWorthOpen] = useState(false);
@@ -79,7 +80,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
     return () => { cancelAnimationFrame(raf); clearTimeout(timer); };
   }, [score, hasInsights]);
 
-  if (!insights) return null;
+  // No report yet (a user who came in through the two-question entry): the
+  // modules to start with instead of the score.
+  if (!insights) return <MobileStartHome d={d} m={m} onStartModule={onStartModule}/>;
 
   const { color: scoreColor, label: scoreLabel } = scoreBand(score);
   const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, insights, "amount");
