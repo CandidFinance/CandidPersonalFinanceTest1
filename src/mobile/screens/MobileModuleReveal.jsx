@@ -8,10 +8,12 @@ import { MODULE_META } from "../../lib/moduleStatus.js";
 // why, and what the user could do, one at a time with the same movement as
 // the questions before it, ending on the module's full screen ("See
 // everything"). `onDone(how, step)`: how is "finished" or "skipped".
+// `header={false}` drops its own module header, for a screen that already has
+// one (Property, under its step tabs).
 
 const SHIFT_PX = 30;
 
-export default function MobileModuleReveal({ moduleKey, steps, onDone }) {
+export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const [index, setIndex] = useState(0);
@@ -30,7 +32,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone }) {
 
   return (
     <div>
-      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px"}}>
+      {header && <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px"}}>
         <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {meta?.icon && <meta.icon size={18} color={G}/>}
         </div>
@@ -38,7 +40,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone }) {
           <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
           <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>Your answer, step by step</div>
         </div>
-      </div>
+      </div>}
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{index + 1} of {steps.length}</span>

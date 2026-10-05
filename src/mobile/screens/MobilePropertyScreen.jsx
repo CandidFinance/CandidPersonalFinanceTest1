@@ -12,6 +12,8 @@ import PropertySteps from "../property/PropertySteps.jsx";
 import GuidedFlow from "../property/GuidedFlow.jsx";
 import AssumptionsHeading from "../property/AssumptionsHeading.jsx";
 import { STEP_GUIDES, guideStarts } from "../../lib/propertyGuide.js";
+import { PROPERTY_REVEALS } from "../../lib/propertyReveal.js";
+import MobileModuleReveal from "./MobileModuleReveal.jsx";
 
 // Property module, split into two steps so neither is one long page:
 //   1. Readiness (/app/property): the loan the purchase needs first (the
@@ -60,10 +62,26 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
   const guiding = guide.step === step && guide.on;
   const holdUntil = STEP_GUIDES[step].holdResultUntil;
   const holdResult = guiding && guide.firstRun && !guide.revealed && !!holdUntil;
+  // The step's answer in three steps (src/lib/propertyReveal.js): after its
+  // first finished walk-through, and from "Explain this" on its result card.
+  // Null when the step has no result yet, so nothing to explain.
+  const revealCtx = { regionalRows, marketRates };
+  const revealSteps = PROPERTY_REVEALS[step](d, m, revealCtx);
+  const [revealStep, setRevealStep] = useState(null);
+  const showReveal = revealStep === step && !!revealSteps;
+  const explain = revealSteps && !guiding ? () => {
+    setRevealStep(step);
+    posthog.capture("reveal_shown", { module: "property", step, from: "replay" });
+    window.scrollTo({ top: 0 });
+  } : null;
   const endGuide = (how, at) => {
     set(STEP_GUIDES[step].doneField, true);
     setGuide(g => ({ ...g, on: false }));
     posthog.capture(how === "finished" ? "property_guide_finished" : "property_guide_skipped", { step, at });
+    if (how === "finished" && guide.firstRun && PROPERTY_REVEALS[step](d, m, revealCtx)) {
+      setRevealStep(step);
+      posthog.capture("reveal_shown", { module: "property", step, from: "walkthrough" });
+    }
     window.scrollTo({ top: 0 });
   };
   const startGuide = () => {
@@ -91,20 +109,29 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
 
       <PropertySteps step={step} unlocked={unlocked} onSelect={onSelectStep}/>
 
-      {step === "mortgage" ? (
+      {showReveal ? (
         <div style={{marginTop:"20px"}}>
-          <MortgageStep d={d} m={m} set={set} onContinue={() => onSelectStep("rentVsBuy")} guide={guideFlow} holdResult={holdResult} onWalkThrough={startGuide}/>
+          <MobileModuleReveal moduleKey="property" header={false} steps={revealSteps}
+            onDone={(how, n) => {
+              posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: "property", step, at: n });
+              setRevealStep(null);
+              window.scrollTo({ top: 0 });
+            }}/>
+        </div>
+      ) : step === "mortgage" ? (
+        <div style={{marginTop:"20px"}}>
+          <MortgageStep d={d} m={m} set={set} onContinue={() => onSelectStep("rentVsBuy")} guide={guideFlow} holdResult={holdResult} onWalkThrough={startGuide} onExplain={explain}/>
         </div>
       ) : step === "rentVsBuy" ? (
         <div style={{marginTop:"20px"}}>
-          <RentVsBuyStep d={d} m={m} set={set} regionalRows={regionalRows} marketRates={marketRates} guide={guideFlow} holdResult={holdResult} onWalkThrough={startGuide}/>
+          <RentVsBuyStep d={d} m={m} set={set} regionalRows={regionalRows} marketRates={marketRates} guide={guideFlow} holdResult={holdResult} onWalkThrough={startGuide} onExplain={explain}/>
         </div>
       ) : guiding ? (
         <div style={{marginTop:"20px"}}>{guideFlow}</div>
       ) : (
         <>
           <div ref={loanRef} style={{marginTop:"20px",scrollMarginTop:"16px"}}>
-            <LoanTile d={d} m={m}/>
+            <LoanTile d={d} m={m} onExplain={explain}/>
           </div>
           <LoanSummaryBar d={d} m={m} watchRef={loanRef}/>
 

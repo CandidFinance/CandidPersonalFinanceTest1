@@ -14,6 +14,7 @@ import PillCell from "./PillCell.jsx";
 import PillSelect from "./PillSelect.jsx";
 import { PROPERTY_REGIONS } from "../../lib/regions.js";
 import { firstTimeBuyerNeeded } from "../../lib/propertyReadiness.js";
+import { ExplainLink } from "../ModuleScreenParts.jsx";
 import useWhyInfo from "./useWhyInfo.jsx";
 
 // Borrowing check: the loan a purchase needs against the 4.5x income most
@@ -258,7 +259,8 @@ export function PurchaseInputs({ d, m, set }) {
 // The loan the purchase needs against the 4.5x most lenders use, with the
 // cash-to-deposit step-through. `emptyText` is the line on the blurred card
 // before there's a price.
-export function LoanTile({ d, m, emptyText = "Update your assumptions below to see what you could borrow." }) {
+// `onExplain` replays the answer step by step ("Explain this", on the heading).
+export function LoanTile({ d, m, emptyText = "Update your assumptions below to see what you could borrow.", onExplain }) {
   const [incomeInfoOpen, setIncomeInfoOpen] = useState(false);
   const [stampDutyInfoOpen, setStampDutyInfoOpen] = useState(false);
   const [breakdownOpen, setBreakdownOpen] = useState(false);
@@ -276,7 +278,10 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>How much you'd need to borrow</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>How much you'd need to borrow</div>
+        <ExplainLink onClick={input.price > 0 ? onExplain : null}/>
+      </div>
       {input.price > 0 ? (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
             style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON,border:bandColor ? `2px solid ${bandColor}` : "none"}}>

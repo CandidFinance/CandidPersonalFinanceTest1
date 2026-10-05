@@ -37,7 +37,7 @@ import { PB_RATE } from "./cash.js";
 import { regionalRates } from "./regionalRates.js";
 
 export const DEFAULT_HORIZON_YEARS = 5;
-const MAX_HORIZON_YEARS = 40;
+export const MAX_HORIZON_YEARS = 40;
 export const SELLING_COSTS_PCT = 1.5;
 // Candid's own assumption, not a published figure.
 export const MODERATE_HOUSE_PRICE_GROWTH_PCT = 3.0;

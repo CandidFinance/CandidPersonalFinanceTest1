@@ -12,6 +12,7 @@ import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
 import AssumptionsHeading from "./AssumptionsHeading.jsx";
+import { ExplainLink } from "../ModuleScreenParts.jsx";
 import useWhyInfo from "./useWhyInfo.jsx";
 
 // Property step 3: rent vs buy over the years before the buyer would sell
@@ -261,7 +262,7 @@ function negativeEquityText(ne) {
 // its guided walk-through runs, `guide` takes the inputs' place, and
 // `holdResult` blurs the card until every answer is in; `onWalkThrough`
 // reruns it.
-export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, guide, holdResult = false, onWalkThrough }) {
+export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, guide, holdResult = false, onWalkThrough, onExplain }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const resultRef = useRef(null);
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
@@ -377,7 +378,11 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Which leaves you better off</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Which leaves you better off</div>
+        {/* "Explain this" replays the answer step by step. */}
+        <ExplainLink onClick={result && !holdResult ? onExplain : null}/>
+      </div>
       {!result || holdResult ? (
         <EmptyResultCard text={guide ? "Answer a few questions below to compare renting with buying." : "Add your monthly rent below to compare renting with buying."}/>
       ) : (

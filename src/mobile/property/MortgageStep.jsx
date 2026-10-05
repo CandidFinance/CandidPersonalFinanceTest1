@@ -13,6 +13,7 @@ import PillCell from "./PillCell.jsx";
 import PillSelect from "./PillSelect.jsx";
 import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
 import AssumptionsHeading from "./AssumptionsHeading.jsx";
+import { ExplainLink } from "../ModuleScreenParts.jsx";
 import useWhyInfo from "./useWhyInfo.jsx";
 
 // Property step 2: the repayment mortgage on the loan from step 1 (logic in
@@ -90,7 +91,7 @@ function RepaymentPath({ payment, fixedYears, termYears, outcomes }) {
 // repayment in view while they're edited. While its guided walk-through runs,
 // `guide` takes the inputs' place, and `holdResult` blurs the card until the
 // user's own term and rate are in; `onWalkThrough` reruns it.
-export default function MortgageStep({ d, m, set, onContinue, guide, holdResult = false, onWalkThrough }) {
+export default function MortgageStep({ d, m, set, onContinue, guide, holdResult = false, onWalkThrough, onExplain }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [totalInfoOpen, setTotalInfoOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -111,7 +112,11 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
 
   return (
     <div>
-      <div style={sectionHeading}>What you'd repay</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+        <div style={sectionHeading}>What you'd repay</div>
+        {/* "Explain this" replays the answer step by step. */}
+        {!holdResult && loan > 0 && <div style={{marginBottom:"10px"}}><ExplainLink onClick={onExplain}/></div>}
+      </div>
       {holdResult ? (
         <EmptyResultCard text="Answer the questions below to see what you'd repay."/>
       ) : (
