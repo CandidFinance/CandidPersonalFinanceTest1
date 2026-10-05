@@ -5558,9 +5558,10 @@ const BLANK_DATA = {
   propertyGroundRent:"", propertyGroundRentGrowth:"", propertyServiceCharge:"",
   propertyHousePriceGrowth:"", propertyRentGrowth:"", propertyInvestmentReturn:"", propertyDividendYield:"",
   propertyRenterMoney:"cash", propertyCashReturn:"",
-  // Whether Readiness's guided walk-through has been finished or skipped.
-  // Kept on this device only, not sent to Supabase.
-  propertyGuideReadinessDone:false,
+  // Whether each step's guided walk-through has been finished or skipped
+  // (STEP_GUIDES, src/lib/propertyGuide.js). Kept on this device only, not
+  // sent to Supabase.
+  propertyGuideReadinessDone:false, propertyGuideMortgageDone:false, propertyGuideRentVsBuyDone:false,
   // Supabase schema note: isa_this_year_other NUMERIC
 };
 
@@ -5881,7 +5882,8 @@ export default function AppShell() {
     const pct = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
     const yesNo = v => v === "yes" ? true : v === "no" ? false : null;
     const rvbInput = rentVsBuyInputs(d, m, regionalRates, "moderate", marketRates);
-    const rvb = rvbInput.monthlyRent > 0 && b.price > 0 ? calcRentVsBuy(rvbInput) : null;
+    // £0 rent is an answer (living with family, say), as on the screen.
+    const rvb = num(d.propertyMonthlyRent) != null && b.price > 0 ? calcRentVsBuy(rvbInput) : null;
     return {
       property_buying_mode: d.propertyBuyingMode === "together" ? "together" : "alone",
       property_price: num(d.propertyPrice),

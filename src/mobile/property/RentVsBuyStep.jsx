@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
+import AssumptionsHeading from "./AssumptionsHeading.jsx";
 
 // Property step 3: rent vs buy over the years before the buyer would sell
 // (logic in src/lib/rentVsBuy.js). Moderate scenario only for now.
@@ -255,8 +256,10 @@ function negativeEquityText(ne) {
 // Laid out like steps 1 and 2: the result first (the answer and the rate
 // options, with the chart, timeline and breakdown behind a chevron so the
 // result and the inputs fit on one screen), then the inputs that drive it,
-// with a sticky bar keeping the answer in view while they're edited.
-export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) {
+// with a sticky bar keeping the answer in view while they're edited. While
+// its guided walk-through runs, `guide` takes the inputs' place;
+// `onWalkThrough` reruns it.
+export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, guide, onWalkThrough }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const resultRef = useRef(null);
   const [assumptionsOpen, setAssumptionsOpen] = useState(false);
@@ -272,13 +275,16 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
 
   const input = rentVsBuyInputs(d, m, regionalRows, "moderate", marketRates);
+  // Any rent figure, £0 included (living with family, say): the result
+  // waits for an answer, not for a rent above zero.
+  const rentGiven = d.propertyMonthlyRent !== "" && d.propertyMonthlyRent != null && !isNaN(+d.propertyMonthlyRent);
   // The first remortgage, if the fix ends before the sale: the year the new
   // deal starts.
   const remortgageYear = input.mortgage.loan > 0 && input.mortgage.fixedYears < input.horizonYears ? input.mortgage.fixedYears + 1 : null;
-  const outcomes = input.monthlyRent > 0 && remortgageYear
+  const outcomes = rentGiven && remortgageYear
     ? Object.fromEntries(RATE_OPTIONS.map(o => [o.scenario, calcRentVsBuy({ ...input, mortgageScenario: o.scenario })]))
     : null;
-  const result = input.monthlyRent > 0 ? (outcomes ? outcomes[rateScenario] : calcRentVsBuy(input)) : null;
+  const result = rentGiven ? (outcomes ? outcomes[rateScenario] : calcRentVsBuy(input)) : null;
   const leasehold = input.tenure === "leasehold";
   const cash = input.returnType === "cash";
   const together = input.people.length > 1;
@@ -365,7 +371,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
     <div>
       <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Which leaves you better off</div>
       {!result ? (
-        <EmptyResultCard text="Add your monthly rent below to compare renting with buying."/>
+        <EmptyResultCard text={guide ? "Answer a few questions below to compare renting with buying." : "Add your monthly rent below to compare renting with buying."}/>
       ) : (
         <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
           style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON}}>
@@ -495,8 +501,10 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates }) 
       )}
 
       <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"18px 0 14px"}}/>
-      <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"0 0 6px"}}>Set your rent vs buy assumptions.</p>
-      {inputs}
+      {guide || (<>
+        <AssumptionsHeading text="Set your rent vs buy assumptions." onWalkThrough={onWalkThrough}/>
+        {inputs}
+      </>)}
     </div>
   );
 }

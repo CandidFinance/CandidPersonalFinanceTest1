@@ -10,6 +10,7 @@ import InfoButton from "../InfoButton.jsx";
 import PillCell from "./PillCell.jsx";
 import PillSelect from "./PillSelect.jsx";
 import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBar.jsx";
+import AssumptionsHeading from "./AssumptionsHeading.jsx";
 
 // Property step 2: the repayment mortgage on the loan from step 1 (logic in
 // src/lib/mortgage.js). Only reachable once step 1 is complete.
@@ -83,8 +84,9 @@ function RepaymentPath({ payment, fixedYears, termYears, outcomes }) {
 // Laid out like step 1: the result first (the repayment, with the rate
 // scenarios and totals behind a chevron so the result and the inputs fit on
 // one screen), then the inputs that drive it, with a sticky bar keeping the
-// repayment in view while they're edited.
-export default function MortgageStep({ d, m, set, onContinue }) {
+// repayment in view while they're edited. While its guided walk-through runs,
+// `guide` takes the inputs' place; `onWalkThrough` reruns it.
+export default function MortgageStep({ d, m, set, onContinue, guide, onWalkThrough }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [totalInfoOpen, setTotalInfoOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -167,7 +169,8 @@ export default function MortgageStep({ d, m, set, onContinue }) {
       )}
 
       <hr style={divider}/>
-      <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:"0 0 6px"}}>Set your mortgage assumptions.</p>
+      {guide || (<>
+      <AssumptionsHeading text="Set your mortgage assumptions." onWalkThrough={onWalkThrough}/>
       <div style={columns}>
         <PillCell min={COLUMN_MIN}><PillMoneyInput label="Term (years)" unit="" value={input.termYears} onChange={v => set("propertyMortgageTerm", v ?? "")}/></PillCell>
         <PillCell min={COLUMN_MIN}><PillMoneyInput label="Mortgage rate" unit="%" value={input.ratePct || null} onChange={v => set("propertyMortgageRate", v ?? "")}/></PillCell>
@@ -186,6 +189,7 @@ export default function MortgageStep({ d, m, set, onContinue }) {
           Continue to rent vs buy<ChevronRight size={16}/>
         </button>
       )}
+      </>)}
     </div>
   );
 }

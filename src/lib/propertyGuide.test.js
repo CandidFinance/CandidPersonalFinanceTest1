@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { READINESS_QUESTIONS, neededAtStart, visibleQuestions } from "./propertyGuide.js";
+import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions, guideStarts } from "./propertyGuide.js";
 import { calcMetrics } from "./metrics.js";
 
 // Someone who did core onboarding with Cash & savings and Pension.
@@ -65,9 +65,44 @@ test("the why lines quote the figures the calculations use", () => {
 });
 
 test("every why line is one sentence of 15 words or fewer", () => {
-  const ctx = ctxFor({ ...base, propertyRegion: "london" });
-  for (const q of READINESS_QUESTIONS) {
+  const ctx = ctxFor({ ...purchased, propertyTenure: "leasehold" });
+  for (const q of [...READINESS_QUESTIONS, ...MORTGAGE_QUESTIONS, ...RENT_VS_BUY_QUESTIONS]) {
     const words = q.why(ctx).split(/\s+/).length;
     assert.ok(words <= 15, `${q.id}: ${words} words`);
   }
+});
+
+// Step 1 done: a £300,000 London home, £30,000 cash.
+const purchased = { ...base, propertyRegion: "london", propertyFirstTimeBuyer: "yes", propertyPrice: "300000", propertyCashAvailable: "30000" };
+const stepIds = (questions, d) => {
+  const ctx = ctxFor(d);
+  return visibleQuestions(questions, ctx, neededAtStart(questions, ctx)).map(q => q.id);
+};
+
+test("mortgage: term, rate and fix, the rate's reason priced on their own loan", () => {
+  assert.deepEqual(stepIds(MORTGAGE_QUESTIONS, purchased), ["term", "rate", "fixedYears"]);
+  const why = MORTGAGE_QUESTIONS.find(q => q.id === "rate").why;
+  // A £272,500 loan (£30,000 less £2,500 fees) over 30 years: about £1,381
+  // a month at 4.5% and £1,547 at 5.5%, so £170 to the nearest £10.
+  assert.equal(why(ctxFor(purchased)), "Each 1% adds about £170 a month on this loan.");
+  assert.equal(why(ctxFor({ ...purchased, propertyCashAvailable: "400000" })), "Sets your monthly payment.");
+});
+
+test("rent vs buy: leasehold adds ground rent and service charge, and £0 rent is an answer", () => {
+  assert.deepEqual(stepIds(RENT_VS_BUY_QUESTIONS, purchased), ["rent", "horizon", "tenure", "renterMoney"]);
+  assert.deepEqual(stepIds(RENT_VS_BUY_QUESTIONS, { ...purchased, propertyTenure: "leasehold" }),
+    ["rent", "horizon", "tenure", "groundRent", "serviceCharge", "renterMoney"]);
+  assert.deepEqual(RENT_VS_BUY_QUESTIONS[0].notSure(), { label: "I don't pay rent", value: "0" });
+});
+
+test("each walk-through starts by itself only on a blank step not yet walked through", () => {
+  const m = calcMetrics(purchased);
+  assert.equal(guideStarts("readiness", purchased, m), false); // already complete
+  assert.equal(guideStarts("readiness", { ...purchased, propertyPrice: "" }, m), true);
+  assert.equal(guideStarts("readiness", { ...purchased, propertyPrice: "", propertyGuideReadinessDone: true }, m), false);
+  assert.equal(guideStarts("mortgage", purchased, m), true);
+  assert.equal(guideStarts("mortgage", { ...purchased, propertyFixedYears: "2" }, m), false);
+  assert.equal(guideStarts("rentVsBuy", purchased, m), true);
+  assert.equal(guideStarts("rentVsBuy", { ...purchased, propertyMonthlyRent: "0" }, m), false);
+  assert.equal(guideStarts("rentVsBuy", { ...purchased, propertyGuideRentVsBuyDone: true }, m), false);
 });

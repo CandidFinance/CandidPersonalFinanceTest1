@@ -10,7 +10,8 @@ import MortgageStep from "../property/MortgageStep.jsx";
 import RentVsBuyStep from "../property/RentVsBuyStep.jsx";
 import PropertySteps from "../property/PropertySteps.jsx";
 import GuidedFlow from "../property/GuidedFlow.jsx";
-import { READINESS_QUESTIONS } from "../../lib/propertyGuide.js";
+import AssumptionsHeading from "../property/AssumptionsHeading.jsx";
+import { STEP_GUIDES, guideStarts } from "../../lib/propertyGuide.js";
 
 // Property module, split into two steps so neither is one long page:
 //   1. Readiness (/app/property): the loan the purchase needs first (the
@@ -21,10 +22,10 @@ import { READINESS_QUESTIONS } from "../../lib/propertyGuide.js";
 //      the years the buyer expects to stay.
 // Steps 2 and 3 are locked until step 1 is complete (readinessMissing is
 // empty).
-// The first visit to Readiness, while it's still incomplete, is a guided
-// walk-through (GuidedFlow, questions in src/lib/propertyGuide.js); once
-// finished or skipped it isn't shown again unless asked for ("Walk me
-// through it"). Not in MODULE_META yet: that list drives scoring, the £-impact
+// The first visit to each step, while it's still blank, is a guided
+// walk-through (GuidedFlow, questions and start rules in
+// src/lib/propertyGuide.js); once finished or skipped it isn't shown again
+// unless asked for ("Walk me through it"). Not in MODULE_META yet: that list drives scoring, the £-impact
 // sort, the AI prompt and the PDF, and Property's £ figure is still to be
 // defined.
 
@@ -47,20 +48,28 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
   const loanRef = useRef(null);
   const checksToReview = runWaterfall(waterfallInputs(d, m))
     .filter(c => VISIBLE_CHECKS.includes(c.key) && c.state === "attention").length;
-  // Decided on arrival and then held: answering the last few questions can
-  // complete step 1, which mustn't end the walk-through early.
-  const [guiding, setGuiding] = useState(() => !d.propertyGuideReadinessDone && !unlocked);
+  // Whether this step's walk-through runs is decided on arriving at the step
+  // and then held: answering the last few questions can complete a step,
+  // which mustn't end its walk-through early. Reset during render (not in an
+  // effect) when the step changes, so the inputs never flash up first.
+  const [guide, setGuide] = useState(() => ({ step, on: guideStarts(step, d, m) }));
+  if (guide.step !== step) setGuide({ step, on: guideStarts(step, d, m) });
+  const guiding = guide.step === step && guide.on;
   const endGuide = (how, at) => {
-    set("propertyGuideReadinessDone", true);
-    setGuiding(false);
-    posthog.capture(how === "finished" ? "property_guide_finished" : "property_guide_skipped", { step: "readiness", at });
+    set(STEP_GUIDES[step].doneField, true);
+    setGuide({ step, on: false });
+    posthog.capture(how === "finished" ? "property_guide_finished" : "property_guide_skipped", { step, at });
     window.scrollTo({ top: 0 });
   };
   const startGuide = () => {
-    setGuiding(true);
-    posthog.capture("property_guide_restarted", { step: "readiness" });
+    setGuide({ step, on: true });
+    posthog.capture("property_guide_restarted", { step });
     window.scrollTo({ top: 0 });
   };
+  const guideFlow = guiding && (
+    <GuidedFlow key={step} questions={STEP_GUIDES[step].questions} d={d} m={m} set={set} regionalRows={regionalRows} onDone={endGuide}
+      result={step === "readiness" ? <LoanTile d={d} m={m} emptyText="Answer a few questions below to see what you could borrow."/> : null}/>
+  );
 
   return (
     <div>
@@ -78,17 +87,14 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
 
       {step === "mortgage" ? (
         <div style={{marginTop:"20px"}}>
-          <MortgageStep d={d} m={m} set={set} onContinue={() => onSelectStep("rentVsBuy")}/>
+          <MortgageStep d={d} m={m} set={set} onContinue={() => onSelectStep("rentVsBuy")} guide={guideFlow} onWalkThrough={startGuide}/>
         </div>
       ) : step === "rentVsBuy" ? (
         <div style={{marginTop:"20px"}}>
-          <RentVsBuyStep d={d} m={m} set={set} regionalRows={regionalRows} marketRates={marketRates}/>
+          <RentVsBuyStep d={d} m={m} set={set} regionalRows={regionalRows} marketRates={marketRates} guide={guideFlow} onWalkThrough={startGuide}/>
         </div>
       ) : guiding ? (
-        <div style={{marginTop:"20px"}}>
-          <GuidedFlow questions={READINESS_QUESTIONS} d={d} m={m} set={set} regionalRows={regionalRows} onDone={endGuide}
-            result={<LoanTile d={d} m={m} emptyText="Answer a few questions below to see what you could borrow."/>}/>
-        </div>
+        <div style={{marginTop:"20px"}}>{guideFlow}</div>
       ) : (
         <>
           <div ref={loanRef} style={{marginTop:"20px",scrollMarginTop:"16px"}}>
@@ -97,10 +103,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
           <LoanSummaryBar d={d} m={m} watchRef={loanRef}/>
 
           <hr style={divider}/>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",margin:"0 0 6px"}}>
-            <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.55,margin:0}}>Set your baseline home purchase assumptions.</p>
-            <button type="button" onClick={startGuide} style={{background:"none",border:"none",padding:0,color:G,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>Walk me through it</button>
-          </div>
+          <AssumptionsHeading text="Set your baseline home purchase assumptions." onWalkThrough={startGuide}/>
           <PurchaseInputs d={d} m={m} set={set}/>
 
           <hr style={divider}/>

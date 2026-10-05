@@ -2,14 +2,19 @@
 
 A plain-English, one-question-per-screen walk-through the first time someone opens Property. When it ends, they land on the existing step screens, unchanged.
 
-**Status:** Readiness is built (`src/lib/propertyGuide.js`, `src/mobile/property/GuidedFlow.jsx`). Mortgage and Rent vs buy are still drafts.
+**Status:** all three steps are built. The questions and the rules for when each walk-through starts are in `src/lib/propertyGuide.js`, and the screens are in `src/mobile/property/GuidedFlow.jsx`.
 
 ## How it works
 
 - **One question per screen.** The question is the headline, with one input below it and one "why it matters" line under that.
 - **The result fills in as they answer.** The blurred result card sits at the top, so each answer visibly moves it closer to a figure.
 - **Never ask twice.** Anything Candid already has, from onboarding or another module, is skipped. Someone who did core onboarding with Cash & savings and Pension sees 4 to 6 questions in Readiness.
-- **Short bites.** Each step has its own walk-through on its first visit, not one long flow. Readiness's runs while the step is still incomplete, and once finished or skipped it doesn't come back on its own.
+- **Short bites.** Each step has its own walk-through on its first visit, not one long flow. It starts by itself only on a blank step:
+  - Readiness: still incomplete.
+  - Mortgage: no term, rate or fix set.
+  - Rent vs buy: no rent entered.
+
+  Once finished or skipped, it doesn't come back on its own.
 - **"I'm not sure"** appears wherever a sensible default exists. The button says what it will use, e.g. "Use the London average, £550,000".
 - **Back and skip.** Back is always available. "Skip to the full view" leaves the walk-through at any point.
 - **Again later.** After the walk-through, the step shows the current dense inputs. A "Walk me through it" link can rerun it.
@@ -68,11 +73,11 @@ C2 is where the payslip upload shortcut belongs once it's built.
 
 | # | Question | Why it matters | Answer | If not sure |
 |---|---|---|---|---|
-| M1 | How many years do you want the mortgage over? | Longer lowers the monthly payment but costs more interest overall. | Years, default 30 | 30 |
-| M2 | What interest rate do you expect? | Each 1% adds about £X a month on this loan. | %, default 4.5% | 4.5% |
-| M3 | How long would you fix the rate for? | Your payment stays the same until the fix ends, then you'd remortgage. | 2 / 3 / 5 / 10 years, default 5 | 5 |
+| M1 | How many years do you want the mortgage over? | Longer lowers the monthly payment but costs more interest overall. | Years, 30 shown | Continue keeps 30 |
+| M2 | What interest rate do you expect? | Each 1% adds about £X a month on this loan. | %, 4.5% shown (caption: "4.5% is Candid's starting figure. Use a quote if you have one.") | Continue keeps 4.5% |
+| M3 | How long would you fix the rate for? | Your payment stays the same until the fix ends, then you'd remortgage. | 2 / 3 / 5 / 10 years | n/a |
 
-In M2, the £X is worked out from their own loan, so the reason is specific to them.
+In M2, the £X is worked out from their own loan and term, to the nearest £10, so the reason is specific to them. If no loan is needed, the line reads "Sets your monthly payment." The repayment card is there from the first question, so each answer moves a figure that's already showing.
 
 **Not asked:** the remortgage fee (default £1,000).
 
@@ -80,12 +85,14 @@ In M2, the £X is worked out from their own loan, so the reason is specific to t
 
 | # | Question | Why it matters | Answer | If not sure | Asked when |
 |---|---|---|---|---|---|
-| V1 | What do you pay in rent each month? | Buying is compared against what you'd keep paying in rent. | £, £0 allowed | n/a | Always |
-| V2 | How many years would you stay before selling? | Buying costs come up front, so the longer you stay, the better buying looks. | Years, default 5 | 5 | Always |
-| V3 | Will you own the land (freehold) or lease it (leasehold)? | Leasehold adds ground rent and a service charge every year. | Freehold / Leasehold, default Freehold | "Most houses are freehold, most flats leasehold" | Always |
-| V4 | What's the yearly ground rent? | A yearly cost of owning that a renter doesn't pay. | £ | £0, flagged | Leasehold |
-| V5 | And the yearly service charge? | Covers the building's upkeep, and usually rises faster than inflation. | £ | £0, flagged | Leasehold |
-| V6 | If you rented instead, would your spare money sit in savings or be invested? | Investments usually grow faster than savings, which favours renting. | Savings / Invested, default Savings | Savings | Always |
+| V1 | What do you pay in rent each month? | Buying is compared against what you'd keep paying in rent. | £ | "I don't pay rent" (£0) | Always |
+| V2 | How many years would you stay before selling? | Buying costs come up front, so the longer you stay, the better buying looks. | Years, 5 shown | Continue keeps 5 | Always |
+| V3 | Will you own the land (freehold) or lease it (leasehold)? | Leasehold adds ground rent and a service charge every year. | Freehold / Leasehold (caption: "Most houses are freehold, and most flats leasehold.") | n/a | Always |
+| V4 | What's the yearly ground rent? | A yearly cost of owning that a renter doesn't pay. | £ | Left blank, counts as £0 | Leasehold |
+| V5 | And the yearly service charge? | Covers the building's upkeep, and usually rises faster than inflation. | £ | Left blank, counts as £0 | Leasehold |
+| V6 | If you rented instead, would your spare money sit in savings or be invested? | Investments usually grow faster than savings, which favours renting. | Savings / Invested | n/a | Always |
+
+£0 rent now counts as an answer everywhere, including the full view and the Supabase record. Before, the result waited for rent above £0.
 
 **Not asked:** house price and rent growth, the ground rent rise, the cash or investment rate, and the dividend share. These are shown as assumptions under the result, as now.
 

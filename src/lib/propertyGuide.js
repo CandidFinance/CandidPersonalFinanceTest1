@@ -10,7 +10,8 @@
 //
 // A question:
 //   id, field          the saved input it writes (`d[field]`)
-//   kind               "choice" (tap an answer, moves on), "money" or "percent"
+//   kind               "choice" (tap an answer, moves on), "money", "percent"
+//                      or "years"
 //   ask(ctx), why(ctx) the question and its "why it matters" line
 //   options(ctx)       choice answers, [{ value, label }]
 //   label              the pill's caption (money and percent)
@@ -29,10 +30,12 @@
 import { fmt } from "./format.js";
 import { PROPERTY_REGIONS, regionNation } from "./regions.js";
 import { sdltApplies, FIRST_TIME_BUYER_NIL_BAND, ADDITIONAL_PROPERTY_SURCHARGE } from "./stampDuty.js";
-import { EMERGENCY_KEEP_BACK_MONTHS, suggestedCashAvailable, cashIsaBalance, borrowingInputs } from "./borrowing.js";
+import { EMERGENCY_KEEP_BACK_MONTHS, suggestedCashAvailable, cashIsaBalance, borrowingInputs, calcBorrowingCheck } from "./borrowing.js";
+import { mortgageInputs, monthlyPayment, FIXED_PERIOD_OPTIONS, DEFAULT_MORTGAGE_TERM_YEARS, DEFAULT_MORTGAGE_RATE_PCT } from "./mortgage.js";
+import { DEFAULT_HORIZON_YEARS } from "./rentVsBuy.js";
 import { runWaterfall, waterfallInputs } from "./waterfall.js";
 import { regionalAveragePrice } from "./regionalRates.js";
-import { firstTimeBuyerNeeded } from "./propertyReadiness.js";
+import { firstTimeBuyerNeeded, readinessMissing } from "./propertyReadiness.js";
 import { ISA_ALLOWANCE } from "./tax.js";
 
 const together = ({ d }) => d.propertyBuyingMode === "together";
@@ -175,6 +178,108 @@ export const READINESS_QUESTIONS = [
     showIf: together,
   },
 ];
+
+// Step 2. The card above shows the repayment from the start (step 1 is done
+// by then), so each answer moves a figure that's already there.
+const loanFor = ({ d, m }) => calcBorrowingCheck(borrowingInputs(d, m)).loanNeeded;
+
+export const MORTGAGE_QUESTIONS = [
+  {
+    id:"term", field:"propertyMortgageTerm", kind:"years", label:"Years",
+    ask: () => "How many years do you want the mortgage over?",
+    why: () => "Longer lowers the monthly payment but costs more interest overall.",
+    prefill: () => DEFAULT_MORTGAGE_TERM_YEARS,
+  },
+  {
+    id:"rate", field:"propertyMortgageRate", kind:"percent", label:"Mortgage rate",
+    ask: () => "What interest rate do you expect?",
+    // What one point on the rate costs on their own loan and term.
+    why: ctx => {
+      const loan = loanFor(ctx);
+      const { termYears, ratePct } = mortgageInputs(ctx.d, loan);
+      const extra = monthlyPayment(loan, ratePct + 1, termYears * 12) - monthlyPayment(loan, ratePct, termYears * 12);
+      return extra > 0 ? `Each 1% adds about ${fmt(Math.round(extra / 10) * 10)} a month on this loan.` : "Sets your monthly payment.";
+    },
+    prefill: () => DEFAULT_MORTGAGE_RATE_PCT,
+    note: ({ d }) => d.propertyMortgageRate === "" || d.propertyMortgageRate == null
+      ? `${DEFAULT_MORTGAGE_RATE_PCT}% is Candid's starting figure. Use a quote if you have one.`
+      : null,
+  },
+  {
+    id:"fixedYears", field:"propertyFixedYears", kind:"choice",
+    ask: () => "How long would you fix the rate for?",
+    why: () => "Your payment stays the same until the fix ends, then you'd remortgage.",
+    options: () => FIXED_PERIOD_OPTIONS.map(y => ({ value:String(y), label:`${y} years` })),
+  },
+];
+
+// Step 3.
+const leasehold = ({ d }) => d.propertyTenure === "leasehold";
+
+export const RENT_VS_BUY_QUESTIONS = [
+  {
+    id:"rent", field:"propertyMonthlyRent", kind:"money", label:"Monthly rent", required:true,
+    ask: () => "What do you pay in rent each month?",
+    why: () => "Buying is compared against what you'd keep paying in rent.",
+    notSure: () => ({ label:"I don't pay rent", value:"0" }),
+  },
+  {
+    id:"horizon", field:"propertyHorizonYears", kind:"years", label:"Years",
+    ask: () => "How many years would you stay before selling?",
+    why: () => "Buying costs come up front, so the longer you stay, the better buying looks.",
+    prefill: () => DEFAULT_HORIZON_YEARS,
+  },
+  {
+    id:"tenure", field:"propertyTenure", kind:"choice",
+    ask: () => "Will you own the land (freehold) or lease it (leasehold)?",
+    why: () => "Leasehold adds ground rent and a service charge every year.",
+    options: () => [{ value:"freehold", label:"Freehold" }, { value:"leasehold", label:"Leasehold" }],
+    note: () => "Most houses are freehold, and most flats leasehold.",
+  },
+  {
+    id:"groundRent", field:"propertyGroundRent", kind:"money", label:"Ground rent a year", required:true,
+    ask: () => "What's the yearly ground rent?",
+    why: () => "A yearly cost of owning that a renter doesn't pay.",
+    notSure: () => LEAVE_BLANK,
+    showIf: leasehold,
+  },
+  {
+    id:"serviceCharge", field:"propertyServiceCharge", kind:"money", label:"Service charge a year", required:true,
+    ask: () => "And the yearly service charge?",
+    why: () => "Covers the building's upkeep, and usually rises faster than inflation.",
+    notSure: () => LEAVE_BLANK,
+    showIf: leasehold,
+  },
+  {
+    id:"renterMoney", field:"propertyRenterMoney", kind:"choice",
+    ask: () => "If you rented instead, would your spare money sit in savings or be invested?",
+    why: () => "Investments usually grow faster than savings, which favours renting.",
+    options: () => [{ value:"cash", label:"Savings" }, { value:"invested", label:"Invested" }],
+  },
+];
+
+// Each step's questions, the saved input recording that its walk-through was
+// finished or skipped, and when it starts by itself: on arriving at a step
+// that's still blank (Readiness: still incomplete), unless already done.
+const blank = v => v === "" || v == null;
+export const STEP_GUIDES = {
+  readiness: {
+    questions: READINESS_QUESTIONS, doneField: "propertyGuideReadinessDone",
+    blank: (d, m) => readinessMissing(d, m).length > 0,
+  },
+  mortgage: {
+    questions: MORTGAGE_QUESTIONS, doneField: "propertyGuideMortgageDone",
+    blank: d => ["propertyMortgageTerm", "propertyMortgageRate", "propertyFixedYears"].every(f => blank(d[f])),
+  },
+  rentVsBuy: {
+    questions: RENT_VS_BUY_QUESTIONS, doneField: "propertyGuideRentVsBuyDone",
+    blank: d => blank(d.propertyMonthlyRent),
+  },
+};
+export function guideStarts(step, d, m) {
+  const g = STEP_GUIDES[step];
+  return !!g && !d[g.doneField] && g.blank(d, m);
+}
 
 // The ids of questions to ask this time through, decided once at the start:
 // a question with `ifMissing` is dropped when Candid already has its figure.
