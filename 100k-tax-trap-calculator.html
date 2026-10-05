@@ -28,12 +28,12 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body { font-family: 'DM Sans', Arial, sans-serif; background: #f6f0e6; color: #1a1a1a; }
+    body { font-family: 'DM Sans', Arial, sans-serif; background: #faf7f0; color: #1a1a1a; }
     h1 { font-family: 'Playfair Display', Georgia, serif; color: #162F24; font-size: 30px; line-height: 1.25; }
     h2 { font-family: 'Playfair Display', Georgia, serif; color: #162F24; font-size: 20px; margin-top: 36px; margin-bottom: 10px; }
     p { color: #4a4a4a; font-size: 15px; line-height: 1.7; }
     a { color: #162F24; }
-    label { display:block; font-size: 12px; font-weight: 700; color: rgba(246,240,230,0.75); letter-spacing:0.04em; text-transform:uppercase; margin-bottom: 6px; }
+    label { display:block; font-size: 12px; font-weight: 700; color: rgba(250,247,240,0.75); letter-spacing:0.04em; text-transform:uppercase; margin-bottom: 6px; }
     /* #0f2018 matches design-tokens.js's INPUT_BG_DARK — the recessed dark
        background for a form field sitting on a G-green surface, also used by
        DevTools.jsx. This page can't import that file (plain HTML); if
@@ -41,7 +41,7 @@
        pages, which share this same rule. */
     input, select {
       width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
-      background: #0f2018; color: #f6f0e6; font-size: 16px; font-family: 'DM Sans', sans-serif; /* 16px+: iOS Safari zooms on focusing smaller fields */
+      background: #0f2018; color: #faf7f0; font-size: 16px; font-family: 'DM Sans', sans-serif; /* 16px+: iOS Safari zooms on focusing smaller fields */
     }
     input:focus, select:focus { outline: 2px solid #C4963A; }
     .field { margin-bottom: 16px; }
@@ -113,10 +113,10 @@
     </p>
 
     <!-- ── Bridge to full tool ───────────────────────────────────────── -->
-    <div id="bridge" style="display:none;background:#f6f0e6;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
+    <div id="bridge" style="display:none;background:#faf7f0;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
       <div id="bridgeLabel" style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;"></div>
       <p id="bridgeText" style="margin-top:0;"></p>
-      <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#f6f0e6;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture, free →</a>
+      <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#faf7f0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture, free →</a>
     </div>
 
     <!-- ── Explainer content (static, for search + trust) ──────────────── -->

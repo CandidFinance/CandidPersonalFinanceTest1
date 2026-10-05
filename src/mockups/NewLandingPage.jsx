@@ -147,7 +147,7 @@ function StatFlipTile({ n, label, source, i, total, reduceMotion }) {
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center",
         }}>
           <div style={{ fontSize: "10px", fontWeight: 700, color: GOLD, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "8px" }}>Source</div>
-          <div style={{ fontSize: "12.5px", color: "rgba(246,240,230,0.85)", lineHeight: 1.6 }}>
+          <div style={{ fontSize: "12.5px", color: "rgba(250,247,240,0.85)", lineHeight: 1.6 }}>
             {/* Same "\n"-forces-a-break convention as the label above (e.g. the
                 cash-savings source splits after its comma). */}
             {source.split("\n").map((line, idx) => (
@@ -381,7 +381,7 @@ export default function NewLandingPage() {
           <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginBottom: "22px" }}>+ more areas depending on your situation</div>
           <div style={{
             borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "18px",
-            fontSize: "11px", color: "rgba(246,240,230,0.45)", lineHeight: 1.5, maxWidth: "440px", margin: "0 auto",
+            fontSize: "11px", color: "rgba(250,247,240,0.45)", lineHeight: 1.5, maxWidth: "440px", margin: "0 auto",
           }}>
             Guidance, not advice. Candid helps you understand your options – the decisions are always yours.
           </div>

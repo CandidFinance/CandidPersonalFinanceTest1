@@ -10,7 +10,7 @@ import GuidedFlow from "../property/GuidedFlow.jsx";
 export default function MobileEntryScreen({ d, m, set, onDone }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   return (
-    <div style={{minHeight:"100vh",background:"#f6f0e6",display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh",background:"#faf7f0",display:"flex",flexDirection:"column"}}>
       <NavBar light center="Getting started"/>
       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
         <GuidedFlow questions={ENTRY_QUESTIONS} d={d} m={m} set={set} skipLabel={null} animateFirst onDone={onDone}/>

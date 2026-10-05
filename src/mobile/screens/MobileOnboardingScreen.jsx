@@ -18,7 +18,7 @@ export default function MobileOnboardingScreen({ step, steps, d, set, insights, 
   const isLastStep = step === steps.length - 1;
 
   return (
-    <div style={{minHeight:"100vh",background:"#f6f0e6",display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh",background:"#faf7f0",display:"flex",flexDirection:"column"}}>
       <NavBar light center={`Step ${step+1} of ${steps.length}`} onLogoClick={insights ? onBackToDashboard : undefined}/>
       <div style={{padding:"16px 20px 0"}}>
         <div style={{height:"4px",borderRadius:"2px",background:"rgba(22,47,36,0.1)",overflow:"hidden"}}>
@@ -28,7 +28,7 @@ export default function MobileOnboardingScreen({ step, steps, d, set, insights, 
       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
         <MobileOnboardingStep stepId={stepId} d={d} set={set}/>
       </div>
-      <div style={{position:"sticky",bottom:0,background:"#f6f0e6",padding:"14px 20px",paddingBottom:"calc(14px + env(safe-area-inset-bottom, 0px))",display:"flex",flexDirection:"column",gap:"8px"}}>
+      <div style={{position:"sticky",bottom:0,background:"#faf7f0",padding:"14px 20px",paddingBottom:"calc(14px + env(safe-area-inset-bottom, 0px))",display:"flex",flexDirection:"column",gap:"8px"}}>
         <div style={{display:"flex",gap:"10px"}}>
           <button onClick={onBack} style={{flex:1,padding:"13px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.22)",borderRadius:"100px",fontSize:"14px",color:TEXT,fontWeight:600,cursor:"pointer"}}>← Back</button>
           <button onClick={onContinue} disabled={continueDisabled} style={{

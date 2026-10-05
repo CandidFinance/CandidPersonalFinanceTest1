@@ -124,7 +124,7 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
           {name || "Welcome"}
         </div>
         <div style={{
-          fontSize:"20px", color:"rgba(246,240,230,0.7)",
+          fontSize:"20px", color:"rgba(250,247,240,0.7)",
           marginBottom:"48px", fontFamily:SERIF, fontStyle:"italic",
         }}>
           Welcome back.
@@ -138,7 +138,7 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
             My Candid report →
           </button>
           {date && (
-            <div style={{fontSize:"11px", color:"rgba(246,240,230,0.35)", marginTop:"-8px"}}>
+            <div style={{fontSize:"11px", color:"rgba(250,247,240,0.35)", marginTop:"-8px"}}>
               Last generated {date}
             </div>
           )}
@@ -152,7 +152,7 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
           </button>
           <button onClick={onStartFresh} style={{
             background:"none", border:"none",
-            color:"rgba(246,240,230,0.3)", fontSize:"13px",
+            color:"rgba(250,247,240,0.3)", fontSize:"13px",
             cursor:"pointer", marginTop:"8px", fontFamily:SANS,
           }}>
             Start fresh
@@ -182,7 +182,7 @@ function ConfidenceCheck() {
   };
 
   return (
-    <div style={{minHeight:"100vh",background:"#f6f0e6",display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh",background:"#faf7f0",display:"flex",flexDirection:"column"}}>
       <NavBar light center="Before you start" right={<button type="button" onClick={() => navigate("/")} style={{background:"transparent",border:`1px solid rgba(22,47,36,0.2)`,borderRadius:"6px",padding:"6px 14px",color:"rgba(22,47,36,0.6)",fontSize:"12px",cursor:"pointer"}}>← Back</button>}/>
       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
         <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Quick one before we start</div>

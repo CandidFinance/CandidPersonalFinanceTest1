@@ -11,7 +11,7 @@
 // Brand
 export const G     = "#162f24"; // primary brand dark green — text, buttons, headlines
 export const GOLD  = "#c4963a"; // brand gold accent
-export const CREAM = "#f6f0e6"; // page background
+export const CREAM = "#faf7f0"; // page background
 export const CDARK = "#ede7db"; // secondary/darker cream surface
 export const TEXT  = "#1a1a1a"; // body text
 export const MUT   = "#6b6b6b"; // muted/secondary text
@@ -150,7 +150,7 @@ export const PROVIDER_TILE_SHADOW = "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 
 export const OPPORTUNITY_TILE_BG     = G;
 export const OPPORTUNITY_TILE_LABEL  = GOLD;                     // "OPPORTUNITY" overline, sub-labels, chevron
 export const OPPORTUNITY_TILE_FIGURE = CREAM;                    // serif £ figures
-export const OPPORTUNITY_TILE_BODY   = "rgba(246,240,230,0.72)"; // supporting sentences, "/yr"
+export const OPPORTUNITY_TILE_BODY   = "rgba(250,247,240,0.72)"; // supporting sentences, "/yr"
 
 // ── One-off colours — reference only, NOT for reuse ───────────────────────
 // Each of these appears in exactly one place (a specific SVG chart

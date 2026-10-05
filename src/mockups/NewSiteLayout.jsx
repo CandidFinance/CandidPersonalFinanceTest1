@@ -6,7 +6,7 @@ import SiteFooter from "./SiteFooter.jsx";
 // and the footer. `children` is just that page's own content between the two.
 export default function NewSiteLayout({ children }) {
   return (
-    <div style={{ background: "linear-gradient(180deg, #f6f0e6 0%, #ffffff 60%, #ffffff 100%)" }}>
+    <div style={{ background: "linear-gradient(180deg, #faf7f0 0%, #ffffff 60%, #ffffff 100%)" }}>
       <div style={{ fontFamily: SANS }}>
         <NewSiteHeader />
         {/* Reserves the header's own height — the header is `position: fixed`

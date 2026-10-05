@@ -35,7 +35,7 @@ export default class ErrorBoundary extends Component {
   render() {
     if (!this.state.hasError) return this.props.children;
     return (
-      <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center",background:"#f6f0e6",fontFamily:"'DM Sans', sans-serif"}}>
+      <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",textAlign:"center",background:"#faf7f0",fontFamily:"'DM Sans', sans-serif"}}>
         <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:"22px",color:"#162f24",fontWeight:700,marginBottom:"10px"}}>
           Something went wrong
         </div>

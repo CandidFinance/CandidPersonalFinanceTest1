@@ -91,7 +91,7 @@ function FlipCard({ icon: Icon, title, body, i, total, reduceMotion }) {
           display: "flex", flexDirection: "column", justifyContent: "center",
         }}>
           <div style={{ fontFamily: SERIF, fontSize: "15px", color: GOLD, fontWeight: 700, marginBottom: "10px" }}>{title}</div>
-          <div style={{ fontSize: "13.5px", color: "rgba(246,240,230,0.85)", lineHeight: 1.7 }}>{body}</div>
+          <div style={{ fontSize: "13.5px", color: "rgba(250,247,240,0.85)", lineHeight: 1.7 }}>{body}</div>
         </div>
       </motion.div>
     </motion.div>
@@ -195,7 +195,7 @@ export default function TheProblemPage() {
           <h2 style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: WHITE, fontWeight: 700, marginBottom: "18px", lineHeight: 1.3 }}>
             Candid's aim is to fix this.
           </h2>
-          <p style={{ fontSize: "14.5px", color: "rgba(246,240,230,0.75)", lineHeight: 1.7, maxWidth: "540px", margin: "0 auto" }}>
+          <p style={{ fontSize: "14.5px", color: "rgba(250,247,240,0.75)", lineHeight: 1.7, maxWidth: "540px", margin: "0 auto" }}>
             One complete, always-up-to-date view of your finances – built to adapt instantly as you change jobs, buy a home, start a family, or clear your student loan.
           </p>
         </motion.div>

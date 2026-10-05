@@ -224,7 +224,7 @@ export default function DevToolsPanel({ onPresetLoaded }) {
         <span style={{ fontWeight: 700, color: GOLD, fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "5px" }}>
           <Wrench size={12}/> Dev tools — test profiles
         </span>
-        <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "rgba(246,240,230,0.6)", cursor: "pointer", fontSize: "16px", lineHeight: 1 }}>×</button>
+        <button type="button" onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "rgba(250,247,240,0.6)", cursor: "pointer", fontSize: "16px", lineHeight: 1 }}>×</button>
       </div>
 
       <select value={selected} onChange={e => setSelected(e.target.value)} style={{
@@ -242,7 +242,7 @@ export default function DevToolsPanel({ onPresetLoaded }) {
       </select>
 
       {activePreset?.description && (
-        <p style={{ fontSize: "11px", color: "rgba(246,240,230,0.6)", lineHeight: 1.5, margin: "0 0 10px" }}>{activePreset.description}</p>
+        <p style={{ fontSize: "11px", color: "rgba(250,247,240,0.6)", lineHeight: 1.5, margin: "0 0 10px" }}>{activePreset.description}</p>
       )}
 
       <button type="button" onClick={handleLoad} style={{
@@ -287,7 +287,7 @@ export default function DevToolsPanel({ onPresetLoaded }) {
                 borderRadius: "6px", fontWeight: 700, fontSize: "11px", cursor: "pointer",
               }}>Save</button>
               <button type="button" onClick={() => { setSaveMode(false); setSaveName(""); }} style={{
-                flex: 1, padding: "6px", background: "transparent", color: "rgba(246,240,230,0.7)",
+                flex: 1, padding: "6px", background: "transparent", color: "rgba(250,247,240,0.7)",
                 border: "1px solid rgba(255,255,255,0.2)", borderRadius: "6px", fontSize: "11px", cursor: "pointer",
               }}>Cancel</button>
             </div>
