@@ -5896,7 +5896,10 @@ export default function AppShell() {
   // settled for 2 seconds so typing a price doesn't PATCH per keystroke; an
   // edit still pending when the user leaves the screen is sent straight away.
   // Includes the user's own pension figures, which the Property screen can
-  // ask for when the Pension module wasn't chosen.
+  // ask for when the Pension module wasn't chosen, and the shared figures its
+  // walk-through asks (salary, monthly spending): someone arriving from a
+  // shared Property link may answer nothing else, and the row is created at
+  // entry, before those are known.
   const propertyPatch = useMemo(() => {
     if (!pathname.startsWith("/app/property")) return null;
     const b = borrowingInputs(d, m);
@@ -5916,6 +5919,10 @@ export default function AppShell() {
       property_fees: Math.round(b.fees),
       property_loan_needed: b.price > 0 ? Math.round(r.loanNeeded) : null,
       property_income_multiple: b.price > 0 && r.multiple != null ? Math.round(r.multiple * 100) / 100 : null,
+      salary: +d.salary||null,
+      other_income: +d.otherIncome||null,
+      tax_band: m.taxBandLabel,
+      monthly_expenses: +d.monthlyExpenses||null,
       partner_salary: num(d.partnerSalary),
       partner_other_income: num(d.partnerOtherIncome),
       partner_pension_my_pct: pct(d.partnerMyContribution),
@@ -5961,6 +5968,7 @@ export default function AppShell() {
       if (!patch) return;
       pendingPropertyPatch.current = null;
       propertyBaseline.current = JSON.stringify(patch);
+      if (patch.salary) { try { localStorage.setItem('candid_property_income_saved', '1'); } catch(e) {} }
       const full = { ...patch, property_updated_at: new Date().toISOString() };
       if (creatingReportRow.current) {
         const id = await creatingReportRow.current;
@@ -5981,7 +5989,15 @@ export default function AppShell() {
     }
     if (!propertyPatch) { send(); propertyBaseline.current = null; return; }
     const json = JSON.stringify(propertyPatch);
-    if (propertyBaseline.current === null) { propertyBaseline.current = json; return; }
+    if (propertyBaseline.current === null) {
+      // Salary entered on Property before 6 Oct 2026 was never saved to the
+      // row (the patch left it out), so it's sent once on the next visit.
+      // Only when there is one: a newcomer's row is still being created.
+      let incomeSaved = true;
+      try { incomeSaved = !!localStorage.getItem('candid_property_income_saved'); } catch(e) {}
+      propertyBaseline.current = !incomeSaved && propertyPatch.salary ? "" : json;
+      if (propertyBaseline.current === json) return;
+    }
     if (json === propertyBaseline.current) { pendingPropertyPatch.current = null; return; }
     pendingPropertyPatch.current = propertyPatch;
     const t = setTimeout(send, 2000);
