@@ -22,8 +22,9 @@ import MobileModuleReveal from "./MobileModuleReveal.jsx";
 //   2. Mortgage (/app/property/mortgage): repayments and remortgaging.
 //   3. Rent vs buy (/app/property/rent-vs-buy): net wealth either way over
 //      the years the buyer expects to stay.
-// Steps 2 and 3 are locked until step 1 is complete (readinessMissing is
-// empty).
+// Steps 2 and 3 are locked until step 1's purchase details are in
+// (readinessMissing is empty); the before-a-deposit checks are advice, not a
+// gate, so a shared link to Property gets through all three steps.
 // The first visit to each step, while it's still blank, is a guided
 // walk-through (GuidedFlow, questions and start rules in
 // src/lib/propertyGuide.js); once finished or skipped it isn't shown again
@@ -34,7 +35,6 @@ import MobileModuleReveal from "./MobileModuleReveal.jsx";
 const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"18px 0 14px" };
 
 const MISSING_TEXT = {
-  checks: "the figures for each check",
   price: "a property price",
   region: "where you're buying",
   firstTimeBuyer: "whether you're a first-time buyer",

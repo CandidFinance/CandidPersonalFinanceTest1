@@ -11,7 +11,7 @@ const complete = {
 };
 const missing = d => readinessMissing(d, calcMetrics(d));
 
-test("complete when every check has figures and the purchase details are in", () => {
+test("complete once the purchase details are in", () => {
   assert.deepEqual(missing(complete), []);
 });
 
@@ -20,8 +20,8 @@ test("checks needing attention still count as complete", () => {
   assert.deepEqual(missing({ ...complete, myContribution: "1", isaThisYearSS: "" }), []);
 });
 
-test("a check without its figures blocks step 2", () => {
-  assert.deepEqual(missing({ ...complete, selectedModules: ["pension"] }), ["checks"]);
+test("the before-a-deposit checks don't block step 2, even with no figures (a shared link straight to Property)", () => {
+  assert.deepEqual(missing({ ...complete, selectedModules: [], employerMatch: "", cashTiers: [] }), []);
 });
 
 test("price, location and first-time buyer status are each needed", () => {
@@ -34,8 +34,8 @@ test("first-time buyer status isn't needed in Scotland or Wales", () => {
   assert.deepEqual(missing({ ...complete, propertyRegion: "northern_ireland", propertyFirstTimeBuyer: "" }), ["firstTimeBuyer"]);
 });
 
-test("buying together also needs the partner's figures and first-time buyer status", () => {
+test("buying together also needs the partner's first-time buyer status", () => {
   const d = { ...complete, propertyBuyingMode: "together" };
-  assert.deepEqual(missing(d), ["checks", "partnerFirstTimeBuyer"]);
-  assert.deepEqual(missing({ ...d, partnerEmployerMatch: "4", partnerIsaThisYear: "0", partnerFirstTimeBuyer: "no" }), []);
+  assert.deepEqual(missing(d), ["partnerFirstTimeBuyer"]);
+  assert.deepEqual(missing({ ...d, partnerFirstTimeBuyer: "no" }), []);
 });

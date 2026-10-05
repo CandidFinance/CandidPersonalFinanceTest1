@@ -6201,6 +6201,25 @@ export default function AppShell() {
   useEffect(() => {
     if (rowSaveTick) saveRow({ ...rowInputFields(), ...(scoreShowing ? rowReportFields(calcCandidScore(statuses)) : {}) });
   }, [rowSaveTick]);
+  // A shared link straight to Property (/app/property, e.g. from LinkedIn)
+  // opens the app for a newcomer as if they'd picked "Buying a home" at the
+  // entry, so they go straight into Property's walk-through rather than the
+  // homepage. Their row is created once appEntered has landed in `d`.
+  const isPropertyLink = pathname.startsWith("/app/property");
+  const propertyLinkRow = useRef(false);
+  useEffect(() => {
+    if (!isPropertyLink || appUnlocked(d, insights)) return;
+    set("appEntered", true);
+    if (!(d.interests || []).length) { set("interests", ["property"]); set("financialGoals", ["buy_house"]); }
+    posthog.capture("app_entered", { interests: "property", via: "property_link" });
+    propertyLinkRow.current = true;
+  }, [isPropertyLink, d.appEntered, insights]);
+  useEffect(() => {
+    if (!propertyLinkRow.current || !d.appEntered) return;
+    propertyLinkRow.current = false;
+    insertReportRow(null);
+  }, [d.appEntered]);
+
   // The score's first appearance, recorded once: an event in place of the
   // old report_generated, and the score on the user's row.
   useEffect(() => {
@@ -6362,6 +6381,8 @@ export default function AppShell() {
     return <Navigate to="/" replace />;
   }
   if ((APP_PATHS.includes(pathname) || pathname.startsWith("/app/module/")) && !appUnlocked(d, insights)) {
+    // A Property link is let in (the effect above); blank for that moment.
+    if (isPropertyLink) return null;
     return <Navigate to="/" replace />;
   }
 

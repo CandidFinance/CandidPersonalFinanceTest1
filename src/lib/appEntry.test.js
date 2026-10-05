@@ -25,6 +25,12 @@ test("the score appears once every pick is answered; for just exploring, after t
   assert.deepEqual(doneModules({ selectedModules: ["studentLoan", "cash"] }, true), ["cash", "studentLoan", "property"]);
 });
 
+test("Property alone doesn't unlock the score: it isn't scored, so it would read 100 with nothing behind it", () => {
+  assert.equal(scoreUnlocked({ interests: ["property"], selectedModules: [] }, true), false);
+  assert.equal(scoreUnlocked({ interests: ["property"], selectedModules: ["pension"] }, true), true);
+  assert.equal(scoreUnlocked({ interests: ["exploring"], selectedModules: [] }, true), false);
+});
+
 test("picks not answered yet stay on home until they are", () => {
   const d = { interests: ["cash", "studentLoan", "property"], selectedModules: ["cash"] };
   assert.deepEqual(unfinishedPicks(d), ["studentLoan", "property"]);

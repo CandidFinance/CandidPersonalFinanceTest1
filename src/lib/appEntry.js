@@ -104,15 +104,20 @@ export function picks(d) {
   return START_MODULES.filter(k => (d.interests || []).includes(k));
 }
 
+// The modules the Candid score covers: Property isn't scored (it has no
+// status in computeModuleStatuses), so a score from Property alone would read
+// 100 with nothing behind it.
+export const SCORED_MODULES = START_MODULES.filter(k => k !== "property");
+
 // When the Candid score appears: once every module picked at the entry is
-// answered, so it covers everything the user said they cared about; for
-// "Just exploring" (no picks), after their first module. Worked out by the
-// code, no AI report (score-without-ai-plan.md).
+// answered, so it covers everything the user said they cared about ("Just
+// exploring": after their first module), and at least one scored module is
+// among them. Worked out by the code, no AI report (score-without-ai-plan.md).
 export function scoreUnlocked(d, propertyDone = false) {
   const chosen = picks(d);
-  return chosen.length
-    ? chosen.every(k => moduleDone(k, d, propertyDone))
-    : doneModules(d, propertyDone).length > 0;
+  const done = doneModules(d, propertyDone);
+  const allPicks = chosen.length ? chosen.every(k => done.includes(k)) : done.length > 0;
+  return allPicks && done.some(k => SCORED_MODULES.includes(k));
 }
 
 // Modules picked at the entry but not answered yet, in the order offered:
