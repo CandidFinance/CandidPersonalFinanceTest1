@@ -7,7 +7,7 @@
 // yet. Pure, unit tested in propertyReveal.test.js.
 
 import { fmt, fmtCompact } from "./format.js";
-import { borrowingInputs, calcBorrowingCheck, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE } from "./borrowing.js";
+import { borrowingInputs, calcBorrowingCheck, maxPriceFor, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, MIN_DEPOSIT_PCT } from "./borrowing.js";
 import { mortgageInputs, mortgageSummary, STRESS_REMORTGAGE_UPLIFT } from "./mortgage.js";
 import { rentVsBuyInputs, calcRentVsBuy, SELLING_COSTS_PCT, MAX_HORIZON_YEARS } from "./rentVsBuy.js";
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "./waterfall.js";
@@ -35,15 +35,28 @@ export function readinessReveal(d, m) {
     ];
   }
   const answer = { label: ANSWER, figure: fmt(r.loanNeeded), title: r.multiple != null ? `to borrow, ${times(r.multiple)} your income.` : "to borrow." };
+  // The most they could afford (the card's figure), and at the 5.5x some
+  // lenders offer higher earners, for the explanation only.
+  const most = maxPriceFor(d, m);
+  const stretchMost = maxPriceFor(d, m, HIGH_EARNER_MULTIPLE);
+  const fits = most?.price > 0 ? `A home up to ${fmt(most.price)} would fit.` : null;
+  const higherEarners = stretchMost?.price > most?.price
+    ? `Some lenders go to ${HIGH_EARNER_MULTIPLE}x for higher earners, which would allow up to ${fmt(stretchMost.price)}.`
+    : null;
+  const lines = (...xs) => xs.filter(Boolean).join(" ") || undefined;
   const action = r.multiple == null
     ? { label: ACTION, title: "Lenders base what they'll lend on income, so it's worth adding yours to see how this compares." }
+    : r.band === "within" && r.depositShort > 0
+      ? { label: ACTION, title: `Most lenders need a deposit of at least ${Math.round(MIN_DEPOSIT_PCT * 100)}%, so you'd need ${fmt(r.depositShort)} more.`,
+          body: lines(most?.price > 0 && `With the cash you have, a home up to ${fmt(most.price)} would fit.`, checksLine) }
     : r.band === "within"
-      ? { label: ACTION, title: `That's within the ${LENDER_INCOME_MULTIPLE}x of income most lenders work to.`, body: checksLine }
+      ? { label: ACTION, title: `That's within the ${LENDER_INCOME_MULTIPLE}x of income most lenders work to.`,
+          body: lines(most?.price > 0 && `The most you could afford is about ${fmt(most.price)}.`, higherEarners, checksLine) }
       : r.band === "stretch"
-        ? { label: ACTION, title: `That's ${fmt(r.gapAboveMultiple)} more than ${LENDER_INCOME_MULTIPLE}x your income. Some lenders go to ${HIGH_EARNER_MULTIPLE}x for higher earners.`,
-            body: "A bigger deposit or a lower price would close the gap." }
+        ? { label: ACTION, title: `That's ${fmt(r.gapAboveMultiple)} more than ${LENDER_INCOME_MULTIPLE}x your income.`,
+            body: lines(fits, higherEarners) || "A bigger deposit or a lower price would close the gap." }
         : { label: ACTION, title: `That's ${fmt(r.gapAboveMultiple)} more than ${LENDER_INCOME_MULTIPLE}x your income, beyond the ${HIGH_EARNER_MULTIPLE}x some lenders offer higher earners.`,
-            body: "A bigger deposit, a lower price or buying with someone would bring it closer." };
+            body: lines(fits, "A bigger deposit or buying with someone would bring it closer.") };
   return [answer, why, action];
 }
 

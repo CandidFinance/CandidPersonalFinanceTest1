@@ -30,6 +30,25 @@ test("readiness: the loan and times income are the borrowing check's own", () =>
   assert.match(steps[2].title, /beyond the 5\.5x some lenders offer higher earners\.$/);
 });
 
+test("readiness: what you could do names the price that fits, and 5.5x only in the explanation", () => {
+  const steps = d => readinessReveal(d, calcMetrics(d))[2];
+  const flat = { ...buyer, monthlyExpenses: "0", propertyFees: "2500" };
+  // 4.5 x 45,000 = 202,500 loan plus a 27,500 deposit: £230,000.
+  assert.equal(steps(flat).body, "A home up to £230,000 would fit. A bigger deposit or buying with someone would bring it closer.");
+  assert.deepEqual(steps({ ...flat, propertyPrice: "245000" }), { label: "What you could do", title: "That's £15,000 more than 4.5x your income.",
+    body: "A home up to £230,000 would fit. Some lenders go to 5.5x for higher earners, which would allow up to £275,000." });
+  // Followed by the line about this screen's checks, when any need a look.
+  assert.ok(steps({ ...flat, propertyPrice: "215000" }).body.startsWith(
+    "The most you could afford is about £230,000. Some lenders go to 5.5x for higher earners, which would allow up to £275,000."));
+});
+
+test("readiness: a deposit under 5% says how much more is needed", () => {
+  const d = { ...buyer, salary: "80000", monthlyExpenses: "0", propertyFees: "2500", propertyCashAvailable: "15000" };
+  const step = readinessReveal(d, calcMetrics(d))[2];
+  assert.equal(step.title, "Most lenders need a deposit of at least 5%, so you'd need £2,500 more.");
+  assert.ok(step.body.startsWith("With the cash you have, a home up to £250,000 would fit."));
+});
+
 test("readiness: cash that covers it all needs no mortgage", () => {
   const rich = { ...buyer, propertyCashAvailable: "400000" };
   assert.equal(readinessReveal(rich, calcMetrics(rich))[0].title, "No mortgage needed.");

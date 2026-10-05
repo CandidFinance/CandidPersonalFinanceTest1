@@ -11,6 +11,9 @@ export const LENDER_INCOME_MULTIPLE = 4.5;
 export const HIGH_EARNER_MULTIPLE = 5.5;
 export const DEFAULT_PROPERTY_FEES = 2500;
 export const EMERGENCY_KEEP_BACK_MONTHS = 3;
+// The smallest deposit most lenders accept, as a share of the price: a 95%
+// mortgage is the most widely offered.
+export const MIN_DEPOSIT_PCT = 0.05;
 
 // Cash ISA balances (this year's payments and earlier years'), which a
 // buyer would usually draw on for a deposit alongside their other cash.
@@ -48,20 +51,74 @@ export function borrowingInputs(d, m) {
   const incomes = [lenderIncome(m.salary, d.otherIncome)];
   if (together) incomes.push(lenderIncome(d.partnerSalary, d.partnerOtherIncome));
   const price = +d.propertyPrice || 0;
-  const nation = regionNation(d.propertyRegion);
-  const stampDutyDetail = nation ? calcStampDuty({
-    price, nation,
-    firstTimeBuyers: together ? [d.propertyFirstTimeBuyer === "yes", d.partnerFirstTimeBuyer === "yes"] : [d.propertyFirstTimeBuyer === "yes"],
-    additionalProperty: d.propertySoleProperty === "no",
-  }) : null;
+  const stampDutyDetail = stampDutyDetailAt(d, price);
   return {
     price,
     cashAvailable: filled(d.propertyCashAvailable) ? +d.propertyCashAvailable : suggestedCashAvailable(m.totalLiquid + cashIsaBalance(d), m.expenses),
-    stampDuty: stampDutyDetail?.supported ? stampDutyDetail.total : stampDutyDetail ? (+d.propertyStampDuty || 0) : 0,
+    stampDuty: stampDutyOf(d, stampDutyDetail),
     stampDutyDetail,
     fees: filled(d.propertyFees) ? +d.propertyFees : DEFAULT_PROPERTY_FEES,
     incomes,
   };
+}
+
+// Stamp duty at a given price, from the user's answers: the breakdown, or
+// null with no location yet; and the figure the borrowing check uses.
+function stampDutyDetailAt(d, price) {
+  const nation = regionNation(d.propertyRegion);
+  const together = d.propertyBuyingMode === "together";
+  return nation ? calcStampDuty({
+    price, nation,
+    firstTimeBuyers: together ? [d.propertyFirstTimeBuyer === "yes", d.partnerFirstTimeBuyer === "yes"] : [d.propertyFirstTimeBuyer === "yes"],
+    additionalProperty: d.propertySoleProperty === "no",
+  }) : null;
+}
+function stampDutyOf(d, detail) {
+  return detail?.supported ? detail.total : detail ? (+d.propertyStampDuty || 0) : 0;
+}
+
+// The most someone could pay for a home: the highest price where the loan
+// is no more than `multiple` times income and the deposit left after stamp
+// duty and fees is at least MIN_DEPOSIT_PCT of the price. `stampDutyAt`
+// gives the stamp duty at a price, worked out afresh as the price moves
+// (first-time buyer relief stops at £500,000, say).
+//
+// Both limits only tighten as the price rises (stamp duty never falls as
+// the price goes up), so the highest price passing each is found by
+// halving the range. Rounded down to the £1,000, which still passes.
+// `limit` says which one sets it: "income" or "deposit". Null with no
+// income, as lenders lend against income.
+const PRICE_SEARCH_MAX = 20000000;
+const PRICE_ROUND = 1000;
+function highestPassing(passes) {
+  if (!passes(0)) return 0;
+  let lo = 0, hi = PRICE_SEARCH_MAX;
+  while (hi - lo > 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (passes(mid)) lo = mid; else hi = mid;
+  }
+  return Math.floor(lo / PRICE_ROUND) * PRICE_ROUND;
+}
+export function calcMaxPrice({ cashAvailable = 0, fees = DEFAULT_PROPERTY_FEES, incomes = [], stampDutyAt = () => 0, multiple = LENDER_INCOME_MULTIPLE }) {
+  const income = incomes.reduce((s, x) => s + Math.max(0, +x || 0), 0);
+  if (!(income > 0)) return null;
+  const maxLoan = income * multiple;
+  const check = p => calcBorrowingCheck({ price: p, cashAvailable, stampDuty: stampDutyAt(p), fees, incomes });
+  const byIncome = highestPassing(p => check(p).loanNeeded <= maxLoan);
+  const byDeposit = highestPassing(p => p - check(p).loanNeeded >= p * MIN_DEPOSIT_PCT && check(p).upfrontShortfall === 0);
+  const price = Math.min(byIncome, byDeposit);
+  const r = check(price);
+  return {
+    price, multiple, maxLoan,
+    limit: byDeposit < byIncome ? "deposit" : "income",
+    loan: r.loanNeeded, deposit: r.usableDeposit, stampDuty: stampDutyAt(price),
+  };
+}
+
+// calcMaxPrice from Candid's saved inputs, as borrowingInputs.
+export function maxPriceFor(d, m, multiple = LENDER_INCOME_MULTIPLE) {
+  const { cashAvailable, fees, incomes } = borrowingInputs(d, m);
+  return calcMaxPrice({ cashAvailable, fees, incomes, multiple, stampDutyAt: p => stampDutyOf(d, stampDutyDetailAt(d, p)) });
 }
 
 // Geometry for the times-income bar, as percentages of its width. The scale
@@ -114,6 +171,9 @@ export function calcBorrowingCheck({ price = 0, cashAvailable = 0, stampDuty = 0
     loanToValue: price > 0 ? loanNeeded / price : null,
     multiple, loanAtMultiple,
     gapAboveMultiple: Math.max(0, loanNeeded - loanAtMultiple),
+    // How far the deposit is below the 5% most lenders need. Nothing for a
+    // purchase with no loan.
+    depositShort: loanNeeded > 0 ? Math.max(0, Math.ceil(price * MIN_DEPOSIT_PCT - usableDeposit)) : 0,
     warn, band,
   };
 }

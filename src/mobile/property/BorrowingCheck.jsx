@@ -6,7 +6,7 @@ import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { capField } from "../../lib/onboarding.js";
-import { borrowingInputs, calcBorrowingCheck, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
+import { borrowingInputs, calcBorrowingCheck, maxPriceFor, MIN_DEPOSIT_PCT, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
@@ -275,6 +275,8 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
   const bandColor = r.band ? bandStyle(r.band).color : null;
   const incomePhrase = together ? "your combined income" : "your income";
   const times = multipleText(r);
+  const most = maxPriceFor(d, m);
+  const minDeposit = `${Math.round(MIN_DEPOSIT_PCT * 100)}%`;
 
   return (
     <div>
@@ -316,6 +318,29 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
                   </p>
                 )}
               </>
+            )}
+            {r.depositShort > 0 && (
+              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+                Most lenders need a deposit of at least {minDeposit}. You'd need {fmt(r.depositShort)} more.
+              </p>
+            )}
+
+            {/* The other way round: the highest price their income and cash
+                allow (maxPriceFor), and which of the two sets it. */}
+            {most && (
+              <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
+                <div style={figureLabel}>The most you could afford</div>
+                {most.price > 0 ? (<>
+                  <div style={{...figure,fontSize:"22px"}}>{fmt(most.price)}</div>
+                  <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>
+                    {most.limit === "deposit"
+                      ? `Your deposit sets this: most lenders need at least ${minDeposit} of the price. Your income alone would allow more.`
+                      : `Where the loan reaches ${LENDER_INCOME_MULTIPLE}x ${incomePhrase}.`}
+                  </p>
+                </>) : (
+                  <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"4px 0 0"}}>Your cash needs to cover the fees and a {minDeposit} deposit first.</p>
+                )}
+              </div>
             )}
 
             {/* The cash-to-deposit breakdown, collapsed by default so the

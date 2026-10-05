@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcBorrowingCheck, suggestedCashAvailable, borrowingInputs, multipleBar, DEFAULT_PROPERTY_FEES } from "./borrowing.js";
+import { calcBorrowingCheck, suggestedCashAvailable, borrowingInputs, multipleBar, DEFAULT_PROPERTY_FEES, calcMaxPrice, maxPriceFor } from "./borrowing.js";
 
 test("usable deposit is cash available less stamp duty and fees", () => {
   const r = calcBorrowingCheck({ price: 300000, cashAvailable: 40000, stampDuty: 5000, fees: 2500, incomes: [60000] });
@@ -179,4 +179,50 @@ test("borrowingInputs: no location yet means no stamp duty and no breakdown", ()
 test("borrowingInputs: suggested cash available includes Cash ISAs", () => {
   const r = borrowingInputs({ propertyPrice: "250000", isaPrevCash: "8000", isaThisYearCash: "2000" }, m);
   assert.equal(r.cashAvailable, 34000);
+});
+
+test("deposit short: how far the deposit is below 5% of the price", () => {
+  assert.equal(calcBorrowingCheck({ price: 300000, cashAvailable: 10000, stampDuty: 0, fees: 2500, incomes: [80000] }).depositShort, 7500);
+  assert.equal(calcBorrowingCheck({ price: 300000, cashAvailable: 17500, stampDuty: 0, fees: 2500, incomes: [80000] }).depositShort, 0);
+  assert.equal(calcBorrowingCheck({ price: 100000, cashAvailable: 200000, incomes: [] }).depositShort, 0);
+});
+
+const buyer = { propertyBuyingMode: "alone", propertyRegion: "london", propertyFirstTimeBuyer: "yes", propertyFees: "2500" };
+const metrics = salary => ({ salary, totalLiquid: 0, expenses: 0 });
+
+test("max price: income sets it when the deposit is big enough", () => {
+  // 4.5 x 45,000 = 202,500 loan, plus 30,000 less 2,500 fees; no stamp duty
+  // for a first-time buyer under 300,000.
+  const r = maxPriceFor({ ...buyer, propertyCashAvailable: "30000" }, metrics(45000));
+  assert.deepEqual([r.price, r.limit, r.loan, r.deposit], [230000, "income", 202500, 27500]);
+});
+
+test("max price: the deposit sets it when it's under 5% of what income would allow", () => {
+  // 12,500 deposit is 5% of 250,000, though 4.5x income would lend 360,000.
+  const r = maxPriceFor({ ...buyer, propertyCashAvailable: "15000" }, metrics(80000));
+  assert.deepEqual([r.price, r.limit], [250000, "deposit"]);
+});
+
+test("max price: stamp duty is worked out at each price, including first-time buyer relief stopping at £500,000", () => {
+  const r = maxPriceFor({ ...buyer, propertyCashAvailable: "120000" }, metrics(90000));
+  assert.equal(r.price, 507000);
+  assert.equal(r.stampDuty, 15350);
+  const check = calcBorrowingCheck(borrowingInputs({ ...buyer, propertyCashAvailable: "120000", propertyPrice: String(r.price) }, metrics(90000)));
+  assert.ok(check.loanNeeded <= 405000 && check.depositShort === 0);
+  const over = calcBorrowingCheck(borrowingInputs({ ...buyer, propertyCashAvailable: "120000", propertyPrice: String(r.price + 1000) }, metrics(90000)));
+  assert.ok(over.loanNeeded > 405000);
+});
+
+test("max price: some lenders' 5.5x for higher earners raises it", () => {
+  assert.equal(maxPriceFor({ ...buyer, propertyCashAvailable: "120000" }, metrics(90000), 5.5).price, 592000);
+});
+
+test("max price: Scotland and Wales use the user's own tax figure; buying together adds incomes", () => {
+  assert.equal(maxPriceFor({ ...buyer, propertyRegion: "scotland", propertyStampDuty: "3000", propertyCashAvailable: "30000" }, metrics(45000)).price, 227000);
+  assert.equal(maxPriceFor({ ...buyer, propertyBuyingMode: "together", partnerSalary: "45000", partnerFirstTimeBuyer: "yes", propertyCashAvailable: "60000" }, metrics(45000)).price, 454000); // 405,000 + 57,500 - 5% stamp duty above 300,000
+});
+
+test("max price: nothing to buy with until cash covers the fees, and no figure without income", () => {
+  assert.deepEqual(calcMaxPrice({ cashAvailable: 1000, fees: 2500, incomes: [90000] }).price, 0);
+  assert.equal(calcMaxPrice({ cashAvailable: 30000, incomes: [] }), null);
 });

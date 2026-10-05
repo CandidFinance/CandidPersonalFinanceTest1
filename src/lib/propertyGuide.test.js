@@ -18,17 +18,17 @@ const ids = d => {
 
 test("buying alone in England with figures already in: only the purchase questions", () => {
   assert.deepEqual(ids({ ...base, propertyRegion: "london" }),
-    ["buyingMode", "region", "firstTimeBuyer", "soleProperty", "price", "cashAvailable"]);
+    ["buyingMode", "region", "firstTimeBuyer", "soleProperty", "cashAvailable", "price"]);
 });
 
 test("a first-time buyer isn't asked about keeping another home", () => {
   assert.deepEqual(ids({ ...base, propertyRegion: "london", propertyFirstTimeBuyer: "yes" }),
-    ["buyingMode", "region", "firstTimeBuyer", "price", "cashAvailable"]);
+    ["buyingMode", "region", "firstTimeBuyer", "cashAvailable", "price"]);
 });
 
 test("Scotland and Wales skip the stamp duty questions", () => {
   for (const region of ["scotland", "wales"]) {
-    assert.deepEqual(ids({ ...base, propertyRegion: region }), ["buyingMode", "region", "price", "cashAvailable"]);
+    assert.deepEqual(ids({ ...base, propertyRegion: region }), ["buyingMode", "region", "cashAvailable", "price"]);
   }
 });
 
@@ -37,7 +37,7 @@ test("buying together adds the partner's questions, the checks led by one line",
   const qs = visibleQuestions(READINESS_QUESTIONS, ctx, neededAtStart(READINESS_QUESTIONS, ctx));
   assert.deepEqual(qs.map(q => q.id), [
     "buyingMode", "partnerSalary", "partnerOtherIncome", "region", "firstTimeBuyer", "partnerFirstTimeBuyer",
-    "soleProperty", "price", "cashAvailable", "partnerMyContribution", "partnerEmployerMatch", "partnerIsa",
+    "soleProperty", "cashAvailable", "price", "partnerMyContribution", "partnerEmployerMatch", "partnerIsa",
   ]);
   assert.deepEqual(qs.filter(q => q.lead).map(q => q.id), ["partnerMyContribution"]);
 });
@@ -46,15 +46,22 @@ test("figures Candid lacks are asked once, and stay asked after they're answered
   const start = { ...base, propertyRegion: "london", propertyFirstTimeBuyer: "yes", myContribution: "", employerMatch: "", monthlyExpenses: "" };
   const needed = neededAtStart(READINESS_QUESTIONS, ctxFor(start));
   const visible = d => visibleQuestions(READINESS_QUESTIONS, ctxFor(d), needed).map(q => q.id);
-  const expected = ["buyingMode", "region", "firstTimeBuyer", "price", "expenses", "cashAvailable", "myContribution", "employerMatch"];
+  const expected = ["buyingMode", "region", "firstTimeBuyer", "expenses", "cashAvailable", "price", "myContribution", "employerMatch"];
   assert.deepEqual(visible(start), expected);
   assert.deepEqual(visible({ ...start, myContribution: "5", employerMatch: "5", monthlyExpenses: "2000" }), expected);
 });
 
-test("not sure of the price offers the region's average", () => {
+test("not sure of the price offers the most they could afford, then the region's average", () => {
   const price = READINESS_QUESTIONS.find(q => q.id === "price");
-  assert.deepEqual(price.notSure(ctxFor({ ...base, propertyRegion: "north_east" })), { label: "Use the North East average, £167,000", value: "167000" });
-  assert.equal(price.notSure({ ...ctxFor({ ...base, propertyRegion: "wales" }), regionalRows: [{ region: "wales", average_price: 220000 }] }).value, "220000");
+  // 4.5 x 50,000 = 225,000 loan plus 30,000 cash less 6,000 kept back
+  // and 2,500 fees, with no stamp duty for a first-time buyer.
+  assert.deepEqual(price.notSure(ctxFor({ ...base, propertyRegion: "north_east", propertyFirstTimeBuyer: "yes" })), [
+    { label: "Use the most I could afford, £246,000", value: "246000" },
+    { label: "Use the North East average, £167,000", value: "167000" },
+  ]);
+  assert.equal(price.notSure({ ...ctxFor({ ...base, propertyRegion: "wales" }), regionalRows: [{ region: "wales", average_price: 220000 }] })[1].value, "220000");
+  // No income, no figure to offer: just the average.
+  assert.deepEqual(price.notSure(ctxFor({ ...base, salary: "", propertyRegion: "north_east" })).map(o => o.value), ["167000"]);
 });
 
 test("the why lines quote the figures the calculations use", () => {

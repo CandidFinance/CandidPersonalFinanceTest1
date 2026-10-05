@@ -17,8 +17,9 @@
 //   label              the pill's caption (money and percent)
 //   prefill(ctx)       the figure shown while the field is blank
 //   cap                FIELD_CAPS key the answer is clamped to
-//   notSure(ctx)       { label, value } for the "not sure" button: `value`
-//                      is written, or the field left as it is when undefined
+//   notSure(ctx)       { label, value } for the "not sure" button, or a list
+//                      of them: `value` is written, or the field left as it
+//                      is when undefined
 //   required           Continue stays off until there's an answer
 //   note(ctx)          an extra caption under the input
 //   group              questions sharing a group share a lead line (GROUP_LEADS)
@@ -30,7 +31,7 @@
 import { fmt } from "./format.js";
 import { PROPERTY_REGIONS, regionNation } from "./regions.js";
 import { sdltApplies, FIRST_TIME_BUYER_NIL_BAND, ADDITIONAL_PROPERTY_SURCHARGE } from "./stampDuty.js";
-import { EMERGENCY_KEEP_BACK_MONTHS, suggestedCashAvailable, cashIsaBalance, borrowingInputs, calcBorrowingCheck } from "./borrowing.js";
+import { EMERGENCY_KEEP_BACK_MONTHS, suggestedCashAvailable, cashIsaBalance, borrowingInputs, calcBorrowingCheck, maxPriceFor } from "./borrowing.js";
 import { mortgageInputs, monthlyPayment, FIXED_PERIOD_OPTIONS, DEFAULT_MORTGAGE_TERM_YEARS, DEFAULT_MORTGAGE_RATE_PCT } from "./mortgage.js";
 import { DEFAULT_HORIZON_YEARS } from "./rentVsBuy.js";
 import { runWaterfall, waterfallInputs } from "./waterfall.js";
@@ -117,16 +118,6 @@ export const READINESS_QUESTIONS = [
     showIf: ctx => sdlt(ctx) && !(ctx.d.propertyFirstTimeBuyer === "yes" && (!together(ctx) || ctx.d.partnerFirstTimeBuyer === "yes")),
   },
   {
-    id:"price", field:"propertyPrice", kind:"money", label:"Price", required:true,
-    ask: () => "Roughly what price are you looking at?",
-    why: ctx => sdlt(ctx) ? "Sets your stamp duty and how much you'd need to borrow." : "Sets how much you'd need to borrow.",
-    notSure: ({ d, regionalRows }) => {
-      const average = regionalAveragePrice(d.propertyRegion, regionalRows);
-      const region = PROPERTY_REGIONS.find(r => r.value === d.propertyRegion);
-      return average && region ? { label:`Use the ${region.label} average, ${fmt(average)}`, value:String(average) } : null;
-    },
-  },
-  {
     // Before cash available: the emergency fund kept back from it is
     // three months of this.
     id:"expenses", field:"monthlyExpenses", kind:"money", label:"Monthly spending", cap:"monthlyExpenses", required:true,
@@ -146,6 +137,22 @@ export const READINESS_QUESTIONS = [
       return blank && suggestedCashAvailable(m.totalLiquid + cashIsaBalance(d), m.expenses) > 0
         ? `Your savings, less ${EMERGENCY_KEEP_BACK_MONTHS} months' spending kept back for emergencies.`
         : null;
+    },
+  },
+  {
+    // Last of the purchase questions: the most they could afford needs their
+    // income and cash first.
+    id:"price", field:"propertyPrice", kind:"money", label:"Price", required:true,
+    ask: () => "Roughly what price are you looking at?",
+    why: ctx => sdlt(ctx) ? "Sets your stamp duty and how much you'd need to borrow." : "Sets how much you'd need to borrow.",
+    notSure: ({ d, m, regionalRows }) => {
+      const most = maxPriceFor(d, m);
+      const average = regionalAveragePrice(d.propertyRegion, regionalRows);
+      const region = PROPERTY_REGIONS.find(r => r.value === d.propertyRegion);
+      return [
+        most?.price > 0 && { label:`Use the most I could afford, ${fmt(most.price)}`, value:String(most.price) },
+        average && region && { label:`Use the ${region.label} average, ${fmt(average)}`, value:String(average) },
+      ].filter(Boolean);
     },
   },
   {

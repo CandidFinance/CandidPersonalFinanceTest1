@@ -105,8 +105,10 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   };
 
   const choose = value => next(write(q.field, value));
-  const notSure = q.notSure ? q.notSure(ctx) : null;
-  const takeNotSure = () => next(notSure.value !== undefined ? write(q.field, notSure.value) : {});
+  // One "not sure" answer or several (Property's price: the most they could
+  // afford, or the local average).
+  const notSure = [q.notSure ? q.notSure(ctx) : null].flat().filter(Boolean);
+  const takeNotSure = o => next(o.value !== undefined ? write(q.field, o.value) : {});
   const picked = Array.isArray(d[q.field]) ? d[q.field] : [];
   const toggle = o => {
     const on = picked.includes(o.value);
@@ -221,9 +223,9 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
             </form>
           )}
 
-          {notSure && (
-            <div style={{textAlign:"center",marginTop:"10px"}}>
-              <button type="button" onClick={takeNotSure} style={textLink}>{notSure.label}</button>
+          {notSure.length > 0 && (
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"10px",marginTop:"10px"}}>
+              {notSure.map(o => <button key={o.label} type="button" onClick={() => takeNotSure(o)} style={textLink}>{o.label}</button>)}
             </div>
           )}
         </motion.div>
