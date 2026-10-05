@@ -29,7 +29,9 @@ const SHIFT_PX = 30;
 //
 // Besides "choice", "money", "percent" and "years", the app's entry uses
 // "multi" (several answers, then Continue; an `exclusive` option clears the
-// rest) and "text" (a typed answer such as a name).
+// rest) and "text" (a typed answer such as a name). "info" tells the user
+// something worked out from their answers (e.g. their student loan plan),
+// with just Continue.
 // `showProgress` hides "1 of N" for a single question asked on its own (the
 // confidence check). `animateFirst` has the first question rise in too, for
 // a flow arrived at from another page of questions (the entry, after the
@@ -80,17 +82,17 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     setHistory(h => h.slice(0, -1));
   };
   // The question's own field, plus any others its answer sets (`also`).
+  // Returns everything written, so the next question can be chosen as if it
+  // had all landed.
   const write = (field, value) => {
-    set(field, value);
-    if (q.also) Object.entries(q.also(value, ctx)).forEach(([k, v]) => set(k, v));
+    const patch = { [field]: value, ...(q.also ? q.also(value, ctx) : {}) };
+    Object.entries(patch).forEach(([k, v]) => set(k, v));
+    return patch;
   };
 
-  const choose = value => { write(q.field, value); next({ [q.field]: value }); };
+  const choose = value => next(write(q.field, value));
   const notSure = q.notSure ? q.notSure(ctx) : null;
-  const takeNotSure = () => {
-    if (notSure.value !== undefined) write(q.field, notSure.value);
-    next(notSure.value !== undefined ? { [q.field]: notSure.value } : {});
-  };
+  const takeNotSure = () => next(notSure.value !== undefined ? write(q.field, notSure.value) : {});
   const picked = Array.isArray(d[q.field]) ? d[q.field] : [];
   const toggle = o => {
     const on = picked.includes(o.value);
@@ -104,6 +106,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   const hasAnswer = q.kind === "multi" ? picked.length > 0
     : q.kind === "text" ? typeof raw === "string" && raw.trim() !== ""
     : q.kind === "custom" ? (q.answered ? q.answered(ctx) : true)
+    : q.kind === "info" ? true
     : raw !== "" && raw != null && !isNaN(+raw);
   const continueButton = (
     <button type="submit" disabled={q.required && !hasAnswer} style={{
@@ -169,6 +172,11 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
                 })}
                 {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>{note}</p>}
               </div>
+              {continueButton}
+            </form>
+          ) : q.kind === "info" ? (
+            <form onSubmit={submit}>
+              {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:0}}>{note}</p>}
               {continueButton}
             </form>
           ) : q.kind === "custom" ? (

@@ -13,7 +13,7 @@ import { ISA_ALLOWANCE } from "./tax.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
 import { FIELD_CAPS } from "./onboarding.js";
 import { estimatePensionPot } from "./pension.js";
-import { resolveSlRate } from "./studentLoan.js";
+import { resolveSlRate, studentLoanPlanFrom } from "./studentLoan.js";
 import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION } from "./sharedQuestions.js";
 
 const YES_NO = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }];
@@ -224,17 +224,67 @@ const PENSION_QUESTIONS = [
 
 const hasLoan = ({ d }) => d.studentLoan && d.studentLoan !== "none";
 
+// The plan helper, for "Not sure which plan": up to three questions, then the
+// plan (studentLoanPlanFrom, src/lib/studentLoan.js, GOV.UK's rules). Each
+// answer sets studentLoan as soon as there's enough to tell, so the questions
+// after it (balance, rate) follow on.
+const PLAN_LABELS = { plan1:"Plan 1", plan2:"Plan 2", plan4:"Plan 4", plan5:"Plan 5", postgrad:"the Postgraduate Loan plan" };
+const unsurePlan = ({ d }) => d.slPlanAnswer === "unsure";
+const helperPlan = (d, patch = {}) => studentLoanPlanFrom({ country: d.slCountry, course: d.slCourse, start: d.slStart, ...patch });
+const setPlan = key => (value, { d }) => {
+  const plan = helperPlan(d, { [key]: value });
+  return plan ? { studentLoan: plan } : {};
+};
+const englandOrWales = ({ d }) => d.slCountry === "england" || d.slCountry === "wales";
+
 const STUDENT_LOAN_QUESTIONS = [
   ...ABOUT_YOU,
   {
-    id:"studentLoanPlan", field:"studentLoan", kind:"choice",
+    // Its own field, so "Not sure" never reaches studentLoan, which the
+    // calculations read as a plan.
+    id:"studentLoanPlan", field:"slPlanAnswer", kind:"choice",
     ask: () => "Which student loan plan are you on?",
     why: () => "Each plan has its own repayment threshold and interest rate.",
     options: () => [
       { value:"plan1", label:"Plan 1" }, { value:"plan2", label:"Plan 2" }, { value:"plan4", label:"Plan 4 (Scotland)" },
-      { value:"plan5", label:"Plan 5" }, { value:"postgrad", label:"Postgraduate loan" }, { value:"none", label:"I don't have one" },
+      { value:"plan5", label:"Plan 5" }, { value:"postgrad", label:"Postgraduate loan" },
+      { value:"unsure", label:"Not sure which plan" }, { value:"none", label:"I don't have one" },
     ],
-    note: () => "It's on your Student Loans Company online account.",
+    also: value => value === "unsure" ? {} : { studentLoan: value },
+  },
+  {
+    id:"slCountry", field:"slCountry", kind:"choice",
+    ask: () => "Where did you live when you applied for student finance?",
+    why: () => "Each part of the UK lends on its own plans.",
+    options: () => [{ value:"england", label:"England" }, { value:"wales", label:"Wales" }, { value:"scotland", label:"Scotland" }, { value:"ni", label:"Northern Ireland" }],
+    also: setPlan("country"),
+    showIf: unsurePlan,
+  },
+  {
+    id:"slCourse", field:"slCourse", kind:"choice",
+    ask: () => "Was the loan for an undergraduate course, or a Master's or PhD?",
+    why: () => "Master's and doctoral loans have their own repayment plan.",
+    options: () => [{ value:"undergrad", label:"Undergraduate (or PGCE)" }, { value:"postgrad", label:"Master's or PhD" }],
+    also: setPlan("course"),
+    showIf: ctx => unsurePlan(ctx) && englandOrWales(ctx),
+  },
+  {
+    id:"slStart", field:"slStart", kind:"choice",
+    ask: () => "When did your course start?",
+    why: () => "The start date decides your plan.",
+    options: ({ d }) => d.slCountry === "wales"
+      ? [{ value:"pre2012", label:"Before September 2012" }, { value:"2012on", label:"September 2012 or later" }]
+      : [{ value:"pre2012", label:"Before September 2012" }, { value:"2012to2023", label:"September 2012 to July 2023" }, { value:"2023on", label:"August 2023 or later" }],
+    also: setPlan("start"),
+    showIf: ctx => unsurePlan(ctx) && englandOrWales(ctx) && ctx.d.slCourse === "undergrad",
+  },
+  {
+    // The helper's answer, said plainly before the questions carry on.
+    id:"slPlanResult", field:"slPlanResult", kind:"info",
+    ask: ({ d }) => `You're on ${PLAN_LABELS[helperPlan(d)]}.`,
+    why: () => "Worked out from your answers, using GOV.UK's rules.",
+    note: () => "More than one loan? Each can be on its own plan. Candid works with one for now.",
+    showIf: ctx => unsurePlan(ctx) && !!helperPlan(ctx.d),
   },
   {
     id:"loanBalance", field:"loanBalance", kind:"money", label:"Still owed", cap:"loanBalance", required:true,

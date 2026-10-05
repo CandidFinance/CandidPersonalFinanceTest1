@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
-import { calcStudentLoanScenario, describeLoanVsPension, resolveSlRate, slRepaymentThreshold, studentLoanPlanConstants, SL_REPAYMENT_THRESHOLDS } from "./studentLoan.js";
+import { calcStudentLoanScenario, describeLoanVsPension, resolveSlRate, slRepaymentThreshold, studentLoanPlanConstants, SL_REPAYMENT_THRESHOLDS, studentLoanPlanFrom } from "./studentLoan.js";
 import { calcLoanMarginalReturnCurve } from "./forecast.js";
 
 const RATES = { isaRate: 4.5, nonIsaRate: 4.6 };
@@ -85,4 +85,21 @@ test("chart: a loan growing slower than the pension puts the pension line above 
   const curve = calcLoanMarginalReturnCurve(d, m, sl);
   for (const p of curve.data) assert.ok(p.pension >= p.ratio);
   assert.ok(curve.data.some(p => p.pension > p.ratio));
+});
+
+test("plan from where you lived, the course and when it started (GOV.UK rules)", () => {
+  const plan = (country, course, start) => studentLoanPlanFrom({ country, course, start });
+  assert.equal(plan("england", "undergrad", "pre2012"), "plan1");
+  assert.equal(plan("england", "undergrad", "2012to2023"), "plan2");
+  assert.equal(plan("england", "undergrad", "2023on"), "plan5");
+  assert.equal(plan("wales", "undergrad", "pre2012"), "plan1");
+  assert.equal(plan("wales", "undergrad", "2012on"), "plan2");
+  assert.equal(plan("england", "postgrad"), "postgrad");
+  assert.equal(plan("wales", "postgrad"), "postgrad");
+  assert.equal(plan("scotland"), "plan4");
+  assert.equal(plan("ni"), "plan1");
+  // Not enough to tell yet.
+  assert.equal(plan("england"), null);
+  assert.equal(plan("england", "undergrad"), null);
+  assert.equal(plan(), null);
 });

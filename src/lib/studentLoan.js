@@ -32,6 +32,28 @@ export const POSTGRAD_RATE = 0.06; // RPI + 3% = 7.1%, capped at 6% for 2026/27
 // the import circular. Keep in sync.
 const PENSION_GROWTH_PCT = 6;
 
+// Which repayment plan a loan is on, for someone who doesn't know: from where
+// they lived when they applied (which student finance body lent it), the
+// course, and when it started. GOV.UK "Which repayment plan you're on",
+// checked 5 October 2026:
+//   England: before 1 Sept 2012 Plan 1; 1 Sept 2012 to 31 July 2023 Plan 2;
+//            from 1 Aug 2023 Plan 5. Master's or doctoral: Postgraduate.
+//   Wales:   before 1 Sept 2012 Plan 1; from then Plan 2 (no Plan 5).
+//            Master's or doctoral: Postgraduate.
+//   Scotland: Plan 4, any course.  Northern Ireland: Plan 1, any course.
+// `start` is "pre2012", "2012to2023" or "2023on" (England), "pre2012" or
+// "2012on" (Wales). Null until there's enough to tell.
+export function studentLoanPlanFrom({ country, course, start }) {
+  if (country === "scotland") return "plan4";
+  if (country === "ni") return "plan1";
+  if (country !== "england" && country !== "wales") return null;
+  if (course === "postgrad") return "postgrad";
+  if (course !== "undergrad") return null;
+  if (start === "pre2012") return "plan1";
+  if (country === "wales") return start === "2012on" ? "plan2" : null;
+  return { "2012to2023": "plan2", "2023on": "plan5" }[start] || null;
+}
+
 export function resolveSlRate(d, grossSalary) {
   if (+d.studentLoanRate > 0) return +d.studentLoanRate / 100;
   if (d.studentLoan === "plan2") {

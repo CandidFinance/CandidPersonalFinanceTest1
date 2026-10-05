@@ -64,6 +64,27 @@ test("pension 'not sure' keeps the unknown flag the module reads; yes and no set
   assert.deepEqual(status.also("yes"), { pensionUnknown: false, hasPension: "yes" });
 });
 
+test("not sure of the plan: the helper asks only what it needs, then the loan questions follow", () => {
+  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no" };
+  const unsure = { ...known, slPlanAnswer: "unsure" };
+  assert.deepEqual(ids("studentLoan", unsure, known), ["studentLoanPlan", "slCountry"]);
+  assert.deepEqual(ids("studentLoan", { ...unsure, slCountry: "scotland", studentLoan: "plan4" }, known),
+    ["studentLoanPlan", "slCountry", "slPlanResult", "loanBalance", "loanRate"]);
+  assert.deepEqual(ids("studentLoan", { ...unsure, slCountry: "england", slCourse: "undergrad", slStart: "2023on", studentLoan: "plan5" }, known),
+    ["studentLoanPlan", "slCountry", "slCourse", "slStart", "slPlanResult", "loanBalance", "loanRate"]);
+});
+
+test("each helper answer sets the plan once there's enough to tell, and the result says which", () => {
+  const qs = MODULE_GUIDES.studentLoan.questions;
+  const q = id => qs.find(x => x.id === id);
+  assert.deepEqual(q("slCountry").also("ni", { d: {} }), { studentLoan: "plan1" });
+  assert.deepEqual(q("slCountry").also("england", { d: {} }), {});
+  assert.deepEqual(q("slStart").also("2012on", { d: { slCountry: "wales", slCourse: "undergrad" } }), { studentLoan: "plan2" });
+  assert.deepEqual(q("studentLoanPlan").also("unsure"), {});
+  assert.deepEqual(q("studentLoanPlan").also("plan2"), { studentLoan: "plan2" });
+  assert.equal(q("slPlanResult").ask(ctxFor({ ...fresh, slCountry: "england", slCourse: "postgrad" })), "You're on the Postgraduate Loan plan.");
+});
+
 test("student loan rate shows the rate the calculations would use", () => {
   const rate = MODULE_GUIDES.studentLoan.questions.find(q => q.id === "loanRate");
   assert.equal(rate.prefill(ctxFor({ ...fresh, studentLoan: "plan2", salary: "29385" })), 4.1);

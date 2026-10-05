@@ -162,7 +162,11 @@ The first module opened then asks 3 to 8 questions, including shared figures. La
 3. **The other goals** (big purchase, future generations, consolidating): asked when the overall report is made.
 4. **Home score:** hidden until the report. In its place, a plain line such as "Finish two modules and we'll work out how well you're doing", with the two modules to try next.
 5. **Savings rate "not sure":** leave it blank. The answer then shows without the rate comparison.
-6. **Student loan plan "not sure":** build a helper. It asks where they lived when they applied and when their course started, and works out the plan. The rules below must be checked against GOV.UK before building:
+6. **Student loan plan "not sure":** built (phase 4).
+   - "Not sure which plan" leads to up to three questions: where they lived when they applied; for England and Wales, undergraduate or Master's/PhD; for undergraduates there, when the course started.
+   - It then says which plan they're on, before the balance and rate questions.
+   - The rules (`studentLoanPlanFrom`, `src/lib/studentLoan.js`) were checked against GOV.UK on 5 October 2026 and match the list below.
+   - GOV.UK notes that someone with more than one loan can be on different plans. Candid holds one, and the result screen says so.
    - England, course started before 1 September 2012: Plan 1.
    - England, started 1 September 2012 to 31 July 2023: Plan 2.
    - England, started on or after 1 August 2023: Plan 5.
