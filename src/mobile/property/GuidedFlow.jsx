@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../CandidApp.jsx";
@@ -59,11 +59,26 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   const q = visible.find(x => x.id === currentId) || visible[0];
   const position = visible.findIndex(x => x.id === q.id) + 1;
 
-  // Back up to the result card if the page has scrolled (e.g. down the
-  // region list), so each answer is seen landing in it.
-  const showResult = () => {
-    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
-  };
+  // Keeps the new question in view once it has replaced the last one (run
+  // when the old one has finished leaving, then after two frames so the new
+  // one has been laid out). If it's all on screen already, nothing moves. If
+  // the top of the page and the whole question fit on screen together, back
+  // to the top, so the answer is seen landing in the result card. Otherwise
+  // the screen starts at the question: on a phone, going to the top would put
+  // it under the fold. The fixed tab bar ([data-tab-bar]) covers the bottom.
+  const areaRef = useRef(null);
+  const keepQuestionInView = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    const covered = document.querySelector("[data-tab-bar]")?.getBoundingClientRect().height || 0;
+    const visibleBottom = window.innerHeight - covered;
+    const rect = el.getBoundingClientRect();
+    if (rect.top >= 0 && rect.bottom <= visibleBottom) return;
+    const behavior = reduceMotion ? "auto" : "smooth";
+    const top = rect.top + window.scrollY;
+    if (top + rect.height <= visibleBottom) window.scrollTo({ top: 0, behavior });
+    else window.scrollTo({ top: Math.max(0, top - 12), behavior });
+  }));
 
   // `patch` is the answer just given: set() lands on the next render, so the
   // next question is chosen as if it already had.
@@ -75,7 +90,6 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     if (!following) { onDone("finished"); return; }
     setDirection(1);
     setHistory(h => [...h, following.id]);
-    showResult();
   };
   const back = () => {
     setDirection(-1);
@@ -132,13 +146,15 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     <div>
       {result}
 
+      {/* The question area: the progress line and the question itself. */}
+      <div ref={areaRef}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:result ? "22px" : 0}}>
         {/* Only once the total can't change with answers still to come. */}
         <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{showProgress && countSettled(questions, ctx, needed, q.id) ? `${position} of ${visible.length}` : ""}</span>
         {skipLabel && <button type="button" onClick={() => onDone("skipped", q.id)} style={{...textLink,fontSize:"12.5px"}}>{skipLabel}</button>}
       </div>
 
-      <AnimatePresence mode="wait" custom={direction} initial={animateFirst}>
+      <AnimatePresence mode="wait" custom={direction} initial={animateFirst} onExitComplete={keepQuestionInView}>
         <motion.div key={q.id} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" style={{marginTop:"10px"}}>
           {q.lead && (
             <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"8px"}}>{q.lead}</div>
@@ -212,6 +228,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
           )}
         </motion.div>
       </AnimatePresence>
+      </div>
 
       {history.length > 1 && (
         <button type="button" onClick={back} style={{...textLink,color:MUT,display:"inline-flex",alignItems:"center",gap:"2px",marginTop:"14px"}}>

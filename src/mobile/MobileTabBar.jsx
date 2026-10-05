@@ -20,7 +20,8 @@ export default function MobileTabBar({ active, onNavigate }) {
     // already be CREAM. Reaches solid white by 40% down the bar (not the
     // full height) so the tab icons/labels sit on a fully opaque surface
     // rather than a still-fading one, with just the top portion soft.
-    <nav style={{position:"fixed",bottom:0,left:0,right:0,background:`linear-gradient(180deg, transparent 0%, ${WHITE} 40%)`,zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
+    // data-tab-bar: walk-throughs measure it to keep questions clear of it.
+    <nav data-tab-bar style={{position:"fixed",bottom:0,left:0,right:0,background:`linear-gradient(180deg, transparent 0%, ${WHITE} 40%)`,zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
       {/* The bar itself stays full-bleed, but the buttons are capped to the
           same 580px content width as MobileLayout's content column and
           centred — otherwise on a wide (desktop browser) viewport the icons
