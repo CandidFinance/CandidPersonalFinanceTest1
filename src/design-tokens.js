@@ -130,16 +130,19 @@ export const PILL_HEIGHT = "44px";
 export const RADIUS_CARD  = "14px"; // mobile card containers (WinTile, ProviderTile, ProductListTile, HomeScreen/ForecastScreen cards)
 export const RADIUS_MODAL = "18px"; // desktop modal shells + marketing/mockup cards
 
-// "Where to open an account" provider tiles (Cash/Investments/Pension) — a
-// pale green, close to white, with a subtle top-to-bottom gradient for a
-// raised/glossy feel, so these link-out tiles read as visually distinct from
-// the app's plain-white numbered action tiles at a glance. PROVIDER_TILE_BG_END
-// is the gradient's own bottom-stop colour, reused by scrollable provider
-// lists' fade-to-solid overlay so the fade blends into the tile rather than
-// revealing a mismatched white seam.
-export const PROVIDER_TILE_BG = "linear-gradient(180deg, #f8faf8 0%, #eef4ef 100%)";
-export const PROVIDER_TILE_BG_END = "#eef4ef";
-export const PROVIDER_TILE_BORDER = "1.5px solid rgba(45,107,74,0.18)";
+// "Where to open an account" provider tiles (Cash/Investments/Pension) —
+// white fading to a light grey, top to bottom, for a raised/glossy feel, so
+// these link-out tiles read apart from the plain-white numbered action tiles
+// and from each module's green-and-gold Opportunity tile above them. (Pale
+// green until 6 Oct 2026, too close to that tile.) PROVIDER_TILE_BG_END is
+// the gradient's own bottom-stop colour, reused by scrollable provider lists'
+// fade-to-solid overlay (from PROVIDER_TILE_FADE_CLEAR, the same colour
+// transparent) so the fade blends into the tile rather than revealing a
+// mismatched seam.
+export const PROVIDER_TILE_BG = "linear-gradient(180deg, #ffffff 0%, #f0f1ef 100%)";
+export const PROVIDER_TILE_BG_END = "#f0f1ef";
+export const PROVIDER_TILE_FADE_CLEAR = "rgba(240,241,239,0)";
+export const PROVIDER_TILE_BORDER = "1.5px solid rgba(22,47,36,0.10)";
 export const PROVIDER_TILE_SHADOW = "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 10px rgba(22,47,36,0.06)";
 
 // Home's hero tile (the Candid score): a soft wash in Candid's own colours,
@@ -159,14 +162,13 @@ export const HERO_TILE_BG = [
 // The same tile treatment in red, amber and green, for a card whose whole
 // surface is its status (the Property mortgage card: whether the repayments
 // are affordable). White for the top 30%, then fading to the status colour
-// over white at about 8% at the bottom (the provider tile's end colour, for
-// green), with a border in the same colour. Use PROVIDER_TILE_SHADOW.
+// over white at about 8% at the bottom, with a border in the same colour. Use PROVIDER_TILE_SHADOW.
 // `figure` is the full-strength colour, for the figure that sets the
 // status; amber is a shade darker than WARNING so it stays readable on white.
 const STATUS_FADE_FROM = "30%";
 const statusFill = end => `linear-gradient(180deg, #ffffff 0%, #ffffff ${STATUS_FADE_FROM}, ${end} 100%)`;
 export const STATUS_TILE = {
-  ok:    { background: statusFill(PROVIDER_TILE_BG_END), border: PROVIDER_TILE_BORDER, figure: SUCCESS },
+  ok:    { background: statusFill("#eef4ef"), border: "1.5px solid rgba(45,107,74,0.18)", figure: SUCCESS },
   tight: { background: statusFill("#fcf5ee"), border: "1.5px solid rgba(217,130,43,0.35)", figure: "#b9661a" },
   short: { background: statusFill("#faefee"), border: "1.5px solid rgba(192,57,43,0.32)", figure: CRITICAL },
 };

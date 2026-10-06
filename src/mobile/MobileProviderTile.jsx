@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Landmark, Unlock, ExternalLink, ChevronRight } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../CandidApp.jsx";
+import { PROVIDER_TILE_FADE_CLEAR } from "../design-tokens.js";
 
 // Static "where to actually do this" provider list for Investments/Pension —
 // unlike Cash's MobileProductListTile, there's no live-rate data source for
@@ -61,7 +62,7 @@ export default function MobileProviderTile({ heading, products, disclaimer }) {
         </div>
         {!open && products.length > 1 && (
           <>
-            <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, rgba(238,244,239,0) 0%, rgba(238,244,239,0) 55%, ${PROVIDER_TILE_BG_END} 100%)`,pointerEvents:"none"}}/>
+            <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, ${PROVIDER_TILE_FADE_CLEAR} 0%, ${PROVIDER_TILE_FADE_CLEAR} 55%, ${PROVIDER_TILE_BG_END} 100%)`,pointerEvents:"none"}}/>
             <div onClick={() => setOpen(true)} style={{position:"absolute",left:0,right:0,bottom:"10px",textAlign:"center",cursor:"pointer"}}>
               <span style={{fontSize:"12px",fontWeight:600,color:GOLD}}>See all {products.length} options</span>
             </div>
