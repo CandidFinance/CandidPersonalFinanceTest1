@@ -142,6 +142,17 @@ export const PROVIDER_TILE_BG_END = "#eef4ef";
 export const PROVIDER_TILE_BORDER = "1.5px solid rgba(45,107,74,0.18)";
 export const PROVIDER_TILE_SHADOW = "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 10px rgba(22,47,36,0.06)";
 
+// Home's hero tile (the Candid score): a pale iridescent wash, mint and
+// aqua into lilac and pink from different corners over a near-white green,
+// so it's the one tile on Home with a fill of its own. Light enough for the
+// app's dark text and the score's band colours to read on it.
+export const HERO_TILE_BG = [
+  "radial-gradient(120% 90% at 0% 0%, #F3FAF8 0%, rgba(243,250,248,0) 60%)",
+  "radial-gradient(90% 80% at 100% 0%, #F5EFFA 0%, rgba(245,239,250,0) 62%)",
+  "radial-gradient(100% 90% at 100% 100%, #FAEFF3 0%, rgba(250,239,243,0) 60%)",
+  "#F6FAF6",
+].join(", ");
+
 // The same tile treatment in red, amber and green, for a card whose whole
 // surface is its status (the Property mortgage card: whether the repayments
 // are affordable). White for the top 30%, then fading to the status colour

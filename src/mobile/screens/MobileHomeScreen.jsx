@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, Check } from "lucide-react";
 import ScoreDonut from "../ScoreDonut.jsx";
 import { scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../CandidApp.jsx";
+import { HERO_TILE_BG } from "../../design-tokens.js";
 import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
@@ -40,13 +41,6 @@ function netWorthBreakdown(d, m) {
     { label: "Personal loan", value: d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0 },
   ].filter(l => l.value > 0);
   return { assets, liabilities };
-}
-
-// The score's band colour for the ring on the dark hero: the two greens are
-// too close to the hero's own dark green to read, so they're lightened, the
-// darkest ("Optimised") most. Amber, orange and red read as they are.
-function heroRingColor(color) {
-  return color === G ? "#9fdcb5" : color === SUCCESS ? "#5cb885" : color;
 }
 
 // The score last shown on Home this session. Home unmounts whenever you open
@@ -117,91 +111,83 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   const report = { headline: scoreHeadline(priorities), priorities, onTrack: onTrackModules(d, m, statuses) };
 
   const { color: scoreColor, label: scoreLabel } = scoreBand(score);
-  // The plan's steps, each marked once its module has been reviewed; the
-  // hero's one action is the first not yet reviewed.
+  // The opportunities by size, each marked once its module has been reviewed.
   const plan = priorities.map(p => ({ ...p, done: (completedModules || []).includes(p.key) }));
   const stepsDone = plan.filter(p => p.done).length;
-  const nextStep = plan.find(p => !p.done) || null;
   const { totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
   const { assets, liabilities } = netWorthBreakdown(d, m);
   const netWorthPositive = m.netWorth >= 0;
 
   return (
     <div>
-      {/* The hero: the one dark surface on Home, full width at the top, as
-          banking apps lead with their balance. The score as a ring in its
-          band colour (lightened where the band's own green would vanish on
-          dark), the opportunity, one next action (step 1 of the plan), and
-          the plan itself opening in place (src/lib/priorities.js). */}
-      <div style={{margin:"-24px -20px 0",padding:"22px 20px 18px",background:G,borderRadius:"0 0 24px 24px",color:WHITE}}>
-        <h1 style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700,margin:0,lineHeight:1.2}}>{mobileGreeting(d)}</h1>
+      <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginBottom:"16px",lineHeight:1.2}}>
+        {mobileGreeting(d)}
+      </h1>
 
-        <div style={{display:"flex",alignItems:"center",gap:"18px",marginTop:"18px"}}>
-          <ScoreDonut value={shownScore} color={gain > 0 ? GOLD : heroRingColor(scoreColor)} size={140} stroke={11} onDark/>
+      {/* The hero: the score, the one tile on Home with a fill of its own (a
+          pale iridescent wash, HERO_TILE_BG), so it reads as the headline.
+          The ring in the score's band colour, the opportunity, and the
+          opportunities by size opening in place. Nothing says where to start:
+          that would be advice (src/lib/priorities.js only ranks by £). */}
+      <div style={{background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"20px 18px 16px",boxShadow:"0 4px 18px rgba(22,47,36,0.07)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"18px"}}>
+          <ScoreDonut value={shownScore} color={gain > 0 ? GOLD : scoreColor} size={132} stroke={11} track="rgba(22,47,36,0.08)"/>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:"10.5px",fontWeight:600,color:"rgba(255,255,255,0.6)",letterSpacing:"0.09em",textTransform:"uppercase"}}>Candid Score</div>
+            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Candid Score</div>
             <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap",marginTop:"4px"}}>
-              <span style={{fontSize:"18px",fontWeight:700,color:WHITE}}>{scoreLabel}</span>
+              <span style={{fontSize:"18px",fontWeight:700,color:TEXT}}>{scoreLabel}</span>
               {gain > 0 && (
-                <span style={{fontSize:"12px",fontWeight:700,color:G,background:GOLD,borderRadius:"100px",padding:"3px 10px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain} pts</span>
+                <span style={{fontSize:"12px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"3px 10px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain} pts</span>
               )}
             </div>
             {totalOpp > 0 && (
               <div style={{marginTop:"10px"}}>
-                <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:WHITE}}>{fmtCompact(totalOpp)}</span>
-                <span style={{fontSize:"13px",color:"rgba(255,255,255,0.7)"}}> a year to gain</span>
+                <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:TEXT}}>{fmtCompact(totalOpp)}</span>
+                <span style={{fontSize:"13px",color:MUT}}> a year in opportunities</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* One next action: the plan's first step not yet reviewed. */}
-        {nextStep && (
-          <button type="button" onClick={() => navigate(`/app/module/${nextStep.key}`)}
-            style={{marginTop:"18px",width:"100%",background:GOLD,color:G,border:"none",borderRadius:"100px",padding:"13px 16px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"4px"}}>
-            Start with {nextStep.title}{nextStep.amount > 0 ? ` · ${fmtCompact(nextStep.amount)}${nextStep.amountIsLumpSum ? " by 18" : " a year"}` : ""}
-            <ChevronRight size={16}/>
-          </button>
-        )}
-
-        {/* The plan, its progress in one place: steps reviewed of the plan. */}
+        {/* The opportunities, largest first, and how many have been reviewed. */}
         <button type="button" onClick={() => setScoreOpen(o => !o)}
-          style={{marginTop:"14px",width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(255,255,255,0.14)",padding:"12px 0 0",color:WHITE,fontFamily:"inherit",cursor:"pointer"}}>
+          style={{marginTop:"16px",width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"12px 0 0",color:TEXT,fontFamily:"inherit",cursor:"pointer"}}>
           <span style={{fontSize:"13.5px",fontWeight:700}}>
-            {plan.length > 0 ? <>Your plan <span style={{fontWeight:500,color:"rgba(255,255,255,0.65)"}}>· {stepsDone} of {plan.length} done</span></> : "Your plan"}
+            {plan.length > 0 ? <>Your opportunities <span style={{fontWeight:500,color:MUT}}>· {stepsDone} of {plan.length} reviewed</span></> : "Your modules"}
           </span>
-          <ChevronDown size={16} color="rgba(255,255,255,0.75)" style={{transform:scoreOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
+          <ChevronDown size={16} color={MUT} style={{transform:scoreOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
         </button>
         {scoreOpen && (
-          <div style={{marginTop:"6px"}}>
+          <div style={{marginTop:"4px"}}>
             {plan.length > 0 ? (
               <div style={{display:"flex",flexDirection:"column"}}>
                 {plan.map((p, i) => (
                   <button key={p.key} type="button" onClick={() => navigate(`/app/module/${p.key}`)}
-                    style={{display:"flex",alignItems:"flex-start",gap:"12px",textAlign:"left",background:"none",border:"none",borderTop:i ? "1px solid rgba(255,255,255,0.08)" : "none",padding:"10px 0",cursor:"pointer",fontFamily:"inherit",width:"100%"}}>
-                    {/* A reviewed step shows a tick in place of its number. */}
-                    <span style={{width:"22px",height:"22px",borderRadius:"50%",background:p.done ? GOLD : "rgba(255,255,255,0.12)",color:p.done ? G : WHITE,fontSize:"12px",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>
-                      {p.done ? <Check size={13} strokeWidth={3}/> : i + 1}
+                    style={{display:"flex",alignItems:"flex-start",gap:"12px",textAlign:"left",background:"none",border:"none",borderTop:i ? "1px solid rgba(22,47,36,0.06)" : "none",padding:"10px 0",cursor:"pointer",fontFamily:"inherit",width:"100%"}}>
+                    {/* Reviewed: a tick. Not yet: an empty ring. No numbers,
+                        so the list doesn't read as an order to follow. */}
+                    <span style={{width:"20px",height:"20px",borderRadius:"50%",border:p.done ? "none" : "1.5px solid rgba(22,47,36,0.25)",background:p.done ? SUCCESS : "transparent",color:WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px",boxSizing:"border-box"}}>
+                      {p.done && <Check size={12} strokeWidth={3}/>}
                     </span>
                     <span style={{flex:1,minWidth:0}}>
-                      <span style={{display:"block",fontSize:"14px",fontWeight:700,color:WHITE}}>{p.title}</span>
-                      {p.line && <span style={{display:"block",fontSize:"12.5px",color:"rgba(255,255,255,0.65)",lineHeight:1.5,marginTop:"2px"}}>{p.line}</span>}
+                      <span style={{display:"block",fontSize:"14px",fontWeight:700,color:TEXT}}>{p.title}</span>
+                      {p.line && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>{p.line}</span>}
                     </span>
-                    <ChevronRight size={15} color="rgba(255,255,255,0.6)" style={{flexShrink:0,marginTop:"3px"}}/>
+                    <ChevronRight size={15} color={MUT} style={{flexShrink:0,marginTop:"3px"}}/>
                   </button>
                 ))}
               </div>
             ) : (
-              <p style={{fontSize:"13px",color:"rgba(255,255,255,0.75)",lineHeight:1.5,margin:"4px 0 0"}}>{report.headline}</p>
+              <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>{report.headline}</p>
             )}
             {report.onTrack.length > 0 && (
-              <p style={{fontSize:"12.5px",color:"rgba(255,255,255,0.65)",lineHeight:1.5,margin:"8px 0 0"}}>
-                <span style={{fontWeight:700,color:WHITE}}>On track:</span> {report.onTrack.join(", ")}.
+              <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+                <span style={{fontWeight:700,color:TEXT}}>On track:</span> {report.onTrack.join(", ")}.
               </p>
             )}
             <button type="button" onClick={() => navigate("/app/modules")}
-              style={{marginTop:"12px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:GOLD,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
-              Review all modules<ChevronRight size={14}/>
+              style={{marginTop:"12px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:G,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
+              All modules<ChevronRight size={14}/>
             </button>
           </div>
         )}
