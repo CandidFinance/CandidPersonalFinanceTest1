@@ -117,7 +117,8 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
   // card's fill and border are its status, green, amber or red, as the
   // provider tiles are styled; plain white until there's a budget to judge.
   const budget = monthlyBudget(d, m);
-  const tile = loan > 0 && budget ? { ...STATUS_TILE[budget.status], boxShadow:PROVIDER_TILE_SHADOW }
+  const status = loan > 0 && budget ? STATUS_TILE[budget.status] : null;
+  const tile = status ? { background:status.background, border:status.border, boxShadow:PROVIDER_TILE_SHADOW }
     : { background:WHITE, border:"none", boxShadow:"0 2px 10px rgba(22,47,36,0.06)" };
   const rise = budget?.ratesRise;
   // A spending figure above take-home pay is more likely a slip (an annual
@@ -174,7 +175,8 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
                 {budget && <InfoButton open={budgetInfoOpen} onClick={() => setBudgetInfoOpen(o => !o)}/>}
               </div>
               {budget ? (<>
-                <div style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:TEXT,lineHeight:1.2}}>
+                {/* In the tile's colour: this figure is what sets it. */}
+                <div style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:status ? status.figure : TEXT,lineHeight:1.2}}>
                   {budget.left < 0 ? `${fmt(-budget.left)} short` : fmt(budget.left)}
                 </div>
                 {budgetNote && <p style={{fontSize:"12.5px",color:budget.status === "ok" ? MUT : TEXT,lineHeight:1.5,margin:"2px 0 0"}}>{budgetNote}</p>}
