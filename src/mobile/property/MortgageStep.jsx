@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
-import { G, MUT, TEXT, SERIF, SC, WHITE, WARNING } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
+import { STATUS_TILE, PROVIDER_TILE_SHADOW } from "../../design-tokens.js";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt } from "../../lib/format.js";
@@ -113,9 +114,11 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
   // The remortgage range, shown in one line while the chart is collapsed.
   const outcomePayments = (s.remortgageOutcomes || []).map(o => o.monthlyPayment);
   // What's left each month once they own it (src/lib/monthlyBudget.js). The
-  // card's border is its status: amber when tight, red when short.
+  // card's fill and border are its status, green, amber or red, as the
+  // provider tiles are styled; plain white until there's a budget to judge.
   const budget = monthlyBudget(d, m);
-  const borderColor = budget?.status === "short" ? SC.critical : budget?.status === "tight" ? WARNING : null;
+  const tile = loan > 0 && budget ? { ...STATUS_TILE[budget.status], boxShadow:PROVIDER_TILE_SHADOW }
+    : { background:WHITE, border:"none", boxShadow:"0 2px 10px rgba(22,47,36,0.06)" };
   const rise = budget?.ratesRise;
   // A spending figure above take-home pay is more likely a slip (an annual
   // figure, a stray digit) than real, so it's flagged where it's entered.
@@ -139,7 +142,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
         <EmptyResultCard text="Answer the questions below to see what you'd repay."/>
       ) : (
       <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
-        style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:loan === 0 ? "18px" : CARD_PADDING_WITH_CHEVRON,border:borderColor ? `2px solid ${borderColor}` : "none"}}>
+        style={{scrollMarginTop:"16px",borderRadius:"16px",...tile,padding:loan === 0 ? "18px" : CARD_PADDING_WITH_CHEVRON}}>
         {loan === 0 ? (
           <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:0}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
         ) : (
