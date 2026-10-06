@@ -117,6 +117,10 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
   const budget = monthlyBudget(d, m);
   const borderColor = budget?.status === "short" ? SC.critical : budget?.status === "tight" ? WARNING : null;
   const rise = budget?.ratesRise;
+  // A spending figure above take-home pay is more likely a slip (an annual
+  // figure, a stray digit) than real, so it's flagged where it's entered.
+  const takeHome = budget ? budget.takeHome : m.monthlyTakeHome;
+  const spendingAboveTakeHome = +d.monthlyExpenses > 0 && takeHome > 0 && +d.monthlyExpenses > takeHome;
   const budgetNote = !budget ? null
     : budget.status === "short" ? "Buying at this price would cost more than you have each month."
     : budget.leftIfRatesRise != null && budget.leftIfRatesRise < 0 ? `If rates are ${pctText(rise.ratePct)} from year ${rise.year}, you'd be ${fmt(-budget.leftIfRatesRise)} short each month.`
@@ -239,6 +243,11 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
         <PillCell min={COLUMN_MIN} info={why.button("budgetSpending")}><PillMoneyInput label="Monthly spending" value={+d.monthlyExpenses || null} onChange={v => set("monthlyExpenses", capField("monthlyExpenses", v ?? ""))}/></PillCell>
       </div>
       {why.panel("budgetRent", "budgetSpending")}
+      {spendingAboveTakeHome && (
+        <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>
+          Your spending is more than your take-home pay ({fmt(takeHome)} a month). Worth checking it.
+        </p>
+      )}
 
       {onContinue && (
         <button type="button" onClick={onContinue} style={{
