@@ -16,6 +16,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
 import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
+import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
 
 const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` }));
 const EXTRA_PCT_OPTIONS = [1,2,3,5].map(p => ({ value:p, label:`+${p}%` }));
@@ -222,7 +223,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
     <div>
       {opportunityCols.length === 0 && onShowReveal && <div style={{marginBottom:"14px"}}><ExplainLink onClick={onShowReveal}/></div>}
       {opportunityCols.length > 0 && (
-        <div style={{background:OPPORTUNITY_TILE_BG,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
             <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
             <ExplainLink onClick={onShowReveal} color={OPPORTUNITY_TILE_FIGURE}/>

@@ -171,15 +171,18 @@ export const STATUS_TILE = {
   short: { background: statusFill("#faefee"), border: "1.5px solid rgba(192,57,43,0.32)", figure: CRITICAL },
 };
 
-// "Opportunity" tile (Home + each module deep dive) — each page's key message,
-// so it's the one solid brand-green surface in the content area, set apart
-// from the white action cards around it. Previously a white-to-light-gold
-// gradient: "linear-gradient(165deg, #ffffff 0%, #ffffff 30%, rgba(196,150,58,0.10) 100%)"
-// with label/sub-label "#8a6a24" and figure/body TEXT.
-export const OPPORTUNITY_TILE_BG     = G;
-export const OPPORTUNITY_TILE_LABEL  = GOLD;                     // "OPPORTUNITY" overline, sub-labels, chevron
-export const OPPORTUNITY_TILE_FIGURE = CREAM;                    // serif £ figures
-export const OPPORTUNITY_TILE_BODY   = "rgba(250,247,240,0.72)"; // supporting sentences, "/yr"
+// "Opportunity" tile (each module deep dive) — each page's key message, in
+// the same treatment as Home's score tile (HERO_TILE_BG), so the headline of
+// every screen looks alike: the green-and-gold wash, a thin border and a soft
+// shadow, dark serif figures and muted labels. Previously the one solid
+// brand-green surface, with gold labels and cream figures (before 6 Oct
+// 2026), and before that a white-to-light-gold gradient.
+export const OPPORTUNITY_TILE_BG     = HERO_TILE_BG;
+export const OPPORTUNITY_TILE_BORDER = "1px solid rgba(22,47,36,0.08)";
+export const OPPORTUNITY_TILE_SHADOW = "0 4px 18px rgba(22,47,36,0.07)";
+export const OPPORTUNITY_TILE_LABEL  = MUT;   // "OPPORTUNITY" overline, sub-labels
+export const OPPORTUNITY_TILE_FIGURE = TEXT;  // serif £ figures, "Explain this"
+export const OPPORTUNITY_TILE_BODY   = MUT;   // supporting sentences
 
 // ── One-off colours — reference only, NOT for reuse ───────────────────────
 // Each of these appears in exactly one place (a specific SVG chart
