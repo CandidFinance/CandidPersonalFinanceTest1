@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Check } from "lucide-react";
 import ScoreDonut from "../ScoreDonut.jsx";
-import { scoreBand, G, GOLD, CDARK, WHITE, MUT, TEXT, SERIF, SC, RADIUS_CARD } from "../../CandidApp.jsx";
+import { scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../CandidApp.jsx";
 import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
@@ -40,6 +40,13 @@ function netWorthBreakdown(d, m) {
     { label: "Personal loan", value: d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0 },
   ].filter(l => l.value > 0);
   return { assets, liabilities };
+}
+
+// The score's band colour for the ring on the dark hero: the two greens are
+// too close to the hero's own dark green to read, so they're lightened, the
+// darkest ("Optimised") most. Amber, orange and red read as they are.
+function heroRingColor(color) {
+  return color === G ? "#9fdcb5" : color === SUCCESS ? "#5cb885" : color;
 }
 
 // The score last shown on Home this session. Home unmounts whenever you open
@@ -110,89 +117,95 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   const report = { headline: scoreHeadline(priorities), priorities, onTrack: onTrackModules(d, m, statuses) };
 
   const { color: scoreColor, label: scoreLabel } = scoreBand(score);
-  const { modulesWithRec, totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
-  const topWin = modulesWithRec[0] || null;
-  // "Reviewed" tracks engagement with the report, not your actual financial
-  // position — its own line, never folded into the score above.
-  const reviewableModules = modulesWithRec.length;
-  const reviewedModuleCount = modulesWithRec.filter(mm => (completedModules||[]).includes(mm.key)).length;
+  // The plan's steps, each marked once its module has been reviewed; the
+  // hero's one action is the first not yet reviewed.
+  const plan = priorities.map(p => ({ ...p, done: (completedModules || []).includes(p.key) }));
+  const stepsDone = plan.filter(p => p.done).length;
+  const nextStep = plan.find(p => !p.done) || null;
+  const { totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
   const { assets, liabilities } = netWorthBreakdown(d, m);
   const netWorthPositive = m.netWorth >= 0;
-  const topWinColor = topWin ? (SC[topWin.status] || MUT) : MUT;
 
   return (
     <div>
-      <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginBottom:"20px",lineHeight:1.2}}>
-        {mobileGreeting(d)}
-      </h1>
+      {/* The hero: the one dark surface on Home, full width at the top, as
+          banking apps lead with their balance. The score as a ring in its
+          band colour (lightened where the band's own green would vanish on
+          dark), the opportunity, one next action (step 1 of the plan), and
+          the plan itself opening in place (src/lib/priorities.js). */}
+      <div style={{margin:"-24px -20px 0",padding:"22px 20px 18px",background:G,borderRadius:"0 0 24px 24px",color:WHITE}}>
+        <h1 style={{fontFamily:SERIF,fontSize:"22px",color:WHITE,fontWeight:700,margin:0,lineHeight:1.2}}>{mobileGreeting(d)}</h1>
 
-      {/* The score: a ring that fills to it, in the score's band colour, and
-          the biggest win. Tap to open what to do first in place (Candid's own
-          plan, src/lib/priorities.js); each step opens its module. */}
-      <div onClick={() => setScoreOpen(o => !o)} style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",cursor:"pointer"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Candid Score</span>
-          <ChevronDown size={14} color={MUT} style={{transform:scoreOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:"16px",marginTop:"12px"}}>
-          <ScoreDonut value={shownScore} color={gain > 0 ? GOLD : scoreColor}/>
+        <div style={{display:"flex",alignItems:"center",gap:"18px",marginTop:"18px"}}>
+          <ScoreDonut value={shownScore} color={gain > 0 ? GOLD : heroRingColor(scoreColor)} size={140} stroke={11} onDark/>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
-              <span style={{fontSize:"16px",fontWeight:700,color:TEXT}}>{scoreLabel}</span>
+            <div style={{fontSize:"10.5px",fontWeight:600,color:"rgba(255,255,255,0.6)",letterSpacing:"0.09em",textTransform:"uppercase"}}>Candid Score</div>
+            <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap",marginTop:"4px"}}>
+              <span style={{fontSize:"18px",fontWeight:700,color:WHITE}}>{scoreLabel}</span>
               {gain > 0 && (
-                <span style={{fontSize:"12px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"3px 10px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain} pts</span>
+                <span style={{fontSize:"12px",fontWeight:700,color:G,background:GOLD,borderRadius:"100px",padding:"3px 10px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain} pts</span>
               )}
             </div>
-            <p style={{fontSize:"13px",color:MUT,margin:"4px 0 0",lineHeight:1.5}}>{report.headline}</p>
+            {totalOpp > 0 && (
+              <div style={{marginTop:"10px"}}>
+                <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:WHITE}}>{fmtCompact(totalOpp)}</span>
+                <span style={{fontSize:"13px",color:"rgba(255,255,255,0.7)"}}> a year to gain</span>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* One next action: the plan's first step not yet reviewed. */}
+        {nextStep && (
+          <button type="button" onClick={() => navigate(`/app/module/${nextStep.key}`)}
+            style={{marginTop:"18px",width:"100%",background:GOLD,color:G,border:"none",borderRadius:"100px",padding:"13px 16px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"4px"}}>
+            Start with {nextStep.title}{nextStep.amount > 0 ? ` · ${fmtCompact(nextStep.amount)}${nextStep.amountIsLumpSum ? " by 18" : " a year"}` : ""}
+            <ChevronRight size={16}/>
+          </button>
+        )}
+
+        {/* The plan, its progress in one place: steps reviewed of the plan. */}
+        <button type="button" onClick={() => setScoreOpen(o => !o)}
+          style={{marginTop:"14px",width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(255,255,255,0.14)",padding:"12px 0 0",color:WHITE,fontFamily:"inherit",cursor:"pointer"}}>
+          <span style={{fontSize:"13.5px",fontWeight:700}}>
+            {plan.length > 0 ? <>Your plan <span style={{fontWeight:500,color:"rgba(255,255,255,0.65)"}}>· {stepsDone} of {plan.length} done</span></> : "Your plan"}
+          </span>
+          <ChevronDown size={16} color="rgba(255,255,255,0.75)" style={{transform:scoreOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
+        </button>
         {scoreOpen && (
-          <div onClick={e => e.stopPropagation()} style={{marginTop:"16px",paddingTop:"14px",borderTop:"1px solid rgba(22,47,36,0.08)",cursor:"default"}}>
-            {report.priorities.length > 0 && (<>
-              <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>What to do first</div>
-              <div style={{display:"flex",flexDirection:"column",marginTop:"6px"}}>
-                {report.priorities.map((p, i) => (
+          <div style={{marginTop:"6px"}}>
+            {plan.length > 0 ? (
+              <div style={{display:"flex",flexDirection:"column"}}>
+                {plan.map((p, i) => (
                   <button key={p.key} type="button" onClick={() => navigate(`/app/module/${p.key}`)}
-                    style={{display:"flex",alignItems:"flex-start",gap:"12px",textAlign:"left",background:"none",border:"none",borderTop:i ? "1px solid rgba(22,47,36,0.06)" : "none",padding:"10px 0",cursor:"pointer",fontFamily:"inherit",width:"100%"}}>
-                    <span style={{width:"22px",height:"22px",borderRadius:"50%",background:CDARK,color:G,fontSize:"12px",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>{i + 1}</span>
-                    <span style={{flex:1,minWidth:0}}>
-                      <span style={{display:"block",fontSize:"14px",fontWeight:700,color:TEXT}}>
-                        {p.title}
-                      </span>
-                      {p.line && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>{p.line}</span>}
+                    style={{display:"flex",alignItems:"flex-start",gap:"12px",textAlign:"left",background:"none",border:"none",borderTop:i ? "1px solid rgba(255,255,255,0.08)" : "none",padding:"10px 0",cursor:"pointer",fontFamily:"inherit",width:"100%"}}>
+                    {/* A reviewed step shows a tick in place of its number. */}
+                    <span style={{width:"22px",height:"22px",borderRadius:"50%",background:p.done ? GOLD : "rgba(255,255,255,0.12)",color:p.done ? G : WHITE,fontSize:"12px",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>
+                      {p.done ? <Check size={13} strokeWidth={3}/> : i + 1}
                     </span>
-                    <ChevronRight size={15} color={MUT} style={{flexShrink:0,marginTop:"3px"}}/>
+                    <span style={{flex:1,minWidth:0}}>
+                      <span style={{display:"block",fontSize:"14px",fontWeight:700,color:WHITE}}>{p.title}</span>
+                      {p.line && <span style={{display:"block",fontSize:"12.5px",color:"rgba(255,255,255,0.65)",lineHeight:1.5,marginTop:"2px"}}>{p.line}</span>}
+                    </span>
+                    <ChevronRight size={15} color="rgba(255,255,255,0.6)" style={{flexShrink:0,marginTop:"3px"}}/>
                   </button>
                 ))}
               </div>
-            </>)}
+            ) : (
+              <p style={{fontSize:"13px",color:"rgba(255,255,255,0.75)",lineHeight:1.5,margin:"4px 0 0"}}>{report.headline}</p>
+            )}
             {report.onTrack.length > 0 && (
-              <div style={{marginTop:report.priorities.length ? "10px" : 0}}>
-                <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>On track</div>
-                <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>{report.onTrack.join(", ")}.</p>
-              </div>
+              <p style={{fontSize:"12.5px",color:"rgba(255,255,255,0.65)",lineHeight:1.5,margin:"8px 0 0"}}>
+                <span style={{fontWeight:700,color:WHITE}}>On track:</span> {report.onTrack.join(", ")}.
+              </p>
             )}
             <button type="button" onClick={() => navigate("/app/modules")}
-              style={{marginTop:"14px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:G,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
+              style={{marginTop:"12px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:GOLD,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
               Review all modules<ChevronRight size={14}/>
             </button>
           </div>
         )}
       </div>
-      {/* Separate bar, deliberately not blended into the score above — this
-          tracks how much of the report you've read, not your finances, so it
-          gets its own colour (brand green, not the score's red-to-green
-          spectrum or its gold gain-flash) rather than reading as another
-          score indicator. */}
-      {reviewableModules > 0 && (
-        <div onClick={() => navigate("/app/modules")} style={{display:"flex",alignItems:"center",gap:"10px",marginTop:"14px",cursor:"pointer"}}>
-          <div style={{flex:1,height:"5px",borderRadius:"100px",background:CDARK,overflow:"hidden"}}>
-            <div style={{height:"100%",borderRadius:"100px",background:G,width:`${Math.round((reviewedModuleCount/reviewableModules)*100)}%`,transition:"width 0.4s ease"}}/>
-          </div>
-          <span style={{fontSize:"11px",color:MUT,whiteSpace:"nowrap"}}>{reviewedModuleCount} of {reviewableModules} reviewed</span>
-        </div>
-      )}
 
       {/* Asked once, after the score appears; never blocks anything. */}
       {!d.goalsAsked && <GoalsCard d={d} set={set} onDone={onGoalsDone}/>}
@@ -202,23 +215,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
           <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Still to do</div>
           <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
             {stillToDo.map(key => <ModuleStartRow key={key} moduleKey={key} onOpen={onStartModule}/>)}
-          </div>
-        </div>
-      )}
-
-      {/* Opportunity — taps through to the full module ranking. Same card,
-          header row and 30px serif figure as the Net worth tile below, so the
-          Home tiles read as one set (not the module pages' dark
-          OPPORTUNITY_TILE_* panel, which competed with the score here). */}
-      {totalOpp > 0 && (
-        <div onClick={() => navigate("/app/modules")} style={{marginTop:"14px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",cursor:"pointer"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Opportunity</span>
-            <ChevronRight size={14} color={MUT}/>
-          </div>
-          <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginTop:"6px"}}>
-            <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:TEXT}}>{fmtCompact(totalOpp)}</span>
-            <span style={{fontSize:"14px",color:MUT}}>/yr</span>
           </div>
         </div>
       )}
@@ -267,31 +263,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         )}
       </div>
 
-      {/* Biggest win — an interactive card (CLAUDE.md rule 3: reserve card
-          wrapping for discrete, actionable components), like the Net worth tile. */}
-      {topWin && (
-        <div style={{marginTop:"20px"}}>
-          <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
-            {/* Title sits inside the card, as the Opportunity/Net worth tiles' header rows do. */}
-            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Your biggest win</div>
-            <div style={{display:"flex",alignItems:"center",gap:"10px",marginTop:"12px"}}>
-              <div style={{width:"34px",height:"34px",borderRadius:"9px",background:`${topWinColor}1f`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                {topWin.icon && <topWin.icon size={16} color={topWinColor}/>}
-              </div>
-              <div style={{fontSize:"15px",fontWeight:600,color:TEXT,lineHeight:1.3}}>{topWin.title}</div>
-            </div>
-            {/* Same figure treatment as the Opportunity/Net worth tiles above. */}
-            <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginTop:"12px"}}>
-              <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:TEXT}}>{fmtCompact(topWin.amount)}</span>
-              <span style={{fontSize:"14px",color:MUT}}>{topWin.amountIsLumpSum ? "by 18" : "/yr"}</span>
-            </div>
-            <p style={{fontSize:"13px",color:MUT,marginTop:"4px",lineHeight:1.5}}>{topWin.summary}</p>
-            <button onClick={() => navigate(`/app/module/${topWin.key}`)} style={{marginTop:"14px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:600,cursor:"pointer"}}>
-              Review in {topWin.title}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
