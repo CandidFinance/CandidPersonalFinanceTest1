@@ -142,15 +142,18 @@ export const PROVIDER_TILE_BG_END = "#eef4ef";
 export const PROVIDER_TILE_BORDER = "1.5px solid rgba(45,107,74,0.18)";
 export const PROVIDER_TILE_SHADOW = "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 10px rgba(22,47,36,0.06)";
 
-// Home's hero tile (the Candid score): a pale iridescent wash, mint and
-// aqua into lilac and pink from different corners over a near-white green,
-// so it's the one tile on Home with a fill of its own. Light enough for the
-// app's dark text and the score's band colours to read on it.
+// Home's hero tile (the Candid score): a soft wash in Candid's own colours,
+// pale tints of the brand greens (SUCCESS from the top left, PENSION_RAS's
+// teal-green from the top right) and a warm hint of GOLD from the bottom
+// right, over a near-white green. The one tile on Home with a fill of its
+// own, light enough for dark text and the score's band colours. (A cooler
+// version with lilac and pink, b7a6e7e, is in git history for a future white
+// background.)
 export const HERO_TILE_BG = [
-  "radial-gradient(120% 90% at 0% 0%, #F3FAF8 0%, rgba(243,250,248,0) 60%)",
-  "radial-gradient(90% 80% at 100% 0%, #F5EFFA 0%, rgba(245,239,250,0) 62%)",
-  "radial-gradient(100% 90% at 100% 100%, #FAEFF3 0%, rgba(250,239,243,0) 60%)",
-  "#F6FAF6",
+  "radial-gradient(120% 95% at 0% 0%, #E6F0EA 0%, rgba(230,240,234,0) 62%)",
+  "radial-gradient(90% 80% at 100% 0%, #E8F3EF 0%, rgba(232,243,239,0) 60%)",
+  "radial-gradient(100% 90% at 100% 100%, #F7F0E2 0%, rgba(247,240,226,0) 62%)",
+  "#F7F9F5",
 ].join(", ");
 
 // The same tile treatment in red, amber and green, for a card whose whole
