@@ -5971,6 +5971,9 @@ export default function AppShell() {
       property_budget_status: budget ? budget.status : null,
       property_max_price: most ? most.price : null,
       property_max_price_limit: most ? most.limit : null,
+      // supabase_spending_scope_migration.sql: buying together, whether the
+      // spending figure is the household's or their own.
+      property_spending_scope: d.propertyBuyingMode === "together" && d.propertySpendingScope ? d.propertySpendingScope : null,
     };
   }, [pathname, d, m, regionalRates, marketRates]);
   const propertyBaseline = useRef(null);
