@@ -91,3 +91,19 @@ test("the mortgage explanation leads with being short, and otherwise says what's
   assert.match(mortgageReveal(buyer, calcMetrics(buyer))[2].body, /^You'd have about £[\d,]+ left each month after your other spending, or £[\d,]+ if rates are higher from year 6\.$/);
   assert.equal(budgetLine(null), null);
 });
+
+test("buying together: household spending is counted once, with the whole rent off it", () => {
+  // Both on £50,000, £3,000 a month spending including £1,500 rent.
+  const couple = { ...buyer, salary: "50000", monthlyExpenses: "3000", propertyMonthlyRent: "1500",
+    propertyBuyingMode: "together", partnerSalary: "50000", partnerFirstTimeBuyer: "yes", propertyCashAvailable: "40000", propertyPrice: "400000" };
+  const own = budgetFor(couple), household = budgetFor({ ...couple, propertySpendingScope: "household" });
+  // Just theirs (and unanswered): £2,250 each other than rent, so £4,500.
+  assert.equal(own.otherSpending, 4500);
+  assert.equal(budgetFor({ ...couple, propertySpendingScope: "mine" }).otherSpending, 4500);
+  assert.equal(own.status, "short");
+  // Both of them: £1,500 other than rent, and the same take-home pay.
+  assert.equal(household.otherSpending, 1500);
+  near(household.takeHome, own.takeHome);
+  assert.equal(household.status, "ok");
+  assert.equal(household.shared, true);
+});

@@ -531,7 +531,9 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
                         </p>
                         {together && input.partnerEstimate && (
                           <p style={{margin:"6px 0 0"}}>
-                            Your partner's take-home pay is roughly {fmt(input.partnerEstimate.takeHome)} a year. Scaling your monthly costs to their salary puts theirs at about {fmt(input.partnerEstimate.costs / 12)} a month, leaving around {fmt(input.partnerEstimate.surplus)} a year to save.
+                            {input.partnerEstimate.shared
+                              ? `Your partner's take-home pay is roughly ${fmt(input.partnerEstimate.takeHome)} a year. With your spending shared, together you'd have about ${fmt(input.partnerEstimate.householdSurplus)} a year to save, split between you by take-home pay.`
+                              : `Your partner's take-home pay is roughly ${fmt(input.partnerEstimate.takeHome)} a year. Scaling your monthly costs to their salary puts theirs at about ${fmt(input.partnerEstimate.costs / 12)} a month, leaving around ${fmt(input.partnerEstimate.surplus)} a year to save.`}
                           </p>
                         )}
                       </div>

@@ -5583,6 +5583,10 @@ const BLANK_DATA = {
   propertyGroundRent:"", propertyGroundRentGrowth:"", propertyServiceCharge:"",
   propertyHousePriceGrowth:"", propertyRentGrowth:"", propertyInvestmentReturn:"", propertyDividendYield:"",
   propertyRenterMoney:"cash", propertyCashReturn:"",
+  propertyMaintenancePct:"", propertyLeaseholdMaintenance:"", propertySellingCosts:"",
+  // Buying together: whether monthlyExpenses is the household's ("household")
+  // or the user's own ("mine"); blank counts as their own (spendingShared).
+  propertySpendingScope:"",
   // Whether each step's guided walk-through has been finished or skipped
   // (STEP_GUIDES, src/lib/propertyGuide.js). Kept on this device only, not
   // sent to Supabase.

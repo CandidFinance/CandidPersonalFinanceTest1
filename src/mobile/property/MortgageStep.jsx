@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
-import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, SC, WHITE, PillSlider } from "../../CandidApp.jsx";
 import { STATUS_TILE, PROVIDER_TILE_SHADOW } from "../../design-tokens.js";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
@@ -25,6 +25,7 @@ import useWhyInfo from "./useWhyInfo.jsx";
 const FIXED_OPTIONS = FIXED_PERIOD_OPTIONS.map(y => ({ value:String(y), label:`${y} years` }));
 const pctText = n => `${Math.round(n * 100) / 100}%`;
 const COLUMN_MIN = "140px";
+const SPENDING_SCOPE_OPTIONS = [{ value:"mine", label:"Just mine" }, { value:"household", label:"Both of us" }];
 
 // The monthly repayment over the term: flat for the fixed period, then
 // three lines from the first remortgage, for rates 1.5 points higher, the
@@ -182,7 +183,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
                 {budgetNote && <p style={{fontSize:"12.5px",color:budget.status === "ok" ? MUT : TEXT,lineHeight:1.5,margin:"2px 0 0"}}>{budgetNote}</p>}
                 {budgetInfoOpen && (
                   <p style={{...explainer,marginTop:"8px"}}>
-                    {budget.together ? "Your take-home pay and your partner's estimated take-home pay" : "Your take-home pay"} ({fmt(budget.takeHome)}), less your spending other than rent ({fmt(budget.otherSpending)}{budget.together ? ", your partner's estimated from yours" : ""}), less the mortgage ({fmt(budget.mortgage)}) and the home's running costs ({fmt(budget.homeCosts)}: upkeep{d.propertyTenure === "leasehold" ? ", ground rent and service charge" : ""}). Buying replaces your rent, so it comes off your spending. Lenders run their own check, at a higher rate than you'd pay.
+                    {budget.together ? "Your take-home pay and your partner's estimated take-home pay" : "Your take-home pay"} ({fmt(budget.takeHome)}), less {budget.shared ? "your shared spending other than rent" : budget.together ? "your spending other than rent, and your partner's estimated from yours" : "your spending other than rent"} ({fmt(budget.otherSpending)}), less the mortgage ({fmt(budget.mortgage)}) and the home's running costs ({fmt(budget.homeCosts)}: upkeep{d.propertyTenure === "leasehold" ? ", ground rent and service charge" : ""}). Buying replaces your rent, so it comes off your spending. Lenders run their own check, at a higher rate than you'd pay.
                   </p>
                 )}
               </>) : (
@@ -248,6 +249,15 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
         <PillCell min={COLUMN_MIN} info={why.button("budgetSpending")}><PillMoneyInput label="Monthly spending" value={+d.monthlyExpenses || null} onChange={v => set("monthlyExpenses", capField("monthlyExpenses", v ?? ""))}/></PillCell>
       </div>
       {why.panel("budgetRent", "budgetSpending")}
+      {d.propertyBuyingMode === "together" && (<>
+        <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase",margin:"14px 0 0"}}>Whose spending is that?</div>
+        <div style={{...columns,marginTop:"6px"}}>
+          <PillCell min={COLUMN_MIN} info={why.button("spendingScope")}>
+            <div style={{flex:1,minWidth:0}}><PillSlider value={d.propertySpendingScope === "household" ? "household" : "mine"} onChange={v => set("propertySpendingScope", v)} options={SPENDING_SCOPE_OPTIONS}/></div>
+          </PillCell>
+        </div>
+        {why.panel("spendingScope")}
+      </>)}
       {spendingAboveTakeHome && (
         <p style={{fontSize:"12px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>
           Your spending is more than your take-home pay ({fmt(takeHome)} a month). Worth checking it.

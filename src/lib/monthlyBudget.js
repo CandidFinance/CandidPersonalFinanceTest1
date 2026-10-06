@@ -14,12 +14,14 @@
 // step's chart does.
 //
 // Buying together: the partner's take-home pay is estimated from their
-// salary (partnerSavingsEstimate), the user's spending is taken as their own
-// share with half the rent, and the partner's spending other than rent is
-// the user's scaled by the ratio of their salaries.
+// salary (partnerSavingsEstimate) and added. The rent is the whole rent.
+// The spending figure is either the household's (spendingShared: it's used
+// as it is, less the rent) or the user's own, with half the rent, plus an
+// estimate of the partner's other spending, the user's scaled by the ratio
+// of their salaries. Unanswered counts as their own.
 import { borrowingInputs, calcBorrowingCheck, maxPriceFor, LENDER_INCOME_MULTIPLE } from "./borrowing.js";
 import { mortgageInputs, mortgageSummary, monthlyPayment, STRESS_REMORTGAGE_UPLIFT } from "./mortgage.js";
-import { rentVsBuyInputs, buyerYearCosts, partnerSavingsEstimate } from "./rentVsBuy.js";
+import { rentVsBuyInputs, buyerYearCosts, partnerSavingsEstimate, spendingShared } from "./rentVsBuy.js";
 
 // Less than this left a month reads as tight. MoneyHelper sets no figure
 // ("there's no specific percentage you should aim to spend on a mortgage"),
@@ -34,7 +36,8 @@ export function budgetBasics(d, m) {
   if (!(+d.monthlyExpenses > 0) || !filled(d.propertyMonthlyRent)) return null;
   const rent = Math.max(0, +d.propertyMonthlyRent);
   const together = d.propertyBuyingMode === "together";
-  const yourOther = Math.max(0, +d.monthlyExpenses - (together ? rent / 2 : rent));
+  const shared = spendingShared(d);
+  const yourOther = Math.max(0, +d.monthlyExpenses - (together && !shared ? rent / 2 : rent));
   let takeHome = Math.max(0, m.monthlyTakeHome || 0);
   let otherSpending = yourOther;
   if (together) {
@@ -43,10 +46,10 @@ export function budgetBasics(d, m) {
       yourSalary: m.salary, yourMonthlyExpenses: +d.monthlyExpenses,
     });
     takeHome += partner.takeHome / 12;
-    otherSpending += yourOther * (m.salary > 0 ? (+d.partnerSalary || 0) / m.salary : 1);
+    if (!shared) otherSpending += yourOther * (m.salary > 0 ? (+d.partnerSalary || 0) / m.salary : 1);
   }
   if (!(takeHome > 0)) return null;
-  return { takeHome, otherSpending, rent, room: takeHome - otherSpending, together };
+  return { takeHome, otherSpending, rent, room: takeHome - otherSpending, together, shared };
 }
 
 // The home's running costs a month, other than the mortgage, at a price:

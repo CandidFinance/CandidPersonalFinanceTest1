@@ -382,3 +382,15 @@ test("selling costs default to 2% and upkeep to 1% a year; both can be changed",
   const flat = inputsFor({ ...londonBuyer, propertyTenure: "leasehold", propertyLeaseholdMaintenance: "2400" });
   near(calcRentVsBuy({ ...flat, horizonYears: 1 }).years[0].buying.maintenance, 2400);
 });
+
+test("buying together with shared spending: the household saves both pays less one spending figure", () => {
+  const couple = { ...londonBuyer, salary: "50000", monthlyExpenses: "3000", propertyBuyingMode: "together", partnerSalary: "50000", partnerFirstTimeBuyer: "yes" };
+  const m = calcMetrics(couple);
+  const own = rentVsBuyInputs(couple, m, null), shared = rentVsBuyInputs({ ...couple, propertySpendingScope: "household" }, m, null);
+  const total = input => input.people.reduce((s, p) => s + p.surplus, 0);
+  near(total(shared), 12 * (2 * m.monthlyTakeHome - 3000), 50);
+  assert.ok(total(shared) > total(own));
+  assert.equal(shared.partnerEstimate.shared, true);
+  // Equal pay: split evenly.
+  near(shared.people[0].surplus, shared.people[1].surplus, 50);
+});

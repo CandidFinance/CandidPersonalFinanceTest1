@@ -134,3 +134,14 @@ test("each walk-through starts by itself only on a blank step not yet walked thr
   assert.equal(guideStarts("rentVsBuy", { ...purchased, propertyMonthlyRent: "0", propertyHorizonYears: "5" }, m), false);
   assert.equal(guideStarts("rentVsBuy", { ...purchased, propertyGuideRentVsBuyDone: true }, m), false);
 });
+
+test("buying together: asked whether spending covers both of them, and the rent is the whole rent", () => {
+  const couple = { ...purchased, propertyBuyingMode: "together", partnerSalary: "40000", partnerFirstTimeBuyer: "yes" };
+  assert.deepEqual(stepIds(MORTGAGE_QUESTIONS, couple), ["term", "rate", "fixedYears", "spendingScope", "budgetRent"]);
+  assert.deepEqual(stepIds(MORTGAGE_QUESTIONS, { ...couple, propertySpendingScope: "household" }), ["term", "rate", "fixedYears", "budgetRent"]);
+  const scope = MORTGAGE_QUESTIONS.find(q => q.id === "spendingScope");
+  assert.equal(scope.ask(ctxFor(couple)), "Is the £2,000 a month you spend just yours, or both of you together?");
+  const rent = MORTGAGE_QUESTIONS.find(q => q.id === "budgetRent");
+  assert.equal(rent.ask(ctxFor(couple)), "What do you both pay in rent each month?");
+  assert.equal(rent.ask(ctxFor(purchased)), "What do you pay in rent each month?");
+});

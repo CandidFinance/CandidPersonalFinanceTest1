@@ -90,6 +90,14 @@ const SAVINGS_TAX = { basic: 0.20, higher: 0.40, additional: 0.45 };
 const filled = v => v !== "" && v !== null && v !== undefined && !isNaN(+v);
 const monthlyRate = annualPct => Math.pow(1 + annualPct / 100, 1 / 12) - 1;
 
+// Buying together, whether the user's monthly spending is the household's
+// (propertySpendingScope "household", asked in the mortgage step) rather
+// than their own. Unanswered counts as their own, the cautious reading: it
+// adds an estimate of the partner's spending on top.
+export function spendingShared(d) {
+  return d.propertyBuyingMode === "together" && d.propertySpendingScope === "household";
+}
+
 export function taxBandFor(taxableIncome) {
   return taxableIncome > 125140 ? "additional" : taxableIncome > 50270 ? "higher" : "basic";
 }
@@ -384,6 +392,17 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
       salary: +d.partnerSalary || 0, otherIncome: +d.partnerOtherIncome || 0, pensionPct: +d.partnerMyContribution || 0,
       yourSalary: m.salary, yourMonthlyExpenses: m.expenses,
     });
+    // Household spending: both take-home pays less the one spending figure,
+    // shared in proportion to take-home pay, rather than each person's own
+    // pay less their own (estimated) costs.
+    if (spendingShared(d)) {
+      const yours = Math.max(0, (m.monthlyTakeHome || 0) * 12);
+      const both = yours + partnerEstimate.takeHome;
+      const household = Math.max(0, both - 12 * (m.expenses || 0));
+      const partnerShare = both > 0 ? household * partnerEstimate.takeHome / both : 0;
+      people[0].surplus = household - partnerShare;
+      partnerEstimate = { ...partnerEstimate, shared: true, householdSurplus: household, surplus: partnerShare, isaCapacity: Math.min(ISA_ALLOWANCE, partnerShare) };
+    }
     people.push({
       who: "partner",
       isaHeadroom: Math.max(0, ISA_ALLOWANCE - (+d.partnerIsaThisYear || 0)),

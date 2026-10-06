@@ -198,7 +198,8 @@ export const READINESS_QUESTIONS = [
 // first; only while Candid doesn't have it. £0 is an answer.
 const RENT_QUESTION = ({ id, why }) => ({
   id, field:"propertyMonthlyRent", kind:"money", label:"Monthly rent", required:true,
-  ask: () => "What do you pay in rent each month?",
+  // Buying together, the whole rent: the budget check splits it.
+  ask: ctx => together(ctx) ? "What do you both pay in rent each month?" : "What do you pay in rent each month?",
   why,
   notSure: () => ({ label:"I don't pay rent", value:"0" }),
   ifMissing: ({ d }) => blank(d.propertyMonthlyRent),
@@ -241,6 +242,18 @@ export const MORTGAGE_QUESTIONS = [
   // vs buy then doesn't ask the rent again.
   { ...SPENDING_QUESTION, id:"budgetSpending", group:undefined,
     why: () => "Shows what you'd have left each month after the mortgage." },
+  {
+    // Buying together: whether that figure covers both of them, so the
+    // partner's spending isn't counted twice (spendingShared, rentVsBuy.js).
+    id:"spendingScope", field:"propertySpendingScope", kind:"choice",
+    ask: ({ d }) => +d.monthlyExpenses > 0
+      ? `Is the ${fmt(+d.monthlyExpenses)} a month you spend just yours, or both of you together?`
+      : "Is your monthly spending just yours, or both of you together?",
+    why: () => "So your partner's spending isn't counted twice.",
+    options: () => [{ value:"mine", label:"Just mine" }, { value:"household", label:"Both of us" }],
+    showIf: together,
+    ifMissing: ({ d }) => blank(d.propertySpendingScope),
+  },
   RENT_QUESTION({ id:"budgetRent", why: () => "Buying replaces it, so it comes off your spending." }),
 ];
 
@@ -311,8 +324,8 @@ export const STEP_GUIDES = {
   rentVsBuy: {
     questions: RENT_VS_BUY_QUESTIONS, doneField: "propertyGuideRentVsBuyDone",
     // Rent may already be in from step 2, so the step counts as blank until
-    // its own figures are set.
-    blank: d => blank(d.propertyMonthlyRent) || (blank(d.propertyHorizonYears) && blank(d.propertyTenure)),
+    // its own first figure is set. (Not tenure: it starts as "freehold".)
+    blank: d => blank(d.propertyMonthlyRent) || blank(d.propertyHorizonYears),
     holdResultUntil: "end",
   },
 };
