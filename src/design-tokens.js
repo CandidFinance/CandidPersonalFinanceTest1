@@ -144,13 +144,15 @@ export const PROVIDER_TILE_SHADOW = "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 
 
 // The same tile treatment in red, amber and green, for a card whose whole
 // surface is its status (the Property mortgage card: whether the repayments
-// are affordable). Each is its status colour over white at about 3% (top)
-// and 8% (bottom), as the provider tile's green is, with a border in the
-// same colour; ok is the provider tile exactly. Use PROVIDER_TILE_SHADOW.
+// are affordable). White for the top 40%, then fading to the status colour
+// over white at about 8% at the bottom (the provider tile's end colour, for
+// green), with a border in the same colour. Use PROVIDER_TILE_SHADOW.
+const STATUS_FADE_FROM = "40%";
+const statusFill = end => `linear-gradient(180deg, #ffffff 0%, #ffffff ${STATUS_FADE_FROM}, ${end} 100%)`;
 export const STATUS_TILE = {
-  ok:    { background: PROVIDER_TILE_BG, border: PROVIDER_TILE_BORDER },
-  tight: { background: "linear-gradient(180deg, #fefbf9 0%, #fcf5ee 100%)", border: "1.5px solid rgba(217,130,43,0.35)" },
-  short: { background: "linear-gradient(180deg, #fdf9f9 0%, #faefee 100%)", border: "1.5px solid rgba(192,57,43,0.32)" },
+  ok:    { background: statusFill(PROVIDER_TILE_BG_END), border: PROVIDER_TILE_BORDER },
+  tight: { background: statusFill("#fcf5ee"), border: "1.5px solid rgba(217,130,43,0.35)" },
+  short: { background: statusFill("#faefee"), border: "1.5px solid rgba(192,57,43,0.32)" },
 };
 
 // "Opportunity" tile (Home + each module deep dive) — each page's key message,
