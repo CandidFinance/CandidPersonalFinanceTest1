@@ -34,6 +34,7 @@ import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
 import { mortgageInputs, mortgageSummary } from "./lib/mortgage.js";
 import { readinessMissing } from "./lib/propertyReadiness.js";
 import { rentVsBuyInputs, calcRentVsBuy } from "./lib/rentVsBuy.js";
+import { monthlyBudget, affordableMaxPrice } from "./lib/monthlyBudget.js";
 
 // Re-exported for existing external consumers (e.g. src/pdf/reportData.js)
 // now that these live in src/lib/ — see that file's own import for the
@@ -5911,6 +5912,9 @@ export default function AppShell() {
     const rvbInput = rentVsBuyInputs(d, m, regionalRates, "moderate", marketRates);
     // £0 rent is an answer (living with family, say), as on the screen.
     const rvb = num(d.propertyMonthlyRent) != null && b.price > 0 ? calcRentVsBuy(rvbInput) : null;
+    // supabase_property_budget_migration.sql
+    const budget = monthlyBudget(d, m);
+    const most = b.price > 0 ? affordableMaxPrice(d, m) : null;
     return {
       property_buying_mode: d.propertyBuyingMode === "together" ? "together" : "alone",
       property_price: num(d.propertyPrice),
@@ -5954,6 +5958,15 @@ export default function AppShell() {
       property_breakeven_year: rvb ? rvb.breakevenYear : null,
       // Buyer's net wealth less the renter's at the horizon (moderate).
       property_wealth_gap: rvb ? Math.round(rvb.gapAtHorizon) : null,
+      // What they'd have left each month once they own it, and the most they
+      // could afford with that as a limit (src/lib/monthlyBudget.js).
+      property_take_home: budget ? Math.round(budget.takeHome) : null,
+      property_other_spending: budget ? Math.round(budget.otherSpending) : null,
+      property_budget_left: budget ? Math.round(budget.left) : null,
+      property_budget_left_if_rates_rise: budget && budget.leftIfRatesRise != null ? Math.round(budget.leftIfRatesRise) : null,
+      property_budget_status: budget ? budget.status : null,
+      property_max_price: most ? most.price : null,
+      property_max_price_limit: most ? most.limit : null,
     };
   }, [pathname, d, m, regionalRates, marketRates]);
   const propertyBaseline = useRef(null);
