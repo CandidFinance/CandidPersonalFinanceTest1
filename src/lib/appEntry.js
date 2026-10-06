@@ -109,15 +109,22 @@ export function picks(d) {
 // 100 with nothing behind it.
 export const SCORED_MODULES = START_MODULES.filter(k => k !== "property");
 
-// When the Candid score appears: once every module picked at the entry is
-// answered, so it covers everything the user said they cared about ("Just
-// exploring": after their first module), and at least one scored module is
-// among them. Worked out by the code, no AI report (score-without-ai-plan.md).
+// The picks the score waits for: those it covers. Property isn't scored, so
+// it never holds the score back, whether picked at the entry or set by a
+// shared Property link.
+export function scorePicks(d) {
+  return picks(d).filter(k => SCORED_MODULES.includes(k));
+}
+
+// When the Candid score appears: once every scored module picked at the
+// entry is answered, so it covers everything the user said they cared about
+// that it measures. With none picked ("Just exploring", or only Property):
+// after their first scored module. Worked out by the code, no AI report
+// (score-without-ai-plan.md).
 export function scoreUnlocked(d, propertyDone = false) {
-  const chosen = picks(d);
+  const chosen = scorePicks(d);
   const done = doneModules(d, propertyDone);
-  const allPicks = chosen.length ? chosen.every(k => done.includes(k)) : done.length > 0;
-  return allPicks && done.some(k => SCORED_MODULES.includes(k));
+  return chosen.length ? chosen.every(k => done.includes(k)) : done.some(k => SCORED_MODULES.includes(k));
 }
 
 // Modules picked at the entry but not answered yet, in the order offered:

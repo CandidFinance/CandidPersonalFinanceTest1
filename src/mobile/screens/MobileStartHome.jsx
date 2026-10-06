@@ -1,5 +1,5 @@
 import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../CandidApp.jsx";
-import { moduleOrder, moduleDone, picks, unfinishedPicks, MODULE_PITCH, SCORED_MODULES } from "../../lib/appEntry.js";
+import { moduleOrder, moduleDone, scorePicks, MODULE_PITCH, SCORED_MODULES } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { mobileGreeting } from "../copy.js";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
@@ -15,15 +15,16 @@ export default function MobileStartHome({ d, m, onStartModule }) {
   const propertyDone = readinessMissing(d, m).length === 0;
   const order = moduleOrder(d);
   const done = order.filter(k => moduleDone(k, d, propertyDone));
-  const chosen = picks(d);
-  const left = unfinishedPicks(d, propertyDone);
-  // Picks all answered but none of them scored (Property alone, say): the
-  // score still needs one module it covers.
-  const needsScored = left.length === 0 && !done.some(k => SCORED_MODULES.includes(k));
-  // Progress towards the score: picks answered of picks made, or the first
-  // (scored) module for "Just exploring" and the case above.
-  const target = chosen.length && !needsScored ? chosen.length : 1;
-  const reached = needsScored ? 0 : chosen.length ? chosen.length - left.length : Math.min(done.length, 1);
+  // The score waits for the scored modules picked at the entry (never
+  // Property, which it doesn't cover), or with none picked, the first scored
+  // module (scoreUnlocked).
+  const chosen = scorePicks(d);
+  const left = chosen.filter(k => !done.includes(k));
+  const needsScored = chosen.length === 0;
+  // Progress towards the score: scored picks answered of those picked, or
+  // the first scored module.
+  const target = chosen.length || 1;
+  const reached = chosen.length ? chosen.length - left.length : Math.min(done.filter(k => SCORED_MODULES.includes(k)).length, 1);
   const start = order.find(k => !done.includes(k));
   const rest = order.filter(k => k !== start);
   const label = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
@@ -47,9 +48,7 @@ export default function MobileStartHome({ d, m, onStartModule }) {
       <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
         {needsScored
           ? "Your Candid score covers your savings, investments, pension and student loan. Finish one of them to see it."
-          : chosen.length
-            ? `Finish ${listText(left.map(k => moduleMeta(k).title))} to see your Candid score.`
-            : "Finish your first module to see your Candid score."}
+          : `Finish ${listText(left.map(k => moduleMeta(k).title))} to see your Candid score.`}
       </p>
       <div style={{display:"flex",alignItems:"center",gap:"10px",marginTop:"10px"}}>
         <div style={{flex:1,height:"5px",borderRadius:"100px",background:CDARK,overflow:"hidden"}}>

@@ -18,8 +18,9 @@ test("the entry asks two questions, each with a short reason", () => {
 test("the score appears once every pick is answered; for just exploring, after the first module", () => {
   assert.equal(scoreUnlocked({ interests: ["cash", "pension"], selectedModules: ["cash"] }), false);
   assert.equal(scoreUnlocked({ interests: ["cash", "pension"], selectedModules: ["cash", "pension"] }), true);
-  assert.equal(scoreUnlocked({ interests: ["cash", "property"], selectedModules: ["cash"] }), false);
-  assert.equal(scoreUnlocked({ interests: ["cash", "property"], selectedModules: ["cash"] }, true), true);
+  // Property isn't scored, so a Property pick never holds the score back.
+  assert.equal(scoreUnlocked({ interests: ["cash", "property"], selectedModules: ["cash"] }), true);
+  assert.equal(scoreUnlocked({ interests: ["cash", "pension", "property"], selectedModules: ["cash"] }, true), false);
   assert.equal(scoreUnlocked({ interests: ["exploring"], selectedModules: [] }), false);
   assert.equal(scoreUnlocked({ interests: ["exploring"], selectedModules: ["investments"] }), true);
   assert.deepEqual(doneModules({ selectedModules: ["studentLoan", "cash"] }, true), ["cash", "studentLoan", "property"]);
@@ -76,4 +77,14 @@ test("just exploring leads with the module most people start with", () => {
   const order = moduleOrder({ interests: ["exploring"] });
   assert.equal(order[0], DEFAULT_FIRST_MODULE);
   assert.deepEqual([...order].sort(), [...START_MODULES].sort());
+});
+
+test("Property never locks the score: picked at the entry, or set by a shared Property link", () => {
+  // Two modules done, neither Property.
+  assert.equal(scoreUnlocked({ interests: ["pension", "cash", "property"], selectedModules: ["pension", "cash"] }), true);
+  // A shared Property link picks Property: the first scored module unlocks it.
+  assert.equal(scoreUnlocked({ interests: ["property"], selectedModules: ["pension"] }), true);
+  assert.equal(scoreUnlocked({ interests: ["property"], selectedModules: [] }), false);
+  // Property is still left to do on home, just not in the score's way.
+  assert.deepEqual(unfinishedPicks({ interests: ["pension", "cash", "property"], selectedModules: ["pension", "cash"] }), ["property"]);
 });
