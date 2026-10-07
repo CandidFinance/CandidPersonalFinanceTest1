@@ -86,3 +86,36 @@ test("review dedupe key ties the source, change and proposed rate together", () 
   assert.equal(reviewDedupeKey("s1", { change_type: "new", product_key: "isa:easy_access:-", proposed: { rate_aer: 4.5 } }), "s1:new:isa:easy_access:-:4.5");
   assert.equal(reviewDedupeKey("s1", { change_type: "missing", product_key: "isa:easy_access:-", proposed: null }), "s1:missing:isa:easy_access:-:");
 });
+
+test("a rate set out as a table still matches a quote like '4.85% AER'", () => {
+  const table = "Fixed Rate Cash ISA\n1 year\n2 years\n4.85\n% AER\n5.08\n% AER";
+  assert.equal(evidenceSupports({ aer: 4.85, evidence: "4.85% AER" }, table), true);
+  assert.equal(evidenceSupports({ aer: 4.9, evidence: "4.9% AER" }, table), false);
+});
+
+test("a row matches the same-kind product with the closest rate when names don't help", () => {
+  const rows = [{ id: "a", provider_name: "Oxbury Bank", product_name: null, rate_kind: "easy_access", is_isa: false, rate_aer: "4.33" }];
+  const text = "Personal Easy Access Account (Issue 2) 3.27% AER. Easy Access Autumn Account (Issue 1) 4.30% AER.";
+  const plan = planChanges(rows, [
+    { product_name: "Personal Easy Access Account (Issue 2)", account_kind: "easy_access", is_isa: false, aer: 3.27, evidence: "3.27% AER" },
+    { product_name: "Easy Access Autumn Account (Issue 1)", account_kind: "easy_access", is_isa: false, aer: 4.3, evidence: "4.30% AER" },
+  ], text);
+  assert.deepEqual(plan.publish.map(p => [p.id, p.fields.product_name]), [["a", "Easy Access Autumn Account (Issue 1)"]]);
+  assert.deepEqual(plan.reviews.map(r => [r.change_type, r.product_name]), [["new", "Personal Easy Access Account (Issue 2)"]]);
+});
+
+test("the same product shown twice on a page is raised once", () => {
+  const p = { product_name: "1 Year Fixed Rate Cash ISA", account_kind: "fixed", is_isa: true, aer: 4.77, term_months: 12, evidence: "4.77% AER" };
+  assert.equal(planChanges([], [p, { ...p }], "4.77% AER").reviews.length, 1);
+});
+
+test("a product whose quote can't be checked isn't reported as gone", () => {
+  const rows = [{ id: "a", provider_name: "Tandem", rate_kind: "fixed", is_isa: true, term_months: 12, rate_aer: "4.67" }];
+  const page = "Instant Access Cash ISA 4.00% AER. 1 year 2 years 4.85 % AER";
+  const plan = planChanges(rows, [
+    { product_name: "Instant Access Cash ISA", account_kind: "easy_access", is_isa: true, aer: 4, evidence: "4.00% AER" },
+    { product_name: "Fixed Rate Cash ISA", account_kind: "fixed", is_isa: true, term_months: 12, aer: 4.85, evidence: "1 year 4.85% AER" },
+  ], page);
+  assert.equal(plan.rejected.length, 1);
+  assert.deepEqual(plan.reviews.map(r => r.change_type), ["new"]);
+});

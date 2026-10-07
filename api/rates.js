@@ -76,6 +76,7 @@ async function extractProducts(providerName, url, pageText) {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 4000,
+      temperature: 0,
       system: EXTRACTION_SYSTEM,
       tools: [EXTRACTION_TOOL],
       tool_choice: { type: "tool", name: EXTRACTION_TOOL.name },
