@@ -1,4 +1,6 @@
 import { PSA_BY_BAND } from "./tax.js";
+import { allocateCash } from "./cashAllocation.js";
+import { isEasyAccess } from "./savingsRates.js";
 
 // ── Cash waterfall optimiser: ISA → Personal Savings Allowance → Premium Bonds ──
 // Single source of truth for "what could this cash + Premium Bonds pot earn if
@@ -7,18 +9,25 @@ import { PSA_BY_BAND } from "./tax.js";
 // Dashboard and the module page never show two different numbers for the same
 // underlying opportunity. isaRatePct/nonIsaRatePct are percentage numbers (e.g.
 // 5.1) or null/undefined, in which case the same pre-data-load fallbacks apply.
+// rateRows (optional) is savings_rates itself: when given, each step spreads
+// its money across real accounts by rate and balance cap (allocateCash), and
+// the step's rate is what that money earns on average. isaLines/savingsLines
+// list the accounts. Without it, each step uses the single rate as before.
 // NS&I's long-run prize-fund average — the same figure used everywhere else in
 // this file for Premium Bonds' effective tax-free return.
 export const PB_RATE = 0.044;
 
-export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
+const pctLabel = ratePct => `${ratePct.toFixed(2)}%`;
+
+export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = null) {
   const bondsVal = m.bonds || 0;
   const psaLimit = PSA_BY_BAND[m.taxBandLabel] ?? 0;
   // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
-  const isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
-  const isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
-  const nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
-  const nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
+  let isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
+  let isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";
+  let nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
+  let nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
+  const rows = Array.isArray(rateRows) ? rateRows : null;
 
   const currentTaxableInterest = Math.round(m.cash * m.savingsRate / 100);
   const currentPbInterest = Math.round(bondsVal * PB_RATE);
@@ -33,15 +42,45 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
   // Premium Bonds are both easy/near-instant access, so there's no liquidity reason
   // to exclude the buffer portion from this.
   const totalPot = m.cash + bondsVal;
-  const step1Isa = Math.min(totalPot, m.isaHeadroom);
-  const step1IsaInterest = Math.round(step1Isa * isaRateDecimal);
+  let step1Isa = Math.min(totalPot, m.isaHeadroom);
+  let step1IsaInterest = Math.round(step1Isa * isaRateDecimal);
+  let isaLines = [];
+  const isaAlloc = rows && allocateCash(step1Isa, rows.filter(r => r.is_isa === true));
+  if (isaAlloc?.lines.length) {
+    // Anything the ISA accounts can't take (only if every one is capped)
+    // carries on to the next step rather than earning a rate it can't get.
+    step1Isa = isaAlloc.allocated;
+    step1IsaInterest = Math.round(isaAlloc.interest);
+    isaRateDecimal = isaAlloc.blendedRatePct / 100;
+    isaRateDisplay = pctLabel(isaAlloc.blendedRatePct);
+    isaLines = isaAlloc.lines;
+  }
   const afterStep1 = totalPot - step1Isa;
   // Only worth filling the PSA with ordinary savings if the best available non-ISA
   // rate actually beats the Premium Bonds average — otherwise the "tax-free"
   // comparison is a wash and Premium Bonds are simply better.
-  const savingsWorthIt = nonIsaRateDecimal > PB_RATE;
-  const step2Savings = savingsWorthIt ? Math.min(afterStep1, psaLimit / nonIsaRateDecimal) : 0;
-  const step2SavingsInterest = Math.round(step2Savings * nonIsaRateDecimal);
+  let savingsWorthIt = nonIsaRateDecimal > PB_RATE;
+  let step2Savings = savingsWorthIt ? Math.min(afterStep1, psaLimit / nonIsaRateDecimal) : 0;
+  let step2SavingsInterest = Math.round(step2Savings * nonIsaRateDecimal);
+  let savingsLines = [];
+  const nonIsaRows = rows && rows.filter(r => r.is_isa === false);
+  if (nonIsaRows?.length) {
+    // Accounts beating Premium Bonds, filled until the interest reaches the
+    // Personal Savings Allowance.
+    const alloc = allocateCash(afterStep1, nonIsaRows, { minRatePct: PB_RATE * 100, maxInterest: psaLimit });
+    // Real accounts to go on: use the answer even when it's "none beat
+    // Premium Bonds" (or there's no allowance left to use).
+    if (alloc.lines.length || nonIsaRows.some(isEasyAccess)) {
+      savingsWorthIt = alloc.lines.length > 0;
+      step2Savings = alloc.allocated;
+      step2SavingsInterest = Math.round(alloc.interest);
+      if (alloc.lines.length) {
+        nonIsaRateDecimal = alloc.blendedRatePct / 100;
+        nonIsaRateDisplay = pctLabel(alloc.blendedRatePct);
+      }
+      savingsLines = alloc.lines;
+    }
+  }
   // What this same slice of money already earns today, at the person's actual
   // current blended rate — so the step shows the genuine incremental benefit
   // of moving it to the best rate, not the full interest as if starting from
@@ -69,7 +108,7 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct) {
   return {
     psaLimit, isaRateDecimal, isaRateDisplay, nonIsaRateDecimal, nonIsaRateDisplay, PB_RATE,
     currentTaxableInterest, currentPbInterest, currentGrossTotal, currentTaxableAmount, trPct, currentTaxCost, currentAfterTaxTotal,
-    totalPot, step1Isa, step1IsaInterest, afterStep1, savingsWorthIt,
+    totalPot, step1Isa, step1IsaInterest, afterStep1, savingsWorthIt, isaLines, savingsLines,
     step2Savings, step2SavingsInterest, step2CurrentInterest, step2Delta, afterStep2, discretionaryAmount,
     step3Pb, step3PbInterest, step3UpliftVsCurrent, beyondPbCap,
     optimisedTotal, keptAmount, todayBlendedRate, currentInterestOnKeptAmount, optimisationGain,

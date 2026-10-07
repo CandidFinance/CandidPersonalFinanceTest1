@@ -65,7 +65,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // "Optimise your cash" win uses — so the Dashboard shows the identical £/yr figure
   // rather than a cruder approximation. This also supersedes the old separate
   // Premium-Bonds-only calc: the optimiser already reallocates cash + bonds together.
-  const cashOpt = calcCashOptimisation(m, isaRate, nonIsaRate);
+  const cashOpt = calcCashOptimisation(m, isaRate, nonIsaRate, marketRates.rows);
   const cashImpact = Math.max(0, Math.round(cashOpt.optimisationGain));
   // Approaching-deadline urgency is a sort-priority-only nudge, kept separate from
   // the £/yr figures shown to the user (see pension's +99999 sentinel below for the

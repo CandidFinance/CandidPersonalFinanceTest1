@@ -1,9 +1,13 @@
 import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE } from "./tax.js";
 import { resolveSlRate, slRepaymentThreshold } from "./studentLoan.js";
+import { allocateCash } from "./cashAllocation.js";
 
 export const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
 
-// marketRates: { isaRate, nonIsaRate } — the live max(rate_aer) from savings_rates,
+// marketRates: { isaRate, nonIsaRate, rows } — the live best easy-access rates from
+// savings_rates, plus (optionally) the rows themselves. With rows, the cash
+// figures spread each portion across real accounts by rate and balance cap
+// (allocateCash) instead of assuming all of it gets the single top rate.
 // resolved ONCE by the caller (client: Candid's useMemo; server: the PDF route) and
 // passed in here as plain numbers so this function stays synchronous. Defaults
 // preserve the exact prior hardcoded behaviour for any caller that omits it.
@@ -27,7 +31,7 @@ export function getBufferMonths(d) {
 }
 
 export function calcMetrics(d, marketRates = {}) {
-  const { isaRate = 5.1, nonIsaRate = 5.1 } = marketRates;
+  const { isaRate = 5.1, nonIsaRate = 5.1, rows = null } = marketRates;
   const salaryGrowthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
   const salary = +d.salary||0, expenses = +d.monthlyExpenses||0,
         bonds = +d.premiumBonds||0;
@@ -103,8 +107,12 @@ export function calcMetrics(d, marketRates = {}) {
         // would silently double-count the same bonds balance in both calculations.
         isaEligiblePortion = Math.min(cash, isaHeadroom),
         nonIsaPortion = Math.max(0, cash - isaHeadroom),
-        isaPortionGain = isaEligiblePortion * (isaRate - savingsRate),
-        nonIsaPortionGain = nonIsaPortion * (nonIsaRate - savingsRate),
+        isaAlloc = Array.isArray(rows) ? allocateCash(isaEligiblePortion, rows.filter(r => r.is_isa === true)) : null,
+        nonIsaAlloc = Array.isArray(rows) ? allocateCash(nonIsaPortion, rows.filter(r => r.is_isa === false)) : null,
+        isaPortionRate = isaAlloc?.lines.length && !isaAlloc.unallocated ? isaAlloc.blendedRatePct : isaRate,
+        nonIsaPortionRate = nonIsaAlloc?.lines.length && !nonIsaAlloc.unallocated ? nonIsaAlloc.blendedRatePct : nonIsaRate,
+        isaPortionGain = isaEligiblePortion * (isaPortionRate - savingsRate),
+        nonIsaPortionGain = nonIsaPortion * (nonIsaPortionRate - savingsRate),
         cashExcessNotWorthMoving = nonIsaPortionGain < 0,
         annualYieldGap = (isaPortionGain + Math.max(0, nonIsaPortionGain)) / 100,
         // What to actually recommend moving: the full cash balance normally, but

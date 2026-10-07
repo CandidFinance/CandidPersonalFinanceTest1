@@ -19,6 +19,24 @@ import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-t
 // desktop's account-by-account allocation list, the Step 4 GIA growth
 // illustration, and the "other cash-like options" section — v1 scope per the
 // mobile deep-dive plan.
+// The accounts a step's money is spread across (allocateCash): each with its
+// amount, rate and interest, and for a capped account how much more it earns
+// than leaving that money in the best uncapped one.
+function AccountLines({ lines, rowStyle }) {
+  const anchorRate = lines.find(l => l.cap == null)?.ratePct;
+  return lines.map((l, i) => {
+    const name = l.product && !l.provider.toLowerCase().includes(l.product.toLowerCase()) ? `${l.provider} · ${l.product}` : l.provider;
+    return (
+      <div key={i} style={{padding:"4px 0"}}>
+        <div style={{...rowStyle,padding:0}}><span>{fmt(l.amount)} at {l.ratePct.toFixed(2)}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(l.interest)}/yr</span></div>
+        <div style={{fontSize:"11.5px",color:MUT,lineHeight:1.45}}>
+          {name}{l.cap != null && ` · up to ${fmt(l.cap)}`}{l.extra != null && anchorRate != null && ` · ${fmt(l.extra)}/yr more than at ${anchorRate.toFixed(2)}%`}
+        </div>
+      </div>
+    );
+  });
+}
+
 // `onShowReveal` replays the answer step by step ("Explain this", in the
 // opportunity tile, or at the top when there's none).
 export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal }) {
@@ -35,7 +53,8 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
     totalPot, step1Isa, step1IsaInterest, step2Savings, step2SavingsInterest, step2CurrentInterest, step2Delta,
     step3Pb, step3PbInterest,
     optimisedTotal, keptAmount, currentInterestOnKeptAmount, optimisationGain, todayBlendedRate,
-  } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct);
+    isaLines, savingsLines,
+  } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct, savingsRates);
   const products = getModuleProducts("cash", d, m, savingsRates);
   const optimalBlendedRatePct = keptAmount > 0 ? (optimisedTotal / keptAmount) * 100 : 0;
 
@@ -116,9 +135,13 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
                   <span style={stepLabel}>Step 1 — Fill your ISA</span>
                   <InfoButton onClick={() => setOpenInfo(o => o==="step1"?null:"step1")} open={openInfo==="step1"}/>
                 </div>
-                <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (best rate)</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span></div>
+                {isaLines.length > 0 ? <AccountLines lines={isaLines} rowStyle={rowStyle}/> : (
+                  <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (best rate)</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span></div>
+                )}
                 {openInfo === "step1" && (
-                  <p style={stepCaption}>{fmt(step1Isa)} is your remaining ISA allowance this tax year. {isaRateDisplay} is the top easy-access Cash ISA rate today.</p>
+                  <p style={stepCaption}>{fmt(step1Isa)} is your remaining ISA allowance this tax year. {isaLines.length > 1
+                    ? `Spread across the best easy-access Cash ISAs, each up to its limit, it earns ${isaRateDisplay} on average.`
+                    : `${isaRateDisplay} is the top easy-access Cash ISA rate today.`}</p>
                 )}
               </div>
             )}
@@ -129,7 +152,9 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
                   <InfoButton onClick={() => setOpenInfo(o => o==="step2"?null:"step2")} open={openInfo==="step2"}/>
                 </div>
                 <div style={rowStyle}><span>{fmt(step2Savings)} at your current rate</span><span>{fmt(step2CurrentInterest)}/yr</span></div>
-                <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (best rate)</span><span style={{fontWeight:600}}>{fmt(step2SavingsInterest)}/yr</span></div>
+                {savingsLines.length > 0 ? <AccountLines lines={savingsLines} rowStyle={rowStyle}/> : (
+                  <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (best rate)</span><span style={{fontWeight:600}}>{fmt(step2SavingsInterest)}/yr</span></div>
+                )}
                 <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?"#2d6b4a":TEXT}}><span>Extra from switching</span><span>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
                 {openInfo === "step2" && (
                   <p style={stepCaption}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band. You're already earning {fmt(step2CurrentInterest)}/yr on this money at your current rate; moving it to today's best non-ISA rate ({nonIsaRateDisplay}) is worth an extra {fmt(Math.max(0,step2Delta))}/yr on top — not {fmt(step2SavingsInterest)}/yr from scratch.</p>

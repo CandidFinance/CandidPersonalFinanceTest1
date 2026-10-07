@@ -91,7 +91,7 @@ export function cashReveal(d, m, { marketRates = {} } = {}) {
         body: "An easy-access account keeps it reachable when you need it." },
     ];
   }
-  const opt = calcCashOptimisation(m, marketRates.isaRate ?? null, marketRates.nonIsaRate ?? null);
+  const opt = calcCashOptimisation(m, marketRates.isaRate ?? null, marketRates.nonIsaRate ?? null, marketRates.rows);
   if (opt.optimisationGain > 50) {
     return [
       { label: ANSWER, figure: `${fmt(opt.optimisationGain)} a year`, title: "more your savings could earn." },

@@ -25,7 +25,7 @@ export async function fetchSavingsRates() {
   const key = import.meta.env?.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   try {
-    const res = await fetch(`${url}/rest/v1/savings_rates?select=provider_name,account_type,rate_aer,updated_at,is_isa`, {
+    const res = await fetch(`${url}/rest/v1/savings_rates?select=provider_name,product_name,account_type,rate_aer,max_balance,updated_at,is_isa`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
     });
     return res.ok ? await res.json() : null;

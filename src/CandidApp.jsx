@@ -7,6 +7,7 @@ import { fmt, fmtK, fmtCompact } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, slRepaymentThreshold, calcStudentLoanScenario, describeLoanVsPension } from "./lib/studentLoan.js";
 import { topRate, isEasyAccess } from "./lib/savingsRates.js";
+import { allocateCash } from "./lib/cashAllocation.js";
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation } from "./lib/cash.js";
 import { calcMetrics, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
@@ -315,18 +316,28 @@ function getModuleInsights(key, d, m, savingsRates) {
     case "cash": {
       const gap = m.annualYieldGap;
       const cashRate = +d.savingsRate || 3.5;
-      // 5.08 fallback only covers the brief window before savingsRates loads.
-      const bestISARate = topRate(savingsRates, true)?.rate_aer ?? 5.08;
       // Cash only, deliberately — premium bonds have their own separate yield
       // calculation (bondsYieldGain) and their own tile below; combining them here
       // would double-count the same bonds balance against this tile's gap figure.
+      // Each portion is spread across real accounts by rate and balance cap
+      // (allocateCash), so the rate quoted is what that money would actually
+      // earn, not a top rate only the first £3,000 can get.
+      const rateRows = savingsRates || [];
+      const isaAlloc = allocateCash(Math.min(m.cash, m.isaHeadroom), rateRows.filter(r => r.is_isa === true));
+      const nonIsaAlloc = allocateCash(Math.max(0, m.cash - m.isaHeadroom), rateRows.filter(r => r.is_isa === false));
       const nonIsaRow = topRate(savingsRates, false);
-      const cashSplit = splitByIsaHeadroom(m.cash, m.isaHeadroom, nonIsaRow ? +nonIsaRow.rate_aer : null, cashRate);
+      // 5.08 fallback only covers the brief window before savingsRates loads.
+      const bestISARate = isaAlloc.lines.length ? isaAlloc.blendedRatePct.toFixed(2) : (topRate(savingsRates, true)?.rate_aer ?? 5.08);
+      const nonIsaRateText = nonIsaAlloc.lines.length ? nonIsaAlloc.blendedRatePct.toFixed(2) : nonIsaRow?.rate_aer ?? null;
+      const cashSplit = splitByIsaHeadroom(m.cash, m.isaHeadroom, nonIsaRateText != null ? +nonIsaRateText : null, cashRate);
+      const isaWhere = isaAlloc.lines.length > 1 ? `Cash ISAs averaging ${bestISARate}%` : `a Cash ISA at ${bestISARate}%`;
+      const nonIsaWhere = nonIsaRateText == null ? "a top-paying savings account"
+        : nonIsaAlloc.lines.length > 1 ? `savings accounts averaging ${nonIsaRateText}%` : `a ${nonIsaRateText}% savings account`;
       const moveDestination = cashSplit.fitsEntirelyInIsa
-        ? `a Cash ISA at ${bestISARate}%`
+        ? isaWhere
         : cashSplit.nonIsaWorthMoving
-          ? `a Cash ISA at ${bestISARate}% (${fmt(cashSplit.isaPortion)}) and a ${nonIsaRow ? nonIsaRow.rate_aer+"%" : "top-paying"} savings account (${fmt(cashSplit.nonIsaPortion)})`
-          : `a Cash ISA at ${bestISARate}% (${fmt(cashSplit.isaPortion)}, your remaining allowance)`;
+          ? `${isaWhere} (${fmt(cashSplit.isaPortion)}) and ${nonIsaWhere} (${fmt(cashSplit.nonIsaPortion)})`
+          : `${isaWhere} (${fmt(cashSplit.isaPortion)}, your remaining allowance)`;
       // Premium bonds tile folds in the essential "worth keeping?" explainer that used
       // to be its own separate overlay card — same bondAdvantage logic, condensed.
       const psaLimit = m.taxBandLabel==="basic"?1000:m.taxBandLabel==="higher"?500:0;
@@ -4482,7 +4493,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
             step2Savings, step2SavingsInterest, step2CurrentInterest, step2Delta, discretionaryAmount,
             step3Pb, step3PbInterest, step3UpliftVsCurrent, beyondPbCap,
             optimisedTotal, keptAmount, currentInterestOnKeptAmount, optimisationGain,
-          } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct);
+          } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct, savingsRates);
 
           const displayTiers = [
             ...((Array.isArray(d.cashTiers) && d.cashTiers.some(t => +t.amount > 0))
@@ -5829,7 +5840,7 @@ export default function AppShell() {
   const [savingsRates, setSavingsRates] = useState(null);
   useEffect(() => {
     let cancelled = false;
-    supaSelect("savings_rates", "?select=provider_name,account_type,rate_aer,product_url,updated_at,is_isa&order=rate_aer.desc")
+    supaSelect("savings_rates", "?select=provider_name,product_name,account_type,rate_aer,max_balance,product_url,updated_at,is_isa&order=rate_aer.desc")
       .then(rows => { if (!cancelled) setSavingsRates(rows || []); });
     return () => { cancelled = true; };
   }, []);
@@ -5900,6 +5911,9 @@ export default function AppShell() {
     return {
       isaRate: topIsa ? +topIsa.rate_aer : undefined,
       nonIsaRate: topNonIsa ? +topNonIsa.rate_aer : undefined,
+      // The rows too, so cash figures can spread money across accounts by
+      // rate and balance cap (allocateCash).
+      rows: savingsRates || null,
     };
   }, [savingsRates]);
   const m = useMemo(() => calcMetrics(d, marketRates), [d, marketRates]);

@@ -92,7 +92,7 @@ async function getMarketRates() {
   if (!SUPA_URL || !SUPA_KEY) return {};
   try {
     const res = await fetch(
-      `${SUPA_URL}/rest/v1/savings_rates?select=rate_aer,is_isa`,
+      `${SUPA_URL}/rest/v1/savings_rates?select=provider_name,product_name,account_type,rate_aer,max_balance,product_url,is_isa&status=eq.live`,
       { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` } }
     );
     if (!res.ok) return {};
@@ -102,6 +102,7 @@ async function getMarketRates() {
     return {
       isaRate: topIsa ? +topIsa.rate_aer : undefined,
       nonIsaRate: topNonIsa ? +topNonIsa.rate_aer : undefined,
+      rows,
     };
   } catch (e) {
     console.error("[generate-report-pdf] Failed to fetch market rates, using calcMetrics/computeModuleStatuses defaults:", e);
