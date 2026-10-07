@@ -23,6 +23,7 @@ export default function RatesAdmin() {
   const [busy, setBusy] = useState("");
   const [lastRun, setLastRun] = useState(null);
   const [newSource, setNewSource] = useState({ providerName: "", url: "" });
+  const [editing, setEditing] = useState(null); // { id, providerName, url } while a source is being changed
 
   async function call(method, body, label) {
     setBusy(label || "load");
@@ -136,7 +137,22 @@ export default function RatesAdmin() {
           <table style={{ borderCollapse: "collapse", width: "100%", background: WHITE }}>
             <thead><tr>{["Provider", "Page", "Last checked", "Result", "Products", ""].map(h => <th key={h} style={head}>{h}</th>)}</tr></thead>
             <tbody>
-              {sources.map(s => (
+              {sources.map(s => editing?.id === s.id ? (
+                <tr key={s.id}>
+                  <td style={cell} colSpan={6}>
+                    <form onSubmit={async e => { e.preventDefault(); if (await call("POST", { action: "update_source", ...editing }, s.id)) setEditing(null); }}
+                      style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                      <input value={editing.providerName} onChange={e => setEditing(x => ({ ...x, providerName: e.target.value }))} placeholder="Provider name"
+                        style={{ padding: "8px 10px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "13px", fontFamily: SANS }}/>
+                      <input value={editing.url} onChange={e => setEditing(x => ({ ...x, url: e.target.value }))} placeholder="https://... product page"
+                        style={{ flex: 1, minWidth: "240px", padding: "8px 10px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "13px", fontFamily: SANS }}/>
+                      <button type="submit" style={button(true)} disabled={!!busy || !editing.providerName || !editing.url}>Save</button>
+                      <button type="button" style={button(false)} onClick={() => setEditing(null)}>Cancel</button>
+                      <span style={{ fontSize: "12px", color: MUT, flexBasis: "100%" }}>Its live rates move with it, and the new page is read on the next check.</span>
+                    </form>
+                  </td>
+                </tr>
+              ) : (
                 <tr key={s.id} style={{ opacity: s.active ? 1 : 0.5 }}>
                   <td style={cell}>{s.provider_name}</td>
                   <td style={{ ...cell, maxWidth: "320px", wordBreak: "break-all" }}><a href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: G }}>{s.url}</a></td>
@@ -145,6 +161,7 @@ export default function RatesAdmin() {
                   <td style={cell}>{s.last_product_count ?? "-"}</td>
                   <td style={{ ...cell, whiteSpace: "nowrap" }}>
                     <button type="button" style={button(false)} disabled={!!busy} onClick={() => call("POST", { action: "run", sourceIds: [s.id] }, "run")}>Check</button>{" "}
+                    <button type="button" style={button(false)} disabled={!!busy} onClick={() => setEditing({ id: s.id, providerName: s.provider_name, url: s.url })}>Edit</button>{" "}
                     <button type="button" style={button(false)} disabled={!!busy} onClick={() => call("POST", { action: "toggle_source", id: s.id }, s.id)}>{s.active ? "Pause" : "Resume"}</button>
                   </td>
                 </tr>

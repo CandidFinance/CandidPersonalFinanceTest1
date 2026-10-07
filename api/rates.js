@@ -198,6 +198,21 @@ async function resolveReview(id, approve) {
   await db(`savings_rate_reviews?id=eq.${id}`, { method: "PATCH", body: { resolved_at: now, resolution: approve ? "approved" : "rejected" } });
 }
 
+// A source's name and page, checked. One source per page: a single read of
+// a page picks up every product on it, so the same page twice would only
+// duplicate them.
+async function sourceFields(providerName, url, exceptId = null) {
+  let parsed;
+  try { parsed = new URL(String(url)); } catch { parsed = null; }
+  const name = String(providerName || "").trim().slice(0, 120);
+  if (!parsed || parsed.protocol !== "https:" || !name) throw Object.assign(new Error("Needs a provider name and an https URL"), { http: 400 });
+  const [taken] = await db(`rate_sources?url=eq.${encodeURIComponent(parsed.toString())}&select=id,provider_name,active`);
+  if (taken && taken.id !== exceptId) {
+    throw Object.assign(new Error(`That page is already a source (${taken.provider_name}${taken.active ? "" : ", paused"}). Every product on a page comes from its one entry.`), { http: 409 });
+  }
+  return { provider_name: name, url: parsed.toString() };
+}
+
 async function adminOverview() {
   const [sources, reviews, rates] = await Promise.all([
     db("rate_sources?select=id,provider_name,url,active,last_fetched_at,last_status,last_error,last_product_count&order=provider_name.asc"),
@@ -243,9 +258,13 @@ export default async function handler(req, res) {
     if (action === "approve" || action === "reject") {
       await resolveReview(String(id), action === "approve");
     } else if (action === "add_source") {
-      const parsed = new URL(String(url));
-      if (parsed.protocol !== "https:" || !String(providerName || "").trim()) return res.status(400).json({ error: "Needs a provider name and an https URL" });
-      await db("rate_sources", { method: "POST", prefer: "return=minimal", body: { provider_name: String(providerName).trim().slice(0, 120), url: parsed.toString() } });
+      await db("rate_sources", { method: "POST", prefer: "return=minimal", body: await sourceFields(providerName, url) });
+    } else if (action === "update_source") {
+      // A new page or name for an existing source. Its live rates move with
+      // it, so the next read matches them up instead of raising them as new.
+      const fields = await sourceFields(providerName, url, String(id));
+      await db(`rate_sources?id=eq.${String(id)}`, { method: "PATCH", body: { ...fields, last_hash: null, last_status: null, last_error: null } });
+      await db(`savings_rates?source_id=eq.${String(id)}`, { method: "PATCH", body: { provider_name: fields.provider_name, product_url: fields.url } });
     } else if (action === "toggle_source") {
       const [source] = await db(`rate_sources?id=eq.${String(id)}&select=active`);
       if (source) await db(`rate_sources?id=eq.${String(id)}`, { method: "PATCH", body: { active: !source.active } });
@@ -257,6 +276,7 @@ export default async function handler(req, res) {
     }
     return res.status(200).json(await adminOverview());
   } catch (e) {
+    if (e.http) return res.status(e.http).json({ error: e.message });
     console.error("[api/rates] admin action failed:", e);
     return res.status(500).json({ error: e.message });
   }
