@@ -163,7 +163,79 @@ Candid fee:       shown separately and disclosed
 - [ ] **Alert wording stays factual.** Not "Tap here to auto-switch and capture £140", which is both directive and untrue. Instead: "Your rate is 2.1%. Accounts you hold or could open pay up to 4.6%, about £140 more a year."
 - [ ] **Sweeping VRP** for repeat moves between accounts the user holds.
 
-## 12. Sequence
+## 12. Candid Assist: the automation widget
+
+**The gap it fills:** today Candid shows the options and then does nothing. Assist walks the user through carrying out the option they choose. It never moves money itself.
+
+**Principle: you choose, Candid does the work.**
+1. The engine shows the options, each with its 12-month £ effect.
+2. The user picks one.
+3. Assist covers the legwork for that choice: the amount, which account the money comes from, a link to the right page, the steps, and a "Done, I've done it" button that updates their data.
+
+This is guidance on carrying out the user's own decision, not advice, so it doesn't depend on the compliance decision in section 2.
+
+**Naming and copy**
+- [ ] Don't call it a "robo-advisor". Robo-advice is the FCA's term for regulated automated advice. Working name: "Candid Assist".
+- [ ] Use the Candid mark or a Lucide icon, not a robot.
+- [ ] No ranking of where leftover cash "should" go. Showing ISA, student loan and savings options side by side with £ effects is fine. Putting them in an order to follow is a financial plan.
+
+**The engine decides; Claude explains**
+- [ ] Every walkthrough narrates deterministic engine output. Worked example: cash at 2% against a student loan at 6% looks like "pay off the loan", but most Plan 2 borrowers are written off after 30 years and overpaying gives money away. `src/lib/studentLoan.js` already models this (`SL_WRITE_OFF_YEARS`, `calcOverpaymentScenarios`). When the engine says it doesn't pay, Assist says so and shows why.
+- [ ] Mention that money paid to the Student Loans Company can't be taken back, so it reduces the user's emergency cushion.
+- [ ] Free-text questions go to Claude with only the user's engine figures. Reject any answer containing a number that wasn't in its input, and fall back to scripted copy.
+
+**The widget**
+- [ ] Fixed above the bottom nav, or snapping to either edge. Not freely draggable: on phones it fights scrolling and covers content.
+- [ ] **Badge: a small gold dot**, not red. Red is the CRITICAL colour in the RAG system.
+- [ ] **What the badge means:** "something changed since you last looked". It must not mean "there are opportunities", which the Home hero already shows (single state indicator rule).
+- [ ] **Replaces the "Coming soon" chat** (`src/mobile/screens/MobileChatScreen.jsx`).
+- [ ] **Reuses the GuidedFlow pattern from Property:** button answers first, free text as an option.
+
+**Triggers**
+
+| Trigger | When it's possible |
+|---|---|
+| ISA allowance unused as 5 April approaches; tax year reset | Now, from what the user entered |
+| Fixed mortgage rate ending; score or opportunity changed after an edit | Now |
+| Market rates changed | Once the rate feed (section 13) exists |
+| Paid with cash left over | Once live Open Banking exists (Phases 1 and 2) |
+
+Version 1 works out the badge when the app opens. Push notifications and pay-day detection come later.
+
+**Version 1 scope**
+- [ ] The widget, the badge, and the walkthrough shell (GuidedFlow plus grounded free text)
+- [ ] Walkthrough: move cash to a higher-rate account
+- [ ] Walkthrough: use the remaining ISA allowance before 5 April
+- [ ] Walkthrough: student loan overpayment, offered only when the engine shows it pays
+- [ ] "Done, I've done it" updates the user's data, and the score and opportunities refresh
+
+## 13. Weekly rate feed
+
+**Approach:** a weekly Vercel Cron job.
+1. Fetch a curated list of provider product pages. Fetch them directly; don't let Claude search freely.
+2. Claude (Haiku) extracts structured products using a fixed schema.
+3. Validate the results.
+4. Write them to a Supabase table that anon users can only read.
+5. A person reviews the flagged changes.
+
+- [ ] **Provider list:** about 30 to 50 providers that cover the best-buy tables (challengers and platforms included), each with its product page URLs.
+- [ ] **Extraction schema:**
+  - provider, product, type (easy access, notice, fixed, cash ISA)
+  - AER, plus any bonus rate and its end date
+  - balance tiers, withdrawal limits, eligibility, app-only flag
+  - source URL, fetch date
+  - **the exact text snippet supporting each rate**
+- [ ] **Validation, in code:**
+  - the snippet must appear in the fetched page text
+  - AER must be within sane bounds
+  - a change of more than 1 point, or a missing product, is held for review rather than published
+  - pages whose content hash hasn't changed are skipped
+- [ ] **Fetching:** handle JavaScript-rendered pages and bot blocking. Some pages will need a headless fetch or a different URL.
+- [ ] **Sources:** don't scrape comparison sites (Moneyfacts, MoneySavingExpert). Their data is licensed, and their terms prohibit it. Use provider pages only.
+- [ ] **Display:** show "rates as of <date>" everywhere. Rerun the job when the Bank of England changes the base rate.
+- [ ] **Later:** a licensed feed (Moneyfacts or Defaqto data, a savings platform's rates API, or affiliate network feeds) once Candid is earning revenue from it.
+
+## 14. Sequence
 
 | Step | Track | Item |
 |---|---|---|
@@ -171,7 +243,9 @@ Candid fee:       shown separately and disclosed
 | 2 | Phase 0 | Hide button, live ceiling, sign-in plan, logs, token encryption |
 | 3 | Partner | Savings platform conversations (Raisin, Flagstone, Hargreaves Lansdown) |
 | 4 | Phase 1 | Environment switch, founder dogfood, £10 test, webhook |
-| 5 | Monitoring | Monthly factual alerts across all modules (no regulatory dependency) |
-| 6 | Phase 2 | Sign-in, alpha with friends, fronted payout test |
-| 7 | Narrative | Deck rewritten around outcomes and the advice gap, with Cash as proof |
-| 8 | Phase 3 | Agent registration, public launch, VRP |
+| 5 | Assist v1 | Widget, badge, three engine-driven walkthroughs (no regulatory dependency) |
+| 6 | Rate feed | Weekly scan, validation, review queue; enables the "rates changed" trigger |
+| 7 | Monitoring | Monthly factual alerts across all modules, delivered through Assist |
+| 8 | Phase 2 | Sign-in, alpha with friends, fronted payout test |
+| 9 | Narrative | Deck rewritten around outcomes and the advice gap, with Assist and Cash as proof |
+| 10 | Phase 3 | Agent registration, public launch, VRP |
