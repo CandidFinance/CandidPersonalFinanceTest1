@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
-import { Sparkles, ChevronDown, ChevronLeft, ArrowUpRight, Check } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronLeft, ChevronRight, ArrowUpRight, Check } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
-import { assistItems, assistHasNews, cashPlan, applyCashMove, accountName, MIN_ASSIST_GAIN } from "../../lib/assist.js";
+import { assistItems, assistHasNews, cashPlan, applyCashMove, accountName, resolveAccount, MIN_ASSIST_GAIN, MIN_SPLIT_GAIN } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { itemisedNonCashIsa } from "../../lib/isa.js";
@@ -32,6 +32,7 @@ const writeSeen = list => { try { localStorage.setItem(SEEN_KEY, JSON.stringify(
 const WIDE = 640;
 
 const pct = n => `${(+n).toFixed(2)}%`;
+const fmtDate = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const fromName = f => f.name ? `${f.name} (${pct(f.ratePct)})` : f.index == null ? `your savings (${pct(f.ratePct)} on average)` : `your account paying ${pct(f.ratePct)}`;
 const ratesDate = opts => {
   const dates = opts.map(o => o.updatedAt).filter(Boolean).map(s => new Date(s));
@@ -52,8 +53,10 @@ function Mark({ on, round = false }) {
   );
 }
 
-// One section's providers: tap to pick, tap again to unpick.
-function OptionList({ options, picked, onPick }) {
+// One section's providers: tap to pick, tap again to unpick. `absolute`:
+// show what each would earn in a year, for when there's no current rate to
+// compare against.
+function OptionList({ options, picked, onPick, absolute = false }) {
   return options.map(o => {
     const on = picked?.id === o.id;
     return (
@@ -67,10 +70,115 @@ function OptionList({ options, picked, onPick }) {
             {pct(o.ratePct)} · would take {fmt(o.amount)}{o.cap != null ? ` (pays this on up to ${fmt(o.cap)})` : ""}
           </span>
         </span>
-        <span style={{ fontFamily: SERIF, fontSize: "15px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>+{fmt(o.gain)}</span>
+        <span style={{ fontFamily: SERIF, fontSize: "15px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{absolute ? `${fmt(o.gain)}/yr` : `+${fmt(o.gain)}`}</span>
       </button>
     );
   });
+}
+
+// After a capped pick, the rest of the money: an optional second account,
+// and how the two together compare with one account that could take it all.
+function SecondChoice({ section, onPick }) {
+  if (!section.pick || !section.secondOptions.length) return null;
+  const { pick, split } = section;
+  return (
+    <div style={{ margin: "2px 0 12px 10px", paddingLeft: "12px", borderLeft: "2px solid rgba(22,47,36,0.12)" }}>
+      <div style={{ fontSize: "13.5px", fontWeight: 700, color: TEXT }}>The other {fmt(section.leftover)}</div>
+      <p style={{ fontSize: "12.5px", color: MUT, margin: "2px 0 8px", lineHeight: 1.5 }}>
+        {accountName(pick)} pays {pct(pick.ratePct)} on up to {fmt(pick.cap)}. If you like, the rest can go into a second account.
+      </p>
+      <OptionList options={section.secondOptions} picked={section.second} onPick={onPick}/>
+      {split && (
+        <p style={{ fontSize: "12.5px", color: TEXT, lineHeight: 1.5, margin: "2px 0 0" }}>
+          Together: +{fmt(split.together)} a year.{" "}
+          {split.extra > 0 ? `That's ${fmt(split.extra)} a year more than all of it in ${accountName(split.single)}.` : `That's no more than all of it in ${accountName(split.single)}.`}
+          {split.extra < MIN_SPLIT_GAIN ? " Under £25 a year for running a second account." : ""}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// An account opened through Assist whose rate is ending or has been cut:
+// what's happening, where the money could go instead (a choice, none picked
+// in advance), how to move it, or keeping it where it is. Either way Candid's
+// figures follow.
+function AccountFlow({ item, state, update, d, set, backToList }) {
+  const a = item.account;
+  const pick = item.options.find(o => o.id === state.accountChoice) || null;
+  const absolute = item.toRate == null;
+  const settle = movedTo => {
+    Object.entries(resolveAccount(d, item, movedTo)).forEach(([k, v]) => set(k, v));
+    update({ step: "finished", itemId: null, accountChoice: null, done: {} });
+  };
+
+  if (state.step === "how" && pick) {
+    return (
+      <div>
+        <button type="button" style={{ ...textButton, padding: "0 0 10px", display: "inline-flex", alignItems: "center", gap: "2px" }} onClick={() => update({ step: "overview" })}><ChevronLeft size={16}/>Back</button>
+        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>{a.isa ? "Transferring your ISA" : "Moving your savings"}</div>
+        <div style={{ ...card, padding: "14px 16px", marginTop: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "10px" }}>
+            <span style={{ fontSize: "15px", fontWeight: 700, color: TEXT }}>{accountName(pick)}</span>
+            <span style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{fmt(pick.amount)}</span>
+          </div>
+          <div style={{ fontSize: "12.5px", color: MUT, marginTop: "2px" }}>{a.isa ? "Cash ISA" : "Savings account"} at {pct(pick.ratePct)}</div>
+          <ul style={{ margin: "12px 0 12px", paddingLeft: "18px", fontSize: "13.5px", color: TEXT, lineHeight: 1.6 }}>
+            {a.isa ? (
+              <>
+                <li>Open a Cash ISA with {pick.provider}.</li>
+                <li>Ask {pick.provider} to transfer your ISA from {a.name}. They arrange it with {a.provider}.</li>
+                <li>Don't withdraw it yourself: it would lose its tax-free status. A transfer doesn't use this year's allowance.</li>
+              </>
+            ) : (
+              <>
+                <li>Open the account on {pick.provider}'s website or app.</li>
+                <li>Move {fmt(pick.amount)} from your {a.name} into it.</li>
+              </>
+            )}
+            {pick.cap != null && <li>Only the first {fmt(pick.cap)} earns {pct(pick.ratePct)}.</li>}
+          </ul>
+          {pick.url && (
+            <a href={pick.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "13.5px", fontWeight: 700, color: G, textDecoration: "none" }}>
+              Open {pick.provider}<ArrowUpRight size={14}/>
+            </a>
+          )}
+        </div>
+        <div style={{ marginTop: "18px" }}><button type="button" style={primaryButton(false)} onClick={() => settle(pick)}>I've moved it: update Candid</button></div>
+      </div>
+    );
+  }
+
+  const ended = item.daysLeft != null && item.daysLeft <= 0;
+  return (
+    <div>
+      {backToList}
+      <div style={sectionLabel}>{item.kind === "bonus" ? (ended ? "Rate ended" : "Rate ending") : "Rate cut"}</div>
+      <div style={{ fontFamily: SERIF, fontSize: "30px", fontWeight: 700, color: G, lineHeight: 1.15, marginTop: "4px" }}>
+        {item.loss != null ? `${fmt(item.loss)} a year less` : `${ended ? "Ended" : "Ends"} ${fmtDate(item.date)}`}
+      </div>
+      <p style={{ fontSize: "14px", color: TEXT, lineHeight: 1.6, marginTop: "8px" }}>
+        {item.kind === "bonus"
+          ? <>The {pct(item.fromRate)} rate on your {fmt(a.amount)} in {a.name} {ended ? "ended" : "ends"} on {fmtDate(item.date)}{!ended && item.daysLeft != null ? `, in ${item.daysLeft} day${item.daysLeft === 1 ? "" : "s"}` : ""}. {item.toRate != null ? `It then drops to ${pct(item.toRate)}.` : `${a.provider}'s page doesn't say what it drops to, so it's worth checking with them.`}</>
+          : <>{a.provider} has cut the rate on your {a.name} from {pct(item.fromRate)} to {pct(item.toRate)}, on your {fmt(a.amount)}.</>}
+      </p>
+      <div style={{ fontSize: "16px", fontWeight: 700, color: TEXT, marginTop: "20px" }}>{a.isa ? "Cash ISAs you could transfer to" : "Savings accounts you could move to"}</div>
+      <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 10px", lineHeight: 1.5 }}>
+        {absolute ? "What each would earn in a year." : `The extra a year compared with staying at ${pct(item.toRate)}.`}
+      </p>
+      {item.options.length
+        ? <OptionList options={item.options} picked={pick} onPick={id => update({ accountChoice: id })} absolute={absolute}/>
+        : <p style={{ fontSize: "12.5px", color: MUT }}>None of the easy-access accounts Candid tracks pays more right now.</p>}
+      <p style={{ fontSize: "11.5px", color: MUT, lineHeight: 1.55, margin: "10px 0 18px" }}>
+        These are figures, not a recommendation: whether to move, and where, is your choice. Sorted by rate. Check each account's terms.
+      </p>
+      <button type="button" disabled={!pick} style={primaryButton(!pick)} onClick={() => update({ step: "how" })}>Show me how</button>
+      <div style={{ textAlign: "center", marginTop: "6px" }}>
+        <button type="button" style={textButton} onClick={() => settle(null)}>Keep it where it is</button>
+        {absolute && !a.isa && <p style={{ fontSize: "11.5px", color: MUT, margin: 0 }}>Candid will keep it at {pct(a.ratePct)} until you update it in Cash & savings.</p>}
+      </div>
+    </div>
+  );
 }
 
 export default function CandidAssist({ d, m, set, savingsRates, state, setState, onOpenCash }) {
@@ -87,12 +195,13 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
   }, []);
 
   const items = useMemo(() => assistItems(d, m, savingsRates), [d, m, savingsRates]);
-  const item = items[0] || null;
+  // With one thing to show, Assist opens on it; with more, on a list of them.
+  const item = items.find(i => i.id === state.itemId) || (items.length === 1 ? items[0] : null);
   const news = assistHasNews(items, readSeen());
   const quiet = items.length === 0;
   const skipIsa = d.assistSkipIsa === true;
-  const plan = useMemo(() => cashPlan(d, m, savingsRates, { skipIsa, isaChoice: state.isaChoice, savingsChoice: state.savingsChoice }),
-    [d, m, savingsRates, skipIsa, state.isaChoice, state.savingsChoice]);
+  const plan = useMemo(() => cashPlan(d, m, savingsRates, { skipIsa, isaChoice: state.isaChoice, isaChoice2: state.isaChoice2, savingsChoice: state.savingsChoice, savingsChoice2: state.savingsChoice2 }),
+    [d, m, savingsRates, skipIsa, state.isaChoice, state.isaChoice2, state.savingsChoice, state.savingsChoice2]);
 
   // Opening Assist counts as having seen what's in it.
   useEffect(() => {
@@ -101,8 +210,11 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
 
   const update = patch => setState(s => ({ ...s, ...patch }));
   const minimise = () => update({ open: false });
-  const picks = plan ? [plan.isa.pick, plan.savings.pick].filter(Boolean) : [];
+  const picks = plan ? plan.picks : [];
   const done = picks.filter(p => state.done[p.id]);
+  const backToList = items.length > 1 && (
+    <button type="button" style={{ ...textButton, padding: "0 0 10px", display: "inline-flex", alignItems: "center", gap: "2px" }} onClick={() => update({ itemId: null, step: "overview" })}><ChevronLeft size={16}/>Everything to look at</button>
+  );
   const otherIsaItemised = itemisedNonCashIsa(d) > 0;
   const otherIsaUnknown = !otherIsaItemised && !d.hasOtherIsaThisYear;
 
@@ -116,9 +228,36 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           Candid now has your cash where you've moved it, so your score and opportunities reflect it.
           Assist will flag anything new, such as a rate change on these accounts.
         </p>
-        <div style={{ marginTop: "22px" }}><button type="button" style={primaryButton(false)} onClick={() => update({ open: false, step: "overview" })}>Close</button></div>
+        <div style={{ marginTop: "22px" }}><button type="button" style={primaryButton(false)} onClick={() => update({ open: false, itemId: null, step: "overview" })}>Close</button></div>
       </div>
     );
+  } else if (items.length > 1 && !item) {
+    // More than one thing: a list, accounts that need a look first.
+    body = (
+      <div>
+        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>{items.length} things to look at</div>
+        <div style={{ marginTop: "14px" }}>
+          {items.map(i => (
+            <button key={i.id} type="button" onClick={() => update({ itemId: i.id, step: "overview" })}
+              style={{ ...card, display: "flex", alignItems: "center", gap: "12px", width: "100%", textAlign: "left", padding: "14px 16px", marginBottom: "10px", cursor: "pointer", fontFamily: SANS }}>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: "14.5px", fontWeight: 700, color: TEXT }}>
+                  {i.id === "cash" ? "Your cash could earn more" : i.kind === "bonus" ? `${i.account.name}: its rate is ending` : `${i.account.name}: rate cut`}
+                </span>
+                <span style={{ display: "block", fontSize: "12.5px", color: MUT, marginTop: "2px" }}>
+                  {i.id === "cash" ? `Up to ${fmt(i.gain)} a year more`
+                    : i.kind === "bonus" ? `${pct(i.fromRate)} ends on ${fmtDate(i.date)}${i.toRate != null ? `, then ${pct(i.toRate)}` : ""}`
+                    : `${pct(i.fromRate)} is now ${pct(i.toRate)}`}
+                </span>
+              </span>
+              <ChevronRight size={16} color={MUT}/>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  } else if (item && item.id !== "cash") {
+    body = <AccountFlow item={item} state={state} update={update} d={d} set={set} backToList={backToList}/>;
   } else if (!item || !plan) {
     const snoozed = d.assistSnoozed?.cash && plan && plan.upTo >= MIN_ASSIST_GAIN;
     body = (
@@ -203,7 +342,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
         <div style={{ marginTop: "22px" }}>
           <button type="button" style={primaryButton(false)} onClick={() => {
             Object.entries(patch).forEach(([k, v]) => set(k, v));
-            update({ step: "finished", isaChoice: null, savingsChoice: null, done: {} });
+            update({ step: "finished", itemId: null, isaChoice: null, isaChoice2: null, savingsChoice: null, savingsChoice2: null, done: {} });
           }}>Update my figures</button>
         </div>
       </div>
@@ -213,6 +352,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     const psa = PSA_BY_BAND[m.taxBandLabel];
     body = (
       <div>
+        {backToList}
         <div style={sectionLabel}>Your cash</div>
         <div style={{ fontFamily: SERIF, fontSize: "32px", fontWeight: 700, color: G, lineHeight: 1.15, marginTop: "4px" }}>
           {picks.length ? `+${fmt(plan.chosenGain)} a year` : `Up to +${fmt(plan.upTo)} a year`}
@@ -225,7 +365,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px", marginTop: "22px" }}>
           <span style={{ fontSize: "16px", fontWeight: 700, color: TEXT }}>Cash ISA</span>
           {plan.isaLeft > 0 && (
-            <button type="button" style={{ ...textButton, padding: 0, fontSize: "12.5px" }} onClick={() => { set("assistSkipIsa", !skipIsa); update({ isaChoice: null }); }}>
+            <button type="button" style={{ ...textButton, padding: 0, fontSize: "12.5px" }} onClick={() => { set("assistSkipIsa", !skipIsa); update({ isaChoice: null, isaChoice2: null }); }}>
               {skipIsa ? "Use it for cash" : "Keep it for investing"}
             </button>
           )}
@@ -254,8 +394,9 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
               </div>
             )}
             {plan.isa.options.length
-              ? <OptionList options={plan.isa.options} picked={plan.isa.pick} onPick={id => update({ isaChoice: id })}/>
+              ? <OptionList options={plan.isa.options} picked={plan.isa.pick} onPick={id => update({ isaChoice: id, isaChoice2: null })}/>
               : <p style={{ fontSize: "12.5px", color: MUT }}>No easy-access Cash ISA Candid tracks beats what your savings earn now.</p>}
+            <SecondChoice section={plan.isa} onPick={id => update({ isaChoice2: id })}/>
           </>
         )}
 
@@ -265,8 +406,9 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           {!skipIsa && plan.isa.options.length ? " Amounts allow for the Cash ISA taking its share first." : ""}
         </p>
         {plan.savings.options.length
-          ? <OptionList options={plan.savings.options} picked={plan.savings.pick} onPick={id => update({ savingsChoice: id })}/>
+          ? <OptionList options={plan.savings.options} picked={plan.savings.pick} onPick={id => update({ savingsChoice: id, savingsChoice2: null })}/>
           : <p style={{ fontSize: "12.5px", color: MUT }}>No easy-access savings account Candid tracks beats what your savings earn now.</p>}
+        <SecondChoice section={plan.savings} onPick={id => update({ savingsChoice2: id })}/>
 
         <p style={{ fontSize: "11.5px", color: MUT, lineHeight: 1.55, margin: "10px 0 18px" }}>
           These are figures, not a recommendation: what you move, if anything, is your choice. Sorted by rate. Easy-access accounts only{asOf ? `, rates as of ${asOf}` : ""}. Bonus rates can end after a set time; check each account's terms.

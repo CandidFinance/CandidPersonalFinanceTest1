@@ -207,6 +207,14 @@ Version 1 works out the badge when the app opens. Push notifications and pay-day
 - [ ] Easy to minimise (a handle, a minimise button, or tapping the page behind it), keeping its place so the user can check the main screen and come back.
 - [ ] Once the issue is sorted, Assist becomes quieter: smaller and muted, with no dot. It stays reachable but is no longer prominent.
 
+**Built, 7 Oct 2026** (`src/lib/assist.js`, `src/mobile/assist/CandidAssist.jsx`)
+- [x] Cash walkthrough: Cash ISA and savings account as separate choices of up to four providers sorted by rate, none preselected; "Keep it for investing"; exactly which of the user's accounts each amount comes from; "Update Candid to match".
+- [x] Splitting: after a capped pick, an optional second account for the rest, compared with one uncapped account for all of it (and a note when that's under £25 a year).
+- [x] Accounts opened through Assist are remembered. Assist raises a rate period ending 4 weeks before it ends, and a provider cutting the rate (from the weekly feed). Each comes with alternatives and transfer steps (ISAs: transfer, never withdraw). Keeping it or moving it updates Candid.
+- [x] ISA allowance counts every kind of ISA paid into this year.
+- [ ] Email reminders for rate periods ending (Resend is set up), so it reaches users who don't open the app.
+- [ ] An optional "rate ends on" date for cash accounts entered by hand.
+
 **Version 1 scope**
 - [ ] The widget, the badge, and the walkthrough shell (GuidedFlow plus grounded free text)
 - [ ] Walkthrough: move cash to a higher-rate account

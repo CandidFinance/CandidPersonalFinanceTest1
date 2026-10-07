@@ -104,6 +104,14 @@ test("a row matches the same-kind product with the closest rate when names don't
   assert.deepEqual(plan.reviews.map(r => [r.change_type, r.product_name]), [["new", "Personal Easy Access Account (Issue 2)"]]);
 });
 
+test("the rate a product drops to is kept only when it's on the page", () => {
+  const text = "Earn 4.72% AER for 12 months, then the standard rate of 3.50% AER.";
+  const p = { product_name: "Smart Cash ISA", account_kind: "easy_access", is_isa: true, aer: 4.72, bonus_months: 12, evidence: "Earn 4.72% AER for 12 months" };
+  assert.equal(planChanges([], [{ ...p, rate_after: 3.5 }], text).reviews[0].proposed.rate_after, 3.5);
+  assert.equal(planChanges([], [{ ...p, rate_after: 3.2 }], text).reviews[0].proposed.rate_after, null);
+  assert.equal(planChanges([], [{ ...p, rate_after: 5 }], text + " 5% elsewhere").reviews[0].proposed.rate_after, null); // not a drop
+});
+
 test("the same product shown twice on a page is raised once", () => {
   const p = { product_name: "1 Year Fixed Rate Cash ISA", account_kind: "fixed", is_isa: true, aer: 4.77, term_months: 12, evidence: "4.77% AER" };
   assert.equal(planChanges([], [p, { ...p }], "4.77% AER").reviews.length, 1);

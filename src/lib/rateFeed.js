@@ -32,8 +32,9 @@ export const EXTRACTION_TOOL = {
             aer: { type: "number", description: "The headline AER as a percentage, e.g. 4.52. Include any bonus in it if the page's headline AER does." },
             term_months: { type: ["integer", "null"], description: "Fixed term in months, for fixed products." },
             notice_days: { type: ["integer", "null"], description: "Notice period in days, for notice products." },
-            bonus_rate: { type: ["number", "null"], description: "Any bonus part of the AER, in percentage points." },
-            bonus_months: { type: ["integer", "null"], description: "How many months the bonus lasts." },
+            bonus_rate: { type: ["number", "null"], description: "If the headline AER includes a bonus, the bonus part in percentage points." },
+            bonus_months: { type: ["integer", "null"], description: "If the headline rate only lasts a set time (a bonus, an introductory rate, or a rate 'for 12 months'), how many months. Null if the rate is simply variable with no set end." },
+            rate_after: { type: ["number", "null"], description: "The AER it drops to once that time ends, if the page says (e.g. 'then the standard rate of 3.50% AER'). Null if the page doesn't say." },
             max_balance: { type: ["number", "null"], description: "Highest balance that earns the rate, in pounds." },
             withdrawal_limits: { type: ["string", "null"], description: "Any limit on withdrawals, in a few words." },
             app_only: { type: "boolean", description: "True if the account is only available through an app." },
@@ -150,6 +151,7 @@ export function rowFields(p) {
     notice_days: p.notice_days ?? null,
     bonus_rate: p.bonus_rate ?? null,
     bonus_months: p.bonus_months ?? null,
+    rate_after: p.rate_after != null && p.rate_after >= 0 && p.rate_after < p.aer ? Math.round(p.rate_after * 100) / 100 : null,
     max_balance: p.max_balance ?? null,
     withdrawal_limits: p.withdrawal_limits ?? null,
     app_only: !!p.app_only,
@@ -166,10 +168,14 @@ export function rowFields(p) {
 //  - rejected: products thrown out, with the reason
 export function planChanges(existingRows, products, pageText) {
   const valid = [], rejected = [];
+  // The rate a product drops to is kept only if that figure is on the page
+  // too; it doesn't need a quote of its own, but it mustn't be invented.
+  const pageNumbers = (normaliseForMatch(pageText).match(/\d+(?:\.\d+)?/g) || []).map(Number);
+  const onPage = n => pageNumbers.some(x => Math.abs(x - n) < 0.001);
   for (const p of products || []) {
     const reason = rejectReason(p, pageText);
     if (reason) rejected.push({ product: p, reason });
-    else valid.push(p);
+    else valid.push(p.rate_after != null && !onPage(p.rate_after) ? { ...p, rate_after: null } : p);
   }
   // Each live row takes the product of the same kind that looks most like
   // it: the most name words in common, then the closest rate (a page can

@@ -1,7 +1,94 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cashSources, cashPlan, assistItems, assistHasNews, applyCashMove, nextIsaReset, accountName } from "./assist.js";
+import { cashSources, cashPlan, assistItems, assistHasNews, applyCashMove, nextIsaReset, accountName, accountItems, resolveAccount, trackAccount, addMonths } from "./assist.js";
 import { isaUsedThisYear } from "./isa.js";
+
+test("picking a capped account offers a second for the rest, compared with one account for all of it", () => {
+  const d5 = { cashTiers: [{ name: "Old Bank", amount: "5000", rate: "1" }] };
+  const m5 = { cash: 5000, isaHeadroom: 0, savingsRate: 1 };
+  const capped = [
+    { provider_name: "Cahoot", product_name: "Sunny Day Saver", account_type: "Easy access", rate_aer: "5.00", max_balance: 3000, is_isa: false },
+    { provider_name: "Cahoot", product_name: "Simple Saver", account_type: "Easy access", rate_aer: "4.52", is_isa: false },
+    { provider_name: "Chase", product_name: null, account_type: "Easy access", rate_aer: "4.50", is_isa: false },
+  ];
+  const first = cashPlan(d5, m5, capped);
+  const sunny = first.savings.options.find(o => o.product === "Sunny Day Saver");
+  const picked = cashPlan(d5, m5, capped, { savingsChoice: sunny.id });
+  assert.equal(picked.savings.leftover, 2000);
+  assert.deepEqual(picked.savings.secondOptions.map(o => [o.provider, o.product, o.amount]), [["Cahoot", "Simple Saver", 2000], ["Chase", null, 2000]]);
+  const both = cashPlan(d5, m5, capped, { savingsChoice: sunny.id, savingsChoice2: picked.savings.secondOptions[0].id });
+  assert.equal(Math.round(both.savings.split.together), Math.round(3000 * 0.04 + 2000 * 0.0352));
+  assert.equal(both.savings.split.single.product, "Simple Saver");
+  assert.equal(Math.round(both.savings.split.extra), Math.round(3000 * 0.0048)); // £14 a year: not much for a second account
+  assert.equal(both.picks.length, 2);
+  // An uncapped pick takes everything, so there's no second choice.
+  const simple = first.savings.options.find(o => o.product === "Simple Saver");
+  assert.equal(cashPlan(d5, m5, capped, { savingsChoice: simple.id }).savings.secondOptions.length, 0);
+});
+
+const bonusRow = { id: "r-chip", provider_name: "Chip", product_name: "Smart Cash ISA", account_type: "Easy access ISA", rate_aer: "4.72", bonus_rate: "1.22", bonus_months: 12, is_isa: true };
+
+test("an account opened through Assist remembers when its bonus ends and what it drops to", () => {
+  const plan = cashPlan({ cashTiers: [{ amount: "10000", rate: "1" }] }, { cash: 10000, isaHeadroom: 20000, savingsRate: 1 }, [bonusRow]);
+  const a = trackAccount(plan.isa.options[0], new Date("2026-10-07T12:00:00Z"));
+  assert.deepEqual([a.rateId, a.name, a.isa, a.amount, a.ratePct, a.openedAt, a.bonusEndsAt, a.rateAfterBonus],
+    ["r-chip", "Chip Smart Cash ISA", true, 10000, 4.72, "2026-10-07", "2027-10-07", 3.5]);
+  assert.equal(addMonths("2026-01-31", 1), "2026-03-03");
+});
+
+test("a bonus ending is raised 4 weeks before, with alternatives on the lower rate", () => {
+  const a = { id: "a1", rateId: "r-chip", provider: "Chip", product: "Smart Cash ISA", name: "Chip Smart Cash ISA", isa: true, amount: 10000, ratePct: 4.72, openedAt: "2026-10-07", bonusEndsAt: "2027-10-07", rateAfterBonus: 3.5 };
+  const others = [bonusRow, { id: "r-plum", provider_name: "Plum", product_name: "Cash ISA", account_type: "Easy access ISA", rate_aer: "4.68", is_isa: true }];
+  assert.deepEqual(accountItems({ assistAccounts: [a] }, others, new Date("2027-09-08T12:00:00Z")), []);
+  const [item] = accountItems({ assistAccounts: [a] }, others, new Date("2027-09-10T12:00:00Z"));
+  assert.equal(item.kind, "bonus");
+  assert.equal(item.daysLeft, 27);
+  assert.equal(Math.round(item.loss), 122);
+  assert.deepEqual(item.options.map(o => [o.provider, o.amount]), [["Plum", 10000]]); // not Chip itself
+  assert.equal(Math.round(item.options[0].gain), Math.round(10000 * 0.0118));
+});
+
+test("a rate period ending is raised even when the page doesn't say what it drops to", () => {
+  const row = { id: "r-cahoot", provider_name: "Cahoot", product_name: "Simple Saver", account_type: "Easy access", rate_aer: "4.52", bonus_months: 12, rate_after: null, is_isa: false };
+  const plan = cashPlan({ cashTiers: [{ amount: "6000", rate: "1" }] }, { cash: 6000, isaHeadroom: 0, savingsRate: 1 }, [row]);
+  const a = trackAccount(plan.savings.options[0], new Date("2026-10-07T12:00:00Z"));
+  assert.deepEqual([a.bonusEndsAt, a.rateAfterBonus], ["2027-10-07", null]);
+  const chase = { id: "r-chase", provider_name: "Chase", product_name: null, account_type: "Easy access", rate_aer: "4.50", is_isa: false };
+  const [item] = accountItems({ assistAccounts: [a] }, [row, chase], new Date("2027-09-20T12:00:00Z"));
+  assert.deepEqual([item.kind, item.toRate, item.loss], ["bonus", null, null]);
+  assert.equal(Math.round(item.options[0].gain), 270); // a full year's interest at 4.50%
+  // Kept: the rate stays until the user updates it, and it's not raised again.
+  const kept = resolveAccount({ assistAccounts: [a], cashTiers: [{ name: "Cahoot Simple Saver", amount: "6000", rate: "4.52" }] }, item);
+  assert.equal(kept.cashTiers[0].rate, "4.52");
+  assert.deepEqual(accountItems({ assistAccounts: kept.assistAccounts }, [row, chase], new Date("2027-09-20T12:00:00Z")), []);
+});
+
+test("a rate cut on an Assist account is raised, and settles when kept or moved", () => {
+  const a = { id: "a2", rateId: "r-cahoot", provider: "Cahoot", product: "Simple Saver", name: "Cahoot Simple Saver", isa: false, amount: 6000, ratePct: 4.52, openedAt: "2026-10-07", bonusEndsAt: null, rateAfterBonus: null };
+  const live = [
+    { id: "r-cahoot", provider_name: "Cahoot", product_name: "Simple Saver", account_type: "Easy access", rate_aer: "4.20", is_isa: false },
+    { id: "r-chase", provider_name: "Chase", product_name: null, account_type: "Easy access", rate_aer: "4.50", is_isa: false },
+  ];
+  const dd = { assistAccounts: [a], cashTiers: [{ name: "Cahoot Simple Saver", amount: "6000", rate: "4.52" }] };
+  const [item] = accountItems(dd, live);
+  assert.equal(item.kind, "cut");
+  assert.equal(item.toRate, 4.2);
+  // Kept: the account and the user's cash both move to the new rate, and it's no longer raised.
+  const kept = resolveAccount(dd, item);
+  assert.equal(kept.cashTiers[0].rate, "4.2");
+  assert.deepEqual(accountItems({ ...dd, ...kept }, live), []);
+  // Moved: the cash account becomes the new one, which is now the one tracked.
+  const moved = resolveAccount(dd, item, item.options[0], new Date("2026-11-01T12:00:00Z"));
+  assert.deepEqual(moved.cashTiers, [{ name: "Chase", amount: "6000", rate: "4.5" }]);
+  assert.deepEqual(moved.assistAccounts.map(x => [x.name, x.rateId, x.openedAt]), [["Chase", "r-chase", "2026-11-01"]]);
+});
+
+test("account items come before the cash item", () => {
+  const a = { id: "a3", rateId: "r-cahoot", provider: "Cahoot", product: "Simple Saver", name: "Cahoot Simple Saver", isa: false, amount: 6000, ratePct: 4.9 };
+  const live = [{ id: "r-cahoot", provider_name: "Cahoot", product_name: "Simple Saver", account_type: "Easy access", rate_aer: "4.52", is_isa: false }, ...rows];
+  const ids = assistItems({ ...d, assistAccounts: [a] }, m, live, new Date(2026, 9, 7)).map(i => i.id);
+  assert.deepEqual(ids, ["account:a3", "cash"]);
+});
 
 const rows = [
   { provider_name: "Chip", product_name: "Smart Cash ISA", account_type: "Easy access ISA", rate_aer: "4.72", is_isa: true },

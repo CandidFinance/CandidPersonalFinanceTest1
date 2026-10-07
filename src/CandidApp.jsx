@@ -5579,6 +5579,9 @@ const BLANK_DATA = {
   assistSnoozed:null,
   // Candid Assist: the user is keeping their ISA allowance for investing.
   assistSkipIsa:false,
+  // Candid Assist: accounts opened through it, so it can warn when a rate
+  // period is ending or the provider cuts the rate (src/lib/assist.js).
+  assistAccounts:[],
   // Whether each step's guided walk-through has been finished or skipped
   // (STEP_GUIDES, src/lib/propertyGuide.js). Kept on this device only, not
   // sent to Supabase.
@@ -5812,10 +5815,10 @@ export default function AppShell() {
   const [savingsRates, setSavingsRates] = useState(null);
   // Candid Assist's panel: open or minimised, and its place in a walkthrough.
   // Held here, not in the panel, so it survives moving between screens.
-  const [assistState, setAssistState] = useState({ open: false, step: "overview", isaChoice: null, savingsChoice: null, done: {} });
+  const [assistState, setAssistState] = useState({ open: false, itemId: null, step: "overview", isaChoice: null, isaChoice2: null, savingsChoice: null, savingsChoice2: null, accountChoice: null, done: {} });
   useEffect(() => {
     let cancelled = false;
-    supaSelect("savings_rates", "?select=provider_name,product_name,account_type,rate_aer,max_balance,product_url,updated_at,is_isa&order=rate_aer.desc")
+    supaSelect("savings_rates", "?select=id,provider_name,product_name,account_type,rate_aer,max_balance,bonus_rate,bonus_months,rate_after,product_url,updated_at,is_isa&order=rate_aer.desc")
       .then(rows => { if (!cancelled) setSavingsRates(rows || []); });
     return () => { cancelled = true; };
   }, []);
