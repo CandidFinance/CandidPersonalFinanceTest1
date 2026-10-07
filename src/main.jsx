@@ -8,6 +8,7 @@ import ErrorBoundary from "./ErrorBoundary.jsx"
 import { appEntryPath } from "./mockups/StartCheckButton.jsx"
 import GuidedFlow from "./mobile/property/GuidedFlow.jsx"
 import { CONFIDENCE_QUESTION } from "./lib/appEntry.js"
+const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -400,6 +401,7 @@ function AppRoutes() {
         <Route path="/welcome" element={<ConfidenceCheck />} />
         <Route path="/welcome-back" element={<WelcomeBackRoute />} />
         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
+        <Route path="/admin/rates" element={<Suspense fallback={null}><RatesAdmin /></Suspense>} />
         {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
             holds — d, insights, completedModules, one-shot modal refs, etc.)
             stays mounted across navigation between all three of these paths,

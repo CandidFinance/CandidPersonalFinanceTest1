@@ -2,11 +2,18 @@
 // in Supabase (public read). The app fetches the rows itself (CandidApp.jsx,
 // via supaSelect); the public calculator pages use fetchSavingsRates below.
 
-// Highest-rate row for a given ISA/non-ISA category — returns the whole row
-// (not just the number) so display keeps the DB's own "X.XX" string formatting
-// rather than reformatting a coerced float. Null if no row of that category.
+// Easy-access accounts only: the comparisons and lists are about money the
+// user can get at, so fixed-term bonds, notice accounts and regular savers
+// (also in the table) don't count, however high their rate.
+export function isEasyAccess(r) {
+  return /^easy access/i.test(r?.account_type || "");
+}
+
+// Highest-rate easy-access row for a given ISA/non-ISA category — returns the
+// whole row (not just the number) so display keeps the DB's own "X.XX" string
+// formatting rather than reformatting a coerced float. Null if none.
 export function topRate(rows, isIsa) {
-  const filtered = (rows || []).filter(r => r.is_isa === isIsa);
+  const filtered = (rows || []).filter(r => r.is_isa === isIsa && isEasyAccess(r));
   if (!filtered.length) return null;
   return filtered.reduce((best, r) => (!best || +r.rate_aer > +best.rate_aer) ? r : best, null);
 }
@@ -18,7 +25,7 @@ export async function fetchSavingsRates() {
   const key = import.meta.env?.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   try {
-    const res = await fetch(`${url}/rest/v1/savings_rates?select=provider_name,rate_aer,updated_at,is_isa`, {
+    const res = await fetch(`${url}/rest/v1/savings_rates?select=provider_name,account_type,rate_aer,updated_at,is_isa`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
     });
     return res.ok ? await res.json() : null;

@@ -1,1 +1,5 @@
-{"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "crons": [{ "path": "/api/rates", "schedule": "0 6 * * *" }],
+  "functions": { "api/rates.js": { "maxDuration": 60 } }
+}

@@ -6,7 +6,7 @@ import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCa
 import { fmt, fmtK, fmtCompact } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, slRepaymentThreshold, calcStudentLoanScenario, describeLoanVsPension } from "./lib/studentLoan.js";
-import { topRate } from "./lib/savingsRates.js";
+import { topRate, isEasyAccess } from "./lib/savingsRates.js";
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation } from "./lib/cash.js";
 import { calcMetrics, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
@@ -630,7 +630,7 @@ export function getModuleProducts(key, d, m, savingsRates) {
       // Allowance fill). Capped at 4 rows, unlike the ISA list, to keep this
       // secondary list visibly secondary.
       const buildNonIsaProducts = () => (savingsRates || [])
-        .filter(r => r.is_isa === false)
+        .filter(r => r.is_isa === false && isEasyAccess(r))
         .sort((a, b) => +b.rate_aer - +a.rate_aer)
         .slice(0, 4)
         .map((r, i) => ({ name: r.provider_name, type: r.account_type, rate: `${r.rate_aer}% AER`, badge: i === 0 ? "Highest rate" : "", highlight: i === 0, cta: "View account", appIcon: Landmark, productUrl: r.product_url }));
@@ -640,7 +640,7 @@ export function getModuleProducts(key, d, m, savingsRates) {
       }
       // Tiles are ISA-specific, matching the heading — non-ISA rows still feed
       // topRate(savingsRates, false) elsewhere (e.g. Dashboard copy) but aren't shown here.
-      const isaRows = savingsRates.filter(r => r.is_isa === true);
+      const isaRows = savingsRates.filter(r => r.is_isa === true && isEasyAccess(r));
       if (isaRows.length === 0) {
         return { heading, subheading, nonIsaHeading, products: [], nonIsaProducts: buildNonIsaProducts(), disclaimer: "Current rates are temporarily unavailable — check back shortly." };
       }
