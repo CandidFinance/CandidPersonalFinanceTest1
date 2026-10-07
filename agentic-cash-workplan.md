@@ -45,7 +45,7 @@ Items marked **(verify)** are my understanding at the time of writing, not confi
 
 These block Phase 1.
 
-- [ ] **The payment button is public.** It sits in onboarding's Cash step (`src/mobile/onboarding/MobileOnboardingStep.jsx`, and `src/CandidApp.jsx`). Hide it unless the server says live payments are allowed for this user.
+- [x] **The payment button is public.** Done 7 Oct 2026: the sandbox "Connect your bank" and "Stage a test payment" buttons are removed from onboarding's Cash step (mobile and desktop). The API routes stay for Phase 1. When they return, show them only when the server says live payments are allowed for this user.
 - [ ] **The amount is fixed at £2,500, with a hard-coded payee** (`api/truelayer/stage-payment.js`). Switching only the base URLs to live would let any visitor stage a real £2,500 payment. Use a separate live setup with a £10 ceiling.
 - [ ] **Connections are keyed by an email anyone can supply** (`api/truelayer/auth-link.js`). The callback upserts on it, so anyone can overwrite another person's stored token. Tie connections to a signed-in user. **The app needs sign-in before Phase 2.**
 - [ ] **Diagnostic logs write cookies and emails to the logs.** Remove them from `auth-link.js` and `callback.js`.
@@ -202,6 +202,11 @@ This is guidance on carrying out the user's own decision, not advice, so it does
 
 Version 1 works out the badge when the app opens. Push notifications and pay-day detection come later.
 
+**Panel design** (Harvey, 7 Oct 2026)
+- [ ] Opens as a panel covering most of the screen but not all of it, so the page underneath stays visible.
+- [ ] Easy to minimise (a handle, a minimise button, or tapping the page behind it), keeping its place so the user can check the main screen and come back.
+- [ ] Once the issue is sorted, Assist becomes quieter: smaller and muted, with no dot. It stays reachable but is no longer prominent.
+
 **Version 1 scope**
 - [ ] The widget, the badge, and the walkthrough shell (GuidedFlow plus grounded free text)
 - [ ] Walkthrough: move cash to a higher-rate account
@@ -211,6 +216,14 @@ Version 1 works out the badge when the app opens. Push notifications and pay-day
 
 ## 13. Weekly rate feed
 
+**Status: built and live, 7 Oct 2026.**
+- **Code:**
+  - `api/rates.js`: the daily cron and the admin API
+  - `src/lib/rateFeed.js`: extraction checks and matching
+  - `src/lib/cashAllocation.js`: spreading cash across accounts by rate and balance cap
+- **Review page:** `/admin/rates`, behind the feedback admin password.
+- **Still open:** coverage (19 sources, aiming for 30 to 50) and pages that block automated reading (Trading 212 and Post Office are kept by hand).
+
 **Approach:** a weekly Vercel Cron job.
 1. Fetch a curated list of provider product pages. Fetch them directly; don't let Claude search freely.
 2. Claude (Haiku) extracts structured products using a fixed schema.
@@ -219,33 +232,33 @@ Version 1 works out the badge when the app opens. Push notifications and pay-day
 5. A person reviews the flagged changes.
 
 - [ ] **Provider list:** about 30 to 50 providers that cover the best-buy tables (challengers and platforms included), each with its product page URLs.
-- [ ] **Extraction schema:**
+- [x] **Extraction schema:**
   - provider, product, type (easy access, notice, fixed, cash ISA)
   - AER, plus any bonus rate and its end date
   - balance tiers, withdrawal limits, eligibility, app-only flag
   - source URL, fetch date
   - **the exact text snippet supporting each rate**
-- [ ] **Validation, in code:**
+- [x] **Validation, in code:**
   - the snippet must appear in the fetched page text
   - AER must be within sane bounds
-  - a change of more than 1 point, or a missing product, is held for review rather than published
+  - a change of more than 0.5 points, a new product, or a missing product is held for review rather than published
   - pages whose content hash hasn't changed are skipped
 - [ ] **Fetching:** handle JavaScript-rendered pages and bot blocking. Some pages will need a headless fetch or a different URL.
-- [ ] **Sources:** don't scrape comparison sites (Moneyfacts, MoneySavingExpert). Their data is licensed, and their terms prohibit it. Use provider pages only.
-- [ ] **Display:** show "rates as of <date>" everywhere. Rerun the job when the Bank of England changes the base rate.
+- [x] **Sources:** don't scrape comparison sites (Moneyfacts, MoneySavingExpert). Their data is licensed, and their terms prohibit it. Use provider pages only.
+- [x] **Display:** show "rates as of <date>" everywhere. Rerun the job when the Bank of England changes the base rate.
 - [ ] **Later:** a licensed feed (Moneyfacts or Defaqto data, a savings platform's rates API, or affiliate network feeds) once Candid is earning revenue from it.
 
 ## 14. Sequence
 
-| Step | Track | Item |
-|---|---|---|
-| 1 | Compliance | Consultant hour: AR arrangement, targeted support, fronted payout, TrueLayer role |
-| 2 | Phase 0 | Hide button, live ceiling, sign-in plan, logs, token encryption |
-| 3 | Partner | Savings platform conversations (Raisin, Flagstone, Hargreaves Lansdown) |
-| 4 | Phase 1 | Environment switch, founder dogfood, £10 test, webhook |
-| 5 | Assist v1 | Widget, badge, three engine-driven walkthroughs (no regulatory dependency) |
-| 6 | Rate feed | Weekly scan, validation, review queue; enables the "rates changed" trigger |
-| 7 | Monitoring | Monthly factual alerts across all modules, delivered through Assist |
-| 8 | Phase 2 | Sign-in, alpha with friends, fronted payout test |
-| 9 | Narrative | Deck rewritten around outcomes and the advice gap, with Assist and Cash as proof |
-| 10 | Phase 3 | Agent registration, public launch, VRP |
+| Step | Track | Item | Status |
+|---|---|---|---|
+| 1 | Compliance | Consultant hour: AR arrangement, targeted support, fronted payout, TrueLayer role | In progress (Harvey) |
+| 2 | Phase 0 | Hide button, live ceiling, sign-in plan, logs, token encryption | Buttons removed; the rest before Phase 1 |
+| 3 | Partner | Savings platform conversations (Raisin, Flagstone, Hargreaves Lansdown) | Deferred until there's a product to show |
+| 4 | Phase 1 | Environment switch, founder dogfood, £10 test, webhook | |
+| 5 | Assist v1 | Widget, badge, three engine-driven walkthroughs (no regulatory dependency) | Next |
+| 6 | Rate feed | Weekly scan, validation, review queue; enables the "rates changed" trigger | Done, 7 Oct 2026 |
+| 7 | Monitoring | Monthly factual alerts across all modules, delivered through Assist | |
+| 8 | Phase 2 | Sign-in, alpha with friends, fronted payout test | |
+| 9 | Narrative | Deck rewritten around outcomes and the advice gap, with Assist and Cash as proof | |
+| 10 | Phase 3 | Agent registration, public launch, VRP | |

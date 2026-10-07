@@ -1,6 +1,5 @@
 import { useState } from "react";
-import posthog from "posthog-js";
-import { AlertTriangle, Landmark, CreditCard, Home, Star, Baby, RefreshCw, Shield, Lightbulb, Check } from "lucide-react";
+import { AlertTriangle, Home, Star, Baby, RefreshCw, Shield, Lightbulb, Check } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, MODULE_META, PillSlider } from "../../CandidApp.jsx";
 import { capField, isaThisYearTotal } from "../../lib/onboarding.js";
 import { estimatePensionPot, CAREER_START_AGE } from "../../lib/pension.js";
@@ -96,21 +95,6 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
   const [showEmploymentInfo, setShowEmploymentInfo] = useState(false);
   const [potEstimated, setPotEstimated] = useState(false); // true only right after the "estimate it" button is used, so the caption doesn't linger over a manually-typed figure
-  const [paymentStaging, setPaymentStaging] = useState({ status:"idle" }); // idle | loading | error
-  const stagePayment = async () => {
-    setPaymentStaging({ status:"loading" });
-    try {
-      const res = await fetch("/api/truelayer/stage-payment", { method:"POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || data.error || `status ${res.status}`);
-      posthog.capture("truelayer_payment_staged", { payment_id: data.paymentId });
-      window.location.href = data.hostedPaymentUrl;
-    } catch (e) {
-      if (import.meta.env.DEV) console.warn("[Candid] Failed to stage TrueLayer payment:", e);
-      posthog.capture("truelayer_payment_stage_failed", { reason: e.message });
-      setPaymentStaging({ status:"error" });
-    }
-  };
   // Defined inside the component, not at module scope — this file is part of
   // a circular import with CandidApp.jsx (which imports it via the
   // onboarding screen), so G/SERIF/etc aren't initialized yet when the module
@@ -285,22 +269,6 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
       <div>
         <h2 style={questionHeading}>Cash & savings</h2>
         <p style={questionSub}>Helps us spot yield gaps and whether your cash is working as hard as it should.</p>
-
-        <button type="button" onClick={() => { window.location.href = `/api/truelayer/auth-link?email=${encodeURIComponent(d.email || "")}`; }} style={{
-          display:"flex",alignItems:"center",gap:"9px",width:"100%",textAlign:"left",background:"rgba(22,47,36,0.04)",
-          border:`1.5px dashed ${GOLD}`,borderRadius:"10px",padding:"13px 16px",color:G,fontSize:"13px",fontWeight:600,cursor:"pointer",marginBottom:"12px",
-        }}>
-          <Landmark size={17}/><span>Connect your bank (Sandbox) — auto-fill cash balances</span>
-        </button>
-        <button type="button" disabled={paymentStaging.status==="loading"} onClick={stagePayment} style={{
-          display:"flex",alignItems:"center",gap:"9px",width:"100%",textAlign:"left",background:"rgba(22,47,36,0.04)",
-          border:`1.5px dashed ${GOLD}`,borderRadius:"10px",padding:"13px 16px",color:G,fontSize:"13px",fontWeight:600,
-          cursor:paymentStaging.status==="loading" ? "default" : "pointer",opacity:paymentStaging.status==="loading" ? 0.6 : 1,
-          marginBottom:paymentStaging.status==="error" ? "6px" : "22px",
-        }}>
-          <CreditCard size={17}/><span>{paymentStaging.status==="loading" ? "Staging test payment…" : "Stage a test payment (Sandbox) — £2,500"}</span>
-        </button>
-        {paymentStaging.status==="error" && <p style={{fontSize:"12px",color:"#b3261e",marginTop:0,marginBottom:"20px"}}>Couldn't stage the sandbox payment — please try again.</p>}
 
         <label style={fieldLabel}>Emergency fund target</label>
         <PillSlider value={String(getBufferMonths(d))} onChange={v=>set("emergencyMonths",v)} options={EMERGENCY_MONTHS_OPTIONS}/>

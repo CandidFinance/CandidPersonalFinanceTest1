@@ -1375,21 +1375,6 @@ function OnboardingStep({ stepId, d, set }) {
   const g2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"};
   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
   const [potEstimated, setPotEstimated] = useState(false); // true only right after the pension pot "estimate it" button is used, so the caption doesn't linger over a manually-typed figure
-  const [paymentStaging, setPaymentStaging] = useState({status:"idle"}); // idle | loading | error
-  const stagePayment = async () => {
-    setPaymentStaging({status:"loading"});
-    try {
-      const res = await fetch("/api/truelayer/stage-payment", {method:"POST"});
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || data.error || `status ${res.status}`);
-      posthog.capture("truelayer_payment_staged", {payment_id: data.paymentId});
-      window.location.href = data.hostedPaymentUrl;
-    } catch (e) {
-      if (import.meta.env.DEV) console.warn("[Candid] Failed to stage TrueLayer payment:", e);
-      posthog.capture("truelayer_payment_stage_failed", {reason: e.message});
-      setPaymentStaging({status:"error"});
-    }
-  };
   // Combined-ISA-allowance total — the £20,000 annual limit is one shared pot
   // across all ISA types, regardless of which onboarding step collects each type
   // (Cash ISA lives in Cash & Savings; S&S/LISA/Other live in Investments), so
@@ -1580,29 +1565,6 @@ function OnboardingStep({ stepId, d, set }) {
     <div>
       <h2 style={{fontFamily:SERIF,fontSize:FONT_SIZE.HERO,color:G,marginBottom:"8px"}}>Cash & savings</h2>
       <p style={{fontSize:FONT_SIZE.BODY,color:MUT,fontStyle:"italic",maxWidth:"480px",marginBottom:"20px",lineHeight:1.5}}>Helps us identify yield gaps and whether your cash is working as hard as it should be.</p>
-      <button type="button" onClick={() => { window.location.href = `/api/truelayer/auth-link?email=${encodeURIComponent(d.email || "")}`; }} style={{
-        display:"flex",alignItems:"center",gap:"9px",width:"100%",textAlign:"left",
-        background:"rgba(22,47,36,0.04)",border:`1.5px dashed ${GOLD}`,borderRadius:"10px",
-        padding:"13px 16px",color:G,fontSize:FONT_SIZE.BODY,fontWeight:600,cursor:"pointer",
-        marginBottom:"24px",fontFamily:SANS,
-      }}>
-        <Landmark size={17}/>
-        <span>Connect your bank (Sandbox) — auto-fill your cash balances</span>
-      </button>
-      <button type="button" disabled={paymentStaging.status==="loading"} onClick={stagePayment} style={{
-        display:"flex",alignItems:"center",gap:"9px",width:"100%",textAlign:"left",
-        background:"rgba(22,47,36,0.04)",border:`1.5px dashed ${GOLD}`,borderRadius:"10px",
-        padding:"13px 16px",color:G,fontSize:FONT_SIZE.BODY,fontWeight:600,
-        cursor:paymentStaging.status==="loading" ? "default" : "pointer",
-        opacity:paymentStaging.status==="loading" ? 0.6 : 1,
-        marginBottom:paymentStaging.status==="error" ? "8px" : "24px",fontFamily:SANS,
-      }}>
-        <CreditCard size={17}/>
-        <span>{paymentStaging.status==="loading" ? "Staging test payment…" : "Stage a test payment (Sandbox) — £2,500 via TrueLayer"}</span>
-      </button>
-      {paymentStaging.status==="error" && (
-        <p style={{fontSize:FONT_SIZE.LABEL,color:"#b3261e",marginTop:0,marginBottom:"24px"}}>Couldn't stage the sandbox payment — please try again.</p>
-      )}
       <Field label="Emergency fund target">
         <Toggle value={String(getBufferMonths(d))} onChange={v=>set("emergencyMonths",v)} options={EMERGENCY_MONTHS_OPTIONS}/>
         <p style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>{EMERGENCY_MONTHS_HINT[getBufferMonths(d)]}</p>
