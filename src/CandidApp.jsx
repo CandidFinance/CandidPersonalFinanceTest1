@@ -8,6 +8,7 @@ import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, slRepaymentThreshold, calcStudentLoanScenario, describeLoanVsPension } from "./lib/studentLoan.js";
 import { topRate, isEasyAccess } from "./lib/savingsRates.js";
 import { allocateCash } from "./lib/cashAllocation.js";
+import { isaUsedThisYear } from "./lib/isa.js";
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation } from "./lib/cash.js";
 import { calcMetrics, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
@@ -1380,7 +1381,7 @@ function OnboardingStep({ stepId, d, set }) {
   // across all ISA types, regardless of which onboarding step collects each type
   // (Cash ISA lives in Cash & Savings; S&S/LISA/Other live in Investments), so
   // both steps compute the same total off the shared `d` and warn identically.
-  const isaThisYearTotal = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0);
+  const isaThisYearTotal = isaUsedThisYear(d);
   const isaThisYearOver = isaThisYearTotal > 20000;
   if (stepId === "name") return (
     <div style={{textAlign:"center",paddingTop:"20px"}}>
@@ -5537,6 +5538,9 @@ const BLANK_DATA = {
   hasInvestments:"no", isaUsedThisYear:"", isaPreviousBalance:"", isaType:"none", unwrappedValue:"", unrealisedGains:"",
   hasSoldAssetsOutsideWrapper:"no", realisedCgtGains:"",
   isaThisYearCash:"", isaThisYearSS:"", isaThisYearLISA:"", isaThisYearOther:"",
+  // Other ISAs paid into this year, as one total, asked in Cash when
+  // Investments hasn't itemised them (src/lib/isa.js).
+  hasOtherIsaThisYear:"", isaThisYearOtherTypes:"",
   isaPrevCash:"", isaPrevSS:"", isaPrevLISA:"", isaPrevOther:"",
   hasPension:"no", myContribution:"", employerMatch:"", potValue:"", potValue2:"", retirementAge:"65", pensionType:"",
   pensionUnknown:false,
@@ -5573,6 +5577,8 @@ const BLANK_DATA = {
   // Candid Assist: the figures the user said "not now" to, per item, so they
   // aren't raised again until the rates behind them change.
   assistSnoozed:null,
+  // Candid Assist: the user is keeping their ISA allowance for investing.
+  assistSkipIsa:false,
   // Whether each step's guided walk-through has been finished or skipped
   // (STEP_GUIDES, src/lib/propertyGuide.js). Kept on this device only, not
   // sent to Supabase.
@@ -5806,7 +5812,7 @@ export default function AppShell() {
   const [savingsRates, setSavingsRates] = useState(null);
   // Candid Assist's panel: open or minimised, and its place in a walkthrough.
   // Held here, not in the panel, so it survives moving between screens.
-  const [assistState, setAssistState] = useState({ open: false, step: "overview", ticked: {}, done: {} });
+  const [assistState, setAssistState] = useState({ open: false, step: "overview", isaChoice: null, savingsChoice: null, done: {} });
   useEffect(() => {
     let cancelled = false;
     supaSelect("savings_rates", "?select=provider_name,product_name,account_type,rate_aer,max_balance,product_url,updated_at,is_isa&order=rate_aer.desc")

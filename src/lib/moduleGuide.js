@@ -12,6 +12,7 @@ import { fmt } from "./format.js";
 import { ISA_ALLOWANCE } from "./tax.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
 import { FIELD_CAPS } from "./onboarding.js";
+import { itemisedNonCashIsa } from "./isa.js";
 import { estimatePensionPot } from "./pension.js";
 import { resolveSlRate, studentLoanPlanFrom } from "./studentLoan.js";
 import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION } from "./sharedQuestions.js";
@@ -60,6 +61,22 @@ const CASH_QUESTIONS = [
     ask: () => "How much have you paid in since 6 April?",
     why: () => "Counts towards this year's allowance, shared across all your ISAs.",
     showIf: is("hasCashIsaThisYear", "yes"),
+  },
+  {
+    // Stocks and shares, Lifetime and other ISAs use the same allowance.
+    // Investments asks for each; until then, one total here, so the cash
+    // figures don't assume allowance that's already been used.
+    id:"otherIsa", field:"hasOtherIsaThisYear", kind:"choice",
+    ask: () => "Have you paid into any other kind of ISA since 6 April?",
+    why: () => `Stocks and shares, Lifetime and other ISAs share the same ${fmt(ISA_ALLOWANCE)} allowance.`,
+    options: () => YES_NO,
+    showIf: ({ d }) => itemisedNonCashIsa(d) === 0,
+  },
+  {
+    id:"otherIsaThisYear", field:"isaThisYearOtherTypes", kind:"money", label:"Paid in since 6 April", cap:"isaThisYearOther", required:true,
+    ask: () => "How much, across those ISAs?",
+    why: () => "So Candid knows how much allowance is left for cash.",
+    showIf: ({ d }) => itemisedNonCashIsa(d) === 0 && d.hasOtherIsaThisYear === "yes",
   },
   {
     id:"cashIsaEarlier", field:"isaPrevCash", kind:"money", label:"From earlier years", cap:"isaPrevCash", required:true,

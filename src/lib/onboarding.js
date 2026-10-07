@@ -1,3 +1,4 @@
+import { isaUsedThisYear } from "./isa.js";
 // Shared onboarding step definitions and field caps — pure logic, no
 // CandidApp.jsx imports, so both the desktop wizard (OnboardingScreen/
 // OnboardingStep) and the mobile wizard (MobileOnboardingScreen) read from a
@@ -48,5 +49,5 @@ export function capField(field, raw) {
 // in the Cash & Savings step) and S&S/LISA/Other (asked in Investments) — so
 // both steps need the same combined total to warn consistently.
 export function isaThisYearTotal(d) {
-  return (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0);
+  return isaUsedThisYear(d);
 }

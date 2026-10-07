@@ -38,9 +38,14 @@ test("someone not working isn't asked for a salary", () => {
 
 test("cash asks spending, accounts, then gated bonds and ISA amounts", () => {
   const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no" };
-  assert.deepEqual(ids("cash", known), ["spending", "cashAccounts", "hasPremiumBonds", "hasCashIsa", "cashIsaEarlier", "cashAccess"]);
-  assert.deepEqual(ids("cash", { ...known, hasPremiumBonds: "yes", hasCashIsaThisYear: "yes" }, known),
-    ["spending", "cashAccounts", "hasPremiumBonds", "premiumBonds", "hasCashIsa", "cashIsaThisYear", "cashIsaEarlier", "cashAccess"]);
+  assert.deepEqual(ids("cash", known), ["spending", "cashAccounts", "hasPremiumBonds", "hasCashIsa", "otherIsa", "cashIsaEarlier", "cashAccess"]);
+  assert.deepEqual(ids("cash", { ...known, hasPremiumBonds: "yes", hasCashIsaThisYear: "yes", hasOtherIsaThisYear: "yes" }, known),
+    ["spending", "cashAccounts", "hasPremiumBonds", "premiumBonds", "hasCashIsa", "cashIsaThisYear", "otherIsa", "otherIsaThisYear", "cashIsaEarlier", "cashAccess"]);
+});
+
+test("cash only asks about other ISAs when Investments hasn't itemised them", () => {
+  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", isaThisYearSS: "6000" };
+  assert.ok(!ids("cash", known).includes("otherIsa"));
 });
 
 test("investments: no investments ends after one question; outside an ISA opens gains", () => {

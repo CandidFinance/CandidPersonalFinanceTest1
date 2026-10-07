@@ -1,6 +1,7 @@
 import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE } from "./tax.js";
 import { resolveSlRate, slRepaymentThreshold } from "./studentLoan.js";
 import { allocateCash } from "./cashAllocation.js";
+import { isaUsedThisYear } from "./isa.js";
 
 export const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
 
@@ -51,8 +52,8 @@ export function calcMetrics(d, marketRates = {}) {
         emergencyShortfall = Math.max(0, emergencyBuffer - emergencyFund),
         emergencyExcess = Math.max(0, emergencyFund - emergencyBuffer),
         surplusCash = emergencyExcess,
-        // ISA: always derived from granular breakdown fields
-        isaUsedThisYearCalc = (+d.isaThisYearCash||0) + (+d.isaThisYearSS||0) + (+d.isaThisYearLISA||0) + (+d.isaThisYearOther||0),
+        // ISA: every kind of ISA shares the allowance (src/lib/isa.js)
+        isaUsedThisYearCalc = isaUsedThisYear(d),
         isaHeadroom = Math.max(0, ISA_ALLOWANCE - isaUsedThisYearCalc),
         myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0,
         missedMatch = Math.max(0, empCapPct - myPct) * salary / 100,
