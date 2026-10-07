@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { calcCashOptimisation } from "../../lib/cash.js";
+import { cashOpportunity, accountName } from "../../lib/assist.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, topRate, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
@@ -56,6 +57,10 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
     isaLines, savingsLines,
   } = calcCashOptimisation(m, isaRatePct, nonIsaRatePct, savingsRates);
   const products = getModuleProducts("cash", d, m, savingsRates);
+  // With the rates loaded, the same after-tax figure and choices as Candid
+  // Assist and Home (cashOpportunity); before then, the waterfall's estimate.
+  const opp = cashOpportunity(d, m, savingsRates);
+  const gain = opp ? opp.gain : optimisationGain;
   const optimalBlendedRatePct = keptAmount > 0 ? (optimisedTotal / keptAmount) * 100 : 0;
 
   const showEmergencyWin = m.emergencyShortfall > 0;
@@ -66,7 +71,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
 
   const opportunityCols = [];
   if (showEmergencyWin) opportunityCols.push({ label:"Short of your emergency fund", value: fmtCompact(m.emergencyShortfall) });
-  if (optimisationGain > 50) opportunityCols.push({ label:"More your savings could earn", value: `${fmtCompact(optimisationGain)}/yr` });
+  if (gain > 50) opportunityCols.push({ label: opp ? "More your savings could earn, after tax" : "More your savings could earn", value: `${fmtCompact(gain)}/yr` });
 
   const runwayTarget = m.emergencyBuffer;
   const runwayCurrent = m.totalLiquid;
@@ -111,17 +116,43 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
       )}
 
       <MobileWinTile number={optimiseWinNumber} title="Earn more on your savings"
-        headline={totalPot<=0 ? "Add your cash details to see this" : optimisationGain>50 ? `Your savings could earn ${fmt(optimisationGain)}/yr more` : "Your savings are already on good rates."}
+        headline={totalPot<=0 ? "Add your cash details to see this" : gain>50 ? `Your savings could earn ${fmt(gain)}/yr more${opp ? ", after tax" : ""}` : "Your savings are already on good rates."}
         tagLabel="Today"
-        reminder={optimisationGain > 50 ? {
+        reminder={gain > 50 ? {
           id: "cash-move-surplus",
-          title: buildReminderSubject(`${fmt(optimisationGain)}/yr`, "Move surplus cash to a better rate"),
+          title: buildReminderSubject(`${fmt(gain)}/yr`, "Move surplus cash to a better rate"),
           // Informational, not directive — states the figures and points to
           // the rate tiles/provider to do the "how", rather than instructing
           // a specific transfer, avoiding reading as financial advice.
-          description: `${firstName(d) ? firstName(d)+", m" : "M"}ove your surplus cash to a better rate when you get a moment. Filling your ISA at ${isaRateDisplay} first, then your Personal Savings Allowance at ${nonIsaRateDisplay}, is worth up to ${fmt(optimisationGain)}/yr more than where it sits today.\n\nCheck the current best rates in Candid and move the cash directly with the provider - most accounts open online in a few minutes.`,
+          description: opp
+            ? `${firstName(d) ? firstName(d)+", m" : "M"}ove your surplus cash to a better rate when you get a moment. The best options in Candid today are worth up to ${fmt(gain)}/yr more after tax than where it sits.\n\nCandid Assist lays out the options and how to move. Most accounts open online in a few minutes.`
+            : `${firstName(d) ? firstName(d)+", m" : "M"}ove your surplus cash to a better rate when you get a moment. Filling your ISA at ${isaRateDisplay} first, then your Personal Savings Allowance at ${nonIsaRateDisplay}, is worth up to ${fmt(optimisationGain)}/yr more than where it sits today.\n\nCheck the current best rates in Candid and move the cash directly with the provider - most accounts open online in a few minutes.`,
         } : null}>
-        {totalPot > 0 ? (
+        {totalPot > 0 && opp ? (
+          <div>
+            <div style={rowStyle}><span>What your savings earn now, after tax</span><span style={{fontWeight:600}}>{fmt(opp.currentKept)}/yr</span></div>
+            <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"8px 0"}}/>
+            {opp.lines.map(l => {
+              const o = l.option;
+              const fromBonds = (o.from || []).filter(f => f.taxFree).reduce((t, f) => t + f.amount, 0);
+              return (
+                <div key={l.section} style={{marginTop:"6px"}}>
+                  <div style={stepLabel}>{l.section}</div>
+                  <div style={rowStyle}>
+                    <span>{fmt(o.amount)} in {accountName(o)} at {o.ratePct.toFixed(2)}%{o.pb ? " (an average)" : ""}</span>
+                    <span style={{fontWeight:700,color:"#2d6b4a",whiteSpace:"nowrap",paddingLeft:"8px"}}>+{fmt(o.gain)}/yr</span>
+                  </div>
+                  {fromBonds > 0 && <div style={{fontSize:"11.5px",color:MUT,marginTop:"-3px"}}>{fmt(fromBonds)} of it from your Premium Bonds</div>}
+                </div>
+              );
+            })}
+            <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"10px 0"}}/>
+            <div style={{...rowStyle,fontWeight:700,color:"#2d6b4a"}}><span>Together, after tax</span><span>+{fmt(opp.gain)}/yr</span></div>
+            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginTop:"4px"}}>
+              The highest-earning option in each, worked out together so no money is counted twice. Candid Assist, bottom right, lists the other providers in each and how to move.
+            </p>
+          </div>
+        ) : totalPot > 0 ? (
           <div>
             <div style={rowStyle}><span>Interest you earn now, before tax</span><span style={{fontWeight:600}}>{fmt(currentGrossTotal)}/yr</span></div>
             {m.cash > 0 && currentTaxCost > 0 && (

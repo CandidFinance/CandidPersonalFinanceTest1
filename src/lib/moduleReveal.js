@@ -12,6 +12,7 @@
 import { fmt } from "./format.js";
 import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential } from "./pension.js";
 import { calcCashOptimisation } from "./cash.js";
+import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
 
@@ -91,8 +92,20 @@ export function cashReveal(d, m, { marketRates = {} } = {}) {
         body: "An easy-access account keeps it reachable when you need it." },
     ];
   }
+  // With the rates loaded: the same after-tax figure as the screen and
+  // Candid Assist (cashOpportunity), and the best choice in each section.
+  const opp = cashOpportunity(d, m, marketRates.rows);
+  if (opp && opp.gain > 50) {
+    const best = opp.lines.map(l => `${l.section === "Premium Bonds" ? "Premium Bonds" : `a ${l.section}`} at ${pct(l.option.ratePct)}`);
+    return [
+      { label: ANSWER, figure: `${fmt(opp.gain)} a year`, title: "more your savings could earn, after tax." },
+      { label: WHY, title: `Your ${fmt(opp.cash)} in savings earns about ${fmt(opp.currentKept)} a year after tax. The best options today include ${best.length > 1 ? `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}` : best[0]}.` },
+      { label: ACTION, title: "Candid Assist lays out the options in each and how to move, whichever you choose.",
+        body: "Open it from the button at the bottom right of the screen." },
+    ];
+  }
   const opt = calcCashOptimisation(m, marketRates.isaRate ?? null, marketRates.nonIsaRate ?? null, marketRates.rows);
-  if (opt.optimisationGain > 50) {
+  if (!opp && opt.optimisationGain > 50) {
     return [
       { label: ANSWER, figure: `${fmt(opt.optimisationGain)} a year`, title: "more your savings could earn." },
       { label: WHY, title: `Your savings earn about ${pct(opt.todayBlendedRate * 100)} on average. The best rates today are ${opt.isaRateDisplay} in a Cash ISA and ${opt.nonIsaRateDisplay} in a savings account.` },

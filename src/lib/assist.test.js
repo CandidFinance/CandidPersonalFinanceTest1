@@ -1,7 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cashSources, cashPlan, assistItems, assistHasNews, applyCashMove, nextIsaReset, accountName, accountItems, resolveAccount, trackAccount, addMonths, itemsForPage, savingsTax } from "./assist.js";
+import { cashSources, cashPlan, assistItems, assistHasNews, applyCashMove, nextIsaReset, accountName, accountItems, resolveAccount, trackAccount, addMonths, itemsForPage, savingsTax, cashOpportunity } from "./assist.js";
 import { isaUsedThisYear } from "./isa.js";
+import { calcMetrics } from "./metrics.js";
+import { computeModuleStatuses } from "./moduleStatus.js";
+import { cashReveal } from "./moduleReveal.js";
+import { fmt } from "./format.js";
 
 test("picking a capped account offers a second for the rest, compared with one account for all of it", () => {
   const d5 = { cashTiers: [{ name: "Old Bank", amount: "5000", rate: "1" }] };
@@ -188,6 +192,19 @@ test("a basic-rate payer's bonds fill the larger allowance in a savings account 
   // £1,000 allowance: £1,000 cash plus about £21,100 of bonds keeps the interest at £1,000.
   assert.ok(bonds && bonds.amount > 21000 && bonds.amount < 21200);
   assert.ok(cahoot.amount * 0.0452 <= 1000.01);
+});
+
+test("Home's figure, Explain this and Assist show the same after-tax opportunity", () => {
+  const d = { selectedModules: ["cash"], salary: "80000", cashTiers: [{ amount: "50000", rate: "1" }], monthlyExpenses: "1000", emergencyMonths: "3", isaThisYearCash: "0" };
+  const m = calcMetrics(d, { rows: taxRows });
+  const opp = cashOpportunity(d, m, taxRows);
+  assert.equal(Math.round(opp.gain), Math.round(cashPlan(d, m, taxRows).upTo));
+  assert.deepEqual(opp.lines.map(l => l.section), ["Cash ISA", "Savings account", "Premium Bonds"]);
+  assert.equal(computeModuleStatuses(d, m, { rows: taxRows }).cash.amount, Math.round(opp.gain));
+  assert.equal(cashReveal(d, m, { marketRates: { rows: taxRows } })[0].figure, `${fmt(opp.gain)} a year`);
+  // What the user has told Assist counts here too.
+  const noPb = cashOpportunity({ ...d, assistSkipPb: true }, m, taxRows);
+  assert.ok(!noPb.lines.some(l => l.section === "Premium Bonds"));
 });
 
 test("on a module page Assist sees that module's items, with the rest as elsewhere", () => {

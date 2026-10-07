@@ -332,6 +332,23 @@ export function cashPlan(d, m, rows, { skipIsa = false, skipPb = false, isaChoic
   };
 }
 
+// The Cash opportunity, the one figure for "more your savings could earn"
+// everywhere it appears (Home, the Cash screen, Explain this, Assist): the
+// best choice in each section, together, after tax, respecting what the
+// user has told Assist (keeping their ISA allowance, no Premium Bonds).
+// `lines` are those choices, for showing where the figure comes from.
+// Null until the rates have loaded.
+export function cashOpportunity(d, m, rows) {
+  const plan = cashPlan(d, m, rows, { skipIsa: d?.assistSkipIsa === true, skipPb: d?.assistSkipPb === true });
+  if (!plan) return null;
+  const lines = [
+    plan.isa.bestSingle && { section: "Cash ISA", option: plan.isa.bestSingle },
+    plan.savings.bestSingle && { section: "Savings account", option: plan.savings.bestSingle },
+    plan.pb.options[0] && { section: "Premium Bonds", option: plan.pb.options[0] },
+  ].filter(Boolean);
+  return { gain: Math.max(0, plan.upTo), lines, currentKept: plan.currentKept, cash: plan.cash };
+}
+
 // Accounts opened through Assist that need a look: a rate period ending
 // within BONUS_WARNING_DAYS (or already ended), or the provider having cut
 // the rate since. Each comes with the alternatives. When the rate it drops
