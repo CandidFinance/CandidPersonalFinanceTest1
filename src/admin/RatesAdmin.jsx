@@ -186,6 +186,18 @@ export default function RatesAdmin() {
                         </div>
                       </>
                     ) : <span style={{ color: MUT }}>-</span>}
+                    {/* Whether accounts can only be opened in the app. Set
+                        here, it wins over what the feed reads off the page. */}
+                    <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: MUT, marginTop: "6px" }}>
+                      App only:
+                      <select value={s.app_only == null ? "" : String(s.app_only)} disabled={!!busy}
+                        onChange={e => call("POST", { action: "set_app_only", id: s.id, value: e.target.value === "" ? null : e.target.value === "true" }, s.id)}
+                        style={{ fontSize: "12px", fontFamily: SANS, padding: "2px 4px", borderRadius: "6px", border: "1px solid rgba(22,47,36,0.2)" }}>
+                        <option value="">From the feed</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    </label>
                   </td>
                   <td style={{ ...cell, whiteSpace: "nowrap" }}>
                     <button type="button" style={button(false)} disabled={!!busy} onClick={() => call("POST", { action: "run", sourceIds: [s.id] }, "run")}>Check</button>{" "}

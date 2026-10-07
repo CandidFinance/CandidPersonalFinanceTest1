@@ -140,9 +140,13 @@ export async function checkSource(source, { force = false, dryRun = false } = {}
 // updated_at is moved on whenever a rate is confirmed, changed or not: the
 // app shows it as "correct as of", so it means "last checked against the
 // provider's page".
+// A provider set as app only (or not) on the admin page wins over what the
+// feed reads off the page.
+const appOnlyOverride = source => (source?.app_only == null ? {} : { app_only: source.app_only });
+
 async function applyPlan(source, plan, now) {
   for (const p of plan.publish) {
-    await db(`savings_rates?id=eq.${p.id}`, { method: "PATCH", body: { ...p.fields, checked_at: now, updated_at: now } });
+    await db(`savings_rates?id=eq.${p.id}`, { method: "PATCH", body: { ...p.fields, ...appOnlyOverride(source), checked_at: now, updated_at: now } });
   }
   if (!plan.reviews.length) return;
   // Skip anything already raised in the last 30 days, open or resolved, so a
@@ -186,19 +190,19 @@ const confirmedAppLinks = source => source?.app_links_confirmed_at
   : { ios_app_url: null, android_app_url: null };
 
 async function resolveReview(id, approve) {
-  const [review] = await db(`savings_rate_reviews?id=eq.${id}&resolved_at=is.null&select=*,rate_sources(provider_name,url,ios_app_url,android_app_url,app_links_confirmed_at)`);
+  const [review] = await db(`savings_rate_reviews?id=eq.${id}&resolved_at=is.null&select=*,rate_sources(provider_name,url,ios_app_url,android_app_url,app_links_confirmed_at,app_only)`);
   if (!review) throw new Error("Review not found or already resolved");
   const now = new Date().toISOString();
   if (approve) {
     if (review.change_type === "new") {
       const source = review.rate_sources;
       await db("savings_rates", { method: "POST", prefer: "return=minimal", body: {
-        ...review.proposed, provider_name: source.provider_name, product_url: source.url,
+        ...review.proposed, ...appOnlyOverride(source), provider_name: source.provider_name, product_url: source.url,
         ...confirmedAppLinks(source),
         source_id: review.source_id, status: "live", checked_at: now, updated_at: now,
       } });
     } else if (review.change_type === "rate_change" && review.row_id) {
-      await db(`savings_rates?id=eq.${review.row_id}`, { method: "PATCH", body: { ...review.proposed, checked_at: now, updated_at: now } });
+      await db(`savings_rates?id=eq.${review.row_id}`, { method: "PATCH", body: { ...review.proposed, ...appOnlyOverride(review.rate_sources), checked_at: now, updated_at: now } });
     } else if (review.change_type === "missing" && review.row_id) {
       await db(`savings_rates?id=eq.${review.row_id}`, { method: "PATCH", body: { status: "withdrawn", updated_at: now } });
     }
@@ -223,7 +227,7 @@ async function sourceFields(providerName, url, exceptId = null) {
 
 async function adminOverview() {
   const [sources, reviews, rates] = await Promise.all([
-    db("rate_sources?select=id,provider_name,url,active,last_fetched_at,last_status,last_error,last_product_count,ios_app_url,android_app_url,app_links_confirmed_at&order=provider_name.asc"),
+    db("rate_sources?select=id,provider_name,url,active,last_fetched_at,last_status,last_error,last_product_count,ios_app_url,android_app_url,app_links_confirmed_at,app_only&order=provider_name.asc"),
     db("savings_rate_reviews?resolved_at=is.null&select=id,source_id,change_type,product_name,current_rate,proposed,created_at,rate_sources(provider_name,url)&order=created_at.desc"),
     db("savings_rates?status=eq.live&select=id,provider_name,product_name,account_type,rate_aer,is_isa,checked_at,updated_at,source_id&order=rate_aer.desc"),
   ]);
@@ -281,6 +285,13 @@ export default async function handler(req, res) {
       catch (e) { return res.status(400).json({ error: e.message }); }
       await db(`rate_sources?id=eq.${String(id)}`, { method: "PATCH", body: { ...links, app_links_confirmed_at: null } });
       await db(`savings_rates?source_id=eq.${String(id)}`, { method: "PATCH", body: confirmedAppLinks(null) });
+    } else if (action === "set_app_only") {
+      // true or false: set by a person, copied onto the rates now and kept
+      // over the feed. null: back to what the feed reads.
+      const value = req.body.value;
+      if (value !== true && value !== false && value !== null) return res.status(400).json({ error: "Bad value" });
+      await db(`rate_sources?id=eq.${String(id)}`, { method: "PATCH", body: { app_only: value } });
+      if (value !== null) await db(`savings_rates?source_id=eq.${String(id)}`, { method: "PATCH", body: { app_only: value } });
     } else if (action === "confirm_app_links") {
       const [source] = await db(`rate_sources?id=eq.${String(id)}&select=ios_app_url,android_app_url`);
       if (!source || (!source.ios_app_url && !source.android_app_url)) return res.status(400).json({ error: "No app links to confirm" });
