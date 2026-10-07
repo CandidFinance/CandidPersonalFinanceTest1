@@ -40,7 +40,7 @@ export default function StartCheckButton({ source }) {
         fontSize: "15px", fontWeight: 700, color: WHITE, fontFamily: SANS, cursor: "pointer",
       }}
     >
-      Optimise my money
+      Beta - Optimise my money
     </motion.button>
   );
 }

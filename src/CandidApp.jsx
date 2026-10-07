@@ -1020,13 +1020,22 @@ export function NavBar({ right, center, onLogoClick, light }) {
   const wordmarkStyle = light
     ? {...HEADER_WORDMARK_LIGHT,fontSize:"20px",justifySelf:"start"}
     : {...HEADER_WORDMARK_DARK,fontSize:FONT_SIZE.HEADLINE,justifySelf:"start"};
+  // A small "Beta" tag beside the wordmark, so it's clear on every app
+  // screen that Candid is still in beta.
+  const betaTag = (
+    <span style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",lineHeight:1,padding:"4px 8px",borderRadius:"100px",
+      background:light?"rgba(196,150,58,0.14)":"rgba(255,255,255,0.14)",color:light?"#8a6a24":"rgba(255,255,255,0.85)"}}>Beta</span>
+  );
   const row = (
     <>
-      {onLogoClick ? (
-        <button type="button" onClick={onLogoClick} aria-label={light ? "Back to Home" : "Back to Dashboard"} style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
-      ) : (
-        <span style={wordmarkStyle}>Candid.</span>
-      )}
+      <span style={{justifySelf:"start",display:"inline-flex",alignItems:"center",gap:"8px"}}>
+        {onLogoClick ? (
+          <button type="button" onClick={onLogoClick} aria-label={light ? "Back to Home" : "Back to Dashboard"} style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
+        ) : (
+          <span style={wordmarkStyle}>Candid.</span>
+        )}
+        {betaTag}
+      </span>
       {center ? <div style={{color:light?"rgba(22,47,36,0.5)":"rgba(255,255,255,0.5)",fontSize:FONT_SIZE.LABEL,fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
       <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>
     </>
