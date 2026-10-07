@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cashSources, cashPlan, assistItems, assistHasNews, applyCashMove, nextIsaReset, accountName, accountItems, resolveAccount, trackAccount, addMonths } from "./assist.js";
+import { cashSources, cashPlan, assistItems, assistHasNews, applyCashMove, nextIsaReset, accountName, accountItems, resolveAccount, trackAccount, addMonths, itemsForPage } from "./assist.js";
 import { isaUsedThisYear } from "./isa.js";
 
 test("picking a capped account offers a second for the rest, compared with one account for all of it", () => {
@@ -81,6 +81,15 @@ test("a rate cut on an Assist account is raised, and settles when kept or moved"
   const moved = resolveAccount(dd, item, item.options[0], new Date("2026-11-01T12:00:00Z"));
   assert.deepEqual(moved.cashTiers, [{ name: "Chase", amount: "6000", rate: "4.5" }]);
   assert.deepEqual(moved.assistAccounts.map(x => [x.name, x.rateId, x.openedAt]), [["Chase", "r-chase", "2026-11-01"]]);
+});
+
+test("on a module page Assist sees that module's items, with the rest as elsewhere", () => {
+  const items = [{ id: "account:a", module: "cash" }, { id: "cash", module: "cash" }, { id: "pension", module: "pension" }];
+  assert.deepEqual(itemsForPage(items, null).here.length, 3);
+  assert.deepEqual(itemsForPage(items, "cash").here.map(i => i.id), ["account:a", "cash"]);
+  assert.deepEqual(itemsForPage(items, "cash").elsewhere.map(i => i.id), ["pension"]);
+  assert.deepEqual(itemsForPage(items, "investments").here, []);
+  assert.equal(itemsForPage(items, "investments").elsewhere.length, 3);
 });
 
 test("account items come before the cash item", () => {

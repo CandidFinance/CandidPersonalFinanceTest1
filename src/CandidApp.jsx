@@ -13,6 +13,8 @@ import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPens
 import { calcCashOptimisation } from "./lib/cash.js";
 import { calcMetrics, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
 import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown, calcCandidScore } from "./lib/moduleStatus.js";
+// Module names for Candid Assist's labels and "Elsewhere" list.
+const ASSIST_MODULE_LABELS = { ...Object.fromEntries(MODULE_META.map(mm => [mm.key, mm.title])), property: "Property" };
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
 import { fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions, calcLoanMarginalReturnCurve } from "./lib/forecast.js";
 import { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
@@ -6514,9 +6516,12 @@ export default function AppShell() {
   );
 
   // On every tab-bar screen (MobileLayout renders it).
+  // Assist deals with the module page it's on (null: an overview page).
+  const assistPage = pathname.startsWith("/app/module/") ? pathname.split("/")[3] || null : pathname.startsWith("/app/property") ? "property" : null;
   const assistNode = (
     <CandidAssist d={d} m={m} set={set} savingsRates={savingsRates} state={assistState} setState={setAssistState}
-      onOpenCash={() => navigate("/app/module/cash")}/>
+      page={assistPage} moduleLabels={ASSIST_MODULE_LABELS}
+      onGoTo={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}/>
   );
 
   if (pathname === "/app/home") return (

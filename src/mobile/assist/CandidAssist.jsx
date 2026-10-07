@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useDragControls, useReducedMotion } from "fram
 import { Sparkles, ChevronDown, ChevronLeft, ChevronRight, ArrowUpRight, Check } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
-import { assistItems, assistHasNews, cashPlan, applyCashMove, accountName, resolveAccount, MIN_ASSIST_GAIN, MIN_SPLIT_GAIN } from "../../lib/assist.js";
+import { assistItems, assistHasNews, itemsForPage, cashPlan, applyCashMove, accountName, resolveAccount, MIN_ASSIST_GAIN, MIN_SPLIT_GAIN } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { devicePlatform, appLinkFor } from "../../lib/appLinks.js";
@@ -216,7 +216,37 @@ function AccountFlow({ item, state, update, d, set, backToList }) {
   );
 }
 
-export default function CandidAssist({ d, m, set, savingsRates, state, setState, onOpenCash }) {
+// An item's one-line title and the detail beneath it, for lists.
+const itemTitle = i => i.id === "cash" ? "Your cash could earn more" : i.kind === "bonus" ? `${i.account.name}: its rate is ending` : `${i.account.name}: rate cut`;
+const itemDetail = i => i.id === "cash" ? `Up to ${fmt(i.gain)} a year more`
+  : i.kind === "bonus" ? `${pct(i.fromRate)} ends on ${fmtDate(i.date)}${i.toRate != null ? `, then ${pct(i.toRate)}` : ""}`
+  : `${pct(i.fromRate)} is now ${pct(i.toRate)}`;
+
+// Items for other pages, each taking the user there with it open in Assist.
+function Elsewhere({ items, labels, onGo }) {
+  if (!items.length) return null;
+  return (
+    <div style={{ marginTop: "22px", paddingTop: "16px", borderTop: "1px solid rgba(22,47,36,0.08)" }}>
+      <div style={sectionLabel}>Elsewhere</div>
+      {items.map(i => (
+        <button key={i.id} type="button" onClick={() => onGo(i)}
+          style={{ ...card, display: "flex", alignItems: "center", gap: "12px", width: "100%", textAlign: "left", padding: "12px 14px", marginTop: "8px", cursor: "pointer", fontFamily: SANS }}>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: "11px", fontWeight: 700, color: MUT, letterSpacing: "0.04em" }}>{labels[i.module] || i.module}</span>
+            <span style={{ display: "block", fontSize: "14px", fontWeight: 700, color: TEXT, marginTop: "1px" }}>{itemTitle(i)}</span>
+            <span style={{ display: "block", fontSize: "12.5px", color: MUT, marginTop: "1px" }}>{itemDetail(i)}</span>
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", fontSize: "13px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>Go there<ChevronRight size={15}/></span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// `page`: the module the user is on (null on Home, Modules and Forecast).
+// On a module page Assist deals with that module only, and lists anything
+// for other pages under Elsewhere; `onGoTo` takes the user to a module.
+export default function CandidAssist({ d, m, set, savingsRates, state, setState, page = null, moduleLabels = {}, onGoTo }) {
   const reduceMotion = useReducedMotion();
   const dragControls = useDragControls();
   const scrollRef = useRef(null);
@@ -229,19 +259,24 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const items = useMemo(() => assistItems(d, m, savingsRates), [d, m, savingsRates]);
+  const allItems = useMemo(() => assistItems(d, m, savingsRates), [d, m, savingsRates]);
+  const { here: items, elsewhere } = itemsForPage(allItems, page);
+  const pageLabel = page ? moduleLabels[page] || page : null;
   // With one thing to show, Assist opens on it; with more, on a list of them.
   const item = items.find(i => i.id === state.itemId) || (items.length === 1 ? items[0] : null);
-  const news = assistHasNews(items, readSeen());
+  // The dot is for anything new anywhere, so nothing is missed by being on
+  // another page; the button's fill is for this page.
+  const news = assistHasNews(allItems, readSeen());
   const quiet = items.length === 0;
+  const goTo = i => { onGoTo(i.module); update({ open: true, itemId: i.id, step: "overview" }); };
   const skipIsa = d.assistSkipIsa === true;
   const plan = useMemo(() => cashPlan(d, m, savingsRates, { skipIsa, isaChoice: state.isaChoice, isaChoice2: state.isaChoice2, savingsChoice: state.savingsChoice, savingsChoice2: state.savingsChoice2 }),
     [d, m, savingsRates, skipIsa, state.isaChoice, state.isaChoice2, state.savingsChoice, state.savingsChoice2]);
 
-  // Opening Assist counts as having seen what's in it.
+  // Opening Assist counts as having seen what's in it, here and elsewhere.
   useEffect(() => {
-    if (state.open && items.length) writeSeen([...new Set([...readSeen(), ...items.map(i => i.signature)])]);
-  }, [state.open, items]);
+    if (state.open && allItems.length) writeSeen([...new Set([...readSeen(), ...allItems.map(i => i.signature)])]);
+  }, [state.open, allItems]);
 
   const update = patch => setState(s => ({ ...s, ...patch }));
   const minimise = () => update({ open: false });
@@ -270,20 +305,15 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     // More than one thing: a list, accounts that need a look first.
     body = (
       <div>
-        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>{items.length} things to look at</div>
+        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>{items.length} things to look at{pageLabel ? ` in ${pageLabel}` : ""}</div>
         <div style={{ marginTop: "14px" }}>
           {items.map(i => (
             <button key={i.id} type="button" onClick={() => update({ itemId: i.id, step: "overview" })}
               style={{ ...card, display: "flex", alignItems: "center", gap: "12px", width: "100%", textAlign: "left", padding: "14px 16px", marginBottom: "10px", cursor: "pointer", fontFamily: SANS }}>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: "14.5px", fontWeight: 700, color: TEXT }}>
-                  {i.id === "cash" ? "Your cash could earn more" : i.kind === "bonus" ? `${i.account.name}: its rate is ending` : `${i.account.name}: rate cut`}
-                </span>
-                <span style={{ display: "block", fontSize: "12.5px", color: MUT, marginTop: "2px" }}>
-                  {i.id === "cash" ? `Up to ${fmt(i.gain)} a year more`
-                    : i.kind === "bonus" ? `${pct(i.fromRate)} ends on ${fmtDate(i.date)}${i.toRate != null ? `, then ${pct(i.toRate)}` : ""}`
-                    : `${pct(i.fromRate)} is now ${pct(i.toRate)}`}
-                </span>
+                {!page && <span style={{ display: "block", fontSize: "11px", fontWeight: 700, color: MUT, letterSpacing: "0.04em" }}>{moduleLabels[i.module] || i.module}</span>}
+                <span style={{ display: "block", fontSize: "14.5px", fontWeight: 700, color: TEXT }}>{itemTitle(i)}</span>
+                <span style={{ display: "block", fontSize: "12.5px", color: MUT, marginTop: "2px" }}>{itemDetail(i)}</span>
               </span>
               <ChevronRight size={16} color={MUT}/>
             </button>
@@ -294,17 +324,25 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
   } else if (item && item.id !== "cash") {
     body = <AccountFlow item={item} state={state} update={update} d={d} set={set} backToList={backToList}/>;
   } else if (!item || !plan) {
-    const snoozed = d.assistSnoozed?.cash && plan && plan.upTo >= MIN_ASSIST_GAIN;
+    // Nothing on this page. On Cash (or an overview page) the cash reasons
+    // why; on another module page, just that, with anything elsewhere below.
+    const cashHere = !page || page === "cash";
+    const snoozed = cashHere && d.assistSnoozed?.cash && plan && plan.upTo >= MIN_ASSIST_GAIN;
     body = (
       <div>
-        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>Nothing needs doing right now.</div>
-        <p style={{ fontSize: "14px", color: TEXT, lineHeight: 1.6, marginTop: "10px" }}>
-          {!(m.cash > 0) ? "Add your cash savings and Assist will show what they could earn in the best easy-access accounts."
-            : snoozed ? "You said not now to the current figures. Assist will flag them again when the rates behind them change."
-            : `Your cash is within ${fmt(MIN_ASSIST_GAIN)} a year of the best easy-access rates Candid tracks.`}
-        </p>
+        <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>
+          {page && !cashHere ? `Nothing to do on ${pageLabel} right now.` : "Nothing needs doing right now."}
+        </div>
+        {cashHere && (
+          <p style={{ fontSize: "14px", color: TEXT, lineHeight: 1.6, marginTop: "10px" }}>
+            {!(m.cash > 0) ? "Add your cash savings and Assist will show what they could earn in the best easy-access accounts."
+              : snoozed ? "You said not now to the current figures. Assist will flag them again when the rates behind them change."
+              : `Your cash is within ${fmt(MIN_ASSIST_GAIN)} a year of the best easy-access rates Candid tracks.`}
+          </p>
+        )}
         {snoozed && <button type="button" style={{ ...textButton, padding: "12px 0 0" }} onClick={() => set("assistSnoozed", { ...(d.assistSnoozed || {}), cash: null })}>Show them anyway</button>}
-        {!(m.cash > 0) && <button type="button" style={{ ...textButton, padding: "12px 0 0" }} onClick={() => { minimise(); onOpenCash(); }}>Go to Cash & savings</button>}
+        {cashHere && !(m.cash > 0) && page !== "cash" && <button type="button" style={{ ...textButton, padding: "12px 0 0" }} onClick={() => { minimise(); onGoTo("cash"); }}>Go to Cash & savings</button>}
+        <Elsewhere items={elsewhere} labels={moduleLabels} onGo={goTo}/>
         <p style={{ fontSize: "12.5px", color: MUT, lineHeight: 1.55, marginTop: "22px" }}>
           Assist checks your figures against the live rates each time you open Candid, and shows a gold dot when there's something new.
         </p>
@@ -502,7 +540,10 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
                   </button>
                 </div>
               </div>
-              <div ref={scrollRef} style={{ overflowY: "auto", padding: wide ? "18px 22px 22px" : "18px 20px calc(24px + env(safe-area-inset-bottom, 0px))" }}>{body}</div>
+              <div ref={scrollRef} style={{ overflowY: "auto", padding: wide ? "18px 22px 22px" : "18px 20px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
+                {body}
+                {items.length > 0 && state.step === "overview" && <Elsewhere items={elsewhere} labels={moduleLabels} onGo={goTo}/>}
+              </div>
             </motion.div>
           </>
         )}

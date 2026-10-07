@@ -196,7 +196,7 @@ export function accountItems(d, rows, today = new Date()) {
     if (!kind) continue;
     const source = [{ index: null, name: a.name, amount: a.amount, ratePct: toRate ?? 0 }];
     items.push({
-      id: `account:${a.id}`, kind, account: a, fromRate: a.ratePct, toRate, date,
+      id: `account:${a.id}`, module: "cash", kind, account: a, fromRate: a.ratePct, toRate, date,
       daysLeft: date ? daysUntil(date, today) : null,
       loss: toRate != null ? a.amount * (a.ratePct - toRate) / 100 : null,
       options: optionsFor(rows, a.isa, source, Infinity, a),
@@ -218,9 +218,16 @@ export function assistItems(d, m, rows, today = new Date()) {
     const isaNote = plan.isa.options.length && daysToReset <= ISA_DEADLINE_DAYS
       ? `Your ISA allowance resets on 5 April, in ${daysToReset} day${daysToReset === 1 ? "" : "s"}.`
       : null;
-    items.push({ id: "cash", gain: plan.upTo, signature: plan.signature, isaNote });
+    items.push({ id: "cash", module: "cash", gain: plan.upTo, signature: plan.signature, isaNote });
   }
   return items;
+}
+
+// Assist on a page: a module page sees only that module's items, with the
+// rest listed as elsewhere; an overview page (no module) sees everything.
+export function itemsForPage(items, page) {
+  if (!page) return { here: items, elsewhere: [] };
+  return { here: items.filter(i => i.module === page), elsewhere: items.filter(i => i.module !== page) };
 }
 
 // The dot on the Assist button: something to show that the user hasn't
