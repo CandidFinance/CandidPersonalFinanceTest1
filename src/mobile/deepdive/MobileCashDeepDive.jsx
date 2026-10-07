@@ -164,7 +164,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
             {step3Pb > 0 && (
               <div>
                 <div style={stepLabel}>Step 3 — Premium Bonds (tax-free avg.)</div>
-                <div style={rowStyle}><span>{fmt(step3Pb)} at ~4.4%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span></div>
+                <div style={rowStyle}><span>{fmt(step3Pb)} at ~{(PB_RATE*100).toFixed(2)}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span></div>
               </div>
             )}
 

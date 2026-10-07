@@ -52,6 +52,7 @@ test("account type labels", () => {
   assert.equal(accountTypeLabel({ ...fixed, term_months: 18 }), "18-month fixed");
   assert.equal(accountTypeLabel({ account_kind: "notice", notice_days: 95 }), "95-day notice");
   assert.equal(accountTypeLabel({ account_kind: "notice" }), "Notice");
+  assert.equal(accountTypeLabel({ account_kind: "premium_bonds", is_isa: false }), "Premium Bonds");
 });
 
 test("products match existing rows by ISA, kind and term", () => {

@@ -9,6 +9,12 @@ export function isEasyAccess(r) {
   return /^easy access/i.test(r?.account_type || "");
 }
 
+// NS&I Premium Bonds, which the rate feed reads off NS&I's page (the annual
+// prize fund rate, in rate_aer). Null until the feed has it.
+export function premiumBondsRow(rows) {
+  return (rows || []).find(r => /^premium bonds$/i.test(r?.account_type || "")) || null;
+}
+
 // Highest-rate easy-access row for a given ISA/non-ISA category — returns the
 // whole row (not just the number) so display keeps the DB's own "X.XX" string
 // formatting rather than reformatting a coerced float. Null if none.

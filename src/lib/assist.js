@@ -1,5 +1,5 @@
-import { isEasyAccess } from "./savingsRates.js";
-import { ISA_ALLOWANCE } from "./tax.js";
+import { isEasyAccess, premiumBondsRow } from "./savingsRates.js";
+import { ISA_ALLOWANCE, PSA_BY_BAND } from "./tax.js";
 
 // Candid Assist: what it has to show, worked out from the user's figures and
 // the live rates. The panel (src/mobile/assist/) only displays this.
@@ -24,6 +24,8 @@ export const ISA_DEADLINE_DAYS = 56;
 export const BONUS_WARNING_DAYS = 28;
 // Providers shown per section, so it's always a choice, never one account.
 export const OPTIONS_PER_SECTION = 4;
+// The most anyone can hold in Premium Bonds.
+export const PB_MAX = 50000;
 
 const DAY = 864e5;
 const isoDay = date => date.toISOString().slice(0, 10);
@@ -63,13 +65,14 @@ export function cashSources(d, m) {
   return m.cash > 0 ? [{ index: null, name: null, amount: m.cash, ratePct: +m.savingsRate || 0 }] : [];
 }
 
-// Takes up to `limit` from the accounts paying less than `ratePct`, lowest
-// rate first: the money that gains most from moving.
-function draw(sources, ratePct, limit) {
+// Takes up to `limit` from the accounts that `beats` (by default, those
+// paying less than `ratePct`), lowest rate first: the money that gains most
+// from moving. `gain` is before tax; cashPlan works out the after-tax figure.
+function draw(sources, ratePct, limit, beats = s => s.ratePct < ratePct) {
   let left = limit;
   const from = [];
   for (const s of [...sources].sort((a, b) => a.ratePct - b.ratePct)) {
-    if (left <= 0 || s.ratePct >= ratePct || s.amount <= 0) continue;
+    if (left <= 0 || !beats(s) || s.amount <= 0) continue;
     const amount = Math.min(s.amount, left);
     from.push({ index: s.index, name: s.name, ratePct: s.ratePct, amount });
     left -= amount;
@@ -83,6 +86,19 @@ function minus(sources, from) {
     const taken = from.filter(f => f.index === s.index).reduce((t, f) => t + f.amount, 0);
     return { ...s, amount: s.amount - taken };
   });
+}
+
+// Interest a year on accounts outside an ISA (before tax).
+const taxableInterest = sources => sources.reduce((t, s) => t + s.amount * s.ratePct / 100, 0);
+const interestOn = from => from.reduce((t, f) => t + f.amount * f.ratePct / 100, 0);
+
+// Tax on savings interest: nothing up to the Personal Savings Allowance,
+// the user's marginal rate above it. ISA interest and Premium Bonds prizes
+// are tax-free and never count towards it.
+export function savingsTax(m) {
+  const rate = +m.tr || 0;
+  const allowance = PSA_BY_BAND[m.taxBandLabel] ?? 0;
+  return { rate, allowance, kept: interest => interest - rate * Math.max(0, interest - allowance) };
 }
 
 // A savings_rates row as an option, with its rate period when the feed has
@@ -105,7 +121,9 @@ function asOption(r, isIsa) {
 // The providers for one section, highest rate first, each with what moving
 // to it would take (from which accounts) and earn. `exclude` leaves out one
 // account (the one already picked, or the one the money is moving from).
-function optionsFor(rows, isIsa, sources, limit, exclude = null) {
+// `value` turns a move into what it earns a year (after tax, in cashPlan);
+// `limitFor` can hold an account to less than everything available.
+function optionsFor(rows, isIsa, sources, limit, exclude = null, { value = null, limitFor = null } = {}) {
   const seen = new Set();
   return (rows || [])
     .filter(r => r.is_isa === isIsa && isEasyAccess(r))
@@ -113,25 +131,27 @@ function optionsFor(rows, isIsa, sources, limit, exclude = null) {
     .sort((a, b) => b.ratePct - a.ratePct)
     .filter(o => { const k = `${o.provider}|${o.product}`; if (seen.has(k)) return false; seen.add(k); return true; })
     .filter(o => !exclude || o.provider !== exclude.provider || o.product !== exclude.product)
-    .map(o => ({ ...o, id: `${isIsa ? "isa" : "savings"}:${o.provider}:${o.product || ""}:${o.ratePct}`, ...draw(sources, o.ratePct, Math.min(limit, o.cap ?? Infinity)) }))
+    .map(o => {
+      const moved = draw(sources, o.ratePct, Math.min(limit, o.cap ?? Infinity, limitFor ? limitFor(o) : Infinity));
+      return { ...o, id: `${isIsa ? "isa" : "savings"}:${o.provider}:${o.product || ""}:${o.ratePct}`, ...moved, ...(value ? { gain: value(o, moved.from) } : {}) };
+    })
     .filter(o => o.amount > 0 && o.gain > 0)
     .slice(0, OPTIONS_PER_SECTION);
 }
 
-const EMPTY_SECTION = { options: [], pick: null, second: null, secondOptions: [], leftover: 0, split: null, bestSingle: null, from: [], gain: 0 };
+const EMPTY_SECTION = { options: [], pick: null, second: null, secondOptions: [], leftover: 0, split: null, bestSingle: null, from: [], gain: 0, picks: [] };
 
 // One section (Cash ISA or savings account). When the pick is capped and
 // money is left over, a second choice of providers for the rest, and how the
 // two together compare with putting everything in the best single account.
-function section(rows, isIsa, sources, limit, choice, choice2) {
-  const options = optionsFor(rows, isIsa, sources, limit);
+function section(options, choice, choice2, secondFor) {
   const pick = options.find(o => o.id === choice) || null;
   const bestSingle = options.reduce((b, o) => (!b || o.gain > b.gain ? o : b), null);
   let second = null, secondOptions = [], leftover = 0, split = null;
   if (pick && pick.cap != null) {
     leftover = Math.max(0, Math.max(...options.map(o => o.amount)) - pick.amount);
     if (leftover > 0) {
-      secondOptions = optionsFor(rows, isIsa, minus(sources, pick.from), limit - pick.amount, pick);
+      secondOptions = secondFor(pick);
       second = secondOptions.find(o => o.id === choice2) || null;
     }
   }
@@ -143,38 +163,123 @@ function section(rows, isIsa, sources, limit, choice, choice2) {
   }
   const picks = [pick, second].filter(Boolean);
   return {
-    options, pick, second, secondOptions, leftover, split, bestSingle,
+    options, pick, second, secondOptions, leftover, split, bestSingle, picks,
     from: picks.flatMap(p => p.from),
     gain: picks.reduce((t, p) => t + p.gain, 0),
   };
 }
 
-// Everything the cash walkthrough shows. `skipIsa`: the user is keeping their
-// ISA allowance for investing. The choices are the option ids they've picked
-// (a second in a section only after a capped first). Savings options are
-// worked out on what's left once the ISA choice (before one's picked, the
-// ISA option that earns most) has taken its share, so the two never count
-// the same money.
-export function cashPlan(d, m, rows, { skipIsa = false, isaChoice = null, isaChoice2 = null, savingsChoice = null, savingsChoice2 = null } = {}) {
+// The most a savings account at `ratePct` can take before its interest, with
+// what's left where it is, goes over the Personal Savings Allowance. Beyond
+// that, Premium Bonds' tax-free prizes can pay more than it keeps after tax.
+// `extra`: taxable interest already coming from elsewhere (an account just
+// picked), which uses up the allowance too.
+function withinAllowance(sources, ratePct, allowance, extra = 0) {
+  const total = sources.filter(s => s.ratePct < ratePct).reduce((t, s) => t + s.amount, 0);
+  const interestAfter = x => { const mv = draw(sources, ratePct, x); return extra + taxableInterest(sources) - interestOn(mv.from) + mv.amount * ratePct / 100; };
+  if (interestAfter(0) >= allowance) return 0;
+  if (interestAfter(total) <= allowance) return total;
+  let lo = 0, hi = total;
+  for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (interestAfter(mid) <= allowance) lo = mid; else hi = mid; }
+  return Math.floor(lo);
+}
+
+// Everything the cash walkthrough shows, with every figure after tax. Three
+// sections, the user picking in any or none:
+//  - Cash ISA: tax-free, up to this year's allowance. `skipIsa`: the user is
+//    keeping the allowance for investing.
+//  - Savings account: interest taxed above the Personal Savings Allowance.
+//    Where Premium Bonds would pay more than an account keeps after tax,
+//    the account's amount stops at the allowance and the rest is Premium
+//    Bonds' to offer.
+//  - Premium Bonds: tax-free prizes at NS&I's prize fund rate (an average,
+//    not a guaranteed return), up to £50,000 in all. `skipPb`: not for them.
+// Each section works on what the one before it has taken (before a pick,
+// the option that earns most), so no money is counted twice.
+export function cashPlan(d, m, rows, { skipIsa = false, skipPb = false, isaChoice = null, isaChoice2 = null, savingsChoice = null, savingsChoice2 = null, pbChoice = null } = {}) {
   const sources = cashSources(d, m);
   if (!sources.length || !Array.isArray(rows) || !rows.length) return null;
+  const tax = savingsTax(m);
+  const base = taxableInterest(sources);
+  // What a move earns a year after tax, on top of `before` taxable interest.
+  const kept = (before, from, ratePct, taxFree) => {
+    const added = from.reduce((t, f) => t + f.amount, 0) * ratePct / 100;
+    return taxFree
+      ? tax.kept(before - interestOn(from)) - tax.kept(before) + added
+      : tax.kept(before - interestOn(from) + added) - tax.kept(before);
+  };
+
+  // Cash ISA
   const isaLeft = Math.max(0, +m.isaHeadroom || 0);
-  const isa = !skipIsa && isaLeft > 0 ? section(rows, true, sources, isaLeft, isaChoice, isaChoice2) : EMPTY_SECTION;
+  const isaValue = before => (o, from) => kept(before, from, o.ratePct, true);
+  const isaOptions = !skipIsa && isaLeft > 0 ? optionsFor(rows, true, sources, isaLeft, null, { value: isaValue(base) }) : [];
+  const isa = isaOptions.length ? section(isaOptions, isaChoice, isaChoice2, pick => {
+    const after = minus(sources, pick.from);
+    return optionsFor(rows, true, after, isaLeft - pick.amount, pick, { value: isaValue(taxableInterest(after)) });
+  }) : EMPTY_SECTION;
   const isaTaken = isa.pick ? isa.from : isa.bestSingle?.from || [];
-  const savings = section(rows, false, minus(sources, isaTaken), Infinity, savingsChoice, savingsChoice2);
-  const best = s => s.pick ? s.gain : s.bestSingle?.gain || 0;
+  const afterIsa = minus(sources, isaTaken);
+
+  // Premium Bonds' rate, if the feed has it and the user wants them.
+  const pbRow = premiumBondsRow(rows);
+  const pbRate = pbRow ? +pbRow.rate_aer : null;
+  const pbRoom = Math.max(0, PB_MAX - (+m.bonds || 0));
+  const pbInPlay = pbRate != null && !skipPb && pbRoom > 0;
+
+  // Savings account
+  const savingsValue = before => (o, from) => kept(before, from, o.ratePct, false);
+  const savingsLimit = srcs => o => (pbInPlay && o.ratePct * (1 - tax.rate) < pbRate ? withinAllowance(srcs, o.ratePct, tax.allowance) : Infinity);
+  const savingsOptions = optionsFor(rows, false, afterIsa, Infinity, null, { value: savingsValue(taxableInterest(afterIsa)), limitFor: savingsLimit(afterIsa) });
+  const savings = section(savingsOptions, savingsChoice, savingsChoice2, pick => {
+    const after = minus(afterIsa, pick.from);
+    const before = taxableInterest(after) + pick.amount * pick.ratePct / 100;
+    return optionsFor(rows, false, after, Infinity, pick, {
+      value: (o, from) => kept(before, from, o.ratePct, false),
+      limitFor: o => (pbInPlay && o.ratePct * (1 - tax.rate) < pbRate ? withinAllowance(after, o.ratePct, tax.allowance, pick.amount * pick.ratePct / 100) : Infinity),
+    });
+  });
+  const savingsTaken = savings.pick ? savings.picks : savings.bestSingle ? [savings.bestSingle] : [];
+  const afterSavings = minus(afterIsa, savingsTaken.flatMap(p => p.from));
+  const pbBefore = taxableInterest(afterSavings) + savingsTaken.reduce((t, p) => t + p.amount * p.ratePct / 100, 0);
+
+  // Premium Bonds: the money whose interest, after tax, pays less than the
+  // prize fund rate.
+  let pbOptions = [];
+  if (pbInPlay) {
+    const overAllowance = pbBefore > tax.allowance;
+    const moved = draw(afterSavings, pbRate, pbRoom, s => s.ratePct * (1 - (overAllowance ? tax.rate : 0)) < pbRate);
+    const gain = kept(pbBefore, moved.from, pbRate, true);
+    if (moved.amount > 0 && gain > 0) {
+      pbOptions = [{
+        ...asOption(pbRow, false), id: `pb:${pbRate}`, pb: true, provider: "NS&I", product: "Premium Bonds",
+        cap: pbRoom, ...moved, gain,
+      }];
+    }
+  }
+  const pb = { options: pbOptions, pick: pbOptions.find(o => o.id === pbChoice) || null, room: pbRoom, rate: pbRate, inPlay: pbInPlay };
+
+  // Totals, all moves taken together, after tax.
+  const together = moves => {
+    const from = moves.flatMap(p => p.from);
+    const taxFree = moves.filter(p => p.isa || p.pb).reduce((t, p) => t + p.amount * p.ratePct / 100, 0);
+    const taxable = moves.filter(p => !p.isa && !p.pb).reduce((t, p) => t + p.amount * p.ratePct / 100, 0);
+    return tax.kept(base - interestOn(from) + taxable) - tax.kept(base) + taxFree;
+  };
+  const picks = [...isa.picks, ...savings.picks, pb.pick].filter(Boolean);
+  const best = [...(isa.pick ? isa.picks : isa.bestSingle ? [isa.bestSingle] : []), ...savingsTaken, ...(pb.pick ? [pb.pick] : pb.options.slice(0, 1))];
   return {
     sources,
     cash: sources.reduce((t, s) => t + s.amount, 0),
-    currentInterest: sources.reduce((t, s) => t + s.amount * s.ratePct / 100, 0),
+    currentInterest: base,
+    currentKept: tax.kept(base),
     bonds: +m.bonds || 0,
-    isaLeft, skipIsa, isa, savings,
-    picks: [isa.pick, isa.second, savings.pick, savings.second].filter(Boolean),
-    upTo: best(isa) + best(savings),
-    chosenGain: isa.gain + savings.gain,
+    tax, isaLeft, skipIsa, skipPb, isa, savings, pb,
+    picks,
+    upTo: together(best),
+    chosenGain: together(picks),
     // What the figures rest on: when it changes (a rate moves, a provider
     // appears), there's something new to show.
-    signature: [...isa.options, ...savings.options].map(o => o.id).join("|"),
+    signature: [...isa.options, ...savings.options, ...pb.options].map(o => o.id).join("|"),
   };
 }
 
@@ -212,7 +317,7 @@ export function accountItems(d, rows, today = new Date()) {
 // again once the rates behind them change.
 export function assistItems(d, m, rows, today = new Date()) {
   const items = accountItems(d, rows, today);
-  const plan = cashPlan(d, m, rows, { skipIsa: d?.assistSkipIsa === true });
+  const plan = cashPlan(d, m, rows, { skipIsa: d?.assistSkipIsa === true, skipPb: d?.assistSkipPb === true });
   if (plan && plan.upTo >= MIN_ASSIST_GAIN && d?.assistSnoozed?.cash !== plan.signature) {
     const daysToReset = Math.ceil((nextIsaReset(today) - today) / DAY);
     const isaNote = plan.isa.options.length && daysToReset <= ISA_DEADLINE_DAYS
@@ -256,10 +361,11 @@ export function trackAccount(move, today = new Date()) {
 export function applyCashMove(d, m, plan, doneMoves, today = new Date()) {
   const tiers = plan.sources.map(s => ({ ...(s.index != null ? d.cashTiers[s.index] : {}), name: s.name || undefined, amount: s.amount, rate: s.ratePct }));
   const byIndex = idx => tiers[plan.sources.findIndex(s => s.index === idx)];
-  let isaMoved = 0;
+  let isaMoved = 0, pbMoved = 0;
   for (const move of doneMoves) {
     for (const f of move.from) { const t = byIndex(f.index); if (t) t.amount -= f.amount; }
     if (move.isa) isaMoved += move.amount;
+    else if (move.pb) pbMoved += move.amount;
     else tiers.push({ name: accountName(move), amount: move.amount, rate: move.ratePct });
   }
   const cashTiers = tiers
@@ -268,7 +374,10 @@ export function applyCashMove(d, m, plan, doneMoves, today = new Date()) {
   return {
     cashTiers: cashTiers.length ? cashTiers : [{ amount: "", rate: "" }],
     ...(isaMoved > 0 ? { isaThisYearCash: String(Math.min(ISA_ALLOWANCE, (+d.isaThisYearCash || 0) + Math.round(isaMoved))) } : {}),
-    assistAccounts: [...(d.assistAccounts || []), ...doneMoves.map(mv => trackAccount(mv, today))],
+    // Premium Bonds bought: added to the user's holding, not a cash account.
+    ...(pbMoved > 0 ? { premiumBonds: String(Math.min(PB_MAX, (+d.premiumBonds || 0) + Math.round(pbMoved))), hasPremiumBonds: "yes" } : {}),
+    // Premium Bonds have no account rate or bonus to watch, so aren't tracked.
+    assistAccounts: [...(d.assistAccounts || []), ...doneMoves.filter(mv => !mv.pb).map(mv => trackAccount(mv, today))],
   };
 }
 

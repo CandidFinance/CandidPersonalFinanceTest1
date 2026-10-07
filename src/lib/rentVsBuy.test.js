@@ -150,9 +150,9 @@ test("inputs: by default the renter's money stays in cash at the user's blended 
   assert.equal(i.people[0].isaHeadroom, 15000);
 });
 
-test("inputs: the blended cash rate weights Premium Bonds at 4.4%", () => {
+test("inputs: the blended cash rate weights Premium Bonds at the prize fund rate", () => {
   const d = { ...saved, cashTiers: [{ amount: "30000", rate: "3" }], premiumBonds: "10000", isaThisYearCash: "" };
-  near(cashRate(d, calcMetrics(d)), (30000 * 3 + 10000 * 4.4) / 40000, 1e-9);
+  near(cashRate(d, calcMetrics(d)), (30000 * 3 + 10000 * 4.35) / 40000, 1e-9);
 });
 
 test("inputs: invested uses 7%, the rate used for Stocks & Shares ISAs elsewhere", () => {

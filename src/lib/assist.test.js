@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cashSources, cashPlan, assistItems, assistHasNews, applyCashMove, nextIsaReset, accountName, accountItems, resolveAccount, trackAccount, addMonths, itemsForPage } from "./assist.js";
+import { cashSources, cashPlan, assistItems, assistHasNews, applyCashMove, nextIsaReset, accountName, accountItems, resolveAccount, trackAccount, addMonths, itemsForPage, savingsTax } from "./assist.js";
 import { isaUsedThisYear } from "./isa.js";
 
 test("picking a capped account offers a second for the rest, compared with one account for all of it", () => {
@@ -81,6 +81,71 @@ test("a rate cut on an Assist account is raised, and settles when kept or moved"
   const moved = resolveAccount(dd, item, item.options[0], new Date("2026-11-01T12:00:00Z"));
   assert.deepEqual(moved.cashTiers, [{ name: "Chase", amount: "6000", rate: "4.5" }]);
   assert.deepEqual(moved.assistAccounts.map(x => [x.name, x.rateId, x.openedAt]), [["Chase", "r-chase", "2026-11-01"]]);
+});
+
+// ── Tax and Premium Bonds ────────────────────────────────────────────────────
+const pbRow = { id: "r-pb", provider_name: "NS&I", product_name: "Premium Bonds", account_type: "Premium Bonds", rate_aer: "4.35", is_isa: false };
+const taxRows = [
+  { provider_name: "Chip", product_name: "Smart Cash ISA", account_type: "Easy access ISA", rate_aer: "4.72", is_isa: true },
+  { provider_name: "Cahoot", product_name: "Simple Saver", account_type: "Easy access", rate_aer: "4.52", is_isa: false },
+  pbRow,
+];
+const higher = { cash: 50000, bonds: 0, isaHeadroom: 20000, savingsRate: 1, tr: 0.4, taxBandLabel: "higher" };
+const fiftyK = { cashTiers: [{ name: "Old Bank", amount: "50000", rate: "1" }] };
+
+test("savings interest is taxed only above the Personal Savings Allowance", () => {
+  const tax = savingsTax({ tr: 0.2, taxBandLabel: "basic" });
+  assert.equal(tax.allowance, 1000);
+  assert.equal(tax.kept(800), 800);
+  assert.equal(tax.kept(1500), 1400);
+  assert.equal(savingsTax({ tr: 0.45, taxBandLabel: "additional" }).kept(100), 55);
+});
+
+test("a higher-rate payer: ISA, then savings up to the allowance, then Premium Bonds for the rest, all after tax", () => {
+  const plan = cashPlan(fiftyK, higher, taxRows);
+  // Cash ISA: £20,000 at 4.72% tax-free, less the taxed 1% it was earning.
+  assert.equal(plan.isa.options[0].amount, 20000);
+  assert.equal(Math.round(plan.isa.options[0].gain), 744);
+  // Savings: 4.52% keeps 2.71% after 40% tax, under Premium Bonds' 4.35%, so
+  // it takes only what keeps the interest inside the £500 allowance.
+  const cahoot = plan.savings.options[0];
+  assert.equal(cahoot.amount, 5681);
+  assert.equal(Math.round(cahoot.gain), 200);
+  // Premium Bonds take the rest, tax-free.
+  const pb = plan.pb.options[0];
+  assert.deepEqual([pb.provider, pb.product, pb.pb, pb.amount], ["NS&I", "Premium Bonds", true, 24319]);
+  assert.equal(Math.round(pb.gain), 815);
+  assert.equal(Math.round(plan.upTo), 1759);
+});
+
+test("without Premium Bonds the savings account takes everything, and its gain is after tax", () => {
+  const plan = cashPlan(fiftyK, higher, taxRows, { skipPb: true });
+  assert.equal(plan.pb.options.length, 0);
+  assert.equal(plan.savings.options[0].amount, 30000);
+  assert.equal(Math.round(plan.savings.options[0].gain), 714); // £1,356 interest, £344 of it taxed at 40%, less the £300 it earned
+  // Nor are Premium Bonds offered when the feed doesn't have their rate.
+  assert.equal(cashPlan(fiftyK, higher, taxRows.slice(0, 2)).pb.inPlay, false);
+});
+
+test("within the allowance a savings account beats Premium Bonds, so they aren't offered", () => {
+  const basic = { cash: 8000, bonds: 0, isaHeadroom: 0, savingsRate: 1, tr: 0.2, taxBandLabel: "basic" };
+  const plan = cashPlan({ cashTiers: [{ amount: "8000", rate: "1" }] }, basic, taxRows);
+  assert.equal(plan.savings.options[0].amount, 8000);
+  assert.equal(plan.pb.options.length, 0);
+});
+
+test("Premium Bonds stop at £50,000 including what's already held", () => {
+  const plan = cashPlan(fiftyK, { ...higher, bonds: 45000 }, taxRows);
+  assert.equal(plan.pb.options[0].amount, 5000);
+});
+
+test("buying Premium Bonds adds to the holding, not to cash accounts, and isn't tracked as an account", () => {
+  const plan = cashPlan(fiftyK, higher, taxRows, { pbChoice: cashPlan(fiftyK, higher, taxRows).pb.options[0].id });
+  const patch = applyCashMove({ ...fiftyK, premiumBonds: "1000" }, higher, plan, [plan.pb.pick]);
+  assert.equal(patch.premiumBonds, "25319");
+  assert.equal(patch.hasPremiumBonds, "yes");
+  assert.deepEqual(patch.cashTiers, [{ name: "Old Bank", amount: "25681", rate: "1" }]);
+  assert.deepEqual(patch.assistAccounts, []);
 });
 
 test("on a module page Assist sees that module's items, with the rest as elsewhere", () => {

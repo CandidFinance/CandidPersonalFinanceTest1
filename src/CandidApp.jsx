@@ -6,11 +6,11 @@ import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCa
 import { fmt, fmtK, fmtCompact } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, slRepaymentThreshold, calcStudentLoanScenario, describeLoanVsPension } from "./lib/studentLoan.js";
-import { topRate, isEasyAccess } from "./lib/savingsRates.js";
+import { topRate, isEasyAccess, premiumBondsRow } from "./lib/savingsRates.js";
 import { allocateCash } from "./lib/cashAllocation.js";
 import { isaUsedThisYear } from "./lib/isa.js";
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
-import { calcCashOptimisation } from "./lib/cash.js";
+import { calcCashOptimisation, PB_RATE } from "./lib/cash.js";
 import { calcMetrics, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
 import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown, calcCandidScore } from "./lib/moduleStatus.js";
 // Module names for Candid Assist's labels and "Elsewhere" list.
@@ -360,7 +360,7 @@ function getModuleInsights(key, d, m, savingsRates) {
         },
         {
           label:"Premium bonds", value: fmt(m.bonds), flag: m.bonds > 0,
-          tooltip:`Premium bonds are government-backed savings (via NS&I). Returns come as monthly tax-free prize draws at ~4.4% average rate — no guaranteed return. ${bondAdvantage ? `Worth keeping, potentially worth adding more: your cash is earning ~${fmt(taxableInterest)}/yr in interest, of which ~${fmt(interestOverPsa)} exceeds your Personal Savings Allowance (£${psaLimit.toLocaleString()}) — costing ~${fmt(taxOnInterest)}/yr in tax. Bonds' winnings are entirely tax-free.` : `At your savings level and tax band, your interest likely falls within your Personal Savings Allowance (£${psaLimit.toLocaleString()}/yr), so bonds' tax-free edge over a Cash ISA matters less here — the real trade-off is no guaranteed return vs a Cash ISA's certain rate.`}`
+          tooltip:`Premium bonds are government-backed savings (via NS&I). Returns come as monthly tax-free prize draws at ~${pbRatePctOf(savingsRates)}% average rate — no guaranteed return. ${bondAdvantage ? `Worth keeping, potentially worth adding more: your cash is earning ~${fmt(taxableInterest)}/yr in interest, of which ~${fmt(interestOverPsa)} exceeds your Personal Savings Allowance (£${psaLimit.toLocaleString()}) — costing ~${fmt(taxOnInterest)}/yr in tax. Bonds' winnings are entirely tax-free.` : `At your savings level and tax band, your interest likely falls within your Personal Savings Allowance (£${psaLimit.toLocaleString()}/yr), so bonds' tax-free edge over a Cash ISA matters less here — the real trade-off is no guaranteed return vs a Cash ISA's certain rate.`}`
         },
       ];
     }
@@ -620,6 +620,13 @@ export { topRate };
 // FULL amount whenever the excess is worth moving *somewhere* (even a non-ISA
 // account), and a sentence naming only "a Cash ISA" as the destination is wrong
 // whenever amount > isaHeadroom, regardless of whether cashMoveAmount looks "capped".
+// Premium Bonds' prize fund rate in %, live from the rate feed when it has
+// it, otherwise the fallback in src/lib/cash.js.
+function pbRatePctOf(savingsRates) {
+  const row = premiumBondsRow(savingsRates);
+  return row ? +row.rate_aer : Math.round(PB_RATE * 10000) / 100;
+}
+
 export function splitByIsaHeadroom(amount, isaHeadroom, nonIsaRatePct, baselineRatePct) {
   const isaPortion = Math.min(amount, isaHeadroom);
   const nonIsaPortion = Math.max(0, amount - isaHeadroom);
@@ -2382,8 +2389,8 @@ function HomeScreen({ insights, d, m, statuses, onReset, onOpenModule, onEditInp
                 </div>
                 <div style={{fontSize:FONT_SIZE.BODY,color:MUT,lineHeight:1.5}}>
                   {isDrawDay
-                    ? `NS&I results are out. Did you win? You hold ${fmt(+d.premiumBonds)} — your expected monthly return is ~${fmt(Math.round(+d.premiumBonds * 0.044 / 12))} on average.`
-                    : `Results are published on the first working day of each month. You hold ${fmt(+d.premiumBonds)} — expected ~${fmt(Math.round(+d.premiumBonds * 0.044 / 12))}/month. A good time to review your Candid score when they're out.`
+                    ? `NS&I results are out. Did you win? You hold ${fmt(+d.premiumBonds)} — your expected monthly return is ~${fmt(Math.round(+d.premiumBonds * PB_RATE / 12))} on average.`
+                    : `Results are published on the first working day of each month. You hold ${fmt(+d.premiumBonds)} — expected ~${fmt(Math.round(+d.premiumBonds * PB_RATE / 12))}/month. A good time to review your Candid score when they're out.`
                   }
                 </div>
               </div>
@@ -3537,6 +3544,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   const topIsaRow = topRate(savingsRates, true);
   const isaRatePct = topIsaRow ? topIsaRow.rate_aer : null;
   const topNonIsaRow = topRate(savingsRates, false);
+  const pbRatePct = pbRatePctOf(savingsRates);
   const nonIsaRatePct = topNonIsaRow ? topNonIsaRow.rate_aer : null;
 
   // Return-per-£1-overpaid curve vs the pension — runs ~38 loan simulations,
@@ -4638,7 +4646,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                           <span>{fmt(step2Savings)} into savings at {nonIsaRateDisplay}</span>
                           <span style={{fontWeight:700,color:SUCCESS}}>{fmt(step2SavingsInterest)}/yr</span>
                         </div>
-                        <p style={stepWhyStyle}>Why: interest within your {fmt(psaLimit)} allowance is also effectively tax-free — and {nonIsaRateDisplay} beats the ~4.4% Premium Bonds average, so this comes next.{step2Delta > 0 ? ` You're already earning ${fmt(step2CurrentInterest)}/yr on this at your current ${m.savingsRate.toFixed(2)}% blended rate — moving it to ${nonIsaRateDisplay} is worth an extra ${fmt(step2Delta)}/yr on top, not ${fmt(step2SavingsInterest)}/yr from scratch.` : ""}</p>
+                        <p style={stepWhyStyle}>Why: interest within your {fmt(psaLimit)} allowance is also effectively tax-free — and {nonIsaRateDisplay} beats the ~{pbRatePct}% Premium Bonds average, so this comes next.{step2Delta > 0 ? ` You're already earning ${fmt(step2CurrentInterest)}/yr on this at your current ${m.savingsRate.toFixed(2)}% blended rate — moving it to ${nonIsaRateDisplay} is worth an extra ${fmt(step2Delta)}/yr on top, not ${fmt(step2SavingsInterest)}/yr from scratch.` : ""}</p>
                       </div>
                     )}
                     {discretionaryAmount > 0 && (
@@ -4646,7 +4654,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                         <div style={stepCardStyle}>
                           <div style={stepEyebrowStyle}>Step 3 — Cash-focused: near-term need, or risk-averse</div>
                           <div style={rowStyle}>
-                            <span>{fmt(step3Pb)} in Premium Bonds at ~4.4% (tax-free avg.)</span>
+                            <span>{fmt(step3Pb)} in Premium Bonds at ~{pbRatePct}% (tax-free avg.)</span>
                             <span style={{fontWeight:700,color:SUCCESS}}>{fmt(step3PbInterest)}/yr</span>
                           </div>
                           <p style={stepWhyStyle}>Why: once your allowance is used, ordinary savings interest is taxed at your {trPct}% marginal rate — Premium Bonds aren't.{step3UpliftVsCurrent > 0 ? ` That's ~${fmt(step3UpliftVsCurrent)}/yr more than your current ${m.savingsRate.toFixed(2)}% blended rate on this amount,` : ""} with no risk of loss and nothing locked in — the right choice for money you might need before you'd want it exposed to markets.{beyondPbCap > 0 ? ` Capped at the £50,000 NS&I product limit — ${fmt(beyondPbCap)} wouldn't fit here.` : ""}</p>
@@ -4657,7 +4665,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                             <span>{fmt(discretionaryAmount)} invested instead (e.g. a General Investment Account)</span>
                             <span style={{fontWeight:700,color:MUT}}>not guaranteed</span>
                           </div>
-                          <p style={stepWhyStyle}>Why: for money you won't touch for several years, long-term capital growth has historically outgrown cash — illustratively, {fmt(discretionaryAmount)} could grow to ~{fmt(investedIllustration)} over {growthYears} years at a typical (not guaranteed) 7% nominal return, versus ~{fmt(pbIllustration)} left in Premium Bonds at ~4.4%. Capital gains are taxed at 18%/24% (with a £3,000 annual exempt amount), not your income tax rate. Real trade-off, not a free upgrade: you could lose money, and it only suits cash you're genuinely not going to need soon.</p>
+                          <p style={stepWhyStyle}>Why: for money you won't touch for several years, long-term capital growth has historically outgrown cash — illustratively, {fmt(discretionaryAmount)} could grow to ~{fmt(investedIllustration)} over {growthYears} years at a typical (not guaranteed) 7% nominal return, versus ~{fmt(pbIllustration)} left in Premium Bonds at ~{pbRatePct}%. Capital gains are taxed at 18%/24% (with a £3,000 annual exempt amount), not your income tax rate. Real trade-off, not a free upgrade: you could lose money, and it only suits cash you're genuinely not going to need soon.</p>
                         </div>
                       </>
                     )}
@@ -4696,10 +4704,10 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                     )}
                     {step3Pb > 0 && bondsVal === 0 && (
                       <div style={{background:"rgba(196,150,58,0.07)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px",fontSize:FONT_SIZE.BODY,color:TEXT,lineHeight:1.65}}>
-                        <strong>New to Premium Bonds?</strong> They're via NS&amp;I, backed directly by HM Treasury, and don't pay interest — instead every £1 bond is entered into a monthly prize draw, with prizes from £25 up to £1 million. Nothing is guaranteed in any single month, but averaged out, the prize fund pays the equivalent of ~4.4% a year, entirely tax-free. Minimum £25, maximum £50,000 holding, and penalty-free to cash out any time.
+                        <strong>New to Premium Bonds?</strong> They're via NS&amp;I, backed directly by HM Treasury, and don't pay interest — instead every £1 bond is entered into a monthly prize draw, with prizes from £25 up to £1 million. Nothing is guaranteed in any single month, but averaged out, the prize fund pays the equivalent of ~{pbRatePct}% a year, entirely tax-free. Minimum £25, maximum £50,000 holding, and penalty-free to cash out any time.
                       </div>
                     )}
-                    <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>Rates change frequently — always confirm the current rate directly with the provider before moving money. Premium Bonds pay no guaranteed return; the ~4.4% is a long-run average, not a promise.</p>
+                    <p style={{fontSize:"11px",color:MUT,lineHeight:1.6,padding:"12px 0",borderTop:"1px solid rgba(22,47,36,0.08)"}}>Rates change frequently — always confirm the current rate directly with the provider before moving money. Premium Bonds pay no guaranteed return; the ~{pbRatePct}% is an average, not a promise.</p>
 
                     {discretionaryAmount > 500 && (
                       <div style={{marginTop:"8px"}}>
@@ -5581,6 +5589,8 @@ const BLANK_DATA = {
   assistSnoozed:null,
   // Candid Assist: the user is keeping their ISA allowance for investing.
   assistSkipIsa:false,
+  // Candid Assist: the user doesn't want Premium Bonds offered.
+  assistSkipPb:false,
   // Candid Assist: accounts opened through it, so it can warn when a rate
   // period is ending or the provider cuts the rate (src/lib/assist.js).
   assistAccounts:[],
@@ -5817,7 +5827,7 @@ export default function AppShell() {
   const [savingsRates, setSavingsRates] = useState(null);
   // Candid Assist's panel: open or minimised, and its place in a walkthrough.
   // Held here, not in the panel, so it survives moving between screens.
-  const [assistState, setAssistState] = useState({ open: false, itemId: null, step: "overview", isaChoice: null, isaChoice2: null, savingsChoice: null, savingsChoice2: null, accountChoice: null, done: {} });
+  const [assistState, setAssistState] = useState({ open: false, itemId: null, step: "overview", isaChoice: null, isaChoice2: null, savingsChoice: null, savingsChoice2: null, pbChoice: null, accountChoice: null, done: {} });
   useEffect(() => {
     let cancelled = false;
     supaSelect("savings_rates", "?select=id,provider_name,product_name,account_type,rate_aer,max_balance,bonus_rate,bonus_months,rate_after,app_only,ios_app_url,android_app_url,product_url,updated_at,is_isa&order=rate_aer.desc")

@@ -1,6 +1,6 @@
 import { PSA_BY_BAND } from "./tax.js";
 import { allocateCash } from "./cashAllocation.js";
-import { isEasyAccess } from "./savingsRates.js";
+import { isEasyAccess, premiumBondsRow } from "./savingsRates.js";
 
 // ── Cash waterfall optimiser: ISA → Personal Savings Allowance → Premium Bonds ──
 // Single source of truth for "what could this cash + Premium Bonds pot earn if
@@ -13,9 +13,10 @@ import { isEasyAccess } from "./savingsRates.js";
 // its money across real accounts by rate and balance cap (allocateCash), and
 // the step's rate is what that money earns on average. isaLines/savingsLines
 // list the accounts. Without it, each step uses the single rate as before.
-// NS&I's long-run prize-fund average — the same figure used everywhere else in
-// this file for Premium Bonds' effective tax-free return.
-export const PB_RATE = 0.044;
+// Premium Bonds' prize fund rate, their effective tax-free return: the live
+// figure from the rate feed (NS&I's page) when rateRows has it, otherwise
+// this fallback, NS&I's rate from the September 2026 draw.
+export const PB_RATE = 0.0435;
 
 const pctLabel = ratePct => `${ratePct.toFixed(2)}%`;
 
@@ -28,9 +29,11 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = nu
   let nonIsaRateDecimal = nonIsaRatePct != null ? +nonIsaRatePct / 100 : 0.045;
   let nonIsaRateDisplay = nonIsaRatePct != null ? `${nonIsaRatePct}%` : "4.5%";
   const rows = Array.isArray(rateRows) ? rateRows : null;
+  const pbRow = premiumBondsRow(rows);
+  const pbRate = pbRow ? +pbRow.rate_aer / 100 : PB_RATE;
 
   const currentTaxableInterest = Math.round(m.cash * m.savingsRate / 100);
-  const currentPbInterest = Math.round(bondsVal * PB_RATE);
+  const currentPbInterest = Math.round(bondsVal * pbRate);
   const currentGrossTotal = currentTaxableInterest + currentPbInterest;
   const currentTaxableAmount = Math.max(0, currentTaxableInterest - psaLimit);
   const trPct = Math.round(m.tr * 100);
@@ -59,7 +62,7 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = nu
   // Only worth filling the PSA with ordinary savings if the best available non-ISA
   // rate actually beats the Premium Bonds average — otherwise the "tax-free"
   // comparison is a wash and Premium Bonds are simply better.
-  let savingsWorthIt = nonIsaRateDecimal > PB_RATE;
+  let savingsWorthIt = nonIsaRateDecimal > pbRate;
   let step2Savings = savingsWorthIt ? Math.min(afterStep1, psaLimit / nonIsaRateDecimal) : 0;
   let step2SavingsInterest = Math.round(step2Savings * nonIsaRateDecimal);
   let savingsLines = [];
@@ -67,7 +70,7 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = nu
   if (nonIsaRows?.length) {
     // Accounts beating Premium Bonds, filled until the interest reaches the
     // Personal Savings Allowance.
-    const alloc = allocateCash(afterStep1, nonIsaRows, { minRatePct: PB_RATE * 100, maxInterest: psaLimit });
+    const alloc = allocateCash(afterStep1, nonIsaRows, { minRatePct: pbRate * 100, maxInterest: psaLimit });
     // Real accounts to go on: use the answer even when it's "none beat
     // Premium Bonds" (or there's no allowance left to use).
     if (alloc.lines.length || nonIsaRows.some(isEasyAccess)) {
@@ -92,7 +95,7 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = nu
   // Step 4) rather than something this function should silently decide.
   const discretionaryAmount = afterStep2;
   const step3Pb = Math.min(discretionaryAmount, 50000); // £50,000 is a hard NS&I product limit, not a preference
-  const step3PbInterest = Math.round(step3Pb * PB_RATE);
+  const step3PbInterest = Math.round(step3Pb * pbRate);
   const step3UpliftVsCurrent = step3PbInterest - Math.round(step3Pb * m.savingsRate / 100);
   const beyondPbCap = Math.max(0, discretionaryAmount - step3Pb); // only nonzero above the £50,000 cap
 
@@ -106,7 +109,7 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = nu
   const optimisationGain = optimisedTotal - currentInterestOnKeptAmount;
 
   return {
-    psaLimit, isaRateDecimal, isaRateDisplay, nonIsaRateDecimal, nonIsaRateDisplay, PB_RATE,
+    psaLimit, isaRateDecimal, isaRateDisplay, nonIsaRateDecimal, nonIsaRateDisplay, PB_RATE: pbRate,
     currentTaxableInterest, currentPbInterest, currentGrossTotal, currentTaxableAmount, trPct, currentTaxCost, currentAfterTaxTotal,
     totalPot, step1Isa, step1IsaInterest, afterStep1, savingsWorthIt, isaLines, savingsLines,
     step2Savings, step2SavingsInterest, step2CurrentInterest, step2Delta, afterStep2, discretionaryAmount,

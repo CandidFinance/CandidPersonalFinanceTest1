@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useDragControls, useReducedMotion } from "fram
 import { Sparkles, ChevronDown, ChevronLeft, ChevronRight, ArrowUpRight, Check } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
-import { assistItems, assistHasNews, itemsForPage, cashPlan, applyCashMove, accountName, resolveAccount, MIN_ASSIST_GAIN, MIN_SPLIT_GAIN } from "../../lib/assist.js";
+import { assistItems, assistHasNews, itemsForPage, cashPlan, applyCashMove, accountName, resolveAccount, MIN_ASSIST_GAIN, MIN_SPLIT_GAIN, PB_MAX } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { devicePlatform, appLinkFor } from "../../lib/appLinks.js";
@@ -68,7 +68,9 @@ function OptionList({ options, picked, onPick, absolute = false }) {
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontSize: "14.5px", fontWeight: 700, color: TEXT }}>{accountName(o)}</span>
           <span style={{ display: "block", fontSize: "12.5px", color: MUT, marginTop: "2px", lineHeight: 1.45 }}>
-            {pct(o.ratePct)} · would take {fmt(o.amount)}{o.cap != null ? ` (pays this on up to ${fmt(o.cap)})` : ""}{o.appOnly ? " · app only" : ""}
+            {o.pb
+              ? `${pct(o.ratePct)} prize fund rate (an average) · would take ${fmt(o.amount)}`
+              : `${pct(o.ratePct)} · would take ${fmt(o.amount)}${o.cap != null ? ` (pays this on up to ${fmt(o.cap)})` : ""}`}{o.appOnly ? " · app only" : ""}
           </span>
         </span>
         <span style={{ fontFamily: SERIF, fontSize: "15px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{absolute ? `${fmt(o.gain)}/yr` : `+${fmt(o.gain)}`}</span>
@@ -82,7 +84,9 @@ function OptionList({ options, picked, onPick, absolute = false }) {
 // and the website comes second; otherwise the website leads, with the app
 // as the alternative. On a laptop, the store links sit underneath.
 const platform = () => (typeof navigator !== "undefined" ? devicePlatform(navigator.userAgent) : "desktop");
-const openStep = o => o.appOnly
+const openStep = o => o.pb
+  ? "Buy Premium Bonds on NS&I's website or app."
+  : o.appOnly
   ? `Download the ${o.provider} app and open the account there: it can only be opened in the app.`
   : `Open the account on ${o.provider}'s website or app.`;
 
@@ -270,8 +274,9 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
   const quiet = items.length === 0;
   const goTo = i => { onGoTo(i.module); update({ open: true, itemId: i.id, step: "overview" }); };
   const skipIsa = d.assistSkipIsa === true;
-  const plan = useMemo(() => cashPlan(d, m, savingsRates, { skipIsa, isaChoice: state.isaChoice, isaChoice2: state.isaChoice2, savingsChoice: state.savingsChoice, savingsChoice2: state.savingsChoice2 }),
-    [d, m, savingsRates, skipIsa, state.isaChoice, state.isaChoice2, state.savingsChoice, state.savingsChoice2]);
+  const skipPb = d.assistSkipPb === true;
+  const plan = useMemo(() => cashPlan(d, m, savingsRates, { skipIsa, skipPb, isaChoice: state.isaChoice, isaChoice2: state.isaChoice2, savingsChoice: state.savingsChoice, savingsChoice2: state.savingsChoice2, pbChoice: state.pbChoice }),
+    [d, m, savingsRates, skipIsa, skipPb, state.isaChoice, state.isaChoice2, state.savingsChoice, state.savingsChoice2, state.pbChoice]);
 
   // Opening Assist counts as having seen what's in it, here and elsewhere.
   useEffect(() => {
@@ -360,7 +365,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
               <span style={{ fontSize: "15px", fontWeight: 700, color: TEXT }}>{accountName(p)}</span>
               <span style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{fmt(p.amount)}</span>
             </div>
-            <div style={{ fontSize: "12.5px", color: MUT, marginTop: "2px" }}>{p.isa ? "Cash ISA" : "Savings account"} at {pct(p.ratePct)}</div>
+            <div style={{ fontSize: "12.5px", color: MUT, marginTop: "2px" }}>{p.pb ? `Premium Bonds, prize fund rate ${pct(p.ratePct)} (an average)` : `${p.isa ? "Cash ISA" : "Savings account"} at ${pct(p.ratePct)}`}</div>
             <div style={{ fontSize: "13.5px", color: TEXT, fontWeight: 600, marginTop: "12px" }}>Move {fmt(p.amount)} from:</div>
             <ul style={{ margin: "4px 0 10px", paddingLeft: "18px", fontSize: "13.5px", color: TEXT, lineHeight: 1.6 }}>
               {p.from.map((f, i) => {
@@ -370,7 +375,8 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
             </ul>
             <ul style={{ margin: "0 0 12px", paddingLeft: "18px", fontSize: "13px", color: MUT, lineHeight: 1.6 }}>
               <li>{openStep(p)} Then move the money in.</li>
-              {p.cap != null && <li>Only the first {fmt(p.cap)} earns {pct(p.ratePct)}.</li>}
+              {p.pb && <li>New bonds join the prize draw after a full calendar month. Prizes are tax-free, and can be paid to your bank or put back into bonds.</li>}
+              {!p.pb && p.cap != null && <li>Only the first {fmt(p.cap)} earns {pct(p.ratePct)}.</li>}
               {p.isa && <li>This uses {fmt(p.amount)} of your {fmt(ISA_ALLOWANCE)} ISA allowance for this tax year.</li>}
               {p.isa && +d.isaPrevCash > 0 && <li>Moving money that's already in a Cash ISA as well? Ask {p.provider} to transfer it in. Withdrawing it yourself loses its tax-free status.</li>}
             </ul>
@@ -397,6 +403,11 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
         <div style={{ fontFamily: SERIF, fontSize: "24px", fontWeight: 700, color: G, lineHeight: 1.25 }}>Update Candid to match?</div>
         <p style={{ fontSize: "13.5px", color: MUT, lineHeight: 1.55, margin: "6px 0 16px" }}>Your cash in Candid becomes:</p>
         <div style={{ ...card, padding: "6px 16px" }}>
+          {done.filter(p => p.pb).map(p => (
+            <div key={p.id} style={{ display: "flex", justifyContent: "space-between", gap: "10px", padding: "10px 0", borderBottom: "1px solid rgba(22,47,36,0.07)", fontSize: "13.5px", color: TEXT }}>
+              <span>NS&I Premium Bonds <span style={{ color: MUT }}>(added to your holding)</span></span><span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>{fmt(p.amount)}</span>
+            </div>
+          ))}
           {isaMoved.map(p => (
             <div key={p.id} style={{ display: "flex", justifyContent: "space-between", gap: "10px", padding: "10px 0", borderBottom: "1px solid rgba(22,47,36,0.07)", fontSize: "13.5px", color: TEXT }}>
               <span>{accountName(p)} <span style={{ color: MUT }}>(Cash ISA, counted in this year's allowance)</span></span><span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>{fmt(p.amount)}</span>
@@ -411,7 +422,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
         <div style={{ marginTop: "22px" }}>
           <button type="button" style={primaryButton(false)} onClick={() => {
             Object.entries(patch).forEach(([k, v]) => set(k, v));
-            update({ step: "finished", itemId: null, isaChoice: null, isaChoice2: null, savingsChoice: null, savingsChoice2: null, done: {} });
+            update({ step: "finished", itemId: null, isaChoice: null, isaChoice2: null, savingsChoice: null, savingsChoice2: null, pbChoice: null, done: {} });
           }}>Update my figures</button>
         </div>
       </div>
@@ -427,7 +438,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           {picks.length ? `+${fmt(plan.chosenGain)} a year` : `Up to +${fmt(plan.upTo)} a year`}
         </div>
         <p style={{ fontSize: "14px", color: TEXT, lineHeight: 1.6, marginTop: "8px" }}>
-          Your {fmt(plan.cash)} in savings earns about {fmt(plan.currentInterest)} a year. Pick a Cash ISA, a savings account, or both, to see what moving would earn.
+          Your {fmt(plan.cash)} in savings earns about {fmt(plan.currentKept)} a year after tax. Pick from any of the options below to see what moving would earn. Every figure is after tax.
         </p>
         {item.isaNote && !skipIsa && <p style={{ fontSize: "13px", color: "#8a6a24", background: "rgba(196,150,58,0.12)", borderRadius: "10px", padding: "9px 12px", marginTop: "10px" }}>{item.isaNote}</p>}
 
@@ -473,15 +484,39 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
         <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 10px", lineHeight: 1.5 }}>
           {psa ? `Interest over ${fmt(psa)} a year (your Personal Savings Allowance) is taxed.` : "Interest is taxed at your income tax rate."}
           {!skipIsa && plan.isa.options.length ? " Amounts allow for the Cash ISA taking its share first." : ""}
+          {plan.pb.options.length ? " Where Premium Bonds would pay more after tax, an account's amount stops at your allowance." : ""}
         </p>
         {plan.savings.options.length
           ? <OptionList options={plan.savings.options} picked={plan.savings.pick} onPick={id => update({ savingsChoice: id, savingsChoice2: null })}/>
           : <p style={{ fontSize: "12.5px", color: MUT }}>No easy-access savings account Candid tracks beats what your savings earn now.</p>}
         <SecondChoice section={plan.savings} onPick={id => update({ savingsChoice2: id })}/>
 
+        {(plan.pb.options.length > 0 || (skipPb && plan.pb.rate != null)) && (
+          <>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px", marginTop: "22px" }}>
+              <span style={{ fontSize: "16px", fontWeight: 700, color: TEXT }}>Premium Bonds</span>
+              <button type="button" style={{ ...textButton, padding: 0, fontSize: "12.5px" }} onClick={() => { set("assistSkipPb", !skipPb); update({ pbChoice: null }); }}>
+                {skipPb ? "Include them" : "Not for me"}
+              </button>
+            </div>
+            {skipPb ? (
+              <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 0", lineHeight: 1.5 }}>Leaving Premium Bonds out.</p>
+            ) : (
+              <>
+                <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 10px", lineHeight: 1.5 }}>
+                  Prizes are tax-free, so beyond your allowance they can pay more than a savings account keeps after tax.
+                  NS&I's prize fund rate is {pct(plan.pb.rate)}: an average, not a guaranteed return. Smaller holdings often win less than the average, and some months nothing.
+                  You can hold up to {fmt(PB_MAX)}{plan.bonds > 0 ? ` (you have ${fmt(plan.bonds)})` : ""}, and every pound is backed by HM Treasury.
+                </p>
+                <OptionList options={plan.pb.options} picked={plan.pb.pick} onPick={id => update({ pbChoice: id })}/>
+              </>
+            )}
+          </>
+        )}
+
         <p style={{ fontSize: "11.5px", color: MUT, lineHeight: 1.55, margin: "10px 0 18px" }}>
           These are figures, not a recommendation: what you move, if anything, is your choice. Sorted by rate. Easy-access accounts only{asOf ? `, rates as of ${asOf}` : ""}. Bonus rates can end after a set time; check each account's terms.
-          {plan.bonds > 0 ? ` Your ${fmt(plan.bonds)} in Premium Bonds isn't included: their prizes are tax-free, so they compare differently.` : ""}
+          {plan.bonds > 0 ? ` Your ${fmt(plan.bonds)} already in Premium Bonds stays where it is.` : ""}
         </p>
         <button type="button" disabled={!picks.length} style={primaryButton(!picks.length)} onClick={() => update({ step: "how" })}>Show me how</button>
         <div style={{ textAlign: "center", marginTop: "6px" }}>

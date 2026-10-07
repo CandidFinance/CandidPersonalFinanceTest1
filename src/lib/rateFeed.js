@@ -11,7 +11,7 @@
 export const AUTO_PUBLISH_MAX_CHANGE = 0.5;
 export const MIN_AER = 0.1, MAX_AER = 10;
 export const PAGE_TEXT_LIMIT = 40000;
-export const ACCOUNT_KINDS = ["easy_access", "notice", "fixed", "regular_saver", "other"];
+export const ACCOUNT_KINDS = ["easy_access", "notice", "fixed", "regular_saver", "premium_bonds", "other"];
 
 // Claude is made to answer through this tool, so the reply is always the
 // same shape.
@@ -27,7 +27,7 @@ export const EXTRACTION_TOOL = {
           type: "object",
           properties: {
             product_name: { type: "string", description: "The product's name as the page gives it." },
-            account_kind: { type: "string", enum: ACCOUNT_KINDS, description: "easy_access: withdraw any time. notice: withdrawals need notice. fixed: locked for a term. regular_saver: limited monthly pay-ins." },
+            account_kind: { type: "string", enum: ACCOUNT_KINDS, description: "easy_access: withdraw any time. notice: withdrawals need notice. fixed: locked for a term. regular_saver: limited monthly pay-ins. premium_bonds: NS&I Premium Bonds only, with the annual prize fund rate as the AER." },
             is_isa: { type: "boolean", description: "True only for a cash ISA." },
             aer: { type: "number", description: "The headline AER as a percentage, e.g. 4.52. Include any bonus in it if the page's headline AER does." },
             term_months: { type: ["integer", "null"], description: "Fixed term in months, for fixed products." },
@@ -120,6 +120,7 @@ export function accountTypeLabel(p) {
   }
   if (p.account_kind === "notice") return `${p.notice_days ? `${p.notice_days}-day ` : ""}notice${isa}`.replace(/^n/, "N");
   if (p.account_kind === "regular_saver") return `Regular saver${isa}`;
+  if (p.account_kind === "premium_bonds") return "Premium Bonds";
   return `Savings${isa}`;
 }
 
