@@ -135,20 +135,30 @@ export default function RatesAdmin() {
         <div style={section}>Sources ({sources.length})</div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ borderCollapse: "collapse", width: "100%", background: WHITE }}>
-            <thead><tr>{["Provider", "Page", "Last checked", "Result", "Products", ""].map(h => <th key={h} style={head}>{h}</th>)}</tr></thead>
+            <thead><tr>{["Provider", "Page", "Last checked", "Result", "Products", "App", ""].map(h => <th key={h} style={head}>{h}</th>)}</tr></thead>
             <tbody>
               {sources.map(s => editing?.id === s.id ? (
                 <tr key={s.id}>
-                  <td style={cell} colSpan={6}>
-                    <form onSubmit={async e => { e.preventDefault(); if (await call("POST", { action: "update_source", ...editing }, s.id)) setEditing(null); }}
+                  <td style={cell} colSpan={7}>
+                    <form onSubmit={async e => {
+                      e.preventDefault();
+                      if (!(await call("POST", { action: "update_source", id: editing.id, providerName: editing.providerName, url: editing.url }, s.id))) return;
+                      const linksChanged = (editing.iosAppUrl || "") !== (s.ios_app_url || "") || (editing.androidAppUrl || "") !== (s.android_app_url || "");
+                      if (linksChanged && !(await call("POST", { action: "set_app_links", id: editing.id, iosAppUrl: editing.iosAppUrl, androidAppUrl: editing.androidAppUrl }, s.id))) return;
+                      setEditing(null);
+                    }}
                       style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
                       <input value={editing.providerName} onChange={e => setEditing(x => ({ ...x, providerName: e.target.value }))} placeholder="Provider name"
                         style={{ padding: "8px 10px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "13px", fontFamily: SANS }}/>
                       <input value={editing.url} onChange={e => setEditing(x => ({ ...x, url: e.target.value }))} placeholder="https://... product page"
                         style={{ flex: 1, minWidth: "240px", padding: "8px 10px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "13px", fontFamily: SANS }}/>
+                      <input value={editing.iosAppUrl} onChange={e => setEditing(x => ({ ...x, iosAppUrl: e.target.value }))} placeholder="App Store link (optional)"
+                        style={{ flex: 1, minWidth: "240px", padding: "8px 10px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "13px", fontFamily: SANS }}/>
+                      <input value={editing.androidAppUrl} onChange={e => setEditing(x => ({ ...x, androidAppUrl: e.target.value }))} placeholder="Google Play link (optional)"
+                        style={{ flex: 1, minWidth: "240px", padding: "8px 10px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "13px", fontFamily: SANS }}/>
                       <button type="submit" style={button(true)} disabled={!!busy || !editing.providerName || !editing.url}>Save</button>
                       <button type="button" style={button(false)} onClick={() => setEditing(null)}>Cancel</button>
-                      <span style={{ fontSize: "12px", color: MUT, flexBasis: "100%" }}>Its live rates move with it, and the new page is read on the next check.</span>
+                      <span style={{ fontSize: "12px", color: MUT, flexBasis: "100%" }}>Its live rates move with it, and the new page is read on the next check. Changed app links need confirming again before users see them.</span>
                     </form>
                   </td>
                 </tr>
@@ -159,9 +169,27 @@ export default function RatesAdmin() {
                   <td style={{ ...cell, whiteSpace: "nowrap" }}>{fmtDate(s.last_fetched_at)}</td>
                   <td style={cell}><span style={{ color: STATUS_COLOR[s.last_status] || MUT, fontWeight: 600 }}>{s.last_status || "-"}</span>{s.last_error && <div style={{ color: MUT, fontSize: "12px" }}>{s.last_error}</div>}</td>
                   <td style={cell}>{s.last_product_count ?? "-"}</td>
+                  {/* App links: open each to check it's the provider's real
+                      app before confirming; only confirmed links reach users. */}
+                  <td style={{ ...cell, whiteSpace: "nowrap" }}>
+                    {s.ios_app_url || s.android_app_url ? (
+                      <>
+                        {s.ios_app_url && <a href={s.ios_app_url} target="_blank" rel="noopener noreferrer" style={{ color: G, marginRight: "8px" }}>App Store</a>}
+                        {s.android_app_url && <a href={s.android_app_url} target="_blank" rel="noopener noreferrer" style={{ color: G }}>Google Play</a>}
+                        <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                          {s.app_links_confirmed_at
+                            ? <span style={{ color: "#2d6b4a", fontWeight: 600 }}>Confirmed</span>
+                            : <>
+                                <span style={{ color: "#b9661a", fontWeight: 600, marginRight: "8px" }}>Not confirmed</span>
+                                <button type="button" style={button(true)} disabled={!!busy} onClick={() => call("POST", { action: "confirm_app_links", id: s.id }, s.id)}>Confirm</button>
+                              </>}
+                        </div>
+                      </>
+                    ) : <span style={{ color: MUT }}>-</span>}
+                  </td>
                   <td style={{ ...cell, whiteSpace: "nowrap" }}>
                     <button type="button" style={button(false)} disabled={!!busy} onClick={() => call("POST", { action: "run", sourceIds: [s.id] }, "run")}>Check</button>{" "}
-                    <button type="button" style={button(false)} disabled={!!busy} onClick={() => setEditing({ id: s.id, providerName: s.provider_name, url: s.url })}>Edit</button>{" "}
+                    <button type="button" style={button(false)} disabled={!!busy} onClick={() => setEditing({ id: s.id, providerName: s.provider_name, url: s.url, iosAppUrl: s.ios_app_url || "", androidAppUrl: s.android_app_url || "" })}>Edit</button>{" "}
                     <button type="button" style={button(false)} disabled={!!busy} onClick={() => call("POST", { action: "toggle_source", id: s.id }, s.id)}>{s.active ? "Pause" : "Resume"}</button>
                   </td>
                 </tr>

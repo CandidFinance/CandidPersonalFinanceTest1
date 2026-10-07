@@ -6,6 +6,7 @@ import { fmt } from "../../lib/format.js";
 import { assistItems, assistHasNews, cashPlan, applyCashMove, accountName, resolveAccount, MIN_ASSIST_GAIN, MIN_SPLIT_GAIN } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
+import { devicePlatform, appLinkFor } from "../../lib/appLinks.js";
 import { itemisedNonCashIsa } from "../../lib/isa.js";
 
 // Candid Assist: a button above the tab bar that opens a panel walking the
@@ -67,13 +68,51 @@ function OptionList({ options, picked, onPick, absolute = false }) {
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontSize: "14.5px", fontWeight: 700, color: TEXT }}>{accountName(o)}</span>
           <span style={{ display: "block", fontSize: "12.5px", color: MUT, marginTop: "2px", lineHeight: 1.45 }}>
-            {pct(o.ratePct)} · would take {fmt(o.amount)}{o.cap != null ? ` (pays this on up to ${fmt(o.cap)})` : ""}
+            {pct(o.ratePct)} · would take {fmt(o.amount)}{o.cap != null ? ` (pays this on up to ${fmt(o.cap)})` : ""}{o.appOnly ? " · app only" : ""}
           </span>
         </span>
         <span style={{ fontFamily: SERIF, fontSize: "15px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{absolute ? `${fmt(o.gain)}/yr` : `+${fmt(o.gain)}`}</span>
       </button>
     );
   });
+}
+
+// Where to go to open the account. On a phone with the provider's app
+// available (confirmed links only), an app-only account leads with the app
+// and the website comes second; otherwise the website leads, with the app
+// as the alternative. On a laptop, the store links sit underneath.
+const platform = () => (typeof navigator !== "undefined" ? devicePlatform(navigator.userAgent) : "desktop");
+const openStep = o => o.appOnly
+  ? `Download the ${o.provider} app and open the account there: it can only be opened in the app.`
+  : `Open the account on ${o.provider}'s website or app.`;
+
+function ProviderLinks({ o }) {
+  const device = platform();
+  const app = appLinkFor(device, o);
+  const store = device === "ios" ? "App Store" : "Google Play";
+  const site = o.url;
+  const appFirst = app && (o.appOnly || !site);
+  const link = { display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "13.5px", fontWeight: 700, color: G, textDecoration: "none" };
+  const small = { color: G, fontWeight: 600, textDecoration: "none" };
+  return (
+    <span style={{ display: "inline-flex", flexDirection: "column", gap: "3px" }}>
+      {appFirst
+        ? <a href={app} target="_blank" rel="noopener noreferrer" style={link}>Get the {o.provider} app<ArrowUpRight size={14}/></a>
+        : site && <a href={site} target="_blank" rel="noopener noreferrer" style={link}>Open {o.provider}<ArrowUpRight size={14}/></a>}
+      <span style={{ fontSize: "12px", color: MUT }}>
+        {appFirst && site && <a href={site} target="_blank" rel="noopener noreferrer" style={small}>or their website</a>}
+        {!appFirst && app && <a href={app} target="_blank" rel="noopener noreferrer" style={small}>or get the app ({store})</a>}
+        {device === "desktop" && (o.iosAppUrl || o.androidAppUrl) && (
+          <>
+            The app:{" "}
+            {o.iosAppUrl && <a href={o.iosAppUrl} target="_blank" rel="noopener noreferrer" style={small}>App Store</a>}
+            {o.iosAppUrl && o.androidAppUrl && " · "}
+            {o.androidAppUrl && <a href={o.androidAppUrl} target="_blank" rel="noopener noreferrer" style={small}>Google Play</a>}
+          </>
+        )}
+      </span>
+    </span>
+  );
 }
 
 // After a capped pick, the rest of the money: an optional second account,
@@ -132,17 +171,13 @@ function AccountFlow({ item, state, update, d, set, backToList }) {
               </>
             ) : (
               <>
-                <li>Open the account on {pick.provider}'s website or app.</li>
+                <li>{openStep(pick)}</li>
                 <li>Move {fmt(pick.amount)} from your {a.name} into it.</li>
               </>
             )}
             {pick.cap != null && <li>Only the first {fmt(pick.cap)} earns {pct(pick.ratePct)}.</li>}
           </ul>
-          {pick.url && (
-            <a href={pick.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "13.5px", fontWeight: 700, color: G, textDecoration: "none" }}>
-              Open {pick.provider}<ArrowUpRight size={14}/>
-            </a>
-          )}
+          <ProviderLinks o={pick}/>
         </div>
         <div style={{ marginTop: "18px" }}><button type="button" style={primaryButton(false)} onClick={() => settle(pick)}>I've moved it: update Candid</button></div>
       </div>
@@ -296,17 +331,13 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
               })}
             </ul>
             <ul style={{ margin: "0 0 12px", paddingLeft: "18px", fontSize: "13px", color: MUT, lineHeight: 1.6 }}>
-              <li>Open the account on {p.provider}'s website or app first, then move the money in.</li>
+              <li>{openStep(p)} Then move the money in.</li>
               {p.cap != null && <li>Only the first {fmt(p.cap)} earns {pct(p.ratePct)}.</li>}
               {p.isa && <li>This uses {fmt(p.amount)} of your {fmt(ISA_ALLOWANCE)} ISA allowance for this tax year.</li>}
               {p.isa && +d.isaPrevCash > 0 && <li>Moving money that's already in a Cash ISA as well? Ask {p.provider} to transfer it in. Withdrawing it yourself loses its tax-free status.</li>}
             </ul>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
-              {p.url && (
-                <a href={p.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "13.5px", fontWeight: 700, color: G, textDecoration: "none" }}>
-                  Open {p.provider}<ArrowUpRight size={14}/>
-                </a>
-              )}
+              <ProviderLinks o={p}/>
               <button type="button" onClick={() => update({ done: { ...state.done, [p.id]: !state.done[p.id] } })}
                 style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "none", border: "none", padding: "4px 0", fontSize: "13.5px", fontWeight: 600, color: TEXT, fontFamily: SANS, cursor: "pointer" }}>
                 <Mark on={!!state.done[p.id]}/>I've done this

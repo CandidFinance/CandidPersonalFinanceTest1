@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { EXTRACTION_TOOL, EXTRACTION_SYSTEM, htmlToText, planChanges, reviewDedupeKey, rowFields } from "../src/lib/rateFeed.js";
+import { cleanIosAppUrl, cleanAndroidAppUrl } from "../src/lib/appLinks.js";
 
 // The savings rate feed, one route for both callers:
 //  - Vercel Cron, daily (vercel.json), authorised by CRON_SECRET. Each run
@@ -179,14 +180,21 @@ export async function runRefresh({ force = false, sourceIds = null } = {}) {
 }
 
 // ── Admin actions ────────────────────────────────────────────────────────────
+// A source's app links as they go onto its rates: only once confirmed.
+const confirmedAppLinks = source => source?.app_links_confirmed_at
+  ? { ios_app_url: source.ios_app_url || null, android_app_url: source.android_app_url || null }
+  : { ios_app_url: null, android_app_url: null };
+
 async function resolveReview(id, approve) {
-  const [review] = await db(`savings_rate_reviews?id=eq.${id}&resolved_at=is.null&select=*,rate_sources(provider_name,url)`);
+  const [review] = await db(`savings_rate_reviews?id=eq.${id}&resolved_at=is.null&select=*,rate_sources(provider_name,url,ios_app_url,android_app_url,app_links_confirmed_at)`);
   if (!review) throw new Error("Review not found or already resolved");
   const now = new Date().toISOString();
   if (approve) {
     if (review.change_type === "new") {
+      const source = review.rate_sources;
       await db("savings_rates", { method: "POST", prefer: "return=minimal", body: {
-        ...review.proposed, provider_name: review.rate_sources.provider_name, product_url: review.rate_sources.url,
+        ...review.proposed, provider_name: source.provider_name, product_url: source.url,
+        ...confirmedAppLinks(source),
         source_id: review.source_id, status: "live", checked_at: now, updated_at: now,
       } });
     } else if (review.change_type === "rate_change" && review.row_id) {
@@ -215,7 +223,7 @@ async function sourceFields(providerName, url, exceptId = null) {
 
 async function adminOverview() {
   const [sources, reviews, rates] = await Promise.all([
-    db("rate_sources?select=id,provider_name,url,active,last_fetched_at,last_status,last_error,last_product_count&order=provider_name.asc"),
+    db("rate_sources?select=id,provider_name,url,active,last_fetched_at,last_status,last_error,last_product_count,ios_app_url,android_app_url,app_links_confirmed_at&order=provider_name.asc"),
     db("savings_rate_reviews?resolved_at=is.null&select=id,source_id,change_type,product_name,current_rate,proposed,created_at,rate_sources(provider_name,url)&order=created_at.desc"),
     db("savings_rates?status=eq.live&select=id,provider_name,product_name,account_type,rate_aer,is_isa,checked_at,updated_at,source_id&order=rate_aer.desc"),
   ]);
@@ -265,6 +273,20 @@ export default async function handler(req, res) {
       const fields = await sourceFields(providerName, url, String(id));
       await db(`rate_sources?id=eq.${String(id)}`, { method: "PATCH", body: { ...fields, last_hash: null, last_status: null, last_error: null } });
       await db(`savings_rates?source_id=eq.${String(id)}`, { method: "PATCH", body: { provider_name: fields.provider_name, product_url: fields.url } });
+    } else if (action === "set_app_links") {
+      // New or changed links wait for confirmation, and come off the app's
+      // rates until then.
+      let links;
+      try { links = { ios_app_url: cleanIosAppUrl(req.body.iosAppUrl), android_app_url: cleanAndroidAppUrl(req.body.androidAppUrl) }; }
+      catch (e) { return res.status(400).json({ error: e.message }); }
+      await db(`rate_sources?id=eq.${String(id)}`, { method: "PATCH", body: { ...links, app_links_confirmed_at: null } });
+      await db(`savings_rates?source_id=eq.${String(id)}`, { method: "PATCH", body: confirmedAppLinks(null) });
+    } else if (action === "confirm_app_links") {
+      const [source] = await db(`rate_sources?id=eq.${String(id)}&select=ios_app_url,android_app_url`);
+      if (!source || (!source.ios_app_url && !source.android_app_url)) return res.status(400).json({ error: "No app links to confirm" });
+      const confirmed = { ...source, app_links_confirmed_at: new Date().toISOString() };
+      await db(`rate_sources?id=eq.${String(id)}`, { method: "PATCH", body: { app_links_confirmed_at: confirmed.app_links_confirmed_at } });
+      await db(`savings_rates?source_id=eq.${String(id)}`, { method: "PATCH", body: confirmedAppLinks(confirmed) });
     } else if (action === "toggle_source") {
       const [source] = await db(`rate_sources?id=eq.${String(id)}&select=active`);
       if (source) await db(`rate_sources?id=eq.${String(id)}`, { method: "PATCH", body: { active: !source.active } });

@@ -94,6 +94,9 @@ function asOption(r, isIsa) {
   return {
     rateId: r.id || null, provider: r.provider_name, product: r.product_name || null, accountType: r.account_type, url: r.product_url || null,
     ratePct: +r.rate_aer, cap: +r.max_balance > 0 ? +r.max_balance : null, updatedAt: r.updated_at || null, isa: isIsa,
+    // The provider's app (confirmed links only), and whether the account
+    // can only be opened in it.
+    appOnly: r.app_only === true, iosAppUrl: r.ios_app_url || null, androidAppUrl: r.android_app_url || null,
     bonusMonths: months,
     rateAfterBonus: months ? after : null,
   };

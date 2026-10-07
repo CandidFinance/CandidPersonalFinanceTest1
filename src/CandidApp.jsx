@@ -5818,7 +5818,7 @@ export default function AppShell() {
   const [assistState, setAssistState] = useState({ open: false, itemId: null, step: "overview", isaChoice: null, isaChoice2: null, savingsChoice: null, savingsChoice2: null, accountChoice: null, done: {} });
   useEffect(() => {
     let cancelled = false;
-    supaSelect("savings_rates", "?select=id,provider_name,product_name,account_type,rate_aer,max_balance,bonus_rate,bonus_months,rate_after,product_url,updated_at,is_isa&order=rate_aer.desc")
+    supaSelect("savings_rates", "?select=id,provider_name,product_name,account_type,rate_aer,max_balance,bonus_rate,bonus_months,rate_after,app_only,ios_app_url,android_app_url,product_url,updated_at,is_isa&order=rate_aer.desc")
       .then(rows => { if (!cancelled) setSavingsRates(rows || []); });
     return () => { cancelled = true; };
   }, []);
