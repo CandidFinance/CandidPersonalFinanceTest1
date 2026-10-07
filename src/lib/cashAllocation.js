@@ -43,6 +43,7 @@ export function allocateCash(amount, rows, { minRatePct = 0, maxInterest = Infin
     lines.push({
       provider: c.row.provider_name, product: c.row.product_name || null, accountType: c.row.account_type,
       url: c.row.product_url || null, ratePct: c.ratePct, cap: c.cap === Infinity ? null : c.cap,
+      updatedAt: c.row.updated_at || null,
       amount: take, interest, extra,
     });
     remaining -= take;

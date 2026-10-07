@@ -9,7 +9,7 @@ import MobileTabBar from "./MobileTabBar.jsx";
 // optional and currently unset everywhere: the tab bar shows which of the 4
 // tab-bar screens is active, and a module deep dive already carries its own
 // title heading in its content, so a nav-bar title would just repeat it.
-export default function MobileLayout({ pageLabel, activeTab, headerRight, children }) {
+export default function MobileLayout({ pageLabel, activeTab, headerRight, assist = null, children }) {
   const navigate = useNavigate();
   return (
     <div style={{minHeight:"100vh",background:CREAM,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
@@ -25,6 +25,7 @@ export default function MobileLayout({ pageLabel, activeTab, headerRight, childr
         {children}
       </div>
       <MobileTabBar active={activeTab} onNavigate={navigate} />
+      {assist}
     </div>
   );
 }

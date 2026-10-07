@@ -21,6 +21,7 @@ import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
 import MobileForecastScreen from "./mobile/screens/MobileForecastScreen.jsx";
 import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
+import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
@@ -5569,6 +5570,9 @@ const BLANK_DATA = {
   // Buying together: whether monthlyExpenses is the household's ("household")
   // or the user's own ("mine"); blank counts as their own (spendingShared).
   propertySpendingScope:"",
+  // Candid Assist: the figures the user said "not now" to, per item, so they
+  // aren't raised again until the rates behind them change.
+  assistSnoozed:null,
   // Whether each step's guided walk-through has been finished or skipped
   // (STEP_GUIDES, src/lib/propertyGuide.js). Kept on this device only, not
   // sent to Supabase.
@@ -5800,6 +5804,9 @@ export default function AppShell() {
   // ── Savings rates — fetched once here (not per-component) since both Dashboard's
   // copy and ModuleDeepDive's Cash tiles need it. null = still loading.
   const [savingsRates, setSavingsRates] = useState(null);
+  // Candid Assist's panel: open or minimised, and its place in a walkthrough.
+  // Held here, not in the panel, so it survives moving between screens.
+  const [assistState, setAssistState] = useState({ open: false, step: "overview", ticked: {}, done: {} });
   useEffect(() => {
     let cancelled = false;
     supaSelect("savings_rates", "?select=provider_name,product_name,account_type,rate_aer,max_balance,product_url,updated_at,is_isa&order=rate_aer.desc")
@@ -6497,8 +6504,14 @@ export default function AppShell() {
     </button>
   );
 
+  // On every tab-bar screen (MobileLayout renders it).
+  const assistNode = (
+    <CandidAssist d={d} m={m} set={set} savingsRates={savingsRates} state={assistState} setState={setAssistState}
+      onOpenCash={() => navigate("/app/module/cash")}/>
+  );
+
   if (pathname === "/app/home") return (
-    <MobileLayout activeTab="home" headerRight={editInputsButton}>
+    <MobileLayout assist={assistNode} activeTab="home" headerRight={editInputsButton}>
       <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules}
         onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}
         onGoalsDone={(how, goals) => {
@@ -6510,7 +6523,7 @@ export default function AppShell() {
   );
 
   if (pathname === "/app/modules") return (
-    <MobileLayout activeTab="modules" headerRight={editInputsButton}>
+    <MobileLayout assist={assistNode} activeTab="modules" headerRight={editInputsButton}>
       <MobileModulesScreen d={d} m={m} statuses={statuses} insights={insights}
         completedModules={completedModules}
         onMarkReviewed={markModuleComplete}
@@ -6525,7 +6538,7 @@ export default function AppShell() {
     // Steps 2 and 3 stay locked until step 1 is complete, including for a direct link.
     if (propertyStep !== "readiness" && readinessMissing(d, m).length > 0) return <Navigate to="/app/property" replace />;
     return (
-      <MobileLayout activeTab="modules"
+      <MobileLayout assist={assistNode} activeTab="modules"
         headerRight={
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
@@ -6540,13 +6553,13 @@ export default function AppShell() {
   }
 
   if (pathname === "/app/forecast") return (
-    <MobileLayout activeTab="forecast" headerRight={editInputsButton}>
+    <MobileLayout assist={assistNode} activeTab="forecast" headerRight={editInputsButton}>
       <MobileForecastScreen d={d} m={m}/>
     </MobileLayout>
   );
 
   if (pathname === "/app/chat") return (
-    <MobileLayout activeTab="chat">
+    <MobileLayout assist={assistNode} activeTab="chat">
       <MobileChatScreen/>
     </MobileLayout>
   );
@@ -6562,7 +6575,7 @@ export default function AppShell() {
     // takes over, and its answers are saved to the user's row.
     if (moduleGuideStarts(mobileActiveModule, d) || moduleRerun === mobileActiveModule) {
       return (
-        <MobileLayout activeTab="modules"
+        <MobileLayout assist={assistNode} activeTab="modules"
           headerRight={
             <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
           }>
@@ -6590,7 +6603,7 @@ export default function AppShell() {
     const revealSteps = MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates }) ?? null;
     if (revealModule === mobileActiveModule && revealSteps) {
       return (
-        <MobileLayout activeTab="modules"
+        <MobileLayout assist={assistNode} activeTab="modules"
           headerRight={
             <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
           }>
@@ -6604,7 +6617,7 @@ export default function AppShell() {
       );
     }
     return (
-      <MobileLayout activeTab="modules"
+      <MobileLayout assist={assistNode} activeTab="modules"
         headerRight={
           <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
         }>
