@@ -148,6 +148,48 @@ test("buying Premium Bonds adds to the holding, not to cash accounts, and isn't 
   assert.deepEqual(patch.assistAccounts, []);
 });
 
+// Harvey's test case: £4,500 at 4%, £4,000 at 1%, £50,000 in Premium Bonds,
+// a higher-rate payer (£500 allowance).
+const harvey = { cashTiers: [{ amount: "4500", rate: "4" }, { amount: "4000", rate: "1" }] };
+const harveyM = { cash: 8500, bonds: 50000, isaHeadroom: 0, savingsRate: 2.59, tr: 0.4, taxBandLabel: "higher" };
+
+test("bonds aren't cashed in to fill the allowance when it's only worth a few pounds", () => {
+  const plan = cashPlan(harvey, harveyM, taxRows);
+  const cahoot = plan.savings.options[0];
+  // The £116 of allowance left would take about £2,560 of bonds, at 0.17% more: about £4 a year.
+  assert.equal(cahoot.amount, 8500);
+  assert.ok(cahoot.from.every(f => !f.taxFree));
+  assert.equal(Math.round(cahoot.gain), 164);
+  // At the £50,000 limit, no more bonds to buy either.
+  assert.equal(plan.pb.options.length, 0);
+});
+
+test("bonds move into a Cash ISA when it adds £25 a year or more", () => {
+  const plan = cashPlan(harvey, { ...harveyM, isaHeadroom: 20000 }, taxRows);
+  const chip = plan.isa.options[0];
+  // Cash first (lowest rate first), then £11,500 of bonds to fill the allowance.
+  assert.deepEqual(chip.from.map(f => [f.name, f.amount]), [[null, 4000], [null, 4500], ["Premium Bonds", 11500]]);
+  assert.equal(chip.amount, 20000);
+  // Bonds: £11,500 at 4.72% instead of 4.35%, both tax-free: about £43 a year.
+  const cashOnly = 4000 * 0.0372 + 4500 * 0.0072;
+  assert.equal(Math.round(chip.gain), Math.round(cashOnly + 11500 * 0.0037));
+  // Updating Candid takes them off the holding.
+  const picked = cashPlan(harvey, { ...harveyM, isaHeadroom: 20000 }, taxRows, { isaChoice: chip.id });
+  const patch = applyCashMove(harvey, harveyM, picked, [picked.isa.pick]);
+  assert.equal(patch.premiumBonds, "38500");
+  assert.equal(patch.isaThisYearCash, "20000");
+});
+
+test("a basic-rate payer's bonds fill the larger allowance in a savings account when it's worth £25", () => {
+  const basic = { cash: 1000, bonds: 50000, isaHeadroom: 0, savingsRate: 1, tr: 0.2, taxBandLabel: "basic" };
+  const plan = cashPlan({ cashTiers: [{ amount: "1000", rate: "1" }] }, basic, taxRows);
+  const cahoot = plan.savings.options[0];
+  const bonds = cahoot.from.find(f => f.taxFree);
+  // £1,000 allowance: £1,000 cash plus about £21,100 of bonds keeps the interest at £1,000.
+  assert.ok(bonds && bonds.amount > 21000 && bonds.amount < 21200);
+  assert.ok(cahoot.amount * 0.0452 <= 1000.01);
+});
+
 test("on a module page Assist sees that module's items, with the rest as elsewhere", () => {
   const items = [{ id: "account:a", module: "cash" }, { id: "cash", module: "cash" }, { id: "pension", module: "pension" }];
   assert.deepEqual(itemsForPage(items, null).here.length, 3);
@@ -221,7 +263,7 @@ test("Assist raises cash worth £50 a year or more, and not while snoozed on the
   assert.deepEqual(assistItems({ ...d, assistSnoozed: { cash: item.signature } }, m, rows, today), []);
   const moved = rows.map(r => r.provider_name === "Chip" ? { ...r, rate_aer: "4.80" } : r);
   assert.equal(assistItems({ ...d, assistSnoozed: { cash: item.signature } }, m, moved, today).length, 1);
-  assert.deepEqual(assistItems({ cashTiers: [{ amount: "1000", rate: "4.6" }] }, { ...m, cash: 1000 }, rows, today), []);
+  assert.deepEqual(assistItems({ cashTiers: [{ amount: "1000", rate: "4.6" }] }, { ...m, cash: 1000, bonds: 0 }, rows, today), []);
 });
 
 test("the ISA reset is mentioned in the last 8 weeks before 5 April", () => {

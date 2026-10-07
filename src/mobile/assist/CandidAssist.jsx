@@ -33,8 +33,10 @@ const writeSeen = list => { try { localStorage.setItem(SEEN_KEY, JSON.stringify(
 const WIDE = 640;
 
 const pct = n => `${(+n).toFixed(2)}%`;
+// How much of a move comes from Premium Bonds the user already holds.
+const bondsIn = o => (o.from || []).filter(f => f.taxFree).reduce((t, f) => t + f.amount, 0);
 const fmtDate = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
-const fromName = f => f.name ? `${f.name} (${pct(f.ratePct)})` : f.index == null ? `your savings (${pct(f.ratePct)} on average)` : `your account paying ${pct(f.ratePct)}`;
+const fromName = f => f.taxFree ? `your Premium Bonds (${pct(f.ratePct)} prize fund rate)` : f.name ? `${f.name} (${pct(f.ratePct)})` : f.index == null ? `your savings (${pct(f.ratePct)} on average)` : `your account paying ${pct(f.ratePct)}`;
 const ratesDate = opts => {
   const dates = opts.map(o => o.updatedAt).filter(Boolean).map(s => new Date(s));
   return dates.length ? new Date(Math.min(...dates)).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : null;
@@ -70,7 +72,7 @@ function OptionList({ options, picked, onPick, absolute = false }) {
           <span style={{ display: "block", fontSize: "12.5px", color: MUT, marginTop: "2px", lineHeight: 1.45 }}>
             {o.pb
               ? `${pct(o.ratePct)} prize fund rate (an average) · would take ${fmt(o.amount)}`
-              : `${pct(o.ratePct)} · would take ${fmt(o.amount)}${o.cap != null ? ` (pays this on up to ${fmt(o.cap)})` : ""}`}{o.appOnly ? " · app only" : ""}
+              : `${pct(o.ratePct)} · would take ${fmt(o.amount)}${o.cap != null ? ` (pays this on up to ${fmt(o.cap)})` : ""}`}{bondsIn(o) ? ` · ${fmt(bondsIn(o))} of it from your Premium Bonds` : ""}{o.appOnly ? " · app only" : ""}
           </span>
         </span>
         <span style={{ fontFamily: SERIF, fontSize: "15px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{absolute ? `${fmt(o.gain)}/yr` : `+${fmt(o.gain)}`}</span>
@@ -369,13 +371,14 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
             <div style={{ fontSize: "13.5px", color: TEXT, fontWeight: 600, marginTop: "12px" }}>Move {fmt(p.amount)} from:</div>
             <ul style={{ margin: "4px 0 10px", paddingLeft: "18px", fontSize: "13.5px", color: TEXT, lineHeight: 1.6 }}>
               {p.from.map((f, i) => {
-                const whole = plan.sources.find(s => s.index === f.index)?.amount ?? 0;
+                const whole = f.taxFree ? plan.bonds : plan.sources.find(s => s.index === f.index)?.amount ?? 0;
                 return <li key={i}>{fromName(f)}: {fmt(f.amount)}{f.amount < whole - 0.5 ? ` (of ${fmt(whole)})` : ""}</li>;
               })}
             </ul>
             <ul style={{ margin: "0 0 12px", paddingLeft: "18px", fontSize: "13px", color: MUT, lineHeight: 1.6 }}>
               <li>{openStep(p)} Then move the money in.</li>
               {p.pb && <li>New bonds join the prize draw after a full calendar month. Prizes are tax-free, and can be paid to your bank or put back into bonds.</li>}
+              {bondsIn(p) > 0 && <li>Cash in {fmt(bondsIn(p))} of Premium Bonds on NS&I's website or app first. The money usually reaches your bank in a few working days.</li>}
               {!p.pb && p.cap != null && <li>Only the first {fmt(p.cap)} earns {pct(p.ratePct)}.</li>}
               {p.isa && <li>This uses {fmt(p.amount)} of your {fmt(ISA_ALLOWANCE)} ISA allowance for this tax year.</li>}
               {p.isa && +d.isaPrevCash > 0 && <li>Moving money that's already in a Cash ISA as well? Ask {p.provider} to transfer it in. Withdrawing it yourself loses its tax-free status.</li>}
