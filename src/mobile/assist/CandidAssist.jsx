@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
 import { Sparkles, ChevronDown, ChevronLeft, ChevronRight, ArrowUpRight, Check } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
 import { assistItems, assistHasNews, cashPlan, applyCashMove, accountName, resolveAccount, MIN_ASSIST_GAIN, MIN_SPLIT_GAIN } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
@@ -435,11 +435,13 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           style={{
             position: "fixed", zIndex: 4500, bottom: "calc(84px + env(safe-area-inset-bottom, 0px))", right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
             width: `${size}px`, height: `${size}px`, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            background: quiet ? WHITE : G, border: quiet ? "1px solid rgba(22,47,36,0.14)" : "none",
-            boxShadow: quiet ? "0 2px 8px rgba(22,47,36,0.08)" : "0 6px 18px rgba(22,47,36,0.25)", opacity: quiet ? 0.85 : 1,
-            transition: "width 0.2s, height 0.2s, background 0.2s",
+            // Active: the Opportunity tiles' wash (Home's hero), with more
+            // lift than a tile so it reads as floating over the page.
+            background: quiet ? WHITE : OPPORTUNITY_TILE_BG, border: quiet ? "1px solid rgba(22,47,36,0.14)" : OPPORTUNITY_TILE_BORDER,
+            boxShadow: quiet ? "0 2px 8px rgba(22,47,36,0.08)" : "0 6px 18px rgba(22,47,36,0.18)", opacity: quiet ? 0.85 : 1,
+            transition: "width 0.2s, height 0.2s",
           }}>
-          <Sparkles size={quiet ? 18 : 22} color={quiet ? MUT : GOLD}/>
+          <Sparkles size={quiet ? 18 : 22} color={quiet ? MUT : G}/>
           {news && <span style={{ position: "absolute", top: "2px", right: "2px", width: "12px", height: "12px", borderRadius: "50%", background: GOLD, border: `2px solid ${WHITE}` }}/>}
         </button>
       )}
