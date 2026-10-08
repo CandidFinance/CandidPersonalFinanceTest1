@@ -164,6 +164,8 @@ export function simulate(arch, { path = "base", levers = [], actionRate = 0, mem
         case "bonus": yi.bonus = ev.amount; break;
         case "monthsOut": yi.factor = (12 - ev.months) / 12; break;
         case "redundancy": yi.factor = (12 - ev.monthsOut) / 12; yi.taxFreeLump += Math.min(30000, ev.payout) * prices; yi.taxableLump += Math.max(0, ev.payout - 30000) * prices; break;
+        // Pay in lieu of notice: taxed as pay (income tax and NI), unlike the redundancy payment itself.
+        case "pilon": yi.taxableLump += ev.amount * prices; break;
         case "break": yi.factor = 0; oneOff += (ev.cost || 0) * prices; if (ev.niGap) p.niGapYear = t; livingFactor = ev.livingFactor ?? 1; break;
         case "partTime": p.workFactor = ev.factor; break;
         case "retire": p.retired = true; p.employment = "retired"; p.dbIncome = ev.dbIncome || 0; cashIn += (ev.lumpSum || 0) * prices; if (ev.drawdown) p.drawdown = { plan: ev.drawdown, start: t }; break;

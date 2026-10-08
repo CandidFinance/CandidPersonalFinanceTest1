@@ -303,4 +303,27 @@ export const ARCHETYPES = [
     housing: { type: "owned", value: 1100000 }, spending: 52000,
     events: { 4: [{ type: "gift", amount: 100000 }], 7: [{ type: "oneOff", amount: 10000 }] },
   },
+  {
+    // The founder's own figures (October 2026), to show what Candid does for
+    // someone like them. Rent, spending and a new job straight after the
+    // redundancy are assumptions.
+    id: "founder", name: "The founder", age: 29, summary: "Higher-rate, ISA first, every year", region: "other", engagement: "high", member: [[1, 10]],
+    people: [{ name: "The founder", age: 29, ...employed(87500, dc(3, { matchUpTo: 3, pot: 50000 })), bonus: 12500, trajectory: "moderate",
+      isaSS: 236000, isaHabit: 20000, gia: { value: 32000, basis: 24500 },
+      sl: { plan: "plan2", balance: 18500, writeOffYear: 2049 } }],
+    cash: [
+      { name: "Savings at 4%", amount: 5000, kind: "legacy", spread: 0.25 },
+      { name: "Savings at 3.5%", amount: 2500, kind: "legacy", spread: -0.25 },
+    ],
+    housing: { type: "rent", rent: 18000 }, spending: 24000,
+    events: { 1: [{ type: "redundancy", payout: 15000, monthsOut: 0 }, { type: "pilon", amount: 7000 }] },
+  },
 ];
+
+// Candid's ideal customers: employed professionals around or above the
+// higher-rate threshold with a workplace pension ("core"), and cash-rich
+// savers over 50 ("savers").
+export const ICP = {
+  core: ["kwame", "raj", "callum", "nadia", "jordan-sam", "founder"],
+  savers: ["margaret", "hannah", "helen-richard"],
+};

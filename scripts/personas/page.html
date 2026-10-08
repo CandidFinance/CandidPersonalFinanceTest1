@@ -71,6 +71,8 @@ section { padding-block: 40px 0; display: grid; gap: 18px; }
 .chart text { fill: var(--muted); font-family: var(--sans); font-size: 12px; }
 .chart .name { fill: var(--text); font-size: 13px; }
 .chart .pct { fill: var(--ink); font-weight: 600; }
+.chart .name.you { fill: var(--gold); font-weight: 700; }
+.group-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .bar-row { cursor: pointer; }
 .bar-row:hover .name, .bar-row:focus .name { fill: var(--gold); }
 .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
@@ -114,7 +116,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
   <header><span class="wordmark">Candid</span><span class="pagelabel">Customer lives</span></header>
 
   <div class="intro">
-    <h1>Twenty people, twenty years, with and without Candid</h1>
+    <h1>Twenty-one people, twenty years, with and without Candid</h1>
     <p>Each life runs a tax year at a time from 2026/27, through pay rises, babies, redundancies, inheritances and retirement. In one, they carry on as they were. In the other, they're a Candid member for part of it and act on some of what Candid shows them. The difference is what Candid is worth to them: as it is today, or, with the roadmap included, once what's planned is built.</p>
     <p class="muted">Today's money, after tax and after the subscription. Hypothetical and illustrative.</p>
   </div>
@@ -126,7 +128,12 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
   </div>
 
   <section aria-labelledby="all-h">
-    <h2 id="all-h">Across all twenty</h2>
+    <h2 id="all-h">Across all twenty-one</h2>
+    <div class="group-bar">
+      <span class="muted" id="group-label">Show</span>
+      <div class="seg" role="group" aria-labelledby="group-label" id="group-seg"></div>
+    </div>
+    <p class="muted" id="group-note" style="font-size:14px;max-width:75ch"></p>
     <div class="figures" id="summary"></div>
     <div class="legend" id="all-legend"></div>
     <div class="chart" id="all-chart"></div>
@@ -174,13 +181,31 @@ const shareOf = (r, key) => { const w = r.years[19].wealth.without; return w > 0
 const pctText = f => f == null ? "n/a" : Math.abs(f) < 0.0005 ? "0%" : (f < 0 ? "-" : "+") + (Math.abs(f) < 0.1 ? (Math.abs(f) * 100).toFixed(1) : Math.round(Math.abs(f) * 100)) + "%";
 const medianOf = list => { const s = list.filter(x => x != null).sort((a, b) => a - b); const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
-let state = { path: "base", id: "callum", roadmap: false };
+let state = { path: "base", id: "founder", roadmap: false, group: "all" };
+// Who's shown in the summary and the ranking.
+const GROUPS = {
+  all: { label: "Everyone", heading: "Across all twenty-one", note: "" },
+  core: { label: "Core ICP", heading: "The core ICP", note: "Employed professionals around or above the higher-rate threshold, with a workplace pension and savings not yet working as hard as they could. The levers that matter to them are in the app today." },
+  savers: { label: "Cash-rich savers", heading: "Cash-rich savers", note: "Savers over 50 with large balances on poor rates. One simple lever, better rates after tax, and they stay the longest." },
+};
+const inGroup = person => state.group === "all" || person.icp === state.group;
+const ICP_LABEL = { core: "Core ICP", savers: "Cash-rich savers, part of the ICP" };
 const view = () => state.roadmap ? "roadmap" : "today";
 try { const h = location.hash.slice(1); if (DATA.people.some(p => p.id === h)) state.id = h; } catch {}
 
 function niceStep(range, ticks) {
   const raw = range / ticks, mag = Math.pow(10, Math.floor(Math.log10(raw)));
   return [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+}
+
+// ── Group control ──
+function renderGroups() {
+  document.getElementById("group-seg").replaceChildren(...Object.entries(GROUPS).map(([key, g]) =>
+    el("button", { type: "button", "aria-pressed": String(key === state.group), onclick: () => { state.group = key; renderAll(); } }, g.label)));
+  const people = DATA.people.filter(inGroup);
+  document.getElementById("all-h").textContent = state.group === "all" ? GROUPS.all.heading : `${GROUPS[state.group].heading}: ${people.length} of the twenty-one`;
+  const note = document.getElementById("group-note");
+  note.textContent = GROUPS[state.group].note; note.hidden = !GROUPS[state.group].note;
 }
 
 // ── Path control ──
@@ -192,13 +217,17 @@ function renderPaths() {
 
 // ── Summary figures ──
 function renderSummary() {
-  const p = DATA.paths[state.path], v = p[view()];
+  // Worked out for whoever's shown: everyone, or one part of the ICP.
+  const rs = DATA.people.filter(inGroup).map(person => person.paths[state.path]);
+  const med = f => medianOf(rs.map(f));
+  const mean = f => rs.reduce((t, r) => t + f(r), 0) / rs.length;
+  const who = state.group === "all" ? "the twenty-one" : "them";
   const figs = [
-    ["Better off, per year as a member", gbp(v.medianPerMemberYear), "Median across the twenty"],
-    ["Better off by year 20", gbp(v.medianLasting), "Median, including what keeps working after they leave"],
-    ["As a share of their wealth", pctText(medianOf(DATA.people.map(person => shareOf(person.paths[state.path], view())))), "Median, by year 20, against their net worth without Candid"],
-    ["For every £1 of subscription", `£${v.medianPerPound}`, "Median gain by year 20, before the subscription"],
-    ["Revenue per member", gbp(p.curveMeanRevenue), `Lifetime, on the standard churn curve. As the stories run: ${gbp(p.meanRevenue)}`],
+    ["Better off, per year as a member", gbp(med(r => r[view()].perMemberYear)), `Median across ${who}`],
+    ["Better off by year 20", gbp(med(r => r[view()].lasting)), "Median, including what keeps working after they leave"],
+    ["As a share of their wealth", pctText(med(r => shareOf(r, view()))), "Median, by year 20, against their net worth without Candid"],
+    ["For every £1 of subscription", `£${Math.round(med(r => r[view()].perPound))}`, "Median gain by year 20, before the subscription"],
+    ["Revenue per member", gbp(mean(r => r.curveRevenue)), `Lifetime, on the standard churn curve. As the stories run: ${gbp(mean(r => r.revenue))}`],
   ];
   document.getElementById("summary").replaceChildren(...figs.map(([label, value, note]) =>
     el("div", { class: "fig" }, el("span", { class: "label" }, label), el("span", { class: "num" }, value), el("span", { class: "note" }, note))));
@@ -209,7 +238,7 @@ function renderAll20() {
   // Ranked by the gain as a share of their wealth without Candid by year 20:
   // Candid today, or with the roadmap when it's on. On the right, their net
   // worth by year 20 without Candid and with it.
-  const rows = DATA.people.map(person => {
+  const rows = DATA.people.filter(inGroup).map(person => {
     const r = person.paths[state.path], end = r.years[19].wealth;
     return { person, today: shareOf(r, "today") ?? 0, shown: shareOf(r, view()) ?? 0, without: end.without, with: end[view()] };
   }).sort((a, b) => b.shown - a.shown);
@@ -233,7 +262,7 @@ function renderAll20() {
     const go = () => { state.id = person.id; renderLife(); document.getElementById("life").scrollIntoView({ behavior: "smooth", block: "start" }); };
     g.addEventListener("click", go); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
     g.append(svg("rect", { x: 0, y, width: W, height: rowH, fill: "transparent" }));
-    g.append(svg("text", { x: nameW - 10, y: y + rowH / 2 + 4, "text-anchor": "end", class: "name" }, person.name));
+    g.append(svg("text", { x: nameW - 10, y: y + rowH / 2 + 4, "text-anchor": "end", class: person.id === "founder" ? "name you" : "name" }, person.name));
     // With the roadmap on: Candid today in green, what the roadmap adds in gold.
     const base = state.roadmap ? Math.min(today, shown) : shown;
     if (shown > base) g.append(svg("rect", { x: x(base), y: y + 6, width: Math.max(0, x(shown) - x(base)), height: rowH - 12, rx: 3, fill: "var(--road)" }));
@@ -311,7 +340,8 @@ function renderLife() {
     el("div", { class: "who" },
       el("h2", {}, `${person.name}, ${person.age}`),
       el("p", {}, person.summary + (person.household ? ` (${person.household})` : "")),
-      el("p", { class: "meta" }, `${ENGAGEMENT[person.engagement]}. A member ${memberText(person.member)}.`)),
+      person.id === "founder" ? el("p", { class: "muted", style: "font-size:13.5px" }, "Built from the founder's own figures: £87,500 salary and £12,500 bonus, 3% into the pension matched by 3%, ISAs filled every year, a £32k investment account with £7.5k of gains, an £18.5k Plan 2 student loan, and a redundancy this year. Rent and spending are estimates.") : null,
+      el("p", { class: "meta" }, `${person.icp ? ICP_LABEL[person.icp] + ". " : ""}${ENGAGEMENT[person.engagement]}. A member ${memberText(person.member)}.`)),
     el("div", { class: "figures" }, figs.map(([label, value, note]) =>
       el("div", { class: "fig" }, el("span", { class: "label" }, label), el("span", { class: "num" }, value), el("span", { class: "note" }, note)))),
     el("div", {},
@@ -343,7 +373,7 @@ function renderLife() {
 }
 
 function renderAll() {
-  renderPaths(); renderSummary(); renderAll20(); renderLife();
+  renderPaths(); renderGroups(); renderSummary(); renderAll20(); renderLife();
   document.getElementById("roadmap-switch").setAttribute("aria-pressed", String(state.roadmap));
 }
 document.getElementById("roadmap-switch").addEventListener("click", () => { state.roadmap = !state.roadmap; renderAll(); });

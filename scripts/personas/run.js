@@ -11,7 +11,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { simulate, TODAY, ALL, LEVERS } from "./engine.js";
-import { ARCHETYPES } from "./archetypes.js";
+import { ARCHETYPES, ICP } from "./archetypes.js";
 import * as R from "./rules.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -91,7 +91,8 @@ function runArchetype(arch, path) {
 
 const results = { generated: new Date().toISOString().slice(0, 10), paths: {}, archetypes: [] };
 for (const arch of ARCHETYPES) {
-  const entry = { id: arch.id, name: arch.name, age: arch.age, summary: arch.summary, engagement: arch.engagement, member: arch.member, paths: {} };
+  const icp = Object.keys(ICP).find(k => ICP[k].includes(arch.id)) || null;
+  const entry = { id: arch.id, name: arch.name, age: arch.age, summary: arch.summary, engagement: arch.engagement, member: arch.member, icp, paths: {} };
   for (const path of Object.keys(R.PATHS)) entry.paths[path] = runArchetype(arch, path);
   results.archetypes.push(entry);
 }

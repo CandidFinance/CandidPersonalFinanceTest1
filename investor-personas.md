@@ -312,6 +312,20 @@ Guildford · retired · combined pension income £55k (Richard's final-salary £
 - **Where Candid helps:** cash rates; a £20k Cash ISA each every year; moving interest to Helen's lower tax band; £50k Premium Bonds each; drawing on the pension against gifting (roadmap).
 - **Leaves:** Y7, moves to an adviser.
 
+### 21. The founder, 29: higher-rate, ISA first, every year
+The founder's own figures, October 2026 · employed, £87.5k + £12.5k bonus · Plan 2 loan £18.5k · engagement: high
+- **Starts with:** pension 3%, matched 3%, pot about £50k; £236k in Stocks and Shares ISAs, filled every year; £32k general investment account with £7.5k of gains; £7.5k cash at 4% and 3.5%.
+- **Without Candid:** fills the ISA and takes the employer match, as now; nothing else changes.
+- **Life:** Y1 redundancy: £15k tax-free plus £7k pay in lieu of notice (taxed as pay), straight into a new job on the same terms. Rent and spending are estimates.
+- **Where Candid helps:** the 60% trap, from year 1 (the notice pay takes income over £100k) and for good as pay rises past the frozen threshold; the bonus into the pension; the £3k of tax-free gains each year on the investment account; cash rates.
+- **Member:** 10 years.
+
+## ICP
+
+- **Core:** employed professionals around or above the higher-rate threshold, with a workplace pension: Kwame, Raj, Callum, Nadia, Jordan and Sam, the founder.
+- **Cash-rich savers:** over 50, large balances on poor rates: Margaret, Hannah, Helen and Richard.
+- **Outside it:** too little spare money (Ellie, Daniel, Aisha), already does it all (Oliver), needs roadmap features (Fatima and Imran, Gareth, Dev), or low value for now (Sophie, Marcus); Priya and Ben grow into the core.
+
 ### Spread at a glance
 
 | | |

@@ -28,7 +28,8 @@ function eventText(arch, ev) {
       return `${who}pay ${k(ev.to)}${ev.bonus ? ` plus ${k(ev.bonus)} bonus` : ""}`;
     case "bonus": return `${who}${k(ev.amount)} bonus`;
     case "monthsOut": return `${who}${ev.months} months without pay`;
-    case "redundancy": return `${who}made redundant, ${k(ev.payout)} payout, ${ev.monthsOut} months out`;
+    case "redundancy": return `${who}made redundant, ${k(ev.payout)} tax-free payout${ev.monthsOut ? `, ${ev.monthsOut} months out` : ", straight into a new job"}`;
+    case "pilon": return `${who}${k(ev.amount)} pay in lieu of notice, taxed as pay`;
     case "break": return `${who}a year out${ev.cost ? `, costing ${k(ev.cost)}` : ""}`;
     case "partTime": return ev.factor >= 1 ? `${who}back to full time` : `${who}works ${Math.round(ev.factor * 5)} days a week`;
     case "retire": return `${who}retires${ev.lumpSum ? ` with a ${k(ev.lumpSum)} tax-free lump sum` : ""}`;
@@ -75,13 +76,13 @@ const data = {
       if (texts.length) events[t] = texts;
     }
     return {
-      id: a.id, name: a.name, age: a.age, summary: a.summary, engagement: a.engagement, member: a.member,
+      id: a.id, name: a.name, age: a.age, summary: a.summary, engagement: a.engagement, member: a.member, icp: a.icp,
       household: arch.people.length > 1 ? arch.people.map(p => p.name).join(" and ") : null,
       events,
       // Each path: the figures for Candid today and with the roadmap built,
       // and each year's gap and actions in both.
       paths: Object.fromEntries(Object.entries(a.paths).map(([key, r]) => [key, {
-        memberYears: r.memberYears, feesPaid: r.feesPaid, revenue: r.revenue,
+        memberYears: r.memberYears, feesPaid: r.feesPaid, revenue: r.revenue, curveRevenue: r.curveRevenue,
         today: r.today, roadmap: r.roadmap,
         years: r.timeline.map(y => ({
           label: `${y.year}/${String(y.year + 1).slice(2)}`,
