@@ -87,6 +87,8 @@ const data = {
           label: `${y.year}/${String(y.year + 1).slice(2)}`,
           member: y.member,
           today: y.today - y.without, roadmap: y.roadmap - y.without,
+          // Net worth in each life, for the wealth chart.
+          wealth: { without: y.without, today: y.today, roadmap: y.roadmap },
           candidToday: [...new Set(y.flagsToday.map(flagText).filter(Boolean))],
           candidRoadmap: [...new Set(y.flagsRoadmap.map(flagText).filter(Boolean))],
         })),
