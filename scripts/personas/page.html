@@ -1,0 +1,315 @@
+<title>Candid Customer Lives</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one reading column; a summary across all twenty, then one life at a time, year by year. Candid's own palette and type. */
+:root {
+  --bg: #faf7f0; --surface: #ffffff; --sunk: #ede7db;
+  --ink: #162f24; --text: #1a1a1a; --muted: #6b6b6b;
+  --gold: #c4963a; --good: #2d6b4a; --bad: #c0392b;
+  --line: rgba(22,47,36,0.12); --member: rgba(196,150,58,0.13); --road: rgba(196,150,58,0.55);
+  --serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1c16; --surface: #15261e; --sunk: #1b3027;
+  --ink: #ece4d1; --text: #e6e2d8; --muted: #a7aba1;
+  --gold: #d7ad58; --good: #74c194; --bad: #e58272;
+  --line: rgba(236,228,209,0.14); --member: rgba(215,173,88,0.15); --road: rgba(215,173,88,0.6);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0f1c16; --surface: #15261e; --sunk: #1b3027;
+  --ink: #ece4d1; --text: #e6e2d8; --muted: #a7aba1;
+  --gold: #d7ad58; --good: #74c194; --bad: #e58272;
+  --line: rgba(236,228,209,0.14); --member: rgba(215,173,88,0.15); --road: rgba(215,173,88,0.6);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.55; padding-inline: 16px; padding-block: 0 56px; }
+.wrap { max-width: 1040px; margin: 0 auto; }
+h1, h2, h3 { color: var(--ink); text-wrap: balance; margin: 0; }
+h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(22px, 3.2vw, 28px); }
+h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.num { font-family: var(--serif); font-variant-numeric: tabular-nums; color: var(--ink); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* Header: the wordmark and the page's name, as on every Candid page. */
+header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; padding-block: 22px 18px; border-bottom: 1px solid var(--line); }
+.wordmark { font-family: var(--serif); font-weight: 700; font-size: 24px; color: var(--ink); letter-spacing: -0.01em; }
+.pagelabel { color: var(--muted); font-size: 14px; }
+.pagelabel::before { content: ""; display: inline-block; width: 1px; height: 14px; background: var(--line); margin-right: 14px; vertical-align: -2px; }
+
+.intro { display: grid; gap: 14px; padding-block: 34px 8px; max-width: 70ch; }
+.intro h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(30px, 5vw, 44px); line-height: 1.12; }
+.intro p { font-size: 16px; }
+
+.paths { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-block: 22px 6px; }
+.seg { display: inline-flex; background: var(--sunk); border-radius: 999px; padding: 3px; }
+.seg button { border: 0; background: none; padding: 7px 14px; border-radius: 999px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+
+section { padding-block: 40px 0; display: grid; gap: 18px; }
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 22px 28px; padding-block: 8px; }
+.fig { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.fig .label { font-size: 13px; color: var(--muted); }
+.fig .num { font-size: clamp(26px, 3.6vw, 34px); line-height: 1.1; }
+.fig .note { font-size: 12.5px; color: var(--muted); }
+
+.chart { width: 100%; overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart text { fill: var(--muted); font-family: var(--sans); font-size: 12px; }
+.chart .name { fill: var(--text); font-size: 13px; }
+.bar-row { cursor: pointer; }
+.bar-row:hover .name, .bar-row:focus .name { fill: var(--gold); }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+
+/* One life */
+.people { display: flex; flex-wrap: wrap; gap: 6px; }
+.people button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; }
+.people button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.life { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: clamp(18px, 3vw, 30px); display: grid; gap: 22px; }
+.who { display: grid; gap: 6px; }
+.who h2 { font-size: clamp(24px, 3.6vw, 32px); }
+.who .meta { color: var(--muted); font-size: 14px; }
+.life .figures { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px 22px; }
+
+.years { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.years th { text-align: left; font-weight: 600; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.years td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.years tr.member td { background: var(--member); }
+.years td.y { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+.years td.gap { text-align: right; white-space: nowrap; font-family: var(--serif); font-variant-numeric: tabular-nums; color: var(--ink); }
+.years th.gap { text-align: right; }
+.years ul { margin: 0; padding-left: 16px; }
+.years li + li { margin-top: 2px; }
+.table-scroll { overflow-x: auto; }
+.levers { display: grid; gap: 10px; }
+.lever { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: baseline; }
+.lever .track { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--sunk); overflow: hidden; }
+.lever .fill { height: 100%; border-radius: 4px; background: var(--ink); }
+.lever.roadmap .fill { background: var(--road); }
+.lever .v { font-family: var(--serif); font-variant-numeric: tabular-nums; color: var(--ink); }
+.lever .tag { font-size: 11.5px; color: var(--gold); margin-left: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.notes { display: grid; gap: 10px; max-width: 75ch; font-size: 14px; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+@media (prefers-reduced-motion: no-preference) { .lever .fill { transition: width 300ms ease; } }
+</style>
+
+<div class="wrap">
+  <header><span class="wordmark">Candid</span><span class="pagelabel">Customer lives</span></header>
+
+  <div class="intro">
+    <h1>Twenty people, twenty years, with and without Candid</h1>
+    <p>Each life runs a tax year at a time from 2026/27, through pay rises, babies, redundancies, inheritances and retirement. In one, they carry on as they were. In the other, they're a Candid member for part of it and act on some of what Candid shows them. The difference is what Candid is worth to them.</p>
+    <p class="muted">Today's money, after tax and after the subscription. Hypothetical and illustrative.</p>
+  </div>
+
+  <div class="paths">
+    <span class="muted" id="path-label">Interest rates</span>
+    <div class="seg" role="group" aria-labelledby="path-label" id="path-seg"></div>
+  </div>
+
+  <section aria-labelledby="all-h">
+    <h2 id="all-h">Across all twenty</h2>
+    <div class="figures" id="summary"></div>
+    <div class="legend"><span><span class="key" style="background:var(--ink)"></span>Better off by year 20, with Candid as it is today</span><span><span class="key" style="background:var(--road)"></span>More with the roadmap built</span></div>
+    <div class="chart" id="all-chart"></div>
+    <p class="muted" style="font-size:13px">Select a name to see that life year by year.</p>
+  </section>
+
+  <section aria-labelledby="life-h" id="life">
+    <h2 id="life-h">One life at a time</h2>
+    <div class="people" id="people" role="group" aria-label="Choose a person"></div>
+    <div class="life" id="life-card"></div>
+  </section>
+
+  <section aria-labelledby="how-h">
+    <h2 id="how-h">How this is worked out</h2>
+    <div class="notes">
+      <ul>
+        <li><b>Without Candid</b>, things stay as they were: savings stay in the same accounts, pension payments stay the same, and allowances are used only as they already were. A fixed-rate mortgage rolls onto the lender's next deal two months late.</li>
+        <li><b>With Candid</b>, each year they're a member, the model asks the app what it would show them, using the app's own code, on that year's rates. They act on 80%, 50% or 25% of it, depending on how engaged they are. What they set up while a member, such as a pension payment or an ISA, keeps working after they leave; new decisions go back to how they were.</li>
+        <li><b>Better off by</b> is the gap in net worth between the two lives, in today's money, after tax and after the subscription. Pensions count after the tax due on drawing them; student loans count as what's still to be repaid.</li>
+        <li><b>The economy</b> follows one path for everyone. Base: Bank Rate 3.75% now, one more rise, settling at 3% from 2030. The low path falls to 2%; the high path settles at 4%. Tax changes already announced are in, such as the £12,000 Cash ISA limit and the higher savings tax from April 2027. Income tax thresholds stay frozen to 2031, then rise by about half of inflation every five years.</li>
+        <li><b>Revenue</b> is £<span id="p1"></span> a month, rising 15% every three years (£<span id="p20"></span> by year 20). That's after VAT, and after app-store fees on 90% of members.</li>
+        <li><b>The standard churn curve</b> replaces each story's membership with a typical consumer subscription's: 40% leave in the first year, then 20% a year.</li>
+        <li><b>Worth knowing:</b> money moved into a pension is invested, while in the life without Candid the spare cash sits in the bank, so part of the pension gains is investment growth. Each path is one fixed set of figures, not a range of outcomes.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const gbp = n => (n < 0 ? "-£" : "£") + Math.abs(Math.round(n)).toLocaleString("en-GB");
+const gbpk = n => Math.abs(n) >= 1000 ? (n < 0 ? "-£" : "£") + (Math.abs(n) / 1000).toFixed(Math.abs(n) >= 100000 ? 0 : 1).replace(/\.0$/, "") + "k" : gbp(n);
+const el = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) { if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); }
+  for (const k of kids.flat()) if (k != null) e.append(k.nodeType ? k : String(k));
+  return e;
+};
+const NS = "http://www.w3.org/2000/svg";
+const svg = (tag, attrs = {}, text) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (text != null) e.textContent = text; return e; };
+const ENGAGEMENT = { high: "Acts on most of what Candid shows (80%)", mid: "Acts on about half of what Candid shows", low: "Acts on about a quarter of what Candid shows" };
+const yearName = t => { const y = 2025 + t; return `${y}/${String(y + 1).slice(2)}`; };
+
+let state = { path: "base", id: "callum" };
+try { const h = location.hash.slice(1); if (DATA.people.some(p => p.id === h)) state.id = h; } catch {}
+
+function niceStep(range, ticks) {
+  const raw = range / ticks, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  return [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+}
+
+// ── Path control ──
+function renderPaths() {
+  const seg = document.getElementById("path-seg");
+  seg.replaceChildren(...Object.entries(DATA.paths).map(([key, p]) =>
+    el("button", { type: "button", "aria-pressed": String(key === state.path), onclick: () => { state.path = key; renderAll(); } }, p.label)));
+}
+
+// ── Summary figures ──
+function renderSummary() {
+  const p = DATA.paths[state.path];
+  const figs = [
+    ["Better off, per year as a member", gbp(p.medianPerMemberYear), "Median across the twenty"],
+    ["Better off by year 20", gbp(p.medianLasting), `Median. With the roadmap built: ${gbp(p.medianWithRoadmap)}`],
+    ["For every £1 of subscription", `£${p.medianPerPound}`, "Median gain by year 20, before the subscription"],
+    ["Revenue per member", gbp(p.curveMeanRevenue), `Lifetime, on the standard churn curve. As the stories run: ${gbp(p.meanRevenue)}`],
+  ];
+  document.getElementById("summary").replaceChildren(...figs.map(([label, value, note]) =>
+    el("div", { class: "fig" }, el("span", { class: "label" }, label), el("span", { class: "num" }, value), el("span", { class: "note" }, note))));
+}
+
+// ── All twenty, as bars ──
+function renderAll20() {
+  const rows = DATA.people.map(person => ({ person, r: person.paths[state.path] })).sort((a, b) => b.r.lasting - a.r.lasting);
+  const max = Math.max(...rows.map(x => Math.max(x.r.lasting, x.r.withRoadmap)));
+  const W = 760, nameW = 150, valueW = 70, rowH = 26, top = 6;
+  const H = top + rows.length * rowH + 22;
+  const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "How much better off each person is by year 20" });
+  const x = v => nameW + Math.max(0, v) / max * (W - nameW - valueW - 10);
+  const step = niceStep(max, 4);
+  for (let v = 0; v <= max; v += step) {
+    s.append(svg("line", { x1: x(v), x2: x(v), y1: top, y2: H - 20, stroke: "var(--line)" }));
+    s.append(svg("text", { x: x(v), y: H - 4, "text-anchor": "middle" }, gbpk(v)));
+  }
+  rows.forEach(({ person, r }, i) => {
+    const y = top + i * rowH;
+    const g = svg("g", { class: "bar-row", tabindex: "0", role: "button", "aria-label": `${person.name}: ${gbp(r.lasting)}` });
+    const go = () => { state.id = person.id; renderLife(); document.getElementById("life").scrollIntoView({ behavior: "smooth", block: "start" }); };
+    g.addEventListener("click", go); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    g.append(svg("rect", { x: 0, y, width: W, height: rowH, fill: "transparent" }));
+    g.append(svg("text", { x: nameW - 10, y: y + rowH / 2 + 4, "text-anchor": "end", class: "name" }, person.name));
+    if (r.withRoadmap > r.lasting) g.append(svg("rect", { x: x(r.lasting), y: y + 6, width: Math.max(0, x(r.withRoadmap) - x(r.lasting)), height: rowH - 12, rx: 3, fill: "var(--road)" }));
+    g.append(svg("rect", { x: nameW, y: y + 6, width: Math.max(0, x(r.lasting) - nameW), height: rowH - 12, rx: 3, fill: "var(--ink)" }));
+    g.append(svg("text", { x: x(Math.max(r.lasting, r.withRoadmap)) + 8, y: y + rowH / 2 + 4 }, gbpk(r.lasting)));
+    s.append(g);
+  });
+  document.getElementById("all-chart").replaceChildren(s);
+}
+
+// ── One life ──
+function memberText(spans) {
+  return spans.map(([a, b]) => a === b ? yearName(a) : `${yearName(a)} to ${yearName(b)}`).join(", then again ");
+}
+function gapChart(person, r) {
+  const W = 760, H = 260, L = 64, R = 16, T = 14, B = 30;
+  const vals = r.years.flatMap(y => [y.gap, y.road]);
+  let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+  if (hi - lo < 1000) hi = lo + 1000;
+  const step = niceStep(hi - lo, 4);
+  lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+  const x = t => L + (t - 0.5) / 20 * (W - L - R);
+  const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `How much better off ${person.name} is with Candid, year by year` });
+  for (const [a, b] of person.member) s.append(svg("rect", { x: x(a) - (x(2) - x(1)) / 2, y: T, width: (b - a + 1) * (x(2) - x(1)), height: H - T - B, fill: "var(--member)" }));
+  for (let v = lo; v <= hi + 1e-6; v += step) {
+    s.append(svg("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--muted)" : "var(--line)", "stroke-width": v === 0 ? 1 : 1 }));
+    s.append(svg("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end" }, gbpk(v)));
+  }
+  for (const t of [1, 5, 10, 15, 20]) s.append(svg("text", { x: x(t), y: H - 8, "text-anchor": "middle" }, yearName(t)));
+  const line = key => r.years.map((yr, i) => `${i ? "L" : "M"}${x(i + 1).toFixed(1)},${y(yr[key]).toFixed(1)}`).join(" ");
+  const area = `${line("gap")} L${x(20)},${y(0)} L${x(1)},${y(0)} Z`;
+  s.append(svg("path", { d: area, fill: "var(--ink)", opacity: "0.08" }));
+  if (r.years.some(yr => yr.road !== yr.gap)) s.append(svg("path", { d: line("road"), fill: "none", stroke: "var(--gold)", "stroke-width": 2, "stroke-dasharray": "5 4" }));
+  s.append(svg("path", { d: line("gap"), fill: "none", stroke: "var(--ink)", "stroke-width": 2.5 }));
+  const end = r.years[19];
+  s.append(svg("circle", { cx: x(20), cy: y(end.gap), r: 4, fill: "var(--ink)" }));
+  return s;
+}
+function renderLife() {
+  const person = DATA.people.find(p => p.id === state.id);
+  const r = person.paths[state.path];
+  try { history.replaceState(null, "", "#" + person.id); } catch {}
+  document.getElementById("people").replaceChildren(...DATA.people.map(p =>
+    el("button", { type: "button", "aria-pressed": String(p.id === person.id), onclick: () => { state.id = p.id; renderLife(); } }, p.name)));
+
+  const figs = [
+    ["While a member", gbp(r.whileMember), `${r.memberYears} year${r.memberYears === 1 ? "" : "s"}, ${gbp(r.perMemberYear)} a year`],
+    ["By year 20", gbp(r.lasting), "Including what keeps working after they leave"],
+    ["If they acted on everything", gbp(r.ifActedOn), "By year 20"],
+    ["With the roadmap built", gbp(r.withRoadmap), "By year 20"],
+    ["Candid's revenue from them", gbp(r.revenue), `They paid ${gbp(r.feesPaid)}, including VAT`],
+  ];
+  const tbody = el("tbody");
+  r.years.forEach((yr, i) => {
+    const life = person.events[i + 1] || [];
+    tbody.append(el("tr", { class: yr.member ? "member" : "" },
+      el("td", { class: "y" }, yr.label),
+      el("td", {}, life.length ? el("ul", {}, life.map(t => el("li", {}, t))) : ""),
+      el("td", {}, yr.candid.length ? el("ul", {}, yr.candid.map(t => el("li", {}, t))) : ""),
+      el("td", { class: "gap" }, gbp(yr.gap))));
+  });
+  const levers = Object.entries(r.byLever).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const negatives = Object.entries(r.byLever).filter(([, v]) => v < 0);
+  const maxLever = Math.max(1, ...levers.map(([, v]) => v));
+
+  document.getElementById("life-card").replaceChildren(
+    el("div", { class: "who" },
+      el("h2", {}, `${person.name}, ${person.age}`),
+      el("p", {}, person.summary + (person.household ? ` (${person.household})` : "")),
+      el("p", { class: "meta" }, `${ENGAGEMENT[person.engagement]}. A member ${memberText(person.member)}.`)),
+    el("div", { class: "figures" }, figs.map(([label, value, note]) =>
+      el("div", { class: "fig" }, el("span", { class: "label" }, label), el("span", { class: "num" }, value), el("span", { class: "note" }, note)))),
+    el("div", {},
+      el("h3", {}, "Better off with Candid, year by year"),
+      el("div", { class: "legend", style: "margin-block:8px" },
+        el("span", {}, el("span", { class: "key", style: "background:var(--member)" }), "A Candid member"),
+        el("span", {}, el("span", { class: "key", style: "background:var(--ink)" }), "Candid today"),
+        r.years.some(yr => yr.road !== yr.gap) ? el("span", {}, el("span", { class: "key", style: "background:var(--gold)" }), "With the roadmap built") : null),
+      el("div", { class: "chart" }, gapChart(person, r))),
+    el("div", { class: "levers" },
+      el("h3", {}, "Where it comes from, by year 20"),
+      levers.length ? levers.map(([k, v]) => {
+        const lv = DATA.levers[k];
+        return el("div", { class: "lever" + (lv.roadmap ? " roadmap" : "") },
+          el("span", {}, lv.label, lv.roadmap ? el("span", { class: "tag" }, "Roadmap") : null),
+          el("span", { class: "v" }, gbp(v)),
+          el("div", { class: "track" }, el("div", { class: "fill", style: `width:${(v / maxLever * 100).toFixed(1)}%` })));
+      }) : el("p", { class: "muted" }, "Nothing Candid shows would change much for them."),
+      negatives.length ? el("p", { class: "muted", style: "font-size:13px" },
+        negatives.map(([k, v]) => `${DATA.levers[k].label}: ${gbp(v)}. Following the app's advice on today's figures costs a little when things change later.`).join(" ")) : null),
+    el("div", {},
+      el("h3", { style: "margin-bottom:8px" }, "Year by year"),
+      el("div", { class: "table-scroll" },
+        el("table", { class: "years" },
+          el("thead", {}, el("tr", {}, el("th", {}, "Year"), el("th", {}, "In their life"), el("th", {}, "What Candid shows, and they act on"), el("th", { class: "gap" }, "Better off by"))),
+          tbody)))
+  );
+}
+
+function renderAll() { renderPaths(); renderSummary(); renderAll20(); renderLife(); }
+document.getElementById("p1").textContent = DATA.price.first.toFixed(2);
+document.getElementById("p20").textContent = DATA.price.last.toFixed(2);
+renderAll();
+</script>
