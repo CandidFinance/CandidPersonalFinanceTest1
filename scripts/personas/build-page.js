@@ -8,7 +8,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ARCHETYPES } from "./archetypes.js";
 import { LEVERS } from "./engine.js";
-import { PATHS, yearOf, monthlyPrice } from "./rules.js";
+import { monthlyPrice } from "./rules.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const results = JSON.parse(readFileSync(join(here, "out", "results.json"), "utf8"));
@@ -65,7 +65,7 @@ function flagText(f) {
 const data = {
   generated: results.generated,
   price: { first: monthlyPrice(1), last: monthlyPrice(20) },
-  paths: Object.fromEntries(Object.entries(results.paths).map(([key, p]) => [key, { ...p, label: PATHS[key].label }])),
+  paths: results.paths,
   levers: Object.fromEntries(Object.entries(LEVERS).map(([key, l]) => [key, { label: l.label, roadmap: l.group === "roadmap" }])),
   people: results.archetypes.map(a => {
     const arch = ARCHETYPES.find(x => x.id === a.id);
@@ -78,15 +78,17 @@ const data = {
       id: a.id, name: a.name, age: a.age, summary: a.summary, engagement: a.engagement, member: a.member,
       household: arch.people.length > 1 ? arch.people.map(p => p.name).join(" and ") : null,
       events,
+      // Each path: the figures for Candid today and with the roadmap built,
+      // and each year's gap and actions in both.
       paths: Object.fromEntries(Object.entries(a.paths).map(([key, r]) => [key, {
-        whileMember: r.whileMember, perMemberYear: r.perMemberYear, lasting: r.lasting, ifActedOn: r.ifActedOn,
-        withRoadmap: r.withRoadmap, feesPaid: r.feesPaid, perPound: r.perPound, revenue: r.revenue,
-        memberYears: r.memberYears, curve: r.curve, byLever: r.byLever,
-        years: r.timeline.map((y, i) => ({
+        memberYears: r.memberYears, feesPaid: r.feesPaid, revenue: r.revenue,
+        today: r.today, roadmap: r.roadmap,
+        years: r.timeline.map(y => ({
           label: `${y.year}/${String(y.year + 1).slice(2)}`,
-          member: y.member, gap: y.gap, road: y.netWorthRoadmap - y.netWorthWithout,
-          without: y.netWorthWithout, with: y.netWorthWith,
-          candid: [...new Set(y.flags.map(flagText).filter(Boolean))],
+          member: y.member,
+          today: y.today - y.without, roadmap: y.roadmap - y.without,
+          candidToday: [...new Set(y.flagsToday.map(flagText).filter(Boolean))],
+          candidRoadmap: [...new Set(y.flagsRoadmap.map(flagText).filter(Boolean))],
         })),
       }])),
     };

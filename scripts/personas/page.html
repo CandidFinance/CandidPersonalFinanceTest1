@@ -52,6 +52,12 @@ header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; paddi
 .seg { display: inline-flex; background: var(--sunk); border-radius: 999px; padding: 3px; }
 .seg button { border: 0; background: none; padding: 7px 14px; border-radius: 999px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.switch { display: inline-flex; align-items: center; gap: 10px; border: 0; background: none; cursor: pointer; padding: 4px 0; font-size: 13.5px; font-weight: 500; color: var(--ink); flex-wrap: wrap; text-align: left; }
+.switch .track { width: 36px; height: 20px; flex: none; border-radius: 999px; background: var(--sunk); position: relative; transition: background 150ms; }
+.switch .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform 150ms; }
+.switch[aria-pressed="true"] .track { background: var(--gold); }
+.switch[aria-pressed="true"] .track::after { transform: translateX(16px); }
+.switch .hint { color: var(--muted); font-weight: 400; }
 
 section { padding-block: 40px 0; display: grid; gap: 18px; }
 .figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 22px 28px; padding-block: 8px; }
@@ -108,19 +114,20 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
 
   <div class="intro">
     <h1>Twenty people, twenty years, with and without Candid</h1>
-    <p>Each life runs a tax year at a time from 2026/27, through pay rises, babies, redundancies, inheritances and retirement. In one, they carry on as they were. In the other, they're a Candid member for part of it and act on some of what Candid shows them. The difference is what Candid is worth to them.</p>
+    <p>Each life runs a tax year at a time from 2026/27, through pay rises, babies, redundancies, inheritances and retirement. In one, they carry on as they were. In the other, they're a Candid member for part of it and act on some of what Candid shows them. The difference is what Candid is worth to them: as it is today, or, with the roadmap included, once what's planned is built.</p>
     <p class="muted">Today's money, after tax and after the subscription. Hypothetical and illustrative.</p>
   </div>
 
   <div class="paths">
     <span class="muted" id="path-label">Interest rates</span>
     <div class="seg" role="group" aria-labelledby="path-label" id="path-seg"></div>
+    <button type="button" class="switch" id="roadmap-switch" aria-pressed="false"><span class="track"></span>Include the roadmap<span class="hint">what Candid would add once it's built</span></button>
   </div>
 
   <section aria-labelledby="all-h">
     <h2 id="all-h">Across all twenty</h2>
     <div class="figures" id="summary"></div>
-    <div class="legend"><span><span class="key" style="background:var(--ink)"></span>Better off by year 20, with Candid as it is today</span><span><span class="key" style="background:var(--road)"></span>More with the roadmap built</span></div>
+    <div class="legend" id="all-legend"></div>
     <div class="chart" id="all-chart"></div>
     <p class="muted" style="font-size:13px">Select a name to see that life year by year.</p>
   </section>
@@ -162,7 +169,8 @@ const svg = (tag, attrs = {}, text) => { const e = document.createElementNS(NS, 
 const ENGAGEMENT = { high: "Acts on most of what Candid shows (80%)", mid: "Acts on about half of what Candid shows", low: "Acts on about a quarter of what Candid shows" };
 const yearName = t => { const y = 2025 + t; return `${y}/${String(y + 1).slice(2)}`; };
 
-let state = { path: "base", id: "callum" };
+let state = { path: "base", id: "callum", roadmap: false };
+const view = () => state.roadmap ? "roadmap" : "today";
 try { const h = location.hash.slice(1); if (DATA.people.some(p => p.id === h)) state.id = h; } catch {}
 
 function niceStep(range, ticks) {
@@ -179,11 +187,11 @@ function renderPaths() {
 
 // ── Summary figures ──
 function renderSummary() {
-  const p = DATA.paths[state.path];
+  const p = DATA.paths[state.path], v = p[view()];
   const figs = [
-    ["Better off, per year as a member", gbp(p.medianPerMemberYear), "Median across the twenty"],
-    ["Better off by year 20", gbp(p.medianLasting), `Median. With the roadmap built: ${gbp(p.medianWithRoadmap)}`],
-    ["For every £1 of subscription", `£${p.medianPerPound}`, "Median gain by year 20, before the subscription"],
+    ["Better off, per year as a member", gbp(v.medianPerMemberYear), "Median across the twenty"],
+    ["Better off by year 20", gbp(v.medianLasting), "Median, including what keeps working after they leave"],
+    ["For every £1 of subscription", `£${v.medianPerPound}`, "Median gain by year 20, before the subscription"],
     ["Revenue per member", gbp(p.curveMeanRevenue), `Lifetime, on the standard churn curve. As the stories run: ${gbp(p.meanRevenue)}`],
   ];
   document.getElementById("summary").replaceChildren(...figs.map(([label, value, note]) =>
@@ -192,8 +200,15 @@ function renderSummary() {
 
 // ── All twenty, as bars ──
 function renderAll20() {
-  const rows = DATA.people.map(person => ({ person, r: person.paths[state.path] })).sort((a, b) => b.r.lasting - a.r.lasting);
-  const max = Math.max(...rows.map(x => Math.max(x.r.lasting, x.r.withRoadmap)));
+  // Ranked by the figure shown: Candid today, or with the roadmap when it's on.
+  const rows = DATA.people.map(person => {
+    const r = person.paths[state.path];
+    return { person, today: r.today.lasting, shown: r[view()].lasting };
+  }).sort((a, b) => b.shown - a.shown);
+  const max = Math.max(1, ...rows.map(x => x.shown));
+  document.getElementById("all-legend").replaceChildren(
+    el("span", {}, el("span", { class: "key", style: "background:var(--ink)" }), state.roadmap ? "Candid today" : "Better off by year 20, with Candid as it is today"),
+    state.roadmap ? el("span", {}, el("span", { class: "key", style: "background:var(--road)" }), "Added by the roadmap") : null);
   const W = 760, nameW = 150, valueW = 70, rowH = 26, top = 6;
   const H = top + rows.length * rowH + 22;
   const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "How much better off each person is by year 20" });
@@ -203,16 +218,18 @@ function renderAll20() {
     s.append(svg("line", { x1: x(v), x2: x(v), y1: top, y2: H - 20, stroke: "var(--line)" }));
     s.append(svg("text", { x: x(v), y: H - 4, "text-anchor": "middle" }, gbpk(v)));
   }
-  rows.forEach(({ person, r }, i) => {
+  rows.forEach(({ person, today, shown }, i) => {
     const y = top + i * rowH;
-    const g = svg("g", { class: "bar-row", tabindex: "0", role: "button", "aria-label": `${person.name}: ${gbp(r.lasting)}` });
+    const g = svg("g", { class: "bar-row", tabindex: "0", role: "button", "aria-label": `${person.name}: ${gbp(shown)}` });
     const go = () => { state.id = person.id; renderLife(); document.getElementById("life").scrollIntoView({ behavior: "smooth", block: "start" }); };
     g.addEventListener("click", go); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
     g.append(svg("rect", { x: 0, y, width: W, height: rowH, fill: "transparent" }));
     g.append(svg("text", { x: nameW - 10, y: y + rowH / 2 + 4, "text-anchor": "end", class: "name" }, person.name));
-    if (r.withRoadmap > r.lasting) g.append(svg("rect", { x: x(r.lasting), y: y + 6, width: Math.max(0, x(r.withRoadmap) - x(r.lasting)), height: rowH - 12, rx: 3, fill: "var(--road)" }));
-    g.append(svg("rect", { x: nameW, y: y + 6, width: Math.max(0, x(r.lasting) - nameW), height: rowH - 12, rx: 3, fill: "var(--ink)" }));
-    g.append(svg("text", { x: x(Math.max(r.lasting, r.withRoadmap)) + 8, y: y + rowH / 2 + 4 }, gbpk(r.lasting)));
+    // With the roadmap on: Candid today in green, what the roadmap adds in gold.
+    const base = state.roadmap ? Math.min(today, shown) : shown;
+    if (shown > base) g.append(svg("rect", { x: x(base), y: y + 6, width: Math.max(0, x(shown) - x(base)), height: rowH - 12, rx: 3, fill: "var(--road)" }));
+    g.append(svg("rect", { x: nameW, y: y + 6, width: Math.max(0, x(base) - nameW), height: rowH - 12, rx: 3, fill: "var(--ink)" }));
+    g.append(svg("text", { x: x(Math.max(0, shown)) + 8, y: y + rowH / 2 + 4 }, gbpk(shown)));
     s.append(g);
   });
   document.getElementById("all-chart").replaceChildren(s);
@@ -224,7 +241,8 @@ function memberText(spans) {
 }
 function gapChart(person, r) {
   const W = 760, H = 260, L = 64, R = 16, T = 14, B = 30;
-  const vals = r.years.flatMap(y => [y.gap, y.road]);
+  const keys = state.roadmap ? ["today", "roadmap"] : ["today"];
+  const vals = r.years.flatMap(y => keys.map(k => y[k]));
   let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
   if (hi - lo < 1000) hi = lo + 1000;
   const step = niceStep(hi - lo, 4);
@@ -239,40 +257,41 @@ function gapChart(person, r) {
   }
   for (const t of [1, 5, 10, 15, 20]) s.append(svg("text", { x: x(t), y: H - 8, "text-anchor": "middle" }, yearName(t)));
   const line = key => r.years.map((yr, i) => `${i ? "L" : "M"}${x(i + 1).toFixed(1)},${y(yr[key]).toFixed(1)}`).join(" ");
-  const area = `${line("gap")} L${x(20)},${y(0)} L${x(1)},${y(0)} Z`;
+  const area = `${line("today")} L${x(20)},${y(0)} L${x(1)},${y(0)} Z`;
   s.append(svg("path", { d: area, fill: "var(--ink)", opacity: "0.08" }));
-  if (r.years.some(yr => yr.road !== yr.gap)) s.append(svg("path", { d: line("road"), fill: "none", stroke: "var(--gold)", "stroke-width": 2, "stroke-dasharray": "5 4" }));
-  s.append(svg("path", { d: line("gap"), fill: "none", stroke: "var(--ink)", "stroke-width": 2.5 }));
+  if (state.roadmap) s.append(svg("path", { d: line("roadmap"), fill: "none", stroke: "var(--gold)", "stroke-width": 2, "stroke-dasharray": "5 4" }));
+  s.append(svg("path", { d: line("today"), fill: "none", stroke: "var(--ink)", "stroke-width": 2.5 }));
   const end = r.years[19];
-  s.append(svg("circle", { cx: x(20), cy: y(end.gap), r: 4, fill: "var(--ink)" }));
+  s.append(svg("circle", { cx: x(20), cy: y(end[view()]), r: 4, fill: state.roadmap ? "var(--gold)" : "var(--ink)" }));
   return s;
 }
 function renderLife() {
   const person = DATA.people.find(p => p.id === state.id);
-  const r = person.paths[state.path];
+  const r = person.paths[state.path], v = r[view()];
   try { history.replaceState(null, "", "#" + person.id); } catch {}
   document.getElementById("people").replaceChildren(...DATA.people.map(p =>
     el("button", { type: "button", "aria-pressed": String(p.id === person.id), onclick: () => { state.id = p.id; renderLife(); } }, p.name)));
 
   const figs = [
-    ["While a member", gbp(r.whileMember), `${r.memberYears} year${r.memberYears === 1 ? "" : "s"}, ${gbp(r.perMemberYear)} a year`],
-    ["By year 20", gbp(r.lasting), "Including what keeps working after they leave"],
-    ["If they acted on everything", gbp(r.ifActedOn), "By year 20"],
-    ["With the roadmap built", gbp(r.withRoadmap), "By year 20"],
+    ["While a member", gbp(v.whileMember), `${r.memberYears} year${r.memberYears === 1 ? "" : "s"}, ${gbp(v.perMemberYear)} a year`],
+    ["By year 20", gbp(v.lasting), "Including what keeps working after they leave"],
+    ["If they acted on everything", gbp(v.ifActedOn), "By year 20"],
+    ["For every £1 they paid", `£${v.perPound}`, "Gain by year 20, before the subscription"],
     ["Candid's revenue from them", gbp(r.revenue), `They paid ${gbp(r.feesPaid)}, including VAT`],
   ];
   const tbody = el("tbody");
   r.years.forEach((yr, i) => {
     const life = person.events[i + 1] || [];
+    const candid = state.roadmap ? yr.candidRoadmap : yr.candidToday;
     tbody.append(el("tr", { class: yr.member ? "member" : "" },
       el("td", { class: "y" }, yr.label),
       el("td", {}, life.length ? el("ul", {}, life.map(t => el("li", {}, t))) : ""),
-      el("td", {}, yr.candid.length ? el("ul", {}, yr.candid.map(t => el("li", {}, t))) : ""),
-      el("td", { class: "gap" }, gbp(yr.gap))));
+      el("td", {}, candid.length ? el("ul", {}, candid.map(t => el("li", {}, t))) : ""),
+      el("td", { class: "gap" }, gbp(yr[view()]))));
   });
-  const levers = Object.entries(r.byLever).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
-  const negatives = Object.entries(r.byLever).filter(([, v]) => v < 0);
-  const maxLever = Math.max(1, ...levers.map(([, v]) => v));
+  const levers = Object.entries(v.byLever).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+  const negatives = Object.entries(v.byLever).filter(([, n]) => n < 0);
+  const maxLever = Math.max(1, ...levers.map(([, n]) => n));
 
   document.getElementById("life-card").replaceChildren(
     el("div", { class: "who" },
@@ -286,19 +305,19 @@ function renderLife() {
       el("div", { class: "legend", style: "margin-block:8px" },
         el("span", {}, el("span", { class: "key", style: "background:var(--member)" }), "A Candid member"),
         el("span", {}, el("span", { class: "key", style: "background:var(--ink)" }), "Candid today"),
-        r.years.some(yr => yr.road !== yr.gap) ? el("span", {}, el("span", { class: "key", style: "background:var(--gold)" }), "With the roadmap built") : null),
+        state.roadmap ? el("span", {}, el("span", { class: "key", style: "background:var(--gold)" }), "With the roadmap built") : null),
       el("div", { class: "chart" }, gapChart(person, r))),
     el("div", { class: "levers" },
       el("h3", {}, "Where it comes from, by year 20"),
-      levers.length ? levers.map(([k, v]) => {
+      levers.length ? levers.map(([k, n]) => {
         const lv = DATA.levers[k];
         return el("div", { class: "lever" + (lv.roadmap ? " roadmap" : "") },
           el("span", {}, lv.label, lv.roadmap ? el("span", { class: "tag" }, "Roadmap") : null),
-          el("span", { class: "v" }, gbp(v)),
-          el("div", { class: "track" }, el("div", { class: "fill", style: `width:${(v / maxLever * 100).toFixed(1)}%` })));
+          el("span", { class: "v" }, gbp(n)),
+          el("div", { class: "track" }, el("div", { class: "fill", style: `width:${(n / maxLever * 100).toFixed(1)}%` })));
       }) : el("p", { class: "muted" }, "Nothing Candid shows would change much for them."),
       negatives.length ? el("p", { class: "muted", style: "font-size:13px" },
-        negatives.map(([k, v]) => `${DATA.levers[k].label}: ${gbp(v)}. Following the app's advice on today's figures costs a little when things change later.`).join(" ")) : null),
+        negatives.map(([k, n]) => `${DATA.levers[k].label}: ${gbp(n)}. Following the app's advice on today's figures costs a little when things change later.`).join(" ")) : null),
     el("div", {},
       el("h3", { style: "margin-bottom:8px" }, "Year by year"),
       el("div", { class: "table-scroll" },
@@ -308,7 +327,11 @@ function renderLife() {
   );
 }
 
-function renderAll() { renderPaths(); renderSummary(); renderAll20(); renderLife(); }
+function renderAll() {
+  renderPaths(); renderSummary(); renderAll20(); renderLife();
+  document.getElementById("roadmap-switch").setAttribute("aria-pressed", String(state.roadmap));
+}
+document.getElementById("roadmap-switch").addEventListener("click", () => { state.roadmap = !state.roadmap; renderAll(); });
 document.getElementById("p1").textContent = DATA.price.first.toFixed(2);
 document.getElementById("p20").textContent = DATA.price.last.toFixed(2);
 renderAll();
