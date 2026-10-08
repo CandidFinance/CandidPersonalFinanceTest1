@@ -279,6 +279,8 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
   const skipPb = d.assistSkipPb === true;
   const plan = useMemo(() => cashPlan(d, m, savingsRates, { skipIsa, skipPb, isaChoice: state.isaChoice, isaChoice2: state.isaChoice2, savingsChoice: state.savingsChoice, savingsChoice2: state.savingsChoice2, pbChoice: state.pbChoice }),
     [d, m, savingsRates, skipIsa, skipPb, state.isaChoice, state.isaChoice2, state.savingsChoice, state.savingsChoice2, state.pbChoice]);
+  // From April 2027 under-65s have a separate, smaller limit for cash.
+  const isaWord = plan && plan.isaLimit < ISA_ALLOWANCE ? "Cash ISA" : "ISA";
 
   // Opening Assist counts as having seen what's in it, here and elsewhere.
   useEffect(() => {
@@ -380,7 +382,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
               {p.pb && <li>New bonds join the prize draw after a full calendar month. Prizes are tax-free, and can be paid to your bank or put back into bonds.</li>}
               {bondsIn(p) > 0 && <li>Cash in {fmt(bondsIn(p))} of Premium Bonds on NS&I's website or app first. The money usually reaches your bank in a few working days.</li>}
               {!p.pb && p.cap != null && <li>Only the first {fmt(p.cap)} earns {pct(p.ratePct)}.</li>}
-              {p.isa && <li>This uses {fmt(p.amount)} of your {fmt(ISA_ALLOWANCE)} ISA allowance for this tax year.</li>}
+              {p.isa && <li>This uses {fmt(p.amount)} of your {fmt(plan.isaLimit)} {isaWord} allowance for this tax year.</li>}
               {p.isa && +d.isaPrevCash > 0 && <li>Moving money that's already in a Cash ISA as well? Ask {p.provider} to transfer it in. Withdrawing it yourself loses its tax-free status.</li>}
             </ul>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
@@ -456,11 +458,11 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
         {skipIsa ? (
           <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 0", lineHeight: 1.5 }}>Keeping your ISA allowance free for investing, so it isn't used here.</p>
         ) : plan.isaLeft <= 0 ? (
-          <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 0", lineHeight: 1.5 }}>Your ISA allowance for this tax year is used. It resets on 6 April.</p>
+          <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 0", lineHeight: 1.5 }}>Your {isaWord} allowance for this tax year is used. It resets on 6 April.</p>
         ) : (
           <>
             <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 10px", lineHeight: 1.5 }}>
-              Interest is tax-free. {fmt(plan.isaLeft)} of your {fmt(ISA_ALLOWANCE)} allowance is left this tax year.
+              Interest is tax-free. {fmt(plan.isaLeft)} of your {fmt(plan.isaLimit)} {isaWord} allowance is left this tax year.
             </p>
             {otherIsaUnknown && (
               <div style={{ ...card, padding: "12px 14px", marginBottom: "10px", background: "rgba(196,150,58,0.07)", borderColor: "rgba(196,150,58,0.3)" }}>

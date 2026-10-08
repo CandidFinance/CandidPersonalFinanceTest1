@@ -36,8 +36,10 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = nu
   const currentPbInterest = Math.round(bondsVal * pbRate);
   const currentGrossTotal = currentTaxableInterest + currentPbInterest;
   const currentTaxableAmount = Math.max(0, currentTaxableInterest - psaLimit);
-  const trPct = Math.round(m.tr * 100);
-  const currentTaxCost = Math.round(currentTaxableAmount * m.tr);
+  // Savings interest is taxed at its own rates (2 points over income tax from April 2027).
+  const savingsTr = m.savingsTr ?? m.tr;
+  const trPct = Math.round(savingsTr * 100);
+  const currentTaxCost = Math.round(currentTaxableAmount * savingsTr);
   const currentAfterTaxTotal = currentTaxableInterest - currentTaxCost + currentPbInterest;
 
   // The full reallocation pot — cash (already outside any ISA) plus premium bonds.
@@ -45,7 +47,7 @@ export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = nu
   // Premium Bonds are both easy/near-instant access, so there's no liquidity reason
   // to exclude the buffer portion from this.
   const totalPot = m.cash + bondsVal;
-  let step1Isa = Math.min(totalPot, m.isaHeadroom);
+  let step1Isa = Math.min(totalPot, m.cashIsaHeadroom ?? m.isaHeadroom);
   let step1IsaInterest = Math.round(step1Isa * isaRateDecimal);
   let isaLines = [];
   const isaAlloc = rows && allocateCash(step1Isa, rows.filter(r => r.is_isa === true));

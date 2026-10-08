@@ -1,5 +1,6 @@
 import { isEasyAccess, premiumBondsRow } from "./savingsRates.js";
-import { ISA_ALLOWANCE, PSA_BY_BAND } from "./tax.js";
+import { PSA_BY_BAND, cashIsaLimit } from "./tax.js";
+import { taxYearFor } from "./taxYear.js";
 import { PB_RATE } from "./cash.js";
 
 // Candid Assist: what it has to show, worked out from the user's figures and
@@ -102,10 +103,11 @@ const taxFreeOn = from => interestOn(from.filter(f => f.taxFree));
 const heldTaken = from => from.filter(f => f.taxFree).reduce((t, f) => t + f.amount, 0);
 
 // Tax on savings interest: nothing up to the Personal Savings Allowance,
-// the user's marginal rate above it. ISA interest and Premium Bonds prizes
-// are tax-free and never count towards it.
+// the savings rate for the user's band above it (2 points over income tax
+// from April 2027). ISA interest and Premium Bonds prizes are tax-free and
+// never count towards it.
 export function savingsTax(m) {
-  const rate = +m.tr || 0;
+  const rate = +(m.savingsTr ?? m.tr) || 0;
   const allowance = PSA_BY_BAND[m.taxBandLabel] ?? 0;
   return { rate, allowance, kept: interest => interest - rate * Math.max(0, interest - allowance) };
 }
@@ -247,7 +249,9 @@ export function cashPlan(d, m, rows, { skipIsa = false, skipPb = false, isaChoic
   };
 
   // Cash ISA
-  const isaLeft = Math.max(0, +m.isaHeadroom || 0);
+  // Room for cash in a Cash ISA: from April 2027, £12,000 for under-65s.
+  const isaLeft = Math.max(0, +(m.cashIsaHeadroom ?? m.isaHeadroom) || 0);
+  const isaLimit = cashIsaLimit(taxYearFor(d), d.age);
   const isaValue = before => (o, from) => kept(before, from, o.ratePct, true);
   const isaRoom = left => (o, moved) => Math.min(left, o.cap ?? Infinity) - moved.amount;
   const isaOptions = !skipIsa && isaLeft > 0 ? optionsFor(rows, true, sources, isaLeft, null, {
@@ -322,7 +326,7 @@ export function cashPlan(d, m, rows, { skipIsa = false, skipPb = false, isaChoic
     currentInterest: base,
     currentKept: tax.kept(base),
     bonds: held, bondsRate: heldRate,
-    tax, isaLeft, skipIsa, skipPb, isa, savings, pb,
+    tax, isaLeft, isaLimit, skipIsa, skipPb, isa, savings, pb,
     picks,
     upTo: together(best),
     chosenGain: together(picks),
@@ -442,7 +446,7 @@ export function applyCashMove(d, m, plan, doneMoves, today = new Date()) {
     .map(t => ({ ...(t.name ? { name: t.name } : {}), amount: String(Math.round(t.amount)), rate: String(t.rate) }));
   return {
     cashTiers: cashTiers.length ? cashTiers : [{ amount: "", rate: "" }],
-    ...(isaMoved > 0 ? { isaThisYearCash: String(Math.min(ISA_ALLOWANCE, (+d.isaThisYearCash || 0) + Math.round(isaMoved))) } : {}),
+    ...(isaMoved > 0 ? { isaThisYearCash: String(Math.min(cashIsaLimit(taxYearFor(d), d.age), (+d.isaThisYearCash || 0) + Math.round(isaMoved))) } : {}),
     // Premium Bonds bought: added to the user's holding, not a cash account.
     ...(pbMoved > 0 || pbCashedIn > 0 ? { premiumBonds: String(Math.max(0, Math.min(PB_MAX, (+d.premiumBonds || plan.bonds || 0) + Math.round(pbMoved) - Math.round(pbCashedIn)))) } : {}),
     ...(pbMoved > 0 ? { hasPremiumBonds: "yes" } : {}),

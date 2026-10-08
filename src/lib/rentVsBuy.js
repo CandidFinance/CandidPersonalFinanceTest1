@@ -31,7 +31,8 @@
 //   buyerWealth  = buying.ownMoneyIn + priceRise - sellingCosts
 //   renterWealth = renting.ownMoneyIn + earnings - tax
 import { mortgageSchedule, mortgageInputs } from "./mortgage.js";
-import { calcIncomeTax } from "./tax.js";
+import { calcIncomeTax, savingsTaxRates, dividendTaxRates, cashIsaLimit } from "./tax.js";
+import { taxYearOf, taxYearFor } from "./taxYear.js";
 import { borrowingInputs, calcBorrowingCheck, cashIsaBalance } from "./borrowing.js";
 import { PB_RATE } from "./cash.js";
 import { regionalRates } from "./regionalRates.js";
@@ -81,11 +82,10 @@ const UK_RENT_GROWTH_PCT = 3.8;
 export const ISA_ALLOWANCE = 20000;
 export const DIVIDEND_ALLOWANCE = 500;
 export const CGT_ALLOWANCE = 3000;
-const DIVIDEND_TAX = { basic: 0.0875, higher: 0.3375, additional: 0.3935 };
 const CGT_RATE = { basic: 0.18, higher: 0.24, additional: 0.24 };
-// Cash interest outside an ISA: income tax above the Personal Savings Allowance.
+// Cash interest outside an ISA: tax above the Personal Savings Allowance.
+// The rates for each year, and dividend rates, come from tax.js by tax year.
 const SAVINGS_ALLOWANCE = { basic: 1000, higher: 500, additional: 0 };
-const SAVINGS_TAX = { basic: 0.20, higher: 0.40, additional: 0.45 };
 
 const filled = v => v !== "" && v !== null && v !== undefined && !isNaN(+v);
 const monthlyRate = annualPct => Math.pow(1 + annualPct / 100, 1 / 12) - 1;
@@ -159,7 +159,11 @@ export function calcRentVsBuy(input) {
   const growthM = monthlyRate(cash ? 0 : input.investmentReturnPct - input.dividendYieldPct);
   const incomeM = incomePct / 100 / 12;
   const incomeAllowance = band => cash ? SAVINGS_ALLOWANCE[band] : DIVIDEND_ALLOWANCE;
-  const incomeTaxRate = band => cash ? SAVINGS_TAX[band] : DIVIDEND_TAX[band];
+  // Year 1 is the current tax year; tax rates and the cash ISA limit follow
+  // each year of the projection (tax.js).
+  const startTaxYear = input.startTaxYear ?? taxYearOf(new Date());
+  const incomeTaxRate = (band, taxYear) => (cash ? savingsTaxRates(taxYear) : dividendTaxRates(taxYear))[band];
+  const isaLimit = (p, taxYear) => cash ? cashIsaLimit(taxYear, p.age) : ISA_ALLOWANCE;
   const people = input.people.map(p => ({ ...p, isa: 0, gia: 0, basis: 0, income: 0, realised: 0, isaRoom: 0, isaPaidIn: 0, giaPaidIn: 0 }));
   let shortfall = 0; // rent the investments couldn't cover
   // Stamp duty and fees: the upfront sum less the deposit.
@@ -235,7 +239,7 @@ export function calcRentVsBuy(input) {
     let renterWealth = -shortfall;
     let taxPaid = 0, unrealisedTaxTotal = 0;
     for (const p of people) {
-      const incomeTax = Math.max(0, p.income - incomeAllowance(p.taxBand)) * incomeTaxRate(p.taxBand);
+      const incomeTax = Math.max(0, p.income - incomeAllowance(p.taxBand)) * incomeTaxRate(p.taxBand, startTaxYear + year - 1);
       const realisedTax = Math.max(0, p.realised - CGT_ALLOWANCE) * CGT_RATE[p.taxBand];
       const allowanceLeft = Math.max(0, CGT_ALLOWANCE - p.realised);
       const unrealisedTax = Math.max(0, p.gia - p.basis - allowanceLeft) * CGT_RATE[p.taxBand];
@@ -244,7 +248,7 @@ export function calcRentVsBuy(input) {
       renterWealth += p.isa + p.gia - unrealisedTax;
       unrealisedTaxTotal += unrealisedTax;
       p.income = 0; p.realised = 0;
-      p.isaRoom = Math.min(ISA_ALLOWANCE, p.isaCapacity);
+      p.isaRoom = Math.min(isaLimit(p, startTaxYear + year), p.isaCapacity);
     }
     sum.taxPaid += taxPaid;
     const propertyValue = input.price * Math.pow(1 + input.housePriceGrowthPct / 100, year);
@@ -379,10 +383,17 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
   const cashPot = m.totalLiquid + cashIsa;
 
   const selected = new Set(d.selectedModules || []);
+  // Kept in cash, only the cash part of the ISA allowance can be used
+  // (£12,000 for under-65s from April 2027).
+  const startTaxYear = taxYearFor(d);
+  const limitNow = age => returnType === "cash" ? cashIsaLimit(startTaxYear, age) : ISA_ALLOWANCE;
   const people = [{
     who: "you",
+    age: +d.age || null,
     // Without the user's ISA figures, assume the full allowance is free.
-    isaHeadroom: (selected.has("cash") || selected.has("investments")) ? m.isaHeadroom : ISA_ALLOWANCE,
+    isaHeadroom: (selected.has("cash") || selected.has("investments"))
+      ? (returnType === "cash" ? (m.cashIsaHeadroom ?? m.isaHeadroom) : m.isaHeadroom)
+      : limitNow(d.age),
     surplus: Math.max(0, (m.monthlySurplus || 0) * 12),
     taxBand: m.taxBandLabel || "basic",
   }];
@@ -405,7 +416,8 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
     }
     people.push({
       who: "partner",
-      isaHeadroom: Math.max(0, ISA_ALLOWANCE - (+d.partnerIsaThisYear || 0)),
+      age: null,
+      isaHeadroom: Math.max(0, limitNow(null) - (+d.partnerIsaThisYear || 0)),
       surplus: partnerEstimate.surplus,
       taxBand: partnerEstimate.taxBand,
     });
@@ -417,6 +429,7 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
   }
 
   return {
+    startTaxYear,
     horizonYears: filled(d.propertyHorizonYears) && +d.propertyHorizonYears >= 1 ? Math.min(MAX_HORIZON_YEARS, Math.round(+d.propertyHorizonYears)) : DEFAULT_HORIZON_YEARS,
     price: b.price,
     upfront,

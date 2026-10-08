@@ -314,3 +314,18 @@ test("ISA allowance used counts other ISAs once, whichever way they were entered
   assert.equal(isaUsedThisYear({ isaThisYearCash: "2000", hasOtherIsaThisYear: "no", isaThisYearOtherTypes: "18000" }), 2000);
   assert.equal(isaUsedThisYear({ isaThisYearSS: "15000", isaThisYearLISA: "4000", hasOtherIsaThisYear: "yes", isaThisYearOtherTypes: "18000" }), 19000);
 });
+
+test("from April 2027 Assist fills a Cash ISA only to £12,000 for under-65s, and taxes savings at 22%", () => {
+  const d = { salary: "40000", age: "40", inputsTaxYear: 2027, cashTiers: [{ name: "Old Bank", amount: "50000", rate: "1" }], monthlyExpenses: "1000", emergencyMonths: "3", isaThisYearCash: "2000" };
+  const m = calcMetrics(d, { rows: taxRows });
+  const plan = cashPlan(d, m, taxRows);
+  assert.equal(plan.isaLimit, 12000);
+  assert.equal(plan.isaLeft, 10000);
+  assert.equal(plan.isa.options[0].amount, 10000);
+  assert.equal(plan.tax.rate, 0.22);
+  // At 65 the full £20,000 can still go into cash.
+  const older = { ...d, age: "65" };
+  const olderPlan = cashPlan(older, calcMetrics(older, { rows: taxRows }), taxRows);
+  assert.equal(olderPlan.isaLimit, 20000);
+  assert.equal(olderPlan.isaLeft, 18000);
+});

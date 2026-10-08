@@ -5,6 +5,14 @@ export function taxYearOf(date) {
   return (month > 3 || (month === 3 && day >= 6)) ? y : y - 1;
 }
 
+// The tax year a user's figures are for: the year their inputs are stamped
+// with (rollTaxYear stamps the current one when the app loads), else the
+// current one. Rates and limits that change on 6 April follow it, so they
+// switch over at the same moment as this year's ISA payments roll.
+export function taxYearFor(d, now = new Date()) {
+  return Number.isInteger(d?.inputsTaxYear) ? d.inputsTaxYear : taxYearOf(now);
+}
+
 const ISA_TYPES = ["Cash", "SS", "LISA", "Other"];
 
 // Some saved inputs only describe the tax year they were entered in: this

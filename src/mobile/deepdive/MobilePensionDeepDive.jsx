@@ -426,7 +426,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
           </div>
           {showFVInfo && (
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,background:"#ede7db",borderRadius:"8px",padding:"8px 10px",marginTop:"6px"}}>
-              Assumes this amount is left untouched in your pension and grows at 6% p.a. until retirement.
+              Assumes this amount is left untouched in your pension until retirement, growing 6% a year less 2% inflation, so it's in today's money.
               {bs.bonusSlRate > 0 && bs.loanBal > 0 && (bs.slOnCash <= 0
                 ? " None of the bonus is taken as cash, so no student loan deduction applies to it."
                 : m.willClear
@@ -497,7 +497,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
             )}
 
             <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.6,marginTop:"10px"}}>
-              Based on 6% annual growth over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}. Contributions shown in today's money.
+              In today's money: growth of 6% a year, less 2% inflation, over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}.
             </p>
 
             <div style={{marginTop:"14px"}}>

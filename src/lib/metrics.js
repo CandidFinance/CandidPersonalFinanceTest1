@@ -1,4 +1,6 @@
-import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE } from "./tax.js";
+import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit } from "./tax.js";
+import { taxYearFor } from "./taxYear.js";
+import { GROWTH_REAL_PCT } from "./growth.js";
 import { resolveSlRate, slRepaymentThreshold } from "./studentLoan.js";
 import { allocateCash } from "./cashAllocation.js";
 import { isaUsedThisYear } from "./isa.js";
@@ -61,8 +63,11 @@ export function calcMetrics(d, marketRates = {}) {
         retireAge = +d.retirementAge||65,
         age = +d.age||30, years = Math.max(1, retireAge - age),
         annualContrib = (myPct + empCapPct) / 100 * salary,
-        projectedPot = potVal * Math.pow(1.06, years) +
-          annualContrib * ((Math.pow(1.06, years) - 1) / 0.06);
+        // In today's money: contributions at today's salary, growing at the
+        // real rate, after inflation (growth.js).
+        pensionGrowth = GROWTH_REAL_PCT / 100,
+        projectedPot = potVal * Math.pow(1 + pensionGrowth, years) +
+          annualContrib * ((Math.pow(1 + pensionGrowth, years) - 1) / pensionGrowth);
   let annualRepayment = 0, willClear = false;
   const loanBal = +d.loanBalance||0;
   const slGrow = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
@@ -86,6 +91,13 @@ export function calcMetrics(d, marketRates = {}) {
   const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome - pensionSacrifice;
   const taxBandLabel = adjustedNetIncome > ADDITIONAL_RATE_THRESHOLD ? "additional" : adjustedNetIncome > HIGHER_RATE_THRESHOLD ? "higher" : "basic";
   const tr = INCOME_TAX_RATES[taxBandLabel];
+  // Rates and limits that change on 6 April follow the tax year the figures
+  // are for: savings interest above the PSA has its own rates (2 points over
+  // income tax from April 2027), and from April 2027 under-65s can put only
+  // £12,000 of the ISA allowance into cash.
+  const taxYear = taxYearFor(d);
+  const savingsTr = savingsTaxRates(taxYear)[taxBandLabel];
+  const cashIsaHeadroom = Math.max(0, Math.min(isaHeadroom, cashIsaLimit(taxYear, d.age) - (+d.isaThisYearCash || 0)));
   // CGT rates on shares/other assets (non-property): 18% basic, 24% higher/additional —
   // aligned with residential property rates from the 30 Oct 2024 Budget. Not 10%/20%,
   // which were the pre-Budget rates.
@@ -191,7 +203,7 @@ export function calcMetrics(d, marketRates = {}) {
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
     isaHeadroom, isaUsedThisYear: isaUsedThisYearCalc,
     missedMatch, annualRepayment, willClear, crystallisable, cgtSaving, cgtRate, remainingCgtAllowance,
-    projectedPot, years, annualYieldGap, savingsRate, loanBal, tr,
+    projectedPot, years, annualYieldGap, savingsRate, loanBal, tr, savingsTr, cashIsaHeadroom, taxYear,
     cashMoveAmount, cashExcessNotWorthMoving,
     cash, bonds, totalAssets, totalLiabilities, netWorth,
     taxBandLabel, adjustedNetIncome, bufferMonths,

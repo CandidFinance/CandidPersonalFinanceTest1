@@ -1,6 +1,7 @@
 import { calcBonusTaxBreakdown, calcIncomeTax } from "./tax.js";
 import { SALARY_GROWTH_RATES } from "./metrics.js";
 import { slRepaymentThreshold } from "./studentLoan.js";
+import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT } from "./growth.js";
 
 // ── User contributing to pension ────────────────────────────────────────────────────────
 export function isPensionContributing(d) {
@@ -23,11 +24,12 @@ export function pensionReturnRatio(d, m) {
 // with. Projects today's salary backwards year by year using the same SALARY_GROWTH_RATES
 // used elsewhere to project it forwards, applies a contribution rate (the user's own
 // stated %s if known, else the UK auto-enrolment minimum of 8% combined), and grows each
-// year's contribution forward at 6% — the same investment-growth assumption
-// calcPensionGrowthTrajectory uses for future projections, applied here in reverse.
+// year's contribution forward at 6% a year. That's the nominal rate (growth.js):
+// these are past contributions in money of the day, not a projection in
+// today's money.
 export const CAREER_START_AGE = 22;
 const DEFAULT_TOTAL_CONTRIB_RATE = 0.08; // UK auto-enrolment minimum: 5% employee + 3% employer
-const PENSION_GROWTH_RATE = 0.06;
+const PENSION_GROWTH_RATE = GROWTH_NOMINAL_PCT / 100;
 
 export function estimatePensionPot(d) {
   const age = +d.age || 0;
@@ -246,7 +248,8 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
 
   const age = +d.age||30, retireAge = +d.retirementAge||65;
   const years = Math.max(1, retireAge - age);
-  const bonusFVpartial = (pct) => Math.round(bonus * pct/100 * Math.pow(1.06, years));
+  // In today's money, at the real growth rate (growth.js).
+  const bonusFVpartial = (pct) => Math.round(bonus * pct/100 * Math.pow(1 + GROWTH_REAL_PCT/100, years));
 
   const loanBal = m.loanBal || 0;
   // Based on slOnCash (the deduction on the portion NOT sacrificed), so it
@@ -289,7 +292,10 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   const myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0;
   const retireAge = +d.retirementAge||65, age = +d.age||30;
   const years = Math.max(1, retireAge - age);
-  const annuityFactor = (Math.pow(1.06, years) - 1) / 0.06;
+  // In today's money: the real growth rate, after inflation (growth.js), the
+  // same as calcMetrics' projectedPot.
+  const g = GROWTH_REAL_PCT / 100;
+  const annuityFactor = (Math.pow(1 + g, years) - 1) / g;
   const annualContrib = (myPct + empCapPct) / 100 * salary;
   const currentPot = m.projectedPot;
   const hasMissedMatch = m.missedMatch > 0;
@@ -308,13 +314,13 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   // withExtraPot below are always built on the right base regardless of
   // whether the match-cap or bonus levers are individually active.
   const optimisedContrib = hasMissedMatch ? (empCapPct * 2) * salary / 100 : annualContrib;
-  const optimisedPot = potVal * Math.pow(1.06, years) + optimisedContrib * annuityFactor;
+  const optimisedPot = potVal * Math.pow(1 + g, years) + optimisedContrib * annuityFactor;
 
   // Bonus sacrifice is a one-off lump sum this year, not a recurring annual
   // contribution — grown with fvSingleLocal (simple compounding) on top of
   // optimisedPot, not the annuity formula optimisedContrib itself uses.
   const bonusExtra = (+d.bonusAmount||0) * 0.9;
-  const withBonusPot = optimisedPot + fvSingleLocal(bonusExtra, 6, years * 12);
+  const withBonusPot = optimisedPot + fvSingleLocal(bonusExtra, GROWTH_REAL_PCT, years * 12);
 
   const showOptimised = hasMissedMatch || hasBonus;
   const extraBase = hasBonus ? withBonusPot : optimisedPot;
@@ -344,7 +350,7 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   const targetPot = Math.max(400000, annualSpend * 25);
   let earlyRetire = retireAge;
   for (let testYrs = 1; testYrs <= years; testYrs++) {
-    const pot = potVal * Math.pow(1.06, testYrs) + annualContrib * ((Math.pow(1.06, testYrs) - 1) / 0.06);
+    const pot = potVal * Math.pow(1 + g, testYrs) + annualContrib * ((Math.pow(1 + g, testYrs) - 1) / g);
     if (pot >= targetPot) { earlyRetire = age + testYrs; break; }
   }
   const yearsSaved = retireAge - earlyRetire;
@@ -363,7 +369,9 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
     const monthlyContrib = annualContrib / 12;
     const totalMonths = years * 12;
     for (let testMonths = 1; testMonths <= totalMonths; testMonths++) {
-      const pot = fvSingleLocal(potVal, 6, testMonths) + fvAnnuityLocal(monthlyContrib, 6, testMonths);
+      // Nominal growth here: the Lump Sum Allowance is a fixed sum of money,
+      // not one that rises with prices.
+      const pot = fvSingleLocal(potVal, GROWTH_NOMINAL_PCT, testMonths) + fvAnnuityLocal(monthlyContrib, GROWTH_NOMINAL_PCT, testMonths);
       if (pot >= LSA_INFLECTION_POT) { lsaCrossYearsLeft = Math.round(testMonths / 12); break; }
     }
   }

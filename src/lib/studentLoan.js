@@ -19,6 +19,8 @@
 // calculated" guidance pages lagged behind and still showed 2025/26 rates.
 // Plan 4 and the Postgraduate Loan aren't offered in the app's onboarding;
 // they're here so the public student loan calculator reads the same figures.
+import { GROWTH_NOMINAL_PCT } from "./growth.js";
+
 export const PLAN2_RPI_BASE = 0.041; // 2026/27 RPI
 export const PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
 export const PLAN2_MAX_VARIABLE = 0.03; // percentage points added by the time income reaches PLAN2_INCOME_UPPER, before capping
@@ -27,10 +29,9 @@ export const PLAN5_RATE = 0.041; // = 2026/27 RPI, same figure as Plan 2's base
 export const PLAN1_RATE = 0.041; // 1 Sept 2026 – 31 Aug 2027: RPI, as RPI is below base rate + 1%
 export const PLAN4_RATE = 0.041; // same rule as Plan 1
 export const POSTGRAD_RATE = 0.06; // RPI + 3% = 7.1%, capped at 6% for 2026/27
-// The same 6% a year the pension projections assume (pension.js) — duplicated
-// rather than imported, since pension.js → metrics.js → this file would make
-// the import circular. Keep in sync.
-const PENSION_GROWTH_PCT = 6;
+// A pension's growth before inflation (growth.js), since the loan's rate is
+// before inflation too.
+const PENSION_GROWTH_PCT = GROWTH_NOMINAL_PCT;
 
 // Which repayment plan a loan is on, for someone who doesn't know: from where
 // they lived when they applied (which student finance body lent it), the

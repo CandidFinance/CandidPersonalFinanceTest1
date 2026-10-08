@@ -75,7 +75,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Approaching-deadline urgency is a sort-priority-only nudge, kept separate from
   // the £/yr figures shown to the user (see pension's +99999 sentinel below for the
   // same pattern).
-  const cashSortPriority = cashImpact + Math.round(m.isaHeadroom * (isaRate / 100) * (isaUrgencyBoost - 1));
+  const cashSortPriority = cashImpact + Math.round((m.cashIsaHeadroom ?? m.isaHeadroom) * (isaRate / 100) * (isaUrgencyBoost - 1));
   const tooMuchCash = m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
   // Emergency fund: any shortfall against the chosen buffer needs attention;
   // less than one month of essential costs covered is critical.

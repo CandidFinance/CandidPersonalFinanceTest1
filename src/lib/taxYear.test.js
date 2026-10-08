@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { taxYearOf, rollTaxYear } from "./taxYear.js";
+import { taxYearOf, taxYearFor, rollTaxYear } from "./taxYear.js";
 import { calcMetrics } from "./metrics.js";
 
 test("the tax year starts on 6 April", () => {
@@ -71,4 +71,22 @@ test("an older single previous-years ISA balance is added to, not dropped", () =
   assert.equal(after.isaPreviousBalance, "33000");
   assert.equal(calcMetrics(after).netWorth, before.netWorth);
   assert.equal(calcMetrics(after).isaHeadroom, 20000);
+});
+
+test("the figures' tax year is the one the inputs are stamped with, else today's", () => {
+  assert.equal(taxYearFor({ inputsTaxYear: 2027 }), 2027);
+  assert.equal(taxYearFor({}, new Date(2027, 3, 6)), 2027);
+  assert.equal(taxYearFor({}, new Date(2027, 3, 5)), 2026);
+});
+
+test("rates and limits switch over when the inputs roll into 2027/28", () => {
+  const d = { salary: "40000", age: "40", cashTiers: [{ amount: "30000", rate: "1" }], isaThisYearCash: "5000" };
+  const before = calcMetrics(rollTaxYear(d, new Date(2027, 3, 5)));
+  assert.equal(before.savingsTr, 0.20);
+  assert.equal(before.cashIsaHeadroom, 15000);
+  // On 6 April this year's £5,000 rolls into last year's, and the new limits apply.
+  const after = calcMetrics(rollTaxYear({ ...d, inputsTaxYear: 2026 }, new Date(2027, 3, 6)));
+  assert.equal(after.savingsTr, 0.22);
+  assert.equal(after.cashIsaHeadroom, 12000);
+  assert.equal(after.isaHeadroom, 20000);
 });

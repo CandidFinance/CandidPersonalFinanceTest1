@@ -69,7 +69,7 @@ export function pensionReveal(d, m) {
   return [
     { label: ANSWER, figure: fmt(Math.round(m.projectedPot)), title: `projected in your pension by ${+d.retirementAge || 65}.` },
     { label: WHY, title: `You pay ${myPct}%${empPct > 0 ? ` and get your employer's full ${empPct}% match` : ""}, so you're not leaving money on the table.`,
-      body: "Projection assumes 6% growth a year, in today's money." },
+      body: "In today's money: growth of 6% a year, less 2% inflation." },
     bonus.standalone > 0
       ? { label: ACTION, title: `Paying your ${fmt(+d.bonusAmount)} bonus into your pension could save up to ${fmt(bonus.standalone)} in tax.`, body: "It has to be arranged with HR or payroll before the bonus is paid." }
       : { label: ACTION, title: "Nothing to change right now.", body: "Worth checking again when your pay or job changes." },
