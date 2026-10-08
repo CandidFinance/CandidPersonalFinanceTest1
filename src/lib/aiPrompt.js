@@ -1,5 +1,6 @@
 import { fmt } from "./format.js";
-import { isPensionContributing, pensionReturnRatio } from "./pension.js";
+import { isPensionContributing, pensionReturnRatio, inRetirement, calcTaxFreeCash } from "./pension.js";
+import { statePensionIncome } from "./metrics.js";
 
 // Builds the plain-object financial summary handed to Claude — pulled out of
 // generateDashboard()'s closure so it stays testable independent of the
@@ -53,6 +54,13 @@ export function buildFinancialSummary(d, m, statuses) {
     retirementAge: +d.retirementAge||65,
     pensionReturnRatio: "1:" + pensionReturnRatio(d, m).toFixed(2),
     pensionType: d.pensionType === "sacrifice" ? "Salary sacrifice" : d.pensionType === "relief" ? "Relief at source" : "Unknown",
+    // Retirement: what's been taken, what can still come out tax-free, and
+    // the State Pension in payment (it sets the tax on withdrawals).
+    pensionInRetirement: inRetirement(d),
+    pensionAccess: { none: "Not started", taxFreeOnly: "Taken tax-free cash only", income: "Drawing an income (£10,000 Money Purchase Annual Allowance applies)" }[d.pensionAccess] || null,
+    taxFreeCashAvailable: (+d.potValue||0) + (+d.potValue2||0) > 0 ? fmt(calcTaxFreeCash(d).taxFree) : null,
+    pensionProtection: { fp2012: "Fixed Protection 2012", p2014: "Fixed or Individual Protection 2014", p2016: "Fixed or Individual Protection 2016", none: "None" }[d.pensionProtection] || null,
+    statePensionInPayment: statePensionIncome(d) > 0 ? fmt(statePensionIncome(d)) + "/yr" : null,
 
     // Student loan
     studentLoan: d.studentLoan !== "none" ? {

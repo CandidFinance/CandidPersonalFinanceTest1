@@ -1,4 +1,4 @@
-import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit } from "./tax.js";
+import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_REAL_PCT } from "./growth.js";
 import { resolveSlRate, slRepaymentThreshold } from "./studentLoan.js";
@@ -31,6 +31,14 @@ export function getBufferMonths(d) {
   const n = +d.emergencyMonths;
   if (n === 3 || n === 6 || n === 9) return n;
   return d.higherBuffer === "yes" ? 9 : 6;
+}
+
+// The State Pension in payment: from 66, what they told us they get, else
+// the full rate. It's taxable, so it counts towards the tax band.
+export function statePensionIncome(d) {
+  if (!(+d.age >= 66)) return 0;
+  const stated = d.statePensionAmount;
+  return stated !== "" && stated != null && !isNaN(+stated) ? Math.max(0, +stated) : STATE_PENSION_FULL;
 }
 
 export function calcMetrics(d, marketRates = {}) {
@@ -88,7 +96,8 @@ export function calcMetrics(d, marketRates = {}) {
   // the tax band, the £100k taper and the Personal Savings Allowance.
   const bonusIncome = +d.bonusAmount||0;
   const pensionSacrifice = salary * myPct / 100;
-  const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome - pensionSacrifice;
+  const statePensionPaid = statePensionIncome(d);
+  const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome + statePensionPaid - pensionSacrifice;
   const taxBandLabel = adjustedNetIncome > ADDITIONAL_RATE_THRESHOLD ? "additional" : adjustedNetIncome > HIGHER_RATE_THRESHOLD ? "higher" : "basic";
   const tr = INCOME_TAX_RATES[taxBandLabel];
   // Rates and limits that change on 6 April follow the tax year the figures
@@ -136,7 +145,7 @@ export function calcMetrics(d, marketRates = {}) {
   // State pension estimate
   const niYears = +d.niYears||0;
   // Full new State Pension, 2026/27.
-  const statePensionWeekly = (niYears / 35) * 241.30;
+  const statePensionWeekly = (niYears / 35) * STATE_PENSION_WEEKLY;
   const statePensionAnnual = statePensionWeekly * 52;
   const niYearsToFull = Math.max(0, 35 - niYears);
   // Mortgage fix expiry in days

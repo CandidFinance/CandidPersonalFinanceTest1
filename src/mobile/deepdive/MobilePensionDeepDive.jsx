@@ -5,12 +5,13 @@ import {
   isPensionContributing,
   calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
   calcCarryForward, defaultCarryForwardYears, calcBonusSacrifice, calcPensionGrowthTrajectory,
-  missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT,
+  missedPensionRelief, calcTaxFreeCash, inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT, MONEY_PURCHASE_ANNUAL_ALLOWANCE,
 } from "../../lib/pension.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
+import MobileDrawdown from "./MobileDrawdown.jsx";
 import MobileProviderTile from "../MobileProviderTile.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -104,6 +105,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const missedRelief = missedPensionRelief(d, m);
   const notPayingIn = !contributing && missedRelief > 0;
   const taxFreeCash = calcTaxFreeCash(d);
+  const retired = inRetirement(d);
   const trPct = Math.round(m.tr * 100);
   const myPct = +d.myContribution || 0;
   const empCapPct = +d.employerMatch || 0;
@@ -314,25 +316,42 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
 
       {/* Tax-free cash: shown once the Lump Sum Allowance caps it, or to
           anyone at their retirement age, when it's the figure that matters. */}
-      {d.hasPension === "yes" && taxFreeCash.pot > 0 && (taxFreeCash.capped || !traj.showTrajectory) && (
+      {d.hasPension === "yes" && taxFreeCash.pot > 0 && (taxFreeCash.capped || retired) && (
         <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Tax-free cash</div>
+          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Tax-free cash{taxFreeCash.taken > 0 ? " left" : ""}</div>
           <div style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,lineHeight:1.15}}>{fmt(taxFreeCash.taxFree)}</div>
           <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:"4px 0 0"}}>
-            {taxFreeCash.capped
-              ? `25% of your pot would be ${fmt(taxFreeCash.quarter)}, but tax-free cash stops at ${fmt(LUMP_SUM_ALLOWANCE)}, the Lump Sum Allowance, for any pot above ${fmt(LSA_INFLECTION_POT)}. The other ${fmt(taxFreeCash.overCap)} is taxed as income when it's taken out.`
-              : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(LUMP_SUM_ALLOWANCE)}. The rest is taxed as income when it's taken out.`}
+            {taxFreeCash.taken > 0
+              ? `Of your ${fmt(taxFreeCash.allowance)} limit, ${fmt(taxFreeCash.taken)} has been taken. ${taxFreeCash.capped ? `25% of the part you haven't touched would be about ${fmt(taxFreeCash.quarter)}, so the limit decides it.` : `25% of the part you haven't touched is about ${fmt(taxFreeCash.quarter)}.`} The rest is taxed as income when it's taken out.`
+              : taxFreeCash.capped
+              ? `25% of your pot would be ${fmt(taxFreeCash.quarter)}, but tax-free cash stops at ${fmt(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? `, the Lump Sum Allowance, for any pot above ${fmt(LSA_INFLECTION_POT)}` : ", your protected limit"}. The other ${fmt(taxFreeCash.overCap)} is taxed as income when it's taken out.`
+              : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(taxFreeCash.allowance)}. The rest is taxed as income when it's taken out.`}
           </p>
-          <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.55,margin:"6px 0 0"}}>
-            Any tax-free cash already taken counts towards the limit. A Fixed or Individual Protection from before 2016 allows more, up to £450,000.
+          {!d.pensionProtection && taxFreeCash.capped && (
+            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.55,margin:"6px 0 0"}}>
+              A Fixed or Individual Protection from 2012 to 2016 allows more, up to £450,000.
+            </p>
+          )}
+        </div>
+      )}
+
+      {retired && d.hasPension === "yes" && taxFreeCash.pot > 0 && <MobileDrawdown d={d} m={m}/>}
+
+      {d.pensionAccess === "income" && (
+        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
+          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Worth knowing</div>
+          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
+            Having drawn an income, up to {fmt(MONEY_PURCHASE_ANNUAL_ALLOWANCE)} a year can go into your pensions with tax relief: the Money Purchase Annual Allowance. Employer payments count towards it.
           </p>
         </div>
       )}
 
       {/* The what-if tools, closed at first. */}
-      <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="bonus, growth and more"/>
+      {/* Retired with no earnings, the what-ifs (paying in more, a bonus,
+          growth to retirement) don't apply. */}
+      {!(retired && !(m.salary > 0)) && <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="bonus, growth and more"/>}
 
-      {exploreOpen && (<>
+      {exploreOpen && !(retired && !(m.salary > 0)) && (<>
       {showSacrificeCalc && !taper.recoverable && sacrificeTile}
 
       {cf.showCarryForward && (

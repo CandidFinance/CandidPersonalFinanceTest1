@@ -74,8 +74,19 @@ test("bonus sacrifice: valued band by band, and not double counted with the tape
 
 test("tax-free cash: 25% of the pot, capped at £268,275", async () => {
   const { calcTaxFreeCash, pastRetirementAge, calcPensionGrowthTrajectory } = await import("./pension.js");
-  assert.deepEqual(calcTaxFreeCash({ potValue: "1000000" }), { pot: 1000000, quarter: 250000, taxFree: 250000, capped: false, overCap: 0 });
-  assert.deepEqual(calcTaxFreeCash({ potValue: "1100000" }), { pot: 1100000, quarter: 275000, taxFree: 268275, capped: true, overCap: 6725 });
+  const pick = c => ({ quarter: c.quarter, taxFree: c.taxFree, capped: c.capped, overCap: c.overCap });
+  assert.deepEqual(pick(calcTaxFreeCash({ potValue: "1000000" })), { quarter: 250000, taxFree: 250000, capped: false, overCap: 0 });
+  assert.deepEqual(pick(calcTaxFreeCash({ potValue: "1100000" })), { quarter: 275000, taxFree: 268275, capped: true, overCap: 6725 });
+  // Old pensions count too.
+  assert.equal(calcTaxFreeCash({ potValue: "900000", potValue2: "200000" }).taxFree, 268275);
+  // A protection raises the limit.
+  assert.equal(calcTaxFreeCash({ potValue: "2000000", pensionProtection: "fp2012" }).taxFree, 450000);
+  // £100,000 already taken: £168,275 of the limit left, and 25% of the
+  // untouched £800,000 (£1.1m less three times £100,000) is £200,000.
+  const taken = calcTaxFreeCash({ potValue: "1100000", pensionAccess: "taxFreeOnly", taxFreeCashTaken: "100000" });
+  assert.deepEqual(pick(taken), { quarter: 200000, taxFree: 168275, capped: true, overCap: 31725 });
+  // Only counted once they say they've started drawing.
+  assert.equal(calcTaxFreeCash({ potValue: "1100000", pensionAccess: "none", taxFreeCashTaken: "100000" }).taken, 0);
   assert.equal(pastRetirementAge({ age: "69" }), true);
   assert.equal(pastRetirementAge({ age: "69", retirementAge: "70" }), false);
   // No growth chart "to age 65" for a 69-year-old.

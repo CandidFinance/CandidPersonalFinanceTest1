@@ -2,7 +2,7 @@ import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, B
 import { fmt } from "./format.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE } from "./pension.js";
+import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement } from "./pension.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
 
 export const MODULE_META = [
@@ -198,8 +198,10 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} saved by paying your bonus into your pension` : null,
     aaRoom.excess > 0 ? `Payments in may go over your reduced ${fmt(aaRoom.approxAA)} pension annual allowance` : null,
   ].filter(Boolean);
-  if (pensionLabelParts.length === 0 && d.hasPension === "yes" && taxFreeCash.capped) {
-    pensionLabelParts.push(`Tax-free cash stops at ${fmt(LUMP_SUM_ALLOWANCE)}: ${fmt(taxFreeCash.overCap)} less than 25% of your pot`);
+  if (pensionLabelParts.length === 0 && d.hasPension === "yes" && taxFreeCash.pot > 0) {
+    if (taxFreeCash.capped && taxFreeCash.taken === 0) pensionLabelParts.push(`Tax-free cash stops at ${fmt(taxFreeCash.allowance)}: ${fmt(taxFreeCash.overCap)} less than 25% of your pot`);
+    else if (taxFreeCash.capped) pensionLabelParts.push(`${fmt(taxFreeCash.left)} of tax-free cash left: ${fmt(taxFreeCash.overCap)} less than 25% of the rest`);
+    else if (inRetirement(d) && taxFreeCash.taxFree > 0) pensionLabelParts.push(`${fmt(taxFreeCash.taxFree)} could be taken tax-free`);
   }
 
   s.pension = m.pensionStatus === "unknown" ? {

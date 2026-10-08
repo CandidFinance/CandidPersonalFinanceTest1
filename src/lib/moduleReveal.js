@@ -11,6 +11,7 @@
 
 import { fmt } from "./format.js";
 import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.js";
+import { calcDrawdown, DEFAULT_DRAWDOWN_YEARS } from "./drawdown.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
@@ -39,14 +40,18 @@ export function pensionReveal(d, m) {
   if (!isPensionContributing(d) && missedPensionRelief(d, m) === 0) {
     const cash = calcTaxFreeCash(d);
     if (!(cash.pot > 0)) return null;
+    const plan = calcDrawdown(d, m, { years: DEFAULT_DRAWDOWN_YEARS });
+    const protectionUnknown = !d.pensionProtection;
     return [
-      { label: ANSWER, figure: fmt(cash.taxFree), title: "of your pension can be taken tax-free." },
+      { label: ANSWER, figure: fmt(cash.taxFree), title: `of your pension can ${cash.taken > 0 ? "still " : ""}be taken tax-free.` },
       cash.capped
-        ? { label: WHY, title: `25% of your pot would be ${fmt(cash.quarter)}, but tax-free cash stops at ${fmt(LUMP_SUM_ALLOWANCE)}, the Lump Sum Allowance.`,
-            body: `Above a pot of ${fmt(LSA_INFLECTION_POT)}, the rest is taxed as income when it's taken out: here, ${fmt(cash.overCap)} more than if the 25% applied in full.` }
-        : { label: WHY, title: `Up to 25% of a pension can be taken tax-free, to a limit of ${fmt(LUMP_SUM_ALLOWANCE)}. The rest is taxed as income when it's taken out.` },
-      { label: ACTION, title: "Worth checking for a Fixed or Individual Protection from before 2016: it allows more tax-free cash, up to £450,000.",
-        body: "Any tax-free cash already taken counts towards the limit. Pension Wise, from MoneyHelper, gives free guidance on taking a pension to anyone over 50." },
+        ? { label: WHY, title: cash.taken > 0
+              ? `25% of the part you haven't touched would be ${fmt(cash.quarter)}, but only ${fmt(cash.left)} of your ${fmt(cash.allowance)} limit is left.`
+              : `25% of your pot would be ${fmt(cash.quarter)}, but tax-free cash stops at ${fmt(cash.allowance)}${cash.allowance === LUMP_SUM_ALLOWANCE ? ", the Lump Sum Allowance" : ", your protected limit"}.`,
+            body: `The rest is taxed as income when it's taken out.${cash.allowance === LUMP_SUM_ALLOWANCE && cash.taken === 0 ? ` That's what happens above a pot of ${fmt(LSA_INFLECTION_POT)}.` : ""}${protectionUnknown ? " A Fixed or Individual Protection from 2012 to 2016 allows more, up to £450,000." : ""}` }
+        : { label: WHY, title: `Up to 25% of a pension can be taken tax-free, to a limit of ${fmt(cash.allowance)}${cash.taken > 0 ? `, less the ${fmt(cash.taken)} already taken` : ""}. The rest is taxed as income when it's taken out.` },
+      { label: ACTION, title: `Drawn over ${plan.years} years, your pension would pay about ${fmt(plan.yearly)} a year, with ${fmt(plan.phases[0].tax)} of income tax in the first year${plan.other + plan.phases[0].statePension > 0 ? " on all your income" : ""}.`,
+        body: "Try other numbers of years on the pension screen. Pension Wise, from MoneyHelper, gives free guidance on taking a pension to anyone over 50." },
     ];
   }
 

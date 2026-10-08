@@ -12,6 +12,12 @@ export const NI_RATE_ABOVE_UEL = 0.02;         // employee NI above £50,270
 export const PSA_BY_BAND = { basic: 1000, higher: 500, additional: 0 };
 // Total ISA allowance per tax year.
 export const ISA_ALLOWANCE = 20000;
+// The full new State Pension, 2026/27: £241.30 a week. State Pension age is
+// rising from 66 to 67 between April 2026 and March 2028; anyone under 66
+// now gets it from 67.
+export const STATE_PENSION_WEEKLY = 241.30;
+export const STATE_PENSION_FULL = Math.round(STATE_PENSION_WEEKLY * 52);
+export const STATE_PENSION_AGE = 67;
 
 // ── Announced changes, switched on by tax year ──────────────────────────────
 // Each takes the tax year (2027 means 2027/28, from 6 April 2027), so the app

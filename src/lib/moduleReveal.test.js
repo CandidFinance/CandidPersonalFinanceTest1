@@ -113,7 +113,8 @@ test("retired above £1,073,100: tax-free cash stops at £268,275", () => {
 test("still earning past retirement age with nothing paid in: the relief gap stands", () => {
   const { statuses } = reveal({ ...retired, salary: "40000", employmentStatus: "employed", potValue: "1100000" });
   assert.equal(statuses.pension.status, "critical");
-  assert.match(statuses.pension.impactLabel, /^Nothing paid in: £400\/yr/);
+  // £40,000 plus the full State Pension (£12,548) is a higher-rate income.
+  assert.match(statuses.pension.impactLabel, /^Nothing paid in: £800\/yr/);
 });
 
 test("no pot and no earnings: nothing to explain", () => {

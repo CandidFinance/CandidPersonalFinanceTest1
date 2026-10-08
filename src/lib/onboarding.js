@@ -33,6 +33,7 @@ export const FIELD_CAPS = {
   houseTargetAmount:5000000, bigPurchaseTargetAmount:1000000,
   myContribution:60, employerMatch:20,
   potValue:10000000, potValue2:10000000, niYears:35,
+  taxFreeCashTaken:1000000, statePensionAmount:50000,
   loanBalance:200000, mortgageBalance:5000000, mortgageRate:15,
   personalLoanBalance:500000, personalLoanRate:50,
 };
