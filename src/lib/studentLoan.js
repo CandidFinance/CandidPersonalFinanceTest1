@@ -19,7 +19,8 @@
 // calculated" guidance pages lagged behind and still showed 2025/26 rates.
 // Plan 4 and the Postgraduate Loan aren't offered in the app's onboarding;
 // they're here so the public student loan calculator reads the same figures.
-import { GROWTH_NOMINAL_PCT } from "./growth.js";
+import { GROWTH_NOMINAL_PCT, INFLATION_PCT } from "./growth.js";
+import { taxYearFor } from "./taxYear.js";
 
 export const PLAN2_RPI_BASE = 0.041; // 2026/27 RPI
 export const PLAN2_INCOME_LOWER = 29385, PLAN2_INCOME_UPPER = 52885;
@@ -77,6 +78,56 @@ export const SL_REPAYMENT_THRESHOLDS = { plan1: 26900, plan2: 29385, plan4: 3379
 export const SL_REPAYMENT_RATES = { plan1: 0.09, plan2: 0.09, plan4: 0.09, plan5: 0.09, postgrad: 0.06 };
 export const SL_WRITE_OFF_YEARS = { plan1: 25, plan2: 30, plan4: 30, plan5: 40, postgrad: 30 };
 
+// ── When repayments started, and so when the loan is written off: 25, 30 or
+// 40 years after the April repayments were first due (SL_WRITE_OFF_YEARS).
+// The user can say (slFirstDueYear, the year of that April); otherwise it's
+// taken as the April after they turned 22, the usual age to finish a first
+// degree, but not before the plan's first repayments (Plan 2 April 2016,
+// Plan 5 April 2026, Postgraduate April 2018).
+export const SL_TYPICAL_FIRST_DUE_AGE = 22;
+export const SL_EARLIEST_FIRST_DUE = { plan2: 2016, plan5: 2026, postgrad: 2018 };
+export function slFirstDueYearStated(d) {
+  const y = +d.slFirstDueYear;
+  return Number.isInteger(y) && y >= 1990 && y <= 2100 ? y : null;
+}
+export function slFirstDueYear(d, taxYear = taxYearFor(d)) {
+  const stated = slFirstDueYearStated(d);
+  if (stated != null) return stated;
+  const age = +d.age > 0 ? +d.age : SL_TYPICAL_FIRST_DUE_AGE;
+  return Math.max(SL_EARLIEST_FIRST_DUE[d.studentLoan] ?? 0, taxYear - (age - SL_TYPICAL_FIRST_DUE_AGE));
+}
+// Tax years of repayments left before the loan is written off (0 if it
+// already would have been).
+export function slYearsLeft(d, taxYear = taxYearFor(d)) {
+  const term = SL_WRITE_OFF_YEARS[d.studentLoan] ?? SL_WRITE_OFF_YEARS.plan1;
+  return Math.max(0, slFirstDueYear(d, taxYear) + term - taxYear);
+}
+
+// ── Thresholds in later years. GOV.UK: Plan 1 rises with RPI each April;
+// Plan 5 stays at £25,000 until April 2027, then rises with RPI; Plan 2 is
+// frozen at £29,385 to 2029/30, then rises with RPI (Autumn Budget 2025).
+// The Postgraduate threshold has no uprating announced, and Plan 4's wasn't
+// confirmed by a GOV.UK source, so both are held flat. RPI is taken at
+// Candid's 2% inflation (growth.js): its own assumption, not a forecast.
+export const SL_THRESHOLDS_TAX_YEAR = 2026;
+export const SL_THRESHOLD_GROWTH_PCT = INFLATION_PCT;
+const SL_THRESHOLD_LAST_FLAT_YEAR = { plan1: 2026, plan2: 2029, plan5: 2026, plan4: Infinity, postgrad: Infinity };
+export function slThresholdIn(plan, taxYear) {
+  const base = SL_REPAYMENT_THRESHOLDS[plan] ?? 0;
+  const flatTo = Math.max(SL_THRESHOLDS_TAX_YEAR, SL_THRESHOLD_LAST_FLAT_YEAR[plan] ?? Infinity);
+  const years = Math.max(0, taxYear - flatTo);
+  return years > 0 ? base * Math.pow(1 + SL_THRESHOLD_GROWTH_PCT / 100, years) : base;
+}
+
+// ── The pay repayments are taken from: salary and bonus (GOV.UK: "including
+// things like bonuses and overtime"), less pension paid by salary sacrifice,
+// which comes off pay before deductions. Relief-at-source and net-pay
+// contributions don't reduce it.
+export function slEarnings(d, salary) {
+  const sacrifice = d.pensionType === "sacrifice" && d.hasPension === "yes" ? salary * (+d.myContribution || 0) / 100 : 0;
+  return Math.max(0, salary + (+d.bonusAmount || 0) - sacrifice);
+}
+
 // Threshold for a plan, or 0 for no loan / an unrecognised plan.
 export function slRepaymentThreshold(studentLoanType) {
   return SL_REPAYMENT_THRESHOLDS[studentLoanType] ?? 0;
@@ -100,7 +151,13 @@ export function studentLoanPlanConstants(studentLoanType) {
 const repayRateOf = plan => SL_REPAYMENT_RATES[plan] ?? SL_REPAYMENT_RATES.plan1;
 
 export function calcStudentLoanScenario(d, m) {
-  const { writeOffYr, threshold } = studentLoanPlanConstants(d.studentLoan);
+  const { threshold } = studentLoanPlanConstants(d.studentLoan);
+  // Years left to write-off, from when repayments started (estimated from
+  // age unless the user said).
+  const taxYear = taxYearFor(d);
+  const firstDueYear = slFirstDueYear(d, taxYear);
+  const writeOffYr = slYearsLeft(d, taxYear);
+  const writeOffTaxYear = taxYear + writeOffYr;
   const slInterestRate = resolveSlRate(d, m.salary);
   const slRatePct = Math.round(slInterestRate * 1000) / 10;
   const annualInterest = Math.round(m.loanBal * slInterestRate);
@@ -116,9 +173,12 @@ export function calcStudentLoanScenario(d, m) {
   // m.willClear and the forecast use): repayments are 9% of pay above the
   // threshold, so with pay held flat a loan that would be cleared can look
   // as if it never will be, and overpaying as if it's wasted.
+  // Pay includes the bonus, less salary sacrifice (slEarnings), and the
+  // threshold rises as the plan's rules say (slThresholdIn).
   const growth = m.salaryGrowthRate ?? 0;
-  const repaymentIn = yr => Math.max(0, m.salary * Math.pow(1 + growth, yr - 1) - threshold) * repayRateOf(d.studentLoan);
-  let projBal = m.loanBal, writeOffBal = 0, clearYr = null, totalRepaidProjected = 0;
+  const earnings = m.slEarnings ?? m.salary;
+  const repaymentIn = yr => Math.max(0, earnings * Math.pow(1 + growth, yr - 1) - slThresholdIn(d.studentLoan, taxYear + yr - 1)) * repayRateOf(d.studentLoan);
+  let projBal = m.loanBal, writeOffBal = writeOffYr === 0 ? m.loanBal : 0, clearYr = null, totalRepaidProjected = 0;
   for (let yr = 1; yr <= writeOffYr; yr++) {
     projBal = projBal * (1 + slInterestRate);
     // Cap the final year's repayment at what's actually left to clear — otherwise
@@ -157,7 +217,8 @@ export function calcStudentLoanScenario(d, m) {
   const overpayAnnualBenefit = worthOverpaying ? Math.round(m.loanBal * effectiveBenefit / 100) : 0;
 
   return {
-    writeOffYr, threshold, slInterestRate, slRatePct, annualInterest, annualRep,
+    writeOffYr, writeOffTaxYear, firstDueYear, firstDueEstimated: slFirstDueYearStated(d) == null,
+    threshold, slInterestRate, slRatePct, annualInterest, annualRep,
     belowThreshold, netAnnualChange, balanceGrowing, inflectionSalary, salaryGapToInflection,
     clearYr, writeOffBal: Math.round(writeOffBal), willClear, totalRepaidProjected,
     cashRate, effectiveBenefit, pensionGrowthPct: PENSION_GROWTH_PCT, pensionGap, beatsPension,

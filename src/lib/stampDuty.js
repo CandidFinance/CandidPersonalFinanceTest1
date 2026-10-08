@@ -3,7 +3,14 @@
 //
 // Rates in force from 1 April 2025, as confirmed on 1 October 2026.
 // Check against GOV.UK before relying on them after any Budget.
-// Not modelled: the 2% surcharge for buyers not resident in the UK.
+// Buyers not resident in the UK (fewer than 183 days here in the 12 months
+// before buying) pay 2% more on every band, first-time buyer rates
+// included, on top of any additional-dwelling surcharge. It applies if any
+// buyer is non-resident, unless they're spouses or civil partners and one of
+// them is resident (gov.uk "Rates of Stamp Duty Land Tax for non-UK
+// residents"). A refund can be claimed if they're then here 183 days within
+// the next year: not modelled.
+export const NON_RESIDENT_SURCHARGE = 0.02;
 export const SDLT_RATES_FROM = "2025-04-01";
 
 // [upper limit of the band, rate]
@@ -29,11 +36,12 @@ export function sdltApplies(nation) {
 // `firstTimeBuyers` has one entry per buyer; relief needs every buyer to be
 // a first-time buyer. `additionalProperty` is true when the buyer(s) will
 // own another home after this purchase.
-export function calcStampDuty({ price = 0, nation, firstTimeBuyers = [], additionalProperty = false }) {
+export function calcStampDuty({ price = 0, nation, firstTimeBuyers = [], additionalProperty = false, nonResident = false }) {
   if (!sdltApplies(nation)) return { supported: false, nation };
   const allFirstTime = firstTimeBuyers.length > 0 && firstTimeBuyers.every(Boolean);
   const reliefApplies = allFirstTime && !additionalProperty && price <= FIRST_TIME_BUYER_MAX_PRICE;
-  const surcharge = additionalProperty && price >= ADDITIONAL_PROPERTY_MIN_PRICE ? ADDITIONAL_PROPERTY_SURCHARGE : 0;
+  const surcharge = (additionalProperty && price >= ADDITIONAL_PROPERTY_MIN_PRICE ? ADDITIONAL_PROPERTY_SURCHARGE : 0)
+    + (nonResident ? NON_RESIDENT_SURCHARGE : 0);
   const bands = reliefApplies ? FIRST_TIME_BUYER_BANDS : STANDARD_BANDS;
 
   const breakdown = [];
@@ -54,6 +62,6 @@ export function calcStampDuty({ price = 0, nation, firstTimeBuyers = [], additio
     reliefLostOverCap: allFirstTime && !additionalProperty && price > FIRST_TIME_BUYER_MAX_PRICE,
     // Joint buyers where only one is a first-time buyer get no relief.
     reliefNeedsAllBuyers: firstTimeBuyers.length > 1 && firstTimeBuyers.some(Boolean) && !allFirstTime,
-    surcharge,
+    surcharge, nonResident,
   };
 }

@@ -4,12 +4,12 @@ import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom"
 import posthog from "posthog-js";
 import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart, Wrench, ChevronRight, ChevronDown } from "lucide-react";
 import { fmt, fmtK, fmtCompact } from "./lib/format.js";
-import { calcIncomeTax, calcBonusTaxBreakdown } from "./lib/tax.js";
+import { calcIncomeTax, calcBonusTaxBreakdown, EMPLOYER_NI_RATE } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, slRepaymentThreshold, calcStudentLoanScenario, describeLoanVsPension } from "./lib/studentLoan.js";
 import { topRate, isEasyAccess, premiumBondsRow } from "./lib/savingsRates.js";
 import { allocateCash } from "./lib/cashAllocation.js";
 import { isaUsedThisYear } from "./lib/isa.js";
-import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
+import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, calcBonusSacrifice, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation, PB_RATE } from "./lib/cash.js";
 import { calcMetrics, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
 import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown, calcCandidScore } from "./lib/moduleStatus.js";
@@ -416,7 +416,7 @@ function getModuleInsights(key, d, m, savingsRates) {
         },
         {
           label:"Pension return ratio", value: pensionReturnLabel(d, m), flag: false,
-          tooltip:`For every £1 you put into your pension, you get back ${pensionReturnRatio(d,m).toFixed(2)} in pension value thanks to tax (${d.pensionType==="sacrifice"?"and NI":""}) relief. ${d.pensionType==="sacrifice"?"Salary sacrifice: contributions reduce your gross pay — you save income tax AND employee NI at 2% on earnings above £50,270.":d.pensionType==="relief"?"Relief at source / net pay: your pension provider claims basic-rate tax relief automatically. Higher-rate taxpayers must claim the extra via self-assessment.":"Check your payslip — if pension appears before the income tax calculation it is likely salary sacrifice, which also saves NI."}`
+          tooltip:`For every £1 you put into your pension, you get back ${pensionReturnRatio(d,m).toFixed(2)} in pension value thanks to tax (${d.pensionType==="sacrifice"?"and NI":""}) relief. ${d.pensionType==="sacrifice"?"Salary sacrifice: contributions reduce your gross pay — you save income tax AND employee NI (8% up to £50,270, 2% above).":d.pensionType==="relief"?"Relief at source / net pay: your pension provider claims basic-rate tax relief automatically. Higher-rate taxpayers must claim the extra via self-assessment.":"Check your payslip — if pension appears before the income tax calculation it is likely salary sacrifice, which also saves NI."}`
         },
         {
           label:"Projected pot at retirement", value: fmt(m.projectedPot), flag: false,
@@ -3587,29 +3587,12 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // Taxable salary = salary minus ongoing pension sacrifice (salary sacrifice scheme)
   const ongoingSacrifice = (+d.myContribution||0) / 100 * m.salary;
   const taxableSalary = Math.max(0, m.salary - ongoingSacrifice);
-  // NI rate on bonus: above £50,270 threshold it's 2%, below 8%
-  // Bonus sits on top of salary, so if salary already above threshold, all bonus at 2%
-  const niRateOnBonus = m.salary >= 50270 ? 0.02 : 0.08;
-  // Student loan on bonus
-  const slThreshold = slRepaymentThreshold(d.studentLoan);
-  const bonusSlRate = (d.studentLoan !== "none" && m.salary > slThreshold) ? 0.09 : 0;
-  // Full bonus (no sacrifice) — effective income tax rate
+  // The same figures as the mobile screen (pension.js calcBonusSacrifice):
+  // NI and student loan by band and plan, employer NI at 15%.
+  const { bonusSlRate, fullTaxPct, fullNIPct, fullSLPct, fullKeepPct, sacrificedAmt, cashPortionBonus,
+    taxOnCash, niOnCash, slOnCash, takeHomeCash, totalDeducted, totalReceived, employerNISave } = calcBonusSacrifice(d, m, bonus, sacrificePct);
   const fullBonusTax = calcBonusTaxBreakdown(taxableSalary, bonus);
-  const fullTaxPct = Math.round(fullBonusTax.effectiveRate * 100);
-  const fullNIPct = Math.round(niRateOnBonus * 100);
-  const fullSLPct = Math.round(bonusSlRate * 100);
-  const fullKeepPct = 100 - fullTaxPct - fullNIPct - fullSLPct;
-  // Per-sacrifice-percentage: compute what changes at the chosen slider setting
-  const sacrificedAmt    = Math.round(bonus * sacrificePct / 100);
-  const cashPortionBonus = bonus - sacrificedAmt;
-  const bonusTaxDetail   = calcBonusTaxBreakdown(taxableSalary, cashPortionBonus);
-  const taxOnCash  = bonusTaxDetail.tax;
-  const niOnCash   = Math.round(cashPortionBonus * niRateOnBonus);
-  const slOnCash   = Math.round(cashPortionBonus * bonusSlRate);
-  const takeHomeCash    = cashPortionBonus - taxOnCash - niOnCash - slOnCash;
-  const totalDeducted   = taxOnCash + niOnCash + slOnCash;
-  const totalReceived   = sacrificedAmt + takeHomeCash;
-  const employerNISave  = Math.round(sacrificedAmt * 0.138);
+  const bonusTaxDetail = calcBonusTaxBreakdown(taxableSalary, cashPortionBonus);
   // Taper / additional rate flags
   const crossesTaper = fullBonusTax.crossesTaper;
   const crossesAR    = fullBonusTax.crossesAR;
@@ -3622,7 +3605,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
   // Student loan tooltip: months saved / interest saved from bonus SL repayment
   const loanBal = m.loanBal || 0;
   const slRepaymentFromBonus = Math.round(bonus * bonusSlRate);
-  const slInterestRate = d.studentLoan==="plan2" ? 0.075 : d.studentLoan==="plan5" ? 0.075 : 0.05;
+  const slInterestRate = slRepaymentThreshold(d.studentLoan) > 0 ? resolveSlRate(d, m.salary) : 0;
   const slInterestSaved = Math.round(slRepaymentFromBonus * slInterestRate * Math.max(1, loanBal/Math.max(1,m.annualRepayment)));
   // ── Personal Allowance taper maths (Win 2 + opportunity strip) ──────────────
   // Every £2 of adjusted net income above £100,000 withdraws £1 of Personal
@@ -4304,7 +4287,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
                       </div>
                     </div>
                     <p style={{fontSize:"10.5px",color:MUT,lineHeight:1.5}}>
-                      Tax rate shown is the effective average across the bonus — it may exceed your salary tax band if total income crosses the £100k personal allowance taper or £125,140 additional rate threshold. {d.employmentStatus !== "self_employed" && "* Employer NI of 13.8% on sacrificed amount — some employers pass this on. "}Future values assume 6% p.a. growth, undrawn until retirement.
+                      Tax rate shown is the effective average across the bonus — it may exceed your salary tax band if total income crosses the £100k personal allowance taper or £125,140 additional rate threshold. {d.employmentStatus !== "self_employed" && `* Employer NI of ${Math.round(EMPLOYER_NI_RATE * 100)}% on sacrificed amount — some employers pass this on. `}Future values assume 6% p.a. growth, undrawn until retirement.
                     </p>
                   </ExpandableInvestmentItem>
                 </div>

@@ -4,6 +4,21 @@ import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement } from "./pension.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
+import { GROWTH_NOMINAL_PCT } from "./growth.js";
+
+// What a mortgage rate is measured against, in order: a rate the user has
+// been offered for when their fix ends (mortgageOfferRate, asked once the
+// Mortgage module returns), then a reference rate entered by hand
+// (marketRates.avgMortgageRate, e.g. the Bank of England's average on new
+// mortgages), then this, Candid's own figure.
+export const AVERAGE_MORTGAGE_RATE_PCT = 4.5;
+export function mortgageComparisonRate(d, marketRates = {}) {
+  const offer = d.mortgageOfferRate;
+  if (offer !== "" && offer != null && +offer > 0) return { rate: +offer, source: "offer" };
+  if (+marketRates.avgMortgageRate > 0) return { rate: +marketRates.avgMortgageRate, source: "reference" };
+  return { rate: AVERAGE_MORTGAGE_RATE_PCT, source: "default" };
+}
+const GROWTH = GROWTH_NOMINAL_PCT / 100;
 
 export const MODULE_META = [
   { key:"cash",        icon:PoundSterling, title:"Cash & savings"  },
@@ -142,7 +157,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const unwrappedInvestments = d.hasInvestments === "yes" ? (+d.unwrappedValue||0) : 0;
   const isaFillable = Math.min(m.isaHeadroom, unwrappedInvestments + m.emergencyExcess + spareIncomeToTaxEnd);
   const isaGap = isaFillable > 2000;
-  const isaSortWeight = Math.round(isaFillable * 0.07 * m.tr * isaUrgencyBoost);
+  const isaSortWeight = Math.round(isaFillable * GROWTH * m.tr * isaUrgencyBoost);
   s.investments = {
     status: (isaFillable > 10000 && daysToTaxEnd < 60) ? "critical"
           : isaGap || m.cgtSaving > 0 ? "attention" : "ok",
@@ -251,10 +266,15 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
 
   // Mortgage
   const mortgageImpact = d.hasMortgage === "yes" ? Math.round(+d.mortgageBalance * +d.mortgageRate / 100 * 0.05) : 0;
+  const comparison = mortgageComparisonRate(d, marketRates);
+  const aboveComparison = +d.mortgageRate > comparison.rate;
   s.mortgage = {
-    status: d.hasMortgage !== "yes" ? "na" : +d.mortgageRate > 4.5 ? "attention" : "ok",
+    status: d.hasMortgage !== "yes" ? "na" : aboveComparison ? "attention" : "ok",
     impact: mortgageImpact,
-    impactLabel: d.hasMortgage === "yes" ? `${d.mortgageRate}% rate — ${+d.mortgageRate > 4.5 ? "above average" : "below average"}` : null,
+    impactLabel: d.hasMortgage !== "yes" ? null
+      : comparison.source === "offer"
+        ? `${d.mortgageRate}% rate — ${aboveComparison ? "above" : "not above"} the ${comparison.rate}% you've been offered`
+        : `${d.mortgageRate}% rate — ${aboveComparison ? "above average" : "below average"}`,
     amount: mortgageImpact, // only surfaced when status is "attention" (rate above average)
   };
 
@@ -274,7 +294,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const kidsAge = d.hasKids === "yes" && d.kidsAges ? parseInt(d.kidsAges.split(",")[0]) : null;
   const kidsRunway = kidsAge !== null ? Math.max(0, 18 - kidsAge) : 10;
   const kidsImpact = d.hasKids === "yes" && d.hasJISA !== "yes"
-    ? Math.round(100 * 12 * ((Math.pow(1.07, kidsRunway)-1)/0.07)) : 0;
+    ? Math.round(100 * 12 * ((Math.pow(1 + GROWTH, kidsRunway)-1)/GROWTH)) : 0;
   s.kids = {
     status: d.hasKids !== "yes" ? "na" : d.hasJISA !== "yes" ? "attention" : "ok",
     impact: kidsImpact,

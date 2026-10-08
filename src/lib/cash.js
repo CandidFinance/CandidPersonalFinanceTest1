@@ -1,4 +1,4 @@
-import { PSA_BY_BAND } from "./tax.js";
+import { taxFreeInterest } from "./tax.js";
 import { allocateCash } from "./cashAllocation.js";
 import { isEasyAccess, premiumBondsRow } from "./savingsRates.js";
 
@@ -22,7 +22,9 @@ const pctLabel = ratePct => `${ratePct.toFixed(2)}%`;
 
 export function calcCashOptimisation(m, isaRatePct, nonIsaRatePct, rateRows = null) {
   const bondsVal = m.bonds || 0;
-  const psaLimit = PSA_BY_BAND[m.taxBandLabel] ?? 0;
+  // Interest that's tax-free: the PSA, plus any unused Personal Allowance and
+  // starting rate for savings (tax.js taxFreeInterest).
+  const psaLimit = taxFreeInterest(m.nonSavingsIncome ?? m.adjustedNetIncome, m.taxBandLabel);
   // 0.049/0.045 fallbacks only cover the brief window before savingsRates loads.
   let isaRateDecimal = isaRatePct != null ? +isaRatePct / 100 : 0.049;
   let isaRateDisplay = isaRatePct != null ? `${isaRatePct}%` : "4.9%";

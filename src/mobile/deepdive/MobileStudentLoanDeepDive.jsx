@@ -33,7 +33,7 @@ function buildOverpayOptions(loanBal) {
 // Leads with the answer and the comparison behind it; the overpayment model
 // and the return chart sit under "Explore what-ifs", closed at first.
 // `onShowReveal` replays the answer step by step ("Explain this").
-export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoanOverpayment, onShowReveal }) {
+export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecordLoanOverpayment, onShowReveal }) {
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const [exploreOpen, setExploreOpen] = useState(false); // before the chart's measuring effect, which waits for it
   const [editingBalance, setEditingBalance] = useState(false);
@@ -65,6 +65,10 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
     const affordable = options.filter(x => x <= (m.surplusCash||0));
     return affordable.length ? affordable[affordable.length-1] : options[0];
   });
+
+  // The write-off assumption's editor (below); hooks stay above the return.
+  const [editingStart, setEditingStart] = useState(false);
+  const [startInput, setStartInput] = useState(null);
 
   if (d.studentLoan === "none" || m.loanBal <= 0) {
     return <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>No student loan on record.</p>;
@@ -103,6 +107,15 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
     closeBalanceEditor();
   };
   const cashDelta = Math.max(0, Math.round(m.loanBal) - balanceInput);
+
+  // When repayments started decides when the loan is written off. Estimated
+  // from age unless the user says (studentLoan.js slFirstDueYear).
+  const startValue = startInput ?? sl.firstDueYear;
+  const saveStart = () => {
+    if (set && startValue >= 1990 && startValue <= new Date().getFullYear() + 10) set("slFirstDueYear", String(Math.round(startValue)));
+    setEditingStart(false); setStartInput(null);
+  };
+  const resetStart = () => { if (set) set("slFirstDueYear", ""); setEditingStart(false); setStartInput(null); };
 
   return (
     <div>
@@ -157,6 +170,30 @@ export default function MobileStudentLoanDeepDive({ d, m, insights, onRecordLoan
             </div>
           ))}
         </div>
+
+        <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:"0 0 12px"}}>
+          Written off in April {sl.writeOffTaxYear}. {sl.firstDueEstimated
+            ? `We've assumed repayments started in April ${sl.firstDueYear}, the April after you turned 22.`
+            : `Repayments started in April ${sl.firstDueYear}, as you told us.`}{" "}
+          {set && !editingStart && (
+            <button type="button" onClick={() => setEditingStart(true)} style={{background:"none",border:"none",padding:0,color:G,fontWeight:600,fontSize:"12px",cursor:"pointer",textDecoration:"underline"}}>Change</button>
+          )}
+        </p>
+        {editingStart && (
+          <div style={{background:"#ede7db",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
+            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>When repayments started</div>
+            <PillMoneyInput label="April of" unit="" value={startValue} onChange={v => setStartInput(v ?? null)}/>
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
+              Usually the April after you left your course. Your payslips or your online student loan account will show it.
+            </p>
+            <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
+              {!sl.firstDueEstimated
+                ? <button onClick={resetStart} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Use the estimate</button>
+                : <button onClick={() => { setEditingStart(false); setStartInput(null); }} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Cancel</button>}
+              <button onClick={saveStart} style={{flex:1,background:G,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer"}}>Save</button>
+            </div>
+          </div>
+        )}
         <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,margin:0}}>
           {sl.belowThreshold
             ? `Your salary is below the repayment threshold, so no deductions yet. Interest still accrues at ${sl.slRatePct}% (~${fmt(sl.annualInterest)}/yr).`

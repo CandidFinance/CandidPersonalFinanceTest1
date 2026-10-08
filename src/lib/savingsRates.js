@@ -5,6 +5,11 @@
 // Easy-access accounts only: the comparisons and lists are about money the
 // user can get at, so fixed-term bonds, notice accounts and regular savers
 // (also in the table) don't count, however high their rate.
+// NS&I is backed by HM Treasury in full, so the FSCS limit doesn't apply.
+export function isNsandi(r) {
+  return /NS&I|National Savings/i.test(r?.provider_name || r?.provider || "");
+}
+
 export function isEasyAccess(r) {
   return /^easy access/i.test(r?.account_type || "");
 }

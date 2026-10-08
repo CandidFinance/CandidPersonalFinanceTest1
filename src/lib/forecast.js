@@ -1,5 +1,7 @@
 import { isaUsedThisYear as isaUsedAcrossAll } from "./isa.js";
-import { resolveSlRate, studentLoanPlanConstants } from "./studentLoan.js";
+import { resolveSlRate, slYearsLeft, slThresholdIn, SL_REPAYMENT_RATES } from "./studentLoan.js";
+import { taxYearFor } from "./taxYear.js";
+import { GROWTH_NOMINAL_PCT } from "./growth.js";
 import { pensionReturnRatio } from "./pension.js";
 
 // Static defaults — replace with live Moneyfacts API rates in future
@@ -7,7 +9,23 @@ export const CASH_RATE_LOW     = 0.030; // below average, high-street loyal-cust
 export const CASH_RATE_CENTRAL = 0.045; // market-leading easy access rate
 export const CASH_RATE_HIGH    = 0.050; // best available, a ceiling not a guarantee
 
+// The terms simulateLoan runs on, the same as calcStudentLoanScenario's:
+// years left to write-off (from when repayments started), the plan's
+// threshold each year and repayment rate, and pay including the bonus less
+// salary sacrifice (m.slEarnings).
+export function studentLoanTerms(d, m) {
+  const taxYear = taxYearFor(d);
+  return {
+    writeOffYr: slYearsLeft(d, taxYear),
+    threshold: year => slThresholdIn(d.studentLoan, taxYear + year),
+    repayRate: SL_REPAYMENT_RATES[d.studentLoan] ?? SL_REPAYMENT_RATES.plan1,
+    earnings: m.slEarnings ?? m.salary,
+  };
+}
+
 // ── Month-by-month student loan simulator ────────────────────────────────────────────
+// `repaymentThreshold` is a figure, or a function of the year (0 = this tax
+// year) for thresholds that rise (studentLoanTerms).
 export function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRate, repaymentThreshold, repaymentRate, maxYears = 30, extraMonthly = 0, trackYearly = false) {
   let balance = openingBalance;
   let salary = annualSalary;
@@ -22,7 +40,8 @@ export function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, int
     const interest = balance * monthlyRate;
     balance += interest;
     totalInterest += interest;
-    const annualRepayment = Math.max(0, (salary - repaymentThreshold) * repaymentRate);
+    const threshold = typeof repaymentThreshold === "function" ? repaymentThreshold(Math.floor(month / 12)) : repaymentThreshold;
+    const annualRepayment = Math.max(0, (salary - threshold) * repaymentRate);
     const monthlyRepayment = annualRepayment / 12 + extraMonthly;
     const payment = Math.min(monthlyRepayment, balance);
     balance -= payment;
@@ -94,19 +113,20 @@ export function calcLoanMarginalReturnCurve(d, m, sl, chartWidth = 340, layout =
   const pensionGrowth = sl.pensionGrowthPct / 100;
   const mortRate = d.hasMortgage === "yes" && +d.mortgageRate > 0 ? +d.mortgageRate : 4.5;
   const mortReturn = 1 + mortRate / 100;
-  const planThreshold = studentLoanPlanConstants(d.studentLoan).threshold;
+  const terms = studentLoanTerms(d, m);
+  const planThreshold = terms.threshold;
   const growthRate = m.salaryGrowthRate;
   // simulateLoan compounds monthly, so the pension compounds monthly too —
   // equal rates then give identical lines.
   const pensionExponent = Math.log(1 + pensionGrowth / 12) / Math.log(1 + loanRate / 12);
   const point = (amt, ratio) => ({ amt, ratio, pension: Math.pow(ratio, pensionExponent) });
-  const baseCase = simulateLoan(m.loanBal, m.salary, growthRate, loanRate, planThreshold, 0.09, writeOffYr);
-  const tiny = simulateLoan(Math.max(0, m.loanBal - 100), m.salary, growthRate, loanRate, planThreshold, 0.09, writeOffYr);
+  const baseCase = simulateLoan(m.loanBal, terms.earnings, growthRate, loanRate, planThreshold, terms.repayRate, writeOffYr);
+  const tiny = simulateLoan(Math.max(0, m.loanBal - 100), terms.earnings, growthRate, loanRate, planThreshold, terms.repayRate, writeOffYr);
   const tinyIntSaved = Math.max(0, baseCase.totalInterest - tiny.totalInterest);
   const STEPS = 36;
   const data = [point(0, 1 + tinyIntSaved / 100), ...Array.from({ length: STEPS }, (_, i) => {
     const amt = (m.loanBal * (i + 1)) / STEPS;
-    const oc = simulateLoan(Math.max(0, m.loanBal - amt), m.salary, growthRate, loanRate, planThreshold, 0.09, writeOffYr);
+    const oc = simulateLoan(Math.max(0, m.loanBal - amt), terms.earnings, growthRate, loanRate, planThreshold, terms.repayRate, writeOffYr);
     const intSaved = Math.max(0, baseCase.totalInterest - oc.totalInterest);
     return point(amt, (amt + intSaved) / amt);
   })];
@@ -174,7 +194,7 @@ export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverrid
 
   // ── 2. Student loan overpayment ────────────────────────────────────────
   if (m.loanBal > 0) {
-    const { writeOffYr, threshold } = studentLoanPlanConstants(d.studentLoan);
+    const { writeOffYr, threshold, repayRate, earnings } = studentLoanTerms(d, m);
     const baseSlRate = resolveSlRate(d, m.salary);
     // Cap simulation at write-off year — no point modelling interest past when the loan is forgiven
     const simYears = Math.min(horizonYears, writeOffYr);
@@ -182,16 +202,16 @@ export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverrid
     const overBal = Math.max(0, m.loanBal - lump);
 
     // First check whether overpaying changes the write-off outcome at all
-    const baseWriteOff = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, writeOffYr, 0);
-    const overWriteOff = simulateLoan(overBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, writeOffYr, surplus);
+    const baseWriteOff = simulateLoan(m.loanBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, writeOffYr, 0);
+    const overWriteOff = simulateLoan(overBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, writeOffYr, surplus);
     // If the loan is written off in both scenarios, overpaying just reduces the amount forgiven — no benefit
     const writtenOffAnyway = !baseWriteOff.cleared && !overWriteOff.cleared;
 
     let slCentral = 0, slLow = 0, slHigh = 0;
     if (!writtenOffAnyway) {
       // Benefit = cumulative interest saved vs baseline (not a compounding figure)
-      const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, 0);
-      const over = simulateLoan(overBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus);
+      const base = simulateLoan(m.loanBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, 0);
+      const over = simulateLoan(overBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, surplus);
       const interestSaved = Math.max(0, base.totalInterest - over.totalInterest);
       // Low/high reflect salary growth uncertainty — not rate-sensitive
       slCentral = Math.round(interestSaved);
@@ -283,13 +303,13 @@ export function calcForecastSeries(d, m, surplusOverride, horizonYears, lumpSumO
       // All-zero if written off in both scenarios
       if (opt.writtenOffAnyway) return { label: opt.label, values: years.map(() => 0) };
 
-      const { writeOffYr, threshold } = studentLoanPlanConstants(d.studentLoan);
+      const { writeOffYr, threshold, repayRate, earnings } = studentLoanTerms(d, m);
       const baseSlRate = resolveSlRate(d, m.salary);
       const overBal = Math.max(0, m.loanBal - lump);
       // Simulate both scenarios once, capturing yearly cumulative interest snapshots
       const simYears = Math.min(horizonYears, writeOffYr);
-      const base = simulateLoan(m.loanBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, 0, true);
-      const over = simulateLoan(overBal, m.salary, m.salaryGrowthRate, baseSlRate, threshold, 0.09, simYears, surplus, true);
+      const base = simulateLoan(m.loanBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, 0, true);
+      const over = simulateLoan(overBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, surplus, true);
       // Flatline at the year the overpayment scenario clears: once cleared, the
       // interest saving is fully realised and the curve stops growing.
       const clearYear = over.monthsToClear !== null ? Math.ceil(over.monthsToClear / 12) : null;
@@ -399,7 +419,7 @@ export function buildForecastAssumptions(d, m) {
 //     matching the Cash module's own "move excess into your ISA" guidance,
 //     rather than assuming someone lets spare cash pile up indefinitely,
 //     which made this line balloon unrealistically over long horizons.
-//   - Investments (ISA + unwrapped): today's balance grown at 7% nominal —
+//   - Investments (ISA + unwrapped): today's balance grown at 6% nominal —
 //     the same rate already used for the Investments deep dive's ISA growth
 //     illustration — plus any surplus swept in once the cash buffer is full.
 //   - Pension: potVal + ongoing contributions grown at 6% p.a. — the exact
@@ -418,14 +438,16 @@ export function buildForecastAssumptions(d, m) {
 // (double-subtracting it would double-count debt already reflected in a
 // reduced propertyEquity).
 export function calcNetWorthTrajectory(d, m, horizonYears) {
-  const PENSION_RATE = 0.06, INVESTMENT_RATE = 0.07;
+  // Pensions and investments both at 6% a year before inflation (growth.js).
+  const PENSION_RATE = GROWTH_NOMINAL_PCT / 100, INVESTMENT_RATE = GROWTH_NOMINAL_PCT / 100;
   const cashMonthlyRate = (m.effectiveSavingsRate || 3.5) / 100 / 12;
   const investMonthlyRate = INVESTMENT_RATE / 12;
   const cashCapTarget = m.emergencyBuffer || 0;
   const monthlySurplus = Math.max(0, m.monthlySurplus || 0);
 
   const potVal = (+d.potValue||0) + (+d.potValue2||0);
-  const pensionAnnualContrib = ((+d.myContribution||0) + (+d.employerMatch||0)) / 100 * m.salary;
+  // The employer matches what the user pays, up to its cap (as calcMetrics).
+  const pensionAnnualContrib = ((+d.myContribution||0) + Math.min(+d.myContribution||0, +d.employerMatch||0)) / 100 * m.salary;
 
   const isaUsedThisYear = isaUsedAcrossAll(d);
   const isaPrev = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);

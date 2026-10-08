@@ -64,6 +64,13 @@ export function borrowingInputs(d, m) {
 
 // Stamp duty at a given price, from the user's answers: the breakdown, or
 // null with no location yet; and the figure the borrowing check uses.
+// The non-resident surcharge applies (stampDuty.js): alone, not UK
+// resident; together, either of them not resident, unless they're married
+// or civil partners and one of them is. Unanswered counts as resident.
+export function nonUkResident(d) {
+  const r = d.propertyUkResident;
+  return d.propertyBuyingMode === "together" ? r === "one" || r === "no" : r === "no";
+}
 function stampDutyDetailAt(d, price) {
   const nation = regionNation(d.propertyRegion);
   const together = d.propertyBuyingMode === "together";
@@ -71,6 +78,7 @@ function stampDutyDetailAt(d, price) {
     price, nation,
     firstTimeBuyers: together ? [d.propertyFirstTimeBuyer === "yes", d.partnerFirstTimeBuyer === "yes"] : [d.propertyFirstTimeBuyer === "yes"],
     additionalProperty: d.propertySoleProperty === "no",
+    nonResident: nonUkResident(d),
   }) : null;
 }
 function stampDutyOf(d, detail) {

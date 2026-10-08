@@ -123,7 +123,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     : q.kind === "text" ? typeof raw === "string" && raw.trim() !== ""
     : q.kind === "custom" ? (q.answered ? q.answered(ctx) : true)
     : q.kind === "info" ? true
-    : raw !== "" && raw != null && !isNaN(+raw);
+    : raw !== "" && raw != null && !isNaN(+raw) && (q.min == null || +raw >= q.min);
   const continueButton = (
     <button type="submit" disabled={q.required && !hasAnswer} style={{
       ...primary, marginTop:"16px",
@@ -131,7 +131,9 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     }}>Continue</button>
   );
   const submit = e => { e.preventDefault(); if (hasAnswer || !q.required) next({}); };
-  const note = q.note ? q.note(ctx) : null;
+  // Below a question's minimum (age 18), its own line replaces the note.
+  const belowMin = q.min != null && raw !== "" && raw != null && !isNaN(+raw) && +raw < q.min;
+  const note = belowMin && q.minNote ? q.minNote(ctx) : q.note ? q.note(ctx) : null;
   const shift = reduceMotion ? 0 : SHIFT_PX;
   const variants = {
     enter: dir => ({ opacity: 0, y: dir * shift }),

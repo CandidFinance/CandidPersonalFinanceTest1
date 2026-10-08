@@ -1,4 +1,12 @@
-import { isEasyAccess } from "./savingsRates.js";
+import { isEasyAccess, isNsandi } from "./savingsRates.js";
+
+// FSCS protects up to £120,000 per person with each bank or building society
+// (from 1 December 2025), so no more than that goes to one provider. NS&I is
+// Treasury-backed and has no limit. Banks sharing one licence, and money the
+// user already holds with a bank, aren't known: the limit is per provider
+// as the rate feed names it.
+export const FSCS_DEPOSIT_LIMIT = 120000;
+export const fscsLimitFor = r => isNsandi(r) ? Infinity : FSCS_DEPOSIT_LIMIT;
 
 // Spreads an amount of cash across the easy-access accounts in savings_rates,
 // highest rate first, each up to its balance cap (max_balance, filled in by
@@ -22,22 +30,27 @@ export const MAX_ACCOUNTS = 3;
 export function allocateCash(amount, rows, { minRatePct = 0, maxInterest = Infinity, minExtra = MIN_EXTRA, maxAccounts = MAX_ACCOUNTS } = {}) {
   const candidates = (rows || [])
     .filter(r => isEasyAccess(r) && +r.rate_aer > minRatePct)
-    .map(r => ({ row: r, ratePct: +r.rate_aer, cap: +r.max_balance > 0 ? +r.max_balance : Infinity }))
+    .map(r => ({ row: r, ratePct: +r.rate_aer, cap: +r.max_balance > 0 ? +r.max_balance : Infinity, fscs: fscsLimitFor(r) }))
     .sort((a, b) => b.ratePct - a.ratePct || b.cap - a.cap);
   const anchor = candidates.find(c => c.cap === Infinity) || null;
 
   let remaining = Math.max(0, +amount || 0), interestLeft = maxInterest;
   const lines = [];
+  let anchorFilled = false;
   for (const c of candidates) {
     if (remaining <= 0 || interestLeft <= 0 || lines.length >= maxAccounts) break;
     const isAnchor = c === anchor;
+    // Once the best uncapped account is full to the FSCS limit, the rest
+    // goes to the next uncapped accounts, with another provider.
+    if (anchorFilled && c.cap !== Infinity) continue;
+    const overflow = anchorFilled;
     // With an uncapped account to fall back on, capped ones above it each
     // need a slot left over for it, and have to earn their place.
-    if (anchor && !isAnchor && lines.length >= maxAccounts - 1) continue;
+    if (anchor && !isAnchor && !overflow && lines.length >= maxAccounts - 1) continue;
     const byInterest = interestLeft / (c.ratePct / 100);
-    const take = Math.min(remaining, c.cap, byInterest);
+    const take = Math.min(remaining, c.cap, c.fscs, byInterest);
     if (take <= 0) continue;
-    const extra = anchor && !isAnchor ? take * (c.ratePct - anchor.ratePct) / 100 : null;
+    const extra = anchor && !isAnchor && !overflow ? take * (c.ratePct - anchor.ratePct) / 100 : null;
     if (extra != null && extra < minExtra) continue;
     const interest = take * c.ratePct / 100;
     lines.push({
@@ -45,10 +58,14 @@ export function allocateCash(amount, rows, { minRatePct = 0, maxInterest = Infin
       url: c.row.product_url || null, ratePct: c.ratePct, cap: c.cap === Infinity ? null : c.cap,
       updatedAt: c.row.updated_at || null,
       amount: take, interest, extra,
+      // Held to the FSCS limit rather than the account's own cap.
+      fscsLimited: take === c.fscs && take < c.cap,
     });
     remaining -= take;
     interestLeft -= interest;
-    if (isAnchor) break; // everything left that fits has gone into it
+    // Everything left that fits has gone into it, unless the FSCS limit
+    // stopped it short.
+    if (isAnchor) { if (take < c.fscs) break; anchorFilled = true; }
   }
 
   const allocated = lines.reduce((s, l) => s + l.amount, 0);

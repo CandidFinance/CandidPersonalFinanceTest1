@@ -1,7 +1,8 @@
 import { isEasyAccess, premiumBondsRow } from "./savingsRates.js";
-import { PSA_BY_BAND, cashIsaLimit } from "./tax.js";
+import { taxFreeInterest, cashIsaLimit } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { PB_RATE } from "./cash.js";
+import { fscsLimitFor, FSCS_DEPOSIT_LIMIT } from "./cashAllocation.js";
 
 // Candid Assist: what it has to show, worked out from the user's figures and
 // the live rates. The panel (src/mobile/assist/) only displays this.
@@ -102,13 +103,14 @@ const taxableOn = from => interestOn(from.filter(f => !f.taxFree));
 const taxFreeOn = from => interestOn(from.filter(f => f.taxFree));
 const heldTaken = from => from.filter(f => f.taxFree).reduce((t, f) => t + f.amount, 0);
 
-// Tax on savings interest: nothing up to the Personal Savings Allowance,
-// the savings rate for the user's band above it (2 points over income tax
-// from April 2027). ISA interest and Premium Bonds prizes are tax-free and
-// never count towards it.
+// Tax on savings interest: nothing up to what can be earned tax-free (any
+// unused Personal Allowance, the starting rate for savings and the Personal
+// Savings Allowance: tax.js taxFreeInterest), the savings rate for the user's
+// band above it (2 points over income tax from April 2027). ISA interest and
+// Premium Bonds prizes are tax-free and never count towards it.
 export function savingsTax(m) {
   const rate = +(m.savingsTr ?? m.tr) || 0;
-  const allowance = PSA_BY_BAND[m.taxBandLabel] ?? 0;
+  const allowance = taxFreeInterest(m.nonSavingsIncome ?? m.adjustedNetIncome, m.taxBandLabel);
   return { rate, allowance, kept: interest => interest - rate * Math.max(0, interest - allowance) };
 }
 
@@ -121,6 +123,8 @@ function asOption(r, isIsa) {
   return {
     rateId: r.id || null, provider: r.provider_name, product: r.product_name || null, accountType: r.account_type, url: r.product_url || null,
     ratePct: +r.rate_aer, cap: +r.max_balance > 0 ? +r.max_balance : null, updatedAt: r.updated_at || null, isa: isIsa,
+    // FSCS: no more than £120,000 with one provider (cashAllocation.js).
+    fscsCap: Number.isFinite(fscsLimitFor(r)) ? fscsLimitFor(r) : null,
     // The provider's app (confirmed links only), and whether the account
     // can only be opened in it.
     appOnly: r.app_only === true, iosAppUrl: r.ios_app_url || null, androidAppUrl: r.android_app_url || null,
@@ -128,6 +132,9 @@ function asOption(r, isIsa) {
     rateAfterBonus: months ? after : null,
   };
 }
+
+// The most an option can take: its own cap, and the FSCS limit.
+const roomOf = o => Math.min(o.cap ?? Infinity, o.fscsCap ?? Infinity);
 
 // The providers for one section, highest rate first, each with what moving
 // to it would take (from which accounts) and earn. `exclude` leaves out one
@@ -144,9 +151,13 @@ function optionsFor(rows, isIsa, sources, limit, exclude = null, { value = null,
     .filter(o => { const k = `${o.provider}|${o.product}`; if (seen.has(k)) return false; seen.add(k); return true; })
     .filter(o => !exclude || o.provider !== exclude.provider || o.product !== exclude.product)
     .map(o => {
-      const cash = draw(sources, o.ratePct, Math.min(limit, o.cap ?? Infinity, limitFor ? limitFor(o) : Infinity));
+      const cash = draw(sources, o.ratePct, Math.min(limit, roomOf(o), limitFor ? limitFor(o) : Infinity));
       const moved = extend ? extend(o, cash) : cash;
-      return { ...o, id: `${isIsa ? "isa" : "savings"}:${o.provider}:${o.product || ""}:${o.ratePct}`, ...moved, ...(value ? { gain: value(o, moved.from) } : {}) };
+      const fscsLimited = o.fscsCap != null && moved.amount >= o.fscsCap && (o.cap == null || o.cap > o.fscsCap);
+      // What it would take with no cap of its own and no FSCS limit: how much
+      // is left for a second account when it's held short.
+      const wanted = draw(sources, o.ratePct, Math.min(limit, limitFor ? limitFor(o) : Infinity)).amount;
+      return { ...o, id: `${isIsa ? "isa" : "savings"}:${o.provider}:${o.product || ""}:${o.ratePct}`, ...moved, fscsLimited, wanted, ...(value ? { gain: value(o, moved.from) } : {}) };
     })
     .filter(o => o.amount > 0 && o.gain > 0)
     .slice(0, OPTIONS_PER_SECTION);
@@ -161,8 +172,8 @@ function section(options, choice, choice2, secondFor) {
   const pick = options.find(o => o.id === choice) || null;
   const bestSingle = options.reduce((b, o) => (!b || o.gain > b.gain ? o : b), null);
   let second = null, secondOptions = [], leftover = 0, split = null;
-  if (pick && pick.cap != null) {
-    leftover = Math.max(0, Math.max(...options.map(o => o.amount)) - pick.amount);
+  if (pick && (pick.cap != null || pick.fscsLimited)) {
+    leftover = Math.max(0, Math.max(...options.map(o => Math.max(o.amount, o.wanted ?? 0))) - pick.amount);
     if (leftover > 0) {
       secondOptions = secondFor(pick);
       second = secondOptions.find(o => o.id === choice2) || null;
@@ -253,7 +264,7 @@ export function cashPlan(d, m, rows, { skipIsa = false, skipPb = false, isaChoic
   const isaLeft = Math.max(0, +(m.cashIsaHeadroom ?? m.isaHeadroom) || 0);
   const isaLimit = cashIsaLimit(taxYearFor(d), d.age);
   const isaValue = before => (o, from) => kept(before, from, o.ratePct, true);
-  const isaRoom = left => (o, moved) => Math.min(left, o.cap ?? Infinity) - moved.amount;
+  const isaRoom = left => (o, moved) => Math.min(left, roomOf(o)) - moved.amount;
   const isaOptions = !skipIsa && isaLeft > 0 ? optionsFor(rows, true, sources, isaLeft, null, {
     value: isaValue(base), extend: withHeld({ before: base, taxFree: true, available: held, room: isaRoom(isaLeft) }),
   }) : [];
@@ -275,7 +286,7 @@ export function cashPlan(d, m, rows, { skipIsa = false, skipPb = false, isaChoic
   const savingsValue = before => (o, from) => kept(before, from, o.ratePct, false);
   const savingsLimit = srcs => o => (pbInPlay && o.ratePct * (1 - tax.rate) < pbRate ? withinAllowance(srcs, o.ratePct, tax.allowance) : Infinity);
   const heldAfterIsa = held - heldTaken(isaTaken);
-  const savingsRoom = (o, moved) => (o.cap ?? Infinity) - moved.amount;
+  const savingsRoom = (o, moved) => roomOf(o) - moved.amount;
   const savingsOptions = optionsFor(rows, false, afterIsa, Infinity, null, {
     value: savingsValue(taxableInterest(afterIsa)), limitFor: savingsLimit(afterIsa),
     extend: withHeld({ before: taxableInterest(afterIsa), taxFree: false, available: heldAfterIsa, room: savingsRoom }),

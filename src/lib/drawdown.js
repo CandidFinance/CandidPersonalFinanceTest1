@@ -11,7 +11,7 @@
 import { calcIncomeTax, PERSONAL_ALLOWANCE, PA_TAPER_START, HIGHER_RATE_THRESHOLD, ADDITIONAL_RATE_THRESHOLD, STATE_PENSION_FULL, STATE_PENSION_AGE } from "./tax.js";
 import { GROWTH_REAL_PCT } from "./growth.js";
 import { calcTaxFreeCash } from "./pension.js";
-import { statePensionIncome } from "./metrics.js";
+import { statePensionIncome, pastStatePensionAge } from "./metrics.js";
 import { taxYearFor } from "./taxYear.js";
 
 export const DRAWDOWN_YEAR_OPTIONS = [10, 15, 20, 25, 30];
@@ -20,12 +20,13 @@ export const DEFAULT_DRAWDOWN_YEARS = 20;
 // inheritance tax (announced at the October 2024 Budget).
 export const PENSION_IHT_FROM_TAX_YEAR = 2027;
 
-// The State Pension: what they get now if they're 66 or over (what they told
-// us, else the full rate), otherwise from 67 at the rate their National
-// Insurance years point to (the full rate if we don't know them).
+// The State Pension: what they get now if they're past State Pension age
+// (what they told us, else the full rate), otherwise from 67 at the rate
+// their National Insurance years point to (the full rate if we don't know
+// them).
 export function statePensionPlan(d, m) {
   const age = +d.age || 0;
-  if (age >= 66) return { fromAge: age, amount: statePensionIncome(d), started: true };
+  if (pastStatePensionAge(d)) return { fromAge: age, amount: statePensionIncome(d), started: true };
   const amount = +d.niYears > 0 ? Math.round(m.statePensionAnnual) : STATE_PENSION_FULL;
   return { fromAge: STATE_PENSION_AGE, amount, started: false };
 }

@@ -18,9 +18,12 @@ const borrower = (overrides, rates = RATES) => {
 };
 
 test("repayments use the 2026/27 thresholds: 9% of pay above them", () => {
-  assert.equal(borrower({ salary: "85000" }).m.annualRepayment, (85000 - 29385) * 0.09);
-  assert.equal(borrower({ salary: "40000", studentLoan: "plan1" }).m.annualRepayment, (40000 - 26900) * 0.09);
-  assert.equal(borrower({ salary: "40000", studentLoan: "plan5" }).m.annualRepayment, (40000 - 25000) * 0.09);
+  // The borrower pays 5% into the pension by salary sacrifice, which comes
+  // off the pay repayments are taken from.
+  const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-6, `${a} is not ${b}`);
+  near(borrower({ salary: "85000" }).m.annualRepayment, (85000 * 0.95 - 29385) * 0.09);
+  near(borrower({ salary: "40000", studentLoan: "plan1" }).m.annualRepayment, (40000 * 0.95 - 26900) * 0.09);
+  near(borrower({ salary: "40000", studentLoan: "plan5" }).m.annualRepayment, (40000 * 0.95 - 25000) * 0.09);
   assert.equal(borrower({ salary: "29000" }).m.annualRepayment, 0);
   assert.equal(slRepaymentThreshold("none"), 0);
   assert.equal(studentLoanPlanConstants("plan2").threshold, SL_REPAYMENT_THRESHOLDS.plan2);

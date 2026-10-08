@@ -30,7 +30,7 @@
 
 import { fmt } from "./format.js";
 import { PROPERTY_REGIONS, regionNation } from "./regions.js";
-import { sdltApplies, FIRST_TIME_BUYER_NIL_BAND, ADDITIONAL_PROPERTY_SURCHARGE } from "./stampDuty.js";
+import { sdltApplies, FIRST_TIME_BUYER_NIL_BAND, ADDITIONAL_PROPERTY_SURCHARGE, NON_RESIDENT_SURCHARGE } from "./stampDuty.js";
 import { EMERGENCY_KEEP_BACK_MONTHS, suggestedCashAvailable, cashIsaBalance, borrowingInputs, calcBorrowingCheck } from "./borrowing.js";
 import { affordableMaxPrice } from "./monthlyBudget.js";
 import { mortgageInputs, monthlyPayment, FIXED_PERIOD_OPTIONS, DEFAULT_MORTGAGE_TERM_YEARS, DEFAULT_MORTGAGE_RATE_PCT } from "./mortgage.js";
@@ -117,6 +117,18 @@ export const READINESS_QUESTIONS = [
     options: () => KEEPING_ANOTHER,
     // Only someone who has owned a home before can be keeping one.
     showIf: ctx => sdlt(ctx) && !(ctx.d.propertyFirstTimeBuyer === "yes" && (!together(ctx) || ctx.d.partnerFirstTimeBuyer === "yes")),
+  },
+  {
+    // The 2% non-resident surcharge (stampDuty.js); answers read by
+    // borrowing.js nonUkResident.
+    id:"ukResident", field:"propertyUkResident", kind:"choice",
+    ask: ctx => together(ctx) ? "Have you both lived in the UK for at least 183 days in the last 12 months?" : "Have you lived in the UK for at least 183 days in the last 12 months?",
+    why: () => `Buyers who haven't pay ${Math.round(NON_RESIDENT_SURCHARGE * 100)}% more stamp duty.`,
+    options: ctx => together(ctx)
+      ? [{ value:"yes", label:"Yes, both of us" }, { value:"spouse", label:"One of us, and we're married or civil partners" },
+         { value:"one", label:"One of us, and we're not married" }, { value:"no", label:"Neither of us" }]
+      : [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }],
+    showIf: sdlt,
   },
   {
     // Before cash available: the emergency fund kept back from it is

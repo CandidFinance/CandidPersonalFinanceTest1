@@ -6,12 +6,14 @@ import {
   calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
   calcCarryForward, defaultCarryForwardYears, calcBonusSacrifice, calcPensionGrowthTrajectory,
   missedPensionRelief, calcTaxFreeCash, inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT, MONEY_PURCHASE_ANNUAL_ALLOWANCE,
+  sacrificeNiRate,
 } from "../../lib/pension.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileDrawdown from "./MobileDrawdown.jsx";
+import { EMPLOYER_NI_RATE } from "../../lib/tax.js";
 import MobileProviderTile from "../MobileProviderTile.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -145,7 +147,8 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   // to fully escape the taper" figure. Reuses extraPct so it stays in sync
   // with the growth-trajectory stepper further down the page.
   const isSalarySacrifice = d.pensionType === "sacrifice";
-  const niSavingPct = isSalarySacrifice && m.salary > 50270 ? 2 : 0;
+  // NI saved by salary sacrifice: 8% in the basic band, 2% above (pension.js).
+  const niSavingPct = isSalarySacrifice ? Math.round(sacrificeNiRate(d, m) * 100) : 0;
   const totalReliefPct = trPct + niSavingPct;
   const illustrativeExtraAmt = m.salary * extraPct / 100;
   const illustrativeExtraRelief = Math.round(illustrativeExtraAmt * (m.tr + niSavingPct/100));
@@ -179,8 +182,8 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         {!taper.recoverable
           ? `Your income sits in the £80k–£100k zone. Sacrificing now builds wealth efficiently — and softens the taper if a bonus or rise pushes you over £100k later.`
           : taper.aboveTaper
-            ? `Above £125,140 your Personal Allowance is gone entirely. Sacrificing back down to £100k saves 45% on everything above £125,140 and an effective 60% on the £100k–£125,140 slice — roughly ${fmt(taper.taperTotalSaving)} in tax and NI.`
-            : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taper.taperTotalSaving)} in tax and NI.`}
+            ? `Above £125,140 your Personal Allowance is gone entirely. Sacrificing back down to £100k saves 45% on everything above £125,140 and an effective 60% on the £100k–£125,140 slice — roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`
+            : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`}
       </p>
       {taper.recoverable && taper.taperTotalSaving > 0 && (
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"10px",textAlign:"center"}}>
@@ -359,7 +362,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
           headline={cf.cfTotalUnused > 0
             ? `Up to ${fmt(cf.cfMaxContributable)} could go into your pension this tax year using carry forward`
             : "Fill in your last 3 tax years below to see how much you could inject in one go"}
-          tagLabel="Today">
+          tagLabel="Strategy">
           <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,marginBottom:"12px"}}>
             Had a scheme in earlier years but didn't use the full £60,000 allowance? Carry the unused part forward for up to 3 years. Capped at 100% of this year's earnings ({fmt(cf.cfRelevantEarnings)}).
           </p>
@@ -474,7 +477,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
                 : m.willClear
                   ? ` The ${fmt(bs.slOnCash)} student loan deduction on the cash portion also brings your clear date forward, saving roughly ${fmt(bs.slInterestSaved)} in interest.`
                   : ` Your loan is unlikely to clear before write-off, so the ${fmt(bs.slOnCash)} student loan deduction on the cash portion would likely be written off anyway.`)}
-              {d.employmentStatus !== "self_employed" && " Employer NI of 13.8% on the sacrificed amount is also saved — some employers pass this on."}
+              {d.employmentStatus !== "self_employed" && ` Employer NI of ${Math.round(EMPLOYER_NI_RATE * 100)}% on the sacrificed amount is also saved — some employers pass this on.`}
             </p>
           )}
         </MobileWinTile>

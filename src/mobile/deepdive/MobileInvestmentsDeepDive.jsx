@@ -10,6 +10,7 @@ import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
 import { ExplainLink } from "../ModuleScreenParts.jsx";
 import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
+import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 
 // Trimmed mobile version of desktop's Investments deep dive (ModuleDeepDive,
 // moduleKey==="investments" — CandidApp.jsx). Keeps both wins (crystallise
@@ -47,7 +48,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
   const retirementAge = 67;
   const currentAge = +d.age || 30;
   const growthYears = Math.max(1, retirementAge - currentAge);
-  const isaProjectedValue = m.isaHeadroom * Math.pow(1.07, growthYears);
+  const isaProjectedValue = m.isaHeadroom * Math.pow(1 + GROWTH_NOMINAL_PCT / 100, growthYears);
 
   const totalGains = +d.unrealisedGains || 0;
   const cgtRatePct = Math.round(m.cgtRate * 100);
@@ -251,7 +252,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
                   </div>
                 )}
                 <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>
-                  Illustrative only — assumes 7% p.a. nominal growth (not guaranteed) and investing at age {currentAge}, retiring at {retirementAge}. Real returns could be lower or negative.
+                  Illustrative only — assumes {GROWTH_NOMINAL_PCT}% p.a. nominal growth (not guaranteed) and investing at age {currentAge}, retiring at {retirementAge}. Real returns could be lower or negative.
                 </p>
               </div>
             )}

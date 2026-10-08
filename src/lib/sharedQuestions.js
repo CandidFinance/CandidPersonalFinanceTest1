@@ -65,6 +65,9 @@ export const EXTRA_INCOME_QUESTIONS = [
 
 export const AGE_QUESTION = {
   id:"age", field:"age", kind:"years", label:"Age", required:true, group:"you",
+  // ISAs are for 18 and over, and so is Candid.
+  min: 18,
+  minNote: () => "Candid is for adults: you need to be 18 or over.",
   ask: () => "How old are you?",
   why: () => "Sets how long your money has to grow.",
   ifMissing: ({ d }) => !filled(d.age) || !(+d.age > 0),

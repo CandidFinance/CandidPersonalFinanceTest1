@@ -129,7 +129,8 @@ test("every question has a short reason, and ids are unique across every walk-th
 const known = { ...fresh, employmentAsked: true, employmentStatus: "not_working", hasExtraIncome: "no" };
 test("pension: not paying in asks about a pot, then retirement for those 55 and over", () => {
   const noPot = { ...known, age: "69", pensionStatus: "no" };
-  assert.deepEqual(ids("pension", noPot), ["pensionStatus", "pensionPotNotPaying"]);
+  // From 66 the State Pension question is asked with or without a pot.
+  assert.deepEqual(ids("pension", noPot), ["pensionStatus", "pensionPotNotPaying", "statePension"]);
   const pot = { ...noPot, hasPensionPot: "yes", potValue: "500000" };
   assert.deepEqual(ids("pension", pot), ["pensionStatus", "pensionPotNotPaying", "pensionPot", "pensionAccess", "statePension", "retirementAge"]);
   const drawing = { ...pot, pensionAccess: "taxFreeOnly" };

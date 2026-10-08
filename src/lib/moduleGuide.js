@@ -255,10 +255,21 @@ const PENSION_QUESTIONS = [
     note: () => "HMRC sent a certificate with a reference number. Your pension provider will know too.",
     options: () => [
       { value:"none", label:"No" }, { value:"fp2012", label:"Fixed Protection 2012" },
-      { value:"p2014", label:"Fixed or Individual Protection 2014" }, { value:"p2016", label:"Fixed or Individual Protection 2016" },
+      { value:"fp2014", label:"Fixed Protection 2014" }, { value:"ip2014", label:"Individual Protection 2014" },
+      { value:"fp2016", label:"Fixed Protection 2016" }, { value:"ip2016", label:"Individual Protection 2016" },
       { value:"", label:"Not sure" },
     ],
     showIf: ctx => hasPot(ctx) && totalPot(ctx.d) >= 1000000,
+  },
+  {
+    // Individual Protection: 25% of the protected amount, up to £375,000
+    // (2014) or £312,500 (2016).
+    id:"pensionProtectedAmount", field:"pensionProtectedAmount", kind:"money", label:"Protected amount", cap:"pensionProtectedAmount",
+    ask: () => "What's your protected amount?",
+    why: () => "Individual Protection allows 25% of it as tax-free cash.",
+    note: () => "It's on your protection certificate from HMRC.",
+    notSure: () => LEAVE_BLANK,
+    showIf: ctx => hasPot(ctx) && (ctx.d.pensionProtection === "ip2014" || ctx.d.pensionProtection === "ip2016"),
   },
   {
     id:"statePension", field:"statePensionAmount", kind:"money", label:"State Pension a year", cap:"statePensionAmount",
@@ -266,7 +277,10 @@ const PENSION_QUESTIONS = [
     why: () => "It's taxed as income, so it sets the tax on pension withdrawals.",
     prefill: () => STATE_PENSION_FULL,
     note: ({ d }) => filled(d.statePensionAmount) ? null : "That's the full new State Pension. Use your own figure if it's different.",
-    showIf: ctx => hasPot(ctx) && +ctx.d.age >= 66,
+    // At 66, whether they've reached State Pension age depends on their date
+    // of birth: "I don't get it yet" tells us (metrics pastStatePensionAge).
+    notSure: () => ({ label:"I don't get it yet", value:"0" }),
+    showIf: ctx => +ctx.d.age >= 66,
   },
   {
     id:"retirementAge", field:"retirementAge", kind:"years", label:"Retire at", required:true,

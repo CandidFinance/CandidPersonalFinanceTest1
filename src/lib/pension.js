@@ -1,6 +1,7 @@
-import { calcBonusTaxBreakdown, calcIncomeTax } from "./tax.js";
-import { SALARY_GROWTH_RATES } from "./metrics.js";
-import { slRepaymentThreshold } from "./studentLoan.js";
+import { calcBonusTaxBreakdown, calcIncomeTax, marginalNiRate, EMPLOYER_NI_RATE, PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD, NI_RATE_ABOVE_UEL, salarySacrificeNiCap } from "./tax.js";
+import { SALARY_GROWTH_RATES, pastStatePensionAge } from "./metrics.js";
+import { slRepaymentThreshold, resolveSlRate, SL_REPAYMENT_RATES } from "./studentLoan.js";
+import { taxYearFor, taxYearOf } from "./taxYear.js";
 import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT } from "./growth.js";
 
 // ── User contributing to pension ────────────────────────────────────────────────────────
@@ -15,8 +16,11 @@ export function isPensionContributing(d) {
 // module's status, its screen and its answer all use. Nil with nothing paid
 // in and no earnings to pay in from, as for someone retired: there's no
 // relief to miss, so that's not a gap.
+// No relief at all from 75 (HMRC PTM044100).
+export const PENSION_RELIEF_MAX_AGE = 75;
 export function missedPensionRelief(d, m) {
   if (isPensionContributing(d)) return 0;
+  if (+d.age >= PENSION_RELIEF_MAX_AGE) return 0;
   return Math.max(0, Math.round((m.salary || 0) * 0.05 * (m.tr || 0)));
 }
 
@@ -30,11 +34,18 @@ export function hasStartedDrawing(d) {
   return d.pensionAccess === "taxFreeOnly" || d.pensionAccess === "income";
 }
 
-// Retirement mode: at their retirement age, or already drawing. The pension
-// screen then shows tax-free cash and drawing it down, not growth to an age
-// they've reached.
+// The earliest a pension can be taken: 55, rising to 57 from 6 April 2028
+// (tax year 2028). Protected pension ages aren't asked about.
+export function minimumPensionAge(taxYear) {
+  return taxYear >= 2028 ? 57 : 55;
+}
+
+// Retirement mode: at their retirement age (once old enough to take a
+// pension), or already drawing. The pension screen then shows tax-free cash
+// and drawing it down, not growth to an age they've reached.
 export function inRetirement(d) {
-  return pastRetirementAge(d) || hasStartedDrawing(d);
+  if (hasStartedDrawing(d)) return true;
+  return pastRetirementAge(d) && (+d.age || 0) >= minimumPensionAge(taxYearFor(d));
 }
 
 // Having drawn an income (or lump sums beyond tax-free cash), only £10,000 a
@@ -53,10 +64,19 @@ export const MONEY_PURCHASE_ANNUAL_ALLOWANCE = 10000;
 // still untouched is estimated as the pot less three times what was taken.
 export const LUMP_SUM_ALLOWANCE = 268275;
 export const LSA_INFLECTION_POT = 1073100;
-export const PROTECTED_LUMP_SUM = { fp2012: 450000, p2014: 375000, p2016: 312500 };
+// Individual Protection: the lower of that figure and 25% of the protected
+// amount (HMRC PTM174600), or the figure while the amount isn't known.
+// "p2014"/"p2016" were saved before Fixed and Individual were asked apart.
+export const PROTECTED_LUMP_SUM = { fp2012: 450000, fp2014: 375000, ip2014: 375000, fp2016: 312500, ip2016: 312500, p2014: 375000, p2016: 312500 };
+export function protectedLumpSum(d) {
+  const cap = PROTECTED_LUMP_SUM[d.pensionProtection];
+  if (!cap) return null;
+  const amount = +d.pensionProtectedAmount;
+  return (d.pensionProtection === "ip2014" || d.pensionProtection === "ip2016") && amount > 0 ? Math.min(cap, Math.round(amount * 0.25)) : cap;
+}
 export function calcTaxFreeCash(d) {
   const pot = Math.max(0, (+d.potValue || 0) + (+d.potValue2 || 0));
-  const allowance = PROTECTED_LUMP_SUM[d.pensionProtection] || LUMP_SUM_ALLOWANCE;
+  const allowance = protectedLumpSum(d) || LUMP_SUM_ALLOWANCE;
   const taken = hasStartedDrawing(d) ? Math.max(0, +d.taxFreeCashTaken || 0) : 0;
   const left = Math.max(0, allowance - taken);
   const untouched = Math.max(0, pot - 3 * taken);
@@ -66,9 +86,17 @@ export function calcTaxFreeCash(d) {
 }
 
 // ── Pension return ratio (salary sacrifice vs relief at source) ───────────────────────
+// The NI a pound of salary sacrifice saves: 8% in the basic band, 2% above
+// it, none below the threshold or past State Pension age, and from April
+// 2029 none once £2,000 a year is already sacrificed (salarySacrificeNiCap).
+export function sacrificeNiRate(d, m) {
+  const ongoing = d.pensionType === "sacrifice" ? m.salary * (+d.myContribution || 0) / 100 : 0;
+  if (ongoing >= salarySacrificeNiCap(m.taxYear)) return 0;
+  return marginalNiRate(m.salary, { pastStatePensionAge: pastStatePensionAge(d) });
+}
 export function pensionReturnRatio(d, m) {
   const isSS = d.pensionType === "sacrifice";
-  const niSaving = isSS && m.salary > 50270 ? 0.02 : 0;
+  const niSaving = isSS ? sacrificeNiRate(d, m) : 0;
   return 1 / Math.max(0.01, 1 - (m.tr + niSaving));
 }
 // ── Estimate a pension pot for someone who doesn't know their balance ──────────────────
@@ -111,7 +139,7 @@ export function pensionReturnLabel(d, m) {
   if (d.pensionType === "sacrifice") return `1:${ratio.toFixed(2)} — includes income tax + NI saving (employer never sees this income)`;
   if (d.pensionType === "relief") return `1:${ratio.toFixed(2)} — income tax relief only (claim higher rate via self-assessment if applicable)`;
   const low = (1 / Math.max(0.01, 1 - m.tr)).toFixed(2);
-  const high = (1 / Math.max(0.01, 1 - (m.tr + 0.02))).toFixed(2);
+  const high = (1 / Math.max(0.01, 1 - (m.tr + sacrificeNiRate(d, m)))).toFixed(2);
   return low === high ? `1:${low}` : `1:${low}–1:${high} — check your payslip: if pension deduction appears before tax, it's likely salary sacrifice`;
 }
 
@@ -126,7 +154,7 @@ export function pensionReturnLabel(d, m) {
 // aaRoom: Annual Allowance left this tax year (calcAnnualAllowanceRoom) — the
 // recovery is only offered when the sacrifice it needs fits inside it.
 export function calcPensionTaperSaving(m, aaRoom = Infinity) {
-  const taperStart = 100000, taperEnd = 125140;
+  const taperStart = PA_TAPER_START, taperEnd = ADDITIONAL_RATE_THRESHOLD;
   const ani = m.adjustedNetIncome;
   const inTaper = ani > taperStart && ani < taperEnd;
   // Above £125,140 the allowance is already gone in full. Recovering it still
@@ -143,7 +171,11 @@ export function calcPensionTaperSaving(m, aaRoom = Infinity) {
   // withdrawn allowance.)
   const taperSacrificeNeeded = (inTaper || aboveTaper) ? Math.ceil(ani - taperStart) : Math.max(0, taperStart - ani);
   const recoverable = (inTaper || aboveTaper) && taperSacrificeNeeded <= aaRoom;
-  const taperNiSaving = Math.round(taperSacrificeNeeded * 0.02);
+  // NI is only saved when it's paid by salary sacrifice, not past State
+  // Pension age, and from April 2029 only on the first £2,000 a year.
+  const niFree = m.pensionType === "sacrifice" && !m.pastStatePensionAge
+    ? Math.min(taperSacrificeNeeded, Math.max(0, salarySacrificeNiCap(m.taxYear) - (m.salarySacrifice || 0))) : 0;
+  const taperNiSaving = Math.round(niFree * NI_RATE_ABOVE_UEL);
   const taperTaxSaving = (inTaper || aboveTaper) ? calcIncomeTax(ani) - calcIncomeTax(taperStart) : 0;
   const taperTotalSaving = taperNiSaving + taperTaxSaving;
   return { taperStart, taperEnd, ani, inTaper, aboveTaper, recoverable, taperSacrificeNeeded, taperNiSaving, taperTaxSaving, taperTotalSaving };
@@ -260,12 +292,9 @@ export function calcCarryForward(d, m, approxAA, cfYears) {
 // The default 3-year carry-forward state — most recent tax year first,
 // assuming a scheme existed with nothing contributed (the same default
 // desktop's own calculator starts from before a user edits anything).
-export function defaultCarryForwardYears() {
-  return [
-    { label:"2025/26", hadScheme:true, contribution:"" },
-    { label:"2024/25", hadScheme:true, contribution:"" },
-    { label:"2023/24", hadScheme:true, contribution:"" },
-  ];
+export function defaultCarryForwardYears(taxYear = taxYearOf(new Date())) {
+  const label = y => `${y}/${String(y + 1).slice(2)}`;
+  return [1, 2, 3].map(back => ({ label: label(taxYear - back), hadScheme:true, contribution:"" }));
 }
 
 // ── Bonus sacrifice calculator — tax/NI/student-loan breakdown for
@@ -278,9 +307,17 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   // NI rate on bonus: above the £50,270 threshold it's 2%, below it's 8% —
   // bonus sits on top of salary, so if salary is already above threshold,
   // all of the bonus falls at 2%.
-  const niRateOnBonus = m.salary >= 50270 ? 0.02 : 0.08;
+  // The rate on the first pound above salary; none past State Pension age.
+  const niRateOnBonus = marginalNiRate(m.salary + 1, { pastStatePensionAge: pastStatePensionAge(d) });
+  // Student loan: the plan's rate (6% Postgraduate, 9% otherwise) on the part
+  // of salary plus bonus above the threshold.
   const slThreshold = slRepaymentThreshold(d.studentLoan);
-  const bonusSlRate = (d.studentLoan !== "none" && m.salary > slThreshold) ? 0.09 : 0;
+  const slPlanRate = slThreshold > 0 ? (SL_REPAYMENT_RATES[d.studentLoan] || 0) : 0;
+  // The pay it sits on top of: salary less salary sacrifice (m.slEarnings
+  // without the stated bonus).
+  const slBase = (m.slEarnings ?? m.salary) - (+d.bonusAmount || 0);
+  const slOn = amount => slPlanRate * Math.max(0, Math.min(amount, slBase + amount - slThreshold));
+  const bonusSlRate = bonus > 0 ? slOn(bonus) / bonus : 0;
 
   // Full bonus, no sacrifice — effective income tax rate on the whole amount.
   const fullBonusTax = calcBonusTaxBreakdown(taxableSalary, bonus);
@@ -295,11 +332,16 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   const bonusTaxDetail = calcBonusTaxBreakdown(taxableSalary, cashPortionBonus);
   const taxOnCash = bonusTaxDetail.tax;
   const niOnCash = Math.round(cashPortionBonus * niRateOnBonus);
-  const slOnCash = Math.round(cashPortionBonus * bonusSlRate);
+  const slOnCash = Math.round(slOn(cashPortionBonus));
+  // From April 2029 only £2,000 a year of salary sacrifice is free of NI:
+  // what's over it (after the regular sacrifice) still pays NI, for the
+  // employee and the employer.
+  const niFreeSacrifice = Math.min(sacrificedAmt, Math.max(0, salarySacrificeNiCap(m.taxYear) - ongoingSacrifice));
+  const niOnSacrificed = Math.round((sacrificedAmt - niFreeSacrifice) * niRateOnBonus);
   const takeHomeCash = cashPortionBonus - taxOnCash - niOnCash - slOnCash;
-  const totalDeducted = taxOnCash + niOnCash + slOnCash;
-  const totalReceived = sacrificedAmt + takeHomeCash;
-  const employerNISave = Math.round(sacrificedAmt * 0.138);
+  const totalDeducted = taxOnCash + niOnCash + slOnCash + niOnSacrificed;
+  const totalReceived = sacrificedAmt + takeHomeCash - niOnSacrificed;
+  const employerNISave = Math.round(niFreeSacrifice * EMPLOYER_NI_RATE);
   const crossesTaper = fullBonusTax.crossesTaper;
   const crossesAR = fullBonusTax.crossesAR;
 
@@ -311,14 +353,14 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   const loanBal = m.loanBal || 0;
   // Based on slOnCash (the deduction on the portion NOT sacrificed), so it
   // moves with the sacrifice slider — it's 0 at 100% sacrifice.
-  const slInterestRate = d.studentLoan==="plan2" ? 0.075 : d.studentLoan==="plan5" ? 0.075 : 0.05;
+  const slInterestRate = slThreshold > 0 ? resolveSlRate(d, m.salary) : 0;
   const slInterestSaved = Math.round(slOnCash * slInterestRate * Math.max(1, loanBal/Math.max(1,m.annualRepayment)));
 
   return {
     bonus, bonusSlRate,
     fullTaxPct, fullNIPct, fullSLPct, fullKeepPct,
     sacrificedAmt, cashPortionBonus, taxOnCash, niOnCash, slOnCash,
-    takeHomeCash, totalDeducted, totalReceived, employerNISave,
+    takeHomeCash, totalDeducted, totalReceived, employerNISave, niOnSacrificed,
     crossesTaper, crossesAR, years, retireAge, bonusFVpartial,
     loanBal, slInterestSaved,
     bonusTaxDetailEffectiveRate: bonusTaxDetail.effectiveRate,
@@ -353,7 +395,8 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   // same as calcMetrics' projectedPot.
   const g = GROWTH_REAL_PCT / 100;
   const annuityFactor = (Math.pow(1 + g, years) - 1) / g;
-  const annualContrib = (myPct + empCapPct) / 100 * salary;
+  // The employer matches what the user pays, up to its cap (as calcMetrics).
+  const annualContrib = (myPct + Math.min(myPct, empCapPct)) / 100 * salary;
   const currentPot = m.projectedPot;
   const hasMissedMatch = m.missedMatch > 0;
   const hasBonus = (+d.bonusAmount||0) > 0;

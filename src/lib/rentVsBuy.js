@@ -31,11 +31,12 @@
 //   buyerWealth  = buying.ownMoneyIn + priceRise - sellingCosts
 //   renterWealth = renting.ownMoneyIn + earnings - tax
 import { mortgageSchedule, mortgageInputs } from "./mortgage.js";
-import { calcIncomeTax, savingsTaxRates, dividendTaxRates, cashIsaLimit } from "./tax.js";
+import { calcIncomeTax, savingsTaxRates, dividendTaxRates, cashIsaLimit, calcNI, ISA_ALLOWANCE, DIVIDEND_ALLOWANCE, CGT_ANNUAL_ALLOWANCE, PSA_BY_BAND, HIGHER_RATE_THRESHOLD, ADDITIONAL_RATE_THRESHOLD } from "./tax.js";
 import { taxYearOf, taxYearFor } from "./taxYear.js";
 import { borrowingInputs, calcBorrowingCheck, cashIsaBalance } from "./borrowing.js";
 import { PB_RATE } from "./cash.js";
 import { regionalRates } from "./regionalRates.js";
+import { GROWTH_NOMINAL_PCT } from "./growth.js";
 
 export const DEFAULT_HORIZON_YEARS = 5;
 export const MAX_HORIZON_YEARS = 40;
@@ -57,10 +58,10 @@ export const MAX_SELLING_COSTS_PCT = 20;
 // ISAs (cashRate) and the best savings rate Candid tracks (savings_rates,
 // the same rates the Cash & savings module points users to): leaving money
 // in a poor account shouldn't count against renting.
-// "invested" earns 7% a year, the rate Candid uses for Stocks & Shares ISA
-// growth elsewhere (Forecast and the Investments module); the stress
+// "invested" earns 6% a year, the long-run growth Candid uses everywhere
+// (growth.js: pensions, Forecast and the Investments module); the stress
 // scenario cuts it to 2%, all of it dividends.
-export const INVESTED_RETURN_PCT = 7;
+export const INVESTED_RETURN_PCT = GROWTH_NOMINAL_PCT;
 export const STRESS_INVESTED_RETURN_PCT = 2;
 // The part of an invested return paid out as dividends (taxed each year
 // outside an ISA); the rest is growth (taxed on sale).
@@ -79,13 +80,13 @@ export const SERVICE_CHARGE_GROWTH_PCT = 5;
 // UK private rent growth, 12 months to August 2026 (ONS): only used if the
 // region has no figure.
 const UK_RENT_GROWTH_PCT = 3.8;
-export const ISA_ALLOWANCE = 20000;
-export const DIVIDEND_ALLOWANCE = 500;
-export const CGT_ALLOWANCE = 3000;
+// The allowances live in tax.js; re-exported for the files that read them here.
+export { ISA_ALLOWANCE, DIVIDEND_ALLOWANCE };
+export const CGT_ALLOWANCE = CGT_ANNUAL_ALLOWANCE;
 const CGT_RATE = { basic: 0.18, higher: 0.24, additional: 0.24 };
 // Cash interest outside an ISA: tax above the Personal Savings Allowance.
 // The rates for each year, and dividend rates, come from tax.js by tax year.
-const SAVINGS_ALLOWANCE = { basic: 1000, higher: 500, additional: 0 };
+const SAVINGS_ALLOWANCE = PSA_BY_BAND;
 
 const filled = v => v !== "" && v !== null && v !== undefined && !isNaN(+v);
 const monthlyRate = annualPct => Math.pow(1 + annualPct / 100, 1 / 12) - 1;
@@ -99,7 +100,7 @@ export function spendingShared(d) {
 }
 
 export function taxBandFor(taxableIncome) {
-  return taxableIncome > 125140 ? "additional" : taxableIncome > 50270 ? "higher" : "basic";
+  return taxableIncome > ADDITIONAL_RATE_THRESHOLD ? "additional" : taxableIncome > HIGHER_RATE_THRESHOLD ? "higher" : "basic";
 }
 
 // Rough take-home pay and room to save for a partner Candid only knows a
@@ -110,7 +111,7 @@ export function taxBandFor(taxableIncome) {
 export function partnerSavingsEstimate({ salary = 0, otherIncome = 0, pensionPct = 0, yourSalary = 0, yourMonthlyExpenses = 0 }) {
   const pension = salary * pensionPct / 100;
   const taxable = Math.max(0, salary + otherIncome - pension);
-  const ni = 0.08 * Math.min(Math.max(0, salary - 12570), 37700) + 0.02 * Math.max(0, salary - 50270);
+  const ni = calcNI(salary);
   const takeHome = Math.max(0, salary + otherIncome - pension - calcIncomeTax(taxable) - ni);
   const costs = 12 * yourMonthlyExpenses * (yourSalary > 0 ? salary / yourSalary : 1);
   const surplus = Math.max(0, takeHome - costs);
@@ -350,7 +351,7 @@ export function cashRate(d, m) {
 // remortgages 1.5 points higher. Rent growth is the region's ONS figure in
 // both, unless the user changes it. The renter's money earns the better of
 // the user's own cash rate and the best rate Candid tracks
-// (`marketRates.nonIsaRate`, null while loading), or if invested 7% (2% in
+// (`marketRates.nonIsaRate`, null while loading), or if invested 6% (2% in
 // stress, all dividends); either rate is editable.
 //
 // ISAs, per person: the upfront sum can fill this tax year's remaining

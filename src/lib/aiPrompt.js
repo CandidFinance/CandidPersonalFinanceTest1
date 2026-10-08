@@ -16,7 +16,8 @@ export function buildFinancialSummary(d, m, statuses) {
     // Income
     grossSalary: fmt(+d.salary||0),
     adjustedNetIncome: fmt(m.adjustedNetIncome||0),
-    taxBand: m.tr >= 0.45 ? "Additional rate (45%)" : m.tr === 0.40 ? "Higher rate (40%)" : m.adjustedNetIncome > 100000 ? "60% taper zone (£100k–£125,140)" : "Basic rate (20%)",
+    // The taper first: between £100,000 and £125,140 the band is "higher".
+    taxBand: m.tr >= 0.45 ? "Additional rate (45%)" : m.adjustedNetIncome > 100000 ? "60% taper zone (£100k–£125,140)" : m.tr === 0.40 ? "Higher rate (40%)" : "Basic rate (20%)",
     otherIncome: +d.otherIncome > 0 ? fmt(+d.otherIncome) : null,
     dividendIncome: +d.dividendIncome > 0 ? fmt(+d.dividendIncome) : null,
     bonusAmount: +d.bonusAmount > 0 ? fmt(+d.bonusAmount) : null,

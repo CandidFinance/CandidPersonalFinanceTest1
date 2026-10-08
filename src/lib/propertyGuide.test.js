@@ -18,12 +18,12 @@ const ids = d => {
 
 test("buying alone in England with figures already in: only the purchase questions", () => {
   assert.deepEqual(ids({ ...base, propertyRegion: "london" }),
-    ["buyingMode", "region", "firstTimeBuyer", "soleProperty", "cashAvailable", "price"]);
+    ["buyingMode", "region", "firstTimeBuyer", "soleProperty", "ukResident", "cashAvailable", "price"]);
 });
 
 test("a first-time buyer isn't asked about keeping another home", () => {
   assert.deepEqual(ids({ ...base, propertyRegion: "london", propertyFirstTimeBuyer: "yes" }),
-    ["buyingMode", "region", "firstTimeBuyer", "cashAvailable", "price"]);
+    ["buyingMode", "region", "firstTimeBuyer", "ukResident", "cashAvailable", "price"]);
 });
 
 test("Scotland and Wales skip the stamp duty questions", () => {
@@ -37,7 +37,7 @@ test("buying together adds the partner's questions, the checks led by one line",
   const qs = visibleQuestions(READINESS_QUESTIONS, ctx, neededAtStart(READINESS_QUESTIONS, ctx));
   assert.deepEqual(qs.map(q => q.id), [
     "buyingMode", "partnerSalary", "partnerOtherIncome", "region", "firstTimeBuyer", "partnerFirstTimeBuyer",
-    "soleProperty", "cashAvailable", "price", "partnerMyContribution", "partnerEmployerMatch", "partnerIsa",
+    "soleProperty", "ukResident", "cashAvailable", "price", "partnerMyContribution", "partnerEmployerMatch", "partnerIsa",
   ]);
   assert.deepEqual(qs.filter(q => q.lead).map(q => q.id), ["partnerMyContribution"]);
 });
@@ -46,7 +46,7 @@ test("figures Candid lacks are asked once, and stay asked after they're answered
   const start = { ...base, propertyRegion: "london", propertyFirstTimeBuyer: "yes", myContribution: "", employerMatch: "", monthlyExpenses: "" };
   const needed = neededAtStart(READINESS_QUESTIONS, ctxFor(start));
   const visible = d => visibleQuestions(READINESS_QUESTIONS, ctxFor(d), needed).map(q => q.id);
-  const expected = ["buyingMode", "region", "firstTimeBuyer", "expenses", "cashAvailable", "price", "myContribution", "employerMatch"];
+  const expected = ["buyingMode", "region", "firstTimeBuyer", "ukResident", "expenses", "cashAvailable", "price", "myContribution", "employerMatch"];
   assert.deepEqual(visible(start), expected);
   assert.deepEqual(visible({ ...start, myContribution: "5", employerMatch: "5", monthlyExpenses: "2000" }), expected);
 });

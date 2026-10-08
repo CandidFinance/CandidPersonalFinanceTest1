@@ -155,10 +155,10 @@ test("inputs: the blended cash rate weights Premium Bonds at the prize fund rate
   near(cashRate(d, calcMetrics(d)), (30000 * 3 + 10000 * 4.35) / 40000, 1e-9);
 });
 
-test("inputs: invested uses 7%, the rate used for Stocks & Shares ISAs elsewhere", () => {
+test("inputs: invested uses 6%, the growth rate used everywhere (growth.js)", () => {
   const i = inputs({ propertyRenterMoney: "invested" });
   assert.equal(i.returnType, "invested");
-  assert.equal(i.investmentReturnPct, 7);
+  assert.equal(i.investmentReturnPct, 6);
   assert.equal(i.dividendYieldPct, 2);
 });
 

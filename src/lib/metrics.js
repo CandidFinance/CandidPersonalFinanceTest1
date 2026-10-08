@@ -1,7 +1,7 @@
-import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL } from "./tax.js";
+import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_REAL_PCT } from "./growth.js";
-import { resolveSlRate, slRepaymentThreshold } from "./studentLoan.js";
+import { resolveSlRate, slRepaymentThreshold, SL_REPAYMENT_RATES, slYearsLeft, slThresholdIn, slEarnings } from "./studentLoan.js";
 import { allocateCash } from "./cashAllocation.js";
 import { isaUsedThisYear } from "./isa.js";
 
@@ -33,10 +33,24 @@ export function getBufferMonths(d) {
   return d.higherBuffer === "yes" ? 9 : 6;
 }
 
-// The State Pension in payment: from 66, what they told us they get, else
-// the full rate. It's taxable, so it counts towards the tax band.
+// Past State Pension age. It depends on date of birth (66 for anyone born
+// before 6 April 1960, rising a month at a time to 67 for those born from
+// 6 March 1961: gov.uk State Pension age timetable), which Candid doesn't
+// ask. So: everyone at 67; at 66, unless they've told us they don't get the
+// State Pension yet (statePensionAmount "0"). It ends employee NI and Class 4,
+// and adds the State Pension to income.
+export function pastStatePensionAge(d) {
+  const age = +d.age || 0;
+  if (age >= PAST_STATE_PENSION_AGE) return true;
+  if (age < 66) return false;
+  const stated = d.statePensionAmount;
+  return !(stated !== "" && stated != null && +stated === 0);
+}
+
+// The State Pension in payment: what they told us they get, else the full
+// rate. It's taxable, so it counts towards the tax band.
 export function statePensionIncome(d) {
-  if (!(+d.age >= 66)) return 0;
+  if (!pastStatePensionAge(d)) return 0;
   const stated = d.statePensionAmount;
   return stated !== "" && stated != null && !isNaN(+stated) ? Math.max(0, +stated) : STATE_PENSION_FULL;
 }
@@ -70,7 +84,9 @@ export function calcMetrics(d, marketRates = {}) {
         potVal = (+d.potValue||0) + (+d.potValue2||0),
         retireAge = +d.retirementAge||65,
         age = +d.age||30, years = Math.max(1, retireAge - age),
-        annualContrib = (myPct + empCapPct) / 100 * salary,
+        // The employer matches what the user pays, up to its cap (the same
+        // model as missedMatch).
+        annualContrib = (myPct + Math.min(myPct, empCapPct)) / 100 * salary,
         // In today's money: contributions at today's salary, growing at the
         // real rate, after inflation (growth.js).
         pensionGrowth = GROWTH_REAL_PCT / 100,
@@ -80,15 +96,21 @@ export function calcMetrics(d, marketRates = {}) {
   const loanBal = +d.loanBalance||0;
   const slGrow = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
   const slThreshold = slRepaymentThreshold(d.studentLoan);
-  if (d.studentLoan === "plan2") {
-    annualRepayment = Math.max(0, (salary - slThreshold) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=30; y++) { const s = salary * Math.pow(1+slGrow,y-1); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
-  } else if (d.studentLoan === "plan5") {
-    annualRepayment = Math.max(0, (salary - slThreshold) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=40; y++) { const s = salary * Math.pow(1+slGrow,y-1); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
-  } else if (d.studentLoan === "plan1") {
-    annualRepayment = Math.max(0, (salary - slThreshold) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=25; y++) { const s = salary * Math.pow(1+slGrow,y-1); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
+  // Every plan, Plan 4 and Postgraduate included: the plan's rate on salary
+  // above its threshold, and whether it clears before the plan's write-off.
+  // Repayments are on salary and bonus, less salary sacrifice (slEarnings);
+  // the regular part leaves out the bonus, for the monthly figures. Whether
+  // it clears runs to the write-off year (from when repayments started) with
+  // the threshold rising as each plan's rules say.
+  const slRepayRate = SL_REPAYMENT_RATES[d.studentLoan];
+  const slPay = slEarnings(d, salary);
+  let slRepaymentRegular = 0;
+  if (slRepayRate && slThreshold > 0) {
+    const slYear = taxYearFor(d);
+    annualRepayment = Math.max(0, (slPay - slThreshold) * slRepayRate);
+    slRepaymentRegular = Math.max(0, (slPay - (+d.bonusAmount || 0) - slThreshold) * slRepayRate);
+    const yearsLeft = slYearsLeft(d, slYear);
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=yearsLeft; y++) { const s = slPay * Math.pow(1+slGrow,y-1); b = b*r - Math.max(0,(s-slThresholdIn(d.studentLoan, slYear + y - 1))*slRepayRate); if(b<=0) return true; } return false; })();
   }
   const otherIncome = +d.otherIncome||0;
   const dividendIncome = +d.dividendIncome||0;
@@ -98,6 +120,9 @@ export function calcMetrics(d, marketRates = {}) {
   const pensionSacrifice = salary * myPct / 100;
   const statePensionPaid = statePensionIncome(d);
   const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome + statePensionPaid - pensionSacrifice;
+  // Income other than savings interest and dividends: what the starting rate
+  // for savings is measured against (tax.js taxFreeInterest).
+  const nonSavingsIncome = adjustedNetIncome - dividendIncome;
   const taxBandLabel = adjustedNetIncome > ADDITIONAL_RATE_THRESHOLD ? "additional" : adjustedNetIncome > HIGHER_RATE_THRESHOLD ? "higher" : "basic";
   const tr = INCOME_TAX_RATES[taxBandLabel];
   // Rates and limits that change on 6 April follow the tax year the figures
@@ -112,7 +137,7 @@ export function calcMetrics(d, marketRates = {}) {
   // which were the pre-Budget rates.
   const gains = +d.unrealisedGains||0,
         realisedCgtGains = d.hasSoldAssetsOutsideWrapper === "yes" ? Math.max(0, +d.realisedCgtGains||0) : 0,
-        remainingCgtAllowance = Math.max(0, 3000 - realisedCgtGains),
+        remainingCgtAllowance = Math.max(0, CGT_ANNUAL_ALLOWANCE - realisedCgtGains),
         crystallisable = Math.min(gains, remainingCgtAllowance),
         cgtRate = tr !== 0.20 ? 0.24 : 0.18,
         cgtSaving = crystallisable * cgtRate,
@@ -145,7 +170,8 @@ export function calcMetrics(d, marketRates = {}) {
   // State pension estimate
   const niYears = +d.niYears||0;
   // Full new State Pension, 2026/27.
-  const statePensionWeekly = (niYears / 35) * STATE_PENSION_WEEKLY;
+  // Nothing below 10 qualifying years (gov.uk/new-state-pension).
+  const statePensionWeekly = niYears >= 10 ? (Math.min(niYears, 35) / 35) * STATE_PENSION_WEEKLY : 0;
   const statePensionAnnual = statePensionWeekly * 52;
   const niYearsToFull = Math.max(0, 35 - niYears);
   // Mortgage fix expiry in days
@@ -195,32 +221,39 @@ export function calcMetrics(d, marketRates = {}) {
   // Used as the default monthly contribution for forecasting (see calcForecast).
   // Regular income only — the bonus is irregular, so it's left out of this
   // monthly figure.
-  const niAnnual = 0.08 * Math.min(Math.max(0, salary - 12570), 37700) + 0.02 * Math.max(0, salary - 50270);
+  // Employee NI, or Class 4 when self-employed; none past State Pension age.
+  const pastSpa = pastStatePensionAge(d);
+  const niAnnual = calcNI(salary, { selfEmployed: d.employmentStatus === "self_employed", pastStatePensionAge: pastSpa });
   const regularIncome = adjustedNetIncome - bonusIncome;
-  const incomeTaxAnnual = calcIncomeTax(regularIncome);
+  // Dividends on their own rates, after the £500 allowance.
+  const incomeTaxAnnual = calcIncomeAndDividendTax(regularIncome - dividendIncome, dividendIncome, taxYear);
   const netAnnualIncome = regularIncome - incomeTaxAnnual - niAnnual;
   const existingMortgagePmt = hasMortgage ? (+d.monthlyMortgage||0) : 0;
   const existingPersonalLoanPmt = d.hasPersonalLoan === "yes" ? plMonthly : 0;
-  const monthlySurplus = Math.max(0, netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - annualRepayment / 12);
+  const monthlySurplus = Math.max(0, netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - slRepaymentRegular / 12);
   // Take-home pay a month after tax, NI, student loan and personal loan
   // repayments, before living costs. Not less any current mortgage: the
   // Property module's budget check (monthlyBudget.js) is for a purchase that
   // replaces it.
-  const monthlyTakeHome = netAnnualIncome / 12 - existingPersonalLoanPmt - annualRepayment / 12;
+  const monthlyTakeHome = netAnnualIncome / 12 - existingPersonalLoanPmt - slRepaymentRegular / 12;
 
   return {
     salary, expenses, totalLiquid, runwayMonths,
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
     isaHeadroom, isaUsedThisYear: isaUsedThisYearCalc,
-    missedMatch, annualRepayment, willClear, crystallisable, cgtSaving, cgtRate, remainingCgtAllowance,
+    missedMatch, annualRepayment, slRepaymentRegular, slEarnings: slPay, willClear, crystallisable, cgtSaving, cgtRate, remainingCgtAllowance,
     projectedPot, years, annualYieldGap, savingsRate, loanBal, tr, savingsTr, cashIsaHeadroom, taxYear,
     cashMoveAmount, cashExcessNotWorthMoving,
     cash, bonds, totalAssets, totalLiabilities, netWorth,
-    taxBandLabel, adjustedNetIncome, bufferMonths,
+    taxBandLabel, adjustedNetIncome, nonSavingsIncome, bufferMonths,
     statePensionWeekly, statePensionAnnual, niYearsToFull,
     daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate,
     propertyEquity, propertyValue, ltv,
     pensionStatus, personalLoanAnnualRepayment, personalLoanPayoffMonths,
+    // For the pension figures that depend on how it's paid in (NI on salary
+    // sacrifice) and on State Pension age.
+    pensionType: d.pensionType || "", pastStatePensionAge: pastSpa,
+    salarySacrifice: d.pensionType === "sacrifice" ? pensionSacrifice : 0,
     monthlySurplus, monthlyTakeHome,
     // The best savings rate available (the live best Cash ISA rate) — what
     // overpaying a student loan is weighed against (calcStudentLoanScenario).

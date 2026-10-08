@@ -31,7 +31,7 @@ function AccountLines({ lines, rowStyle }) {
       <div key={i} style={{padding:"4px 0"}}>
         <div style={{...rowStyle,padding:0}}><span>{fmt(l.amount)} at {l.ratePct.toFixed(2)}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(l.interest)}/yr</span></div>
         <div style={{fontSize:"11.5px",color:MUT,lineHeight:1.45}}>
-          {name}{l.cap != null && ` · up to ${fmt(l.cap)}`}{l.extra != null && anchorRate != null && ` · ${fmt(l.extra)}/yr more than at ${anchorRate.toFixed(2)}%`}
+          {name}{l.cap != null && ` · up to ${fmt(l.cap)}`}{l.fscsLimited && " · the most FSCS protects with one bank"}{l.extra != null && anchorRate != null && ` · ${fmt(l.extra)}/yr more than at ${anchorRate.toFixed(2)}%`}
         </div>
       </div>
     );

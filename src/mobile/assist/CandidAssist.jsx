@@ -8,6 +8,7 @@ import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { devicePlatform, appLinkFor } from "../../lib/appLinks.js";
 import { itemisedNonCashIsa } from "../../lib/isa.js";
+import { FSCS_DEPOSIT_LIMIT } from "../../lib/cashAllocation.js";
 
 // Candid Assist: a button above the tab bar that opens a panel walking the
 // user through acting on what Candid has found. v1 covers cash that could
@@ -130,7 +131,9 @@ function SecondChoice({ section, onPick }) {
     <div style={{ margin: "2px 0 12px 10px", paddingLeft: "12px", borderLeft: "2px solid rgba(22,47,36,0.12)" }}>
       <div style={{ fontSize: "13.5px", fontWeight: 700, color: TEXT }}>The other {fmt(section.leftover)}</div>
       <p style={{ fontSize: "12.5px", color: MUT, margin: "2px 0 8px", lineHeight: 1.5 }}>
-        {accountName(pick)} pays {pct(pick.ratePct)} on up to {fmt(pick.cap)}. If you like, the rest can go into a second account.
+        {pick.fscsLimited
+          ? `FSCS protects up to ${fmt(FSCS_DEPOSIT_LIMIT)} with each bank, so ${fmt(pick.amount)} goes into ${accountName(pick)}.`
+          : `${accountName(pick)} pays ${pct(pick.ratePct)} on up to ${fmt(pick.cap)}.`} If you like, the rest can go into a second account.
       </p>
       <OptionList options={section.secondOptions} picked={section.second} onPick={onPick}/>
       {split && (
@@ -182,6 +185,7 @@ function AccountFlow({ item, state, update, d, set, backToList }) {
               </>
             )}
             {pick.cap != null && <li>Only the first {fmt(pick.cap)} earns {pct(pick.ratePct)}.</li>}
+            {pick.fscsLimited && <li>FSCS protects up to {fmt(FSCS_DEPOSIT_LIMIT)} with each bank, counting anything you already hold there.</li>}
           </ul>
           <ProviderLinks o={pick}/>
         </div>
@@ -382,6 +386,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
               {p.pb && <li>New bonds join the prize draw after a full calendar month. Prizes are tax-free, and can be paid to your bank or put back into bonds.</li>}
               {bondsIn(p) > 0 && <li>Cash in {fmt(bondsIn(p))} of Premium Bonds on NS&I's website or app first. The money usually reaches your bank in a few working days.</li>}
               {!p.pb && p.cap != null && <li>Only the first {fmt(p.cap)} earns {pct(p.ratePct)}.</li>}
+              {p.fscsLimited && <li>FSCS protects up to {fmt(FSCS_DEPOSIT_LIMIT)} with each bank, counting anything you already hold there.</li>}
               {p.isa && <li>This uses {fmt(p.amount)} of your {fmt(plan.isaLimit)} {isaWord} allowance for this tax year.</li>}
               {p.isa && +d.isaPrevCash > 0 && <li>Moving money that's already in a Cash ISA as well? Ask {p.provider} to transfer it in. Withdrawing it yourself loses its tax-free status.</li>}
             </ul>
