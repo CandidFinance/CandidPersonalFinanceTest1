@@ -134,7 +134,15 @@ All archetypes live in England or Wales, because the app doesn't yet handle Scot
 | 41/42 to 43/44 | £10.04 | £120.48 | £100.40 |
 | 44/45 to 45/46 | £11.54 | £138.48 | £115.40 |
 
-The member's cost (counted against their benefit) is the full price. Candid's revenue is after VAT, and after payment fees: roughly 15% if billed through the App Store or Google Play, roughly 2% through the website. Referral commissions from providers are left out.
+The member's cost (counted against their benefit) is the full price. Candid's revenue is after VAT (20%, included in the price) and after payment fees. Billing: 90% through the App Store and Google Play at 15% (Apple's Small Business Program and Google's subscription rate; both charge on the price after VAT), 10% through the website at about 2%. Blended fee: about 13.7%.
+
+| | Per month at £4.99 | Per year |
+|---|---|---|
+| Price paid by the member | £4.99 | £59.88 |
+| After VAT | £4.16 | £49.90 |
+| Candid's revenue, after store and payment fees | £3.59 | £43.07 |
+
+So Candid keeps about 72% of the price. Referral commissions from providers are left out.
 
 ---
 
@@ -306,14 +314,12 @@ Guildford · retired · combined pension income £55k (Richard's final-salary £
 
 ---
 
-## 5. App gaps found along the way
+## 5. App gaps found along the way (fixed 8 October 2026)
 
-None of these change the model, but they need fixing in the app:
-
-1. **Savings tax goes up 2pt in April 2027.** `assist.js` and `cash.js` use the current rates.
-2. **The Cash ISA limit falls to £12,000 for under-65s in April 2027.** `tax.js` notes it, but nothing enforces it yet.
-3. **Dividend tax rates in `rentVsBuy.js` are out of date** (8.75% and 33.75%; 10.75% and 35.75% since April 2026). This one is live now.
-4. **Pension projections assume 6% growth in today's money** (about 8% nominal). That's high next to this model's 6% nominal; worth aligning.
+1. **Savings tax goes up 2pt in April 2027.** Now in `tax.js` by tax year; Assist and the Cash screen switch on 6 April 2027.
+2. **The Cash ISA limit falls to £12,000 for under-65s in April 2027.** Also in `tax.js` by tax year; Assist fills a Cash ISA only to the limit.
+3. **Dividend tax rates in `rentVsBuy.js` were out of date.** Now 10.75% and 35.75%.
+4. **Pension projections assumed 6% growth in today's money.** Now 4% (6% less 2% inflation), the same as this model.
 
 ---
 
