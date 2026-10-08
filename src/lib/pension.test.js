@@ -71,3 +71,14 @@ test("bonus sacrifice: valued band by band, and not double counted with the tape
   // the whole bonus is already inside the £33,560 taper recovery
   assert.equal(b.beyondTaper, 0);
 });
+
+test("tax-free cash: 25% of the pot, capped at £268,275", async () => {
+  const { calcTaxFreeCash, pastRetirementAge, calcPensionGrowthTrajectory } = await import("./pension.js");
+  assert.deepEqual(calcTaxFreeCash({ potValue: "1000000" }), { pot: 1000000, quarter: 250000, taxFree: 250000, capped: false, overCap: 0 });
+  assert.deepEqual(calcTaxFreeCash({ potValue: "1100000" }), { pot: 1100000, quarter: 275000, taxFree: 268275, capped: true, overCap: 6725 });
+  assert.equal(pastRetirementAge({ age: "69" }), true);
+  assert.equal(pastRetirementAge({ age: "69", retirementAge: "70" }), false);
+  // No growth chart "to age 65" for a 69-year-old.
+  const d = person({ age: "69", potValue: "1100000", myContribution: "0", employerMatch: "0" });
+  assert.equal(calcPensionGrowthTrajectory(d, calcMetrics(d)).showTrajectory, false);
+});

@@ -89,3 +89,33 @@ test("student loan: none means nothing to explain; otherwise the screen's own sc
   assert.equal(calcStudentLoanScenario({ studentLoan: "plan1", loanBalance: "8000", salary: "60000" }, m).clearYr, 3);
   assert.equal(steps[0].figure, "3 years");
 });
+
+// Retired, with a pot and no salary: not a gap, and the answer is the
+// tax-free cash, capped by the Lump Sum Allowance above £1,073,100.
+const retired = { ...base, age: "69", salary: "0", employmentStatus: "not_working", myContribution: "0", employerMatch: "0" };
+
+test("retired with no earnings: not critical, and no £0 of tax relief", () => {
+  const { steps, statuses } = reveal({ ...retired, potValue: "1000000" });
+  assert.equal(statuses.pension.status, "ok");
+  assert.equal(statuses.pension.amount, 0);
+  assert.equal(steps[0].figure, "£250,000");
+  assert.match(steps[0].title, /tax-free/);
+});
+
+test("retired above £1,073,100: tax-free cash stops at £268,275", () => {
+  const { steps, statuses } = reveal({ ...retired, potValue: "2000000" });
+  assert.equal(statuses.pension.status, "ok");
+  assert.match(statuses.pension.impactLabel, /£268,275: £231,725 less than 25% of your pot/);
+  assert.equal(steps[0].figure, "£268,275");
+  assert.match(steps[1].title, /£500,000/);
+});
+
+test("still earning past retirement age with nothing paid in: the relief gap stands", () => {
+  const { statuses } = reveal({ ...retired, salary: "40000", employmentStatus: "employed", potValue: "1100000" });
+  assert.equal(statuses.pension.status, "critical");
+  assert.match(statuses.pension.impactLabel, /^Nothing paid in: £400\/yr/);
+});
+
+test("no pot and no earnings: nothing to explain", () => {
+  assert.equal(reveal({ ...retired, potValue: "0" }).steps, null);
+});

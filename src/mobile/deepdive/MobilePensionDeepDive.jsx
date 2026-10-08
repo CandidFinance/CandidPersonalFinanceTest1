@@ -5,6 +5,7 @@ import {
   isPensionContributing,
   calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
   calcCarryForward, defaultCarryForwardYears, calcBonusSacrifice, calcPensionGrowthTrajectory,
+  missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT,
 } from "../../lib/pension.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
@@ -98,10 +99,15 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   }
 
   const contributing = isPensionContributing(d);
+  // Not paying in is a gap only with earnings to pay in from (see
+  // computeModuleStatuses): retired, there's no relief to miss.
+  const missedRelief = missedPensionRelief(d, m);
+  const notPayingIn = !contributing && missedRelief > 0;
+  const taxFreeCash = calcTaxFreeCash(d);
   const trPct = Math.round(m.tr * 100);
   const myPct = +d.myContribution || 0;
   const empCapPct = +d.employerMatch || 0;
-  const showMatchWin = !contributing || m.missedMatch > 0;
+  const showMatchWin = notPayingIn || (contributing && m.missedMatch > 0);
   const matchWinTitle = !contributing ? "Start your pension" : "Get your full employer match";
   const matchWinHeadline = !contributing
     ? `Every £${100-trPct} becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
@@ -150,8 +156,8 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const psaAmount = m.taxBandLabel === "additional" ? 0 : m.taxBandLabel === "higher" ? 500 : 1000;
 
   const opportunityCols = [];
-  if (!contributing) opportunityCols.push({ label:"Tax relief you're missing", value: fmtCompact(Math.round(m.salary*0.05*m.tr)) });
-  else if (m.missedMatch > 0) opportunityCols.push({ label:"Employer match you're not getting", value: fmtCompact(m.missedMatch) });
+  if (notPayingIn) opportunityCols.push({ label:"Tax relief you're missing", value: fmtCompact(missedRelief) });
+  else if (contributing && m.missedMatch > 0) opportunityCols.push({ label:"Employer match you're not getting", value: fmtCompact(m.missedMatch) });
   if (taper.recoverable && taper.taperTotalSaving > 0) opportunityCols.push({ label:"Tax-free allowance you could win back", value: fmtCompact(taper.taperTotalSaving) });
 
   let winCounter = 0;
@@ -302,6 +308,23 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
             {cf.showCarryForward
               ? "Carry forward unused allowance from the last 3 tax years to contribute more without a charge — use the calculator below."
               : "Carry forward unused allowance from the last 3 tax years to contribute more without a charge — check your provider's statements or HMRC account for an exact figure."}
+          </p>
+        </div>
+      )}
+
+      {/* Tax-free cash: shown once the Lump Sum Allowance caps it, or to
+          anyone at their retirement age, when it's the figure that matters. */}
+      {d.hasPension === "yes" && taxFreeCash.pot > 0 && (taxFreeCash.capped || !traj.showTrajectory) && (
+        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
+          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Tax-free cash</div>
+          <div style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,lineHeight:1.15}}>{fmt(taxFreeCash.taxFree)}</div>
+          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:"4px 0 0"}}>
+            {taxFreeCash.capped
+              ? `25% of your pot would be ${fmt(taxFreeCash.quarter)}, but tax-free cash stops at ${fmt(LUMP_SUM_ALLOWANCE)}, the Lump Sum Allowance, for any pot above ${fmt(LSA_INFLECTION_POT)}. The other ${fmt(taxFreeCash.overCap)} is taxed as income when it's taken out.`
+              : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(LUMP_SUM_ALLOWANCE)}. The rest is taxed as income when it's taken out.`}
+          </p>
+          <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.55,margin:"6px 0 0"}}>
+            Any tax-free cash already taken counts towards the limit. A Fixed or Individual Protection from before 2016 allows more, up to £450,000.
           </p>
         </div>
       )}
@@ -508,11 +531,9 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
               </p>
             </div>
 
-            {traj.showLsaFlag && (
+            {traj.showLsaFlag && !traj.alreadyPastLsa && (
               <div style={{marginTop:"10px",fontSize:"11.5px",color:MUT,lineHeight:1.5}}>
-                {traj.alreadyPastLsa
-                  ? `Your pot is already above the ${fmt(traj.LSA_INFLECTION_POT)} Lump Sum Allowance inflection point — further growth doesn't add to your tax-free withdrawal amount, which stays fixed at £268,275.`
-                  : `Your pot is projected to cross the ${fmt(traj.LSA_INFLECTION_POT)} Lump Sum Allowance inflection point around age ${traj.lsaCrossAge} — beyond that, further growth doesn't add to your tax-free withdrawal amount.`}
+                {`Your pot is projected to cross the ${fmt(traj.LSA_INFLECTION_POT)} Lump Sum Allowance inflection point around age ${traj.lsaCrossAge} — beyond that, further growth doesn't add to your tax-free withdrawal amount.`}
               </div>
             )}
           </div>

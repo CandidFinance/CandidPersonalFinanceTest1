@@ -10,7 +10,7 @@
 // student loan, say), in which case no reveal or "Explain this" is offered.
 
 import { fmt } from "./format.js";
-import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential } from "./pension.js";
+import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
@@ -34,8 +34,24 @@ export function pensionReveal(d, m) {
 
   // Not paying in: the tax relief on 5% of salary, the figure the module's
   // status and the score use (computeModuleStatuses).
+  // Not paying in, with no earnings to pay in from (retired, say): what
+  // matters is what can come out tax-free, not relief there's none of.
+  if (!isPensionContributing(d) && missedPensionRelief(d, m) === 0) {
+    const cash = calcTaxFreeCash(d);
+    if (!(cash.pot > 0)) return null;
+    return [
+      { label: ANSWER, figure: fmt(cash.taxFree), title: "of your pension can be taken tax-free." },
+      cash.capped
+        ? { label: WHY, title: `25% of your pot would be ${fmt(cash.quarter)}, but tax-free cash stops at ${fmt(LUMP_SUM_ALLOWANCE)}, the Lump Sum Allowance.`,
+            body: `Above a pot of ${fmt(LSA_INFLECTION_POT)}, the rest is taxed as income when it's taken out: here, ${fmt(cash.overCap)} more than if the 25% applied in full.` }
+        : { label: WHY, title: `Up to 25% of a pension can be taken tax-free, to a limit of ${fmt(LUMP_SUM_ALLOWANCE)}. The rest is taxed as income when it's taken out.` },
+      { label: ACTION, title: "Worth checking for a Fixed or Individual Protection from before 2016: it allows more tax-free cash, up to £450,000.",
+        body: "Any tax-free cash already taken counts towards the limit. Pension Wise, from MoneyHelper, gives free guidance on taking a pension to anyone over 50." },
+    ];
+  }
+
   if (!isPensionContributing(d)) {
-    const relief = Math.round(m.salary * 0.05 * m.tr);
+    const relief = missedPensionRelief(d, m);
     return [
       { label: ANSWER, figure: `${fmt(relief)} a year`, title: "of tax relief you're not getting, with no pension payments." },
       { label: WHY, title: `Every £${100 - trPct} you pay in becomes £100 in your pension, because of ${trPct}% tax relief.`,

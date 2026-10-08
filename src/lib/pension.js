@@ -11,6 +11,37 @@ export function isPensionContributing(d) {
   return isNaN(pct) || d.myContribution === "" ? false : pct > 0;
 }
 
+// The tax relief missed by not paying in: on 5% of salary, the figure the
+// module's status, its screen and its answer all use. Nil with nothing paid
+// in and no earnings to pay in from, as for someone retired: there's no
+// relief to miss, so that's not a gap.
+export function missedPensionRelief(d, m) {
+  if (isPensionContributing(d)) return 0;
+  return Math.max(0, Math.round((m.salary || 0) * 0.05 * (m.tr || 0)));
+}
+
+// At or past the age they told us they'd retire (65 if not given): the
+// growth chart to that age no longer means anything.
+export function pastRetirementAge(d) {
+  return (+d.age || 0) >= (+d.retirementAge || 65);
+}
+
+// ── Tax-free cash: the Lump Sum Allowance ─────────────────────────────────
+// Since April 2024, 25% of a pension can be taken tax-free, up to £268,275
+// in all. The cap bites from a pot of £1,073,100 (25% of it is £268,275).
+// Older protections (Fixed or Individual Protection, 2012 to 2016) allow
+// more, up to £450,000; we don't ask about them, so the copy mentions them.
+// Tax-free cash already taken counts against the cap; we don't ask that
+// either, so this is the most there could be.
+export const LUMP_SUM_ALLOWANCE = 268275;
+export const LSA_INFLECTION_POT = 1073100;
+export function calcTaxFreeCash(d) {
+  const pot = Math.max(0, +d.potValue || 0);
+  const quarter = Math.round(pot * 0.25);
+  const taxFree = Math.min(quarter, LUMP_SUM_ALLOWANCE);
+  return { pot, quarter, taxFree, capped: quarter > LUMP_SUM_ALLOWANCE, overCap: Math.max(0, quarter - LUMP_SUM_ALLOWANCE) };
+}
+
 // ── Pension return ratio (salary sacrifice vs relief at source) ───────────────────────
 export function pensionReturnRatio(d, m) {
   const isSS = d.pensionType === "sacrifice";
@@ -355,14 +386,15 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   }
   const yearsSaved = retireAge - earlyRetire;
   const onTrackEarly = yearsSaved > 0 && isPensionContributing(d);
-  const showTrajectory = d.hasPension === "yes" && (potVal > 0 || myPct > 0);
+  // Not once they're at their retirement age: a chart of growth "to age 65"
+  // means nothing at 69. The tax-free cash note covers them instead.
+  const showTrajectory = d.hasPension === "yes" && (potVal > 0 || myPct > 0) && !pastRetirementAge(d);
 
   // Lump Sum Allowance inflection point — £1,073,100 is the pot size at
   // which the standard 25% tax-free withdrawal entitlement equals the
   // £268,275 Lump Sum Allowance cap (April 2024 reform). Below it, 25%
   // tax-free applies in full; above it, the tax-free portion stays fixed
   // while further growth is otherwise unrestricted.
-  const LSA_INFLECTION_POT = 1073100;
   const alreadyPastLsa = potVal >= LSA_INFLECTION_POT;
   let lsaCrossYearsLeft = null;
   if (showTrajectory && !alreadyPastLsa) {

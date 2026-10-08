@@ -2,7 +2,7 @@ import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, B
 import { fmt } from "./format.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential } from "./pension.js";
+import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE } from "./pension.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
 
 export const MODULE_META = [
@@ -177,20 +177,30 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // "Not contributing" and "missed employer match" are mutually exclusive (the
   // latter only applies once you're contributing) — taper is an independent
   // opportunity that can stack on top of either.
-  const pensionPrimaryAmount = !contributing ? Math.round(m.salary * 0.05 * m.tr) : m.missedMatch;
+  // Not paying in is only a gap when there are earnings to pay in from: a
+  // retired member with a pot and no salary has no relief to miss.
+  const missedRelief = missedPensionRelief(d, m);
+  const notPayingIn = !contributing && missedRelief > 0;
+  const pensionPrimaryAmount = notPayingIn ? missedRelief : contributing ? m.missedMatch : 0;
   const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount); // definitive only
   const pensionPotentialAmount = Math.round(bonusSacrifice.beyondTaper); // potential — not in amount
   // Sort priority still weighs the potential upside too, so a large bonus-sacrifice
   // opportunity isn't buried in the module ordering just because it's not "definitive".
-  const pensionImpact = (!contributing ? pensionAmount + 99999 : pensionAmount) + pensionPotentialAmount;
+  const pensionImpact = (notPayingIn ? pensionAmount + 99999 : pensionAmount) + pensionPotentialAmount;
+  // Above a £1,073,100 pot, tax-free cash stops at £268,275: a fact, not
+  // something to act on, so it's the module's line only when nothing else is.
+  const taxFreeCash = calcTaxFreeCash(d);
   const pensionLabelParts = [
-    !contributing
-      ? `No pension: ${fmt(pensionPrimaryAmount)}/yr of tax relief missed`
-      : m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of employer match unclaimed` : null,
+    notPayingIn
+      ? `${d.hasPension === "yes" ? "Nothing paid in" : "No pension"}: ${fmt(pensionPrimaryAmount)}/yr of tax relief missed`
+      : contributing && m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of employer match unclaimed` : null,
     pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr of tax-free allowance you could win back` : null,
     pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} saved by paying your bonus into your pension` : null,
     aaRoom.excess > 0 ? `Payments in may go over your reduced ${fmt(aaRoom.approxAA)} pension annual allowance` : null,
   ].filter(Boolean);
+  if (pensionLabelParts.length === 0 && d.hasPension === "yes" && taxFreeCash.capped) {
+    pensionLabelParts.push(`Tax-free cash stops at ${fmt(LUMP_SUM_ALLOWANCE)}: ${fmt(taxFreeCash.overCap)} less than 25% of your pot`);
+  }
 
   s.pension = m.pensionStatus === "unknown" ? {
     // User told us they don't know their pension situation — neutral/informational,
@@ -203,7 +213,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   } : {
     // "critical" when genuinely missing match or not contributing at all;
     // "attention" only when there's still something to act on; otherwise "ok".
-    status: !contributing ? "critical" : m.missedMatch > 0 ? "critical"
+    status: notPayingIn ? "critical" : contributing && m.missedMatch > 0 ? "critical"
           : pensionTaperAmount > 0 || pensionPotentialAmount > 0 || aaRoom.excess > 0 ? "attention" : "ok",
     impact: pensionImpact,
     impactLabel: pensionLabelParts.join(" + ") || null,
