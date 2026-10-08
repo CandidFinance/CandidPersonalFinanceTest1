@@ -90,3 +90,8 @@ test("rates and limits switch over when the inputs roll into 2027/28", () => {
   assert.equal(after.cashIsaHeadroom, 12000);
   assert.equal(after.isaHeadroom, 20000);
 });
+
+test("a full NI record gives the 2026/27 full State Pension, £241.30 a week", () => {
+  const m = calcMetrics({ niYears: "35" });
+  assert.equal(Math.round(m.statePensionWeekly * 100) / 100, 241.30);
+});

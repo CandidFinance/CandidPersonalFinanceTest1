@@ -4,39 +4,39 @@
   "base": {
    "label": "Base",
    "medianLasting": 40682,
-   "meanLasting": 57224,
+   "meanLasting": 57590,
    "medianWhileMember": 8312,
    "medianPerMemberYear": 1709,
    "medianPerPound": 113,
    "medianWithRoadmap": 54190,
    "meanRevenue": 239,
-   "curveMeanBenefit": 38409,
+   "curveMeanBenefit": 38480,
    "curveMeanRevenue": 179,
    "lowCases": 2
   },
   "low": {
    "label": "Low rates",
    "medianLasting": 29038,
-   "meanLasting": 51109,
+   "meanLasting": 51463,
    "medianWhileMember": 7057,
-   "medianPerMemberYear": 1500,
-   "medianPerPound": 87,
+   "medianPerMemberYear": 1438,
+   "medianPerPound": 98,
    "medianWithRoadmap": 42873,
    "meanRevenue": 241,
-   "curveMeanBenefit": 33766,
+   "curveMeanBenefit": 33833,
    "curveMeanRevenue": 180,
    "lowCases": 2
   },
   "high": {
    "label": "High rates",
    "medianLasting": 44081,
-   "meanLasting": 57461,
+   "meanLasting": 57233,
    "medianWhileMember": 9058,
    "medianPerMemberYear": 1842,
    "medianPerPound": 115,
    "medianWithRoadmap": 56143,
    "meanRevenue": 234,
-   "curveMeanBenefit": 39483,
+   "curveMeanBenefit": 39206,
    "curveMeanRevenue": 175,
    "lowCases": 2
   }
@@ -58,22 +58,22 @@
     "base": {
      "memberYears": 4,
      "leaveYear": 4,
-     "whileMember": 6372,
-     "lasting": 17135,
-     "ifActedOn": 24121,
-     "withRoadmap": 17135,
+     "whileMember": 4741,
+     "lasting": 24452,
+     "ifActedOn": 30476,
+     "withRoadmap": 24452,
      "feesPaid": 238,
-     "perPound": 73,
-     "perMemberYear": 1593,
+     "perPound": 104,
+     "perMemberYear": 1185,
      "revenue": 171,
      "byLever": {
       "cash": 3884,
       "pensionMatch": 24127,
-      "studentLoan": -11371,
+      "studentLoan": -3202,
       "lisa": 2112
      },
      "curve": {
-      "benefit": 17061,
+      "benefit": 20401,
       "revenue": 179
      },
      "timeline": [
@@ -111,11 +111,11 @@
        "year": 2028,
        "member": true,
        "netWorthWithout": -35862,
-       "netWorthWith": -31751,
-       "netWorthRoadmap": -31751,
-       "gap": 4111,
+       "netWorthWith": -32338,
+       "netWorthRoadmap": -32338,
+       "gap": 3525,
        "flags": [
-        "stops overpaying the student loan",
+        "overpays the student loan",
         "moves cash"
        ],
        "events": [
@@ -127,11 +127,11 @@
        "year": 2029,
        "member": true,
        "netWorthWithout": -28369,
-       "netWorthWith": -21997,
-       "netWorthRoadmap": -21997,
-       "gap": 6372,
+       "netWorthWith": -23628,
+       "netWorthRoadmap": -23628,
+       "gap": 4741,
        "flags": [
-        "stops overpaying the student loan",
+        "overpays the student loan",
         "moves cash"
        ],
        "events": []
@@ -140,9 +140,9 @@
        "year": 2030,
        "member": false,
        "netWorthWithout": -23790,
-       "netWorthWith": -25116,
-       "netWorthRoadmap": -25116,
-       "gap": -1325,
+       "netWorthWith": -22797,
+       "netWorthRoadmap": -22797,
+       "gap": 993,
        "flags": [],
        "events": [
         "salary"
@@ -152,9 +152,9 @@
        "year": 2031,
        "member": false,
        "netWorthWithout": -6479,
-       "netWorthWith": -7655,
-       "netWorthRoadmap": -7655,
-       "gap": -1175,
+       "netWorthWith": -4518,
+       "netWorthRoadmap": -4518,
+       "gap": 1961,
        "flags": [
         "buys at 257003"
        ],
@@ -167,9 +167,9 @@
        "year": 2032,
        "member": false,
        "netWorthWithout": 13592,
-       "netWorthWith": 12665,
-       "netWorthRoadmap": 12665,
-       "gap": -927,
+       "netWorthWith": 16588,
+       "netWorthRoadmap": 16588,
+       "gap": 2996,
        "flags": [],
        "events": []
       },
@@ -177,9 +177,9 @@
        "year": 2033,
        "member": false,
        "netWorthWithout": 33162,
-       "netWorthWith": 32618,
-       "netWorthRoadmap": 32618,
-       "gap": -545,
+       "netWorthWith": 37264,
+       "netWorthRoadmap": 37264,
+       "gap": 4102,
        "flags": [],
        "events": []
       },
@@ -187,9 +187,9 @@
        "year": 2034,
        "member": false,
        "netWorthWithout": 53785,
-       "netWorthWith": 53739,
-       "netWorthRoadmap": 53739,
-       "gap": -46,
+       "netWorthWith": 59071,
+       "netWorthRoadmap": 59071,
+       "gap": 5286,
        "flags": [],
        "events": []
       },
@@ -197,9 +197,9 @@
        "year": 2035,
        "member": false,
        "netWorthWithout": 74005,
-       "netWorthWith": 74576,
-       "netWorthRoadmap": 74576,
-       "gap": 571,
+       "netWorthWith": 80556,
+       "netWorthRoadmap": 80556,
+       "gap": 6552,
        "flags": [],
        "events": []
       },
@@ -207,9 +207,9 @@
        "year": 2036,
        "member": false,
        "netWorthWithout": 95689,
-       "netWorthWith": 97011,
-       "netWorthRoadmap": 97011,
-       "gap": 1323,
+       "netWorthWith": 103583,
+       "netWorthRoadmap": 103583,
+       "gap": 7894,
        "flags": [],
        "events": []
       },
@@ -217,9 +217,9 @@
        "year": 2037,
        "member": false,
        "netWorthWithout": 117033,
-       "netWorthWith": 119383,
-       "netWorthRoadmap": 119383,
-       "gap": 2350,
+       "netWorthWith": 126358,
+       "netWorthRoadmap": 126358,
+       "gap": 9325,
        "flags": [],
        "events": []
       },
@@ -227,9 +227,9 @@
        "year": 2038,
        "member": false,
        "netWorthWithout": 139350,
-       "netWorthWith": 143189,
-       "netWorthRoadmap": 143189,
-       "gap": 3839,
+       "netWorthWith": 150210,
+       "netWorthRoadmap": 150210,
+       "gap": 10860,
        "flags": [],
        "events": []
       },
@@ -237,9 +237,9 @@
        "year": 2039,
        "member": false,
        "netWorthWithout": 161394,
-       "netWorthWith": 166831,
-       "netWorthRoadmap": 166831,
-       "gap": 5437,
+       "netWorthWith": 173881,
+       "netWorthRoadmap": 173881,
+       "gap": 12486,
        "flags": [],
        "events": []
       },
@@ -247,9 +247,9 @@
        "year": 2040,
        "member": false,
        "netWorthWithout": 184400,
-       "netWorthWith": 191510,
-       "netWorthRoadmap": 191510,
-       "gap": 7111,
+       "netWorthWith": 198597,
+       "netWorthRoadmap": 198597,
+       "gap": 14197,
        "flags": [],
        "events": []
       },
@@ -257,9 +257,9 @@
        "year": 2041,
        "member": false,
        "netWorthWithout": 207640,
-       "netWorthWith": 216554,
-       "netWorthRoadmap": 216554,
-       "gap": 8914,
+       "netWorthWith": 223682,
+       "netWorthRoadmap": 223682,
+       "gap": 16042,
        "flags": [],
        "events": []
       },
@@ -267,9 +267,9 @@
        "year": 2042,
        "member": false,
        "netWorthWithout": 231801,
-       "netWorthWith": 242598,
-       "netWorthRoadmap": 242598,
-       "gap": 10797,
+       "netWorthWith": 249772,
+       "netWorthRoadmap": 249772,
+       "gap": 17972,
        "flags": [],
        "events": []
       },
@@ -277,9 +277,9 @@
        "year": 2043,
        "member": false,
        "netWorthWithout": 255839,
-       "netWorthWith": 268644,
-       "netWorthRoadmap": 268644,
-       "gap": 12805,
+       "netWorthWith": 275854,
+       "netWorthRoadmap": 275854,
+       "gap": 20014,
        "flags": [],
        "events": []
       },
@@ -287,9 +287,9 @@
        "year": 2044,
        "member": false,
        "netWorthWithout": 280762,
-       "netWorthWith": 295674,
-       "netWorthRoadmap": 295674,
-       "gap": 14912,
+       "netWorthWith": 302938,
+       "netWorthRoadmap": 302938,
+       "gap": 22176,
        "flags": [],
        "events": []
       },
@@ -297,9 +297,9 @@
        "year": 2045,
        "member": false,
        "netWorthWithout": 305667,
-       "netWorthWith": 322802,
-       "netWorthRoadmap": 322802,
-       "gap": 17135,
+       "netWorthWith": 330119,
+       "netWorthRoadmap": 330119,
+       "gap": 24452,
        "flags": [],
        "events": []
       }
@@ -308,22 +308,22 @@
     "low": {
      "memberYears": 4,
      "leaveYear": 4,
-     "whileMember": 6194,
-     "lasting": 16145,
-     "ifActedOn": 22933,
-     "withRoadmap": 16145,
+     "whileMember": 4570,
+     "lasting": 23219,
+     "ifActedOn": 29740,
+     "withRoadmap": 23219,
      "feesPaid": 239,
-     "perPound": 69,
-     "perMemberYear": 1549,
+     "perPound": 98,
+     "perMemberYear": 1143,
      "revenue": 172,
      "byLever": {
       "cash": 2371,
       "pensionMatch": 24375,
-      "studentLoan": -10952,
+      "studentLoan": -3485,
       "lisa": 1785
      },
      "curve": {
-      "benefit": 16210,
+      "benefit": 19492,
       "revenue": 180
      },
      "timeline": [
@@ -361,11 +361,11 @@
        "year": 2028,
        "member": true,
        "netWorthWithout": -35267,
-       "netWorthWith": -31218,
-       "netWorthRoadmap": -31218,
-       "gap": 4049,
+       "netWorthWith": -31806,
+       "netWorthRoadmap": -31806,
+       "gap": 3461,
        "flags": [
-        "stops overpaying the student loan",
+        "overpays the student loan",
         "moves cash"
        ],
        "events": [
@@ -377,11 +377,11 @@
        "year": 2029,
        "member": true,
        "netWorthWithout": -27380,
-       "netWorthWith": -21186,
-       "netWorthRoadmap": -21186,
-       "gap": 6194,
+       "netWorthWith": -22810,
+       "netWorthRoadmap": -22810,
+       "gap": 4570,
        "flags": [
-        "stops overpaying the student loan",
+        "overpays the student loan",
         "moves cash"
        ],
        "events": []
@@ -390,9 +390,9 @@
        "year": 2030,
        "member": false,
        "netWorthWithout": -23608,
-       "netWorthWith": -25299,
-       "netWorthRoadmap": -25299,
-       "gap": -1692,
+       "netWorthWith": -22930,
+       "netWorthRoadmap": -22930,
+       "gap": 677,
        "flags": [],
        "events": [
         "salary"
@@ -402,9 +402,9 @@
        "year": 2031,
        "member": false,
        "netWorthWithout": -4100,
-       "netWorthWith": -5800,
-       "netWorthRoadmap": -5800,
-       "gap": -1700,
+       "netWorthWith": -2571,
+       "netWorthRoadmap": -2571,
+       "gap": 1529,
        "flags": [
         "buys at 256260"
        ],
@@ -417,9 +417,9 @@
        "year": 2032,
        "member": false,
        "netWorthWithout": 18050,
-       "netWorthWith": 16480,
-       "netWorthRoadmap": 16480,
-       "gap": -1569,
+       "netWorthWith": 20537,
+       "netWorthRoadmap": 20537,
+       "gap": 2488,
        "flags": [],
        "events": []
       },
@@ -427,9 +427,9 @@
        "year": 2033,
        "member": false,
        "netWorthWithout": 39619,
-       "netWorthWith": 38299,
-       "netWorthRoadmap": 38299,
-       "gap": -1320,
+       "netWorthWith": 43126,
+       "netWorthRoadmap": 43126,
+       "gap": 3507,
        "flags": [],
        "events": []
       },
@@ -437,9 +437,9 @@
        "year": 2034,
        "member": false,
        "netWorthWithout": 62139,
-       "netWorthWith": 61197,
-       "netWorthRoadmap": 61197,
-       "gap": -942,
+       "netWorthWith": 66761,
+       "netWorthRoadmap": 66761,
+       "gap": 4622,
        "flags": [],
        "events": []
       },
@@ -447,9 +447,9 @@
        "year": 2035,
        "member": false,
        "netWorthWithout": 84161,
-       "netWorthWith": 83843,
-       "netWorthRoadmap": 83843,
-       "gap": -318,
+       "netWorthWith": 89986,
+       "netWorthRoadmap": 89986,
+       "gap": 5825,
        "flags": [],
        "events": []
       },
@@ -457,9 +457,9 @@
        "year": 2036,
        "member": false,
        "netWorthWithout": 107577,
-       "netWorthWith": 108448,
-       "netWorthRoadmap": 108448,
-       "gap": 872,
+       "netWorthWith": 114695,
+       "netWorthRoadmap": 114695,
+       "gap": 7118,
        "flags": [],
        "events": []
       },
@@ -467,9 +467,9 @@
        "year": 2037,
        "member": false,
        "netWorthWithout": 130549,
-       "netWorthWith": 132721,
-       "netWorthRoadmap": 132721,
-       "gap": 2173,
+       "netWorthWith": 139046,
+       "netWorthRoadmap": 139046,
+       "gap": 8498,
        "flags": [],
        "events": []
       },
@@ -477,9 +477,9 @@
        "year": 2038,
        "member": false,
        "netWorthWithout": 154416,
-       "netWorthWith": 157959,
-       "netWorthRoadmap": 157959,
-       "gap": 3543,
+       "netWorthWith": 164379,
+       "netWorthRoadmap": 164379,
+       "gap": 9962,
        "flags": [],
        "events": []
       },
@@ -487,9 +487,9 @@
        "year": 2039,
        "member": false,
        "netWorthWithout": 177915,
-       "netWorthWith": 182957,
-       "netWorthRoadmap": 182957,
-       "gap": 5043,
+       "netWorthWith": 189473,
+       "netWorthRoadmap": 189473,
+       "gap": 11558,
        "flags": [],
        "events": []
       },
@@ -497,9 +497,9 @@
        "year": 2040,
        "member": false,
        "netWorthWithout": 202278,
-       "netWorthWith": 208896,
-       "netWorthRoadmap": 208896,
-       "gap": 6618,
+       "netWorthWith": 215498,
+       "netWorthRoadmap": 215498,
+       "gap": 13220,
        "flags": [],
        "events": []
       },
@@ -507,9 +507,9 @@
        "year": 2041,
        "member": false,
        "netWorthWithout": 226820,
-       "netWorthWith": 235130,
-       "netWorthRoadmap": 235130,
-       "gap": 8310,
+       "netWorthWith": 241818,
+       "netWorthRoadmap": 241818,
+       "gap": 14998,
        "flags": [],
        "events": []
       },
@@ -517,9 +517,9 @@
        "year": 2042,
        "member": false,
        "netWorthWithout": 252165,
-       "netWorthWith": 262267,
-       "netWorthRoadmap": 262267,
-       "gap": 10102,
+       "netWorthWith": 269057,
+       "netWorthRoadmap": 269057,
+       "gap": 16892,
        "flags": [],
        "events": []
       },
@@ -527,9 +527,9 @@
        "year": 2043,
        "member": false,
        "netWorthWithout": 277338,
-       "netWorthWith": 289337,
-       "netWorthRoadmap": 289337,
-       "gap": 11999,
+       "netWorthWith": 296216,
+       "netWorthRoadmap": 296216,
+       "gap": 18878,
        "flags": [],
        "events": []
       },
@@ -537,9 +537,9 @@
        "year": 2044,
        "member": false,
        "netWorthWithout": 303275,
-       "netWorthWith": 317293,
-       "netWorthRoadmap": 317293,
-       "gap": 14018,
+       "netWorthWith": 324266,
+       "netWorthRoadmap": 324266,
+       "gap": 20992,
        "flags": [],
        "events": []
       },
@@ -547,9 +547,9 @@
        "year": 2045,
        "member": false,
        "netWorthWithout": 329134,
-       "netWorthWith": 345279,
-       "netWorthRoadmap": 345279,
-       "gap": 16145,
+       "netWorthWith": 352353,
+       "netWorthRoadmap": 352353,
+       "gap": 23219,
        "flags": [],
        "events": []
       }
@@ -558,22 +558,22 @@
     "high": {
      "memberYears": 4,
      "leaveYear": 4,
-     "whileMember": 6386,
-     "lasting": 21142,
-     "ifActedOn": 27807,
-     "withRoadmap": 21142,
+     "whileMember": 4762,
+     "lasting": 16590,
+     "ifActedOn": 2642,
+     "withRoadmap": 16590,
      "feesPaid": 236,
-     "perPound": 91,
-     "perMemberYear": 1596,
+     "perPound": 71,
+     "perMemberYear": 1191,
      "revenue": 170,
      "byLever": {
       "cash": 8953,
       "pensionMatch": -8578,
-      "studentLoan": -5122,
+      "studentLoan": 4682,
       "lisa": 7293
      },
      "curve": {
-      "benefit": 21903,
+      "benefit": 18200,
       "revenue": 175
      },
      "timeline": [
@@ -611,11 +611,11 @@
        "year": 2028,
        "member": true,
        "netWorthWithout": -36639,
-       "netWorthWith": -32519,
-       "netWorthRoadmap": -32519,
-       "gap": 4120,
+       "netWorthWith": -33102,
+       "netWorthRoadmap": -33102,
+       "gap": 3538,
        "flags": [
-        "stops overpaying the student loan",
+        "overpays the student loan",
         "moves cash"
        ],
        "events": [
@@ -627,11 +627,11 @@
        "year": 2029,
        "member": true,
        "netWorthWithout": -29897,
-       "netWorthWith": -23511,
-       "netWorthRoadmap": -23511,
-       "gap": 6386,
+       "netWorthWith": -25134,
+       "netWorthRoadmap": -25134,
+       "gap": 4762,
        "flags": [
-        "stops overpaying the student loan",
+        "overpays the student loan",
         "moves cash"
        ],
        "events": []
@@ -640,9 +640,9 @@
        "year": 2030,
        "member": false,
        "netWorthWithout": -29540,
-       "netWorthWith": -31173,
-       "netWorthRoadmap": -31173,
-       "gap": -1633,
+       "netWorthWith": -29244,
+       "netWorthRoadmap": -29244,
+       "gap": 297,
        "flags": [],
        "events": [
         "salary"
@@ -652,9 +652,9 @@
        "year": 2031,
        "member": false,
        "netWorthWithout": -12857,
-       "netWorthWith": -14331,
-       "netWorthRoadmap": -14331,
-       "gap": -1474,
+       "netWorthWith": -11520,
+       "netWorthRoadmap": -11520,
+       "gap": 1336,
        "flags": [
         "buys at 261242"
        ],
@@ -667,9 +667,9 @@
        "year": 2032,
        "member": false,
        "netWorthWithout": 6531,
-       "netWorthWith": 5327,
-       "netWorthRoadmap": 5327,
-       "gap": -1204,
+       "netWorthWith": 8913,
+       "netWorthRoadmap": 8913,
+       "gap": 2382,
        "flags": [],
        "events": []
       },
@@ -677,9 +677,9 @@
        "year": 2033,
        "member": false,
        "netWorthWithout": 25338,
-       "netWorthWith": 24574,
-       "netWorthRoadmap": 24574,
-       "gap": -764,
+       "netWorthWith": 28816,
+       "netWorthRoadmap": 28816,
+       "gap": 3479,
        "flags": [],
        "events": []
       },
@@ -687,9 +687,9 @@
        "year": 2034,
        "member": false,
        "netWorthWithout": 45152,
-       "netWorthWith": 44897,
-       "netWorthRoadmap": 44897,
-       "gap": -254,
+       "netWorthWith": 49717,
+       "netWorthRoadmap": 49717,
+       "gap": 4565,
        "flags": [],
        "events": []
       },
@@ -697,9 +697,9 @@
        "year": 2035,
        "member": false,
        "netWorthWithout": 64487,
-       "netWorthWith": 64896,
-       "netWorthRoadmap": 64896,
-       "gap": 409,
+       "netWorthWith": 70177,
+       "netWorthRoadmap": 70177,
+       "gap": 5690,
        "flags": [],
        "events": []
       },
@@ -707,9 +707,9 @@
        "year": 2036,
        "member": false,
        "netWorthWithout": 85200,
-       "netWorthWith": 86498,
-       "netWorthRoadmap": 86498,
-       "gap": 1299,
+       "netWorthWith": 92036,
+       "netWorthRoadmap": 92036,
+       "gap": 6836,
        "flags": [],
        "events": []
       },
@@ -717,9 +717,9 @@
        "year": 2037,
        "member": false,
        "netWorthWithout": 105401,
-       "netWorthWith": 107837,
-       "netWorthRoadmap": 107837,
-       "gap": 2436,
+       "netWorthWith": 113394,
+       "netWorthRoadmap": 113394,
+       "gap": 7993,
        "flags": [],
        "events": []
       },
@@ -727,9 +727,9 @@
        "year": 2038,
        "member": false,
        "netWorthWithout": 126259,
-       "netWorthWith": 130186,
-       "netWorthRoadmap": 130186,
-       "gap": 3927,
+       "netWorthWith": 135444,
+       "netWorthRoadmap": 135444,
+       "gap": 9186,
        "flags": [],
        "events": []
       },
@@ -737,9 +737,9 @@
        "year": 2039,
        "member": false,
        "netWorthWithout": 146687,
-       "netWorthWith": 152351,
-       "netWorthRoadmap": 152351,
-       "gap": 5664,
+       "netWorthWith": 157072,
+       "netWorthRoadmap": 157072,
+       "gap": 10385,
        "flags": [],
        "events": []
       },
@@ -747,9 +747,9 @@
        "year": 2040,
        "member": false,
        "netWorthWithout": 167749,
-       "netWorthWith": 175494,
-       "netWorthRoadmap": 175494,
-       "gap": 7745,
+       "netWorthWith": 179317,
+       "netWorthRoadmap": 179317,
+       "gap": 11568,
        "flags": [],
        "events": []
       },
@@ -757,9 +757,9 @@
        "year": 2041,
        "member": false,
        "netWorthWithout": 188976,
-       "netWorthWith": 199057,
-       "netWorthRoadmap": 199057,
-       "gap": 10081,
+       "netWorthWith": 201726,
+       "netWorthRoadmap": 201726,
+       "gap": 12750,
        "flags": [],
        "events": []
       },
@@ -767,9 +767,9 @@
        "year": 2042,
        "member": false,
        "netWorthWithout": 210911,
-       "netWorthWith": 223542,
-       "netWorthRoadmap": 223542,
-       "gap": 12631,
+       "netWorthWith": 224757,
+       "netWorthRoadmap": 224757,
+       "gap": 13846,
        "flags": [],
        "events": []
       },
@@ -777,9 +777,9 @@
        "year": 2043,
        "member": false,
        "netWorthWithout": 232663,
-       "netWorthWith": 247979,
-       "netWorthRoadmap": 247979,
-       "gap": 15316,
+       "netWorthWith": 247557,
+       "netWorthRoadmap": 247557,
+       "gap": 14894,
        "flags": [],
        "events": []
       },
@@ -787,9 +787,9 @@
        "year": 2044,
        "member": false,
        "netWorthWithout": 255141,
-       "netWorthWith": 273314,
-       "netWorthRoadmap": 273314,
-       "gap": 18173,
+       "netWorthWith": 270957,
+       "netWorthRoadmap": 270957,
+       "gap": 15816,
        "flags": [],
        "events": []
       },
@@ -797,9 +797,9 @@
        "year": 2045,
        "member": false,
        "netWorthWithout": 277543,
-       "netWorthWith": 298685,
-       "netWorthRoadmap": 298685,
-       "gap": 21142,
+       "netWorthWith": 294133,
+       "netWorthRoadmap": 294133,
+       "gap": 16590,
        "flags": [],
        "events": []
       }
@@ -3920,7 +3920,7 @@
       "partner": 6138
      },
      "curve": {
-      "benefit": 37577,
+      "benefit": 37042,
       "revenue": 179
      },
      "timeline": [
@@ -4175,7 +4175,7 @@
       "partner": 5055
      },
      "curve": {
-      "benefit": 36498,
+      "benefit": 35895,
       "revenue": 180
      },
      "timeline": [
@@ -4431,7 +4431,7 @@
       "partner": 4854
      },
      "curve": {
-      "benefit": 34284,
+      "benefit": 33800,
       "revenue": 175
      },
      "timeline": [
@@ -8476,7 +8476,7 @@
       "studentLoan": 7817
      },
      "curve": {
-      "benefit": 12027,
+      "benefit": 10644,
       "revenue": 179
      },
      "timeline": [
@@ -8718,7 +8718,7 @@
       "studentLoan": 7823
      },
      "curve": {
-      "benefit": 9871,
+      "benefit": 8527,
       "revenue": 180
      },
      "timeline": [
@@ -8960,7 +8960,7 @@
       "studentLoan": 7419
      },
      "curve": {
-      "benefit": 13230,
+      "benefit": 11865,
       "revenue": 175
      },
      "timeline": [
@@ -9949,7 +9949,7 @@
      "byLever": {
       "cash": 9516,
       "taxTraps": 3944,
-      "studentLoan": -1725
+      "studentLoan": -1784
      },
      "curve": {
       "benefit": 71341,
@@ -10192,7 +10192,7 @@
      "byLever": {
       "cash": 8402,
       "taxTraps": 4038,
-      "studentLoan": -1499
+      "studentLoan": -1562
      },
      "curve": {
       "benefit": 78491,
@@ -10435,7 +10435,7 @@
      "byLever": {
       "cash": 9292,
       "taxTraps": 3489,
-      "studentLoan": -1541
+      "studentLoan": -1584
      },
      "curve": {
       "benefit": 61348,

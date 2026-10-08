@@ -66,7 +66,7 @@ export function simulate(arch, { path = "base", levers = [], actionRate = 0, mem
     pension: { own: 0, employer: 0, matchUpTo: null, pot: 0, sacrifice: false, type: "none", ...clone(p.pension || {}) },
     extraSacrificePct: 0,     // Candid: salary sacrificed to stay under a tax trap
     selfPensionPct: 0,        // Candid: self-employed standing pension payment
-    sl: p.sl ? { ...clone(p.sl), overpay: p.sl.overpay || 0 } : null,
+    sl: p.sl ? { ...clone(p.sl), overpay: p.sl.overpay || 0, habit: p.sl.overpay || 0 } : null,
     lisa: 0, lisaOpen: false, lisaAmount: 0,
     isaSS: p.isaSS || 0,
     gia: p.gia ? clone(p.gia) : { value: 0, basis: 0 },
@@ -335,11 +335,14 @@ export function simulate(arch, { path = "base", levers = [], actionRate = 0, mem
         x.slRepay = Math.min(p.sl.balance, 0.09 * Math.max(0, slEarnings - R.slThreshold(p.sl.plan, path, t)));
         // Candid: the app's verdict on overpaying, with this year's figures.
         if (lever("studentLoan") && i === 0) {
-          const d = { studentLoan: p.sl.plan, loanBalance: String(Math.round(p.sl.balance)), salary: String(Math.round(x.gross)), salaryTrajectory: "stable" };
+          const d = { studentLoan: p.sl.plan, loanBalance: String(Math.round(p.sl.balance)), salary: String(Math.round(x.gross)), salaryTrajectory: p.trajectory ?? "stable" };
           const m = calcMetrics(d, { isaRate: e.bestCashIsa, nonIsaRate: e.bestEasyAccess });
           const verdict = calcStudentLoanScenario(d, { ...m, bestSavingsRate: e.bestCashIsa });
           p.sl.candidOverpay = verdict.worthOverpaying;
+          // Each year's verdict: stop overpaying when it doesn't pay, go back
+          // to their usual overpayment when it does again.
           if (!verdict.worthOverpaying && p.sl.overpay > 0) { p.sl.overpay *= 1 - a; flags.push("stops overpaying the student loan"); }
+          if (verdict.worthOverpaying && p.sl.overpay < p.sl.habit) { p.sl.overpay += a * (p.sl.habit - p.sl.overpay); flags.push("overpays the student loan"); }
         }
         x.slOverpay = Math.min(Math.max(0, p.sl.balance - x.slRepay), p.sl.overpay * prices);
       }

@@ -7,6 +7,7 @@
 // cash[].kind: "current" (0%), "bigbank" (the inertia rate), "legacy" (an
 // old account, Bank Rate + spread), "diy" (someone who keeps their own money
 // on top rates). `inflow`: the account the year's spare money lands in.
+// `trajectory`: the pay outlook they'd pick in the app ("stable" unless set).
 
 const employed = (salary, pension = {}) => ({ employment: "employed", salary, pension });
 const dc = (own, { employer = 0, matchUpTo = null, pot = 0, sacrifice = false } = {}) => ({ type: "dc", own, employer, matchUpTo, pot, sacrifice });
@@ -15,7 +16,7 @@ const db = { type: "db" };
 export const ARCHETYPES = [
   {
     id: "priya", name: "Priya", age: 23, summary: "First job", region: "other", engagement: "mid", member: [[1, 4]],
-    people: [{ name: "Priya", age: 23, ...employed(32000, dc(4, { matchUpTo: 6, pot: 3000 })),
+    people: [{ name: "Priya", age: 23, ...employed(32000, dc(4, { matchUpTo: 6, pot: 3000 })), trajectory: "moderate",
       sl: { plan: "plan2", balance: 52000, writeOffYear: 2056, overpay: 1200 } }],
     cash: [{ name: "Current account", amount: 3000, kind: "current" }],
     housing: { type: "rent", rent: 7800 }, spending: 13500,
@@ -29,7 +30,7 @@ export const ARCHETYPES = [
   {
     id: "callum", name: "Callum", age: 29, summary: "Heading for the £100k trap", region: "other", engagement: "high", member: [[1, 10]],
     people: [
-      { name: "Callum", age: 29, ...employed(68000, dc(5, { employer: 5, pot: 28000, sacrifice: true })), isaSS: 8000,
+      { name: "Callum", age: 29, ...employed(68000, dc(5, { employer: 5, pot: 28000, sacrifice: true })), isaSS: 8000, trajectory: "moderate",
         sl: { plan: "plan2", balance: 60000, writeOffYear: 2049 } },
       { name: "Ella", age: 29, ...employed(38000, db), sl: { plan: "plan2", balance: 35000, writeOffYear: 2050 } },
     ],
@@ -211,7 +212,7 @@ export const ARCHETYPES = [
   },
   {
     id: "nadia", name: "Nadia", age: 29, summary: "Fast-track career, big decisions", region: "london_se", engagement: "high", member: [[1, 3]],
-    people: [{ name: "Nadia", age: 29, ...employed(75000, dc(0, { employer: 8, pot: 30000, sacrifice: true })), isaSS: 15000,
+    people: [{ name: "Nadia", age: 29, ...employed(75000, dc(0, { employer: 8, pot: 30000, sacrifice: true })), isaSS: 15000, trajectory: "moderate",
       sl: { plan: "plan2", balance: 65000, writeOffYear: 2049 } }],
     cash: [{ name: "Big-bank saver", amount: 40000, kind: "bigbank" }, { name: "Current account", amount: 4000, kind: "current" }],
     housing: { type: "rent", rent: 24000 }, spending: 20000,
@@ -271,7 +272,7 @@ export const ARCHETYPES = [
   {
     id: "ben", name: "Ben", age: 21, summary: "Grows up with Candid", region: "other", engagement: "mid", member: [[1, 12]],
     people: [
-      { name: "Ben", age: 21, ...employed(9000), sl: { plan: "plan5", balance: 50000, writeOffYear: 2068 } },
+      { name: "Ben", age: 21, ...employed(9000), sl: { plan: "plan5", balance: 50000, writeOffYear: 2068 }, trajectory: "moderate" },
       // A partner from year 8, when they buy together.
       { name: "Partner", age: 22, employment: "none", salary: 0, buying: false },
     ],

@@ -97,6 +97,8 @@ export function studentLoanPlanConstants(studentLoanType) {
 // it" — shared by computeModuleStatuses (Dashboard figure) and the module's
 // own Win/info tile, so the two can't disagree (same pattern as
 // calcCashOptimisation).
+const repayRateOf = plan => SL_REPAYMENT_RATES[plan] ?? SL_REPAYMENT_RATES.plan1;
+
 export function calcStudentLoanScenario(d, m) {
   const { writeOffYr, threshold } = studentLoanPlanConstants(d.studentLoan);
   const slInterestRate = resolveSlRate(d, m.salary);
@@ -110,13 +112,19 @@ export function calcStudentLoanScenario(d, m) {
   const inflectionSalary = Math.round(threshold + (m.loanBal * slInterestRate) / 0.09);
   const salaryGapToInflection = Math.max(0, inflectionSalary - m.salary);
 
+  // Pay rises at the user's expected rate (m.salaryGrowthRate, the same as
+  // m.willClear and the forecast use): repayments are 9% of pay above the
+  // threshold, so with pay held flat a loan that would be cleared can look
+  // as if it never will be, and overpaying as if it's wasted.
+  const growth = m.salaryGrowthRate ?? 0;
+  const repaymentIn = yr => Math.max(0, m.salary * Math.pow(1 + growth, yr - 1) - threshold) * repayRateOf(d.studentLoan);
   let projBal = m.loanBal, writeOffBal = 0, clearYr = null, totalRepaidProjected = 0;
   for (let yr = 1; yr <= writeOffYr; yr++) {
     projBal = projBal * (1 + slInterestRate);
     // Cap the final year's repayment at what's actually left to clear — otherwise
     // a loan that pays off partway through its final year books a full year's
     // repayment against a balance that no longer exists, overstating total repaid.
-    const payment = Math.min(annualRep, projBal);
+    const payment = Math.min(repaymentIn(yr), projBal);
     projBal -= payment;
     totalRepaidProjected += payment;
     if (projBal <= 0 && !clearYr) { clearYr = yr; break; }

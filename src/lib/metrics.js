@@ -74,13 +74,13 @@ export function calcMetrics(d, marketRates = {}) {
   const slThreshold = slRepaymentThreshold(d.studentLoan);
   if (d.studentLoan === "plan2") {
     annualRepayment = Math.max(0, (salary - slThreshold) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=30; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=30; y++) { const s = salary * Math.pow(1+slGrow,y-1); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
   } else if (d.studentLoan === "plan5") {
     annualRepayment = Math.max(0, (salary - slThreshold) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=40; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=40; y++) { const s = salary * Math.pow(1+slGrow,y-1); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
   } else if (d.studentLoan === "plan1") {
     annualRepayment = Math.max(0, (salary - slThreshold) * 0.09);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=25; y++) { const s = salary * Math.pow(1+slGrow,y); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
+    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=25; y++) { const s = salary * Math.pow(1+slGrow,y-1); b = b*r - Math.max(0,(s-slThreshold)*0.09); if(b<=0) return true; } return false; })();
   }
   const otherIncome = +d.otherIncome||0;
   const dividendIncome = +d.dividendIncome||0;
@@ -135,7 +135,8 @@ export function calcMetrics(d, marketRates = {}) {
         cashMoveAmount = cashExcessNotWorthMoving ? isaEligiblePortion : cash;
   // State pension estimate
   const niYears = +d.niYears||0;
-  const statePensionWeekly = (niYears / 35) * 221.20;
+  // Full new State Pension, 2026/27.
+  const statePensionWeekly = (niYears / 35) * 241.30;
   const statePensionAnnual = statePensionWeekly * 52;
   const niYearsToFull = Math.max(0, 35 - niYears);
   // Mortgage fix expiry in days

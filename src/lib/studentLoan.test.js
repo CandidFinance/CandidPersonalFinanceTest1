@@ -103,3 +103,14 @@ test("plan from where you lived, the course and when it started (GOV.UK rules)",
   assert.equal(plan("england", "undergrad"), null);
   assert.equal(plan(), null);
 });
+
+test("pay growth counts: a loan that never clears on today's pay can clear as pay rises", () => {
+  const d = { salary: "52000", studentLoan: "plan2", loanBalance: "60000" };
+  const flat = calcStudentLoanScenario({ ...d }, { ...calcMetrics(d), salaryGrowthRate: 0 });
+  assert.equal(flat.willClear, false);
+  const rising = { ...d, salaryTrajectory: "moderate" };
+  const sl = calcStudentLoanScenario(rising, calcMetrics(rising));
+  assert.equal(sl.willClear, true);
+  // The scenario and the metrics agree on whether it clears.
+  assert.equal(calcMetrics(rising).willClear, true);
+});

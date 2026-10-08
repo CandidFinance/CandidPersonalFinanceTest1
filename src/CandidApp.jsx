@@ -432,7 +432,7 @@ function getModuleInsights(key, d, m, savingsRates) {
         } : null,
         +d.niYears > 0 ? {
           label:"State pension estimate", value: `${fmt(m.statePensionWeekly)}/wk · ${fmt(m.statePensionAnnual)}/yr`, flag: m.niYearsToFull > 0,
-          tooltip:`Based on ${d.niYears} qualifying NI years. Full state pension (£221.20/wk) requires 35 years. You need ${m.niYearsToFull} more year${m.niYearsToFull!==1?"s":""} to reach the full amount. You can check (and fill gaps) via HMRC's Check Your State Pension service.`
+          tooltip:`Based on ${d.niYears} qualifying NI years. Full state pension (£241.30/wk) requires 35 years. You need ${m.niYearsToFull} more year${m.niYearsToFull!==1?"s":""} to reach the full amount. You can check (and fill gaps) via HMRC's Check Your State Pension service.`
         } : null,
       ].filter(Boolean);
     }
@@ -1756,7 +1756,7 @@ function OnboardingStep({ stepId, d, set }) {
               }} placeholder="65"/>
               <Warn msg={+d.retirementAge > 0 && +d.retirementAge < 55 ? "Pension access age is currently 57 from 2028 — double-check" : null}/>
             </Field>
-            <Field label={<>NI years completed <InfoTooltip text="You need 35 NI qualifying years for the full State Pension (£221.20/week). Fewer years = a smaller pension. Check yours free at gov.uk/check-state-pension — gaps can be filled with voluntary contributions."/></>} hint="Check via HMRC / Personal Tax Account">
+            <Field label={<>NI years completed <InfoTooltip text="You need 35 NI qualifying years for the full State Pension (£241.30/week). Fewer years = a smaller pension. Check yours free at gov.uk/check-state-pension — gaps can be filled with voluntary contributions."/></>} hint="Check via HMRC / Personal Tax Account">
               <input style={INP} type="number" value={d.niYears||""} onChange={e => {
                 const v = Math.min(35, Math.max(0, +e.target.value || 0));
                 set("niYears", e.target.value === "" ? "" : String(v));
