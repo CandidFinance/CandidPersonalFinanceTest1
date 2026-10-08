@@ -1,6 +1,6 @@
 # Candid customer lives: assumptions and archetypes
 
-Draft for review, 8 October 2026. Stage 1 of 3: agree these assumptions and the 20 archetypes; stage 2 runs them through Candid's own calculations; stage 3 turns the results into an investor page.
+8 October 2026. Stage 1 of 3 (agreed): these assumptions and the 20 archetypes. Stage 2 (built): the model in `scripts/personas/`, run with `npm run personas`; results in `scripts/personas/out/summary.md`. Stage 3: the investor page.
 
 Everything here is hypothetical and illustrative. Fine for investors; not for consumer marketing without a compliance review.
 
@@ -266,7 +266,7 @@ Swansea · married to Carys (part-time, £14k) · factory engineer, £46k · wor
 ### 14. Nadia, 29: fast-track career, big decisions
 London · single, renting · management consultant, £75k · Plan 2 loan £65k · engagement: high
 - **Starts with:** £40k cash at 1.5%; £15k Stocks and Shares ISA; employer pays 8% into the pension.
-- **Life:** Y2 £85k + £12k bonus · Y3 MBA year, no income, £70k cost · Y4 £130k + £30k bonus · Y5 buys a £600k flat · Y7 £160k.
+- **Life:** Y2 £85k + £12k bonus · Y3 MBA year, no income, £30k cost (part-sponsored) · Y4 £130k + £30k bonus · Y6 buys a £600k flat · Y7 £160k.
 - **Where Candid helps:** cash and the ISA before the MBA; the student loan question, which flips as income rises; the £100k trap and bonus into the pension.
 - **Leaves:** Y3, switches to a competitor app. Shows what's lost when a member leaves early.
 
