@@ -83,7 +83,7 @@ Everything else moves with Bank Rate (BR):
 Other assumptions:
 
 - **Investments:** 6% a year nominal after fees (about 4% after inflation).
-- **House prices:** 2% in 26/27, 3% in 27/28, then CPI + 1.5pt.
+- **House prices:** 2% in 26/27, 3% in 27/28, then CPI + 1.5pt (3.5% on the base path). London and the South East: the same for the first two years, then 2% a year. That covers Kwame, Nadia and Dev (London), and Ellie, Sophie, and Helen and Richard (South East).
 - **Rents:** rise with average pay.
 - **RPI:** CPI + 0.9pt until 2030, then equal to CPI (RPI reform).
 - **Individual pay:** rises from each archetype's life events, on top of average pay growth.
@@ -92,7 +92,7 @@ Other assumptions:
 
 | | Low | High |
 |---|---|---|
-| Bank Rate | Falls to 2.0% by 29/30 and stays | Rises to 5.0% in 27/28, settles at 4.5% |
+| Bank Rate | Falls to 2.0% by 29/30 and stays | Rises to 4.5% in 27/28, settles at 4.0% |
 | CPI | 2.0% from 27/28 | 4.0% in 27/28, 2.5% long run |
 | Effect on Candid | Rate gaps shrink, so cash benefit falls | Rate gaps widen, so cash benefit rises |
 
@@ -114,7 +114,18 @@ Already legislated or announced (all in the model):
 | Income tax thresholds and personal allowance frozen | Until April 2031 |
 | Inheritance tax nil-rate bands frozen | Until April 2031 |
 
-Not announced: assumed to stay where they are in cash terms (ISA £20,000, LISA £4,000, PSA, CGT allowance £3,000, dividend allowance £500, pension annual allowance £60,000, Child Benefit charge £60k to £80k, childcare support cut-off £100k). Frozen income tax thresholds rise with CPI from April 2031. State pension: triple lock, 4% a year. Lifetime ISA continues as now (the government has consulted on replacing it; if it does, the replacement is assumed to match).
+Not announced: assumed to stay where they are in cash terms (ISA £20,000, LISA £4,000, PSA, CGT allowance £3,000, dividend allowance £500, pension annual allowance £60,000, Child Benefit charge £60k to £80k, childcare support cut-off £100k). State pension: 3.5% a year. Lifetime ISA continues as now (the government has consulted on replacing it; if it does, the replacement is assumed to match).
+
+**Income tax thresholds after the freeze.** Fiscal drag is too useful to governments to give up, so thresholds aren't assumed to track inflation. Instead they're revisited in April 2031 and every five years after, each time rising by about half of the previous five years' inflation, then frozen again until the next review. On the base path:
+
+| From April | Rise | Personal allowance | Higher-rate threshold |
+|---|---|---|---|
+| 2026 (now) | Frozen | £12,570 | £50,270 |
+| 2031 | 6% | £13,320 | £53,290 |
+| 2036 | 5% | £13,990 | £55,950 |
+| 2041 | 5% | £14,690 | £58,750 |
+
+National Insurance thresholds move with them. The £100,000 taper point and the £125,140 additional-rate threshold stay frozen throughout, as they have been since 2010. On the low and high paths, the rises follow those paths' inflation.
 
 All archetypes live in England or Wales, because the app doesn't yet handle Scottish income tax bands.
 
