@@ -1,5 +1,5 @@
 import { calcBonusTaxBreakdown, calcIncomeTax, marginalNiRate, EMPLOYER_NI_RATE, PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD, NI_RATE_ABOVE_UEL, salarySacrificeNiCap } from "./tax.js";
-import { SALARY_GROWTH_RATES, pastStatePensionAge } from "./metrics.js";
+import { SALARY_GROWTH_RATES, pastStatePensionAge, retirementAgeFor } from "./metrics.js";
 import { slRepaymentThreshold, resolveSlRate, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { taxYearFor, taxYearOf } from "./taxYear.js";
 import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT } from "./growth.js";
@@ -24,9 +24,10 @@ export function missedPensionRelief(d, m) {
   return Math.max(0, Math.round((m.salary || 0) * 0.05 * (m.tr || 0)));
 }
 
-// At or past the age they told us they'd retire (65 if not given).
+// At or past the age they stop working (metrics retirementAgeFor: the age
+// they gave, or 75 if they're still earning past it).
 export function pastRetirementAge(d) {
-  return (+d.age || 0) >= (+d.retirementAge || 65);
+  return (+d.age || 0) >= retirementAgeFor(d);
 }
 
 // Started taking money out: tax-free cash only, or an income or lump sums.
@@ -345,7 +346,7 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   const crossesTaper = fullBonusTax.crossesTaper;
   const crossesAR = fullBonusTax.crossesAR;
 
-  const age = +d.age||30, retireAge = +d.retirementAge||65;
+  const age = +d.age||30, retireAge = retirementAgeFor(d);
   const years = Math.max(1, retireAge - age);
   // In today's money, at the real growth rate (growth.js).
   const bonusFVpartial = (pct) => Math.round(bonus * pct/100 * Math.pow(1 + GROWTH_REAL_PCT/100, years));
@@ -389,7 +390,7 @@ function fvAnnuityLocal(pmt, annualRatePct, months) {
 export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   const salary = m.salary, potVal = +d.potValue||0;
   const myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0;
-  const retireAge = +d.retirementAge||65, age = +d.age||30;
+  const retireAge = retirementAgeFor(d), age = +d.age||30;
   const years = Math.max(1, retireAge - age);
   // In today's money: the real growth rate, after inflation (growth.js), the
   // same as calcMetrics' projectedPot.

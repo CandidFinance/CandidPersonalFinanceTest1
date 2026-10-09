@@ -6,6 +6,9 @@ import { capField } from "../../lib/onboarding.js";
 import { neededAtStart, visibleQuestions, countSettled } from "../../lib/propertyGuide.js";
 import PillMoneyInput, { pillFieldStyle } from "../PillMoneyInput.jsx";
 
+// A question's lowest allowed answer: a number, or worked out from the answers.
+const minFor = (q, ctx) => typeof q.min === "function" ? q.min(ctx) : q.min;
+
 // A step's guided first pass: one question per screen under the step's
 // result card, which fills in as the answers go in. The card is `result`
 // when given; Mortgage and Rent vs buy instead show this in place of their
@@ -123,7 +126,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     : q.kind === "text" ? typeof raw === "string" && raw.trim() !== ""
     : q.kind === "custom" ? (q.answered ? q.answered(ctx) : true)
     : q.kind === "info" ? true
-    : raw !== "" && raw != null && !isNaN(+raw) && (q.min == null || +raw >= q.min);
+    : raw !== "" && raw != null && !isNaN(+raw) && (minFor(q, ctx) == null || +raw >= minFor(q, ctx));
   const continueButton = (
     <button type="submit" disabled={q.required && !hasAnswer} style={{
       ...primary, marginTop:"16px",
@@ -132,7 +135,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   );
   const submit = e => { e.preventDefault(); if (hasAnswer || !q.required) next({}); };
   // Below a question's minimum (age 18), its own line replaces the note.
-  const belowMin = q.min != null && raw !== "" && raw != null && !isNaN(+raw) && +raw < q.min;
+  const belowMin = minFor(q, ctx) != null && raw !== "" && raw != null && !isNaN(+raw) && +raw < minFor(q, ctx);
   const note = belowMin && q.minNote ? q.minNote(ctx) : q.note ? q.note(ctx) : null;
   const shift = reduceMotion ? 0 : SHIFT_PX;
   const variants = {

@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { AlertTriangle, PartyPopper, Banknote, Check } from "lucide-react";
-import { ExplainLink, ExploreToggle } from "../ModuleScreenParts.jsx";
+import { ExplainLink } from "../ModuleScreenParts.jsx";
 import {
   isPensionContributing,
   calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
   calcCarryForward, defaultCarryForwardYears, calcBonusSacrifice, calcPensionGrowthTrajectory,
   missedPensionRelief, calcTaxFreeCash, inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT, MONEY_PURCHASE_ANNUAL_ALLOWANCE,
-  sacrificeNiRate,
+  sacrificeNiRate, minimumPensionAge,
 } from "../../lib/pension.js";
+import { bestDrawdown, defaultDrawdownYears } from "../../lib/drawdown.js";
+import { taxYearFor } from "../../lib/taxYear.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
-import MobileDrawdown from "./MobileDrawdown.jsx";
+import MobileDrawdown, { compact, Pill } from "./MobileDrawdown.jsx";
 import { EMPLOYER_NI_RATE } from "../../lib/tax.js";
 import MobileProviderTile from "../MobileProviderTile.jsx";
 import InfoButton from "../InfoButton.jsx";
@@ -88,6 +90,7 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
 export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const [cfYears, setCfYears] = useState(defaultCarryForwardYears());
+  const [showTaxFreeInfo, setShowTaxFreeInfo] = useState(false);
   const [bonusInput, setBonusInput] = useState(+d.bonusAmount || null);
   const [sacrificePct, setSacrificePct] = useState(100);
   const [extraPct, setExtraPct] = useState(1);
@@ -95,7 +98,6 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   // The what-if tools (bonus sacrifice, carry forward, the growth chart and
   // the £80k-£100k sacrifice explorer) sit under "Explore", closed at first,
   // so the screen leads with the answer and its one action.
-  const [exploreOpen, setExploreOpen] = useState(false);
 
   if (m.pensionStatus === "unknown") {
     return <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>You told us you're not sure about your pension situation — find out your contribution rate and employer match, then come back to see your options here.</p>;
@@ -112,7 +114,8 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const myPct = +d.myContribution || 0;
   const empCapPct = +d.employerMatch || 0;
   const showMatchWin = notPayingIn || (contributing && m.missedMatch > 0);
-  const matchWinTitle = !contributing ? "Start your pension" : "Get your full employer match";
+  // Not paying in: "Start" only when there's no pension yet.
+  const matchWinTitle = contributing ? "Get your full employer match" : taxFreeCash.pot > 0 ? "Pay into your pension" : "Start a pension";
   const matchWinHeadline = !contributing
     ? `Every £${100-trPct} becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
     : `Up to ${fmt(m.missedMatch)}/yr`;
@@ -165,11 +168,22 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   else if (contributing && m.missedMatch > 0) opportunityCols.push({ label:"Employer match you're not getting", value: fmtCompact(m.missedMatch) });
   if (taper.recoverable && taper.taperTotalSaving > 0) opportunityCols.push({ label:"Tax-free allowance you could win back", value: fmtCompact(taper.taperTotalSaving) });
 
+  // Drawdown planning: from the minimum pension age (55, 57 from April
+  // 2028), or once retired, for anyone with a pot.
+  const showDrawdown = d.hasPension === "yes" && taxFreeCash.pot > 0 && (retired || (+d.age || 0) >= minimumPensionAge(taxYearFor(d)));
+  const drawdownYears = defaultDrawdownYears(d);
+  const drawdownBest = showDrawdown ? bestDrawdown(d, m, drawdownYears) : null;
+  // The what-ifs: growth to retirement, past years' allowance, the bonus.
+  // Not for someone retired with no earnings.
+  const showExplore = !(retired && !(m.salary > 0));
+
   let winCounter = 0;
   const win1Num = showMatchWin ? ++winCounter : null;
-  const win2Num = showSacrificeCalc ? ++winCounter : null;
-  const win3Num = cf.showCarryForward ? ++winCounter : null;
-  const win4Num = ++winCounter; // bonus-sacrifice win always rendered (calculator or prompt)
+  const win2Num = showSacrificeCalc && taper.recoverable ? ++winCounter : null;
+  const drawdownNum = drawdownBest ? ++winCounter : null;
+  const exploreNum = showExplore ? ++winCounter : null;
+  // Inside the what-ifs tile, unnumbered.
+  const win3Num = null, win4Num = null;
 
   const sacrificeTile = (
     <MobileWinTile number={win2Num}
@@ -228,6 +242,38 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         {newBandLabel !== m.taxBandLabel ? `, dropping you into the ${newBandLabel}-rate band.` : `, still within the ${m.taxBandLabel}-rate band.`} Use the "What if you contributed more?" stepper further down to try a different percentage.
       </p>
     </MobileWinTile>
+  );
+
+  // The tax-free cash explained, behind the "?" in the drawdown tile.
+  const taxFreeCashText = (taxFreeCash.taken > 0
+    ? `Of your ${fmt(taxFreeCash.allowance)} limit, ${fmt(taxFreeCash.taken)} has been taken. 25% of the part you haven't touched is about ${fmt(taxFreeCash.quarter)}.`
+    : taxFreeCash.capped
+    ? `25% of your pot would be ${fmt(taxFreeCash.quarter)}, but tax-free cash stops at ${fmt(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? ", the Lump Sum Allowance" : ", your protected limit"}.`
+    : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(taxFreeCash.allowance)}.`)
+    + " The rest is taxed as income when it's taken out."
+    + (!d.pensionProtection && taxFreeCash.capped ? " A Fixed or Individual Protection from 2012 to 2016 allows more." : "");
+  const taxFreeCashBlock = (
+        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
+          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Tax-free cash{taxFreeCash.taken > 0 ? " left" : ""}</div>
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            <div style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,lineHeight:1.15}}>{fmt(taxFreeCash.taxFree)}</div>
+            <InfoButton onClick={() => setShowTaxFreeInfo(o => !o)} open={showTaxFreeInfo}/>
+          </div>
+          {showTaxFreeInfo && <>
+          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:"4px 0 0"}}>
+            {taxFreeCash.taken > 0
+              ? `Of your ${fmt(taxFreeCash.allowance)} limit, ${fmt(taxFreeCash.taken)} has been taken. ${taxFreeCash.capped ? `25% of the part you haven't touched would be about ${fmt(taxFreeCash.quarter)}, so the limit decides it.` : `25% of the part you haven't touched is about ${fmt(taxFreeCash.quarter)}.`} The rest is taxed as income when it's taken out.`
+              : taxFreeCash.capped
+              ? `25% of your pot would be ${fmt(taxFreeCash.quarter)}, but tax-free cash stops at ${fmt(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? `, the Lump Sum Allowance, for any pot above ${fmt(LSA_INFLECTION_POT)}` : ", your protected limit"}. The other ${fmt(taxFreeCash.overCap)} is taxed as income when it's taken out.`
+              : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(taxFreeCash.allowance)}. The rest is taxed as income when it's taken out.`}
+          </p>
+          {!d.pensionProtection && taxFreeCash.capped && (
+            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.55,margin:"6px 0 0"}}>
+              A Fixed or Individual Protection from 2012 to 2016 allows more, up to £450,000.
+            </p>
+          )}
+          </>}
+        </div>
   );
 
   return (
@@ -317,28 +363,25 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         </div>
       )}
 
-      {/* Tax-free cash: shown once the Lump Sum Allowance caps it, or to
-          anyone at their retirement age, when it's the figure that matters. */}
-      {d.hasPension === "yes" && taxFreeCash.pot > 0 && (taxFreeCash.capped || retired) && (
-        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Tax-free cash{taxFreeCash.taken > 0 ? " left" : ""}</div>
-          <div style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,lineHeight:1.15}}>{fmt(taxFreeCash.taxFree)}</div>
-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:"4px 0 0"}}>
-            {taxFreeCash.taken > 0
-              ? `Of your ${fmt(taxFreeCash.allowance)} limit, ${fmt(taxFreeCash.taken)} has been taken. ${taxFreeCash.capped ? `25% of the part you haven't touched would be about ${fmt(taxFreeCash.quarter)}, so the limit decides it.` : `25% of the part you haven't touched is about ${fmt(taxFreeCash.quarter)}.`} The rest is taxed as income when it's taken out.`
-              : taxFreeCash.capped
-              ? `25% of your pot would be ${fmt(taxFreeCash.quarter)}, but tax-free cash stops at ${fmt(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? `, the Lump Sum Allowance, for any pot above ${fmt(LSA_INFLECTION_POT)}` : ", your protected limit"}. The other ${fmt(taxFreeCash.overCap)} is taxed as income when it's taken out.`
-              : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(taxFreeCash.allowance)}. The rest is taxed as income when it's taken out.`}
-          </p>
-          {!d.pensionProtection && taxFreeCash.capped && (
-            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.55,margin:"6px 0 0"}}>
-              A Fixed or Individual Protection from 2012 to 2016 allows more, up to £450,000.
-            </p>
+      {/* Tax-free cash on its own: a pot capped by the Lump Sum Allowance,
+          before drawdown planning applies. */}
+      {d.hasPension === "yes" && taxFreeCash.pot > 0 && taxFreeCash.capped && !drawdownBest && taxFreeCashBlock}
+
+      {drawdownBest && (
+        <MobileWinTile number={drawdownNum} title="Plan drawing your pension" tagLabel="Strategy" defaultOpen={!showMatchWin}
+          headline="Choose how many years to draw it over, and how to take the tax-free cash">
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+            <Pill value={compact(taxFreeCash.pot)} caption="Pension pot"/>
+            <Pill value={compact(taxFreeCash.taxFree)} caption={`Tax-free cash${taxFreeCash.taken > 0 ? " left" : ""}`}
+              info={<InfoButton onClick={() => setShowTaxFreeInfo(o => !o)} open={showTaxFreeInfo}/>}/>
+          </div>
+          {showTaxFreeInfo && (
+            <p style={{fontSize:"12px",color:TEXT,lineHeight:1.55,margin:"8px 0 0"}}>{taxFreeCashText}</p>
           )}
-        </div>
+          <MobileDrawdown d={d} m={m} bare/>
+        </MobileWinTile>
       )}
 
-      {retired && d.hasPension === "yes" && taxFreeCash.pot > 0 && <MobileDrawdown d={d} m={m}/>}
 
       {d.pensionAccess === "income" && (
         <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
@@ -352,9 +395,9 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
       {/* The what-if tools, closed at first. */}
       {/* Retired with no earnings, the what-ifs (paying in more, a bonus,
           growth to retirement) don't apply. */}
-      {!(retired && !(m.salary > 0)) && <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="bonus, growth and more"/>}
-
-      {exploreOpen && !(retired && !(m.salary > 0)) && (<>
+      {showExplore && (
+        <MobileWinTile number={exploreNum} title="Explore what-ifs" tagLabel="What if"
+          headline={`How your pension could grow by ${traj.retireAge}${hasStatedBonus ? ", and paying in your bonus" : ", and paying in more"}`}>
       {showSacrificeCalc && !taper.recoverable && sacrificeTile}
 
       {cf.showCarryForward && (
@@ -562,7 +605,8 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         );
       })()}
 
-      </>)}
+        </MobileWinTile>
+      )}
 
       <MobileProviderTile heading={d.hasPension === "yes" ? "Consolidate or top up" : "Get started"} products={products.products} disclaimer={products.disclaimer}/>
     </div>

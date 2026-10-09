@@ -15,6 +15,7 @@ import { FIELD_CAPS } from "./onboarding.js";
 import { itemisedNonCashIsa } from "./isa.js";
 import { estimatePensionPot, LUMP_SUM_ALLOWANCE, hasStartedDrawing } from "./pension.js";
 import { STATE_PENSION_FULL } from "./tax.js";
+import { workingPastRetirementAge } from "./metrics.js";
 import { resolveSlRate, studentLoanPlanFrom } from "./studentLoan.js";
 import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION } from "./sharedQuestions.js";
 
@@ -283,10 +284,14 @@ const PENSION_QUESTIONS = [
     showIf: ctx => +ctx.d.age >= 66,
   },
   {
+    // Still earning at or past it: when they'll stop, an age after today
+    // (metrics retirementAgeFor assumes 75 until they say).
     id:"retirementAge", field:"retirementAge", kind:"years", label:"Retire at", required:true,
-    ask: () => "When would you like to retire?",
-    why: () => "Sets how many years your pension has to grow.",
-    showIf: ctx => hasPot(ctx) && !hasStartedDrawing(ctx.d),
+    ask: ({ d }) => workingPastRetirementAge(d) ? "When do you plan to stop working?" : "When would you like to retire?",
+    why: ({ d }) => workingPastRetirementAge(d) ? "Your pension grows until then, and you draw on it after." : "Sets how many years your pension has to grow.",
+    min: ({ d }) => workingPastRetirementAge(d) ? (+d.age || 0) + 1 : null,
+    minNote: () => "Pick an age after the one you are now.",
+    showIf: ctx => (hasPot(ctx) || workingPastRetirementAge(ctx.d)) && !hasStartedDrawing(ctx.d),
   },
   {
     id:"pensionType", field:"pensionType", kind:"choice",

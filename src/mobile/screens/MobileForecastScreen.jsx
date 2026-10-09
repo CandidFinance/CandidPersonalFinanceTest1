@@ -5,6 +5,7 @@ import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecast
 import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
+import { retirementAgeFor } from "../../lib/metrics.js";
 
 // Mobile Forecast screen — a "Surplus" comparison view (multi-strategy line
 // chart + low/mid/high table) and a "Net worth" view (single projected net
@@ -64,7 +65,7 @@ export default function MobileForecastScreen({ d, m }) {
   const [view, setView] = useState("surplus");
   const [openRow, setOpenRow] = useState(null);
   const age = +d.age || null;
-  const retireAge = +d.retirementAge || 65;
+  const retireAge = retirementAgeFor(d);
   // Age-based horizon pills ("Age 35") when we know the user's age — people
   // orient around age milestones, not "N years from now". The milestone AGES
   // are fixed (30/40/50/60, plus retirement always included); the number of

@@ -98,16 +98,17 @@ test("retired with no earnings: not critical, and no £0 of tax relief", () => {
   const { steps, statuses } = reveal({ ...retired, potValue: "1000000" });
   assert.equal(statuses.pension.status, "ok");
   assert.equal(statuses.pension.amount, 0);
-  assert.equal(steps[0].figure, "£250,000");
-  assert.match(steps[0].title, /tax-free/);
+  // The answer is the drawdown strategy; the tax-free cash is in the why.
+  assert.match(steps[0].figure, /a year$/);
+  assert.match(steps[0].title, /^after tax from your pension, drawn over/);
+  assert.match(steps[1].body, /^£250,000 can be taken tax-free/);
 });
 
 test("retired above £1,073,100: tax-free cash stops at £268,275", () => {
   const { steps, statuses } = reveal({ ...retired, potValue: "2000000" });
   assert.equal(statuses.pension.status, "ok");
   assert.match(statuses.pension.impactLabel, /£268,275: £231,725 less than 25% of your pot/);
-  assert.equal(steps[0].figure, "£268,275");
-  assert.match(steps[1].title, /£500,000/);
+  assert.match(steps[1].body, /^£268,275 can be taken tax-free: 25% stops at the Lump Sum Allowance/);
 });
 
 test("still earning past retirement age with nothing paid in: the relief gap stands", () => {

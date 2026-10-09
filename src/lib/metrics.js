@@ -47,6 +47,20 @@ export function pastStatePensionAge(d) {
   return !(stated !== "" && stated != null && +stated === 0);
 }
 
+// The age someone stops working. Earning at or past the retirement age they
+// gave (65 if none), they're asked when they plan to stop; until they say,
+// they're taken to stop at 75 (or now, if they're already 75 or over), not
+// to earn for ever. Not earning: the retirement age they gave.
+export const WORKING_AGE_LIMIT = 75;
+export function workingPastRetirementAge(d) {
+  return (+d.salary || 0) > 0 && (+d.age || 0) >= (+d.retirementAge || 65);
+}
+export function retirementAgeFor(d) {
+  const age = +d.age || 0, stated = +d.retirementAge || 65;
+  if (!((+d.salary || 0) > 0) || stated > age) return stated;
+  return Math.max(age, WORKING_AGE_LIMIT);
+}
+
 // The State Pension in payment: what they told us they get, else the full
 // rate. It's taxable, so it counts towards the tax band.
 export function statePensionIncome(d) {
@@ -82,7 +96,7 @@ export function calcMetrics(d, marketRates = {}) {
         myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0,
         missedMatch = Math.max(0, empCapPct - myPct) * salary / 100,
         potVal = (+d.potValue||0) + (+d.potValue2||0),
-        retireAge = +d.retirementAge||65,
+        retireAge = retirementAgeFor(d),
         age = +d.age||30, years = Math.max(1, retireAge - age),
         // The employer matches what the user pays, up to its cap (the same
         // model as missedMatch).

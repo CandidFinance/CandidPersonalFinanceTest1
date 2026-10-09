@@ -1,6 +1,6 @@
 import { fmt } from "./format.js";
 import { isPensionContributing, pensionReturnRatio, inRetirement, calcTaxFreeCash } from "./pension.js";
-import { statePensionIncome } from "./metrics.js";
+import { statePensionIncome, retirementAgeFor } from "./metrics.js";
 
 // Builds the plain-object financial summary handed to Claude — pulled out of
 // generateDashboard()'s closure so it stays testable independent of the
@@ -52,7 +52,7 @@ export function buildFinancialSummary(d, m, statuses) {
     missedMatchAnnual: m.missedMatch > 0 ? fmt(Math.round(m.missedMatch)) + "/yr" : "None",
     pensionPot: (+d.potValue||0) + (+d.potValue2||0) > 0 ? fmt((+d.potValue||0)+(+d.potValue2||0)) : null,
     projectedPotAtRetirement: fmt(Math.round(m.projectedPot||0)),
-    retirementAge: +d.retirementAge||65,
+    retirementAge: retirementAgeFor(d),
     pensionReturnRatio: "1:" + pensionReturnRatio(d, m).toFixed(2),
     pensionType: d.pensionType === "sacrifice" ? "Salary sacrifice" : d.pensionType === "relief" ? "Relief at source" : "Unknown",
     // Retirement: what's been taken, what can still come out tax-free, and

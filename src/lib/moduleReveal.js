@@ -11,7 +11,8 @@
 
 import { fmt } from "./format.js";
 import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.js";
-import { calcDrawdown, DEFAULT_DRAWDOWN_YEARS } from "./drawdown.js";
+import { bestDrawdown, defaultDrawdownYears } from "./drawdown.js";
+import { retirementAgeFor } from "./metrics.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
@@ -40,18 +41,24 @@ export function pensionReveal(d, m) {
   if (!isPensionContributing(d) && missedPensionRelief(d, m) === 0) {
     const cash = calcTaxFreeCash(d);
     if (!(cash.pot > 0)) return null;
-    const plan = calcDrawdown(d, m, { years: DEFAULT_DRAWDOWN_YEARS });
+    // The answer is the drawdown strategy: drawn to 87, the tax-free cash
+    // taken whichever way leaves more after tax (drawdown.js bestDrawdown).
+    const years = defaultDrawdownYears(d);
+    const best = bestDrawdown(d, m, years);
+    const plan = best.plan;
+    const how = t => t === "phased" ? "a quarter of each withdrawal tax-free" : "all the tax-free cash at the start";
     const protectionUnknown = !d.pensionProtection;
+    const cashLine = cash.capped
+      ? `${fmt(cash.taxFree)} can ${cash.taken > 0 ? "still " : ""}be taken tax-free: ${cash.taken > 0 ? `what's left of your ${fmt(cash.allowance)} limit` : cash.allowance === LUMP_SUM_ALLOWANCE ? "25% stops at the Lump Sum Allowance" : "your protected limit"}.${protectionUnknown && cash.allowance === LUMP_SUM_ALLOWANCE ? " A Fixed or Individual Protection from 2012 to 2016 allows more." : ""}`
+      : `${fmt(cash.taxFree)} can ${cash.taken > 0 ? "still " : ""}be taken tax-free, 25% of your pension.`;
     return [
-      { label: ANSWER, figure: fmt(cash.taxFree), title: `of your pension can ${cash.taken > 0 ? "still " : ""}be taken tax-free.` },
-      cash.capped
-        ? { label: WHY, title: cash.taken > 0
-              ? `25% of the part you haven't touched would be ${fmt(cash.quarter)}, but only ${fmt(cash.left)} of your ${fmt(cash.allowance)} limit is left.`
-              : `25% of your pot would be ${fmt(cash.quarter)}, but tax-free cash stops at ${fmt(cash.allowance)}${cash.allowance === LUMP_SUM_ALLOWANCE ? ", the Lump Sum Allowance" : ", your protected limit"}.`,
-            body: `The rest is taxed as income when it's taken out.${cash.allowance === LUMP_SUM_ALLOWANCE && cash.taken === 0 ? ` That's what happens above a pot of ${fmt(LSA_INFLECTION_POT)}.` : ""}${protectionUnknown ? " A Fixed or Individual Protection from 2012 to 2016 allows more, up to £450,000." : ""}` }
-        : { label: WHY, title: `Up to 25% of a pension can be taken tax-free, to a limit of ${fmt(cash.allowance)}${cash.taken > 0 ? `, less the ${fmt(cash.taken)} already taken` : ""}. The rest is taxed as income when it's taken out.` },
-      { label: ACTION, title: `Drawn over ${plan.years} years, your pension would pay about ${fmt(plan.yearly)} a year, with ${fmt(plan.phases[0].tax)} of income tax in the first year${plan.other + plan.phases[0].statePension > 0 ? " on all your income" : ""}.`,
-        body: "Try other numbers of years on the pension screen. Pension Wise, from MoneyHelper, gives free guidance on taking a pension to anyone over 50." },
+      { label: ANSWER, figure: `${fmt(plan.firstYear.afterTax)} a year`, title: `after tax from your pension, drawn over ${years} years, to ${plan.toAge}, with ${how(plan.taxFree)}${plan.upfront > 0 ? ` (${fmt(plan.upfront)})` : ""}.` },
+      { label: WHY, title: best.saving > 0
+          ? `That leaves ${fmt(best.saving)} more after tax than taking ${how(best.other.taxFree)}. ${Math.round(plan.effectiveRate * 100)}% of what comes out goes in tax, ${fmt(plan.totalTax)} over the ${years} years.`
+          : `Either way of taking the tax-free cash leaves the same after tax. ${Math.round(plan.effectiveRate * 100)}% of what comes out goes in tax, ${fmt(plan.totalTax)} over the ${years} years.`,
+        body: cashLine },
+      { label: ACTION, title: "Try other numbers of years on the pension screen: fewer pays more each year, and more of it goes in tax.",
+        body: "Pension Wise, from MoneyHelper, gives free guidance on taking a pension to anyone over 50." },
     ];
   }
 
@@ -88,7 +95,7 @@ export function pensionReveal(d, m) {
   // On track: where it's heading, and the bonus if there's one to use.
   const bonus = calcBonusSacrificePotential(d, m);
   return [
-    { label: ANSWER, figure: fmt(Math.round(m.projectedPot)), title: `projected in your pension by ${+d.retirementAge || 65}.` },
+    { label: ANSWER, figure: fmt(Math.round(m.projectedPot)), title: `projected in your pension by ${retirementAgeFor(d)}.` },
     { label: WHY, title: `You pay ${myPct}%${empPct > 0 ? ` and get your employer's full ${empPct}% match` : ""}, so you're not leaving money on the table.`,
       body: "In today's money: growth of 6% a year, less 2% inflation." },
     bonus.standalone > 0

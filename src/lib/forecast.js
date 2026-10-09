@@ -2,6 +2,8 @@ import { isaUsedThisYear as isaUsedAcrossAll } from "./isa.js";
 import { resolveSlRate, slYearsLeft, slThresholdIn, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
+import { retirementAgeFor } from "./metrics.js";
+import { DRAWDOWN_TO_AGE } from "./drawdown.js";
 import { pensionReturnRatio } from "./pension.js";
 
 // Static defaults — replace with live Moneyfacts API rates in future
@@ -422,9 +424,8 @@ export function buildForecastAssumptions(d, m) {
 //   - Investments (ISA + unwrapped): today's balance grown at 6% nominal —
 //     the same rate already used for the Investments deep dive's ISA growth
 //     illustration — plus any surplus swept in once the cash buffer is full.
-//   - Pension: potVal + ongoing contributions grown at 6% p.a. — the exact
-//     same formula shape as calcMetrics' own projectedPot, evaluated at
-//     every year instead of just at retirement.
+//   - Pension: potVal plus ongoing contributions grown at 6% a year until
+//     they stop working, then drawn down evenly to empty by 87.
 //   - Student loan: the same year-stepping interest/repayment model
 //     calcStudentLoanScenario uses, extended to expose every year's balance.
 //   - Personal loan / mortgage: amortised at their own entered rate and
@@ -454,7 +455,8 @@ export function calcNetWorthTrajectory(d, m, horizonYears) {
   let investBal = isaUsedThisYear + isaPrev + (+d.unwrappedValue||0);
   let cashBal = m.totalLiquid || 0;
 
-  const slWriteOffYr = d.studentLoan === "plan2" ? 30 : d.studentLoan === "plan5" ? 40 : 25;
+  // Written off when calcStudentLoanScenario says (from when repayments started).
+  const slWriteOffYr = d.studentLoan && d.studentLoan !== "none" ? studentLoanTerms(d, m).writeOffYr : 0;
   const slRate = d.studentLoan !== "none" ? resolveSlRate(d, m.salary) : 0;
   const slAnnualRep = m.annualRepayment || 0;
 
@@ -468,9 +470,25 @@ export function calcNetWorthTrajectory(d, m, horizonYears) {
   let plBal = d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0;
   let mortBal = d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0;
 
+  // Working until they stop (metrics retirementAgeFor): until then, the
+  // monthly surplus is saved and pension payments go in. After, both stop,
+  // and the pension is drawn down evenly to empty by DRAWDOWN_TO_AGE (87),
+  // the money spent rather than saved.
+  const age = +d.age || 0;
+  const workYears = age > 0 ? Math.max(0, retirementAgeFor(d) - age) : Infinity;
+  let pensionBal = potVal;
+
   const rows = [];
   for (let yr = 0; yr <= horizonYears; yr++) {
+    const working = yr <= workYears;
+    const surplusNow = working ? monthlySurplus : 0;
     if (yr > 0) {
+      if (working) pensionBal = pensionBal * (1 + PENSION_RATE) + pensionAnnualContrib;
+      else {
+        const yearsLeft = DRAWDOWN_TO_AGE - (age + yr - 1);
+        const draw = yearsLeft <= 1 ? pensionBal * (1 + PENSION_RATE) : pensionBal * PENSION_RATE / (1 - Math.pow(1 + PENSION_RATE, -yearsLeft));
+        pensionBal = Math.max(0, pensionBal * (1 + PENSION_RATE) - draw);
+      }
       if (yr > slWriteOffYr) loanBal = 0;
       else if (loanBal > 0) {
         loanBal = loanBal * (1 + slRate);
@@ -486,15 +504,15 @@ export function calcNetWorthTrajectory(d, m, horizonYears) {
         cashBal *= (1 + cashMonthlyRate);
         investBal *= (1 + investMonthlyRate);
         if (cashBal < cashCapTarget) {
-          const toCash = Math.min(monthlySurplus, cashCapTarget - cashBal);
+          const toCash = Math.min(surplusNow, cashCapTarget - cashBal);
           cashBal += toCash;
-          investBal += monthlySurplus - toCash;
+          investBal += surplusNow - toCash;
         } else {
-          investBal += monthlySurplus;
+          investBal += surplusNow;
         }
       }
     }
-    const pension = potVal * Math.pow(1 + PENSION_RATE, yr) + pensionAnnualContrib * ((Math.pow(1 + PENSION_RATE, yr) - 1) / PENSION_RATE);
+    const pension = pensionBal;
     const cash = cashBal, investments = investBal;
     const propertyEquity = d.hasMortgage === "yes" ? Math.max(0, (m.propertyValue||0) - mortBal)
       : d.ownsOutright ? (+d.outrightPropertyValue||0)
