@@ -2,18 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, User } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, MODULE_META } from "../../CandidApp.jsx";
 import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
+import ModuleInputsForm from "./ModuleInputsForm.jsx";
 import { SCORED_MODULES } from "../../lib/appEntry.js";
 
 // Edit inputs (/app/inputs): every answer on one page, so changing one
-// figure is one tap away rather than a walk back through onboarding. "About
-// you" is open at the top; each module is a tile that opens to the same
-// fields its onboarding step shows. `open` opens that module's tile and
-// scrolls to it (from a module page's Edit inputs). A module not answered
-// yet starts its questions instead (`onStartModule`). `onRerun(key)` runs a
-// module's questions again, for the answers only they ask (a retiree's
-// tax-free cash, say). `onOpenModule(key)` goes back to a module's page.
-// "About you" is a tile like the modules, open when no module was asked for.
-export default function MobileInputsScreen({ d, set, open, onStartModule, onRerun, onOpenModule }) {
+// figure is one tap away rather than a walk back through onboarding. About
+// you and each answered module are tiles; a module's tile holds all of its
+// questions as one form (ModuleInputsForm), so nothing needs the walk-through
+// again. `open` opens that module's tile and scrolls to it (from a module
+// page's Edit inputs); otherwise About you starts open. A module not
+// answered yet starts its questions instead (`onStartModule`).
+// `onOpenModule(key)` goes back to a module's page.
+export default function MobileInputsScreen({ d, m, set, open, onStartModule, onOpenModule }) {
   const answered = SCORED_MODULES.filter(k => (d.selectedModules || []).includes(k));
   const notYet = SCORED_MODULES.filter(k => !answered.includes(k));
   const [openKey, setOpenKey] = useState(answered.includes(open) ? open : "about");
@@ -58,17 +58,15 @@ export default function MobileInputsScreen({ d, set, open, onStartModule, onReru
               {isOpen && (
                 <div style={{padding:"4px 18px 18px",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
                   <div style={{paddingTop:"14px"}}>
-                    <MobileOnboardingStep stepId={key} d={d} set={set} bare/>
+                    {isModule
+                      ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set}/>
+                      : <MobileOnboardingStep stepId="about" d={d} set={set} bare/>}
                   </div>
                   {isModule && (
                     <>
-                      <button type="button" onClick={() => onRerun(key)}
-                        style={{background:"none",border:"none",padding:"16px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
-                        Go through the questions again
-                      </button>
                       {/* The way back to the module's page, with the new figures. */}
                       <button type="button" onClick={() => onOpenModule(key)}
-                        style={{marginTop:"16px",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"13px",fontSize:"14.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+                        style={{marginTop:"22px",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"13px",fontSize:"14.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
                         Back to {title(key)}<ChevronRight size={16}/>
                       </button>
                     </>
