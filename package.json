@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build && for f in *.html; do [ -e \"dist/$f\" ] || cp \"$f\" \"dist/$f\"; done",
     "preview": "vite preview",
-    "test": "node --import ./src/lib/testClock.js --test \"src/lib/*.test.js\" \"scripts/personas/*.test.js\"",
+    "test": "node --import ./src/lib/testClock.js --test \"src/lib/*.test.js\" \"scripts/personas/*.test.js\" \"scripts/assist-agent/*.test.js\"",
+    "assist-agent": "node scripts/assist-agent/agent.js",
     "personas": "node scripts/personas/run.js && node scripts/personas/build-page.js"
   },
   "dependencies": {

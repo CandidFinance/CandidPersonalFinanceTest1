@@ -7,6 +7,7 @@ import { isLocked } from "../../lib/unlock.js";
 import { assistItems, assistHasNews, itemsForPage, cashPlan, applyCashMove, accountName, resolveAccount, MIN_ASSIST_GAIN, MIN_SPLIT_GAIN, PB_MAX } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
+import AgentPanel, { agentAvailable } from "./AgentPanel.jsx";
 import { devicePlatform, appLinkFor } from "../../lib/appLinks.js";
 import { itemisedNonCashIsa } from "../../lib/isa.js";
 import { FSCS_DEPOSIT_LIMIT } from "../../lib/cashAllocation.js";
@@ -399,6 +400,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
                 <Mark on={!!state.done[p.id]}/>I've done this
               </button>
             </div>
+            {agentAvailable(p) && <AgentPanel o={p} onOpened={() => setState(s => ({ ...s, done: { ...s.done, [p.id]: true } }))}/>}
           </div>
         ))}
         <div style={{ marginTop: "8px" }}>

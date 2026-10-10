@@ -17,3 +17,6 @@ node_modules/
 verify-report*.pdf
 .vercel
 .env*
+
+# Account-opening agent: your personal details, never committed
+scripts/assist-agent/profile.local.json
