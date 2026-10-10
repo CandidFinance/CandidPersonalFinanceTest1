@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import posthog from "posthog-js";
 import { Menu, X } from "lucide-react";
 import { G, GOLD, MUT, SANS, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT } from "../CandidApp.jsx";
-import { appEntryPath } from "./StartCheckButton.jsx";
+import { appEntryPath, CTA_BLUE, CTA_LABEL } from "./StartCheckButton.jsx";
 import { EASE_STEADY } from "./motion.js";
 
 // Fixed header height, kept in sync with this file's own padding/font-size
@@ -146,6 +146,20 @@ export default function NewSiteHeader() {
             );
           })}
         </nav>
+        {/* The way into the app, on every page, far right (desktop only). */}
+        <button
+          type="button"
+          className="nsh-cta-btn"
+          onClick={startCheck}
+          style={{
+            alignItems: "center", marginLeft: "auto",
+            background: CTA_BLUE, border: "none", borderRadius: "100px",
+            padding: "11px 22px", fontFamily: SANS, fontSize: "14px", fontWeight: 700,
+            color: "#fff", cursor: "pointer",
+          }}
+        >
+          {CTA_LABEL}
+        </button>
         {/* Mobile menu toggle — invisible/unreachable on desktop
             (.nsh-toggle above), takes over the far-right spot the start
             button occupies on desktop once that button is hidden. */}
@@ -205,12 +219,12 @@ export default function NewSiteHeader() {
             onClick={startCheck}
             style={{
               display: "flex", alignItems: "center", gap: "8px", marginTop: "14px",
-              background: "transparent", border: `1.5px solid ${G}`, borderRadius: "100px",
-              padding: "10px 18px", fontFamily: SANS, fontSize: "14px", fontWeight: 700,
-              color: G, cursor: "pointer", alignSelf: "flex-start",
+              background: CTA_BLUE, border: "none", borderRadius: "100px",
+              padding: "12px 20px", fontFamily: SANS, fontSize: "15px", fontWeight: 700,
+              color: "#fff", cursor: "pointer", alignSelf: "flex-start",
             }}
           >
-            Beta - Optimise my money
+            {CTA_LABEL}
           </button>
         </nav>
       </div>

@@ -143,3 +143,19 @@ test("pension: not paying in asks about a pot, then retirement for those 55 and 
   assert.deepEqual(q.also("yes"), { hasPension: "yes" });
   assert.deepEqual(q.also("no"), { hasPension: "no" });
 });
+
+test("not sure of the balance: the borrowing questions come, then the estimate", () => {
+  const known = { ...fresh, employmentAsked: true, salary: "60000", hasExtraIncome: "no", slPlanAnswer: "plan2", studentLoan: "plan2" };
+  const qs = MODULE_GUIDES.studentLoan.questions;
+  const q = id => qs.find(x => x.id === id);
+  assert.deepEqual(q("loanBalance").also(""), { slBalanceEstimate: "yes" });
+  assert.deepEqual(q("loanBalance").also("12000"), { slBalanceEstimate: "" });
+  assert.deepEqual(q("slFinishYear").also("2018"), { slFirstDueYear: "2019" });
+  const est = { ...known, loanBalance: "", slBalanceEstimate: "yes" };
+  assert.deepEqual(ids("studentLoan", est, known), ["studentLoanPlan", "loanBalance", "slStudyYears", "slTuition", "slMaintenance", "slFinishYear", "loanRate"]);
+  const done = { ...est, slStudyYears: "6", slTuition: "nhs5", slMaintenance: "full", slFinishYear: "2018" };
+  assert.ok(ids("studentLoan", done, known).includes("slBalanceResult"));
+  // The NHS option only for courses of five years or more.
+  assert.ok(q("slTuition").options(ctxFor({ ...done, slStudyYears: "3" })).every(o => o.value !== "nhs5"));
+  assert.match(q("slBalanceResult").ask(ctxFor(done)), /^That puts what you still owe at about £\d/);
+});

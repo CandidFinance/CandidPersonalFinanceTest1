@@ -1,10 +1,10 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion, useInView, useScroll, useTransform, animate } from "framer-motion";
-import { ClipboardList, Scale, Search, Compass, GraduationCap, PoundSterling, Home as HomeIcon } from "lucide-react";
+import { ClipboardList, Scale, Search, Compass, GraduationCap, PoundSterling, Home as HomeIcon, Check, ArrowRight } from "lucide-react";
 import posthog from "posthog-js";
 import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
 import NewSiteLayout from "./NewSiteLayout.jsx";
-import StartCheckButton from "./StartCheckButton.jsx";
+import StartCheckButton, { CTA_BLUE } from "./StartCheckButton.jsx";
 import { EASE_STEADY, riseIn, pullTogether, heroStagger, heroItem } from "./motion.js";
 import { useEqualHeights } from "./useEqualHeights.js";
 
@@ -242,11 +242,18 @@ export default function NewLandingPage() {
             Stop leaking wealth to tax traps and idle cash.
           </motion.h1>
           <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 0 40px" }}>
-            Connect your finances in under 3 minutes to pinpoint exact tax-drag points and get a prioritised, calculation-first action plan.
+            Answer a few questions and see, in pounds, where tax and idle cash are costing you, and what each fix is worth.
           </motion.p>
           <motion.div variants={heroItem}>
-            <StartCheckButton source="hero" />
-            <div style={{ fontSize: "12px", color: MUT, marginTop: "14px" }}>Free • No credit card required • Open Banking encrypted</div>
+            <StartCheckButton source="hero" size="large" />
+            {/* The reassurances, sized to be read rather than skimmed past. */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", marginTop: "18px" }}>
+              {["Free", "No card needed", "About 3 minutes"].map(t => (
+                <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "15px", fontWeight: 600, color: G }}>
+                  <Check size={16} color={GOLD} strokeWidth={3} />{t}
+                </span>
+              ))}
+            </div>
           </motion.div>
         </motion.div>
 
@@ -409,11 +416,15 @@ export default function NewLandingPage() {
             ].map((tool, i) => (
               <motion.a key={tool.href} href={tool.href} ref={calcRef(i)} {...pullTogether(i, 3, reduceMotion)} {...tileHover} style={{
                 background: WHITE, borderRadius: RADIUS_MODAL, padding: "32px 28px", boxShadow: "0 4px 24px rgba(22,47,36,0.07)",
-                borderTop: `4px solid ${GOLD}`, textDecoration: "none", display: "block",
+                borderTop: `4px solid ${GOLD}`, textDecoration: "none", display: "block", cursor: "pointer",
               }}>
                 <div style={{ marginBottom: "16px" }}><tool.icon size={26} color={G} /></div>
                 <div style={{ fontFamily: SERIF, fontSize: "17px", color: G, fontWeight: 600, marginBottom: "10px" }}>{tool.title}</div>
-                <div style={{ fontSize: "14px", color: MUT, lineHeight: 1.7 }}>{tool.body}</div>
+                <div style={{ fontSize: "14px", color: MUT, lineHeight: 1.7, marginBottom: "18px" }}>{tool.body}</div>
+                {/* Said in words, so the tile reads as something to open. */}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: 700, color: CTA_BLUE }}>
+                  Open the calculator <ArrowRight size={15} strokeWidth={2.5} />
+                </div>
               </motion.a>
             ))}
           </div>

@@ -1,7 +1,7 @@
 import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_REAL_PCT } from "./growth.js";
-import { resolveSlRate, slRepaymentThreshold, SL_REPAYMENT_RATES, slYearsLeft, slThresholdIn, slEarnings } from "./studentLoan.js";
+import { resolveSlRate, slRepaymentThreshold, SL_REPAYMENT_RATES, slYearsLeft, slThresholdIn, slEarnings, estimateSlBalance } from "./studentLoan.js";
 import { allocateCash } from "./cashAllocation.js";
 import { isaUsedThisYear } from "./isa.js";
 
@@ -107,8 +107,11 @@ export function calcMetrics(d, marketRates = {}) {
         projectedPot = potVal * Math.pow(1 + pensionGrowth, years) +
           annualContrib * ((Math.pow(1 + pensionGrowth, years) - 1) / pensionGrowth);
   let annualRepayment = 0, willClear = false;
-  const loanBal = +d.loanBalance||0;
   const slGrow = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
+  // The balance they gave, or, if they weren't sure, Candid's estimate from
+  // what they borrowed (estimateSlBalance).
+  const slEstimate = d.loanBalance === "" || d.loanBalance == null ? estimateSlBalance(d, { salary, growth: slGrow }) : null;
+  const loanBal = slEstimate ? slEstimate.balance : +d.loanBalance||0;
   const slThreshold = slRepaymentThreshold(d.studentLoan);
   // Every plan, Plan 4 and Postgraduate included: the plan's rate on salary
   // above its threshold, and whether it clears before the plan's write-off.
@@ -256,7 +259,7 @@ export function calcMetrics(d, marketRates = {}) {
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
     isaHeadroom, isaUsedThisYear: isaUsedThisYearCalc,
     missedMatch, annualRepayment, slRepaymentRegular, slEarnings: slPay, willClear, crystallisable, cgtSaving, cgtRate, remainingCgtAllowance,
-    projectedPot, years, annualYieldGap, savingsRate, loanBal, tr, savingsTr, cashIsaHeadroom, taxYear,
+    projectedPot, years, annualYieldGap, savingsRate, loanBal, loanBalEstimated: !!slEstimate, tr, savingsTr, cashIsaHeadroom, taxYear,
     cashMoveAmount, cashExcessNotWorthMoving,
     cash, bonds, totalAssets, totalLiabilities, netWorth,
     taxBandLabel, adjustedNetIncome, nonSavingsIncome, bufferMonths,

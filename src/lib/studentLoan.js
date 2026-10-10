@@ -271,3 +271,64 @@ export function calcOverpaymentScenarios(m, sl, amounts = [5000, 10000, 20000]) 
   const baseProjection = projectLoan(0);
   return { scenarios, baseProjection };
 }
+
+// ── An estimate of what's still owed, for someone who doesn't know: what they
+// borrowed (course length, how much tuition and maintenance loan they took),
+// interest on it since, less what their pay would have repaid. Rough by
+// design: the guided questions offer it from "I'm not sure", it is labelled
+// an estimate, and the user can type the real figure on the module's page.
+//
+// The yearly amounts are Candid's own round figures for a typical full loan
+// in each era, not official tables: tuition is the fee cap of the time;
+// maintenance is the loan for living away from home outside London, which
+// rose sharply in 2016 when England's maintenance grants became loans.
+// Scottish students' fees are paid by SAAS, so Plan 4 has no tuition loan.
+// Interest is one long-run average per plan, as the real rates moved with
+// RPI year by year (Plan 2 charging RPI plus up to 3%). Repayments are 9%
+// (6% Postgraduate) of pay above today's threshold, with pay taken back
+// from today's at the user's expected pay growth.
+export const SL_ESTIMATE_RATES = { plan1: 0.025, plan2: 0.055, plan4: 0.025, plan5: 0.042, postgrad: 0.065 };
+export const SL_POSTGRAD_LOAN = 11500; // a Master's loan, the whole course
+export function slTuitionPerYear(plan, startYear) {
+  if (plan === "plan4" || plan === "postgrad") return 0;
+  if (plan === "plan5") return startYear >= 2025 ? 9535 : 9250;
+  if (plan === "plan2") return startYear >= 2017 ? 9250 : 9000;
+  return startYear >= 2006 ? 3300 : 1200; // plan1
+}
+export function slMaintenancePerYear(plan, startYear) {
+  if (plan === "postgrad") return 0;
+  if (plan === "plan5") return 10000;
+  if (plan === "plan2") return startYear >= 2016 ? 8700 : 5500;
+  if (plan === "plan4") return startYear >= 2023 ? 8500 : 5750;
+  return 4000; // plan1
+}
+// The tuition answer: "full" every year, "nhs5" full fees for the first four
+// years only (the NHS pays medicine and dentistry fees in England from year
+// 5), or "none". Maintenance: "full", "half" or "none".
+const TUITION_YEARS = { full: y => y, nhs5: y => Math.min(y, 4), none: () => 0 };
+const MAINTENANCE_SHARE = { full: 1, half: 0.5, none: 0 };
+export function slEstimateReady(d) {
+  const years = +d.slStudyYears, finish = +d.slFinishYear;
+  return d.slBalanceEstimate === "yes" && years >= 1 && years <= 10 && finish >= 1990 && finish <= 2100;
+}
+export function estimateSlBalance(d, { salary = 0, growth = 0, taxYear = taxYearFor(d) } = {}) {
+  if (!slEstimateReady(d)) return null;
+  const plan = d.studentLoan in SL_ESTIMATE_RATES ? d.studentLoan : "plan1";
+  const years = Math.round(+d.slStudyYears), finish = Math.round(+d.slFinishYear);
+  const start = finish - years;
+  const rate = SL_ESTIMATE_RATES[plan];
+  const tuitionYears = (TUITION_YEARS[d.slTuition] ?? TUITION_YEARS.full)(years);
+  const maintShare = MAINTENANCE_SHARE[d.slMaintenance] ?? 1;
+  const borrowedIn = i => plan === "postgrad"
+    ? SL_POSTGRAD_LOAN / years
+    : (i < tuitionYears ? slTuitionPerYear(plan, start) : 0) + slMaintenancePerYear(plan, start) * maintShare;
+  const threshold = SL_REPAYMENT_THRESHOLDS[plan];
+  let bal = 0, borrowed = 0;
+  for (let y = start; y < taxYear; y++) {
+    if (y < finish) { const b = borrowedIn(y - start); bal += b; borrowed += b; }
+    bal *= 1 + rate;
+    if (y > finish) bal -= Math.max(0, salary / Math.pow(1 + growth, taxYear - y) - threshold) * repayRateOf(plan);
+    bal = Math.max(0, bal);
+  }
+  return { balance: Math.round(bal / 100) * 100, borrowed: Math.round(borrowed / 100) * 100 };
+}

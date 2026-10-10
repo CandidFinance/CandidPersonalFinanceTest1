@@ -135,7 +135,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
         <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your loan trajectory</div>
 
         <div style={{marginBottom:"12px"}}>
-          <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Current balance</div>
+          <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{m.loanBalEstimated ? "Current balance (estimated)" : "Current balance"}</div>
           <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"2px"}}>
             <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(m.loanBal)}</div>
             {onRecordLoanOverpayment && (

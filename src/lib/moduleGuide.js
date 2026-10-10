@@ -16,7 +16,7 @@ import { itemisedNonCashIsa } from "./isa.js";
 import { estimatePensionPot, LUMP_SUM_ALLOWANCE, hasStartedDrawing } from "./pension.js";
 import { STATE_PENSION_FULL } from "./tax.js";
 import { workingPastRetirementAge } from "./metrics.js";
-import { resolveSlRate, studentLoanPlanFrom } from "./studentLoan.js";
+import { resolveSlRate, studentLoanPlanFrom, estimateSlBalance, slEstimateReady } from "./studentLoan.js";
 import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION } from "./sharedQuestions.js";
 
 const YES_NO = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }];
@@ -308,6 +308,7 @@ const PENSION_QUESTIONS = [
 ];
 
 const hasLoan = ({ d }) => d.studentLoan && d.studentLoan !== "none";
+const estimating = ctx => hasLoan(ctx) && ctx.d.slBalanceEstimate === "yes";
 
 // The plan helper, for "Not sure which plan": up to three questions, then the
 // plan (studentLoanPlanFrom, src/lib/studentLoan.js, GOV.UK's rules). Each
@@ -375,7 +376,60 @@ const STUDENT_LOAN_QUESTIONS = [
     id:"loanBalance", field:"loanBalance", kind:"money", label:"Still owed", cap:"loanBalance", required:true,
     ask: () => "Roughly how much do you still owe?",
     why: () => "Shows whether you'll clear it before it's written off.",
-    notSure: () => LEAVE_BLANK, showIf: hasLoan,
+    // Not sure: a few questions about what they borrowed, and Candid
+    // estimates it (estimateSlBalance). Typing a figure turns that off.
+    also: value => ({ slBalanceEstimate: value === "" ? "yes" : "" }),
+    notSure: () => ({ label:"I'm not sure, help me estimate it", value:"" }),
+    showIf: hasLoan,
+  },
+  {
+    id:"slStudyYears", field:"slStudyYears", kind:"years", label:"Years", required:true, min:1,
+    ask: () => "How many years was your course?",
+    why: () => "Each year of study added a year of loans.",
+    note: () => "Medicine and dentistry are usually 5 or 6 years, counting any intercalated year.",
+    showIf: estimating,
+  },
+  {
+    id:"slTuition", field:"slTuition", kind:"choice",
+    ask: () => "Did you take a loan for your tuition fees?",
+    why: () => "Fees were the biggest part of most loans.",
+    options: ({ d }) => [
+      { value:"full", label:"Yes, every year" },
+      ...(+d.slStudyYears >= 5 ? [{ value:"nhs5", label:"Yes, until the NHS paid them from year 5" }] : []),
+      { value:"none", label:"No, they were paid another way" },
+    ],
+    note: ({ d }) => d.studentLoan === "plan4" ? "Scottish students studying in Scotland usually have their fees paid by SAAS, not a loan." : null,
+    showIf: ctx => estimating(ctx) && ctx.d.studentLoan !== "postgrad",
+  },
+  {
+    id:"slMaintenance", field:"slMaintenance", kind:"choice",
+    ask: () => "And a maintenance loan for living costs?",
+    why: () => "How much you could borrow depended on your household's income.",
+    options: () => [
+      { value:"full", label:"Yes, the full amount" },
+      { value:"half", label:"Yes, about half" },
+      { value:"none", label:"No" },
+    ],
+    showIf: ctx => estimating(ctx) && ctx.d.studentLoan !== "postgrad",
+  },
+  {
+    id:"slFinishYear", field:"slFinishYear", kind:"years", label:"Year", required:true, min:1990,
+    ask: () => "What year did you finish the course?",
+    why: () => "Interest has built up since, and repayments started the April after.",
+    // Repayments were first due the April after they finished, which also
+    // sets when the loan is written off (slFirstDueYear).
+    also: value => +value >= 1990 ? { slFirstDueYear: String(+value + 1) } : {},
+    showIf: estimating,
+  },
+  {
+    id:"slBalanceResult", field:"slBalanceResult", kind:"info",
+    ask: ({ m }) => `That puts what you still owe at about ${fmt(m.loanBal)}.`,
+    why: ({ d, m }) => {
+      const est = estimateSlBalance(d, { salary: m.salary, growth: m.salaryGrowthRate });
+      return `From roughly ${fmt(est?.borrowed || 0)} borrowed, plus interest, less what your pay would have repaid.`;
+    },
+    note: () => "An estimate. Your balance is in your Student Loans Company account, and you can change it on the student loan page.",
+    showIf: ctx => estimating(ctx) && slEstimateReady(ctx.d),
   },
   {
     // Shows the usual rate for their plan and salary until they change it,
