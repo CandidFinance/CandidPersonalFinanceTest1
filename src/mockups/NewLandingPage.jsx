@@ -237,20 +237,22 @@ export default function NewLandingPage() {
           </motion.div>
           <motion.h1 variants={heroItem} style={{
             fontFamily: SERIF, fontSize: "clamp(36px,5vw,54px)", fontWeight: 700,
-            color: G, lineHeight: 1.12, letterSpacing: "-0.01em", marginBottom: "20px",
+            color: G, lineHeight: 1.12, letterSpacing: "-0.01em", marginBottom: "24px",
           }}>
             Stop leaking wealth to tax traps and idle cash.
           </motion.h1>
-          <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 0 40px" }}>
+          <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 0 24px" }}>
             Answer a few questions and see, in pounds, where tax and idle cash are costing you, and what each fix is worth.
           </motion.p>
-          <motion.div variants={heroItem}>
+          {/* The button and the reassurances under it share one width: the
+              line sets it (one row, never wrapping) and the button stretches
+              to match. */}
+          <motion.div variants={heroItem} style={{ display: "inline-flex", flexDirection: "column", alignItems: "stretch" }}>
             <StartCheckButton source="hero" size="large" />
-            {/* The reassurances, sized to be read rather than skimmed past. */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", marginTop: "18px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "14px", marginTop: "16px", whiteSpace: "nowrap" }}>
               {["Free", "No card needed", "About 3 minutes"].map(t => (
-                <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "15px", fontWeight: 600, color: G }}>
-                  <Check size={16} color={GOLD} strokeWidth={3} />{t}
+                <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "14px", fontWeight: 600, color: G }}>
+                  <Check size={15} color={GOLD} strokeWidth={3} />{t}
                 </span>
               ))}
             </div>

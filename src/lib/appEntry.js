@@ -32,10 +32,19 @@ export const ENTRY_CHOICES = [
   { value:"cash",        label:"Savings and emergency cash", goal:"emergency_fund" },
   { value:"investments", label:"Investing and ISAs" },
   { value:"pension",     label:"Pension" },
+  { value:"retirement",  label:"Retirement planning", goal:"retirement" },
   { value:"studentLoan", label:"Student loan" },
   { value:"property",    label:"Buying a home", goal:"buy_house" },
   { value:"exploring",   label:"Just exploring", exclusive:true },
 ];
+
+// The modules the entry's picks lead to. "Retirement planning" is the
+// Pension module, which covers retirement income as well as saving.
+const PICK_MODULE = { retirement: "pension" };
+export function pickedModules(interests) {
+  const chosen = (interests || []).map(v => PICK_MODULE[v] || v);
+  return START_MODULES.filter(k => chosen.includes(k));
+}
 
 // The goals E1's picks imply. The Goals step's other options (a big
 // purchase, future generations, consolidating) only shape the overall
@@ -73,25 +82,21 @@ export const ENTRY_QUESTIONS = [
   },
 ];
 
-// What each topic asks about, and where people usually find it. Salary is
-// asked by every module, so it comes first, once. "Just exploring" starts
-// with DEFAULT_FIRST_MODULE, so it gets that module's list.
+// What's good to have to hand: salary always; then each picked topic's
+// figures, rough is fine. Savings and investments share one line (where
+// the money sits). "Just exploring" gets the pension and the money lines.
 const TO_HAND = {
-  pension:     [{ what:"Your pension contributions, and your employer's", where:"On your payslip, as a % of pay or £ a month" },
-                { what:"What your pension pot is worth", where:"In your pension provider's app or latest statement" }],
-  cash:        [{ what:"Your savings balances and their interest rates", where:"In your banking apps" },
-                { what:"Roughly what you spend each month" }],
-  investments: [{ what:"Your ISA and investment balances", where:"In your investment apps" },
-                { what:"What you've paid into ISAs since 6 April", where:"Each ISA provider shows this year's payments" }],
-  studentLoan: [{ what:"Your student loan plan and balance", where:"In your Student Loans Company account. Not sure? We can estimate it." }],
+  pension:     [{ what:"An idea of your pension", where:"What you pay in, what your employer pays in, and what the pot's worth. If you're not sure, not a problem: we can help you with this." }],
+  money:       [{ what:"An idea of where your money sits", where:"Savings accounts, ISAs, investments, Premium Bonds, or cash under the mattress." }],
+  studentLoan: [{ what:"Your student loan plan and balance", where:"Not sure? We can work it out with you." }],
   property:    [{ what:"What you've saved towards a deposit" },
                 { what:"Roughly what you'd like to spend on a home" }],
 };
+const TO_HAND_TOPIC = { pension:"pension", cash:"money", investments:"money", studentLoan:"studentLoan", property:"property" };
 export function toHandFor(interests) {
-  const picks = (interests || []).includes("exploring") || !(interests || []).length
-    ? [DEFAULT_FIRST_MODULE]
-    : START_MODULES.filter(k => interests.includes(k));
-  return [{ what:"Your salary before tax", where:"On your payslip or contract" }, ...picks.flatMap(k => TO_HAND[k] || [])];
+  const exploring = (interests || []).includes("exploring") || !(interests || []).length;
+  const topics = exploring ? ["pension", "money"] : [...new Set(pickedModules(interests).map(k => TO_HAND_TOPIC[k]))];
+  return [{ what:"Your salary" }, ...topics.flatMap(t => TO_HAND[t] || [])];
 }
 
 // The confidence check before the entry (/welcome), in the same walk-through
@@ -131,7 +136,7 @@ export function doneModules(d, propertyDone = false) {
 
 // The modules picked at the entry (no "exploring"), in the order offered.
 export function picks(d) {
-  return START_MODULES.filter(k => (d.interests || []).includes(k));
+  return pickedModules(d.interests);
 }
 
 // The modules the Candid score covers: Property isn't scored (it has no
@@ -190,7 +195,7 @@ export function goalsWith(interests, chosenGoals) {
 // first, in the order offered, then the rest. With no picks ("Just
 // exploring"), DEFAULT_FIRST_MODULE leads.
 export function moduleOrder(d) {
-  const picked = START_MODULES.filter(k => (d.interests || []).includes(k));
+  const picked = pickedModules(d.interests);
   const first = picked.length ? picked : [DEFAULT_FIRST_MODULE];
   return [...first, ...START_MODULES.filter(k => !first.includes(k))];
 }

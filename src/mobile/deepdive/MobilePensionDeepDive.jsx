@@ -182,6 +182,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const win2Num = showSacrificeCalc && taper.recoverable ? ++winCounter : null;
   const drawdownNum = drawdownBest ? ++winCounter : null;
   const exploreNum = showExplore ? ++winCounter : null;
+  const providersNum = products.products?.length ? ++winCounter : null;
   // Inside the what-ifs tile, unnumbered.
   const win3Num = null, win4Num = null;
 
@@ -608,7 +609,14 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         </MobileWinTile>
       )}
 
-      <MobileProviderTile heading={d.hasPension === "yes" ? "Consolidate or top up" : "Get started"} products={products.products} disclaimer={products.disclaimer}/>
+      {/* Where to do it: a numbered tile like the others, the providers
+          inside it once opened. */}
+      {providersNum && (
+        <MobileWinTile number={providersNum} title={d.hasPension === "yes" ? "Consolidate or top up" : "Get started"} tagLabel="Providers"
+          headline={`${products.products.length} pension providers to compare`}>
+          <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
+        </MobileWinTile>
+      )}
     </div>
   );
 }

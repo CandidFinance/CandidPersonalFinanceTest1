@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { entryGoals, toHandFor, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION,
+import { entryGoals, toHandFor, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION,
   doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
@@ -89,10 +89,16 @@ test("Property never locks the score: picked at the entry, or set by a shared Pr
   assert.deepEqual(unfinishedPicks({ interests: ["pension", "cash", "property"], selectedModules: ["pension", "cash"] }), ["property"]);
 });
 
-test("good to have to hand: salary once, then each picked topic's figures", () => {
+test("good to have to hand: salary, then each picked topic, savings and investments as one line", () => {
   const whats = interests => toHandFor(interests).map(i => i.what);
-  assert.equal(whats(["studentLoan"])[0], "Your salary before tax");
-  assert.deepEqual(whats(["studentLoan"]), ["Your salary before tax", "Your student loan plan and balance"]);
-  assert.equal(whats(["exploring"]).length, whats([DEFAULT_FIRST_MODULE]).length);
-  assert.ok(whats(["cash", "property"]).length === 5);
+  assert.deepEqual(whats(["studentLoan"]), ["Your salary", "Your student loan plan and balance"]);
+  assert.deepEqual(whats(["cash", "investments"]), ["Your salary", "An idea of where your money sits"]);
+  assert.deepEqual(whats(["exploring"]), ["Your salary", "An idea of your pension", "An idea of where your money sits"]);
+  assert.deepEqual(whats(["retirement"]), ["Your salary", "An idea of your pension"]);
+});
+
+test("retirement planning leads to the Pension module", () => {
+  assert.deepEqual(pickedModules(["retirement", "cash"]), ["pension", "cash"]);
+  assert.equal(moduleOrder({ interests: ["retirement"] })[0], "pension");
+  assert.deepEqual(entryGoals(["retirement"]), ["retirement"]);
 });

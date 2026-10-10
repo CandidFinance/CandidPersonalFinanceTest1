@@ -19,16 +19,22 @@ import { PROVIDER_TILE_FADE_CLEAR } from "../design-tokens.js";
 // any future entry with no real destination yet.
 const COLLAPSED_HEIGHT = 190;
 
-export default function MobileProviderTile({ heading, products, disclaimer }) {
+// `embedded`: inside another tile (a numbered MobileWinTile, which gives
+// the heading): no frame or heading of its own, and the fade ends in the
+// tile's white.
+export default function MobileProviderTile({ heading, products, disclaimer, embedded = false }) {
   const [open, setOpen] = useState(false);
   if (!products || products.length === 0) return null;
+  const fadeTo = embedded ? WHITE : PROVIDER_TILE_BG_END;
 
   return (
-    <div style={{background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
-      <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",cursor:"pointer",marginBottom:"12px"}}>
-        <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</div>
-        <ChevronRight size={14} color={MUT} style={{flexShrink:0,transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
-      </div>
+    <div style={embedded ? {} : {background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
+      {!embedded && (
+        <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",cursor:"pointer",marginBottom:"12px"}}>
+          <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</div>
+          <ChevronRight size={14} color={MUT} style={{flexShrink:0,transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
+        </div>
+      )}
 
       <div style={{position:"relative",maxHeight:open?"none":`${COLLAPSED_HEIGHT}px`,overflow:"hidden"}}>
         <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
@@ -62,7 +68,7 @@ export default function MobileProviderTile({ heading, products, disclaimer }) {
         </div>
         {!open && products.length > 1 && (
           <>
-            <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, ${PROVIDER_TILE_FADE_CLEAR} 0%, ${PROVIDER_TILE_FADE_CLEAR} 55%, ${PROVIDER_TILE_BG_END} 100%)`,pointerEvents:"none"}}/>
+            <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, ${PROVIDER_TILE_FADE_CLEAR} 0%, ${PROVIDER_TILE_FADE_CLEAR} 55%, ${fadeTo} 100%)`,pointerEvents:"none"}}/>
             <div onClick={() => setOpen(true)} style={{position:"absolute",left:0,right:0,bottom:"10px",textAlign:"center",cursor:"pointer"}}>
               <span style={{fontSize:"12px",fontWeight:600,color:GOLD}}>See all {products.length} options</span>
             </div>
