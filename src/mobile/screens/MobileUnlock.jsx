@@ -63,22 +63,22 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock }) {
 
       {ask.kind === "email" && (
         <form onSubmit={e => { e.preventDefault(); setTried(true); if (emailOk) onUnlock(ask, { email, callOk }); }}>
-          <div style={{fontSize:"16px",fontWeight:700,color:TEXT,marginBottom:"12px"}}>Enter your email to see {amount > 0 ? "why, and how to fix it" : "your answer"}</div>
+          <div style={{fontSize:"16px",fontWeight:700,color:TEXT,marginBottom:"12px"}}>Enter your email to see {amount > 0 ? "why, and how to fix it" : "your answer"}, for free</div>
           <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
             style={{width:"100%",boxSizing:"border-box",border:`1.5px solid ${tried && !emailOk ? "#b3261e" : "rgba(22,47,36,0.15)"}`,borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
           {tried && !emailOk && <div style={{fontSize:"12px",color:"#b3261e",margin:"6px 0 0 6px"}}>Enter a valid email address</div>}
           <button type="submit" style={{...primary(false),marginTop:"10px"}}>{cta}</button>
           <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"12px 0 0"}}>
-            Free. We'll email you when you could be keeping more: a better rate, an allowance going unused, or money sitting idle.
+            We'll notify you when you could be keeping more: a better rate, an allowance going unused, or money sitting idle.
           </p>
           <label style={{display:"flex",alignItems:"center",gap:"8px",margin:"12px 0 0",cursor:"pointer"}}>
             <span style={{width:"18px",height:"18px",borderRadius:"5px",border:callOk ? "none" : "1.5px solid rgba(22,47,36,0.3)",background:callOk ? G : WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxSizing:"border-box"}}>
               {callOk && <Check size={12} color={WHITE} strokeWidth={3}/>}
             </span>
             <input type="checkbox" checked={callOk} onChange={e => setCallOk(e.target.checked)} style={{position:"absolute",opacity:0,width:0,height:0}}/>
-            <span style={{fontSize:"12.5px",color:MUT}}>Happy to have a call to talk it through</span>
+            <span style={{fontSize:"12.5px",color:MUT}}>Happy to have a chat to talk it through</span>
           </label>
-          <p style={{fontSize:"11.5px",color:MUT,margin:"10px 0 0"}}>
+          <p style={{fontSize:"11.5px",color:MUT,margin:"14px 0 0",textAlign:"center"}}>
             Unsubscribe any time. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a>
           </p>
         </form>

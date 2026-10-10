@@ -200,14 +200,14 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
             </form>
           ) : q.kind === "info" ? (
             <form onSubmit={submit}>
-              {/* An info step's optional list: { what, where } rows, divided
-                  by rules rather than boxed. */}
+              {/* An info step's optional list: { what, where } items, each a
+                  tile, every tile the height of the tallest (1fr rows). */}
               {q.list && (
-                <div style={{marginBottom:"14px"}}>
-                  {q.list(ctx).map((item, i) => (
-                    <div key={item.what} style={{padding:"11px 0",borderTop:i ? "1px solid rgba(22,47,36,0.08)" : "none"}}>
-                      <div style={{fontSize:"14px",fontWeight:600,color:TEXT,lineHeight:1.4}}>{item.what}</div>
-                      {item.where && <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>{item.where}</div>}
+                <div style={{display:"grid",gridAutoRows:"1fr",gap:"10px",marginBottom:"14px"}}>
+                  {q.list(ctx).map(item => (
+                    <div key={item.what} style={{background:WHITE,border:"1px solid rgba(22,47,36,0.1)",borderRadius:"14px",padding:"16px 18px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                      <div style={{fontSize:"17px",fontWeight:700,color:TEXT,lineHeight:1.3}}>{item.what}</div>
+                      {item.where && <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,marginTop:"4px"}}>{item.where}</div>}
                     </div>
                   ))}
                 </div>

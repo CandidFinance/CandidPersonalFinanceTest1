@@ -86,7 +86,7 @@ export const ENTRY_QUESTIONS = [
 // figures, rough is fine. Savings and investments share one line (where
 // the money sits). "Just exploring" gets the pension and the money lines.
 const TO_HAND = {
-  pension:     [{ what:"An idea of your pension", where:"What you pay in, what your employer pays in, and what the pot's worth. If you're not sure, not a problem: we can help you with this." }],
+  pension:     [{ what:"An idea of your pension", where:"What you pay in, what your employer pays in, and what the pot's worth." }],
   money:       [{ what:"An idea of where your money sits", where:"Savings accounts, ISAs, investments, Premium Bonds, or cash under the mattress." }],
   studentLoan: [{ what:"Your student loan plan and balance", where:"Not sure? We can work it out with you." }],
   property:    [{ what:"What you've saved towards a deposit" },
