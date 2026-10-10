@@ -6603,6 +6603,7 @@ export default function AppShell() {
         headerRight={<button onClick={back} style={{background:G,border:"none",borderRadius:"100px",padding:"7px 16px",cursor:"pointer",color:WHITE,fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>Done</button>}>
         <MobileInputsScreen key={open || "all"} d={d} set={set} open={open}
           onStartModule={key => navigate(`/app/module/${key}`)}
+          onOpenModule={key => { inputsReturnPath.current = null; navigate(`/app/module/${key}`); window.scrollTo({ top: 0, behavior: "instant" }); }}
           onRerun={key => { setModuleRerun(key); posthog.capture("guide_restarted", { module: key, from: "inputs" }); navigate(`/app/module/${key}`); }}/>
       </MobileLayout>
     );

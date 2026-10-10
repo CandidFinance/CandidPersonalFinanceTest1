@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, User } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, MODULE_META } from "../../CandidApp.jsx";
 import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
 import { SCORED_MODULES } from "../../lib/appEntry.js";
@@ -11,11 +11,12 @@ import { SCORED_MODULES } from "../../lib/appEntry.js";
 // scrolls to it (from a module page's Edit inputs). A module not answered
 // yet starts its questions instead (`onStartModule`). `onRerun(key)` runs a
 // module's questions again, for the answers only they ask (a retiree's
-// tax-free cash, say).
-export default function MobileInputsScreen({ d, set, open, onStartModule, onRerun }) {
+// tax-free cash, say). `onOpenModule(key)` goes back to a module's page.
+// "About you" is a tile like the modules, open when no module was asked for.
+export default function MobileInputsScreen({ d, set, open, onStartModule, onRerun, onOpenModule }) {
   const answered = SCORED_MODULES.filter(k => (d.selectedModules || []).includes(k));
   const notYet = SCORED_MODULES.filter(k => !answered.includes(k));
-  const [openKey, setOpenKey] = useState(answered.includes(open) ? open : null);
+  const [openKey, setOpenKey] = useState(answered.includes(open) ? open : "about");
   const refs = useRef({});
 
   useEffect(() => {
@@ -24,8 +25,8 @@ export default function MobileInputsScreen({ d, set, open, onStartModule, onReru
     else window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  const title = key => MODULE_META.find(mm => mm.key === key)?.title || key;
-  const icon = key => MODULE_META.find(mm => mm.key === key)?.icon;
+  const title = key => key === "about" ? "About you" : MODULE_META.find(mm => mm.key === key)?.title || key;
+  const icon = key => key === "about" ? User : MODULE_META.find(mm => mm.key === key)?.icon;
   const tile = { background:WHITE, border:"1px solid rgba(22,47,36,0.1)", borderRadius:"16px" };
   const label = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
   const iconBox = key => {
@@ -42,15 +43,10 @@ export default function MobileInputsScreen({ d, set, open, onStartModule, onReru
       <h1 style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your inputs</h1>
       <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"0 0 20px"}}>Change anything here and your figures update straight away.</p>
 
-      <div style={label}>About you</div>
-      <div style={{...tile,padding:"18px",margin:"10px 0 24px"}}>
-        <MobileOnboardingStep stepId="about" d={d} set={set} bare/>
-      </div>
-
-      {answered.length > 0 && <div style={{...label,marginBottom:"10px"}}>Your modules</div>}
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-        {answered.map(key => {
+        {["about", ...answered].map(key => {
           const isOpen = openKey === key;
+          const isModule = key !== "about";
           return (
             <div key={key} ref={el => { refs.current[key] = el; }} style={{...tile,scrollMarginTop:"80px"}}>
               <button type="button" onClick={() => setOpenKey(k => k === key ? null : key)} aria-expanded={isOpen}
@@ -64,10 +60,19 @@ export default function MobileInputsScreen({ d, set, open, onStartModule, onReru
                   <div style={{paddingTop:"14px"}}>
                     <MobileOnboardingStep stepId={key} d={d} set={set} bare/>
                   </div>
-                  <button type="button" onClick={() => onRerun(key)}
-                    style={{background:"none",border:"none",padding:"16px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
-                    Go through the questions again
-                  </button>
+                  {isModule && (
+                    <>
+                      <button type="button" onClick={() => onRerun(key)}
+                        style={{background:"none",border:"none",padding:"16px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+                        Go through the questions again
+                      </button>
+                      {/* The way back to the module's page, with the new figures. */}
+                      <button type="button" onClick={() => onOpenModule(key)}
+                        style={{marginTop:"16px",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"13px",fontSize:"14.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+                        Back to {title(key)}<ChevronRight size={16}/>
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
