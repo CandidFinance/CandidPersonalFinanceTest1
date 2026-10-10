@@ -58,11 +58,41 @@ export const ENTRY_QUESTIONS = [
     also: value => ({ financialGoals: entryGoals(value) }),
   },
   {
+    // What's useful to have to hand for the topics picked, said before the
+    // questions start (testers asked to know up front). Information only:
+    // nothing is uploaded, and every figure can be rough or skipped.
+    id:"toHand", field:"toHand", kind:"info",
+    ask: () => "Good to have to hand",
+    why: () => "Rough figures are fine, and you can skip anything you don't know.",
+    list: ({ d }) => toHandFor(d.interests),
+  },
+  {
     id:"name", field:"name", kind:"text", label:"First name", required:true,
     ask: () => "What should we call you?",
     why: () => "Only used to talk to you in the app.",
   },
 ];
+
+// What each topic asks about, and where people usually find it. Salary is
+// asked by every module, so it comes first, once. "Just exploring" starts
+// with DEFAULT_FIRST_MODULE, so it gets that module's list.
+const TO_HAND = {
+  pension:     [{ what:"Your pension contributions, and your employer's", where:"On your payslip, as a % of pay or £ a month" },
+                { what:"What your pension pot is worth", where:"In your pension provider's app or latest statement" }],
+  cash:        [{ what:"Your savings balances and their interest rates", where:"In your banking apps" },
+                { what:"Roughly what you spend each month" }],
+  investments: [{ what:"Your ISA and investment balances", where:"In your investment apps" },
+                { what:"What you've paid into ISAs since 6 April", where:"Each ISA provider shows this year's payments" }],
+  studentLoan: [{ what:"Your student loan plan and balance", where:"In your Student Loans Company account. Not sure? We can estimate it." }],
+  property:    [{ what:"What you've saved towards a deposit" },
+                { what:"Roughly what you'd like to spend on a home" }],
+};
+export function toHandFor(interests) {
+  const picks = (interests || []).includes("exploring") || !(interests || []).length
+    ? [DEFAULT_FIRST_MODULE]
+    : START_MODULES.filter(k => interests.includes(k));
+  return [{ what:"Your salary before tax", where:"On your payslip or contract" }, ...picks.flatMap(k => TO_HAND[k] || [])];
+}
 
 // The confidence check before the entry (/welcome), in the same walk-through
 // format but kept apart from it, so it reads as a quick aside rather than

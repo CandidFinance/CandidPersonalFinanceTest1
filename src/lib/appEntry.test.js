@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { entryGoals, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION,
+import { entryGoals, toHandFor, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION,
   doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
@@ -10,7 +10,7 @@ test("entry picks set the goals they imply", () => {
 });
 
 test("the entry asks two questions, each with a short reason", () => {
-  assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["interests", "name"]);
+  assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["interests", "toHand", "name"]);
   for (const q of ENTRY_QUESTIONS) assert.ok(q.why().split(/\s+/).length <= 15, q.id);
   assert.deepEqual(ENTRY_QUESTIONS[0].also(["property"]), { financialGoals: ["buy_house"] });
 });
@@ -87,4 +87,12 @@ test("Property never locks the score: picked at the entry, or set by a shared Pr
   assert.equal(scoreUnlocked({ interests: ["property"], selectedModules: [] }), false);
   // Property is still left to do on home, just not in the score's way.
   assert.deepEqual(unfinishedPicks({ interests: ["pension", "cash", "property"], selectedModules: ["pension", "cash"] }), ["property"]);
+});
+
+test("good to have to hand: salary once, then each picked topic's figures", () => {
+  const whats = interests => toHandFor(interests).map(i => i.what);
+  assert.equal(whats(["studentLoan"])[0], "Your salary before tax");
+  assert.deepEqual(whats(["studentLoan"]), ["Your salary before tax", "Your student loan plan and balance"]);
+  assert.equal(whats(["exploring"]).length, whats([DEFAULT_FIRST_MODULE]).length);
+  assert.ok(whats(["cash", "property"]).length === 5);
 });
