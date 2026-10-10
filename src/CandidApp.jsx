@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
-import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart, Wrench, ChevronRight, ChevronDown } from "lucide-react";
+import { Check, Lock, AlertTriangle, Landmark, Laptop, Smartphone, Zap, CreditCard, RefreshCw, Building2, Globe, FileText, Briefcase, Shield, Banknote, PoundSterling, TrendingUp, GraduationCap, Baby, MessageCircle, BarChart3, Pencil, Calendar, Trophy, PartyPopper, Handshake, Mail, ArrowUpRight, Star, Unlock, Rocket, Construction, Building, Palette, Wine, Watch, Car, Pin, Coins, AlertOctagon, Lightbulb, Gift, Hourglass, ClipboardList, Home, LayoutGrid, LineChart, ChevronRight, ChevronDown } from "lucide-react";
 import { fmt, fmtK, fmtCompact } from "./lib/format.js";
 import { calcIncomeTax, calcBonusTaxBreakdown, EMPLOYER_NI_RATE } from "./lib/tax.js";
 import { resolveSlRate, studentLoanPlanConstants, slRepaymentThreshold, calcStudentLoanScenario, describeLoanVsPension } from "./lib/studentLoan.js";
@@ -27,6 +27,7 @@ import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
 import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
+import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
@@ -5651,6 +5652,15 @@ export default function AppShell() {
   useEffect(() => {
     if (!pathname.startsWith("/app/assessment/")) assessmentReturnPath.current = null;
   }, [pathname]);
+  // Edit inputs (/app/inputs): where it was opened from, to go back to,
+  // and the user's row saved when they leave it, however they leave.
+  const inputsReturnPath = useRef(null);
+  const wasOnInputs = useRef(false);
+  useEffect(() => {
+    const onInputs = pathname === "/app/inputs";
+    if (wasOnInputs.current && !onInputs) setRowSaveTick(t => t + 1);
+    wasOnInputs.current = onInputs;
+  }, [pathname]);
   const prevScoreRef = useRef(null);
   // Modules visited via the "Next" chain since the user last picked one directly from
   // the dashboard — lets nextMod below cycle through every outstanding module once per
@@ -6367,6 +6377,8 @@ export default function AppShell() {
     // module's own screen, rather than the old step, which ends by making a
     // report.
     if (moduleGuideStarts(stepId, d)) { navigate(`/app/module/${stepId}`); return; }
+    // Answered already: the field is on Edit inputs, in that module's tile.
+    if (stepId === "about" || (d.selectedModules || []).includes(stepId)) { openInputs(stepId === "about" ? null : stepId); return; }
     const def = ALL_STEP_DEFS.find(s => s.id === stepId);
     let selected = d.selectedModules || [];
     if (def?.moduleKey && !selected.includes(def.moduleKey)) {
@@ -6378,6 +6390,11 @@ export default function AppShell() {
       assessmentReturnPath.current = pathname;
       navigate(`/app/assessment/${idx + 1}`);
     }
+  }
+  function openInputs(moduleKey = null) {
+    inputsReturnPath.current = pathname;
+    posthog.capture("edit_inputs_opened", { from: pathname, module: moduleKey });
+    navigate(moduleKey ? `/app/inputs?open=${moduleKey}` : "/app/inputs");
   }
   function takeAssessmentReturnPath() {
     const path = assessmentReturnPath.current || "/app/home";
@@ -6416,7 +6433,7 @@ export default function AppShell() {
   // been through its two-question entry (appUnlocked), so its screens cope
   // without a report.
   const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat"];
-  const APP_PATHS = ["/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
+  const APP_PATHS = ["/app/home", "/app/modules", "/app/forecast", "/app/inputs", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
   if ((REPORT_PATHS.includes(pathname) || pathname.startsWith("/module/")) && !insights) {
     return <Navigate to="/" replace />;
   }
@@ -6512,11 +6529,14 @@ export default function AppShell() {
 
   // Shared by the Home, Modules and Forecast tabs so the edit-inputs entry
   // point sits in the same header slot on each.
-  const editInputsButton = (
-    <button onClick={() => navigate("/app/assessment/1")} aria-label="Edit inputs" style={{background:"none",border:"none",padding:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <Wrench size={20} color={G}/>
+  // Said in words: the spanner icon it replaced wasn't clear. On a module's
+  // page it opens that module's tile.
+  const editInputsFor = moduleKey => (
+    <button onClick={() => openInputs(moduleKey)} style={{background:"none",border:`1.5px solid rgba(22,47,36,0.18)`,borderRadius:"100px",padding:"6px 14px",cursor:"pointer",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",whiteSpace:"nowrap"}}>
+      Edit inputs
     </button>
   );
+  const editInputsButton = editInputsFor(null);
 
   // On every tab-bar screen (MobileLayout renders it).
   // Assist deals with the module page it's on (null: an overview page).
@@ -6574,6 +6594,19 @@ export default function AppShell() {
       <MobileForecastScreen d={d} m={m}/>
     </MobileLayout>
   );
+
+  if (pathname === "/app/inputs") {
+    const open = new URLSearchParams(window.location.search).get("open");
+    const back = () => { const to = inputsReturnPath.current || "/app/home"; inputsReturnPath.current = null; navigate(to); window.scrollTo({ top: 0, behavior: "instant" }); };
+    return (
+      <MobileLayout assist={assistNode} activeTab={null}
+        headerRight={<button onClick={back} style={{background:G,border:"none",borderRadius:"100px",padding:"7px 16px",cursor:"pointer",color:WHITE,fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>Done</button>}>
+        <MobileInputsScreen key={open || "all"} d={d} set={set} open={open}
+          onStartModule={key => navigate(`/app/module/${key}`)}
+          onRerun={key => { setModuleRerun(key); posthog.capture("guide_restarted", { module: key, from: "inputs" }); navigate(`/app/module/${key}`); }}/>
+      </MobileLayout>
+    );
+  }
 
   if (pathname === "/app/chat") return (
     <MobileLayout assist={assistNode} activeTab="chat">
@@ -6654,13 +6687,9 @@ export default function AppShell() {
       );
     }
     return (
-      <MobileLayout assist={assistNode} activeTab="modules"
-        headerRight={
-          <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
-        }>
-        <MobileModuleDeepDive moduleKey={mobileActiveModule}
+      <MobileLayout assist={assistNode} activeTab="modules" headerRight={editInputsFor(mobileActiveModule)}>
+        <MobileModuleDeepDive moduleKey={mobileActiveModule} onWalkThrough={null}
           onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
-          onWalkThrough={MODULE_GUIDES[mobileActiveModule] ? () => { setModuleRerun(mobileActiveModule); posthog.capture("guide_restarted", { module: mobileActiveModule }); } : null}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
           onBack={() => navigate("/app/modules")}

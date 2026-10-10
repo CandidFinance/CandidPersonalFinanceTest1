@@ -417,6 +417,7 @@ function AppRoutes() {
           <Route path="/app/home" />
           <Route path="/app/modules" />
           <Route path="/app/forecast" />
+          <Route path="/app/inputs" />
           <Route path="/app/chat" />
           <Route path="/app/module/:moduleKey" />
           <Route path="/app/property" />

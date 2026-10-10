@@ -91,7 +91,9 @@ function GoalAmountSlider({ label, value, onChange, max, step, presets }) {
 // for mobile fall through to a placeholder rather than blocking the flow —
 // Continue isn't disabled on any module-specific step, so onboarding can
 // still be completed end to end while later steps are built out.
-export default function MobileOnboardingStep({ stepId, d, set }) {
+// `bare`: without the step's own heading and subheading, for the Edit inputs
+// page (MobileInputsScreen), whose tile already names the section.
+export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
   const [showEmploymentInfo, setShowEmploymentInfo] = useState(false);
   const [potEstimated, setPotEstimated] = useState(false); // true only right after the "estimate it" button is used, so the caption doesn't linger over a manually-typed figure
@@ -99,8 +101,8 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
   // a circular import with CandidApp.jsx (which imports it via the
   // onboarding screen), so G/SERIF/etc aren't initialized yet when the module
   // itself first evaluates. Safe once read at render time instead.
-  const questionHeading = { fontFamily:SERIF, fontSize:"22px", color:G, fontWeight:700, marginBottom:"8px", textAlign:"center" };
-  const questionSub = { fontSize:"13px", color:MUT, lineHeight:1.5, textAlign:"center", marginBottom:"24px" };
+  const questionHeading = bare ? { display:"none" } : { fontFamily:SERIF, fontSize:"22px", color:G, fontWeight:700, marginBottom:"8px", textAlign:"center" };
+  const questionSub = bare ? { display:"none" } : { fontSize:"13px", color:MUT, lineHeight:1.5, textAlign:"center", marginBottom:"24px" };
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
   const centeredInput = { width:"100%", maxWidth:"320px", margin:"0 auto", display:"block", textAlign:"center", fontSize:"17px", fontWeight:600, color:TEXT, padding:"14px 18px", borderRadius:"100px", border:"1.5px solid rgba(22,47,36,0.18)", background:WHITE, outline:"none", boxSizing:"border-box" };
   // Same grey circular "?" convention as the deep-dive screens (MobilePensionDeepDive etc.) — toggles a short explanatory note rather than showing it inline by default.
@@ -369,8 +371,9 @@ export default function MobileOnboardingStep({ stepId, d, set }) {
 
         <label style={fieldLabel}>Do you contribute to a pension?</label>
         <PillSlider value={d.pensionUnknown ? "unsure" : (d.hasPension || "no")} onChange={v => {
-          if (v === "unsure") { set("pensionUnknown", true); }
-          else { set("pensionUnknown", false); set("hasPension", v); }
+          // pensionStatus is the module questions' own copy of this answer.
+          if (v === "unsure") { set("pensionUnknown", true); set("pensionStatus", "unsure"); }
+          else { set("pensionUnknown", false); set("hasPension", v); set("pensionStatus", v); }
         }} options={PENSION_STATUS_OPTIONS}/>
 
         {d.pensionUnknown ? (
