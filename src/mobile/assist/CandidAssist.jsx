@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useDragControls, useReducedMotion } from "fram
 import { Sparkles, ChevronDown, ChevronLeft, ChevronRight, ArrowUpRight, Check } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
+import { isLocked } from "../../lib/unlock.js";
 import { assistItems, assistHasNews, itemsForPage, cashPlan, applyCashMove, accountName, resolveAccount, MIN_ASSIST_GAIN, MIN_SPLIT_GAIN, PB_MAX } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -269,7 +270,8 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const allItems = useMemo(() => assistItems(d, m, savingsRates), [d, m, savingsRates]);
+  // Nothing about a module whose answer is still locked (src/lib/unlock.js).
+  const allItems = useMemo(() => assistItems(d, m, savingsRates).filter(i => !isLocked(d, i.module)), [d, m, savingsRates]);
   const { here: items, elsewhere } = itemsForPage(allItems, page);
   const pageLabel = page ? moduleLabels[page] || page : null;
   // With one thing to show, Assist opens on it; with more, on a list of them.

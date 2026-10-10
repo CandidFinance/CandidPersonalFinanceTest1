@@ -7,6 +7,7 @@ import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel } from "../statusLabel.js";
 import { notStarted, MODULE_PITCH } from "../../lib/appEntry.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
+import { isLocked } from "../../lib/unlock.js";
 
 // Mobile Modules screen — matches the "Claude Design" mockup's Modules tab
 // (count header, category/impact sort toggle, expandable module cards with a
@@ -131,8 +132,9 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
               </div>
               {isOpen && (
                 <div style={{background:"rgba(22,47,36,0.03)",padding:"14px 18px 18px",display:"flex",flexDirection:"column",gap:"10px"}}>
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:0}}>{mm.summary}</p>
-                  {insights.length > 0 && (
+                  {/* A locked answer (src/lib/unlock.js) stays hidden here too. */}
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:0}}>{isLocked(d, mm.key) ? "Your answer is ready. Open it to unlock it." : mm.summary}</p>
+                  {!isLocked(d, mm.key) && insights.length > 0 && (
                     <div style={{display:"flex",gap:"10px"}}>
                       {insights.map((ins,i) => (
                         <div key={i} style={{flex:1,background:WHITE,borderRadius:"10px",padding:"10px 12px"}}>

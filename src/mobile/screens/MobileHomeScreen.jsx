@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronRight, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Lock } from "lucide-react";
+import { isLocked } from "../../lib/unlock.js";
 import ScoreDonut from "../ScoreDonut.jsx";
 import { scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../CandidApp.jsx";
 import { HERO_TILE_BG } from "../../design-tokens.js";
@@ -130,22 +131,25 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
           opportunities by size opening in place. Nothing says where to start:
           that would be advice (src/lib/priorities.js only ranks by £). */}
       <div style={{background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"20px 18px 16px",boxShadow:"0 4px 18px rgba(22,47,36,0.07)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"18px"}}>
-          <ScoreDonut value={shownScore} color={gain > 0 ? GOLD : scoreColor} size={132} stroke={11} track="rgba(22,47,36,0.08)"/>
+        {/* The £ at stake leads (what people care about); the score's ring
+            beside it shows how far along they are. */}
+        <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Candid Score</div>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap",marginTop:"4px"}}>
-              <span style={{fontSize:"18px",fontWeight:700,color:TEXT}}>{scoreLabel}</span>
+            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>At stake each year</div>
+            <div style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:G,lineHeight:1.1,marginTop:"6px"}}>{fmt(totalOpp)}</div>
+            <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
+              {totalOpp > 0 ? "What your money could be doing that it isn't, across what you've answered." : "Nothing left on the table in what you've answered."}
+            </p>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
+            <ScoreDonut value={shownScore} color={gain > 0 ? GOLD : scoreColor} size={92} stroke={8} track="rgba(22,47,36,0.08)"/>
+            <div style={{fontSize:"10px",fontWeight:600,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"8px"}}>Candid score</div>
+            <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"2px"}}>
+              <span style={{fontSize:"12.5px",fontWeight:700,color:TEXT}}>{scoreLabel}</span>
               {gain > 0 && (
-                <span style={{fontSize:"12px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"3px 10px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain} pts</span>
+                <span style={{fontSize:"11px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"2px 8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain}</span>
               )}
             </div>
-            {totalOpp > 0 && (
-              <div style={{marginTop:"10px"}}>
-                <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:TEXT}}>{fmtCompact(totalOpp)}</span>
-                <span style={{fontSize:"13px",color:MUT}}> a year in opportunities</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -171,7 +175,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
                     </span>
                     <span style={{flex:1,minWidth:0}}>
                       <span style={{display:"block",fontSize:"14px",fontWeight:700,color:TEXT}}>{p.title}</span>
-                      {p.line && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>{p.line}</span>}
+                      {isLocked(d, p.key)
+                        ? <span style={{display:"flex",alignItems:"center",gap:"5px",fontSize:"12.5px",color:MUT,lineHeight:1.5,marginTop:"2px"}}><Lock size={12}/>{fmt(p.amount)}{p.amountIsLumpSum ? " by 18" : " a year"}. Unlock to see how</span>
+                        : p.line && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>{p.line}</span>}
                     </span>
                     <ChevronRight size={15} color={MUT} style={{flexShrink:0,marginTop:"3px"}}/>
                   </button>

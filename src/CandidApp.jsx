@@ -26,6 +26,8 @@ import MobileForecastScreen from "./mobile/screens/MobileForecastScreen.jsx";
 import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
 import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
+import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
+import { isLocked, unlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
@@ -6219,6 +6221,18 @@ export default function AppShell() {
   // The module whose answer is being shown step by step (MODULE_REVEALS):
   // after its first walk-through, or replayed from its screen.
   const [revealModule, setRevealModule] = useState(null);
+  // An unlock's answers, saved a render later so they're in `d`. The email
+  // goes with the inputs; the unlock columns on their own, so a missing
+  // column grant can't stop the email saving.
+  const [unlockSaveTick, setUnlockSaveTick] = useState(0);
+  useEffect(() => {
+    if (!unlockSaveTick) return;
+    // One after the other, so a missing row is only created once.
+    (async () => {
+      await saveRow(rowInputFields());
+      await saveRow({ unlock_call_ok: d.unlockCallOk ?? null, unlock_feedback: d.unlockFeedback || null, unlocked_modules: (d.unlockedModules || []).join(", ") || null });
+    })();
+  }, [unlockSaveTick]);
   // Whether the Candid score is showing: once every module picked at the
   // entry is answered (scoreUnlocked), or for a user with an old report.
   // It's worked out by the code, so the row gets the score with the inputs.
@@ -6235,6 +6249,7 @@ export default function AppShell() {
   useEffect(() => {
     if (!isPropertyLink || appUnlocked(d, insights)) return;
     set("appEntered", true);
+    if (UNLOCK_GATE_ON) set("unlockGate", true);
     if (!(d.interests || []).length) { set("interests", ["property"]); set("financialGoals", ["buy_house"]); }
     posthog.capture("app_entered", { interests: "property", via: "property_link" });
     propertyLinkRow.current = true;
@@ -6417,6 +6432,8 @@ export default function AppShell() {
     return (
       <MobileEntryScreen d={d} m={m} set={set} onDone={() => {
         set("appEntered", true);
+        // New users unlock each module's answer (src/lib/unlock.js).
+        if (UNLOCK_GATE_ON) set("unlockGate", true);
         posthog.capture("app_entered", { interests: (d.interests || []).join(",") });
         // The user's row from the start (name and interests), not only once
         // a report exists. The report still adds its own row when it's made.
@@ -6587,7 +6604,7 @@ export default function AppShell() {
               posthog.capture("module_answer_shown", { module: mobileActiveModule });
               // A first walk-through, finished, goes on to the answer step
               // by step (MODULE_REVEALS), when there's one to give.
-              if (how === "finished" && moduleRerun !== mobileActiveModule && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
+              if (how === "finished" && moduleRerun !== mobileActiveModule && !isLocked(d, mobileActiveModule) && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
                 setRevealModule(mobileActiveModule);
                 posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
               }
@@ -6601,6 +6618,26 @@ export default function AppShell() {
     // The module's answer in three steps, or null when there's nothing to
     // explain (no student loan, say): then no reveal and no "Explain this".
     const revealSteps = MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates }) ?? null;
+    // Answered but locked: what it's worth, and the way to unlock it, which
+    // then goes straight on to the answer.
+    if (isLocked(d, mobileActiveModule)) {
+      return (
+        <MobileLayout assist={assistNode} activeTab="modules"
+          headerRight={
+            <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+          }>
+          <MobileUnlock moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses}
+            onUnlock={(ask, answer) => {
+              const patch = unlockPatch(d, mobileActiveModule, ask, answer);
+              Object.entries(patch).forEach(([k, v]) => set(k, v));
+              posthog.capture("module_unlocked", { module: mobileActiveModule, via: ask.kind, question: ask.question?.id ?? null, answer: ask.kind === "question" ? answer : null, call_ok: ask.kind === "email" ? !!answer.callOk : null });
+              if (ask.kind === "email") posthog.capture("email_captured", { source: "unlock", call_ok: !!answer.callOk });
+              setUnlockSaveTick(t => t + 1);
+              if (revealSteps) setRevealModule(mobileActiveModule);
+            }}/>
+        </MobileLayout>
+      );
+    }
     if (revealModule === mobileActiveModule && revealSteps) {
       return (
         <MobileLayout assist={assistNode} activeTab="modules"
