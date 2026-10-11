@@ -58,6 +58,9 @@ export { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboa
 // ── Supabase client — module level, no package needed ─────────────────────────
 const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
 const SUPA_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+// No writes from automated browsers (Playwright test runs), so they don't add
+// rows that look like users.
+const SUPA_WRITES = typeof navigator === "undefined" || !navigator.webdriver;
 // Only source of production visibility for Supabase failures — DEV console.warn is
 // stripped from the production build, so without this, every read/write below can
 // fail completely silently (this is what let the report_pdf_requests RLS gap and
@@ -67,7 +70,7 @@ function reportSupabaseFailure(table, operation, errorMessage, status) {
   posthog.capture("supabase_operation_failed", { table, operation, error_message: errorMessage, status: status ?? null });
 }
 async function supaInsert(table, row) {
-  if (!SUPA_URL || !SUPA_KEY) return null;
+  if (!SUPA_URL || !SUPA_KEY || !SUPA_WRITES) return null;
   try {
     // ?select=id: anon only has column-level SELECT on `id` (lock_down_test_table_rls),
     // so returning the full row makes PostgREST reject the whole insert with a 401.
@@ -119,7 +122,7 @@ async function supaSelect(table, query = "") {
 // the returned ids, which anon can read), "failed" or "skipped" (no
 // Supabase config).
 async function supaUpdateRow(table, rowId, patch) {
-  if (!SUPA_URL || !SUPA_KEY) return "skipped";
+  if (!SUPA_URL || !SUPA_KEY || !SUPA_WRITES) return "skipped";
   if (!rowId) return "missing";
   try {
     const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(rowId)}&select=id`, {
@@ -5493,7 +5496,7 @@ function ModuleDeepDive({ moduleKey, insights, d, m, statuses, savingsRates, ope
 
 // ── Main app ──────────────────────────────────────────────────────────────────
 const BLANK_DATA = {
-  // `interests`: the modules picked at the app's two-question entry
+  // `interests`: the modules picked at the app's entry
   // (src/lib/appEntry.js), plus "property" or "exploring". `appEntered`:
   // they've been through that entry, which opens the app before any report.
   name:"", email:"", interests:[], appEntered:false,
@@ -5707,7 +5710,7 @@ export default function AppShell() {
   }, []);
 
   async function supaUpdate(patch) {
-    if (!supaRowId.current || !SUPA_URL || !SUPA_KEY) return;
+    if (!supaRowId.current || !SUPA_URL || !SUPA_KEY || !SUPA_WRITES) return;
     try {
       await fetch(`${SUPA_URL}/rest/v1/test?id=eq.${supaRowId.current}`, {
         method: "PATCH",
@@ -6171,7 +6174,7 @@ export default function AppShell() {
 
   // Writes the user's row to `test` and remembers its id, in memory and in
   // localStorage so a later visit can still PATCH it. Called at the app's
-  // two-question entry (no score yet), and when a report or a Property save
+  // entry (no score yet), and when a report or a Property save
   // finds this browser has no row yet (see saveRow, propertyPatch). `extra`
   // adds columns to the insert, the Property fields in that case.
   async function insertReportRow(score, extra = {}) {
@@ -6430,7 +6433,7 @@ export default function AppShell() {
   // meaningfully once an assessment has produced a report — bounce home rather
   // than show a broken or empty page for a stale bookmark, shared link, or a
   // bare reload with no data. The mobile app opens earlier, once the user has
-  // been through its two-question entry (appUnlocked), so its screens cope
+  // been through its entry (appUnlocked), so its screens cope
   // without a report.
   const REPORT_PATHS = ["/dashboard", "/modules", "/forecast", "/chat"];
   const APP_PATHS = ["/app/home", "/app/modules", "/app/forecast", "/app/inputs", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
@@ -6443,7 +6446,7 @@ export default function AppShell() {
     return <Navigate to="/" replace />;
   }
 
-  // The two-question entry. Anyone the app is already open to goes home.
+  // The entry. Anyone the app is already open to goes home.
   if (pathname === "/app/start") {
     if (appUnlocked(d, insights)) return <Navigate to="/app/home" replace />;
     return (
