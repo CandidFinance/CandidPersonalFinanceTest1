@@ -123,7 +123,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   // The opportunities by size, each marked once its module has been reviewed.
   const plan = priorities.map(p => ({ ...p, done: (completedModules || []).includes(p.key) }));
   const stepsDone = plan.filter(p => p.done).length;
-  const { totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
+  const { totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, null, "amount");
   const { assets, liabilities } = netWorthBreakdown(d, m);
   const netWorthPositive = m.netWorth >= 0;
   // How much of the picture the score covers: a high score from one module
@@ -154,6 +154,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
                 : unchecked > 0 ? `Nothing left on the table in what you've checked so far. ${unchecked} more ${unchecked === 1 ? "area" : "areas"} to check below.`
                 : "Nothing left on the table in what you've answered."}
             </p>
+            {totalBanked > 0 && <div style={{fontSize:"13px",fontWeight:700,color:SUCCESS,marginTop:"6px"}}>{fmt(totalBanked)} a year banked so far</div>}
           </div>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
             <ScoreDonut value={shownScore} color={gain > 0 ? GOLD : scoreColor} size={92} stroke={8} track="rgba(22,47,36,0.08)"/>

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Check, Users, Coins, ChevronRight, Home } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
+import { SUCCESS } from "../../design-tokens.js";
 import { getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel } from "../statusLabel.js";
 import { notStarted, MODULE_PITCH } from "../../lib/appEntry.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
+import BankConfirm from "../BankConfirm.jsx";
 import { moduleEstimate } from "../../lib/crossModule.js";
 import { isLocked } from "../../lib/unlock.js";
 
@@ -64,7 +66,7 @@ const LOCKED_MODULES = [
   { key:"household", title:"Household finances", icon:Users, description:"Two people, one plan. Marriage or a civil partnership changes the advice, from shared allowances to how you hold savings and investments." },
 ];
 
-export default function MobileModulesScreen({ d, m, statuses, insights, completedModules, onMarkReviewed, onOpenModule, onOpenProperty }) {
+export default function MobileModulesScreen({ d, m, set, statuses, insights, completedModules, onMarkReviewed, onOpenModule, onOpenProperty }) {
   const [sortMode, setSortMode] = useState("amount");
   const [expandedKey, setExpandedKey] = useState(null);
   // Same celebration as the module deep dive (MobileModuleDeepDive) — coins
@@ -73,7 +75,7 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
   // celebrating, not a per-tile state array, since only one can be reviewed
   // at a time from a tap.
   const [celebratingKey, setCelebratingKey] = useState(null);
-  const { moduleList, modulesWithRec, needActionCount, totalOpp } = getModuleBreakdown(d, m, statuses, insights, sortMode);
+  const { moduleList, modulesWithRec, needActionCount, totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, insights, sortMode);
   const waiting = notStarted(d).filter(k => k !== "property");
 
   return (
@@ -82,7 +84,7 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
         {moduleList.length} modules · {needActionCount} need action
       </div>
 
-      {(modulesWithRec.length > 1 || totalOpp > 0) && (
+      {(modulesWithRec.length > 1 || totalOpp > 0 || totalBanked > 0) && (
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginTop:"12px",marginBottom:"18px"}}>
           <div style={{display:"flex",gap:"6px"}}>
             {modulesWithRec.length > 1 && [{ key:"category", label:"By category" }, { key:"amount", label:"By £ impact" }].map(opt => (
@@ -92,16 +94,27 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
               }}>{opt.label}</button>
             ))}
           </div>
-          {totalOpp > 0 && (
-            <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>At stake</div>
-              <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:GOLD,lineHeight:1.15}}>{fmtCompact(totalOpp)}/yr</div>
-            </div>
-          )}
+          {/* Banked: what's come off the £ at stake since each module was
+              first answered (moduleStatus.js bankedFor). At stake: what's
+              still available, the sum of the tiles below. */}
+          <div style={{display:"flex",gap:"18px",flexShrink:0}}>
+            {totalBanked > 0 && (
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>Banked</div>
+                <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:SUCCESS,lineHeight:1.15}}>{fmtCompact(totalBanked)}/yr</div>
+              </div>
+            )}
+            {totalOpp > 0 && (
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>At stake</div>
+                <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:GOLD,lineHeight:1.15}}>{fmtCompact(totalOpp)}/yr</div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      <div style={{display:"flex",flexDirection:"column",gap:"12px",marginTop:(modulesWithRec.length > 1 || totalOpp > 0) ? 0 : "16px"}}>
+      <div style={{display:"flex",flexDirection:"column",gap:"12px",marginTop:(modulesWithRec.length > 1 || totalOpp > 0 || totalBanked > 0) ? 0 : "16px"}}>
         {moduleList.map(mm => {
           const reviewed = completedModules.includes(mm.key);
           const hasRec = mm.amount > 0;
@@ -112,7 +125,7 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
           const isOpen = expandedKey === mm.key;
           const insights = isOpen ? moduleInsights(mm, d, m) : [];
           return (
-            <div key={mm.key} style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",opacity:reviewed?0.6:1,overflow:"hidden"}}>
+            <div key={mm.key} style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",overflow:"hidden"}}>
               <div onClick={() => setExpandedKey(k => k===mm.key ? null : mm.key)} style={{display:"flex",alignItems:"flex-start",gap:"14px",padding:"18px 18px 13px",cursor:"pointer"}}>
                 <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
                   {mm.icon && <mm.icon size={18} color={G}/>}
@@ -121,16 +134,18 @@ export default function MobileModulesScreen({ d, m, statuses, insights, complete
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
                     <div style={{fontSize:"16px",fontWeight:600,color:TEXT}}>{mm.title}</div>
                     <div style={{fontFamily:SERIF,fontWeight:700,fontSize:"16px",color:statusColor,flexShrink:0}}>
-                      {reviewed ? "Completed" : hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : "On track"}
+                      {hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : "On track"}
                     </div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
                     <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
                     <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel(mm, reviewed)}</span>
+                    {mm.banked > 0 && <span style={{fontSize:"12.5px",color:SUCCESS,fontWeight:700}}>· {fmtCompact(mm.banked)}/yr banked</span>}
                   </div>
                 </div>
                 <ChevronRight size={14} color={MUT} style={{flexShrink:0,marginTop:"6px",transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
               </div>
+              {set && <BankConfirm compact d={d} set={set} moduleKey={mm.key} title={mm.title} amount={mm.amount}/>}
               {isOpen && (
                 <div style={{background:"rgba(22,47,36,0.03)",padding:"14px 18px 18px",display:"flex",flexDirection:"column",gap:"10px"}}>
                   {/* A locked answer (src/lib/unlock.js) stays hidden here too. */}

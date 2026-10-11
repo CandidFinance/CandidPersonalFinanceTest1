@@ -1,3 +1,4 @@
+import BankConfirm from "../BankConfirm.jsx";
 import { useState } from "react";
 import { Check, Coins } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
@@ -65,6 +66,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
           </button>
         )}
       </div>
+      {set && <BankConfirm d={d} set={set} moduleKey={moduleKey} title={meta?.title || moduleKey} amount={statuses[moduleKey]?.amount || 0}/>}
 
       {Content ? (
         <Content d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set} onShowReveal={onShowReveal} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain}/>

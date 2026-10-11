@@ -64,3 +64,45 @@ test("student loan alternatives: £100 a month for 5 years in a pension, an ISA 
   assert.equal(a.options[1].total, 6980);
   assert.equal(a.options[2].total, 6710);
 });
+
+test("a module opened and skipped isn't counted: the total is answered modules only", async () => {
+  const { computeModuleStatuses, getModuleBreakdown } = await import("./moduleStatus.js");
+  const d = { age: "26", salary: "38000", studentLoan: "plan2", loanBalance: "52000", selectedModules: ["studentLoan", "pension"], answeredModules: ["studentLoan"] };
+  const m = calcMetrics(d);
+  assert.equal(getModuleBreakdown(d, m, computeModuleStatuses(d, m), null).totalOpp, 0);
+  const answered = { ...d, answeredModules: ["studentLoan", "pension"] };
+  assert.ok(getModuleBreakdown(answered, m, computeModuleStatuses(answered, m), null).totalOpp > 0);
+  const before = { ...d, answeredModules: undefined };
+  assert.ok(getModuleBreakdown(before, m, computeModuleStatuses(before, m), null).totalOpp > 0);
+});
+
+test("banked: what a module's £ has come down by since it was first answered", async () => {
+  const { computeModuleStatuses, getModuleBreakdown, baselinePatch, bankPatch } = await import("./moduleStatus.js");
+  const d = { age: "32", salary: "45000", selectedModules: ["pension"], hasPension: "yes", pensionStatus: "yes", myContribution: "3", employerMatch: "5", potValue: "30000", pensionType: "relief" };
+  const m = calcMetrics(d);
+  const baselines = baselinePatch(d, computeModuleStatuses(d, m));
+  assert.equal(baselines.pension.amount, 900);
+  assert.equal(baselinePatch({ ...d, moduleBaselines: baselines }, computeModuleStatuses(d, m)), null);
+  const acted = { ...d, myContribution: "5", moduleBaselines: baselines };
+  const breakdown = x => getModuleBreakdown(x, calcMetrics(x), computeModuleStatuses(x, calcMetrics(x)), null);
+  // Waits for the user to say they made the change.
+  let b = breakdown(acted);
+  assert.equal(b.moduleList.find(x => x.key === "pension").pending, 900);
+  assert.equal(b.totalBanked, 0);
+  assert.equal(b.totalOpp, 0);
+  const made = { ...acted, moduleBaselines: bankPatch(acted, "pension", 0, true) };
+  b = breakdown(made);
+  assert.equal(b.totalBanked, 900);
+  assert.equal(b.moduleList.find(x => x.key === "pension").pending, 0);
+  // A correction moves the baseline and banks nothing.
+  const corrected = { ...acted, moduleBaselines: bankPatch(acted, "pension", 0, false) };
+  assert.equal(breakdown(corrected).totalBanked, 0);
+  assert.equal(breakdown(corrected).moduleList.find(x => x.key === "pension").pending, 0);
+  // Cash's £ moving because of a pension change isn't banked on Cash.
+  const cash = { ...d, selectedModules: ["pension", "cash"], monthlyExpenses: "1800", cashTiers: [{ amount: "15000", rate: "1" }] };
+  const cashBase = baselinePatch(cash, computeModuleStatuses(cash, calcMetrics(cash)));
+  const after = { ...cash, myContribution: "5", moduleBaselines: cashBase };
+  const ab = breakdown(after);
+  assert.equal(ab.moduleList.find(x => x.key === "cash").pending, 0);
+  assert.equal(ab.moduleList.find(x => x.key === "pension").pending, 900);
+});

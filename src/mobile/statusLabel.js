@@ -2,7 +2,7 @@
 // Modules list rows and deep-dive headers never say something different for
 // the same status.
 export function statusLabel(mm, reviewed) {
-  if (reviewed) return "Completed";
+  if (reviewed) return "Reviewed";
   if (mm.status === "ok") return "On track";
   if (mm.status === "unknown") return "Find out";
   return "Action needed";

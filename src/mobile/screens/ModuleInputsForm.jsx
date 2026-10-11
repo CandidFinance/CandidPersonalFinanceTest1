@@ -1,6 +1,7 @@
 import { G, WHITE, MUT, TEXT, PillSlider } from "../../CandidApp.jsx";
 import { MODULE_GUIDES } from "../../lib/moduleGuide.js";
 import { capField } from "../../lib/onboarding.js";
+import { withAnswered } from "../../lib/appEntry.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import MobileCashTiersList from "../onboarding/MobileCashTiersList.jsx";
 
@@ -18,7 +19,8 @@ export default function ModuleInputsForm({ moduleKey, d, m, set }) {
     .filter(q => q.group !== "you" && (!q.showIf || q.showIf(ctx)));
   const write = (q, value) => {
     const v = q.cap && typeof value !== "object" ? capField(q.cap, value ?? "") : value;
-    const patch = { [q.field]: v, ...(q.also ? q.also(v, ctx) : {}) };
+    // Changing an answer here counts as answering the module.
+    const patch = { [q.field]: v, ...(q.also ? q.also(v, ctx) : {}), ...(Array.isArray(d.answeredModules) ? withAnswered(d, moduleKey) : {}) };
     Object.entries(patch).forEach(([k, val]) => set(k, val));
   };
 

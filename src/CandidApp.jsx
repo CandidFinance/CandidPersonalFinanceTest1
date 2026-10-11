@@ -12,7 +12,7 @@ import { isaUsedThisYear } from "./lib/isa.js";
 import { isPensionContributing, pensionReturnRatio, pensionReturnLabel, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, calcBonusSacrifice, estimatePensionPot, CAREER_START_AGE } from "./lib/pension.js";
 import { calcCashOptimisation, PB_RATE } from "./lib/cash.js";
 import { calcMetrics, EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT, getBufferMonths } from "./lib/metrics.js";
-import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown, calcCandidScore } from "./lib/moduleStatus.js";
+import { MODULE_META, MODULE_TAG, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, getModuleSummary, getModuleBreakdown, calcCandidScore, baselinePatch } from "./lib/moduleStatus.js";
 // Module names for Candid Assist's labels and "Elsewhere" list.
 const ASSIST_MODULE_LABELS = { ...Object.fromEntries(MODULE_META.map(mm => [mm.key, mm.title])), property: "Property" };
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
@@ -35,7 +35,7 @@ import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
-import { appUnlocked, scoreUnlocked } from "./lib/appEntry.js";
+import { appUnlocked, scoreUnlocked, withAnswered } from "./lib/appEntry.js";
 import { MODULE_GUIDES, moduleGuideStarts } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
@@ -5899,6 +5899,12 @@ export default function AppShell() {
   }, [savingsRates]);
   const m = useMemo(() => calcMetrics(d, marketRates), [d, marketRates]);
   const statuses = useMemo(() => computeModuleStatuses(d, m, marketRates), [d, m, marketRates]);
+  // Each module's £ when first answered, for what's been banked since
+  // (moduleStatus.js bankedFor).
+  useEffect(() => {
+    const next = baselinePatch(d, statuses);
+    if (next) set("moduleBaselines", next);
+  }, [statuses]);
 
   // Property inputs → the report row. Only edits made on the Property screen
   // are sent (not the values already there when it opens), once they've
@@ -6452,6 +6458,8 @@ export default function AppShell() {
     return (
       <MobileEntryScreen d={d} m={m} set={set} onDone={() => {
         set("appEntered", true);
+        // Which modules are answered, not just opened, is tracked from here.
+        set("answeredModules", []);
         // New users unlock each module's answer (src/lib/unlock.js).
         if (UNLOCK_GATE_ON) set("unlockGate", true);
         posthog.capture("app_entered", { interests: (d.interests || []).join(",") });
@@ -6564,7 +6572,7 @@ export default function AppShell() {
 
   if (pathname === "/app/modules") return (
     <MobileLayout assist={assistNode} activeTab="modules" headerRight={editInputsButton}>
-      <MobileModulesScreen d={d} m={m} statuses={statuses} insights={insights}
+      <MobileModulesScreen d={d} m={m} set={set} statuses={statuses} insights={insights}
         completedModules={completedModules}
         onMarkReviewed={markModuleComplete}
         onOpenModule={key => navigate(`/app/module/${key}`)}
@@ -6637,6 +6645,7 @@ export default function AppShell() {
             onDone={(how, at) => {
               const selected = d.selectedModules || [];
               if (!selected.includes(mobileActiveModule)) set("selectedModules", [...selected, mobileActiveModule]);
+              if (how === "finished" && Array.isArray(d.answeredModules)) set("answeredModules", withAnswered(d, mobileActiveModule).answeredModules);
               posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at, rerun: moduleRerun === mobileActiveModule });
               posthog.capture("module_answer_shown", { module: mobileActiveModule });
               // The first module finished unlocks by itself (unlock.js).

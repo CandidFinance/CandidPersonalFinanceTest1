@@ -175,11 +175,22 @@ export function appUnlocked(d, insights) {
   return !!insights || !!d.appEntered;
 }
 
+// Whether a module's questions have been answered: finished, or changed on
+// Edit inputs, not just opened and skipped (opening one adds it to
+// selectedModules either way, and its figures would then come from blank
+// answers: a guess, not an answer). Tracked in `answeredModules` from the
+// entry on; for anyone from before, with none recorded, every module with
+// figures counts.
+export function moduleAnswered(key, d) {
+  return (d.selectedModules || []).includes(key) && (!Array.isArray(d.answeredModules) || d.answeredModules.includes(key));
+}
+export const withAnswered = (d, key) => ({ answeredModules: [...new Set([...(d.answeredModules || []), key])] });
+
 // Whether a module's questions have been answered. Property counts once its
 // first step is complete; `propertyDone` is passed in rather than worked out
 // here, to keep this file free of the Property calculations.
 export function moduleDone(key, d, propertyDone = false) {
-  return key === "property" ? propertyDone : (d.selectedModules || []).includes(key);
+  return key === "property" ? propertyDone : moduleAnswered(key, d);
 }
 
 // The modules whose questions have been answered, in START_MODULES order.

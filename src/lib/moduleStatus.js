@@ -1,3 +1,5 @@
+import { moduleAnswered } from "./appEntry.js";
+import { MODULE_GUIDES } from "./moduleGuide.js";
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby } from "lucide-react";
 import { fmt } from "./format.js";
 import { calcCashOptimisation } from "./cash.js";
@@ -309,7 +311,10 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // This is what makes it safe to leave e.g. Pension unselected — without this,
   // isPensionContributing(d) reading the blank default would otherwise mark it
   // "critical" (with a +99999 sort sentinel) purely because it was never asked.
-  const selectedModules = new Set(d.selectedModules || []);
+  // Opened but skipped counts as not answered too (moduleAnswered): its
+  // figures would be guesses from blank answers, and the totals show actual
+  // figures only.
+  const selectedModules = new Set(["cash", "investments", "pension", "studentLoan"].filter(k => moduleAnswered(k, d)));
   for (const key of ["cash", "investments", "pension"]) {
     if (!selectedModules.has(key)) {
       s[key] = { status: "na", impact: 0, impactLabel: null, amount: 0 };
@@ -368,8 +373,51 @@ export function calcCandidScore(statuses) {
 // Shared £-ranking for the module breakdown — single source of truth for both
 // the Modules screen's full list and Home's "biggest win" teaser, so the two
 // can never drift into separate sort implementations.
+// ── Banked: what a module's £ at stake has come down by because the user
+// changed something, confirmed by them. Each module keeps a baseline in
+// `moduleBaselines`: its £ and its own answers when first answered, and
+// what's been banked so far. When its own answers change and its £ falls,
+// the drop waits (pendingBank) until the user says whether they made the
+// change ("made": banked) or corrected a figure ("correcting": not banked);
+// either way the baseline moves to the new figures (bankPatch). Only its own
+// answers: raising a pension contribution nudges the Cash figure too, and
+// that isn't money banked on Cash. Marking a module as reviewed banks
+// nothing: it only says it's been read.
+const OWN_FIELDS = {
+  mortgage: ["hasMortgage", "mortgageBalance", "mortgageRate", "mortgageOfferRate"],
+  personalLoan: ["hasPersonalLoan", "personalLoanBalance", "personalLoanMonthly", "personalLoanRate", "personalLoanTermRemaining"],
+};
+const ownAnswers = (d, key) => JSON.stringify((OWN_FIELDS[key] || (MODULE_GUIDES[key]?.questions || [])
+  .filter(q => q.group !== "you").map(q => q.field)).map(f => d[f] ?? null));
+export function bankedFor(d, key) {
+  return Math.round((d.moduleBaselines || {})[key]?.banked || 0);
+}
+export function pendingBank(d, key, amount) {
+  const base = (d.moduleBaselines || {})[key];
+  if (!base || base.answers === ownAnswers(d, key)) return 0;
+  return base.amount > amount ? Math.round(base.amount - amount) : 0;
+}
+export function bankPatch(d, key, amount, made) {
+  const base = d.moduleBaselines[key];
+  return { ...d.moduleBaselines, [key]: {
+    amount: Math.round(amount), answers: ownAnswers(d, key),
+    banked: (base.banked || 0) + (made ? pendingBank(d, key, amount) : 0),
+  } };
+}
+// The baselines with any newly answered module added, or null if none is
+// new. Lump sums (Kids, £ by 18) aren't comparable, so aren't tracked.
+export function baselinePatch(d, statuses) {
+  const base = d.moduleBaselines || {};
+  const added = MODULE_META.filter(mm => mm.key !== "kids" && !(mm.key in base) && statuses[mm.key] && statuses[mm.key].status !== "na");
+  if (!added.length) return null;
+  return { ...base, ...Object.fromEntries(added.map(mm => [mm.key, { amount: Math.round(statuses[mm.key].amount || 0), answers: ownAnswers(d, mm.key), banked: 0 }])) };
+}
+
 export function getModuleBreakdown(d, m, statuses, insights, sortMode = "amount") {
-  const allModules = MODULE_META.map(mm => getModuleSummary(mm, d, m, statuses, insights));
+  const allModules = MODULE_META.map(mm => {
+    const s = getModuleSummary(mm, d, m, statuses, insights);
+    return { ...s, banked: s.amountIsLumpSum ? 0 : bankedFor(d, mm.key), pending: s.amountIsLumpSum ? 0 : pendingBank(d, mm.key, s.amount) };
+  });
   const activeModules = allModules.filter(mm => mm.status !== "na");
 
   // Descending by the clean £/yr `amount` figure (not the sort-priority `impact`,
@@ -400,6 +448,7 @@ export function getModuleBreakdown(d, m, statuses, insights, sortMode = "amount"
   const needActionCount = modulesWithRec.length + (kidsModule && kidsModule.amount > 0 ? 1 : 0);
   const onTrackCount    = modulesNoRec.length + (kidsModule && kidsModule.amount === 0 ? 1 : 0);
   const totalOpp = modulesWithRec.filter(mm => !mm.amountIsLumpSum).reduce((sum, mm) => sum + mm.amount, 0);
+  const totalBanked = moduleList.reduce((sum, mm) => sum + (mm.banked || 0), 0);
 
-  return { moduleList, modulesWithRec, modulesNoRec, kidsModule, needActionCount, onTrackCount, totalOpp };
+  return { moduleList, modulesWithRec, modulesNoRec, kidsModule, needActionCount, onTrackCount, totalOpp, totalBanked };
 }
