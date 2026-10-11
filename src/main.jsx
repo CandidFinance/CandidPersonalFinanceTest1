@@ -6,8 +6,6 @@ import { MotionConfig } from "framer-motion"
 import CandidApp, { PageWrap, NavBar, ContentWrap, G, GOLD, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "./CandidApp.jsx"
 import ErrorBoundary from "./ErrorBoundary.jsx"
 import { appEntryPath } from "./mockups/StartCheckButton.jsx"
-import GuidedFlow from "./mobile/property/GuidedFlow.jsx"
-import { CONFIDENCE_QUESTION } from "./lib/appEntry.js"
 const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
@@ -159,37 +157,6 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
             Start fresh
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Pre-assessment confidence check ────────────────────────────────────────────
-// Deliberately not one of the entry's questions — a single, separate,
-// low-stakes question shown once before the entry, so it doesn't read as part
-// of "the test". Same walk-through format as the entry and modules
-// (GuidedFlow, question in src/lib/appEntry.js): one tap answers and moves on
-// to the entry (/app/start). Always the mobile-native app, regardless of
-// viewport.
-function ConfidenceCheck() {
-  const navigate = useNavigate();
-  const [score, setScore] = useState(() => {
-    try { return localStorage.getItem('candid_confidence_score') || ""; }
-    catch (e) { reportStorageFailure("confidence_check_load", e); return ""; }
-  });
-  const save = (field, value) => {
-    setScore(value);
-    try { localStorage.setItem('candid_confidence_score', String(value)); } catch (e) { reportStorageFailure("confidence_check_save", e); }
-  };
-
-  return (
-    <div style={{minHeight:"100vh",background:"#faf7f0",display:"flex",flexDirection:"column"}}>
-      <NavBar light center="Before you start" right={<button type="button" onClick={() => navigate("/")} style={{background:"transparent",border:`1px solid rgba(22,47,36,0.2)`,borderRadius:"6px",padding:"6px 14px",color:"rgba(22,47,36,0.6)",fontSize:"12px",cursor:"pointer"}}>← Back</button>}/>
-      <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
-        <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Quick one before we start</div>
-        <GuidedFlow questions={[CONFIDENCE_QUESTION]} d={{ confidence: score }} m={{}} set={save}
-          skipLabel={null} showProgress={false}
-          onDone={() => { navigate("/app/start"); window.scrollTo({ top: 0, behavior: "instant" }); }}/>
       </div>
     </div>
   );
@@ -398,7 +365,8 @@ function AppRoutes() {
         {/* The app used to sit behind a beta password here; old links now go
             straight in. */}
         <Route path="/beta" element={<BetaRedirect />} />
-        <Route path="/welcome" element={<ConfidenceCheck />} />
+        {/* The confidence question is now part of the entry. */}
+        <Route path="/welcome" element={<Navigate to="/app/start" replace />} />
         <Route path="/welcome-back" element={<WelcomeBackRoute />} />
         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
         <Route path="/admin/rates" element={<Suspense fallback={null}><RatesAdmin /></Suspense>} />

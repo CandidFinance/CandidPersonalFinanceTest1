@@ -1,4 +1,4 @@
-// The app's two-question entry, and what the home screen offers a user who
+// The app's entry, and what the home screen offers a user who
 // hasn't had a report yet. Pure logic, unit tested in appEntry.test.js.
 // Spec: onboarding-guided-questions.md.
 //
@@ -54,33 +54,103 @@ export function entryGoals(interests) {
   return ENTRY_CHOICES.filter(c => c.goal && (interests || []).includes(c.value)).map(c => c.goal);
 }
 
-// The entry's two questions, run by the same walk-through as the modules
-// (GuidedFlow; question fields as in src/lib/propertyGuide.js). `also`
-// gives the other saved inputs an answer sets alongside its own field.
+// The entry's questions, run by the same walk-through as the modules
+// (GuidedFlow; question fields as in src/lib/propertyGuide.js): name first,
+// so the rest can use it. `also` gives the other saved inputs an answer sets
+// alongside its own field. What's good to have to hand and how Candid works
+// follow, on screens of their own (MobileEntryScreen).
+const firstName = d => (d.name || "").trim();
+
+// Saved to localStorage (candid_confidence_score) and onto the user's row:
+// for insight, nothing in the calculations reads it.
+export const CONFIDENCE_QUESTION = {
+  id:"confidence", field:"confidence", kind:"choice",
+  ask: ({ d }) => firstName(d) ? `How confident do you feel about your finances, ${firstName(d)}?` : "How confident do you feel about your finances?",
+  why: () => "There's no wrong answer. It helps us pitch things right for you.",
+  options: () => [
+    { value:"1", label:"Not at all confident" },
+    { value:"2", label:"Not very confident" },
+    { value:"3", label:"Fairly confident" },
+    { value:"4", label:"Confident" },
+    { value:"5", label:"Very confident" },
+  ],
+};
+
 export const ENTRY_QUESTIONS = [
-  {
-    id:"interests", field:"interests", kind:"multi", required:true,
-    ask: () => "What would you like help with?",
-    why: () => "We'll start with these. You can add the rest any time.",
-    options: () => ENTRY_CHOICES,
-    note: () => "Pick as many as you like.",
-    also: value => ({ financialGoals: entryGoals(value) }),
-  },
-  {
-    // What's useful to have to hand for the topics picked, said before the
-    // questions start (testers asked to know up front). Information only:
-    // nothing is uploaded, and every figure can be rough or skipped.
-    id:"toHand", field:"toHand", kind:"info",
-    ask: () => "Good to have to hand",
-    why: () => "Rough figures are fine, and you can skip anything you don't know.",
-    list: ({ d }) => toHandFor(d.interests),
-  },
   {
     id:"name", field:"name", kind:"text", label:"First name", required:true,
     ask: () => "What should we call you?",
     why: () => "Only used to talk to you in the app.",
   },
+  CONFIDENCE_QUESTION,
+  {
+    // The picks set which modules Home offers first, and which the score
+    // waits for (scorePicks).
+    id:"interests", field:"interests", kind:"multi", required:true,
+    ask: () => "What would you like help with?",
+    why: () => "We'll set up your modules around these. You can add the rest any time.",
+    options: () => ENTRY_CHOICES,
+    note: () => "Pick as many as you like.",
+    also: value => ({ financialGoals: entryGoals(value) }),
+  },
 ];
+
+// The modules' names as the entry's messages say them.
+const MODULE_NAMES = { pension:"Pension", cash:"Cash & savings", investments:"Investments", studentLoan:"Student loan", property:"Buying a home" };
+const listOf = names => names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+
+// "How Candid works": the messages Candid sends at the end of the entry,
+// in the first person, like talking to an adviser, and the replies the user
+// can give between them. The opener and the check-in vary (`variant`, picked
+// at random per visit) so it reads like a person, not a script.
+const OPENERS = [
+  n => `Good good${n ? `, ${n}` : ""}. Quick word on how I work.`,
+  n => `Right${n ? ` ${n}` : ""}, now that's out of the way, let's crack on.`,
+  n => `Final quick one from me${n ? `, ${n}` : ""}, before we dive in.`,
+];
+const CHECK_INS = ["All good?", "All clear?", "Comprende?", "Make sense?"];
+export const CHAT_VARIANTS = { openers: OPENERS.length, checkIns: CHECK_INS.length };
+
+export function entryChat(d, variant = { opener: 0, checkIn: 0 }) {
+  const name = firstName(d);
+  const picked = pickedModules(d.interests);
+  const modules = picked.length
+    ? [`Based on what you told me, I've set up modules for ${listOf(picked.map(k => MODULE_NAMES[k]))}.`, "They're where you're most likely to be losing money."]
+    : [`I've set up modules where people most often lose money, starting with ${MODULE_NAMES[DEFAULT_FIRST_MODULE]}.`];
+  return {
+    intro: [
+      OPENERS[variant.opener % OPENERS.length](name),
+      "I find where you're losing money because your setup isn't optimised.",
+      "I weigh your figures and goals against UK tax law and best practice.",
+      "Then I show you your options, and you choose what suits you.",
+      "For most people, that's hundreds to thousands of pounds a year.",
+      CHECK_INS[variant.checkIn % CHECK_INS.length],
+    ],
+    understood: [{ value:"yes", label:"Yes, all good" }, { value:"no", label:"Not quite" }],
+    // Only after "Not quite": the same point, more plainly.
+    plainer: [
+      "No worries. Put simply, most people's money could be working harder for them.",
+      "I'll show you where, what it's worth each year, and what you could change. The choices are always yours.",
+    ],
+    how: [
+      ...modules,
+      "Open each one and give me a few basic figures.",
+      "I'll do the sums and build your action plan as you go.",
+    ],
+    ready: { value:"ready", label:"All clear, ready to explore" },
+    last: "Lovely. Over to you.",
+  };
+}
+
+// How long a message takes to read, so the next one doesn't arrive before
+// it's been read: 300 words a minute (quicker than the 240 average for
+// silent reading, which felt slow in testing), plus a moment to look. The
+// messages are kept short so the whole intro takes about 15 seconds.
+export const READING_WPM = 300;
+export function readingMs(text) {
+  const words = String(text).trim().split(/\s+/).filter(Boolean).length;
+  return 300 + Math.round(words * 60000 / READING_WPM);
+}
 
 // What's good to have to hand: salary always; then each picked topic's
 // figures, rough is fine. Savings and investments share one line (where
@@ -98,23 +168,6 @@ export function toHandFor(interests) {
   const topics = exploring ? ["pension", "money"] : [...new Set(pickedModules(interests).map(k => TO_HAND_TOPIC[k]))];
   return [{ what:"Your salary" }, ...topics.flatMap(t => TO_HAND[t] || [])];
 }
-
-// The confidence check before the entry (/welcome), in the same walk-through
-// format but kept apart from it, so it reads as a quick aside rather than
-// part of the questions. Saved to localStorage (candid_confidence_score) and
-// onto the user's row, not to the inputs.
-export const CONFIDENCE_QUESTION = {
-  id:"confidence", field:"confidence", kind:"choice",
-  ask: () => "How confident are you managing your money?",
-  why: () => "There's no wrong answer. It helps us pitch things right for you.",
-  options: () => [
-    { value:"1", label:"Not at all confident" },
-    { value:"2", label:"Not very confident" },
-    { value:"3", label:"Fairly confident" },
-    { value:"4", label:"Confident" },
-    { value:"5", label:"Very confident" },
-  ],
-};
 
 // Whether the app is open to this user: they've had a report (everyone who
 // used Candid before the two-question entry) or they've been through it.

@@ -9,8 +9,8 @@ import { WHITE, SANS } from "../CandidApp.jsx";
 export const CTA_BLUE = "#0071E3";
 
 // Where a visitor lands on entering the app: someone with a saved report, or
-// who has been through the app's two-question entry, goes straight back in;
-// everyone else starts the pre-assessment confidence check. Always the
+// who has been through the app's entry, goes straight back in; everyone
+// else starts the entry. Always the
 // mobile-native app (/app/...), regardless of viewport.
 export function appEntryPath() {
   try {
@@ -18,7 +18,7 @@ export function appEntryPath() {
     const hasSavedInsights = !!localStorage.getItem('candid_insights');
     if (savedInputs && (hasSavedInsights || JSON.parse(savedInputs).appEntered)) return "/app/home";
   } catch (e) {}
-  return "/welcome";
+  return "/app/start";
 }
 
 // The CTA's label, shared with the site header so every "start" button reads

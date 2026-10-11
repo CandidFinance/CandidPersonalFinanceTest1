@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { entryGoals, toHandFor, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION,
+import { entryGoals, toHandFor, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION, entryChat, readingMs,
   doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
@@ -9,10 +9,22 @@ test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["exploring"]), ["exploring"]);
 });
 
-test("the entry asks two questions, each with a short reason", () => {
-  assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["interests", "toHand", "name"]);
+test("the entry asks name, confidence, then interests, each with a short reason", () => {
+  assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["name", "confidence", "interests"]);
   for (const q of ENTRY_QUESTIONS) assert.ok(q.why().split(/\s+/).length <= 15, q.id);
-  assert.deepEqual(ENTRY_QUESTIONS[0].also(["property"]), { financialGoals: ["buy_house"] });
+  assert.deepEqual(ENTRY_QUESTIONS[2].also(["property"]), { financialGoals: ["buy_house"] });
+  assert.equal(CONFIDENCE_QUESTION.ask({ d: { name: " Sam " } }), "How confident do you feel about your finances, Sam?");
+});
+
+test("how Candid works names the modules picked, or the default for just exploring", () => {
+  assert.match(entryChat({ interests: ["cash", "retirement", "property"] }).how[0], /modules for Pension, Cash & savings and Buying a home\./);
+  assert.match(entryChat({ interests: ["exploring"] }).how[0], /starting with Pension\./);
+  assert.match(entryChat({ name: "Sam" }, { opener: 1, checkIn: 2 }).intro[0], /^Right Sam, now that's out of the way/);
+  assert.equal(entryChat({}, { opener: 0, checkIn: 2 }).intro.at(-1), "Comprende?");
+});
+
+test("each message waits for the one before to be read, at 300 words a minute", () => {
+  assert.equal(readingMs("one two three four five six seven eight nine ten"), 300 + 2000);
 });
 
 test("the score appears once every pick is answered; for just exploring, after the first module", () => {
