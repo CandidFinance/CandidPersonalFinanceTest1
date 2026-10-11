@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { pensionOutlook, FAST_GROWTH_YEARS } from "../../lib/crossModule.js";
+import { SALARY_GROWTH_RATES } from "../../lib/metrics.js";
 import { AlertTriangle, PartyPopper, Banknote, Check } from "lucide-react";
 import { ExplainLink } from "../ModuleScreenParts.jsx";
 import {
@@ -182,6 +185,10 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const win2Num = showSacrificeCalc && taper.recoverable ? ++winCounter : null;
   const drawdownNum = drawdownBest ? ++winCounter : null;
   const exploreNum = showExplore ? ++winCounter : null;
+  // Looking ahead: what the pension's path, with salary growth, means for
+  // tax later on (src/lib/crossModule.js), leading on to Investments.
+  const outlook = pensionOutlook(d, m);
+  const aheadNum = outlook?.flags.length ? ++winCounter : null;
   const providersNum = products.products?.length ? ++winCounter : null;
   // Inside the what-ifs tile, unnumbered.
   const win3Num = null, win4Num = null;
@@ -609,6 +616,8 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         </MobileWinTile>
       )}
 
+      {aheadNum && <LookingAhead d={d} outlook={outlook} number={aheadNum}/>}
+
       {/* Where to do it: a numbered tile like the others, the providers
           inside it once opened. */}
       {providersNum && (
@@ -618,5 +627,61 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         </MobileWinTile>
       )}
     </div>
+  );
+}
+
+// The "Looking ahead" tile: each way the pension's path could cost tax
+// later, the age it happens and what it's worth, and where that leads.
+const pct = r => `${Math.round(r * 100)}%`;
+function LookingAhead({ d, outlook, number }) {
+  const navigate = useNavigate();
+  const by = key => outlook.flags.find(f => f.key === key);
+  const trap = by("taxTrap"), lumpSum = by("lumpSum"), later = by("retirementRate");
+  const headline = later ? `Your retirement income could be taxed at ${pct(later.laterRate)}`
+    : lumpSum ? `Your pot could pass the tax-free cash limit around age ${lumpSum.age}`
+    : `Your pay could pass £100,000 around age ${trap.age}`;
+  const growth = Math.round((SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02) * 100);
+  const payGrowth = growth === 2 ? "your pay rising 2% a year" : `your pay rising ${growth}% a year for ${FAST_GROWTH_YEARS} years, then 2%`;
+  const item = { padding:"12px 0", borderTop:"1px solid rgba(22,47,36,0.08)" };
+  const title = { fontSize:"14px", fontWeight:700, color:TEXT, lineHeight:1.35 };
+  const body = { fontSize:"13px", color:MUT, lineHeight:1.55, margin:"4px 0 0" };
+  const link = { background:"none", border:"none", padding:"8px 0 0", color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
+  const toInvestments = <button type="button" onClick={() => navigate("/app/module/investments")} style={link}>See Investments ›</button>;
+  return (
+    <MobileWinTile number={number} title="Looking ahead" tagLabel="Tax later" headline={headline}>
+      <div>
+        {later && (
+          <div style={{...item,borderTop:"none",paddingTop:0}}>
+            <div style={title}>Taxed at {pct(later.laterRate)} in retirement, relief at {pct(later.nowRate)} now</div>
+            <p style={body}>
+              Your pension and State Pension could pay you around {fmt(later.income)} a year in today's money. The part above {fmt(later.laterRate === 0.45 ? 125140 : 50270)} would be taxed at {pct(later.laterRate)}, though it only got {pct(later.nowRate)} relief going in: about {fmt(later.extraTax)} a year more in tax.
+              An ISA is taxed on the way in but not on the way out, so for saving beyond what you'll need, it can come out ahead.
+            </p>
+            {toInvestments}
+          </div>
+        )}
+        {lumpSum && (
+          <div style={later ? item : {...item,borderTop:"none",paddingTop:0}}>
+            <div style={title}>Past the tax-free cash limit around age {lumpSum.age}</div>
+            <p style={body}>
+              A quarter of a pension can be taken tax-free, but only up to {fmt(LUMP_SUM_ALLOWANCE)}, and that limit doesn't rise. Your pot is on course to pass it, leaving about {fmt(lumpSum.overCap)} in today's money that would otherwise have been tax-free: roughly {fmt(lumpSum.extraTax)} in tax.
+              Money saved in an ISA has no such limit.
+            </p>
+            {toInvestments}
+          </div>
+        )}
+        {trap && (
+          <div style={later || lumpSum ? item : {...item,borderTop:"none",paddingTop:0}}>
+            <div style={title}>Your pay could pass £100,000 around age {trap.age}</div>
+            <p style={body}>
+              Above £100,000 the tax-free Personal Allowance is taken away, £1 for every £2 earned, so the next £25,140 is taxed at an effective 60%. That limit doesn't rise either. Paying more into your pension lowers the income it's measured on, so it can keep you under it.
+            </p>
+          </div>
+        )}
+        <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>
+          An estimate, not a forecast: {payGrowth}, paying in at today's rates, investments growing 6% a year, and today's tax rules.
+        </p>
+      </div>
+    </MobileWinTile>
   );
 }

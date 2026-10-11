@@ -1,7 +1,9 @@
 // Unlocking module answers. A new user answers every module's questions and
 // sees the £ each is worth, but each module's answer (its reveal, its page,
-// and what Assist says about it) stays hidden until they unlock it: the
-// first with their email, each one after with a one-tap feedback question.
+// and what Assist says about it) stays hidden until they unlock it. The
+// first module they finish is free, so they see Candid work before giving
+// anything; the next takes their email, each one after a one-tap feedback
+// question.
 // They choose which to unlock, so the order never depends on which is
 // biggest. Pure, unit tested in unlock.test.js.
 //
@@ -46,10 +48,19 @@ export const UNLOCK_QUESTIONS = [
   ] },
 ];
 
-// What unlocking the next module asks for: their email first ("email"),
-// then the next feedback question not yet answered, or nothing once they're
-// all answered ({ kind: "free" }).
+// The first module finished unlocks by itself: the patch to apply when a
+// gated user with nothing unlocked yet finishes `key`, or null.
+export function firstUnlockPatch(d, key) {
+  if (!isLocked(d, key) || (d.unlockedModules || []).length) return null;
+  return { unlockedModules: [key] };
+}
+
+// What unlocking the next module asks for: nothing for the first ({ kind:
+// "free" }, for anyone who finished one before it unlocked by itself), then
+// their email ("email"), then the next feedback question not yet answered,
+// then nothing once they're all answered ("free").
 export function unlockAsk(d) {
+  if (!(d.unlockedModules || []).length) return { kind: "free" };
   if (!validEmail(d.email) || !d.unlockEmailGiven) return { kind: "email" };
   const answered = d.unlockFeedback || {};
   const q = UNLOCK_QUESTIONS.find(x => !(x.id in answered));

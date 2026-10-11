@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { ExternalLink, Wrench } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { loanAlternatives } from "../../lib/crossModule.js";
+import { ExternalLink, Wrench, ChevronRight } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension } from "../../lib/studentLoan.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
@@ -207,6 +209,8 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
         </p>
       </div>
 
+      {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
+
       {sl.willClear && (
         <MobileWinTile
           title={sl.balanceGrowing ? "Your loan balance is growing" : worthOverpaying ? "Overpay your student loan" : "What overpaying would do"}
@@ -335,6 +339,41 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
         );
       })()}
       </>)}
+    </div>
+  );
+}
+
+// Overpaying isn't worth it, so money that might have gone on the loan can
+// do more elsewhere: the same £100 a month in a pension, an ISA or savings,
+// with what each would grow to and how easily it can be reached
+// (src/lib/crossModule.js loanAlternatives). Each opens its module; the user
+// chooses, so they're listed by £ with their trade-offs, not ranked as advice.
+const ALTERNATIVES = {
+  pension:     { title: "Pension", note: tr => `Tax relief at ${Math.round(tr * 100)}% adds to every payment. Can't be touched until 57.` },
+  investments: { title: "Stocks and Shares ISA", note: () => "Growth is tax-free and you can take it out any time. Can fall as well as rise." },
+  cash:        { title: "Savings at the best rate", note: () => "Safe, and there whenever you need it." },
+};
+function WhereItCouldGo({ m }) {
+  const navigate = useNavigate();
+  const { monthly, years, paidIn, options } = loanAlternatives(m);
+  return (
+    <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.1)",borderRadius:"14px",padding:"16px 18px",margin:"0 0 16px"}}>
+      <div style={{fontSize:"10px",fontWeight:800,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Where that money could go instead</div>
+      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 4px"}}>£{monthly} a month for {years} years ({fmt(paidIn)} in all) could grow to:</p>
+      {options.map((o, i) => (
+        <button key={o.key} type="button" onClick={() => navigate(`/app/module/${o.key}`)}
+          style={{width:"100%",textAlign:"left",fontFamily:"inherit",cursor:"pointer",background:"none",border:"none",borderTop:i ? "1px solid rgba(22,47,36,0.08)" : "none",padding:"12px 0",display:"flex",alignItems:"center",gap:"12px"}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px"}}>
+              <span style={{fontSize:"14px",fontWeight:700,color:TEXT}}>{ALTERNATIVES[o.key].title}</span>
+              <span style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:G}}>{fmt(o.total)}</span>
+            </div>
+            <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>{ALTERNATIVES[o.key].note(m.tr || 0)}</div>
+          </div>
+          <ChevronRight size={16} color={MUT} style={{flexShrink:0}}/>
+        </button>
+      ))}
+      <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>Investments growing 6% a year and savings at today's best rate. Not including anything an employer adds to a pension.</p>
     </div>
   );
 }

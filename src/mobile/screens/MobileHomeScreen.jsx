@@ -10,7 +10,8 @@ import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
-import { unfinishedPicks, scoreUnlocked } from "../../lib/appEntry.js";
+import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, SCORED_MODULES } from "../../lib/appEntry.js";
+import { moduleEstimate } from "../../lib/crossModule.js";
 import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import GoalsCard from "./GoalsCard.jsx";
@@ -106,6 +107,13 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   // report who has since picked more): kept on home, each dropping off once
   // answered.
   const stillToDo = unfinishedPicks(d, propertyDone);
+  // Modules they didn't pick and haven't started, each with a rough £ from
+  // what they've answered so far, largest first (by £, not an order to
+  // follow): what draws someone on from the one module they came for.
+  const worthALook = notStarted(d, propertyDone)
+    .filter(k => k !== "property" && !stillToDo.includes(k))
+    .map(k => ({ key: k, estimate: moduleEstimate(k, d, m) }))
+    .sort((a, b) => (b.estimate?.high ?? -1) - (a.estimate?.high ?? -1));
   // "What to do first", the line under the score and what's on track, all
   // from the code (src/lib/priorities.js).
   const priorities = whatToDoFirst(d, m, statuses);
@@ -118,6 +126,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   const { totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
   const { assets, liabilities } = netWorthBreakdown(d, m);
   const netWorthPositive = m.netWorth >= 0;
+  // How much of the picture the score covers: a high score from one module
+  // answered mustn't read as everything being fine.
+  const checked = doneModules(d, propertyDone).filter(k => SCORED_MODULES.includes(k)).length;
+  const unchecked = SCORED_MODULES.length - checked;
 
   return (
     <div>
@@ -138,7 +150,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
             <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>At stake each year</div>
             <div style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:G,lineHeight:1.1,marginTop:"6px"}}>{fmt(totalOpp)}</div>
             <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
-              {totalOpp > 0 ? "What your money could be doing that it isn't, across what you've answered." : "Nothing left on the table in what you've answered."}
+              {totalOpp > 0 ? "What your money could be doing that it isn't, across what you've answered."
+                : unchecked > 0 ? `Nothing left on the table in what you've checked so far. ${unchecked} more ${unchecked === 1 ? "area" : "areas"} to check below.`
+                : "Nothing left on the table in what you've answered."}
             </p>
           </div>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
@@ -150,6 +164,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
                 <span style={{fontSize:"11px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"2px 8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain}</span>
               )}
             </div>
+            {unchecked > 0 && <div style={{fontSize:"11px",color:MUT,marginTop:"2px",whiteSpace:"nowrap"}}>{checked} of {SCORED_MODULES.length} areas checked</div>}
           </div>
         </div>
 
@@ -206,7 +221,16 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         <div style={{marginTop:"22px"}}>
           <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Still to do</div>
           <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
-            {stillToDo.map(key => <ModuleStartRow key={key} moduleKey={key} onOpen={onStartModule}/>)}
+            {stillToDo.map(key => <ModuleStartRow key={key} moduleKey={key} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
+          </div>
+        </div>
+      )}
+
+      {worthALook.length > 0 && (
+        <div style={{marginTop:"22px"}}>
+          <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Worth a look</div>
+          <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
+            {worthALook.map(({ key, estimate }) => <ModuleStartRow key={key} moduleKey={key} estimate={estimate} onOpen={onStartModule}/>)}
           </div>
         </div>
       )}

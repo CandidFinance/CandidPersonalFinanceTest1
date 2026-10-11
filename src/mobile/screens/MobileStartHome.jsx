@@ -3,6 +3,7 @@ import { moduleOrder, moduleDone, scorePicks, MODULE_PITCH, SCORED_MODULES } fro
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { mobileGreeting } from "../copy.js";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
+import { moduleEstimate } from "../../lib/crossModule.js";
 
 // Home before the Candid score appears: the modules to start with, their
 // picks from the entry first. The score waits until every pick is answered
@@ -76,7 +77,7 @@ export default function MobileStartHome({ d, m, onStartModule }) {
       <div style={{marginTop:"24px"}}>
         <div style={label}>{startMeta ? "Then" : "Your modules"}</div>
         <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
-          {rest.map(key => <ModuleStartRow key={key} moduleKey={key} done={done.includes(key)} onOpen={onStartModule}/>)}
+          {rest.map(key => <ModuleStartRow key={key} moduleKey={key} done={done.includes(key)} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isLocked, unlockAsk, unlockPatch, validEmail, UNLOCK_QUESTIONS } from "./unlock.js";
+import { isLocked, unlockAsk, unlockPatch, firstUnlockPatch, validEmail, UNLOCK_QUESTIONS } from "./unlock.js";
 
 test("only gated users, and only scored modules, are locked", () => {
   assert.equal(isLocked({}, "cash"), false);
@@ -9,8 +9,16 @@ test("only gated users, and only scored modules, are locked", () => {
   assert.equal(isLocked({ unlockGate: true, unlockedModules: ["cash"] }, "cash"), false);
 });
 
-test("email first, then one question per unlock, then free", () => {
-  let d = { unlockGate: true };
+test("the first module finished unlocks by itself, and only the first", () => {
+  const d = { unlockGate: true };
+  assert.deepEqual(firstUnlockPatch(d, "studentLoan"), { unlockedModules: ["studentLoan"] });
+  assert.equal(firstUnlockPatch({ ...d, unlockedModules: ["cash"] }, "pension"), null);
+  assert.equal(firstUnlockPatch({}, "cash"), null);
+  assert.equal(unlockAsk(d).kind, "free");
+});
+
+test("after the first, email, then one question per unlock, then free", () => {
+  let d = { unlockGate: true, unlockedModules: ["studentLoan"] };
   assert.equal(unlockAsk(d).kind, "email");
   d = { ...d, ...unlockPatch(d, "cash", unlockAsk(d), { email: " a@b.co ", callOk: true }) };
   assert.equal(d.email, "a@b.co");
@@ -25,6 +33,6 @@ test("email first, then one question per unlock, then free", () => {
 });
 
 test("an email typed elsewhere in the app doesn't count as the unlock", () => {
-  assert.equal(unlockAsk({ email: "a@b.co" }).kind, "email");
+  assert.equal(unlockAsk({ email: "a@b.co", unlockedModules: ["cash"] }).kind, "email");
   assert.ok(!validEmail("nope"));
 });

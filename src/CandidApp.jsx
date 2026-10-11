@@ -28,7 +28,7 @@ import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
-import { isLocked, unlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
+import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
@@ -6639,9 +6639,16 @@ export default function AppShell() {
               if (!selected.includes(mobileActiveModule)) set("selectedModules", [...selected, mobileActiveModule]);
               posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at, rerun: moduleRerun === mobileActiveModule });
               posthog.capture("module_answer_shown", { module: mobileActiveModule });
+              // The first module finished unlocks by itself (unlock.js).
+              const firstFree = how === "finished" ? firstUnlockPatch(d, mobileActiveModule) : null;
+              if (firstFree) {
+                Object.entries(firstFree).forEach(([k, v]) => set(k, v));
+                posthog.capture("module_unlocked", { module: mobileActiveModule, via: "first_free" });
+                setUnlockSaveTick(t => t + 1);
+              }
               // A first walk-through, finished, goes on to the answer step
               // by step (MODULE_REVEALS), when there's one to give.
-              if (how === "finished" && moduleRerun !== mobileActiveModule && !isLocked(d, mobileActiveModule) && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
+              if (how === "finished" && moduleRerun !== mobileActiveModule && (firstFree || !isLocked(d, mobileActiveModule)) && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
                 setRevealModule(mobileActiveModule);
                 posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
               }
