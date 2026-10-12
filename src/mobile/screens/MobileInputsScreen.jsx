@@ -124,19 +124,23 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
 }
 
 // For a subscriber: their plan, and Stripe's page to change or cancel it.
+// A "comp" plan (a free row added by hand in `subscriptions`, for testing)
+// has no Stripe customer, so no portal.
 function Subscription() {
   const [error, setError] = useState(null);
   if (!hasAccess()) return null;
   const a = accessInfo();
+  const comp = a.plan === "comp";
+  const planLabel = comp ? "complimentary" : PLANS[a.plan]?.label.toLowerCase();
   const until = a.periodEnd ? new Date(a.periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : null;
   return (
     <div style={{marginTop:"28px",paddingTop:"16px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
-      <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Candid subscription{a.plan ? `, ${PLANS[a.plan]?.label.toLowerCase()}` : ""}</div>
+      <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Candid subscription{planLabel ? `, ${planLabel}` : ""}</div>
       <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>{a.email}{until ? ` · ${a.cancelling ? "ends" : "renews"} ${until}` : ""}</div>
-      <button type="button" onClick={() => openBillingPortal().catch(e => setError(e.message))}
+      {!comp && <button type="button" onClick={() => openBillingPortal().catch(e => setError(e.message))}
         style={{background:"none",border:"none",padding:"8px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
         Manage subscription
-      </button>
+      </button>}
       {error && <div style={{fontSize:"12px",color:"#b3261e"}}>{error}</div>}
     </div>
   );
