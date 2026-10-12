@@ -1,3 +1,4 @@
+import { ExplainLink } from "../ModuleScreenParts.jsx";
 import BankConfirm from "../BankConfirm.jsx";
 import { useState } from "react";
 import { Check, Coins } from "lucide-react";
@@ -60,6 +61,9 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
             <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel({status}, isComplete)}</span>
           </div>
         </div>
+        {/* The answer step by step, beside the module's name on every
+            module, rather than inside the page. */}
+        {onShowReveal && <div style={{alignSelf:"flex-start",marginTop:"6px"}}><ExplainLink onClick={onShowReveal}/></div>}
         {onWalkThrough && (
           <button type="button" onClick={onWalkThrough} style={{background:"none",border:"none",padding:0,color:G,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap",alignSelf:"flex-start",marginTop:"4px"}}>
             Edit answers

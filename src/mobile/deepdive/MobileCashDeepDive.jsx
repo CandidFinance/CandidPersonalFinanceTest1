@@ -8,7 +8,6 @@ import MobileProductListTile from "../MobileProductListTile.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
-import { ExplainLink } from "../ModuleScreenParts.jsx";
 import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
@@ -86,12 +85,10 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
 
   return (
     <div>
-      {opportunityCols.length === 0 && onShowReveal && <div style={{marginBottom:"14px"}}><ExplainLink onClick={onShowReveal}/></div>}
       {opportunityCols.length > 0 && (
         <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
             <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
-            <ExplainLink onClick={onShowReveal} color={OPPORTUNITY_TILE_FIGURE}/>
           </div>
           <div style={{display:"flex",gap:"24px",flexWrap:"wrap"}}>
             {opportunityCols.map((c,i) => (

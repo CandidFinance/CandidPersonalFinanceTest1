@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { pensionOutlook, cliffEdge, FAST_GROWTH_YEARS } from "../../lib/crossModule.js";
 import { SALARY_GROWTH_RATES } from "../../lib/metrics.js";
-import { AlertTriangle, PartyPopper, Banknote, Check, PiggyBank, Users, CalendarClock, ChevronRight } from "lucide-react";
-import { ExplainLink } from "../ModuleScreenParts.jsx";
+import { AlertTriangle, PartyPopper, Banknote, Check, PiggyBank, Users, CalendarClock, ChevronRight, ChevronDown } from "lucide-react";
 import {
   isPensionContributing,
   calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
@@ -290,12 +289,10 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
 
   return (
     <div>
-      {opportunityCols.length === 0 && onShowReveal && <div style={{marginBottom:"14px"}}><ExplainLink onClick={onShowReveal}/></div>}
       {opportunityCols.length > 0 && (
         <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
             <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
-            <ExplainLink onClick={onShowReveal} color={OPPORTUNITY_TILE_FIGURE}/>
           </div>
           <div style={{display:"flex",gap:"22px",flexWrap:"wrap"}}>
             {opportunityCols.map((c,i) => (
@@ -377,17 +374,18 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
                 it stands and nothing in it looks stuck. */}
             <div style={{marginTop:"16px",paddingTop:"14px",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
               <div style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>What if you contributed more?</div>
-              <PillSlider value={extraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS}/>
+              <PillSlider compact value={extraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS}/>
               <PayInMore traj={traj} tr={m.tr || 0}/>
             </div>
+
+            {/* The cliff edge, closed, so the tiles below stay in view. */}
+            {cliff && <CliffEdge cliff={cliff} onSeeMore={() => {
+              setAheadOpen(true);
+              setTimeout(() => document.getElementById("looking-ahead")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+            }}/>}
           </div>
         );
       })()}
-
-      {cliff && <CliffEdge cliff={cliff} onSeeMore={() => {
-        setAheadOpen(true);
-        setTimeout(() => document.getElementById("looking-ahead")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-      }}/>}
 
       {showMatchWin && (
         <MobileWinTile number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tagLabel="Today"
@@ -639,20 +637,25 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   );
 }
 
-// Paying in more: the salary it takes over the years to retirement against
-// what it adds to the pot, as two bars on one scale, and what each £1 of
-// salary becomes. In today's money at today's salary
-// (calcPensionGrowthTrajectory extraSalaryCost, extraGain).
+// Paying in more, to retirement: the take-home pay it costs (the salary
+// paid in, less the tax relief that tops it up) against what it adds to the
+// pot. In today's money at today's salary (calcPensionGrowthTrajectory
+// extraSalaryCost, extraGain); on top of what's paid in already.
 function PayInMore({ traj, tr }) {
-  const cost = traj.extraSalaryCost, gain = traj.extraGain;
-  const scale = Math.max(cost, gain, 1);
+  const foregone = Math.round(traj.extraSalaryCost * (1 - tr));
+  const figure = (label, value, color) => (
+    <div style={{flex:1,minWidth:0}}>
+      <div style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color,lineHeight:1.1}}>{fmt(value)}</div>
+      <div style={{fontSize:"12px",color:MUT,marginTop:"4px",lineHeight:1.35}}>{label}</div>
+    </div>
+  );
   return (
-    <div style={{marginTop:"6px"}}>
-      <AmountBar label={`Costs you, in salary, over ${traj.years} years`} value={cost} color={MUT} scale={scale}/>
-      <AmountBar label={`Adds to your pension by ${traj.retireAge}`} value={gain} color={SUCCESS_GREEN} scale={scale}/>
-      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>
-        Each £1 of salary paid in becomes about £{(gain / Math.max(cost, 1)).toFixed(2)}.{tr > 0 && <> After tax relief, the {fmt(cost)} costs about {fmt(Math.round(cost * (1 - tr)))} of take-home pay.</>}
-      </p>
+    <div style={{marginTop:"12px"}}>
+      <div style={{fontSize:"11px",fontWeight:700,color:TEXT,marginBottom:"8px"}}>To retirement, on top of what you pay in now</div>
+      <div style={{display:"flex",gap:"16px"}}>
+        {figure("Post-tax salary foregone", foregone, TEXT)}
+        {figure("Additional pension value", traj.extraGain, SUCCESS_GREEN)}
+      </div>
     </div>
   );
 }
@@ -678,6 +681,7 @@ function AmountBar({ label, value, color, scale, size = 17, pounds = fmt }) {
 // cliffEdge). Leads on to Looking ahead for what it means and the options.
 const AMBER = "#b7791f";
 function CliffEdge({ cliff, onSeeMore }) {
+  const [open, setOpen] = useState(false);
   const bars = [
     { label: "In your pension, before the limit", value: cliff.before, color: SUCCESS_GREEN },
     { label: "In your pension, after the limit", value: cliff.after, color: AMBER },
@@ -685,13 +689,16 @@ function CliffEdge({ cliff, onSeeMore }) {
   ];
   const scale = Math.max(...bars.map(b => b.value));
   return (
-    <div style={{background:"#fdf6ea",border:"1.5px solid rgba(183,121,31,0.35)",borderRadius:RADIUS_CARD,padding:"16px",marginBottom:"12px"}}>
-      <div style={{display:"flex",alignItems:"flex-start",gap:"10px"}}>
-        <AlertTriangle size={20} color={AMBER} style={{flexShrink:0,marginTop:"1px"}}/>
-        <div style={{fontSize:"15px",fontWeight:700,color:TEXT,lineHeight:1.35}}>
+    <div style={{background:"#fdf6ea",border:"1.5px solid rgba(183,121,31,0.35)",borderRadius:"12px",padding:"12px 14px",marginTop:"16px"}}>
+      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
+        style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
+        <AlertTriangle size={18} color={AMBER} style={{flexShrink:0}}/>
+        <span style={{flex:1,fontSize:"14px",fontWeight:700,color:TEXT,lineHeight:1.35}}>
           {cliff.already ? "Your pot is past a cliff edge" : `You're approaching a cliff edge, around age ${cliff.age}`}
-        </div>
-      </div>
+        </span>
+        <ChevronDown size={16} color={MUT} style={{flexShrink:0,transform:open ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
+      </button>
+      {open && <div>
       <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:"8px 0 0"}}>
         A quarter of a pension can be taken tax-free, but only up to {fmt(LUMP_SUM_ALLOWANCE)}, and that limit doesn't rise. Once your pot passes {fmt(LSA_INFLECTION_POT)}, everything added after that is taxed when you take it out.
       </p>
@@ -706,6 +713,7 @@ function CliffEdge({ cliff, onSeeMore }) {
       <button type="button" onClick={onSeeMore} style={{background:"none",border:"none",padding:"10px 0 0",color:G,fontSize:"13.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"2px"}}>
         See what it means, and the alternatives<ChevronRight size={15}/>
       </button>
+      </div>}
     </div>
   );
 }

@@ -8,7 +8,6 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
-import { ExplainLink } from "../ModuleScreenParts.jsx";
 import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
 import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 
@@ -84,12 +83,10 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
 
   return (
     <div>
-      {!hasOpportunity && onShowReveal && <div style={{marginBottom:"14px"}}><ExplainLink onClick={onShowReveal}/></div>}
       {hasOpportunity && (
         <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
             <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
-            <ExplainLink onClick={onShowReveal} color={OPPORTUNITY_TILE_FIGURE}/>
           </div>
           {/* The same lead figure as the answer step by step: tax-free profit
               when there is some, otherwise the unused ISA allowance. */}
