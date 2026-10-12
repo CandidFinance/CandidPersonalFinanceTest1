@@ -21,6 +21,16 @@ export function formatThousands(raw) {
   return new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 }).format(n);
 }
 
+// Large sums in running text and chart labels: £1.073m from a million,
+// £268.3k from £100,000, in full below that. Display only: the sums
+// themselves stay whole.
+export function fmtBig(n) {
+  const abs = Math.abs(n || 0), sign = n < 0 ? "-" : "";
+  if (abs >= 1e6) return `${sign}£${(abs / 1e6).toFixed(3)}m`;
+  if (abs >= 1e5) return `${sign}£${(abs / 1e3).toFixed(1)}k`;
+  return fmt(n);
+}
+
 export function fmtCompact(n) {
   const abs = Math.abs(n || 0);
   if (abs < 1000) return fmt(n);

@@ -13,7 +13,7 @@ import {
 import { bestDrawdown, defaultDrawdownYears } from "../../lib/drawdown.js";
 import { taxYearFor } from "../../lib/taxYear.js";
 import { capField } from "../../lib/onboarding.js";
-import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
+import { fmt, fmtK, fmtCompact, fmtBig } from "../../lib/format.js";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, PillSlider, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileDrawdown, { compact, Pill } from "./MobileDrawdown.jsx";
@@ -27,7 +27,7 @@ import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
 import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
 
 const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` }));
-const EXTRA_PCT_OPTIONS = [1,2,3,5].map(p => ({ value:p, label:`+${p}%` }));
+const EXTRA_PCT_OPTIONS = [0,1,2,3,5].map(p => ({ value:p, label:p ? `+${p}%` : "0%" }));
 
 // Full mobile version of desktop's Pension deep dive (ModuleDeepDive,
 // moduleKey==="pension" — CandidApp.jsx): the two core wins (employer match,
@@ -95,7 +95,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const [showTaxFreeInfo, setShowTaxFreeInfo] = useState(false);
   const [bonusInput, setBonusInput] = useState(+d.bonusAmount || null);
   const [sacrificePct, setSacrificePct] = useState(100);
-  const [extraPct, setExtraPct] = useState(1);
+  const [extraPct, setExtraPct] = useState(0);
   const [showFVInfo, setShowFVInfo] = useState(false);
   const [showTrajInfo, setShowTrajInfo] = useState(false);
   const [aheadOpen, setAheadOpen] = useState(false);
@@ -157,7 +157,8 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   // NI saved by salary sacrifice: 8% in the basic band, 2% above (pension.js).
   const niSavingPct = isSalarySacrifice ? Math.round(sacrificeNiRate(d, m) * 100) : 0;
   const totalReliefPct = trPct + niSavingPct;
-  const illustrativeExtraAmt = m.salary * extraPct / 100;
+  const sacrificeExtraPct = extraPct || 1;
+  const illustrativeExtraAmt = m.salary * sacrificeExtraPct / 100;
   const illustrativeExtraRelief = Math.round(illustrativeExtraAmt * (m.tr + niSavingPct/100));
   const illustrativeExtraNetCost = Math.round(illustrativeExtraAmt - illustrativeExtraRelief);
   const newAdjustedIncome = Math.max(0, m.adjustedNetIncome - illustrativeExtraAmt);
@@ -243,7 +244,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
       </div>
 
       <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px"}}>
-        <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"8px"}}>Or try your own amount — sacrifice an extra {extraPct}% of salary</div>
+        <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"8px"}}>Or try your own amount — sacrifice an extra {sacrificeExtraPct}% of salary</div>
         <div style={rowStyle}><span>Comes off your taxable income</span><span style={{fontWeight:600}}>−{fmt(Math.round(illustrativeExtraAmt))}</span></div>
         <div style={rowStyle}><span>Tax{niSavingPct>0?" + NI":""} relief at {totalReliefPct}%</span><span>−{fmt(illustrativeExtraRelief)}</span></div>
         <div style={{...rowStyle,fontWeight:700}}><span>Net cost to your take-home</span><span>{fmt(illustrativeExtraNetCost)}</span></div>
@@ -259,7 +260,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const taxFreeCashText = (taxFreeCash.taken > 0
     ? `Of your ${fmt(taxFreeCash.allowance)} limit, ${fmt(taxFreeCash.taken)} has been taken. 25% of the part you haven't touched is about ${fmt(taxFreeCash.quarter)}.`
     : taxFreeCash.capped
-    ? `25% of your pot would be ${fmt(taxFreeCash.quarter)}, but tax-free cash stops at ${fmt(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? ", the Lump Sum Allowance" : ", your protected limit"}.`
+    ? `25% of your pot would be ${fmtBig(taxFreeCash.quarter)}, but tax-free cash stops at ${fmtBig(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? ", the Lump Sum Allowance" : ", your protected limit"}.`
     : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(taxFreeCash.allowance)}.`)
     + " The rest is taxed as income when it's taken out."
     + (!d.pensionProtection && taxFreeCash.capped ? " A Fixed or Individual Protection from 2012 to 2016 allows more." : "");
@@ -275,7 +276,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
             {taxFreeCash.taken > 0
               ? `Of your ${fmt(taxFreeCash.allowance)} limit, ${fmt(taxFreeCash.taken)} has been taken. ${taxFreeCash.capped ? `25% of the part you haven't touched would be about ${fmt(taxFreeCash.quarter)}, so the limit decides it.` : `25% of the part you haven't touched is about ${fmt(taxFreeCash.quarter)}.`} The rest is taxed as income when it's taken out.`
               : taxFreeCash.capped
-              ? `25% of your pot would be ${fmt(taxFreeCash.quarter)}, but tax-free cash stops at ${fmt(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? `, the Lump Sum Allowance, for any pot above ${fmt(LSA_INFLECTION_POT)}` : ", your protected limit"}. The other ${fmt(taxFreeCash.overCap)} is taxed as income when it's taken out.`
+              ? `25% of your pot would be ${fmtBig(taxFreeCash.quarter)}, but tax-free cash stops at ${fmtBig(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? `, the Lump Sum Allowance, for any pot above ${fmtBig(LSA_INFLECTION_POT)}` : ", your protected limit"}. The other ${fmtBig(taxFreeCash.overCap)} is taxed as income when it's taken out.`
               : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(taxFreeCash.allowance)}. The rest is taxed as income when it's taken out.`}
           </p>
           {!d.pensionProtection && taxFreeCash.capped && (
@@ -312,7 +313,13 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
 
       {/* The hero: how the pot could grow to retirement. */}
       {showExplore && traj.showTrajectory && (() => {
-        const maxBar = Math.max(...traj.bars.map(b => b.value), 1);
+        // What paying more in adds sits on top of every bar after Now (the
+        // same extra, grown the same, whichever path it joins), so each bar
+        // shows the whole pot. Scaled for the largest extra on offer, so the
+        // bars don't shrink as the slider moves.
+        const extra = traj.extraGain;
+        const maxExtra = calcPensionGrowthTrajectory(d, m, EXTRA_PCT_OPTIONS.at(-1).value).extraGain;
+        const maxBar = Math.max(...traj.bars.map(b => b.value + (b.key === "now" ? 0 : maxExtra)), 1);
         const barColors = { now:"rgba(196,150,58,0.5)", retirement:GOLD, optimised:"#2d6b4a", bonus:"rgba(45,107,74,0.7)" };
         // Short labels for narrow mobile columns — the bars themselves are a
         // cumulative staircase (see calcPensionGrowthTrajectory), so each
@@ -337,7 +344,10 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
             )}
             <div style={{display:"flex",alignItems:"stretch",justifyContent:"space-between",gap:"4px",height:"150px"}}>
               {traj.bars.map(bar => {
-                const uplift = bar.key !== "retirement" ? bar.value - traj.currentPot : 0;
+                const added = bar.key === "now" ? 0 : extra;
+                const total = bar.value + added;
+                // More than the pension as it stands, with everything on this bar.
+                const uplift = bar.key !== "now" ? total - traj.currentPot : 0;
                 return (
                   <div key={bar.key} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%"}}>
                     {/* Fixed-height label area (whether or not the uplift badge renders) so
@@ -346,12 +356,13 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
                         their value was higher. */}
                     <div style={{height:"36px",flexShrink:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
                       {uplift > 0 && (
-                        <div style={{fontSize:"9px",fontWeight:700,color:"#2d6b4a",background:"rgba(45,107,74,0.12)",borderRadius:"100px",padding:"1px 6px",whiteSpace:"nowrap",marginBottom:"3px"}}>+{fmtK(uplift)}</div>
+                        <div style={{fontSize:"9px",fontWeight:700,color:"#2d6b4a",background:"rgba(45,107,74,0.12)",borderRadius:"100px",padding:"1px 6px",whiteSpace:"nowrap",marginBottom:"3px"}}>+{fmtBig(uplift)}</div>
                       )}
-                      <div style={{fontSize:"13px",fontWeight:700,fontFamily:SERIF,color:TEXT,whiteSpace:"nowrap"}}>{fmtK(bar.value)}</div>
+                      <div style={{fontSize:"13px",fontWeight:700,fontFamily:SERIF,color:TEXT,whiteSpace:"nowrap"}}>{fmtBig(total)}</div>
                     </div>
-                    <div style={{flex:1,width:"100%",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-                      <div style={{width:"100%",maxWidth:"52px",borderRadius:"5px 5px 0 0",background:barColors[bar.key]||G,height:`${Math.max(3,(bar.value/maxBar)*100)}%`}}/>
+                    <div style={{flex:1,width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end"}}>
+                      <div style={{width:"100%",maxWidth:"52px",borderRadius:"5px 5px 0 0",background:EXTRA_COLOR,height:`${(added/maxBar)*100}%`,transition:"height 0.3s ease"}}/>
+                      <div style={{width:"100%",maxWidth:"52px",borderRadius:added > 0 ? 0 : "5px 5px 0 0",background:barColors[bar.key]||G,height:`${Math.max(3,(bar.value/maxBar)*100)}%`}}/>
                     </div>
                   </div>
                 );
@@ -362,6 +373,12 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
                 <div key={bar.key} style={{flex:1,textAlign:"center",fontSize:"9.5px",color:MUT,lineHeight:1.25}}>{shortLabel[bar.key] || bar.label}</div>
               ))}
             </div>
+            {extraPct > 0 && (
+              <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"8px"}}>
+                <span style={{width:"10px",height:"10px",borderRadius:"3px",background:EXTRA_COLOR,display:"inline-block"}}/>
+                <span style={{fontSize:"11px",color:MUT}}>Paying in {extraPct}% more of your salary</span>
+              </div>
+            )}
 
             {+d.niYears > 0 && (
               <p style={{fontSize:"12px",color:TEXT,lineHeight:1.6,marginTop:"14px"}}>
@@ -641,11 +658,15 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
 // paid in, less the tax relief that tops it up) against what it adds to the
 // pot. In today's money at today's salary (calcPensionGrowthTrajectory
 // extraSalaryCost, extraGain); on top of what's paid in already.
+const EXTRA_COLOR = "#8a4fae";
 function PayInMore({ traj, tr }) {
+  if (!(traj.extraSalaryCost > 0)) return (
+    <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>Pick an amount to see it added to the bars above, and what it would cost you.</p>
+  );
   const foregone = Math.round(traj.extraSalaryCost * (1 - tr));
   const figure = (label, value, color) => (
     <div style={{flex:1,minWidth:0}}>
-      <div style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color,lineHeight:1.1}}>{fmt(value)}</div>
+      <div style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color,lineHeight:1.1}}>{fmtBig(value)}</div>
       <div style={{fontSize:"12px",color:MUT,marginTop:"4px",lineHeight:1.35}}>{label}</div>
     </div>
   );
@@ -654,7 +675,7 @@ function PayInMore({ traj, tr }) {
       <div style={{fontSize:"11px",fontWeight:700,color:TEXT,marginBottom:"8px"}}>To retirement, on top of what you pay in now</div>
       <div style={{display:"flex",gap:"16px"}}>
         {figure("Post-tax salary foregone", foregone, TEXT)}
-        {figure("Additional pension value", traj.extraGain, SUCCESS_GREEN)}
+        {figure("Additional pension value", traj.extraGain, EXTRA_COLOR)}
       </div>
     </div>
   );
@@ -700,7 +721,7 @@ function CliffEdge({ cliff, onSeeMore }) {
       </button>
       {open && <div>
       <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:"8px 0 0"}}>
-        A quarter of a pension can be taken tax-free, but only up to {fmt(LUMP_SUM_ALLOWANCE)}, and that limit doesn't rise. Once your pot passes {fmt(LSA_INFLECTION_POT)}, everything added after that is taxed when you take it out.
+        25% of a pension can be taken tax-free, but only up to {fmtBig(LUMP_SUM_ALLOWANCE)}, and that limit doesn't rise. Once your pot passes {fmtBig(LSA_INFLECTION_POT)}, everything added after that is taxed when you take it out.
       </p>
       <div style={{fontSize:"12.5px",fontWeight:700,color:TEXT,margin:"14px 0 0"}}>£100 of take-home pay, by the time you spend it</div>
       {bars.map(b => <AmountBar key={b.label} label={b.label} value={b.value} color={b.color} scale={scale} size={16} pounds={v => `£${v}`}/>)}
@@ -738,7 +759,7 @@ function LookingAhead({ d, outlook, cliff, number, open, onOpenChange }) {
   const body = { fontSize:"13px", color:MUT, lineHeight:1.55, margin:"4px 0 0" };
   const figure = (value, label) => (
     <div style={{display:"flex",alignItems:"baseline",gap:"6px",marginTop:"6px"}}>
-      <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:AMBER}}>{fmt(value)}</span>
+      <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:AMBER}}>{fmtBig(value)}</span>
       <span style={{fontSize:"12.5px",color:MUT}}>{label}</span>
     </div>
   );
@@ -749,7 +770,7 @@ function LookingAhead({ d, outlook, cliff, number, open, onOpenChange }) {
   if (lumpSum) means.push(
     <div key="lsa">
       <div style={title}>Less of your pension comes out tax-free</div>
-      <p style={body}>From around age {lumpSum.age}, a quarter of your pot is more than {fmt(LUMP_SUM_ALLOWANCE)}, the most anyone can take tax-free. About {fmt(lumpSum.overCap)} in today's money that would have been tax-free gets taxed instead.</p>
+      <p style={body}>From around age {lumpSum.age}, 25% of your pot is more than {fmtBig(LUMP_SUM_ALLOWANCE)}, the most anyone can take tax-free. About {fmtBig(lumpSum.overCap)} in today's money that would have been tax-free gets taxed instead.</p>
       {figure(lumpSum.extraTax, "more tax, roughly")}
     </div>);
   if (later) means.push(
