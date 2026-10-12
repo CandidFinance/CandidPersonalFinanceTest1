@@ -19,6 +19,7 @@ import MobileWinTile from "../MobileWinTile.jsx";
 import MobileDrawdown, { compact, Pill } from "./MobileDrawdown.jsx";
 import { EMPLOYER_NI_RATE } from "../../lib/tax.js";
 import MobileProviderTile from "../MobileProviderTile.jsx";
+import { ADVISER_LINK } from "../GuidanceNote.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
@@ -543,7 +544,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
             <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px 16px",marginTop:"12px"}}>
               <div style={{fontSize:"10.5px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>If pension contributions alone can't fix this</div>
               <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-                Even with carry forward, getting Threshold Income below £200,000 through pension contributions alone may not be realistic here. VCTs and EIS are the usual alternative — both give 30% upfront income tax relief, with far more risk and illiquidity. Speak to an FCA-regulated adviser before investing.
+                Even with carry forward, pension contributions alone may not bring Threshold Income below £200,000 here. The other routes carry much more risk, and this is a position where people usually take regulated advice. <a href={ADVISER_LINK.href} target="_blank" rel="noopener noreferrer" style={{color:G,fontWeight:700}}>{ADVISER_LINK.label}</a>
               </p>
             </div>
           )}
@@ -729,7 +730,7 @@ function CliffEdge({ cliff, onSeeMore }) {
         £100 paid in becomes £{cliff.paidIn} with tax relief at {pct(cliff.nowRate)}, then taxed at {pct(cliff.laterRate)} in retirement. Growth is the same in each, so it's left out.
       </p>
       <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:"12px 0 0"}}>
-        This is a complex position, and people in it often get help from a regulated adviser.
+        This is a complex position, and people in it often get help from a regulated adviser. <a href={ADVISER_LINK.href} target="_blank" rel="noopener noreferrer" style={{color:G,fontWeight:700}}>{ADVISER_LINK.label}</a>
       </p>
       <button type="button" onClick={onSeeMore} style={{background:"none",border:"none",padding:"10px 0 0",color:G,fontSize:"13.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"2px"}}>
         See what it means, and the alternatives<ChevronRight size={15}/>

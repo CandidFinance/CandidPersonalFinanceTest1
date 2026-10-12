@@ -63,7 +63,7 @@ function moduleInsights(mm, d, m) {
 // (Property absorbs mortgages).
 const LOCKED_MODULES = [
   { key:"kids", title:"Family tax planning", description:"Junior ISAs, Child Benefit tapering, and tax-efficient gifting for your children." },
-  { key:"household", title:"Household finances", icon:Users, description:"Two people, one plan. Marriage or a civil partnership changes the advice, from shared allowances to how you hold savings and investments." },
+  { key:"household", title:"Household finances", icon:Users, description:"Two people, one plan. Marriage or a civil partnership changes the picture, from shared allowances to how you hold savings and investments." },
 ];
 
 export default function MobileModulesScreen({ d, m, set, statuses, insights, completedModules, onMarkReviewed, onOpenModule, onOpenProperty }) {

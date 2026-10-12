@@ -96,7 +96,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
               <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Capital gains tax you could avoid this year</div>
               {m.isaHeadroom > 0 && (
                 <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
-                  Plus {fmt(m.isaHeadroom)} of unused ISA allowance — not a guaranteed gain, but investing it shelters future growth from tax.
+                  Plus {fmt(m.isaHeadroom)} of unused ISA allowance: in an ISA, growth or interest is free of tax.
                 </div>
               )}
             </>
@@ -232,7 +232,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
         {m.isaHeadroom > 0 ? (
           <div>
             <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,marginTop:0,marginBottom:"4px"}}>
-              Invest it and shelter the growth from tax, for good.{" "}
+              Over long periods shares have tended to grow faster than cash, though they can fall. Inside an ISA, that growth is free of tax for good.{" "}
               <InfoButton onClick={() => setOpenInfo(o => o==="isa"?null:"isa")} open={openInfo==="isa"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",verticalAlign:"middle"}}/>
             </p>
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:0,marginBottom:openInfo==="isa"?"10px":"12px"}}>
@@ -242,9 +242,12 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
               <div style={{marginBottom:"12px"}}>
                 {showMoveMsg && (
                   <div style={{borderLeft:`3px solid ${GOLD}`,paddingLeft:"12px",marginBottom:"10px"}}>
-                    <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"4px"}}>Move this into your S&amp;S ISA</div>
+                    <div style={{fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"4px"}}>Money that could use it</div>
                     <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:0}}>
-                      You have {surplusSources.join(" and ")} — {fmt(m.isaHeadroom)} of ISA allowance is available to shelter it from tax, permanently.
+                      You have {surplusSources.join(" and ")}, and {fmt(m.isaHeadroom)} of this year's ISA allowance could shelter it from tax.
+                    </p>
+                    <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,margin:"8px 0 0"}}>
+                      Many people use a Stocks and Shares ISA for money they won't need for five years or more, because over long periods shares have tended to grow faster than cash. They also carry the most risk: they can fall in value, sometimes for years. A Cash ISA uses the same allowance without that risk. Moving investments you already hold into an ISA means selling them first ("Bed and ISA"), which can create a taxable gain.
                     </p>
                   </div>
                 )}

@@ -737,7 +737,7 @@ export function getModuleProducts(key, d, m, savingsRates) {
           { name:"Trading 212",   type:"S&S ISA", rate:"0% commission", badge:"Commission-free",feature:"Fractional shares, no dealing fees, instant deposits. Good entry-level platform.", cta:"Open S&S ISA", highlight:false, productUrl:"https://www.trading212.com/isa" },
           { name:"InvestEngine",  type:"S&S ISA", rate:"0% platform fee", badge:"ETFs only",  feature:"Zero platform fees on ETF portfolios. Very competitive for passive investors.", cta:"Open S&S ISA", highlight:false, productUrl:"https://www.investengine.com/isa/" },
         ],
-        disclaimer:"Platform fees shown are indicative annual charges on equity holdings. Fund OCF costs are additional. Investments can fall as well as rise. Tax treatment depends on individual circumstances. Candid may earn a referral fee — this does not affect our ranking.",
+        disclaimer:"Platform fees shown are indicative annual charges on equity holdings. Fund OCF costs are additional. Investments can fall as well as rise. Tax treatment depends on individual circumstances. Candid isn't paid by any provider listed.",
       };
     }
     case "pension":
@@ -751,7 +751,7 @@ export function getModuleProducts(key, d, m, savingsRates) {
           { name:"Vanguard SIPP", type:"Self-invested pension", rate:"0.15%+0.06%/yr", badge:"Lowest cost", feature:"Index funds only. Best long-term value for hands-off investors.", cta:"Open SIPP", highlight:false, productUrl:"https://www.vanguardinvestor.co.uk/what-we-offer/personal-pension" },
           { name:"Moneybox",      type:"Pension",  rate:"0.45%/yr", badge:"App-first",    feature:"Simple pension app with round-ups and auto-escalation.", cta:"Open pension", highlight:false, productUrl:"https://www.moneyboxapp.com/pension/" },
         ],
-        disclaimer:"Pension tax relief figures are illustrative. Annual allowance is £60,000 (2025/26). Lifetime allowance was abolished April 2024. Always confirm tax relief with your pension provider. Candid may earn a referral fee."
+        disclaimer:"Pension tax relief figures are illustrative. Annual allowance is £60,000 (2025/26). Lifetime allowance was abolished April 2024. Always confirm tax relief with your pension provider. Candid isn't paid by any provider listed."
       };
     case "studentLoan": {
       const sl = calcStudentLoanScenario(d, m);

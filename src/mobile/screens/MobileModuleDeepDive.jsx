@@ -1,5 +1,6 @@
 import { ExplainLink } from "../ModuleScreenParts.jsx";
 import BankConfirm from "../BankConfirm.jsx";
+import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
 import { useState } from "react";
 import { Check, Coins } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
@@ -50,6 +51,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
 
   return (
     <div>
+      <GuidanceIntro key={moduleKey}/>
       <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px"}}>
         <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {meta?.icon && <meta.icon size={18} color={G}/>}
@@ -99,6 +101,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
           Back to Modules
         </button>
       </div>
+      <GuidanceFooter moduleKey={moduleKey}/>
     </div>
   );
 }

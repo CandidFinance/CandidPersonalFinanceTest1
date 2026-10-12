@@ -16,17 +16,17 @@ const STEPS = [
   },
   {
     icon: Scale, title: "Candid runs the numbers against UK tax rules",
-    body: "Candid cross-references your figures against pension allowances, ISA limits, tax brackets, student loan thresholds, and more. The outcome is an instant financial health score and a prioritised roadmap for your specific goals.",
+    body: "Candid cross-references your figures against pension allowances, ISA limits, tax brackets, student loan thresholds, and more. The outcome is an instant financial health score and your options, ordered by what they're worth in pounds.",
     detail: "",
   },
   {
-    icon: Search, title: "Actionable steps with exact £ impact",
-    body: "Break down your finances area by area – pension, ISAs, mortgage, debt and cash. Every action shows its quantified £ impact, calculated directly from your numbers, alongside clear plain English explainers so you see the 'why' behind every step.",
+    icon: Search, title: "Every option, with its £ value",
+    body: "Break down your finances area by area – pension, ISAs, mortgage, debt and cash. Every option shows its estimated £ value, calculated directly from your numbers, alongside clear plain English explainers so you see the 'why' behind it.",
     detail: "",
   },
   {
     icon: Compass, title: "Guidance that grows with you",
-    body: "A pay rise, buying a home, starting a family, or clearing a student loan – life isn't static. Update your numbers whenever things change, and Candid automatically recalculates your score and next steps to keep your plan on track.",
+    body: "A pay rise, buying a home, starting a family, or clearing a student loan – life isn't static. Update your numbers whenever things change, and Candid automatically recalculates your score and options, so your figures stay current.",
     detail: "",
   },
 ];

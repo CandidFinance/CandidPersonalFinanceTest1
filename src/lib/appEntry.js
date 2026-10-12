@@ -121,8 +121,8 @@ export function entryChat(d, variant = { opener: 0, checkIn: 0 }) {
     intro: [
       OPENERS[variant.opener % OPENERS.length](name),
       "I find where you're losing money because your setup isn't optimised.",
-      "I weigh your figures and goals against UK tax law and best practice.",
-      "Then I show you your options, and you choose what suits you.",
+      "I run your figures through UK tax rules and allowances, and work out what each option is worth in pounds.",
+      "I'm a calculator, not an adviser: I've no stake in what you choose, and the choice is always yours.",
       "For most people, that's hundreds to thousands of pounds a year.",
       CHECK_INS[variant.checkIn % CHECK_INS.length],
     ],
@@ -135,7 +135,7 @@ export function entryChat(d, variant = { opener: 0, checkIn: 0 }) {
     how: [
       ...modules,
       "Open each one and give me a few basic figures.",
-      "I'll do the sums and build your action plan as you go.",
+      "I'll do the sums and show you the options as you go.",
     ],
     ready: { value:"ready", label:"All clear, ready to explore" },
     last: "Lovely. Over to you.",

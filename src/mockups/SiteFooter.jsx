@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { G, GOLD, SERIF } from "../CandidApp.jsx";
 
 // Shared across every marketing-site page — extracted so Home, The Problem
@@ -21,6 +22,7 @@ export default function SiteFooter() {
       </div>
       <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
         <span>© 2026 Candid Finance</span>
+        <Link to="/what-candid-is" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>What Candid is and isn't</Link>
         <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Privacy Policy</a>
         <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Terms of Service</a>
       </div>

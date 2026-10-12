@@ -167,8 +167,8 @@ export function investmentsReveal(d, m) {
     return [
       { label: ANSWER, figure: fmt(m.isaHeadroom), title: "of this year's ISA allowance unused." },
       isaLine,
-      { label: ACTION, title: "Putting money you won't need for five years or more into a Stocks and Shares ISA would use it.",
-        body: "Investments can fall as well as rise." },
+      { label: ACTION, title: "A Stocks and Shares ISA, for money you won't need for five years or more, or a Cash ISA would use it.",
+        body: "Over long periods shares have tended to grow faster than cash, which is why many people invest for the long term, but they can fall in value, sometimes for years. Money in a Cash ISA can't fall." },
     ];
   }
   return [

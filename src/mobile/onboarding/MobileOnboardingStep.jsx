@@ -144,7 +144,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
     return (
       <div>
         <h2 style={questionHeading}>What are you working towards?</h2>
-        <p style={questionSub}>Pick as many as apply — this helps us tailor advice to what matters to you.</p>
+        <p style={questionSub}>Pick as many as apply — this helps us show what's most relevant to you.</p>
         <div style={{display:"flex",flexDirection:"column",gap:"9px"}}>
           {GOAL_TILES.map(({ key, icon:Icon, label, exclusive }) => {
             const selected = goals.includes(key);

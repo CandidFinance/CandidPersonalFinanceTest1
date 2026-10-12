@@ -24,8 +24,8 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
   const amount = mod?.amount > 0 ? mod.amount : 0;
 
   // What's behind the frost, named, so it's clear what unlocking gets them.
-  const hidden = amount > 0 ? ["Why you're missing it", "How to fix it"] : ["Where you stand", "What to keep an eye on"];
-  const cta = amount > 0 ? "Show me how to fix it" : "Show me";
+  const hidden = amount > 0 ? ["Why it's happening", "Your options, and what each is worth"] : ["Where you stand", "What to keep an eye on"];
+  const cta = amount > 0 ? "Show me my options" : "Show me";
 
   const label = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
   const primary = disabled => ({ width:"100%", background:disabled ? "rgba(22,47,36,0.2)" : G, color:WHITE, border:"none", borderRadius:"100px", padding:"15px", fontSize:"15.5px", fontWeight:700, fontFamily:"inherit", cursor:disabled ? "not-allowed" : "pointer" });
@@ -46,7 +46,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
           <div style={{fontSize:"16px",color:TEXT,fontWeight:600,marginTop:"10px"}}>{mod.amountIsLumpSum ? "by the time they're 18" : "a year you're missing out on"}</div>
         </div>
       ) : (
-        <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,lineHeight:1.2,margin:"22px 0 4px"}}>Your answer is ready</div>
+        <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,lineHeight:1.2,margin:"22px 0 4px"}}>Your figures are ready</div>
       )}
 
       {/* What unlocking shows, each under a frost of stand-in lines (not the
@@ -134,7 +134,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
   return (
     <div>
       <Worth title={title} amount={amount} lumpSum={lumpSum}/>
-      <div style={{fontSize:"14px",color:TEXT,lineHeight:1.45,marginTop:"12px"}}>Your first answer was free. Subscribe to see {amount > 0 ? "how to fix this" : "this answer"}, and every other module.</div>
+      <div style={{fontSize:"14px",color:TEXT,lineHeight:1.45,marginTop:"12px"}}>Your first module was free. {amount > 0 ? "Subscribe to see your options here, and in every other module." : "Subscribe to see this module, and every other one."}</div>
       <div style={{display:"flex",gap:"10px",margin:"14px 0 12px"}}>
         {Object.entries(PLANS).map(([key, p]) => (
           <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>
@@ -155,7 +155,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
       </button>
       {error && !panel && <div style={{fontSize:"12.5px",color:"#b3261e",margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
       <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
-        Every module's answer, kept up to date as rates change. Cancel any time, and get a full refund within 14 days of first subscribing. Payments by Stripe. By subscribing you agree to our <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>.
+        Every module's figures and options, kept up to date as rates change. Guidance, not advice: <a href="/what-candid-is" target="_blank" rel="noreferrer" style={{color:MUT}}>what Candid is and isn't</a>. Cancel any time, and get a full refund within 14 days of first subscribing. Payments by Stripe. By subscribing you agree to our <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>.
       </p>
 
       <div style={{display:"flex",justifyContent:"center",gap:"18px",marginTop:"16px"}}>

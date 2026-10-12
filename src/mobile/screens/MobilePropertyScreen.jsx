@@ -14,6 +14,7 @@ import AssumptionsHeading from "../property/AssumptionsHeading.jsx";
 import { STEP_GUIDES, guideStarts } from "../../lib/propertyGuide.js";
 import { PROPERTY_REVEALS } from "../../lib/propertyReveal.js";
 import MobileModuleReveal from "./MobileModuleReveal.jsx";
+import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
 
 // Property module, split into two steps so neither is one long page:
 //   1. Readiness (/app/property): the loan the purchase needs first (the
@@ -97,6 +98,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
 
   return (
     <div>
+      <GuidanceIntro/>
       <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"14px"}}>
         <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           <Home size={18} color={G}/>
@@ -166,9 +168,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
         </>
       )}
 
-      <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginTop:"26px"}}>
-        Candid is guidance, not regulated financial advice. These figures show where things stand; the right decision depends on your full circumstances.
-      </p>
+      <GuidanceFooter moduleKey="property"/>
     </div>
   );
 }

@@ -102,6 +102,7 @@ const NewLandingPage = lazy(() => import("./mockups/NewLandingPage.jsx"))
 const TheProblemPage = lazy(() => import("./mockups/TheProblemPage.jsx"))
 const HowItWorksPage = lazy(() => import("./mockups/HowItWorksPage.jsx"))
 const SignInPage = lazy(() => import("./mockups/SignInPage.jsx"))
+const WhatCandidIsPage = lazy(() => import("./mockups/WhatCandidIsPage.jsx"))
 
 // ── Welcome back screen ───────────────────────────────────────────────────────
 function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStartFresh }) {
@@ -364,6 +365,7 @@ function AppRoutes() {
         <Route path="/the-problem" element={<Suspense fallback={null}><TheProblemPage /></Suspense>} />
         <Route path="/how-it-works" element={<Suspense fallback={null}><HowItWorksPage /></Suspense>} />
         <Route path="/signin" element={<Suspense fallback={null}><SignInPage /></Suspense>} />
+        <Route path="/what-candid-is" element={<Suspense fallback={null}><WhatCandidIsPage /></Suspense>} />
         {/* The app used to sit behind a beta password here; old links now go
             straight in. */}
         <Route path="/beta" element={<BetaRedirect />} />

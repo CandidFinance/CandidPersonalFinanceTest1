@@ -353,8 +353,8 @@ export default function NewLandingPage() {
           <div className="how-it-works-grid">
             {[
               { icon: ClipboardList, title: "Where you stand and where you're headed", body: "Share your current setup and targets, from salary and savings to buying a home or growing your investments. Rough estimates are fine, we'll do the maths." },
-              { icon: Scale, title: "Your full financial picture, analysed", body: "We test your setup against UK tax traps, debt mechanics, and personal goals. Delivering an instant financial health score and a tailored plan." },
-              { icon: Search, title: "See the £ value of every decision", body: "Walk through personalised actions, showing precisely how much each decision adds to your net worth." },
+              { icon: Scale, title: "Your full financial picture, analysed", body: "We test your setup against UK tax traps, debt mechanics, and personal goals. Delivering an instant financial health score and every option worked out in pounds." },
+              { icon: Search, title: "See the £ value of every decision", body: "See what each option could add to your net worth, calculated from your own figures. Candid does the maths; the decisions are yours." },
               { icon: Compass, title: "Guidance that grows with you", body: "Life isn't static. Whether you get a pay rise, buy a home, or start a family – Candid updates automatically, keeping your money on track." },
             ].map((step, i) => (
               <Tile key={step.title} ref={teaserRef(i)} {...pullTogether(i, 4, reduceMotion)} {...tileHover} style={{ borderTop: `4px solid ${GOLD}` }}>
