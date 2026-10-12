@@ -15,7 +15,7 @@ import { Redis } from "@upstash/redis";
 // Stripe is called over its REST API (no SDK). Who has paid lives in the
 // Supabase `subscriptions` table, which only service_role can read or write
 // (migration add_subscriptions_table). The browser holds a signed token
-// naming the email (BILLING_TOKEN_SECRET); every check goes back to that
+// naming the email (STRIPE_BILLING_TOKEN_SECRET); every check goes back to that
 // table, so a cancelled subscription stops at the next check.
 //
 // Fails closed: with any setting missing, every action answers 503 and
@@ -24,7 +24,7 @@ import { Redis } from "@upstash/redis";
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY;
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const PRICES = { monthly: process.env.STRIPE_PRICE_MONTHLY, yearly: process.env.STRIPE_PRICE_YEARLY };
-const TOKEN_SECRET = process.env.BILLING_TOKEN_SECRET;
+const TOKEN_SECRET = process.env.STRIPE_BILLING_TOKEN_SECRET;
 const SUPA_URL = process.env.VITE_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const RESEND_KEY = process.env.RESEND_API_KEY;
