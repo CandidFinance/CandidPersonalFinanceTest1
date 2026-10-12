@@ -728,30 +728,34 @@ export function getModuleProducts(key, d, m, savingsRates) {
         // only the surrounding copy: urgency, the tax-free-for-life point, and the
         // hand-off into the provider tiles.
         subheading: m.isaHeadroom > 0
-          ? `${urgencyMsg} Entirely free of income tax, dividend tax, and CGT, for life. Here's where you could actually do this:`
+          ? `${urgencyMsg} Entirely free of income tax, dividend tax, and CGT, for life.`
           : `You've used your full £20,000 ISA allowance this tax year. New allowance opens on April 6th. If you have unwrapped investments, consider a Bed & ISA strategy next tax year.`,
         subheadingUrgent: m.isaHeadroom > 0 && daysToTaxYearEnd < 30,
         products: [
-          { name:"Vanguard",      type:"S&S ISA", rate:"0.15%/yr", badge:"Lowest cost",       feature:"Index fund specialist. Best for low-cost, long-term investors. No dealing fees on funds.", cta:"Open S&S ISA", highlight:true, productUrl:"https://www.vanguardinvestor.co.uk/investing-explained/stocks-shares-isa" },
-          { name:"Hargreaves Lansdown", type:"S&S ISA", rate:"0.45%/yr", badge:"Widest range",feature:"15,000+ funds, shares, ETFs. Best platform for active investors and fund switchers.", cta:"Open S&S ISA", highlight:false, productUrl:"https://www.hl.co.uk/investing/isa" },
-          { name:"Trading 212",   type:"S&S ISA", rate:"0% commission", badge:"Commission-free",feature:"Fractional shares, no dealing fees, instant deposits. Good entry-level platform.", cta:"Open S&S ISA", highlight:false, productUrl:"https://www.trading212.com/isa" },
-          { name:"InvestEngine",  type:"S&S ISA", rate:"0% platform fee", badge:"ETFs only",  feature:"Zero platform fees on ETF portfolios. Very competitive for passive investors.", cta:"Open S&S ISA", highlight:false, productUrl:"https://www.investengine.com/isa/" },
+          // Neutral: alphabetical, no badges or highlight, the same facts for
+          // each, fees as each provider published them (checked October
+          // 2026). Not a recommendation (advice-vs-guidance review, fix 1).
+          { name:"Hargreaves Lansdown", type:"Funds, shares and ETFs", rate:"0.35% a year", feature:"Charge on shares and ETFs capped at £150 a year. Dealing charges apply.", cta:"Visit site", productUrl:"https://www.hl.co.uk/investing/isa" },
+          { name:"InvestEngine",  type:"ETFs only", rate:"No platform fee", feature:"0.25% a year if they choose the investments for you.", cta:"Visit site", productUrl:"https://www.investengine.com/isa/" },
+          { name:"Trading 212",   type:"Shares and ETFs", rate:"No platform fee", feature:"0.15% currency fee on trades not in pounds.", cta:"Visit site", productUrl:"https://www.trading212.com/isa" },
+          { name:"Vanguard",      type:"Vanguard funds and ETFs only", rate:"0.15% a year", feature:"£4 a month below £32,000.", cta:"Visit site", productUrl:"https://www.vanguardinvestor.co.uk/investing-explained/stocks-shares-isa" },
         ],
-        disclaimer:"Platform fees shown are indicative annual charges on equity holdings. Fund OCF costs are additional. Investments can fall as well as rise. Tax treatment depends on individual circumstances. Candid isn't paid by any provider listed.",
+        disclaimer:"Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; fund and ETF charges are extra. Check the provider's own fees and terms before opening anything. Investments can fall as well as rise.",
       };
     }
     case "pension":
       return {
-        heading: d.hasPension === "yes" ? "Consider consolidating or topping up" : "Get started — it takes under 15 minutes",
+        heading: "Some pension providers",
         subheading: d.hasPension === "yes"
           ? `At your current rate, tax relief means every £${Math.round(100*(1-m.tr))} you contribute becomes £100 in your pension. A higher-rate taxpayer effectively gets ${Math.round(m.tr*100)}% added by HMRC.`
           : `Starting today, a £${Math.round(d.salary ? +d.salary * 0.05 / 12 : 200)}/month contribution would cost you roughly £${Math.round(d.salary ? +d.salary * 0.05 / 12 * (1-m.tr) : 120)} in take-home after tax relief.`,
         products: [
-          { name:"PensionBee",    type:"SIPP / consolidation", rate:"0.25–0.75%/yr", badge:"Easiest consolidation", feature:"Combine old pensions in minutes. Tracked via one simple app.", cta:"Start pension", highlight:true, productUrl:"https://www.pensionbee.com/" },
-          { name:"Vanguard SIPP", type:"Self-invested pension", rate:"0.15%+0.06%/yr", badge:"Lowest cost", feature:"Index funds only. Best long-term value for hands-off investors.", cta:"Open SIPP", highlight:false, productUrl:"https://www.vanguardinvestor.co.uk/what-we-offer/personal-pension" },
-          { name:"Moneybox",      type:"Pension",  rate:"0.45%/yr", badge:"App-first",    feature:"Simple pension app with round-ups and auto-escalation.", cta:"Open pension", highlight:false, productUrl:"https://www.moneyboxapp.com/pension/" },
+          // Neutral, as the ISA list above.
+          { name:"Moneybox",      type:"Personal pension", rate:"0.15% a year", feature:"Capped at £150 a year. Moneybox's own funds charge 0.29% on top.", cta:"Visit site", productUrl:"https://www.moneyboxapp.com/pension/" },
+          { name:"PensionBee",    type:"Personal pension", rate:"0.50–0.95% a year", feature:"One charge, including the funds, depending on the plan. Halved on savings over £100,000.", cta:"Visit site", productUrl:"https://www.pensionbee.com/" },
+          { name:"Vanguard",      type:"Personal pension (SIPP)", rate:"0.15% a year", feature:"£4 a month below £32,000. Vanguard funds and ETFs only, with their own charges on top.", cta:"Visit site", productUrl:"https://www.vanguardinvestor.co.uk/what-we-offer/personal-pension" },
         ],
-        disclaimer:"Pension tax relief figures are illustrative. Annual allowance is £60,000 (2025/26). Lifetime allowance was abolished April 2024. Always confirm tax relief with your pension provider. Candid isn't paid by any provider listed."
+        disclaimer:"Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
       };
     case "studentLoan": {
       const sl = calcStudentLoanScenario(d, m);

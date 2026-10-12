@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from "react"
 import ReactDOM from "react-dom/client"
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLocation } from "react-router-dom"
 import posthog from "posthog-js"
 import { MotionConfig } from "framer-motion"
 import CandidApp, { PageWrap, NavBar, ContentWrap, G, GOLD, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "./CandidApp.jsx"
@@ -274,6 +274,15 @@ function FeedbackAdmin() {
 // — MobileOnboardingStep shares the same ALL_STEP_DEFS/step numbering as the
 // desktop wizard, and already has its own TrueLayer connect UI) with the
 // query string intact, instead of ever rendering the marketing page.
+// The old report flow (questions at /assessment, an AI-written report at
+// /dashboard, the desktop modules) is switched off: each old address goes
+// to the app's own page for it (advice-vs-guidance review, fix 5).
+function LegacyRedirect({ to }) {
+  const params = useParams();
+  const { search } = useLocation();
+  return <Navigate to={to(params) + search} replace />;
+}
+
 function RootRoute() {
   const search = new URLSearchParams(window.location.search);
   const isTrueLayerBounce = search.get('truelayer') || search.get('truelayer_payment');
@@ -354,7 +363,7 @@ function AppRoutes() {
   const [devReloadKey, setDevReloadKey] = useState(0);
   function handleDevPresetLoaded() {
     setDevReloadKey(k => k + 1);
-    navigate("/dashboard");
+    navigate("/app/home");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
@@ -379,13 +388,13 @@ function AppRoutes() {
             stays mounted across navigation between all three of these paths,
             branching on the URL internally the same way it used to branch on
             local `screen` state. */}
+        <Route path="/assessment/:step" element={<LegacyRedirect to={p => `/app/assessment/${p.step}`} />} />
+        <Route path="/dashboard" element={<LegacyRedirect to={() => "/app/home"} />} />
+        <Route path="/modules" element={<LegacyRedirect to={() => "/app/modules"} />} />
+        <Route path="/forecast" element={<LegacyRedirect to={() => "/app/forecast"} />} />
+        <Route path="/chat" element={<LegacyRedirect to={() => "/app/chat"} />} />
+        <Route path="/module/:moduleKey" element={<LegacyRedirect to={p => `/app/module/${p.moduleKey}`} />} />
         <Route element={<CandidAppLayout key={devReloadKey} />}>
-          <Route path="/assessment/:step" />
-          <Route path="/dashboard" />
-          <Route path="/modules" />
-          <Route path="/forecast" />
-          <Route path="/chat" />
-          <Route path="/module/:moduleKey" />
           <Route path="/app/home" />
           <Route path="/app/modules" />
           <Route path="/app/forecast" />

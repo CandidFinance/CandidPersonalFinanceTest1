@@ -75,7 +75,7 @@ export default function MobileProviderTile({ heading, products, disclaimer, embe
         )}
       </div>
 
-      {open && disclaimer && (
+      {disclaimer && (
         <p style={{fontSize:"10.5px",color:MUT,lineHeight:1.5,marginTop:"12px",marginBottom:0}}>{disclaimer}</p>
       )}
     </div>

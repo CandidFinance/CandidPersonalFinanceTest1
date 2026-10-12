@@ -27,9 +27,9 @@ const SIGNPOSTS = {
 };
 export const ADVISER_LINK = ADVISER_HELP;
 
-// Over the page as it opens: the page fades in from behind it. Under a
-// second in all, and skipped for anyone who has asked for less motion.
-const INTRO_MS = 900;
+// Over the page as it opens: the page fades in from behind it. 1.8
+// seconds in all, and skipped for anyone who has asked for less motion.
+const INTRO_MS = 1800;
 export function GuidanceIntro() {
   const reduce = useReducedMotion();
   const [shown, setShown] = useState(!reduce);
@@ -40,10 +40,11 @@ export function GuidanceIntro() {
   }, [shown]);
   if (!shown) return null;
   return (
-    <motion.div aria-hidden="true"
-      initial={{ opacity: 1 }} animate={{ opacity: [1, 1, 0] }} transition={{ duration: INTRO_MS / 1000, times: [0, 0.7, 1], ease: "easeOut" }}
-      style={{ position: "fixed", inset: 0, zIndex: 4800, background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", pointerEvents: "none" }}>
-      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: [0, 1, 1, 0], y: [6, 0, 0, 0] }} transition={{ duration: INTRO_MS / 1000, times: [0, 0.25, 0.6, 0.8] }}
+    // A tap ends it early, rather than landing on the page still hidden under it.
+    <motion.div aria-hidden="true" onClick={() => setShown(false)}
+      initial={{ opacity: 1 }} animate={{ opacity: [1, 1, 0] }} transition={{ duration: INTRO_MS / 1000, times: [0, 0.75, 1], ease: "easeOut" }}
+      style={{ position: "fixed", inset: 0, zIndex: 4800, background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: [0, 1, 1, 0], y: [6, 0, 0, 0] }} transition={{ duration: INTRO_MS / 1000, times: [0, 0.15, 0.7, 0.85] }}
         style={{ textAlign: "center" }}>
         <div style={{ fontFamily: SERIF, fontSize: "22px", fontWeight: 700, color: G }}>Guidance, not advice</div>
         <div style={{ fontSize: "14px", color: TEXT, marginTop: "6px" }}>Candid does the maths on your figures. The choices are yours.</div>

@@ -646,8 +646,8 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
       {/* Where to do it: a numbered tile like the others, the providers
           inside it once opened. */}
       {providersNum && (
-        <MobileWinTile provider number={providersNum} title={d.hasPension === "yes" ? "Consolidate or top up" : "Get started"} tagLabel="Providers"
-          headline={`${products.products.length} pension providers to compare`}>
+        <MobileWinTile provider number={providersNum} title="Some pension providers" tagLabel="Providers"
+          headline={`${products.products.length} providers, listed alphabetically`}>
           <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
         </MobileWinTile>
       )}
