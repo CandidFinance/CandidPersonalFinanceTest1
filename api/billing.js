@@ -196,6 +196,9 @@ async function checkout(body, res, origin) {
     success_url: `${origin}${back}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${back}?checkout=cancelled`,
     allow_promotion_codes: "true",
+    // Candid is the seller, not Stripe (Managed Payments is on for the
+    // account): not VAT-registered, so the price is the price, no VAT added.
+    managed_payments: { enabled: "false" },
     subscription_data: mod ? { metadata: { module: mod } } : undefined,
     customer_email: cleanEmail(email) || undefined,
   });
