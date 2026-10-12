@@ -64,7 +64,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
 
       {ask.kind === "pay" && (
         <PaywallSheet>
-          <Subscribe moduleKey={moduleKey} d={d} amount={amount} onLeaveEmail={onLeaveEmail}/>
+          <Subscribe moduleKey={moduleKey} title={meta?.title || moduleKey} d={d} amount={amount} lumpSum={!!mod?.amountIsLumpSum} onLeaveEmail={onLeaveEmail}/>
         </PaywallSheet>
       )}
 
@@ -75,26 +75,26 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
   );
 }
 
-// The paywall as a card risen over the locked page, which stays in view
-// behind it, dimmed: the £ figure above the card, the frosted lines under
-// it. Over the tab bar and the Assist button (4500), under Assist's own
-// panel. Closing goes back to the modules.
+// The paywall as a card floating in the middle of the screen, over the
+// locked page, which stays in view behind it, dimmed. The card repeats the
+// module's £ figure, since it covers the one on the page. Over the tab bar
+// and the Assist button (4500), under Assist's own panel. Closing goes back
+// to the modules.
 function PaywallSheet({ children }) {
   const navigate = useNavigate();
   return (
-    <div style={{position:"fixed",inset:0,zIndex:4600,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+    <div style={{position:"fixed",inset:0,zIndex:4600,display:"flex",flexDirection:"column",justifyContent:"center",padding:"16px",boxSizing:"border-box"}}>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}
         style={{position:"absolute",inset:0,background:"rgba(22,47,36,0.28)",backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)"}}/>
       <motion.div role="dialog" aria-modal="true" aria-label="Subscribe to Candid"
-        initial={{ y: "100%" }} animate={{ y: 0 }} transition={{ type: "spring", stiffness: 320, damping: 34 }}
-        style={{position:"relative",background:"#faf7f0",borderRadius:"22px 22px 0 0",boxShadow:"0 -10px 40px rgba(22,47,36,0.22)",maxHeight:"72dvh",overflowY:"auto",
-          padding:"10px 20px",paddingBottom:"calc(22px + env(safe-area-inset-bottom, 0px))",maxWidth:"580px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
-        <div style={{width:"38px",height:"4px",borderRadius:"100px",background:"rgba(22,47,36,0.18)",margin:"0 auto 8px"}}/>
+        initial={{ opacity: 0, scale: 0.94, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 340, damping: 30 }}
+        style={{position:"relative",background:"#faf7f0",borderRadius:"22px",boxShadow:"0 18px 50px rgba(22,47,36,0.28)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",
+          padding:"20px",maxWidth:"440px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
         <button type="button" onClick={() => navigate("/app/modules")} aria-label="Close"
           style={{position:"absolute",top:"12px",right:"14px",width:"32px",height:"32px",borderRadius:"50%",border:"none",background:"rgba(22,47,36,0.07)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
           <X size={16} color={TEXT}/>
         </button>
-        <div style={{paddingTop:"14px"}}>{children}</div>
+        {children}
       </motion.div>
     </div>
   );
@@ -103,7 +103,7 @@ function PaywallSheet({ children }) {
 // Subscribing: the two plans, then Stripe's own checkout page. Below, a way
 // back in for someone already subscribed (an emailed link), and a way to
 // hear about rate changes without subscribing.
-function Subscribe({ moduleKey, d, amount, onLeaveEmail }) {
+function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
   const [plan, setPlan] = useState("yearly");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -133,7 +133,8 @@ function Subscribe({ moduleKey, d, amount, onLeaveEmail }) {
   const link = { background:"none", border:"none", padding:0, color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
   return (
     <div>
-      <div style={{fontSize:"16px",fontWeight:700,color:TEXT,lineHeight:1.35,paddingRight:"36px"}}>Your first answer was free. Subscribe to see {amount > 0 ? "how to fix this" : "this answer"}, and every other module.</div>
+      <Worth title={title} amount={amount} lumpSum={lumpSum}/>
+      <div style={{fontSize:"14px",color:TEXT,lineHeight:1.45,marginTop:"12px"}}>Your first answer was free. Subscribe to see {amount > 0 ? "how to fix this" : "this answer"}, and every other module.</div>
       <div style={{display:"flex",gap:"10px",margin:"14px 0 12px"}}>
         {Object.entries(PLANS).map(([key, p]) => (
           <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>
@@ -183,6 +184,29 @@ function Subscribe({ moduleKey, d, amount, onLeaveEmail }) {
           </form>
         )
       )}
+    </div>
+  );
+}
+
+// What this module is worth against what Candid costs a year: "3x" rounded
+// down, so it never overstates; "more than" under 2x. Lump sums (by 18) and
+// small amounts just show the figure; nothing found, just the module.
+function Worth({ title, amount, lumpSum }) {
+  const kicker = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase", paddingRight:"40px" };
+  if (!(amount > 0)) return <div style={{...kicker,marginTop:"6px"}}>{title}</div>;
+  const cost = PLANS.yearly.amount;
+  const times = Math.floor(amount / cost);
+  const compare = lumpSum || amount <= cost ? null
+    : times >= 2 ? `That's ${times}x what Candid costs a year (${PLANS.yearly.price}).`
+    : `That's more than Candid costs a year (${PLANS.yearly.price}).`;
+  return (
+    <div>
+      <div style={{...kicker,marginTop:"6px"}}>{title}</div>
+      <div style={{display:"flex",alignItems:"baseline",gap:"8px",flexWrap:"wrap",marginTop:"8px"}}>
+        <span style={{fontFamily:SERIF,fontSize:"40px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em"}}>{fmt(amount)}</span>
+        <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>{lumpSum ? "by the time they're 18" : "a year you're missing out on"}</span>
+      </div>
+      {compare && <div style={{fontSize:"14px",color:G,fontWeight:700,lineHeight:1.4,marginTop:"10px"}}>{compare}</div>}
     </div>
   );
 }
