@@ -27,9 +27,9 @@ const SIGNPOSTS = {
 };
 export const ADVISER_LINK = ADVISER_HELP;
 
-// Over the page as it opens: the page fades in from behind it. 1.8
+// Over the page as it opens: the page fades in from behind it. About 1.5
 // seconds in all, and skipped for anyone who has asked for less motion.
-const INTRO_MS = 1800;
+const INTRO_MS = 1530;
 export function GuidanceIntro() {
   const reduce = useReducedMotion();
   const [shown, setShown] = useState(!reduce);
