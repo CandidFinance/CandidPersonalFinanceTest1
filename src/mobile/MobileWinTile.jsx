@@ -12,8 +12,12 @@ import MobileReminderAction from "./MobileReminderAction.jsx";
 // the user can actually schedule (and, with `email`, send to HR), not just read.
 // `provider`: the provider lists' surface (pale grey gradient and border),
 // same size and layout as every other tile on the page.
-export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, provider = false, children }) {
-  const [open, setOpen] = useState(defaultOpen);
+// `open` and `onOpenChange`, together, let the page open it (a link
+// elsewhere on the page that leads to it).
+export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, provider = false, open: openProp, onOpenChange, children }) {
+  const [openState, setOpenState] = useState(defaultOpen);
+  const open = openProp ?? openState;
+  const setOpen = f => onOpenChange ? onOpenChange(f(open)) : setOpenState(f);
   const surface = provider
     ? { background:PROVIDER_TILE_BG, border:PROVIDER_TILE_BORDER, boxShadow:PROVIDER_TILE_SHADOW }
     : { background:WHITE, boxShadow:"0 2px 10px rgba(22,47,36,0.06)" };

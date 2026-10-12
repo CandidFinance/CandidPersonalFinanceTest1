@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { moduleEstimate, pensionOutlook, loanAlternatives } from "./crossModule.js";
+import { moduleEstimate, pensionOutlook, loanAlternatives, cliffEdge } from "./crossModule.js";
 import { calcMetrics } from "./metrics.js";
 
 const base = { age: "32", salary: "45000", employmentStatus: "employed", salaryTrajectory: "stable" };
@@ -47,6 +47,13 @@ test("pension outlook: a large pot passes the tax-free cash limit", () => {
   const d = { ...base, age: "40", salary: "150000", hasPension: "yes", myContribution: "10", employerMatch: "10", potValue: "400000", retirementAge: "65" };
   const lsa = pensionOutlook(d, calcMetrics(d)).flags.find(f => f.key === "lumpSum");
   assert.ok(lsa && lsa.age < 65 && lsa.overCap > 0 && lsa.extraTax > 0);
+});
+
+test("cliff edge: £100 from take-home pay before and after the tax-free cash limit, against an ISA", () => {
+  const outlook = { laterRate: 0.4, alreadyPastLsa: false, flags: [{ key: "lumpSum", age: 53 }] };
+  assert.deepEqual(cliffEdge(outlook, { tr: 0.2 }), { age: 53, already: false, nowRate: 0.2, laterRate: 0.4, paidIn: 125, before: 88, after: 75, isa: 100 });
+  // £125 in at basic rate: a quarter tax-free (£31.25) and £93.75 at 40% is £87.50.
+  assert.equal(cliffEdge({ ...outlook, flags: [] }, { tr: 0.2 }), null);
 });
 
 test("pension outlook: nothing flagged for a modest pot at basic rate", () => {

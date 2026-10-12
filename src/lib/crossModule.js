@@ -110,7 +110,28 @@ export function pensionOutlook(d, m) {
     const band = laterRate === 0.45 ? ADDITIONAL_RATE_THRESHOLD : HIGHER_RATE_THRESHOLD;
     flags.push({ key: "retirementRate", nowRate, laterRate, income: round10(retirementIncome), extraTax: round10((retirementIncome - band) * (laterRate - nowRate)) });
   }
-  return { retireAge, potAtRetirement: Math.round(pot), potToday: Math.round(potToday), retirementIncome, laterRate, flags };
+  return { retireAge, potAtRetirement: Math.round(pot), potToday: Math.round(potToday), retirementIncome, laterRate, flags,
+    alreadyPastLsa: (+d.potValue || 0) + (+d.potValue2 || 0) >= LSA_INFLECTION_POT };
+}
+
+// The cliff edge in £: what £100 of take-home pay paid in becomes when it's
+// drawn, before the pot passes the tax-free cash limit and after, against
+// £100 in an ISA. Growth is the same for all three, so it's left out. Paid
+// in: £100 plus tax relief at today's rate. Drawn before: a quarter
+// tax-free, the rest taxed at the rate in retirement; after: all of it
+// taxed (at least basic rate, as pensionOutlook's extraTax).
+export function cliffEdge(outlook, m) {
+  const flag = outlook?.flags.find(f => f.key === "lumpSum");
+  if (!flag) return null;
+  const nowRate = m.tr || 0, laterRate = Math.max(0.2, outlook.laterRate);
+  const paidIn = 100 / (1 - nowRate);
+  return {
+    age: flag.age, already: outlook.alreadyPastLsa, nowRate, laterRate,
+    paidIn: Math.round(paidIn),
+    before: Math.round(paidIn * (0.25 + 0.75 * (1 - laterRate))),
+    after: Math.round(paidIn * (1 - laterRate)),
+    isa: 100,
+  };
 }
 
 // ── Student loan: where money not overpaid could go ─────────────────────

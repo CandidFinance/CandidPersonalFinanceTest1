@@ -427,6 +427,10 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   const extraBase = hasBonus ? withBonusPot : optimisedPot;
   const extraGrowth = Math.round(salary * extraPct/100 * annuityFactor);
   const withExtraPot = Math.round(extraBase) + extraGrowth;
+  // What paying the extra in costs, against what it adds: the salary paid in
+  // over the years to retirement, and what that becomes. Both at today's
+  // salary and in today's money, so they compare like for like.
+  const extraSalaryCost = Math.round(salary * extraPct/100 * years);
 
   // Builds each label as "everything included so far", e.g. once both the
   // match-cap and bonus levers are active: "Optimised", "Optimised + bonus",
@@ -442,7 +446,6 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
     { key:"retirement", value: currentPot, label: `At retirement (age ${retireAge})` },
     ...(hasMissedMatch ? [{ key:"optimised", value: optimisedPot, label: `Optimised (+${matchCapIncreasePct}%)` }] : []),
     ...(hasBonus ? [{ key:"bonus", value: withBonusPot, label: hasMissedMatch ? `Optimised (+${matchCapIncreasePct}%) + bonus` : "With bonus sacrifice" }] : []),
-    { key:"extra", value: withExtraPot, label: extraLabel },
   ];
 
   // Earliest viable retirement age — binary/linear search for when the pot
@@ -481,7 +484,7 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   const showLsaFlag = showTrajectory && (alreadyPastLsa || lsaCrossAge != null);
 
   return {
-    years, retireAge, age, currentPot, optimisedPot, withBonusPot, withExtraPot,
+    years, retireAge, age, currentPot, optimisedPot, withBonusPot, withExtraPot, extraGain: extraGrowth, extraSalaryCost, extraLabel,
     hasMissedMatch, hasBonus, showOptimised, bars, matchCapIncreasePct,
     earlyRetire, yearsSaved, onTrackEarly, showTrajectory,
     alreadyPastLsa, lsaCrossAge, showLsaFlag, LSA_INFLECTION_POT,
