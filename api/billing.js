@@ -30,7 +30,9 @@ const TOKEN_SECRET = process.env.STRIPE_BILLING_TOKEN_SECRET;
 const SUPA_URL = process.env.VITE_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const RESEND_KEY = process.env.RESEND_API_KEY;
-const MAIL_FROM = process.env.BILLING_MAIL_FROM || "Candid <hello@candid-finance.co.uk>";
+const MAIL_FROM = process.env.BILLING_MAIL_FROM || "Candid <admin@candid-finance.co.uk>";
+// Where replies to Candid's emails go: the address in the terms and privacy policy.
+const MAIL_REPLY_TO = "admin@candid-finance.co.uk";
 
 // The live site and local dev, plus any hostnames in BILLING_EXTRA_HOSTS
 // (comma-separated), for trying checkout on a Vercel preview in test mode.
@@ -260,7 +262,7 @@ async function restore(req, body, res, origin) {
       method: "POST",
       headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: MAIL_FROM, to: [email], subject: "Your Candid sign-in link",
+        from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [email], subject: "Your Candid sign-in link",
         text: `Open this link on the device you want to use Candid on. It works for 20 minutes.\n\n${link}\n\nIf you didn't ask for this, you can ignore it.`,
       }),
     });
