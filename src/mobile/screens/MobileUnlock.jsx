@@ -155,7 +155,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
       </button>
       {error && !panel && <div style={{fontSize:"12.5px",color:"#b3261e",margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
       <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
-        Every module's answer, kept up to date as rates change. Cancel any time. Payments by Stripe.
+        Every module's answer, kept up to date as rates change. Cancel any time, and get a full refund within 14 days of first subscribing. Payments by Stripe.
       </p>
 
       <div style={{display:"flex",justifyContent:"center",gap:"18px",marginTop:"16px"}}>
