@@ -264,7 +264,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
       </MobileWinTile>
 
       {products.products?.length > 0 && (
-        <MobileWinTile provider number={showGains ? 3 : 2} title="Some Stocks and Shares ISA providers" tagLabel="Providers"
+        <MobileWinTile provider number={showGains ? 3 : 2} title="Stocks and Shares ISA providers" tagLabel="Providers"
           headline={`${products.products.length} providers, listed alphabetically`}>
           <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
         </MobileWinTile>

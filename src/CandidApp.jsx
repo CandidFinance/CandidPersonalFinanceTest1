@@ -745,7 +745,7 @@ export function getModuleProducts(key, d, m, savingsRates) {
     }
     case "pension":
       return {
-        heading: "Some pension providers",
+        heading: "Pension providers",
         subheading: d.hasPension === "yes"
           ? `At your current rate, tax relief means every £${Math.round(100*(1-m.tr))} you contribute becomes £100 in your pension. A higher-rate taxpayer effectively gets ${Math.round(m.tr*100)}% added by HMRC.`
           : `Starting today, a £${Math.round(d.salary ? +d.salary * 0.05 / 12 : 200)}/month contribution would cost you roughly £${Math.round(d.salary ? +d.salary * 0.05 / 12 * (1-m.tr) : 120)} in take-home after tax relief.`,
