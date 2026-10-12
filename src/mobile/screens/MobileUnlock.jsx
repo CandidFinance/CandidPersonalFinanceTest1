@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import posthog from "posthog-js";
-import { Lock } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
+import { Lock, X } from "lucide-react";
+import { G, GOLD, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
-import { PLANS, startCheckout, requestRestore } from "../../lib/entitlement.js";
+import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../lib/entitlement.js";
 
 // A locked module (src/lib/unlock.js): what it's worth, in £, with the answer
 // itself frosted until it's unlocked. The first module is free; after that,
@@ -60,11 +62,40 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
         ))}
       </div>
 
-      {ask.kind === "pay" && <Subscribe moduleKey={moduleKey} d={d} amount={amount} onLeaveEmail={onLeaveEmail}/>}
+      {ask.kind === "pay" && (
+        <PaywallSheet>
+          <Subscribe moduleKey={moduleKey} d={d} amount={amount} onLeaveEmail={onLeaveEmail}/>
+        </PaywallSheet>
+      )}
 
       {ask.kind === "free" && (
         <button type="button" style={primary(false)} onClick={() => onUnlock(ask, null)}>{cta}</button>
       )}
+    </div>
+  );
+}
+
+// The paywall as a card risen over the locked page, which stays in view
+// behind it, dimmed: the £ figure above the card, the frosted lines under
+// it. Over the tab bar and the Assist button (4500), under Assist's own
+// panel. Closing goes back to the modules.
+function PaywallSheet({ children }) {
+  const navigate = useNavigate();
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:4600,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}
+        style={{position:"absolute",inset:0,background:"rgba(22,47,36,0.28)",backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)"}}/>
+      <motion.div role="dialog" aria-modal="true" aria-label="Subscribe to Candid"
+        initial={{ y: "100%" }} animate={{ y: 0 }} transition={{ type: "spring", stiffness: 320, damping: 34 }}
+        style={{position:"relative",background:"#faf7f0",borderRadius:"22px 22px 0 0",boxShadow:"0 -10px 40px rgba(22,47,36,0.22)",maxHeight:"72dvh",overflowY:"auto",
+          padding:"10px 20px",paddingBottom:"calc(22px + env(safe-area-inset-bottom, 0px))",maxWidth:"580px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
+        <div style={{width:"38px",height:"4px",borderRadius:"100px",background:"rgba(22,47,36,0.18)",margin:"0 auto 8px"}}/>
+        <button type="button" onClick={() => navigate("/app/modules")} aria-label="Close"
+          style={{position:"absolute",top:"12px",right:"14px",width:"32px",height:"32px",borderRadius:"50%",border:"none",background:"rgba(22,47,36,0.07)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+          <X size={16} color={TEXT}/>
+        </button>
+        <div style={{paddingTop:"14px"}}>{children}</div>
+      </motion.div>
     </div>
   );
 }
@@ -102,10 +133,13 @@ function Subscribe({ moduleKey, d, amount, onLeaveEmail }) {
   const link = { background:"none", border:"none", padding:0, color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
   return (
     <div>
-      <div style={{fontSize:"16px",fontWeight:700,color:TEXT,lineHeight:1.35}}>Your first answer was free. Subscribe to see {amount > 0 ? "how to fix this" : "this answer"}, and every other module.</div>
+      <div style={{fontSize:"16px",fontWeight:700,color:TEXT,lineHeight:1.35,paddingRight:"36px"}}>Your first answer was free. Subscribe to see {amount > 0 ? "how to fix this" : "this answer"}, and every other module.</div>
       <div style={{display:"flex",gap:"10px",margin:"14px 0 12px"}}>
         {Object.entries(PLANS).map(([key, p]) => (
-          <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={card(plan === key)}>
+          <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>
+            {key === "yearly" && ANNUAL_SAVING_PCT > 0 && (
+              <span style={{position:"absolute",top:"-9px",right:"10px",background:GOLD,color:WHITE,fontSize:"10.5px",fontWeight:800,letterSpacing:"0.03em",borderRadius:"100px",padding:"2px 8px"}}>Save {ANNUAL_SAVING_PCT}%</span>
+            )}
             <div style={{fontSize:"12px",fontWeight:700,color:MUT}}>{p.label}</div>
             <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginTop:"2px"}}>
               <span style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color:G}}>{p.price}</span>

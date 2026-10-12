@@ -7,11 +7,13 @@
 
 const KEY = "candid_access";
 
-// Display only: the prices themselves are set in Stripe.
+// Display only: the prices themselves are set in Stripe, and these must
+// match them. Monthly first; the annual saving is worked out from the two.
 export const PLANS = {
-  yearly:  { label: "Yearly",  price: "£24",   per: "a year",  note: "£2 a month" },
-  monthly: { label: "Monthly", price: "£2.99", per: "a month", note: "Cancel any time" },
+  monthly: { label: "Monthly",  amount: 2.99, price: "£2.99", per: "a month", note: "Cancel any time" },
+  yearly:  { label: "Annually", amount: 24,   price: "£24",   per: "a year",  note: "£2 a month" },
 };
+export const ANNUAL_SAVING_PCT = Math.round((1 - PLANS.yearly.amount / (PLANS.monthly.amount * 12)) * 100);
 
 function read() {
   try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; }
