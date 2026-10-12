@@ -146,7 +146,9 @@ const accessFor = row => {
   return { active, email: row?.email || null, plan: row?.plan || null, periodEnd: row?.current_period_end || null, cancelling: !!row?.cancel_at_period_end };
 };
 
-// ── Webhook: the raw body, for Stripe's signature ───────────────────────
+// ── The raw body: Vercel's parser is off (config below) so the webhook can
+// check Stripe's signature against the exact bytes; the other actions parse it.
+export const config = { api: { bodyParser: false } };
 async function rawBody(req) {
   const chunks = [];
   for await (const c of req) chunks.push(typeof c === "string" ? Buffer.from(c) : c);
@@ -163,8 +165,7 @@ function stripeSigned(raw, header) {
     return v.length === expected.length && crypto.timingSafeEqual(Buffer.from(v), Buffer.from(expected));
   });
 }
-async function webhook(req, res) {
-  const raw = await rawBody(req);
+async function webhook(req, res, raw) {
   if (!stripeSigned(raw, req.headers["stripe-signature"])) return res.status(400).json({ error: "Bad signature" });
   const event = JSON.parse(raw);
   const obj = event.data?.object;
@@ -178,8 +179,8 @@ async function webhook(req, res) {
 }
 
 // ── The actions the app calls ───────────────────────────────────────────
-async function checkout(req, res, origin) {
-  const { plan, module, email } = req.body || {};
+async function checkout(body, res, origin) {
+  const { plan, module, email } = body;
   if (!PRICES[plan]) return res.status(400).json({ error: "Unknown plan" });
   const back = typeof module === "string" && /^[a-zA-Z]{2,20}$/.test(module) ? `/app/module/${module}` : "/app/modules";
   const session = await stripe("POST", "/checkout/sessions", {
@@ -192,8 +193,8 @@ async function checkout(req, res, origin) {
   });
   return res.status(200).json({ url: session.url });
 }
-async function confirm(req, res) {
-  const { sessionId } = req.body || {};
+async function confirm(body, res) {
+  const { sessionId } = body;
   if (typeof sessionId !== "string" || !/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return res.status(400).json({ error: "Bad session" });
   const session = await stripe("GET", `/checkout/sessions/${sessionId}`);
   if (session.status !== "complete" || session.mode !== "subscription" || !session.subscription) return res.status(200).json({ active: false });
@@ -203,16 +204,16 @@ async function confirm(req, res) {
   const access = accessFor(await rowFor(email));
   return res.status(200).json({ ...access, token: access.active ? makeToken(email, "access", ACCESS_TTL_MS) : null });
 }
-async function status(req, res) {
-  const { token } = req.body || {};
+async function status(body, res) {
+  const { token } = body;
   // A sign-in link's token (restore) is swapped for an access token here.
   const email = readToken(token, "access") || readToken(token, "restore");
   if (!email) return res.status(200).json({ active: false, email: null, token: null });
   const access = accessFor(await rowFor(email));
   return res.status(200).json({ ...access, token: access.active ? makeToken(email, "access", ACCESS_TTL_MS) : null });
 }
-async function restore(req, res, origin) {
-  const email = cleanEmail(req.body?.email);
+async function restore(req, body, res, origin) {
+  const email = cleanEmail(body.email);
   if (!email) return res.status(400).json({ error: "Enter a valid email address" });
   if (restoreLimiter) {
     const { success } = await restoreLimiter.limit(`${clientIp(req)}:${email}`);
@@ -234,8 +235,8 @@ async function restore(req, res, origin) {
   }
   return res.status(200).json({ ok: true });
 }
-async function portal(req, res, origin) {
-  const email = readToken(req.body?.token, "access");
+async function portal(body, res, origin) {
+  const email = readToken(body.token, "access");
   const row = email && await rowFor(email);
   if (!row?.stripe_customer_id) return res.status(401).json({ error: "Not signed in" });
   const session = await stripe("POST", "/billing_portal/sessions", { customer: row.stripe_customer_id, return_url: `${origin}/app/inputs` });
@@ -249,7 +250,8 @@ export default async function handler(req, res) {
   try {
     // Stripe calls the webhook from its own servers, so no origin check:
     // its signature is the check.
-    if (action === "webhook") return await webhook(req, res);
+    const raw = await rawBody(req);
+    if (action === "webhook") return await webhook(req, res, raw);
 
     const origin = ourOrigin(req);
     if (!origin) return res.status(403).json({ error: "Forbidden" });
@@ -259,11 +261,14 @@ export default async function handler(req, res) {
     }
     // Checkout and sign-in links return to the site they were asked from.
     const returnTo = origin;
-    if (action === "checkout") return await checkout(req, res, returnTo);
-    if (action === "confirm") return await confirm(req, res);
-    if (action === "status") return await status(req, res);
-    if (action === "restore") return await restore(req, res, returnTo);
-    if (action === "portal") return await portal(req, res, returnTo);
+    let body;
+    try { body = raw ? JSON.parse(raw) : {}; } catch { return res.status(400).json({ error: "Bad request" }); }
+    if (!body || typeof body !== "object") body = {};
+    if (action === "checkout") return await checkout(body, res, returnTo);
+    if (action === "confirm") return await confirm(body, res);
+    if (action === "status") return await status(body, res);
+    if (action === "restore") return await restore(req, body, res, returnTo);
+    if (action === "portal") return await portal(body, res, returnTo);
     return res.status(404).json({ error: "Unknown action" });
   } catch (e) {
     console.error("billing", action, e);
