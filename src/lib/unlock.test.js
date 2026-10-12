@@ -17,22 +17,21 @@ test("the first module finished unlocks by itself, and only the first", () => {
   assert.equal(unlockAsk(d).kind, "free");
 });
 
-test("after the first, email, then one question per unlock, then free", () => {
-  let d = { unlockGate: true, unlockedModules: ["studentLoan"] };
-  assert.equal(unlockAsk(d).kind, "email");
-  d = { ...d, ...unlockPatch(d, "cash", unlockAsk(d), { email: " a@b.co ", callOk: true }) };
-  assert.equal(d.email, "a@b.co");
-  assert.equal(d.unlockCallOk, true);
-  assert.equal(isLocked(d, "cash"), false);
-  for (const q of UNLOCK_QUESTIONS) {
-    const ask = unlockAsk(d);
-    assert.equal(ask.question.id, q.id);
-    d = { ...d, ...unlockPatch(d, "pension", ask, q.options[0].value) };
-  }
-  assert.equal(unlockAsk(d).kind, "free");
+test("after the first, a subscription, which unlocks every module", () => {
+  const d = { unlockGate: true, unlockedModules: ["studentLoan"] };
+  assert.equal(unlockAsk(d, false).kind, "pay");
+  assert.equal(isLocked(d, "cash", false), true);
+  assert.equal(unlockAsk(d, true).kind, "free");
+  assert.equal(isLocked(d, "cash", true), false);
+  assert.equal(isLocked(d, "pension", true), false);
+  // Paying doesn't make the first one count as unlocked by itself.
+  assert.equal(firstUnlockPatch({ unlockGate: true }, "cash", true), null);
 });
 
-test("an email typed elsewhere in the app doesn't count as the unlock", () => {
-  assert.equal(unlockAsk({ email: "a@b.co", unlockedModules: ["cash"] }).kind, "email");
+test("modules unlocked before payments, by email or a question, stay unlocked", () => {
+  const d = { unlockGate: true, unlockedModules: ["cash", "pension"], unlockEmailGiven: true };
+  assert.equal(isLocked(d, "pension", false), false);
+  assert.equal(isLocked(d, "investments", false), true);
+  assert.deepEqual(unlockPatch(d, "investments", { kind: "question", question: UNLOCK_QUESTIONS[0] }, "friend").unlockFeedback, { heard: "friend" });
   assert.ok(!validEmail("nope"));
 });

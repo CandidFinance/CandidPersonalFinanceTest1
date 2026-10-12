@@ -29,6 +29,7 @@ import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
+import { checkAccessOnLoad, accessInfo } from "./lib/entitlement.js";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
@@ -6245,6 +6246,25 @@ export default function AppShell() {
   // goes with the inputs; the unlock columns on their own, so a missing
   // column grant can't stop the email saving.
   const [unlockSaveTick, setUnlockSaveTick] = useState(0);
+  // A subscription (src/lib/entitlement.js): checked with the server on
+  // opening, including back from checkout or a sign-in link. A change
+  // redraws, since what's locked reads it. Back from paying on a module's
+  // page, its answer is shown step by step, as after a free unlock.
+  const [, setAccessTick] = useState(0);
+  useEffect(() => {
+    const redraw = () => setAccessTick(t => t + 1);
+    window.addEventListener("candid-access", redraw);
+    checkAccessOnLoad().then(outcome => {
+      if (outcome === "paid" || outcome === "restored") {
+        posthog.capture(outcome === "paid" ? "checkout_completed" : "access_restored", { plan: accessInfo()?.plan ?? null });
+        const email = accessInfo()?.email;
+        if (email && !d.email) { set("email", email); setUnlockSaveTick(t => t + 1); }
+        const onModule = window.location.pathname.match(/^\/app\/module\/([a-zA-Z]+)/);
+        if (outcome === "paid" && onModule) setRevealModule(onModule[1]);
+      } else if (outcome === "cancelled") posthog.capture("checkout_cancelled");
+    });
+    return () => window.removeEventListener("candid-access", redraw);
+  }, []);
   useEffect(() => {
     if (!unlockSaveTick) return;
     // One after the other, so a missing row is only created once.
@@ -6681,6 +6701,11 @@ export default function AppShell() {
             <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
           }>
           <MobileUnlock moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses}
+            onLeaveEmail={email => {
+              set("email", email); set("alertsOptIn", true);
+              posthog.capture("email_captured", { source: "paywall" });
+              setUnlockSaveTick(t => t + 1);
+            }}
             onUnlock={(ask, answer) => {
               const patch = unlockPatch(d, mobileActiveModule, ask, answer);
               Object.entries(patch).forEach(([k, v]) => set(k, v));

@@ -1,25 +1,25 @@
 import { useEffect, useState } from "react";
-import { Lock, Check } from "lucide-react";
+import posthog from "posthog-js";
+import { Lock } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
+import { PLANS, startCheckout, requestRestore } from "../../lib/entitlement.js";
 
 // A locked module (src/lib/unlock.js): what it's worth, in £, with the answer
-// itself frosted until it's unlocked. The first unlock asks for an email,
-// each later one a single tap of feedback. The frosted lines are stand-ins,
-// not the real answer blurred, so nothing can be read from the page.
-// `onUnlock(ask, answer)` unlocks it and goes on to the answer.
-export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock }) {
+// itself frosted until it's unlocked. The first module is free; after that,
+// a subscription unlocks them all (Stripe's checkout, then back here). The
+// frosted lines are stand-ins, not the real answer blurred, so nothing can
+// be read from the page. `onUnlock(ask, answer)` unlocks a free one and goes
+// on to the answer; `onLeaveEmail(email)` records an email for rate alerts
+// from someone not subscribing yet.
+export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLeaveEmail }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const mod = getModuleBreakdown(d, m, statuses, null, "amount").moduleList.find(mm => mm.key === moduleKey);
   const ask = unlockAsk(d);
-  const [email, setEmail] = useState(d.email || "");
-  const [callOk, setCallOk] = useState(false);
-  const [tried, setTried] = useState(false);
   const amount = mod?.amount > 0 ? mod.amount : 0;
-  const emailOk = validEmail(email);
 
   // What's behind the frost, named, so it's clear what unlocking gets them.
   const hidden = amount > 0 ? ["Why you're missing it", "How to fix it"] : ["Where you stand", "What to keep an eye on"];
@@ -27,7 +27,6 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock }) {
 
   const label = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
   const primary = disabled => ({ width:"100%", background:disabled ? "rgba(22,47,36,0.2)" : G, color:WHITE, border:"none", borderRadius:"100px", padding:"15px", fontSize:"15.5px", fontWeight:700, fontFamily:"inherit", cursor:disabled ? "not-allowed" : "pointer" });
-  const option = { display:"block", width:"100%", textAlign:"left", background:WHITE, border:"1.5px solid rgba(22,47,36,0.15)", borderRadius:"14px", padding:"13px 16px", fontSize:"14.5px", fontWeight:600, color:TEXT, fontFamily:"inherit", cursor:"pointer" };
 
   return (
     <div>
@@ -61,43 +60,94 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock }) {
         ))}
       </div>
 
-      {ask.kind === "email" && (
-        <form onSubmit={e => { e.preventDefault(); setTried(true); if (emailOk) onUnlock(ask, { email, callOk }); }}>
-          <div style={{fontSize:"16px",fontWeight:700,color:TEXT,marginBottom:"12px"}}>Enter your email to see {amount > 0 ? "why, and how to fix it" : "your answer"}, for free</div>
-          <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
-            style={{width:"100%",boxSizing:"border-box",border:`1.5px solid ${tried && !emailOk ? "#b3261e" : "rgba(22,47,36,0.15)"}`,borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
-          {tried && !emailOk && <div style={{fontSize:"12px",color:"#b3261e",margin:"6px 0 0 6px"}}>Enter a valid email address</div>}
-          <button type="submit" style={{...primary(false),marginTop:"10px"}}>{cta}</button>
-          <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"12px 0 0"}}>
-            We'll notify you when you could be keeping more: a better rate, an allowance going unused, or money sitting idle.
-          </p>
-          <label style={{display:"flex",alignItems:"center",gap:"8px",margin:"12px 0 0",cursor:"pointer"}}>
-            <span style={{width:"18px",height:"18px",borderRadius:"5px",border:callOk ? "none" : "1.5px solid rgba(22,47,36,0.3)",background:callOk ? G : WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxSizing:"border-box"}}>
-              {callOk && <Check size={12} color={WHITE} strokeWidth={3}/>}
-            </span>
-            <input type="checkbox" checked={callOk} onChange={e => setCallOk(e.target.checked)} style={{position:"absolute",opacity:0,width:0,height:0}}/>
-            <span style={{fontSize:"12.5px",color:MUT}}>Happy to have a chat to talk it through</span>
-          </label>
-          <p style={{fontSize:"11.5px",color:MUT,margin:"14px 0 0",textAlign:"center"}}>
-            Unsubscribe any time. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a>
-          </p>
-        </form>
-      )}
-
-      {ask.kind === "question" && (
-        <div>
-          <div style={label}>One quick question to see {amount > 0 ? "how to fix it" : "your answer"}</div>
-          <div style={{fontSize:"17px",fontWeight:700,color:TEXT,lineHeight:1.35,margin:"6px 0 14px"}}>{ask.question.ask}</div>
-          <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-            {ask.question.options.map(o => (
-              <button key={o.value} type="button" style={option} onClick={() => onUnlock(ask, o.value)}>{o.label}</button>
-            ))}
-          </div>
-        </div>
-      )}
+      {ask.kind === "pay" && <Subscribe moduleKey={moduleKey} d={d} amount={amount} onLeaveEmail={onLeaveEmail}/>}
 
       {ask.kind === "free" && (
         <button type="button" style={primary(false)} onClick={() => onUnlock(ask, null)}>{cta}</button>
+      )}
+    </div>
+  );
+}
+
+// Subscribing: the two plans, then Stripe's own checkout page. Below, a way
+// back in for someone already subscribed (an emailed link), and a way to
+// hear about rate changes without subscribing.
+function Subscribe({ moduleKey, d, amount, onLeaveEmail }) {
+  const [plan, setPlan] = useState("yearly");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [panel, setPanel] = useState(null); // "restore" | "alerts"
+  const [email, setEmail] = useState(d.email || "");
+  const [done, setDone] = useState(null);
+  useEffect(() => { posthog.capture("paywall_shown", { module: moduleKey }); }, [moduleKey]);
+
+  const go = async () => {
+    setBusy(true); setError(null);
+    posthog.capture("checkout_started", { module: moduleKey, plan });
+    try { await startCheckout(plan, moduleKey, d.email); }
+    catch (e) { setError(e.message); setBusy(false); }
+  };
+  const submitEmail = async e => {
+    e.preventDefault();
+    if (!validEmail(email)) { setError("Enter a valid email address"); return; }
+    setError(null);
+    if (panel === "alerts") { onLeaveEmail?.(email.trim()); setDone("alerts"); return; }
+    setBusy(true);
+    try { await requestRestore(email.trim()); posthog.capture("restore_requested"); setDone("restore"); }
+    catch (err) { setError(err.message); }
+    setBusy(false);
+  };
+
+  const card = on => ({ flex:1, textAlign:"left", background:WHITE, border:`2px solid ${on ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"14px", padding:"12px 14px", cursor:"pointer", fontFamily:"inherit" });
+  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
+  return (
+    <div>
+      <div style={{fontSize:"16px",fontWeight:700,color:TEXT,lineHeight:1.35}}>Your first answer was free. Subscribe to see {amount > 0 ? "how to fix this" : "this answer"}, and every other module.</div>
+      <div style={{display:"flex",gap:"10px",margin:"14px 0 12px"}}>
+        {Object.entries(PLANS).map(([key, p]) => (
+          <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={card(plan === key)}>
+            <div style={{fontSize:"12px",fontWeight:700,color:MUT}}>{p.label}</div>
+            <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginTop:"2px"}}>
+              <span style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color:G}}>{p.price}</span>
+              <span style={{fontSize:"12px",color:MUT}}>{p.per}</span>
+            </div>
+            <div style={{fontSize:"11.5px",color:MUT,marginTop:"2px"}}>{p.note}</div>
+          </button>
+        ))}
+      </div>
+      <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
+        {busy && !panel ? "Opening checkout…" : "Subscribe and unlock everything"}
+      </button>
+      {error && !panel && <div style={{fontSize:"12.5px",color:"#b3261e",margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
+      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
+        Every module's answer, kept up to date as rates change. Cancel any time. Payments by Stripe.
+      </p>
+
+      <div style={{display:"flex",justifyContent:"center",gap:"18px",marginTop:"16px"}}>
+        <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); }}>Already subscribed?</button>
+        <button type="button" style={link} onClick={() => { setPanel(p => p === "alerts" ? null : "alerts"); setDone(null); setError(null); }}>Not yet? Get rate alerts</button>
+      </div>
+      {panel && (
+        done ? (
+          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"14px 0 0",textAlign:"center"}}>
+            {done === "restore" ? "If that email has a subscription, a sign-in link is on its way. Open it on this device." : "Thanks. We'll email you when you could be keeping more."}
+          </p>
+        ) : (
+          <form onSubmit={submitEmail} style={{marginTop:"14px"}}>
+            <div style={{fontSize:"13px",color:TEXT,marginBottom:"8px"}}>
+              {panel === "restore" ? "Enter the email you subscribed with, and we'll send you a sign-in link." : "We'll email you when you could be keeping more: a better rate, or an allowance going unused."}
+            </div>
+            <div style={{display:"flex",gap:"8px"}}>
+              <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
+                style={{flex:1,minWidth:0,boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"12px 16px",fontSize:"14px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+              <button type="submit" disabled={busy} style={{background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"0 16px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
+                {panel === "restore" ? "Send link" : "Sign up"}
+              </button>
+            </div>
+            {error && <div style={{fontSize:"12px",color:"#b3261e",margin:"6px 0 0 6px"}}>{error}</div>}
+            {panel === "alerts" && <p style={{fontSize:"11.5px",color:MUT,margin:"8px 0 0"}}>Unsubscribe any time. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>}
+          </form>
+        )
       )}
     </div>
   );
