@@ -146,13 +146,20 @@ export default function NewSiteHeader() {
             );
           })}
         </nav>
-        {/* The way into the app, on every page, far right (desktop only). */}
+        {/* Signing in on another device (subscribers), then the way into
+            the app, on every page, far right (desktop only). */}
+        <Link to="/signin" className="nsh-cta-btn" style={{
+          marginLeft: "auto", marginRight: "-32px", fontFamily: SANS, fontSize: "14px", fontWeight: 600,
+          color: location.pathname === "/signin" ? G : MUT, textDecoration: "none", whiteSpace: "nowrap",
+        }}>
+          Sign in
+        </Link>
         <button
           type="button"
           className="nsh-cta-btn"
           onClick={startCheck}
           style={{
-            alignItems: "center", marginLeft: "auto",
+            alignItems: "center",
             background: CTA_BLUE, border: "none", borderRadius: "100px",
             padding: "11px 22px", fontFamily: SANS, fontSize: "14px", fontWeight: 700,
             color: "#fff", cursor: "pointer",
@@ -214,6 +221,17 @@ export default function NewSiteHeader() {
               </Link>
             );
           })}
+          <Link
+            to="/signin"
+            onClick={() => setMobileOpen(false)}
+            style={{
+              fontFamily: SANS, fontSize: "16px", fontWeight: 600,
+              color: location.pathname === "/signin" ? G : MUT, textDecoration: "none",
+              padding: "14px 0", borderBottom: "1px solid rgba(22,47,36,0.08)",
+            }}
+          >
+            Sign in
+          </Link>
           <button
             type="button"
             onClick={startCheck}

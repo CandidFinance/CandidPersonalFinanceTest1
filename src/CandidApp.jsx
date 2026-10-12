@@ -29,7 +29,7 @@ import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
-import { checkAccessOnLoad, accessInfo } from "./lib/entitlement.js";
+import { checkAccessOnLoad, accessInfo, saveStateSoon } from "./lib/entitlement.js";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
@@ -6250,7 +6250,7 @@ export default function AppShell() {
   // opening, including back from checkout or a sign-in link. A change
   // redraws, since what's locked reads it. Back from paying on a module's
   // page, its answer is shown step by step, as after a free unlock.
-  const [, setAccessTick] = useState(0);
+  const [accessTick, setAccessTick] = useState(0);
   useEffect(() => {
     const redraw = () => setAccessTick(t => t + 1);
     window.addEventListener("candid-access", redraw);
@@ -6265,6 +6265,10 @@ export default function AppShell() {
     });
     return () => window.removeEventListener("candid-access", redraw);
   }, []);
+  // A subscriber's answers go to their subscription as they change (and
+  // once on subscribing), for signing in on another device. Does nothing
+  // without one.
+  useEffect(() => { saveStateSoon({ inputs: rawD, completedModules }); }, [rawD, completedModules, accessTick]);
   useEffect(() => {
     if (!unlockSaveTick) return;
     // One after the other, so a missing row is only created once.

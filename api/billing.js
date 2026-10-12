@@ -10,6 +10,8 @@ import { Redis } from "@upstash/redis";
 //   status    POST {token}                 -> { active, email, plan, periodEnd, token }
 //   restore   POST {email}                 -> emails a sign-in link if subscribed
 //   portal    POST {token}                 -> { url } of Stripe's billing portal
+//   save      POST {token, state}          -> keeps a subscriber's answers, for
+//                                             signing in on another device
 //   webhook   Stripe's events, signature-checked, keep `subscriptions` current
 //
 // Stripe is called over its REST API (no SDK). Who has paid lives in the
@@ -39,6 +41,8 @@ const ACTIVE = ["active", "trialing", "past_due"];
 const ACCESS_TTL_MS = 30 * 24 * 3600 * 1000;
 const RESTORE_TTL_MS = 20 * 60 * 1000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// The app's inputs are a few kB; this is a ceiling, not a target.
+const MAX_STATE_CHARS = 200000;
 
 const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
   ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
@@ -217,11 +221,29 @@ async function confirm(body, res) {
 }
 async function status(body, res) {
   const { token } = body;
-  // A sign-in link's token (restore) is swapped for an access token here.
-  const email = readToken(token, "access") || readToken(token, "restore");
+  // A sign-in link's token (restore) is swapped for an access token here,
+  // and brings their saved answers with it, for a new device.
+  const signIn = readToken(token, "restore");
+  const email = readToken(token, "access") || signIn;
   if (!email) return res.status(200).json({ active: false, email: null, token: null });
-  const access = accessFor(await rowFor(email));
-  return res.status(200).json({ ...access, token: access.active ? makeToken(email, "access", ACCESS_TTL_MS) : null });
+  const row = await rowFor(email);
+  const access = accessFor(row);
+  return res.status(200).json({
+    ...access, token: access.active ? makeToken(email, "access", ACCESS_TTL_MS) : null,
+    ...(signIn && access.active ? { state: row.saved_state || null } : {}),
+  });
+}
+// A subscriber's answers, saved as they change, so a sign-in elsewhere
+// brings them back.
+async function saveState(body, res) {
+  const email = readToken(body.token, "access");
+  if (!email) return res.status(401).json({ error: "Not signed in" });
+  const { state } = body;
+  if (!state || typeof state !== "object" || Array.isArray(state)) return res.status(400).json({ error: "Bad request" });
+  if (JSON.stringify(state).length > MAX_STATE_CHARS) return res.status(413).json({ error: "Too large" });
+  if (!accessFor(await rowFor(email)).active) return res.status(403).json({ error: "No subscription" });
+  await supa("PATCH", `?email=eq.${encodeURIComponent(email)}`, { saved_state: state, saved_state_at: new Date().toISOString() });
+  return res.status(200).json({ ok: true });
 }
 async function restore(req, body, res, origin) {
   const email = cleanEmail(body.email);
@@ -233,7 +255,7 @@ async function restore(req, body, res, origin) {
   const access = accessFor(await rowFor(email));
   // The same answer either way, so the form doesn't reveal who subscribes.
   if (access.active && RESEND_KEY) {
-    const link = `${origin}/app/modules?restore=${encodeURIComponent(makeToken(email, "restore", RESTORE_TTL_MS))}`;
+    const link = `${origin}/signin?restore=${encodeURIComponent(makeToken(email, "restore", RESTORE_TTL_MS))}`;
     const sent = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
@@ -266,7 +288,9 @@ export default async function handler(req, res) {
 
     const origin = ourOrigin(req);
     if (!origin) return res.status(403).json({ error: "Forbidden" });
-    if (limiter) {
+    // Saving follows their typing, so it's left out of the per-IP limit; it
+    // needs a signed token for a live subscription anyway.
+    if (limiter && action !== "save") {
       const { success } = await limiter.limit(clientIp(req));
       if (!success) return res.status(429).json({ error: "Too many requests. Try again shortly." });
     }
@@ -280,6 +304,7 @@ export default async function handler(req, res) {
     if (action === "status") return await status(body, res);
     if (action === "restore") return await restore(req, body, res, returnTo);
     if (action === "portal") return await portal(body, res, returnTo);
+    if (action === "save") return await saveState(body, res);
     return res.status(404).json({ error: "Unknown action" });
   } catch (e) {
     console.error("billing", action, e);

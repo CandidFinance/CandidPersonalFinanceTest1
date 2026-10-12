@@ -71,6 +71,34 @@ export async function checkAccessOnLoad() {
 }
 
 export async function requestRestore(email) { return call("restore", { email }); }
+
+// A subscriber's answers, saved to their subscription a moment after they
+// stop changing, so signing in on another device brings them back.
+let saveTimer = null;
+export function saveStateSoon(state) {
+  const token = read()?.token;
+  if (!token || !hasAccess()) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { call("save", { token, state }).catch(() => {}); }, 3000);
+}
+
+// From a sign-in link (/signin?restore=): holds the subscription, and puts
+// their saved answers in this browser, where the app reads them on opening.
+// Returns "signed-in", "ended" (the link is good but the subscription isn't)
+// or "invalid".
+export async function signInWithLink(restoreToken) {
+  const r = await call("status", { token: restoreToken });
+  if (!r.email) return "invalid";
+  save(r);
+  if (!r.active) return "ended";
+  if (r.state?.inputs) {
+    try {
+      localStorage.setItem("candid_inputs", JSON.stringify(r.state.inputs));
+      if (Array.isArray(r.state.completedModules)) localStorage.setItem("candid_completed_modules", JSON.stringify(r.state.completedModules));
+    } catch {}
+  }
+  return "signed-in";
+}
 export async function openBillingPortal() {
   const { url } = await call("portal", { token: read()?.token });
   window.location.assign(url);
