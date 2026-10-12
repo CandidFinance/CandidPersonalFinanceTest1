@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD } from "../CandidApp.jsx";
+import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../CandidApp.jsx";
 import MobileReminderAction from "./MobileReminderAction.jsx";
 
 // Compact, tap-to-expand "Win" tile for mobile module deep-dive pages —
@@ -10,10 +10,15 @@ import MobileReminderAction from "./MobileReminderAction.jsx";
 // (optional {id,title,description,email}) adds a labelled "Remind me" action
 // pill at the bottom of the expanded tile, turning the Win into something
 // the user can actually schedule (and, with `email`, send to HR), not just read.
-export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, children }) {
+// `provider`: the provider lists' surface (pale grey gradient and border),
+// same size and layout as every other tile on the page.
+export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, provider = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
+  const surface = provider
+    ? { background:PROVIDER_TILE_BG, border:PROVIDER_TILE_BORDER, boxShadow:PROVIDER_TILE_SHADOW }
+    : { background:WHITE, boxShadow:"0 2px 10px rgba(22,47,36,0.06)" };
   return (
-    <div style={{background:WHITE,borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.06)",marginBottom:"12px",overflow:"hidden"}}>
+    <div style={{...surface,borderRadius:RADIUS_CARD,marginBottom:"12px",overflow:"hidden"}}>
       <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"flex-start",gap:"12px",padding:"16px 16px 13px",cursor:"pointer"}}>
         {number != null && (
           <div style={{width:"24px",height:"24px",borderRadius:"50%",background:G,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>

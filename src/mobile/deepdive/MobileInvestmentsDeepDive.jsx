@@ -263,7 +263,12 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
         )}
       </MobileWinTile>
 
-      <MobileProviderTile heading="Where to open one" products={products.products} disclaimer={products.disclaimer}/>
+      {products.products?.length > 0 && (
+        <MobileWinTile provider defaultOpen number={showGains ? 3 : 2} title="Where to open one" tagLabel="Providers"
+          headline={`${products.products.length} Stocks and Shares ISA providers to compare`}>
+          <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
+        </MobileWinTile>
+      )}
     </div>
   );
 }

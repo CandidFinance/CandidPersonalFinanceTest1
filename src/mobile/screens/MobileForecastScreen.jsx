@@ -139,7 +139,18 @@ export default function MobileForecastScreen({ d, m }) {
 
   return (
     <div>
+      {/* What this tab is for, then what the chosen view shows. */}
+      <h1 style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your forecast</h1>
+      <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"0 0 16px"}}>
+        Where your money could be in the future, worked out from your answers. Pick a point in time and change the figures to see how the picture moves.
+      </p>
       <PillSlider value={view} onChange={setView} options={VIEW_OPTIONS}/>
+      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>
+        {view === "surplus"
+          ? "What the money left over each month could grow to in a Stocks and Shares ISA, in savings, or in your pension, side by side. Change the monthly amount or add a lump sum to compare."
+          : "Everything you own less everything you owe, projected forward: savings and pension growing, loans paid down."}
+        {" "}<span style={{color:MUT}}>Estimates, not promises: growth isn't guaranteed.</span>
+      </p>
 
       <label style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginTop:"16px",display:"block"}}>Time horizon</label>
       <div style={{marginTop:"8px"}}>

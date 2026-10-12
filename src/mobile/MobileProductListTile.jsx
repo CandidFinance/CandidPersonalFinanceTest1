@@ -11,21 +11,23 @@ import { PROVIDER_TILE_FADE_CLEAR } from "../design-tokens.js";
 // of plain whitespace below a short fade. Expands to the full list on tap.
 const COLLAPSED_HEIGHT = 98;
 
-export default function MobileProductListTile({ heading, subheading, products, disclaimer }) {
+// `embedded`: inside a numbered MobileWinTile with `provider`, which gives
+// the heading and the frame.
+export default function MobileProductListTile({ heading, subheading, products, disclaimer, embedded = false }) {
   const [open, setOpen] = useState(false);
   if (!products || products.length === 0) return null;
 
   return (
-    <div style={{background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
-      <div onClick={() => setOpen(o => !o)} style={{cursor:"pointer"}}>
+    <div style={embedded ? {} : {background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
+      {!embedded && <div onClick={() => setOpen(o => !o)} style={{cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
           <div style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:G}}>{heading}</div>
           <ChevronRight size={14} color={MUT} style={{flexShrink:0,transform:open?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
         </div>
         {subheading && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.4,marginTop:"3px",marginBottom:0}}>{subheading}</p>}
-      </div>
+      </div>}
 
-      <div style={{position:"relative",marginTop:"10px",maxHeight:open?"none":`${COLLAPSED_HEIGHT}px`,overflow:"hidden"}}>
+      <div style={{position:"relative",marginTop:embedded ? 0 : "10px",maxHeight:open?"none":`${COLLAPSED_HEIGHT}px`,overflow:"hidden"}}>
         {products.map((p, i) => (
           <a key={i} href={p.productUrl} target="_blank" rel="noopener noreferrer" style={{
             display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",padding:"8px 0",

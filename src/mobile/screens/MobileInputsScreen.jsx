@@ -13,7 +13,22 @@ import { SCORED_MODULES } from "../../lib/appEntry.js";
 // page's Edit inputs); otherwise About you starts open. A module not
 // answered yet starts its questions instead (`onStartModule`).
 // `onOpenModule(key)` goes back to a module's page.
+// Tapping empty space in an open tile closes it, as on a phone, so its
+// header doesn't need scrolling back to. Not a tap on anything that responds
+// to one (a field, a pill, a slider, a link), nor one that started on such a
+// thing, so a slider let go of over empty space stays open.
+const INTERACTIVE = "button,input,select,textarea,a,label,[role],[contenteditable],svg";
+function onSomething(target, container) {
+  for (let el = target; el && el !== container; el = el.parentElement) {
+    if (el.matches?.(INTERACTIVE)) return true;
+    const cursor = getComputedStyle(el).cursor;
+    if (cursor === "pointer" || cursor === "grab" || cursor === "text") return true;
+  }
+  return false;
+}
+
 export default function MobileInputsScreen({ d, m, set, open, onStartModule, onOpenModule }) {
+  const pressedOn = useRef(false);
   const answered = SCORED_MODULES.filter(k => (d.selectedModules || []).includes(k));
   const notYet = SCORED_MODULES.filter(k => !answered.includes(k));
   const [openKey, setOpenKey] = useState(answered.includes(open) ? open : "about");
@@ -56,7 +71,14 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
                 <ChevronDown size={18} color={MUT} style={{transform:isOpen ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
               </button>
               {isOpen && (
-                <div style={{padding:"4px 18px 18px",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
+                <div style={{padding:"4px 18px 18px",borderTop:"1px solid rgba(22,47,36,0.08)"}}
+                  onPointerDown={e => { pressedOn.current = onSomething(e.target, e.currentTarget); }}
+                  onClick={e => {
+                    if (pressedOn.current || onSomething(e.target, e.currentTarget)) return;
+                    setOpenKey(null);
+                    const top = refs.current[key]?.getBoundingClientRect().top;
+                    if (top < 70) refs.current[key].scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}>
                   <div style={{paddingTop:"14px"}}>
                     {isModule
                       ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set}/>

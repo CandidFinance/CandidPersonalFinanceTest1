@@ -68,6 +68,10 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
   let winCounter = 0;
   const emergencyWinNumber = showEmergencyWin ? ++winCounter : null;
   const optimiseWinNumber = ++winCounter;
+  // The provider lists: numbered tiles like the others, open on their
+  // blurred preview.
+  const isaListNumber = products.products?.length ? ++winCounter : null;
+  const savingsListNumber = products.nonIsaProducts?.length ? ++winCounter : null;
 
   const opportunityCols = [];
   if (showEmergencyWin) opportunityCols.push({ label:"Short of your emergency fund", value: fmtCompact(m.emergencyShortfall) });
@@ -234,11 +238,18 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
         </div>
       </div>
 
-      <MobileProductListTile heading={products.heading} subheading={mobileIsaSubheading(m)}
-        products={products.products} disclaimer={products.disclaimer}/>
-
-      <MobileProductListTile heading={products.nonIsaHeading} subheading={mobilePsaSubheading()}
-        products={products.nonIsaProducts} disclaimer={products.disclaimer}/>
+      <div style={{marginTop:"16px"}}>
+        {isaListNumber && (
+          <MobileWinTile provider defaultOpen number={isaListNumber} title={products.heading} headline={mobileIsaSubheading(m)} tagLabel="Providers">
+            <MobileProductListTile embedded products={products.products} disclaimer={products.disclaimer}/>
+          </MobileWinTile>
+        )}
+        {savingsListNumber && (
+          <MobileWinTile provider defaultOpen number={savingsListNumber} title={products.nonIsaHeading} headline={mobilePsaSubheading()} tagLabel="Providers">
+            <MobileProductListTile embedded products={products.nonIsaProducts} disclaimer={products.disclaimer}/>
+          </MobileWinTile>
+        )}
+      </div>
     </div>
   );
 }

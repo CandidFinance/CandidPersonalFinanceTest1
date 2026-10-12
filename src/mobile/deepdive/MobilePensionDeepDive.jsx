@@ -15,7 +15,7 @@ import { bestDrawdown, defaultDrawdownYears } from "../../lib/drawdown.js";
 import { taxYearFor } from "../../lib/taxYear.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK, fmtCompact } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, PillSlider, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileDrawdown, { compact, Pill } from "./MobileDrawdown.jsx";
 import { EMPLOYER_NI_RATE } from "../../lib/tax.js";
@@ -98,6 +98,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const [sacrificePct, setSacrificePct] = useState(100);
   const [extraPct, setExtraPct] = useState(1);
   const [showFVInfo, setShowFVInfo] = useState(false);
+  const [showTrajInfo, setShowTrajInfo] = useState(false);
   // The what-if tools (bonus sacrifice, carry forward, the growth chart and
   // the £80k-£100k sacrifice explorer) sit under "Explore", closed at first,
   // so the screen leads with the answer and its one action.
@@ -309,6 +310,83 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         </div>
       )}
 
+      {/* The hero: how the pot could grow to retirement. */}
+      {showExplore && traj.showTrajectory && (() => {
+        const maxBar = Math.max(...traj.bars.map(b => b.value), 1);
+        const barColors = { now:"rgba(196,150,58,0.5)", retirement:GOLD, optimised:"#2d6b4a", bonus:"rgba(45,107,74,0.7)", extra:"#8a4fae" };
+        // Short labels for narrow mobile columns — the bars themselves are a
+        // cumulative staircase (see calcPensionGrowthTrajectory), so each
+        // label after "Optimised" is a running "+lever" on top of the last,
+        // not an independent scenario.
+        const shortLabel = {
+          now: "Now",
+          retirement: `Retire (${traj.retireAge})`,
+          optimised: `Optimised (+${traj.matchCapIncreasePct}%)`,
+          bonus: "+ Bonus",
+          extra: `+ ${extraPct}%`,
+        };
+        return (
+          <div style={{background:WHITE,borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"16px",marginBottom:"12px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:showTrajInfo ? "8px" : "14px"}}>
+              <div style={{fontSize:"15px",fontWeight:700,color:G}}>Pension growth trajectory</div>
+              <InfoButton onClick={() => setShowTrajInfo(o => !o)} open={showTrajInfo}/>
+            </div>
+            {showTrajInfo && (
+              <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.6,margin:"0 0 14px"}}>
+                In today's money: growth of 6% a year, less 2% inflation, over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}.
+              </p>
+            )}
+            <div style={{display:"flex",alignItems:"stretch",justifyContent:"space-between",gap:"4px",height:"150px"}}>
+              {traj.bars.map(bar => {
+                const uplift = bar.key !== "retirement" ? bar.value - traj.currentPot : 0;
+                return (
+                  <div key={bar.key} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%"}}>
+                    {/* Fixed-height label area (whether or not the uplift badge renders) so
+                        it never eats into the bar's own space below — otherwise columns with
+                        a badge got a shorter effective track and drew a shorter bar even when
+                        their value was higher. */}
+                    <div style={{height:"36px",flexShrink:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
+                      {uplift > 0 && (
+                        <div style={{fontSize:"9px",fontWeight:700,color:"#2d6b4a",background:"rgba(45,107,74,0.12)",borderRadius:"100px",padding:"1px 6px",whiteSpace:"nowrap",marginBottom:"3px"}}>+{fmtK(uplift)}</div>
+                      )}
+                      <div style={{fontSize:"13px",fontWeight:700,fontFamily:SERIF,color:TEXT,whiteSpace:"nowrap"}}>{fmtK(bar.value)}</div>
+                    </div>
+                    <div style={{flex:1,width:"100%",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+                      <div style={{width:"100%",maxWidth:"52px",borderRadius:"5px 5px 0 0",background:barColors[bar.key]||G,height:`${Math.max(3,(bar.value/maxBar)*100)}%`}}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",gap:"4px",marginTop:"6px"}}>
+              {traj.bars.map(bar => (
+                <div key={bar.key} style={{flex:1,textAlign:"center",fontSize:"9.5px",color:MUT,lineHeight:1.25}}>{shortLabel[bar.key] || bar.label}</div>
+              ))}
+            </div>
+
+            {+d.niYears > 0 && (
+              <p style={{fontSize:"12px",color:TEXT,lineHeight:1.6,marginTop:"14px"}}>
+                State pension estimate: <b style={{fontFamily:SERIF}}>{fmt(m.statePensionAnnual)}/yr</b>, based on your recorded National Insurance years.
+              </p>
+            )}
+
+            <div style={{marginTop:"14px"}}>
+              <div style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>What if you contributed more?</div>
+              <PillSlider value={extraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS}/>
+              <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,marginTop:"8px",marginBottom:0}}>
+                An extra {extraPct}% of salary grows to {fmt(traj.withExtraPot - Math.round(traj.hasBonus ? traj.withBonusPot : traj.optimisedPot))} on top{(traj.hasMissedMatch || traj.hasBonus) ? " of your optimised/bonus scenario" : " of your projected pot"} by retirement.
+              </p>
+            </div>
+
+            {traj.showLsaFlag && !traj.alreadyPastLsa && (
+              <div style={{marginTop:"10px",fontSize:"11.5px",color:MUT,lineHeight:1.5}}>
+                {`Your pot is projected to cross the ${fmt(traj.LSA_INFLECTION_POT)} Lump Sum Allowance inflection point around age ${traj.lsaCrossAge} — beyond that, further growth doesn't add to your tax-free withdrawal amount.`}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {showMatchWin && (
         <MobileWinTile number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tagLabel="Today"
           reminder={{
@@ -405,7 +483,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
           growth to retirement) don't apply. */}
       {showExplore && (
         <MobileWinTile number={exploreNum} title="Explore what-ifs" tagLabel="What if"
-          headline={`How your pension could grow by ${traj.retireAge}${hasStatedBonus ? ", and paying in your bonus" : ", and paying in more"}`}>
+          headline={`${hasStatedBonus ? "Paying in your bonus" : "Paying a bonus into your pension"}${cf.showCarryForward ? ", and using past years' allowance" : ""}`}>
       {showSacrificeCalc && !taper.recoverable && sacrificeTile}
 
       {cf.showCarryForward && (
@@ -541,77 +619,6 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         </div>
       )}
 
-      {traj.showTrajectory && (() => {
-        const maxBar = Math.max(...traj.bars.map(b => b.value), 1);
-        const barColors = { now:"rgba(196,150,58,0.5)", retirement:GOLD, optimised:"#2d6b4a", bonus:"rgba(45,107,74,0.7)", extra:"#8a4fae" };
-        // Short labels for narrow mobile columns — the bars themselves are a
-        // cumulative staircase (see calcPensionGrowthTrajectory), so each
-        // label after "Optimised" is a running "+lever" on top of the last,
-        // not an independent scenario.
-        const shortLabel = {
-          now: "Now",
-          retirement: `Retire (${traj.retireAge})`,
-          optimised: `Optimised (+${traj.matchCapIncreasePct}%)`,
-          bonus: "+ Bonus",
-          extra: `+ ${extraPct}%`,
-        };
-        return (
-          <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px"}}>
-            <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"14px"}}>Pension growth trajectory</div>
-            <div style={{display:"flex",alignItems:"stretch",justifyContent:"space-between",gap:"4px",height:"150px"}}>
-              {traj.bars.map(bar => {
-                const uplift = bar.key !== "retirement" ? bar.value - traj.currentPot : 0;
-                return (
-                  <div key={bar.key} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%"}}>
-                    {/* Fixed-height label area (whether or not the uplift badge renders) so
-                        it never eats into the bar's own space below — otherwise columns with
-                        a badge got a shorter effective track and drew a shorter bar even when
-                        their value was higher. */}
-                    <div style={{height:"36px",flexShrink:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
-                      {uplift > 0 && (
-                        <div style={{fontSize:"9px",fontWeight:700,color:"#2d6b4a",background:"rgba(45,107,74,0.12)",borderRadius:"100px",padding:"1px 6px",whiteSpace:"nowrap",marginBottom:"3px"}}>+{fmtK(uplift)}</div>
-                      )}
-                      <div style={{fontSize:"13px",fontWeight:700,fontFamily:SERIF,color:TEXT,whiteSpace:"nowrap"}}>{fmtK(bar.value)}</div>
-                    </div>
-                    <div style={{flex:1,width:"100%",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-                      <div style={{width:"100%",maxWidth:"52px",borderRadius:"5px 5px 0 0",background:barColors[bar.key]||G,height:`${Math.max(3,(bar.value/maxBar)*100)}%`}}/>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",gap:"4px",marginTop:"6px"}}>
-              {traj.bars.map(bar => (
-                <div key={bar.key} style={{flex:1,textAlign:"center",fontSize:"9.5px",color:MUT,lineHeight:1.25}}>{shortLabel[bar.key] || bar.label}</div>
-              ))}
-            </div>
-
-            {+d.niYears > 0 && (
-              <p style={{fontSize:"12px",color:TEXT,lineHeight:1.6,marginTop:"14px"}}>
-                State pension estimate: <b style={{fontFamily:SERIF}}>{fmt(m.statePensionAnnual)}/yr</b>, based on your recorded National Insurance years.
-              </p>
-            )}
-
-            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.6,marginTop:"10px"}}>
-              In today's money: growth of 6% a year, less 2% inflation, over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}.
-            </p>
-
-            <div style={{marginTop:"14px"}}>
-              <div style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>What if you contributed more?</div>
-              <PillSlider value={extraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS}/>
-              <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,marginTop:"8px",marginBottom:0}}>
-                An extra {extraPct}% of salary grows to {fmt(traj.withExtraPot - Math.round(traj.hasBonus ? traj.withBonusPot : traj.optimisedPot))} on top{(traj.hasMissedMatch || traj.hasBonus) ? " of your optimised/bonus scenario" : " of your projected pot"} by retirement.
-              </p>
-            </div>
-
-            {traj.showLsaFlag && !traj.alreadyPastLsa && (
-              <div style={{marginTop:"10px",fontSize:"11.5px",color:MUT,lineHeight:1.5}}>
-                {`Your pot is projected to cross the ${fmt(traj.LSA_INFLECTION_POT)} Lump Sum Allowance inflection point around age ${traj.lsaCrossAge} — beyond that, further growth doesn't add to your tax-free withdrawal amount.`}
-              </div>
-            )}
-          </div>
-        );
-      })()}
 
         </MobileWinTile>
       )}
@@ -621,7 +628,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
       {/* Where to do it: a numbered tile like the others, the providers
           inside it once opened. */}
       {providersNum && (
-        <MobileWinTile number={providersNum} title={d.hasPension === "yes" ? "Consolidate or top up" : "Get started"} tagLabel="Providers"
+        <MobileWinTile provider defaultOpen number={providersNum} title={d.hasPension === "yes" ? "Consolidate or top up" : "Get started"} tagLabel="Providers"
           headline={`${products.products.length} pension providers to compare`}>
           <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
         </MobileWinTile>

@@ -19,13 +19,12 @@ import { PROVIDER_TILE_FADE_CLEAR } from "../design-tokens.js";
 // any future entry with no real destination yet.
 const COLLAPSED_HEIGHT = 190;
 
-// `embedded`: inside another tile (a numbered MobileWinTile, which gives
-// the heading): no frame or heading of its own, and the fade ends in the
-// tile's white.
+// `embedded`: inside a numbered MobileWinTile (with `provider`, so the fade
+// ends in its grey), which gives the heading: no frame or heading of its own.
 export default function MobileProviderTile({ heading, products, disclaimer, embedded = false }) {
   const [open, setOpen] = useState(false);
   if (!products || products.length === 0) return null;
-  const fadeTo = embedded ? WHITE : PROVIDER_TILE_BG_END;
+  const fadeTo = PROVIDER_TILE_BG_END;
 
   return (
     <div style={embedded ? {} : {background:PROVIDER_TILE_BG,border:PROVIDER_TILE_BORDER,boxShadow:PROVIDER_TILE_SHADOW,borderRadius:RADIUS_CARD,padding:"16px 18px",marginTop:"16px"}}>
