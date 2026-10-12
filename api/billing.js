@@ -134,10 +134,16 @@ async function saveSubscription(sub, email) {
   if (!who) who = cleanEmail((await stripe("GET", `/customers/${customerId}`)).email);
   if (!who) throw new Error(`No email for customer ${customerId}`);
   const periodEnd = sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end;
+  const price = sub.items?.data?.[0]?.price;
+  const iso = s => s ? new Date(s * 1000).toISOString() : null;
   await supa("POST", "?on_conflict=email", {
     email: who, stripe_customer_id: customerId, stripe_subscription_id: sub.id, status: sub.status,
-    plan: planOf(sub), current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+    plan: planOf(sub), current_period_end: iso(periodEnd),
     cancel_at_period_end: !!sub.cancel_at_period_end, updated_at: new Date().toISOString(),
+    stripe_price_id: price?.id || null, amount_pence: price?.unit_amount ?? null, currency: price?.currency || null,
+    canceled_at: iso(sub.canceled_at), cancellation_reason: sub.cancellation_details?.feedback || null,
+    cancellation_comment: sub.cancellation_details?.comment || null,
+    ...(sub.metadata?.module ? { signup_module: sub.metadata.module } : {}),
   });
   return who;
 }
@@ -182,13 +188,15 @@ async function webhook(req, res, raw) {
 async function checkout(body, res, origin) {
   const { plan, module, email } = body;
   if (!PRICES[plan]) return res.status(400).json({ error: "Unknown plan" });
-  const back = typeof module === "string" && /^[a-zA-Z]{2,20}$/.test(module) ? `/app/module/${module}` : "/app/modules";
+  const mod = typeof module === "string" && /^[a-zA-Z]{2,20}$/.test(module) ? module : null;
+  const back = mod ? `/app/module/${mod}` : "/app/modules";
   const session = await stripe("POST", "/checkout/sessions", {
     mode: "subscription",
     line_items: { 0: { price: PRICES[plan], quantity: 1 } },
     success_url: `${origin}${back}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${back}?checkout=cancelled`,
     allow_promotion_codes: "true",
+    subscription_data: mod ? { metadata: { module: mod } } : undefined,
     customer_email: cleanEmail(email) || undefined,
   });
   return res.status(200).json({ url: session.url });

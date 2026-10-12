@@ -10,6 +10,17 @@ create table if not exists public.subscriptions (
   plan text,
   current_period_end timestamptz,
   cancel_at_period_end boolean not null default false,
+  -- The module whose paywall they paid at (Checkout metadata), the price and
+  -- what it costs (pence), when they cancelled, and the reason and comment
+  -- Stripe's portal asks for on the way out.
+  signup_module text,
+  stripe_price_id text,
+  amount_pence integer,
+  currency text,
+  canceled_at timestamptz,
+  cancellation_reason text,
+  cancellation_comment text,
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
