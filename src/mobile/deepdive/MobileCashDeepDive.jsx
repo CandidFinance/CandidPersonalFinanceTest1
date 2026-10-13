@@ -101,6 +101,25 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
         </div>
       )}
 
+      {/* The cash buffer, above the numbered tiles. */}
+      <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px",flexWrap:"wrap",gap:"6px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
+            <span style={{width:"8px",height:"8px",borderRadius:"50%",background:runwayTierColor,display:"inline-block"}}/>
+            <span style={{fontSize:"13px",fontWeight:600,color:G}}>Months of spending covered — {runwayLabel}</span>
+          </div>
+          <span style={{fontSize:"12.5px",color:MUT}}>{m.runwayMonths.toFixed(1)} mo</span>
+        </div>
+        <div style={{position:"relative",width:"100%",height:"12px",borderRadius:"6px",background:`linear-gradient(90deg,#c0392b 0%,${GOLD} 33%,#2d6b4a 60%,#1e4d35 100%)`}}>
+          <div style={{position:"absolute",left:`${runwayMarkerPct}%`,top:"-3px",bottom:"-3px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)"}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:"5px"}}>
+          <span style={{fontSize:"10px",color:MUT}}>0 mo</span>
+          <span style={{fontSize:"10px",color:TEXT,fontWeight:600}}>{m.bufferMonths}mo target</span>
+          <span style={{fontSize:"10px",color:MUT}}>{m.bufferMonths*2}mo+</span>
+        </div>
+      </div>
+
       {showEmergencyWin && (
         <MobileWinTile number={emergencyWinNumber} title="Build your emergency fund"
           headline={`${fmt(m.emergencyShortfall)} more needed to reach your ${m.bufferMonths}-month target`}
@@ -131,7 +150,8 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
         } : null}>
         {totalPot > 0 && opp ? (
           <div>
-            <div style={rowStyle}><span>What your savings earn now, after tax</span><span style={{fontWeight:600}}>{fmt(opp.currentKept)}/yr</span></div>
+            <div style={rowStyle}><span>What your savings earn now, after tax</span><span style={{fontWeight:600}}>{fmt(opp.currentKept + opp.bondsPrize)}/yr</span></div>
+            {opp.bondsPrize > 0 && <div style={{fontSize:"11.5px",color:MUT,marginTop:"-3px"}}>Including about {fmt(opp.bondsPrize)} in Premium Bond prizes, at the average rate</div>}
             <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"8px 0"}}/>
             {opp.lines.map(l => {
               const o = l.option;
@@ -148,7 +168,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
               );
             })}
             <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"10px 0"}}/>
-            <div style={{...rowStyle,fontWeight:700,color:"#2d6b4a"}}><span>Together, after tax</span><span>+{fmt(opp.gain)}/yr</span></div>
+            <div style={{...rowStyle,fontWeight:700,color:"#2d6b4a"}}><span>Together, after tax</span><span>{fmt(opp.currentKept + opp.bondsPrize + opp.gain)}/yr</span></div>
             <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginTop:"4px"}}>
               The highest-earning option in each, worked out together so no money is counted twice. Candid Assist, bottom right, lists the other providers in each and how to move.
             </p>
@@ -216,24 +236,6 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
           <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>Add your cash savings and any Premium Bonds in your onboarding details to see a personalised allocation.</p>
         )}
       </MobileWinTile>
-
-      <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px",flexWrap:"wrap",gap:"6px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
-            <span style={{width:"8px",height:"8px",borderRadius:"50%",background:runwayTierColor,display:"inline-block"}}/>
-            <span style={{fontSize:"13px",fontWeight:600,color:G}}>Months of spending covered — {runwayLabel}</span>
-          </div>
-          <span style={{fontSize:"12.5px",color:MUT}}>{m.runwayMonths.toFixed(1)} mo</span>
-        </div>
-        <div style={{position:"relative",width:"100%",height:"12px",borderRadius:"6px",background:`linear-gradient(90deg,#c0392b 0%,${GOLD} 33%,#2d6b4a 60%,#1e4d35 100%)`}}>
-          <div style={{position:"absolute",left:`${runwayMarkerPct}%`,top:"-3px",bottom:"-3px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)"}}/>
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:"5px"}}>
-          <span style={{fontSize:"10px",color:MUT}}>0 mo</span>
-          <span style={{fontSize:"10px",color:TEXT,fontWeight:600}}>{m.bufferMonths}mo target</span>
-          <span style={{fontSize:"10px",color:MUT}}>{m.bufferMonths*2}mo+</span>
-        </div>
-      </div>
 
       <div style={{marginTop:"16px"}}>
         {isaListNumber && (

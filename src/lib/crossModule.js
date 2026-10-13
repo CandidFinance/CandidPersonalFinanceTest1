@@ -55,7 +55,8 @@ export function moduleEstimate(key, d, m) {
 //    threshold is a fixed sum, so it's compared in money of the day.
 //  - lumpSum: the pot passing £1,073,100, beyond which tax-free cash stops
 //    at the £268,275 Lump Sum Allowance (also fixed), so a quarter of the
-//    rest is taxed instead.
+//    rest is taxed instead. overPot is that rest (the pot above £1,073,100),
+//    in today's money.
 //  - retirementRate: income in retirement taxed at a higher rate than the
 //    relief paying in gets now (basic rate now, higher rate later), when an
 //    ISA, taxed on the way in but not out, can do better for extra savings.
@@ -104,7 +105,7 @@ export function pensionOutlook(d, m) {
   if (taperAge !== null) flags.push({ key: "taxTrap", age: taperAge });
   if (lsaAge !== null && pot * 0.25 > LUMP_SUM_ALLOWANCE) {
     const overCapToday = (pot * 0.25 - LUMP_SUM_ALLOWANCE) / inflate;
-    flags.push({ key: "lumpSum", age: lsaAge, overCap: round10(overCapToday), extraTax: round10(overCapToday * Math.max(0.2, laterRate)) });
+    flags.push({ key: "lumpSum", age: lsaAge, overCap: round10(overCapToday), overPot: round10(overCapToday * 4), extraTax: round10(overCapToday * Math.max(0.2, laterRate)) });
   }
   if (laterRate > nowRate && laterRate >= 0.4) {
     const band = laterRate === 0.45 ? ADDITIONAL_RATE_THRESHOLD : HIGHER_RATE_THRESHOLD;

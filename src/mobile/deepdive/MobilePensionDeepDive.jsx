@@ -771,7 +771,7 @@ function LookingAhead({ d, outlook, cliff, number, open, onOpenChange }) {
   if (lumpSum) means.push(
     <div key="lsa">
       <div style={title}>Less of your pension comes out tax-free</div>
-      <p style={body}>From around age {lumpSum.age}, 25% of your pot is more than {fmtBig(LUMP_SUM_ALLOWANCE)}, the most anyone can take tax-free. About {fmtBig(lumpSum.overCap)} in today's money that would have been tax-free gets taxed instead.</p>
+      <p style={body}>From around age {lumpSum.age}, your pot could be large enough that anything added after that gets no tax-free cash. The most anyone can take tax-free is {fmtBig(LUMP_SUM_ALLOWANCE)}, a quarter of a {fmtBig(LSA_INFLECTION_POT)} pot. Any of your pot above {fmtBig(LSA_INFLECTION_POT)} is taxed in full as income when you take it out, at your rate then, so your pension does less for you as a way to save tax. That leaves about {fmtBig(lumpSum.overPot)} of your pot, in today's money, with no tax-free part.</p>
       {figure(lumpSum.extraTax, "more tax, roughly")}
     </div>);
   if (later) means.push(

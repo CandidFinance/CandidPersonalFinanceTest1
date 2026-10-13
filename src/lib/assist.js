@@ -352,6 +352,9 @@ export function cashPlan(d, m, rows, { skipIsa = false, skipPb = false, isaChoic
 // best choice in each section, together, after tax, respecting what the
 // user has told Assist (keeping their ISA allowance, no Premium Bonds).
 // `lines` are those choices, for showing where the figure comes from.
+// `bondsPrize` is what Premium Bonds already held pay a year at the average
+// prize rate (tax-free): `gain` is net of any of it given up, so what the
+// savings earn now, for a total, is currentKept plus bondsPrize.
 // Null until the rates have loaded.
 export function cashOpportunity(d, m, rows) {
   const plan = cashPlan(d, m, rows, { skipIsa: d?.assistSkipIsa === true, skipPb: d?.assistSkipPb === true });
@@ -361,7 +364,7 @@ export function cashOpportunity(d, m, rows) {
     plan.savings.bestSingle && { section: "Savings account", option: plan.savings.bestSingle },
     plan.pb.options[0] && { section: "Premium Bonds", option: plan.pb.options[0] },
   ].filter(Boolean);
-  return { gain: Math.max(0, plan.upTo), lines, currentKept: plan.currentKept, cash: plan.cash };
+  return { gain: Math.max(0, plan.upTo), lines, currentKept: plan.currentKept, bondsPrize: plan.bonds * plan.bondsRate / 100, cash: plan.cash };
 }
 
 // Accounts opened through Assist that need a look: a rate period ending

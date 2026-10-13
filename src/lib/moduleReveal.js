@@ -127,7 +127,7 @@ export function cashReveal(d, m, { marketRates = {} } = {}) {
     const best = opp.lines.map(l => `${l.section === "Premium Bonds" ? "Premium Bonds" : `a ${l.section}`} at ${pct(l.option.ratePct)}`);
     return [
       { label: ANSWER, figure: `${fmt(opp.gain)} a year`, title: "more your savings could earn, after tax." },
-      { label: WHY, title: `Your ${fmt(opp.cash)} in savings earns about ${fmt(opp.currentKept)} a year after tax. The best options today include ${best.length > 1 ? `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}` : best[0]}.` },
+      { label: WHY, title: `Your ${fmt(opp.cash)} in savings earns about ${fmt(opp.currentKept)} a year after tax. The highest-rate options today include ${best.length > 1 ? `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}` : best[0]}.` },
       { label: ACTION, title: "Candid Assist lays out the options in each and how to move, whichever you choose.",
         body: "Open it from the button at the bottom right of the screen." },
     ];
