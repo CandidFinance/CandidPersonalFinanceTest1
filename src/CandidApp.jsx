@@ -6742,7 +6742,9 @@ export default function AppShell() {
     }
     return (
       <MobileLayout assist={assistNode} activeTab="modules" headerRight={editInputsFor(mobileActiveModule)}>
-        <MobileModuleDeepDive moduleKey={mobileActiveModule} onWalkThrough={null}
+        {/* Keyed by module, so each module page opens fresh, every tile collapsed,
+            however it's reached. */}
+        <MobileModuleDeepDive key={mobileActiveModule} moduleKey={mobileActiveModule} onWalkThrough={null}
           onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
