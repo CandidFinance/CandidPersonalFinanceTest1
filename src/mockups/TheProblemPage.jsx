@@ -193,7 +193,7 @@ export default function TheProblemPage() {
           padding: "56px 40px", textAlign: "center",
         }}>
           <h2 style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: WHITE, fontWeight: 700, marginBottom: "18px", lineHeight: 1.3 }}>
-            Candid's aim is to make this clearer.
+            Candid's aim is to help you fix this.
           </h2>
           <p style={{ fontSize: "14.5px", color: "rgba(250,247,240,0.75)", lineHeight: 1.7, maxWidth: "540px", margin: "0 auto" }}>
             One complete, always-up-to-date view of your finances – built to adapt instantly as you change jobs, buy a home, start a family, or clear your student loan.
