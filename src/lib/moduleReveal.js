@@ -18,7 +18,7 @@ import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
 
-const ANSWER = "Your figures", WHY = "Why", ACTION = "What you could do";
+const ANSWER = "Your position", WHY = "Why", ACTION = "What you could do";
 const HR = "HR or payroll can change it, usually from the next month.";
 
 export function pensionReveal(d, m) {

@@ -9,7 +9,7 @@ const reveal = d => { const m = calcMetrics(d); return { steps: pensionReveal(d,
 
 test("three steps every time: answer, why, what you could do", () => {
   for (const d of [base, { ...base, myContribution: "3", employerMatch: "5" }, { ...base, hasPension: "no" }, { ...base, pensionUnknown: true }]) {
-    assert.deepEqual(reveal(d).steps.map(s => s.label), ["Your figures", "Why", "What you could do"]);
+    assert.deepEqual(reveal(d).steps.map(s => s.label), ["Your position", "Why", "What you could do"]);
   }
 });
 

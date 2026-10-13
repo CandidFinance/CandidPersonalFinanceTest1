@@ -46,7 +46,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
           <div style={{fontSize:"16px",color:TEXT,fontWeight:600,marginTop:"10px"}}>{mod.amountIsLumpSum ? "by the time they're 18, our estimate" : "a year, our estimate on your figures"}</div>
         </div>
       ) : (
-        <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,lineHeight:1.2,margin:"22px 0 4px"}}>Your figures are ready</div>
+        <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,lineHeight:1.2,margin:"22px 0 4px"}}>Your position is ready</div>
       )}
 
       {/* What unlocking shows, each under a frost of stand-in lines (not the

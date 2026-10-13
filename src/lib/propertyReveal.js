@@ -13,7 +13,7 @@ import { mortgageInputs, mortgageSummary, STRESS_REMORTGAGE_UPLIFT } from "./mor
 import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, MAX_HORIZON_YEARS } from "./rentVsBuy.js";
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "./waterfall.js";
 
-const ANSWER = "Your figures", WHY = "Why", ACTION = "What you could do";
+const ANSWER = "Your position", WHY = "Why", ACTION = "What you could do";
 const pct = n => `${Math.round(n * 100) / 100}%`;
 const times = x => `${x.toFixed(1)}x`;
 

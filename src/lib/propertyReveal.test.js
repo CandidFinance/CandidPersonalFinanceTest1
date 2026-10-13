@@ -23,7 +23,7 @@ test("readiness: the loan and times income are the borrowing check's own", () =>
   const m = calcMetrics(buyer);
   const r = calcBorrowingCheck(borrowingInputs(buyer, m));
   const steps = readinessReveal(buyer, m);
-  assert.deepEqual(steps.map(s => s.label), ["Your figures", "Why", "What you could do"]);
+  assert.deepEqual(steps.map(s => s.label), ["Your position", "Why", "What you could do"]);
   assert.equal(steps[0].figure, fmtGBP(r.loanNeeded));
   assert.equal(steps[0].title, `to borrow, ${r.multiple.toFixed(1)}x your income.`);
   // £272,500 on £45,000 is 6.1x: beyond the 5.5x some lenders offer.
