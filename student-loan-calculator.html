@@ -19,7 +19,7 @@
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
-    "publisher": { "@type": "Organization", "name": "Candid Finance Ltd" }
+    "publisher": { "@type": "Organization", "name": "Candid Personal Finance Ltd" }
   }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -113,14 +113,14 @@
     <div id="result" style="background:#ffffff;border:2px solid #162F24;border-radius:14px;padding:24px;margin-top:18px;"></div>
 
     <p style="font-size:12px;color:#8a8a8a;margin-top:10px;line-height:1.6;">
-      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your salary grows at the selected rate every year and your loan's interest rate stays flat at today's figure — the real SLC calculation compounds monthly, and if you're on Plan 2, your rate will actually track your income up or down as it changes over time rather than staying fixed. If you have more than one loan (e.g. an undergraduate plan plus a Postgraduate Loan running alongside it), this only models one at a time. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
+      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your salary grows at the selected rate every year and your loan's interest rate stays flat at today's figure — the real SLC calculation compounds monthly, and if you're on Plan 2, your rate will actually track your income up or down as it changes over time rather than staying fixed. If you have more than one loan (e.g. an undergraduate plan plus a Postgraduate Loan running alongside it), this only models one at a time. Candid Personal Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
     </p>
 
     <!-- ── Bridge to full tool ───────────────────────────────────────── -->
     <div id="bridge" style="display:none;background:#faf7f0;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
       <div id="bridgeLabel" style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;"></div>
       <p id="bridgeText" style="margin-top:0;"></p>
-      <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#faf7f0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture, free →</a>
+      <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#faf7f0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture →</a>
     </div>
 
     <!-- ── Explainer content (static, for search + trust) ──────────────── -->
@@ -152,7 +152,7 @@
 
   <footer style="background:#162F24;padding:28px 32px;text-align:center;margin-top:40px;">
     <span style="font-size:11px;color:rgba(255,255,255,0.5);">
-      © 2026 Candid Finance Ltd. Not regulated by the FCA — educational tool, not financial advice. ·
+      © 2026 Candid Personal Finance Ltd. Not regulated by the FCA — educational tool, not financial advice. ·
       <a href="/privacy.html" style="color:rgba(255,255,255,0.5);">Privacy</a> ·
       <a href="/terms.html" style="color:rgba(255,255,255,0.5);">Terms</a>
     </span>
@@ -271,7 +271,7 @@
 
       var html, bridgeLabel, bridgeText;
       var BRIDGE_BAD = "Instead of overpaying a loan that gets written off, see how that cash performs across your ISAs, Pension, and Savings.";
-      var BRIDGE_MORE = "This only checks your student loan. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, or approaching the £100,000 tax trap — any of which could be a better home for that same monthly amount. Candid checks your whole picture, free, in about 5 minutes.";
+      var BRIDGE_MORE = "This only checks your student loan. It doesn't check whether you're missing an employer pension match, sitting on unused ISA allowance, or approaching the £100,000 tax trap — any of which could be a better home for that same monthly amount. Candid checks your whole picture in about 5 minutes, and your first module is free.";
 
       if (!baseline.cleared && !over.cleared) {
         // State 1: written off either way — overpaying buys nothing.

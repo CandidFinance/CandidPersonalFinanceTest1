@@ -51,7 +51,7 @@ export default function HowItWorksPage() {
             How Candid works.
           </h1>
           <p style={{ fontSize: "clamp(15px,2vw,17px)", color: MUT, lineHeight: 1.7, maxWidth: "480px", margin: "0 auto" }}>
-            Four steps, five minutes, and a complete picture of your tax efficiency, net worth, and tailored action plan – built to update automatically as your life changes.
+            Four steps, five minutes, and a complete picture of your tax efficiency, net worth, and your options in pounds – built to update automatically as your life changes.
           </p>
         </motion.div>
       </div>

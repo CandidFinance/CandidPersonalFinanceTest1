@@ -19,7 +19,7 @@
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
-    "publisher": { "@type": "Organization", "name": "Candid Finance Ltd" }
+    "publisher": { "@type": "Organization", "name": "Candid Personal Finance Ltd" }
   }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,7 +96,7 @@
           <input type="number" id="surplus" value="300" min="0" step="25"/>
         </div>
         <div class="field">
-          <label for="altRate">Best alternative savings/ISA rate (%)</label>
+          <label for="altRate">Alternative savings/ISA rate (%)</label>
           <input type="number" id="altRate" value="4.5" min="0" step="0.1"/>
           <div id="altRateNote" style="font-size:11px;color:rgba(250,247,240,0.6);margin-top:6px;line-height:1.5;"></div>
         </div>
@@ -122,14 +122,14 @@
     <div id="result" style="background:#ffffff;border:2px solid #162F24;border-radius:14px;padding:24px;margin-top:18px;"></div>
 
     <p style="font-size:12px;color:#8a8a8a;margin-top:10px;line-height:1.6;">
-      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your mortgage rate and savings rate both stay flat until your fix ends, and that no other interest is using up your Personal Savings Allowance, which is applied for each year of the period. It doesn't check the {{ISA_ALLOWANCE}} annual ISA allowance. Candid Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
+      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your mortgage rate and savings rate both stay flat until your fix ends, and that no other interest is using up your Personal Savings Allowance, which is applied for each year of the period. It doesn't check the {{ISA_ALLOWANCE}} annual ISA allowance. Candid Personal Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
     </p>
 
     <!-- ── Bridge to full tool ───────────────────────────────────────── -->
     <div id="bridge" style="display:none;background:#faf7f0;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
       <div style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Your mortgage fix is only part of the equation</div>
-      <p style="margin-top:0;">See how your overpayments compare against pension match gaps and ISA allowances in your full report. Candid checks your whole picture, free, in about 5 minutes.</p>
-      <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#faf7f0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture, free →</a>
+      <p style="margin-top:0;">See how your overpayments compare against pension match gaps and ISA allowances. Candid checks your whole picture in about 5 minutes, and your first module is free.</p>
+      <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#faf7f0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture →</a>
     </div>
 
     <!-- ── Explainer content (static, for search + trust) ──────────────── -->
@@ -157,7 +157,7 @@
 
   <footer style="background:#162F24;padding:28px 32px;text-align:center;margin-top:40px;">
     <span style="font-size:11px;color:rgba(255,255,255,0.5);">
-      © 2026 Candid Finance Ltd. Not regulated by the FCA — educational tool, not financial advice. ·
+      © 2026 Candid Personal Finance Ltd. Not regulated by the FCA — educational tool, not financial advice. ·
       <a href="/privacy.html" style="color:rgba(255,255,255,0.5);">Privacy</a> ·
       <a href="/terms.html" style="color:rgba(255,255,255,0.5);">Terms</a>
     </span>
@@ -217,7 +217,7 @@
       var note = document.getElementById('altRateNote');
       if (!row) { note.textContent = ''; return; }
       document.getElementById('altRate').value = +row.rate_aer;
-      note.textContent = 'Best ' + (isIsa ? 'Cash ISA' : 'savings') + ' rate Candid tracks: ' + row.rate_aer + '% (' + row.provider_name + '). Change it if yours differs.';
+      note.textContent = 'Highest ' + (isIsa ? 'Cash ISA' : 'savings') + ' rate Candid tracks: ' + row.rate_aer + '% (' + row.provider_name + '). Change it if yours differs.';
       calculate();
     }
     document.getElementById('altRate').addEventListener('input', function() {

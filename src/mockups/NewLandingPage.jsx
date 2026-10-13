@@ -335,7 +335,7 @@ export default function NewLandingPage() {
           <div style={{ textAlign: "center", marginBottom: "44px" }}>
             <SectionLabel>How it works</SectionLabel>
             <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: G, fontWeight: 700, lineHeight: 1.2 }}>
-              Your finances, mapped. Tailored steps to grow your wealth.<br />All, in 5 minutes.
+              Your finances, mapped. Every option worked out in pounds.<br />All, in 5 minutes.
             </motion.h2>
           </div>
           {/* Fixed 2x2 down to phone width, then a single column — a plain
@@ -355,7 +355,7 @@ export default function NewLandingPage() {
               { icon: ClipboardList, title: "Where you stand and where you're headed", body: "Share your current setup and targets, from salary and savings to buying a home or growing your investments. Rough estimates are fine, we'll do the maths." },
               { icon: Scale, title: "Your full financial picture, analysed", body: "We test your setup against UK tax traps, debt mechanics, and personal goals. Delivering an instant financial health score and every option worked out in pounds." },
               { icon: Search, title: "See the £ value of every decision", body: "See what each option could add to your net worth, calculated from your own figures. Candid does the maths; the decisions are yours." },
-              { icon: Compass, title: "Guidance that grows with you", body: "Life isn't static. Whether you get a pay rise, buy a home, or start a family – Candid updates automatically, keeping your money on track." },
+              { icon: Compass, title: "Guidance that grows with you", body: "Life isn't static. Whether you get a pay rise, buy a home, or start a family – Candid updates automatically, so your figures stay current." },
             ].map((step, i) => (
               <Tile key={step.title} ref={teaserRef(i)} {...pullTogether(i, 4, reduceMotion)} {...tileHover} style={{ borderTop: `4px solid ${GOLD}` }}>
                 <div style={{ marginBottom: "16px" }}><step.icon size={26} color={G} /></div>

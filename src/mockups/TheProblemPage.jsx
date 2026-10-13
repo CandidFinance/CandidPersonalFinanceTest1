@@ -11,7 +11,7 @@ import { EASE_STEADY, riseIn, pullTogether } from "./motion.js";
 const CAUSES = [
   { icon: Layers, title: "Complexity", body: "Pensions, ISAs, tax bands, allowances and mortgages all interact. Get one decision wrong and it can undo the benefit of another." },
   { icon: Clock, title: "Lack of time", body: "Between demanding careers and life outside work, few have the bandwidth to model each financial decision against every tax threshold, account rule and investment option across their wider setup." },
-  { icon: DoorClosed, title: "Lack of access", body: "Traditional financial advisers charge thousands in fees or demand six-figure minimum portfolios – leaving millions with nowhere clear to turn." },
+  { icon: DoorClosed, title: "Lack of access", body: "Traditional financial advisers charge thousands in fees or demand six-figure minimum portfolios – leaving millions to work it out alone." },
 ];
 
 const LIFE_EVENTS = [
@@ -163,7 +163,7 @@ export default function TheProblemPage() {
           <motion.h2 {...riseIn(reduceMotion)} style={{
             fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,32px)", color: G, fontWeight: 700, lineHeight: 1.3, marginBottom: "44px",
           }}>
-            Year on year, the picture changes – your plan has to keep up.
+            Year on year, the picture changes – your figures have to keep up.
           </motion.h2>
           <div style={{ position: "relative" }}>
             <div style={{ position: "absolute", top: "24px", left: "8%", right: "8%", height: "1.5px", background: "rgba(22,47,36,0.12)" }} />
@@ -193,7 +193,7 @@ export default function TheProblemPage() {
           padding: "56px 40px", textAlign: "center",
         }}>
           <h2 style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: WHITE, fontWeight: 700, marginBottom: "18px", lineHeight: 1.3 }}>
-            Candid's aim is to fix this.
+            Candid's aim is to make this clearer.
           </h2>
           <p style={{ fontSize: "14.5px", color: "rgba(250,247,240,0.75)", lineHeight: 1.7, maxWidth: "540px", margin: "0 auto" }}>
             One complete, always-up-to-date view of your finances – built to adapt instantly as you change jobs, buy a home, start a family, or clear your student loan.
