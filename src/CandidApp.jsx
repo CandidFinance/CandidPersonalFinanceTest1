@@ -652,8 +652,8 @@ export function getModuleProducts(key, d, m, savingsRates) {
       const subheading = m.isaHeadroom > 0
         ? `You have ${fmt(m.isaHeadroom)} of ISA allowance remaining — any interest earned inside an ISA is tax-free, permanently.`
         : "Your ISA allowance is fully used this year. Consider a high-interest easy-access account for remaining cash.";
-      const heading = "Highest-rate easy-access Cash ISAs right now";
-      const nonIsaHeading = "Highest-rate easy-access savings accounts";
+      const heading = "Cash ISA rates";
+      const nonIsaHeading = "Savings account rates";
       // A second, genuinely different list — non-ISA rows, for the portion of
       // the pot that doesn't fit in the ISA (Step 2's Personal Savings
       // Allowance fill). Capped at 4 rows, unlike the ISA list, to keep this

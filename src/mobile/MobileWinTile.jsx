@@ -11,7 +11,8 @@ import MobileReminderAction from "./MobileReminderAction.jsx";
 // pill at the bottom of the expanded tile, turning the Win into something
 // the user can actually schedule (and, with `email`, send to HR), not just read.
 // `provider`: the provider lists' surface (pale grey gradient and border),
-// same size and layout as every other tile on the page.
+// same size and layout as every other tile on the page (the plain tile has a
+// transparent border, so the provider border adds no height).
 // `open` and `onOpenChange`, together, let the page open it (a link
 // elsewhere on the page that leads to it).
 export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, provider = false, open: openProp, onOpenChange, children }) {
@@ -20,7 +21,7 @@ export default function MobileWinTile({ number, title, headline, tagLabel, tagCo
   const setOpen = f => onOpenChange ? onOpenChange(f(open)) : setOpenState(f);
   const surface = provider
     ? { background:PROVIDER_TILE_BG, border:PROVIDER_TILE_BORDER, boxShadow:PROVIDER_TILE_SHADOW }
-    : { background:WHITE, boxShadow:"0 2px 10px rgba(22,47,36,0.06)" };
+    : { background:WHITE, border:"1px solid transparent", boxShadow:"0 2px 10px rgba(22,47,36,0.06)" };
   return (
     <div style={{...surface,borderRadius:RADIUS_CARD,marginBottom:"12px",overflow:"hidden"}}>
       <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"flex-start",gap:"12px",padding:"16px 16px 13px",cursor:"pointer"}}>

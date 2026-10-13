@@ -67,8 +67,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
   let winCounter = 0;
   const emergencyWinNumber = showEmergencyWin ? ++winCounter : null;
   const optimiseWinNumber = ++winCounter;
-  // The provider lists: numbered tiles like the others, open on their
-  // blurred preview.
+  // The provider lists: numbered tiles like the others, closed like the others.
   const isaListNumber = products.products?.length ? ++winCounter : null;
   const savingsListNumber = products.nonIsaProducts?.length ? ++winCounter : null;
 
@@ -237,14 +236,14 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
         )}
       </MobileWinTile>
 
-      <div style={{marginTop:"16px"}}>
+      <div>
         {isaListNumber && (
-          <MobileWinTile provider defaultOpen number={isaListNumber} title={products.heading} headline={mobileIsaSubheading(m)} tagLabel="Providers">
+          <MobileWinTile provider number={isaListNumber} title={products.heading} headline={mobileIsaSubheading(m)} tagLabel="Providers">
             <MobileProductListTile embedded products={products.products} disclaimer={products.disclaimer}/>
           </MobileWinTile>
         )}
         {savingsListNumber && (
-          <MobileWinTile provider defaultOpen number={savingsListNumber} title={products.nonIsaHeading} headline={mobilePsaSubheading()} tagLabel="Providers">
+          <MobileWinTile provider number={savingsListNumber} title={products.nonIsaHeading} headline={mobilePsaSubheading()} tagLabel="Providers">
             <MobileProductListTile embedded products={products.nonIsaProducts} disclaimer={products.disclaimer}/>
           </MobileWinTile>
         )}

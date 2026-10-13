@@ -21,13 +21,13 @@ export function mobileCashLabel(cashImpact, excess) {
   return `${fmtCompact(cashImpact)}/yr available — ${fmtCompact(excess)} sits idle`;
 }
 
-// One-line variants of getModuleProducts' cash subheadings (CandidApp.jsx) —
+// Short variants of getModuleProducts' cash subheadings (CandidApp.jsx) —
 // desktop's two-sentence versions read fine in a wide card; on a narrow
 // mobile tile they wrapped to two lines and made the (now-collapsible)
 // product tile taller than it needed to be before you'd even opened it.
 export function mobileIsaSubheading(m) {
-  return m.isaHeadroom > 0 ? `${fmt(m.isaHeadroom)} of ISA allowance left — tax-free, permanently.` : "Your ISA allowance is fully used this year.";
+  return m.isaHeadroom > 0 ? `Highest easy-access rates, with ${fmt(m.isaHeadroom)} of allowance left` : "Highest easy-access rates. Your allowance is used this year.";
 }
 export function mobilePsaSubheading() {
-  return "Tax-free up to your Personal Savings Allowance.";
+  return "Highest easy-access rates, tax-free up to your allowance";
 }
