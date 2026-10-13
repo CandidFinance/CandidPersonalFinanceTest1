@@ -158,7 +158,7 @@ export default function MobileDrawdown({ d, m, bare = false }) {
           <li>The two ways of taking tax-free cash are compared as if cash taken at the start stayed invested at the same growth and was spent evenly.</li>
           {plan.stillWorking && <li>Your pay is counted until you stop work at {plan.stopAge}. Once you take any taxable income from a pension, payments in with tax relief are limited to {fmt(MONEY_PURCHASE_ANNUAL_ALLOWANCE)} a year.</li>}
           {plan.halfway.pot > 0 && <li>Halfway, at {plan.halfway.age}, about {compact(plan.halfway.pot)} would still be in your pension. {pensionIhtLine(d)}</li>}
-          <li>An illustration, not a recommendation of how much to take.</li>
+          <li>An illustration, not a recommendation of how much to take. Taking money from a pension is a big decision, with more options than these two. <a href="https://www.moneyhelper.org.uk/en/pensions-and-retirement/pension-wise" target="_blank" rel="noopener noreferrer" style={{color:"inherit",fontWeight:600}}>Pension Wise</a>, from MoneyHelper, gives free guidance to anyone 50 or over.</li>
         </ul>
       )}
     </div>

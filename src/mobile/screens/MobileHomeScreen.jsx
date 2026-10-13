@@ -147,7 +147,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
             beside it shows how far along they are. */}
         <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>At stake each year</div>
+            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>At stake each year, estimated</div>
             <div style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:G,lineHeight:1.1,marginTop:"6px"}}>{fmt(totalOpp)}</div>
             <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
               {totalOpp > 0 ? "What your money could be doing that it isn't, across what you've answered."

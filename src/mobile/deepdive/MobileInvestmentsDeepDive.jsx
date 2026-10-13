@@ -113,13 +113,13 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
       )}
 
       {showGains && (
-      <MobileWinTile number={1} title="Take profit tax-free"
+      <MobileWinTile number={1} title="Tax-free gains this year"
         headline={m.crystallisable > 0
           ? (m.remainingCgtAllowance >= 3000
               ? "Your full £3,000 tax-free gains allowance is available this year."
               : `You have ${fmt(m.remainingCgtAllowance)} of your £3,000 tax-free gains allowance left this year.`)
           : "No profit to take tax-free this tax year."}
-        tagLabel="Harvest gains" tagColor={GOLD}
+        tagLabel="This tax year" tagColor={GOLD}
         reminder={m.crystallisable > 0 ? {
           id: "investments-crystallise-gains",
           title: buildReminderSubject(fmt(m.crystallisable), "Crystallise capital gains"),
@@ -157,7 +157,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
               <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,marginBottom:"12px"}}>Fully shielded by this year's allowance — no CGT due either way.</p>
             )}
 
-            <GoToProviderButton storageKey="candid_gia_provider_pref" defaultLabel={`Take ${fmt(m.crystallisable)} of profit tax-free`}/>
+            <GoToProviderButton storageKey="candid_gia_provider_pref" defaultLabel="Go to my platform"/>
 
             {onRecordCrystallisedGain && (
               <div style={{marginTop:"10px"}}>
@@ -219,7 +219,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
       </MobileWinTile>
       )}
 
-      <MobileWinTile number={showGains ? 2 : 1} title="Use your ISA allowance"
+      <MobileWinTile number={showGains ? 2 : 1} title="Your ISA allowance"
         headline={m.isaHeadroom > 0
           ? `${fmt(m.isaHeadroom)} remaining.`
           : "You've used your full £20,000 ISA allowance this tax year."}

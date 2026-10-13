@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="Earning near £100,000 with young kids? Find out if you're in the {{TAPER_RATE}} tax trap AND losing Tax-Free Childcare or 30 free hours — and the exact pension sacrifice that fixes both. Free UK calculator."/>
+  <meta name="description" content="Earning near £100,000 with young kids? Find out if you're in the {{TAPER_RATE}} tax trap AND losing Tax-Free Childcare or 30 free hours — and how much pension sacrifice would bring your income back under £100,000. Free UK calculator."/>
   <meta property="og:title" content="The £100,000 Tax Trap & Childcare Cliff Calculator"/>
   <meta property="og:description" content="Between {{TAPER_START}} and {{TAPER_END}} you lose your Personal Allowance at an effective {{TAPER_RATE}} marginal rate — and if you have children under 5, crossing {{TAPER_START}} at all can cost you thousands in childcare support too. Free UK calculator, instant answer."/>
   <meta property="og:type" content="website"/>
@@ -15,7 +15,7 @@
     "@type": "WebApplication",
     "name": "£100,000 Tax Trap & Childcare Cliff Calculator",
     "url": "https://www.candid-finance.co.uk/100k-tax-trap-calculator.html",
-    "description": "Free UK calculator — checks the {{TAPER_RATE}} Personal Allowance taper between {{TAPER_START}} and {{TAPER_END}}, the Tax-Free Childcare and 30-hours childcare cliff, and the exact pension sacrifice that fixes both.",
+    "description": "Free UK calculator — checks the {{TAPER_RATE}} Personal Allowance taper between {{TAPER_START}} and {{TAPER_END}}, the Tax-Free Childcare and 30-hours childcare cliff, and how much pension sacrifice would bring your income back under £100,000.",
     "applicationCategory": "FinanceApplication",
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
@@ -138,7 +138,7 @@
     <p>Most people who fall into this band don't plan to — a bonus, a pay rise, or investment/dividend income pushes their adjusted net income over {{TAPER_START}} without their base salary changing. Because it's based on total income for the tax year, a one-off bonus in an otherwise sub-£100k salary can be enough to trigger both the tax trap and the childcare cliff at once.</p>
 
     <h2>How to get out of it: salary sacrifice</h2>
-    <p>Because both the taper and the childcare cliff are based on <em>adjusted</em> net income, pension contributions taken before tax reduce it directly. Sacrificing enough to bring your adjusted net income back to {{TAPER_START}} restores your full Personal Allowance <em>and</em> your full childcare entitlement — the same pound of sacrifice fixes both at once, which is why the effective relief in this band is so much higher than pension contributions get anywhere else.</p>
+    <p>Because both the taper and the childcare cliff are based on <em>adjusted</em> net income, pension contributions taken before tax reduce it directly. Sacrificing enough to bring your adjusted net income back to {{TAPER_START}} restores your full Personal Allowance <em>and</em> your full childcare entitlement — the same pound of sacrifice counts towards both at once, which is why the effective relief in this band is so much higher than pension contributions get anywhere else.</p>
 
     <h2>Related calculators</h2>
     <p>
@@ -155,18 +155,6 @@
     </span>
   </footer>
 
-  <!-- Cookie consent — same banner/copy as the main app -->
-  <script>
-    if (!localStorage.getItem('cookieAccepted')) {
-      document.addEventListener('DOMContentLoaded', function() {
-        var banner = document.createElement('div');
-        banner.id = 'cookie-banner';
-        banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#162F24;color:rgba(255,255,255,0.8);font-family:sans-serif;font-size:13px;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;z-index:99999;flex-wrap:wrap;';
-        banner.innerHTML = '<span>We use cookies and anonymised analytics to improve Candid. <a href="/privacy.html" target="_blank" style="color:#C4963A;text-decoration:none;">Privacy Policy</a></span><button onclick="localStorage.setItem(\'cookieAccepted\',\'1\');document.getElementById(\'cookie-banner\').remove();" style="background:#C4963A;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;color:#162F24;cursor:pointer;white-space:nowrap;flex-shrink:0;">Got it</button>';
-        document.body.appendChild(banner);
-      });
-    }
-  </script>
 
   <!-- ── Prefill from a returning visit / carry inputs into the main app ────
        Same "candid_inputs" localStorage shape as the main app (src/CandidApp.jsx)

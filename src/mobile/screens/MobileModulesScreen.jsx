@@ -149,7 +149,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
               {isOpen && (
                 <div style={{background:"rgba(22,47,36,0.03)",padding:"14px 18px 18px",display:"flex",flexDirection:"column",gap:"10px"}}>
                   {/* A locked answer (src/lib/unlock.js) stays hidden here too. */}
-                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:0}}>{isLocked(d, mm.key) ? "Your answer is ready. Open it to unlock it." : mm.summary}</p>
+                  <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:0}}>{isLocked(d, mm.key) ? "Your figures are ready. Open it to unlock them." : mm.summary}</p>
                   {!isLocked(d, mm.key) && insights.length > 0 && (
                     <div style={{display:"flex",gap:"10px"}}>
                       {insights.map((ins,i) => (

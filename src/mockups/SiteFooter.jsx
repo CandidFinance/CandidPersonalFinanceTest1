@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { G, GOLD, SERIF } from "../CandidApp.jsx";
+import { askConsentAgain } from "../lib/consent.js";
 
 // Shared across every marketing-site page — extracted so Home, The Problem
 // and How it works don't each carry their own copy of the legal/company
@@ -25,6 +26,7 @@ export default function SiteFooter() {
         <Link to="/what-candid-is" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>What Candid is and isn't</Link>
         <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Privacy Policy</a>
         <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Terms of Service</a>
+        <button type="button" onClick={askConsentAgain} style={{ background: "none", border: "none", padding: 0, font: "inherit", color: "rgba(255,255,255,0.35)", cursor: "pointer" }}>Cookie settings</button>
       </div>
     </div>
   );

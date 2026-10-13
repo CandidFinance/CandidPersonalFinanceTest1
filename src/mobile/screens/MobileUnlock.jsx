@@ -43,7 +43,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
       {amount > 0 ? (
         <div style={{margin:"22px 0 4px"}}>
           <div style={{fontFamily:SERIF,fontSize:"64px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em"}}>{fmt(amount)}</div>
-          <div style={{fontSize:"16px",color:TEXT,fontWeight:600,marginTop:"10px"}}>{mod.amountIsLumpSum ? "by the time they're 18" : "a year you're missing out on"}</div>
+          <div style={{fontSize:"16px",color:TEXT,fontWeight:600,marginTop:"10px"}}>{mod.amountIsLumpSum ? "by the time they're 18, our estimate" : "a year, our estimate on your figures"}</div>
         </div>
       ) : (
         <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,lineHeight:1.2,margin:"22px 0 4px"}}>Your figures are ready</div>
@@ -150,12 +150,15 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
           </button>
         ))}
       </div>
+      <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"0 0 10px",textAlign:"center"}}>
+        Candid is guidance, not financial advice. It works out what your options are worth, and won't tell you which product to choose. <a href="/what-candid-is" target="_blank" rel="noreferrer" style={{color:TEXT}}>What Candid is and isn't</a>
+      </p>
       <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
         {busy && !panel ? "Opening checkout…" : "Subscribe and unlock everything"}
       </button>
       {error && !panel && <div style={{fontSize:"12.5px",color:"#b3261e",margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
       <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
-        Every module's figures and options, kept up to date as rates change. Guidance, not advice: <a href="/what-candid-is" target="_blank" rel="noreferrer" style={{color:MUT}}>what Candid is and isn't</a>. Cancel any time, and get a full refund within 14 days of first subscribing. Payments by Stripe. By subscribing you agree to our <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>.
+        Every module's figures and options, kept up to date as rates change. Cancel any time, and get a full refund within 14 days of first subscribing. Payments by Stripe. By subscribing you agree to our <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>.
       </p>
 
       <div style={{display:"flex",justifyContent:"center",gap:"18px",marginTop:"16px"}}>
@@ -197,14 +200,14 @@ function Worth({ title, amount, lumpSum }) {
   const cost = PLANS.yearly.amount;
   const times = Math.floor(amount / cost);
   const compare = lumpSum || amount <= cost ? null
-    : times >= 2 ? `That's ${times}x what Candid costs a year (${PLANS.yearly.price}).`
-    : `That's more than Candid costs a year (${PLANS.yearly.price}).`;
+    : times >= 2 ? `On our estimate, that's ${times}x what Candid costs a year (${PLANS.yearly.price}).`
+    : `On our estimate, that's more than Candid costs a year (${PLANS.yearly.price}).`;
   return (
     <div>
       <div style={{...kicker,marginTop:"6px"}}>{title}</div>
       <div style={{display:"flex",alignItems:"baseline",gap:"8px",flexWrap:"wrap",marginTop:"8px"}}>
         <span style={{fontFamily:SERIF,fontSize:"40px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em"}}>{fmt(amount)}</span>
-        <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>{lumpSum ? "by the time they're 18" : "a year you're missing out on"}</span>
+        <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>{lumpSum ? "by the time they're 18, our estimate" : "a year, our estimate on your figures"}</span>
       </div>
       {compare && <div style={{fontSize:"14px",color:G,fontWeight:700,lineHeight:1.4,marginTop:"10px"}}>{compare}</div>}
     </div>

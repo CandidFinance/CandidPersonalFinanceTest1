@@ -9,7 +9,7 @@ const reveal = d => { const m = calcMetrics(d); return { steps: pensionReveal(d,
 
 test("three steps every time: answer, why, what you could do", () => {
   for (const d of [base, { ...base, myContribution: "3", employerMatch: "5" }, { ...base, hasPension: "no" }, { ...base, pensionUnknown: true }]) {
-    assert.deepEqual(reveal(d).steps.map(s => s.label), ["Your answer", "Why", "What you could do"]);
+    assert.deepEqual(reveal(d).steps.map(s => s.label), ["Your figures", "Why", "What you could do"]);
   }
 });
 
@@ -31,7 +31,7 @@ test("not paying in: the tax relief figure matches the module's status", () => {
 test("on track: the projected pot, and nothing to change without a bonus", () => {
   const { steps } = reveal({ ...base, myContribution: "5", employerMatch: "5" });
   assert.match(steps[0].title, /^projected in your pension by 65\.$/);
-  assert.equal(steps[2].title, "Nothing to change right now.");
+  assert.equal(steps[2].title, "Nothing stands out right now.");
 });
 
 test("£100k tax trap: the saving and the sacrifice needed come from the module's own calculation", () => {
@@ -62,7 +62,7 @@ test("cash: better rates, with the same gain as the screen's own calculation", (
   const { steps, m } = run({ ...cashBase, cashTiers: [{ amount: "20000", rate: "1" }] }, cashReveal);
   const opt = calcCashOptimisation(m, rates.isaRate, rates.nonIsaRate);
   assert.equal(steps[0].figure, `£${Math.round(opt.optimisationGain).toLocaleString("en-GB")} a year`);
-  assert.match(steps[1].title, /best rates today are 4\.50?% in a Cash ISA/);
+  assert.match(steps[1].title, /highest rates today are 4\.50?% in a Cash ISA/);
 });
 
 test("investments: tax-free profit first, the saving matching the module's amount", () => {

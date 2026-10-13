@@ -5,6 +5,8 @@ import posthog from "posthog-js"
 import { MotionConfig } from "framer-motion"
 import CandidApp, { PageWrap, NavBar, ContentWrap, G, GOLD, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "./CandidApp.jsx"
 import ErrorBoundary from "./ErrorBoundary.jsx"
+import CookieNotice from "./CookieNotice.jsx"
+import { getConsent, analyticsPersistence } from "./lib/consent.js"
 import { appEntryPath } from "./mockups/StartCheckButton.jsx"
 const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
 
@@ -67,6 +69,9 @@ if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
     capture_pageview: "history_change",
     capture_pageleave: true,
     autocapture: false,
+    // No cookies or storage without consent (src/lib/consent.js).
+    persistence: analyticsPersistence(getConsent()),
+    opt_out_capturing_by_default: getConsent() === "denied",
   })
 }
 posthog.register({
@@ -409,6 +414,8 @@ function AppRoutes() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      <CookieNotice />
 
       {SHOW_DEV_TOOLS && DevToolsPanel && (
         <Suspense fallback={null}>

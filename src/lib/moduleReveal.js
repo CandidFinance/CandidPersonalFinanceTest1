@@ -18,7 +18,7 @@ import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
 
-const ANSWER = "Your answer", WHY = "Why", ACTION = "What you could do";
+const ANSWER = "Your figures", WHY = "Why", ACTION = "What you could do";
 const HR = "HR or payroll can change it, usually from the next month.";
 
 export function pensionReveal(d, m) {
@@ -88,7 +88,7 @@ export function pensionReveal(d, m) {
     return [
       { label: ANSWER, figure: `${fmt(taper.taperTotalSaving)} a year`, title: "of tax you could save." },
       { label: WHY, title: "Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at 60%." },
-      { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into your pension through salary sacrifice would bring your income back to £100,000.`, body: HR },
+      { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into your pension through salary sacrifice would bring your income back to £100,000.`, body: `It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028). ${HR}` },
     ];
   }
 
@@ -100,7 +100,7 @@ export function pensionReveal(d, m) {
       body: "In today's money: growth of 6% a year, less 2% inflation." },
     bonus.standalone > 0
       ? { label: ACTION, title: `Paying your ${fmt(+d.bonusAmount)} bonus into your pension could save up to ${fmt(bonus.standalone)} in tax.`, body: "It has to be arranged with HR or payroll before the bonus is paid." }
-      : { label: ACTION, title: "Nothing to change right now.", body: "Worth checking again when your pay or job changes." },
+      : { label: ACTION, title: "Nothing stands out right now.", body: "Worth checking again when your pay or job changes." },
   ];
 }
 
@@ -136,17 +136,17 @@ export function cashReveal(d, m, { marketRates = {} } = {}) {
   if (!opp && opt.optimisationGain > 50) {
     return [
       { label: ANSWER, figure: `${fmt(opt.optimisationGain)} a year`, title: "more your savings could earn." },
-      { label: WHY, title: `Your savings earn about ${pct(opt.todayBlendedRate * 100)} on average. The best rates today are ${opt.isaRateDisplay} in a Cash ISA and ${opt.nonIsaRateDisplay} in a savings account.` },
+      { label: WHY, title: `Your savings earn about ${pct(opt.todayBlendedRate * 100)} on average. The highest rates today are ${opt.isaRateDisplay} in a Cash ISA and ${opt.nonIsaRateDisplay} in a savings account.` },
       { label: ACTION, title: opt.step1Isa > 0
-          ? `Moving ${fmt(opt.step1Isa)} into a Cash ISA, and the rest to the best savings rate, would earn it.`
-          : "Moving your savings to the best rate would earn it.",
-        body: "The best accounts are listed on this screen. Most open online in minutes." },
+          ? `Moving ${fmt(opt.step1Isa)} into a Cash ISA, and the rest to the highest savings rate, would earn it.`
+          : "Moving your savings to the highest rate would earn it.",
+        body: "The highest-rate accounts are listed on this screen. Most open online in minutes." },
     ];
   }
   return [
     { label: ANSWER, figure: `${(m.runwayMonths || 0).toFixed(1)} months`, title: "of essential spending your savings would cover." },
     { label: WHY, title: `That's at or above your ${m.bufferMonths}-month target, and your savings are already on good rates.` },
-    { label: ACTION, title: "Nothing to change right now.", body: "Worth checking rates every few months: the best ones move." },
+    { label: ACTION, title: "Nothing stands out right now.", body: "Worth checking rates every few months: the top ones move." },
   ];
 }
 
@@ -160,7 +160,7 @@ export function investmentsReveal(d, m) {
       { label: ANSWER, figure: fmt(Math.round(m.cgtSaving)), title: "of capital gains tax you could avoid this tax year." },
       { label: WHY, title: `Each tax year, the first ${fmt(CGT_ALLOWANCE)} of profit you take is tax-free. You have ${fmt(m.remainingCgtAllowance)} of it left, and about ${fmt(gains)} of profit outside an ISA or pension.` },
       { label: ACTION, title: `Taking ${fmt(m.crystallisable)} of that profit before 5 April would use this year's allowance.`,
-        body: "Your platform or an adviser can tell you how for your holdings. Buying back inside an ISA keeps you invested." },
+        body: "Your platform or an adviser can tell you how for your holdings. Some people buy back inside an ISA ('Bed and ISA') to stay invested; prices can move in between." },
     ];
   }
   if (m.isaHeadroom > 0) {
@@ -205,7 +205,7 @@ export function studentLoanReveal(d, m) {
     return [
       { label: ANSWER, title: "You're not expected to clear this loan before it's written off." },
       { label: WHY, title: `Your repayments of about ${fmt(sl.annualRep)} a year don't clear the ${fmt(m.loanBal)} balance in time.` },
-      { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "That money could do more in savings or your pension." },
+      { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "On these assumptions, savings or a pension may earn more than overpaying." },
     ];
   }
   return [

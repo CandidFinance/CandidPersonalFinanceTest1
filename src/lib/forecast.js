@@ -375,7 +375,7 @@ export function buildForecastAssumptions(d, m) {
     },
     "Stocks & Shares ISA": {
       lines: [
-        `Globally diversified index fund, returns compound monthly.`,
+        `An illustrative growth rate for shares, compounding monthly.`,
         `Tax-free inside an ISA.`,
         `Past performance is not a reliable guide to future returns.`,
       ],

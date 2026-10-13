@@ -38,7 +38,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
         </div>
         <div style={{flex:1,minWidth:0}}>
           <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
-          <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>Your answer, step by step</div>
+          <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>Your figures, step by step</div>
         </div>
       </div>}
 

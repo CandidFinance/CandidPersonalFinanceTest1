@@ -121,13 +121,13 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
         tagLabel="Today"
         reminder={gain > 50 ? {
           id: "cash-move-surplus",
-          title: buildReminderSubject(`${fmt(gain)}/yr`, "Move surplus cash to a better rate"),
+          title: buildReminderSubject(`${fmt(gain)}/yr`, "Higher rates for your savings"),
           // Informational, not directive — states the figures and points to
           // the rate tiles/provider to do the "how", rather than instructing
           // a specific transfer, avoiding reading as financial advice.
           description: opp
-            ? `${firstName(d) ? firstName(d)+", m" : "M"}ove your surplus cash to a better rate when you get a moment. The best options in Candid today are worth up to ${fmt(gain)}/yr more after tax than where it sits.\n\nCandid Assist lays out the options and how to move. Most accounts open online in a few minutes.`
-            : `${firstName(d) ? firstName(d)+", m" : "M"}ove your surplus cash to a better rate when you get a moment. Filling your ISA at ${isaRateDisplay} first, then your Personal Savings Allowance at ${nonIsaRateDisplay}, is worth up to ${fmt(optimisationGain)}/yr more than where it sits today.\n\nCheck the current best rates in Candid and move the cash directly with the provider - most accounts open online in a few minutes.`,
+            ? `${firstName(d) ? firstName(d)+", h" : "H"}ere's your reminder to look at your savings rates. The highest-rate options in Candid today are worth up to ${fmt(gain)}/yr more after tax than where it sits.\n\nCandid Assist lays out the options and how to move. Most accounts open online in a few minutes.`
+            : `${firstName(d) ? firstName(d)+", h" : "H"}ere's your reminder to look at your savings rates. Filling your ISA at ${isaRateDisplay} first, then your Personal Savings Allowance at ${nonIsaRateDisplay}, is worth up to ${fmt(optimisationGain)}/yr more than where it sits today.\n\nThe current highest rates are in Candid; any move is made directly with the provider - most accounts open online in a few minutes.`,
         } : null}>
         {totalPot > 0 && opp ? (
           <div>
@@ -164,15 +164,15 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
             {step1Isa > 0 && (
               <div>
                 <div style={stepLabelRow}>
-                  <span style={stepLabel}>Step 1 — Fill your ISA</span>
+                  <span style={stepLabel}>In a Cash ISA, where interest is never taxed</span>
                   <InfoButton onClick={() => setOpenInfo(o => o==="step1"?null:"step1")} open={openInfo==="step1"}/>
                 </div>
                 {isaLines.length > 0 ? <AccountLines lines={isaLines} rowStyle={rowStyle}/> : (
-                  <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (best rate)</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span></div>
+                  <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (highest rate)</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span></div>
                 )}
                 {openInfo === "step1" && (
                   <p style={stepCaption}>{fmt(step1Isa)} is your remaining ISA allowance this tax year. {isaLines.length > 1
-                    ? `Spread across the best easy-access Cash ISAs, each up to its limit, it earns ${isaRateDisplay} on average.`
+                    ? `Spread across the highest-rate easy-access Cash ISAs, each up to its limit, it earns ${isaRateDisplay} on average.`
                     : `${isaRateDisplay} is the top easy-access Cash ISA rate today.`}</p>
                 )}
               </div>
@@ -180,22 +180,22 @@ export default function MobileCashDeepDive({ d, m, savingsRates, onShowReveal })
             {step2Savings > 0 && (
               <div>
                 <div style={stepLabelRow}>
-                  <span style={stepLabel}>Step 2 — Use your tax-free savings interest</span>
+                  <span style={stepLabel}>Then savings, up to your tax-free interest allowance</span>
                   <InfoButton onClick={() => setOpenInfo(o => o==="step2"?null:"step2")} open={openInfo==="step2"}/>
                 </div>
                 <div style={rowStyle}><span>{fmt(step2Savings)} at your current rate</span><span>{fmt(step2CurrentInterest)}/yr</span></div>
                 {savingsLines.length > 0 ? <AccountLines lines={savingsLines} rowStyle={rowStyle}/> : (
-                  <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (best rate)</span><span style={{fontWeight:600}}>{fmt(step2SavingsInterest)}/yr</span></div>
+                  <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (highest rate)</span><span style={{fontWeight:600}}>{fmt(step2SavingsInterest)}/yr</span></div>
                 )}
                 <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?"#2d6b4a":TEXT}}><span>Extra from switching</span><span>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
                 {openInfo === "step2" && (
-                  <p style={stepCaption}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band. You're already earning {fmt(step2CurrentInterest)}/yr on this money at your current rate; moving it to today's best non-ISA rate ({nonIsaRateDisplay}) is worth an extra {fmt(Math.max(0,step2Delta))}/yr on top — not {fmt(step2SavingsInterest)}/yr from scratch.</p>
+                  <p style={stepCaption}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band. You're already earning {fmt(step2CurrentInterest)}/yr on this money at your current rate; moving it to today's highest non-ISA rate ({nonIsaRateDisplay}) is worth an extra {fmt(Math.max(0,step2Delta))}/yr on top — not {fmt(step2SavingsInterest)}/yr from scratch.</p>
                 )}
               </div>
             )}
             {step3Pb > 0 && (
               <div>
-                <div style={stepLabel}>Step 3 — Premium Bonds (tax-free avg.)</div>
+                <div style={stepLabel}>Then Premium Bonds (tax-free avg.)</div>
                 <div style={rowStyle}><span>{fmt(step3Pb)} at ~{(PB_RATE*100).toFixed(2)}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span></div>
               </div>
             )}

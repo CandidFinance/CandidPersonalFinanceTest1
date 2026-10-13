@@ -233,7 +233,7 @@ export default function NewLandingPage() {
             fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
             borderRadius: "100px", padding: "7px 16px", marginBottom: "24px",
           }}>
-            Free to use
+            Free to start
           </motion.div>
           <motion.h1 variants={heroItem} style={{
             fontFamily: SERIF, fontSize: "clamp(36px,5vw,54px)", fontWeight: 700,
@@ -242,7 +242,7 @@ export default function NewLandingPage() {
             Stop leaking wealth to tax traps and idle cash.
           </motion.h1>
           <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 0 24px" }}>
-            Answer a few questions and see, in pounds, where tax and idle cash are costing you, and what each fix is worth.
+            Answer a few questions and see, in pounds, where tax and idle cash are costing you, and what each option is worth.
           </motion.p>
           {/* The button and the reassurances under it share one width: the
               line sets it (one row, never wrapping) and the button stretches
@@ -250,7 +250,7 @@ export default function NewLandingPage() {
           <motion.div variants={heroItem} style={{ display: "inline-flex", flexDirection: "column", alignItems: "stretch" }}>
             <StartCheckButton source="hero" size="large" />
             <div style={{ display: "flex", justifyContent: "space-between", gap: "14px", marginTop: "16px", whiteSpace: "nowrap" }}>
-              {["Free", "No card needed", "About 3 minutes"].map(t => (
+              {["First module free", "No card needed", "About 3 minutes"].map(t => (
                 <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "14px", fontWeight: 600, color: G }}>
                   <Check size={15} color={GOLD} strokeWidth={3} />{t}
                 </span>
@@ -413,7 +413,7 @@ export default function NewLandingPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px" }}>
             {[
               { href: "/student-loan-calculator.html", icon: GraduationCap, title: "Student loan overpayment calculator", body: "Plan 1, 2, 4, 5 & Postgraduate – find out if overpaying saves you money or just hands cash to the government that would've been written off." },
-              { href: "/100k-tax-trap-calculator.html", icon: PoundSterling, title: "£100,000 tax trap & childcare cliff calculator", body: "Check the 60% marginal-rate zone and the childcare cliff, and see the exact pension sacrifice that fixes both at once." },
+              { href: "/100k-tax-trap-calculator.html", icon: PoundSterling, title: "£100,000 tax trap & childcare cliff calculator", body: "Check the 60% marginal-rate zone and the childcare cliff, and see how much pension sacrifice would bring your income back under £100,000." },
               { href: "/mortgage-vs-savings-calculator.html", icon: HomeIcon, title: "Mortgage overpayment vs high-yield savings", body: "When your fix ends, compare paying down the mortgage against a savings account or Cash ISA – tax accounted for." },
             ].map((tool, i) => (
               <motion.a key={tool.href} href={tool.href} ref={calcRef(i)} {...pullTogether(i, 3, reduceMotion)} {...tileHover} style={{

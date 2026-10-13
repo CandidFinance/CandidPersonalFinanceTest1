@@ -120,7 +120,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
   const empCapPct = +d.employerMatch || 0;
   const showMatchWin = notPayingIn || (contributing && m.missedMatch > 0);
   // Not paying in: "Start" only when there's no pension yet.
-  const matchWinTitle = contributing ? "Get your full employer match" : taxFreeCash.pot > 0 ? "Pay into your pension" : "Start a pension";
+  const matchWinTitle = contributing ? "Your employer's match" : taxFreeCash.pot > 0 ? "Paying into your pension" : "Starting a pension";
   const matchWinHeadline = !contributing
     ? `Every £${100-trPct} becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
     : `Up to ${fmt(m.missedMatch)}/yr`;
@@ -200,17 +200,17 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
 
   const sacrificeTile = (
     <MobileWinTile number={win2Num}
-      title="Pay less tax with salary sacrifice"
+      title="Salary sacrifice and your tax"
       headline={taper.recoverable
         ? `Sacrificing ${fmt(taper.taperSacrificeNeeded)} recovers your full Personal Allowance — worth ~${fmt(taper.taperTotalSaving)}`
-        : `You're ${fmt(Math.max(0, taper.taperStart - taper.ani))} below the £100k taper — sacrifice now to stay ahead of it`}
+        : `You're ${fmt(Math.max(0, taper.taperStart - taper.ani))} below the £100k taper`}
       tagLabel="Today">
       <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:taper.recoverable&&taper.taperTotalSaving>0?"12px":0}}>
         {!taper.recoverable
-          ? `Your income sits in the £80k–£100k zone. Sacrificing now builds wealth efficiently — and softens the taper if a bonus or rise pushes you over £100k later.`
+          ? `Your income sits in the £80k–£100k zone. Salary sacrifice saves tax and NI on what goes in, and leaves room if a bonus or rise would take you over £100k later. It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028).`
           : taper.aboveTaper
             ? `Above £125,140 your Personal Allowance is gone entirely. Sacrificing back down to £100k saves 45% on everything above £125,140 and an effective 60% on the £100k–£125,140 slice — roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`
-            : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice restores it, saving roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`}
+            : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice back to £100k would restore it, saving roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`}
       </p>
       {taper.recoverable && taper.taperTotalSaving > 0 && (
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"10px",textAlign:"center"}}>
@@ -424,8 +424,8 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
           }}>
           <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:"10px"}}>
             {!contributing
-              ? `You're not currently contributing. Pension contributions get ${trPct}% tax relief automatically${empCapPct > 0 ? `, and your employer will match up to ${empCapPct}% of salary if you contribute at least that much` : ""} — money you're leaving unclaimed.`
-              : `You're contributing but not capturing the full match. Increasing to ${empCapPct}% claims the rest — free money from your employer, on top of your own ${trPct}% tax relief.`}
+              ? `You're not currently contributing. Pension contributions get ${trPct}% tax relief automatically${empCapPct > 0 ? `, and your employer will match up to ${empCapPct}% of salary if you contribute at least that much` : ""} — money that currently goes unclaimed. Money in a pension usually can't be taken out until you're 55 (57 from 2028).`
+              : `You're contributing, but below your employer's full match. At ${empCapPct}%, your employer would add the rest, on top of your own ${trPct}% tax relief. Money in a pension usually can't be taken out until you're 55 (57 from 2028).`}
           </p>
           {contributing ? (
             <div>
@@ -552,7 +552,7 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
       )}
 
       {hasStatedBonus ? (
-        <MobileWinTile number={win4Num} title="Pay your bonus into your pension"
+        <MobileWinTile number={win4Num} title="Your bonus and your pension"
           headline={bonusSacrifice.room <= 0
             ? "Your pension allowance has no room left this year — sacrificing your bonus could trigger a tax charge"
             : bonusSacrifice.standaloneSacrifice < bonusSacrifice.bonus
@@ -630,9 +630,9 @@ export default function MobilePensionDeepDive({ d, m, set, onShowReveal }) {
         </MobileWinTile>
       ) : (
         <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px",display:"flex",alignItems:"center",gap:"6px"}}><Banknote size={15}/>Getting a bonus? Sacrifice it before it's paid</div>
+          <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px",display:"flex",alignItems:"center",gap:"6px"}}><Banknote size={15}/>A bonus, and salary sacrifice</div>
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,margin:0}}>
-            Sacrificing a bonus into your pension before it hits your payslip means you never pay tax or NI on it. If you're expecting one this year, update your inputs to model it here.
+            A bonus paid into your pension through salary sacrifice has no tax or NI taken from it, but it has to be arranged before the bonus is paid. If you're expecting one this year, add it to your inputs to see the figures.
           </p>
         </div>
       )}
@@ -788,12 +788,12 @@ function LookingAhead({ d, outlook, cliff, number, open, onOpenChange }) {
 
   // The alternatives, for the pot or the income being taxed later.
   const alternatives = (lumpSum || later) ? [
-    { icon: PiggyBank, title: "Save the extra in an ISA", body: cliff
+    { icon: PiggyBank, title: "An ISA instead", body: cliff
         ? `No tax going in or coming out, and no limit on what you take out tax-free. £100 stays £100, ${cliff.after < 100 ? `against £${cliff.after} paid into the pension past the limit` : "the same as the pension past the limit, but you can take it out at any time"}.`
         : "No tax relief going in, but no tax coming out, and no limit on what you take out tax-free.",
       action: { label: "See Investments", to: "/app/module/investments" } },
-    { icon: Users, title: "Pay into a partner's pension", body: "If you have a husband, wife or civil partner with a smaller pension, money in theirs uses their own tax-free cash and their own tax bands, so less of it may be taxed, or taxed at a lower rate." },
-    { icon: CalendarClock, title: "Plan when you draw it", body: "The tax-free limit is the same however you take it. What can be planned is the rest: drawing more in years when your other income is low, such as before your State Pension starts, keeps more of it in the 20% band." },
+    { icon: Users, title: "A partner's pension", body: "If you have a husband, wife or civil partner with a smaller pension, money in theirs uses their own tax-free cash and their own tax bands, so less of it may be taxed, or taxed at a lower rate." },
+    { icon: CalendarClock, title: "When you draw it", body: "The tax-free limit is the same however you take it. What can be planned is the rest: drawing more in years when your other income is low, such as before your State Pension starts, keeps more of it in the 20% band." },
   ] : [];
 
   return (

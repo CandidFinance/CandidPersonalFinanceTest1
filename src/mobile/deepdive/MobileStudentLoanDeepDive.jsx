@@ -211,13 +211,13 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
 
       {sl.willClear && (
         <MobileWinTile
-          title={sl.balanceGrowing ? "Your loan balance is growing" : worthOverpaying ? "Overpay your student loan" : "What overpaying would do"}
+          title={sl.balanceGrowing ? "Your loan balance is growing" : worthOverpaying ? "Overpaying your student loan" : "What overpaying would do"}
           headline={worthOverpaying
             ? (sl.balanceGrowing
                 ? `Growing by ${fmt(sl.netAnnualChange)}/yr — overpaying could still save ${fmt(sl.overpayAnnualBenefit)}/yr`
-                : `${fmt(sl.overpayAnnualBenefit)}/yr better off than saving at the best rate`)
+                : `${fmt(sl.overpayAnnualBenefit)}/yr better off than saving at the highest rate`)
             : sl.effectiveBenefit <= 0
-              ? `The best savings rate (${sl.cashRate}%) beats your ${sl.slRatePct}% loan rate`
+              ? `The highest savings rate (${sl.cashRate}%) beats your ${sl.slRatePct}% loan rate`
               : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your ${sl.slRatePct}% loan rate`}
           tagLabel={worthOverpaying ? "Today" : "Not optimal"} tagColor={worthOverpaying ? GOLD : "#c0392b"}>
           {sl.balanceGrowing && (
@@ -235,11 +235,11 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
             <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0"}}>Step 2 — You don't currently hold cash above your emergency buffer; the comparison still applies to any spare cash you build up.</p>
           )}
           <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0?"#2d6b4a":"#c0392b"}}>
-            <span>Step 3 — {sl.slRatePct}% loan vs {sl.cashRate}% best savings</span>
+            <span>Step 3 — {sl.slRatePct}% loan vs {sl.cashRate}% highest savings</span>
             <span>{sl.effectiveBenefit > 0 ? `Repay wins by ${sl.effectiveBenefit}%` : `Savings win by ${Math.abs(sl.effectiveBenefit)}%`}</span>
           </div>
           <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?"#2d6b4a":"#c0392b"}}>
-            <span>Step 4 — {sl.slRatePct}% loan vs {sl.pensionGrowthPct}% pension growth</span>
+            <span>Step 4 — {sl.slRatePct}% loan vs {sl.pensionGrowthPct}% assumed pension growth</span>
             <span>{sl.pensionGap > 0 ? `Repay wins by ${sl.pensionGap}%` : sl.pensionGap === 0 ? "Level — repaying is guaranteed" : `Pension wins by ${Math.abs(sl.pensionGap)}%`}</span>
           </div>
           <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
@@ -257,7 +257,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
         <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"14px"}}>Model a lump sum overpayment</div>
           {!worthOverpaying && (
-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,marginTop:"-8px",marginBottom:"14px"}}>Not recommended given your rates, but for reference:</p>
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,marginTop:"-8px",marginBottom:"14px"}}>On these figures, overpaying doesn't come out ahead. For reference:</p>
           )}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"4px",textAlign:"center"}}>
             <div>
@@ -349,7 +349,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
 const ALTERNATIVES = {
   pension:     { title: "Pension", note: tr => `Tax relief at ${Math.round(tr * 100)}% adds to every payment. Can't be touched until 57.` },
   investments: { title: "Stocks and Shares ISA", note: () => "Growth is tax-free and you can take it out any time. Can fall as well as rise." },
-  cash:        { title: "Savings at the best rate", note: () => "Safe, and there whenever you need it." },
+  cash:        { title: "Savings at the highest rate", note: () => "Safe, and there whenever you need it." },
 };
 function WhereItCouldGo({ m }) {
   const navigate = useNavigate();

@@ -13,7 +13,7 @@ import { mortgageInputs, mortgageSummary, STRESS_REMORTGAGE_UPLIFT } from "./mor
 import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, MAX_HORIZON_YEARS } from "./rentVsBuy.js";
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "./waterfall.js";
 
-const ANSWER = "Your answer", WHY = "Why", ACTION = "What you could do";
+const ANSWER = "Your figures", WHY = "Why", ACTION = "What you could do";
 const pct = n => `${Math.round(n * 100) / 100}%`;
 const times = x => `${x.toFixed(1)}x`;
 
@@ -40,7 +40,7 @@ export function readinessReveal(d, m) {
   // lenders offer higher earners, for the explanation only.
   const most = affordableMaxPrice(d, m);
   const stretchMost = affordableMaxPrice(d, m, HIGH_EARNER_MULTIPLE);
-  const fits = most?.price > 0 ? `A home up to ${fmt(most.price)} would fit.` : null;
+  const fits = most?.price > 0 ? `A home up to ${fmt(most.price)} is within what most lenders lend.` : null;
   const higherEarners = stretchMost?.price > most?.price
     ? `Some lenders go to ${HIGH_EARNER_MULTIPLE}x for higher earners, which would allow up to ${fmt(stretchMost.price)}.`
     : null;
@@ -49,10 +49,10 @@ export function readinessReveal(d, m) {
     ? { label: ACTION, title: "Lenders base what they'll lend on income, so it's worth adding yours to see how this compares." }
     : r.band === "within" && r.depositShort > 0
       ? { label: ACTION, title: `Most lenders need a deposit of at least ${Math.round(MIN_DEPOSIT_PCT * 100)}%, so you'd need ${fmt(r.depositShort)} more.`,
-          body: lines(most?.price > 0 && `With the cash you have, a home up to ${fmt(most.price)} would fit.`, checksLine) }
+          body: lines(most?.price > 0 && `With the cash you have, a home up to ${fmt(most.price)} is within what most lenders lend.`, checksLine) }
     : r.band === "within"
       ? { label: ACTION, title: `That's within the ${LENDER_INCOME_MULTIPLE}x of income most lenders work to.`,
-          body: lines(most?.price > 0 && `The most you could afford is about ${fmt(most.price)}.`, higherEarners, checksLine) }
+          body: lines(most?.price > 0 && `The most lenders would typically lend for is a home of about ${fmt(most.price)}.`, higherEarners, checksLine) }
       : r.band === "stretch"
         ? { label: ACTION, title: `That's ${fmt(r.gapAboveMultiple)} more than ${LENDER_INCOME_MULTIPLE}x your income.`,
             body: lines(fits, higherEarners) || "A bigger deposit or a lower price would close the gap." }

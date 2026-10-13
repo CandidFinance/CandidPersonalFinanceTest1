@@ -367,7 +367,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
     return (
       <div>
         <h2 style={questionHeading}>Pension</h2>
-        <p style={questionSub}>The single biggest optimisation for most people in your income bracket.</p>
+        <p style={questionSub}>Pensions often hold the biggest tax savings at this income.</p>
 
         <label style={fieldLabel}>Do you contribute to a pension?</label>
         <PillSlider value={d.pensionUnknown ? "unsure" : (d.hasPension || "no")} onChange={v => {
@@ -423,7 +423,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
           </div>
         ) : (
           <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
-            <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}><strong>This is likely your biggest financial gap.</strong> We'll quantify exactly what it's costing you.</p>
+            <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}><strong>This could be where the biggest gap is.</strong> We'll show what it could be worth.</p>
           </div>
         )}
       </div>
