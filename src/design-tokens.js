@@ -38,6 +38,35 @@ export const CASH_BLUE      = "#1a6fa3"; // "Cash savings"
 export const STUDENT_PURPLE = "#8a4fae"; // "Student loan overpayment"
 export const PENSION_RAS    = "#1e7a5a"; // "Pension (relief at source)"
 
+// ── Chart colours: one per module, the same in every chart (Home's pot,
+// both Forecast tabs), so Pension is always deep sage. Candid's chart
+// palette. Soft by design, so colour alone doesn't tell the modules apart
+// (pink and sand barely differ, and the light four are under 3:1 on white):
+// every chart using them also has a legend or labels, a 2px gap in the
+// surface colour between touching fills, and lines drawn over a darker
+// outline (chartEdge).
+export const CHART_PINK        = "#EDB9B2";
+export const CHART_BUTTER      = "#F3DC8C";
+export const CHART_LIGHT_SAGE  = "#A9BF95";
+export const CHART_DEEP_SAGE   = "#7A8A5E";
+export const CHART_SAND        = "#D9C2A7";
+export const CHART_BROWN       = "#7A5235";
+export const MODULE_CHART_COLOR = {
+  cash:         CHART_LIGHT_SAGE,
+  investments:  CHART_BUTTER,
+  pension:      CHART_DEEP_SAGE,
+  studentLoan:  CHART_PINK,
+  mortgage:     CHART_BROWN,   // and property equity
+  personalLoan: CHART_SAND,    // and Forecast's "Debts"
+};
+// The darker outline a chart line is drawn over: its own colour, 45% of the
+// way to the brand dark green, so a pale line stays visible on white.
+export function chartEdge(hex) {
+  const mix = (a, b) => Math.round(a + (b - a) * 0.45);
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  return `rgb(${mix(r, 0x16)},${mix(g, 0x2f)},${mix(b, 0x24)})`;
+}
+
 export const SC = { ok: SUCCESS, attention: GOLD, critical: CRITICAL, na: MUT, unknown: MUT };
 
 // Candid score → colour + label. Five discrete bands, not a continuous
@@ -57,13 +86,15 @@ export function scoreBand(score) {
 
 // Per-option line colours (chart + legend + table dots) shared by both
 // Forecast tabs.
+// Forecast tabs. Each option takes its module's chart colour; the two
+// pension options never show together, so both are Pension's.
 export const FORECAST_COLORS = {
-  "Mortgage overpayment": CRITICAL,
-  "Student loan overpayment": STUDENT_PURPLE,
-  "Stocks & Shares ISA": GOLD,
-  "Cash savings": CASH_BLUE,
-  "Pension (salary sacrifice)": SUCCESS,
-  "Pension (relief at source)": PENSION_RAS,
+  "Mortgage overpayment": MODULE_CHART_COLOR.mortgage,
+  "Student loan overpayment": MODULE_CHART_COLOR.studentLoan,
+  "Stocks & Shares ISA": MODULE_CHART_COLOR.investments,
+  "Cash savings": MODULE_CHART_COLOR.cash,
+  "Pension (salary sacrifice)": MODULE_CHART_COLOR.pension,
+  "Pension (relief at source)": MODULE_CHART_COLOR.pension,
 };
 
 // Shorter display names for the same options — mobile legend/table space is

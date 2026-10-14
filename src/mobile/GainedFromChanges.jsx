@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD, HERO_TILE_BG, CASH_BLUE, GOLD, STUDENT_PURPLE } from "../design-tokens.js";
+import { MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD, HERO_TILE_BG, MODULE_CHART_COLOR } from "../design-tokens.js";
 import { bankedChanges, gainedSoFar, MODULE_META } from "../lib/moduleStatus.js";
 import { hasAccess, accessInfo, PLANS } from "../lib/entitlement.js";
 import { fmt } from "../lib/format.js";
@@ -7,8 +7,8 @@ import { fmt } from "../lib/format.js";
 // Home's "Gained from your changes" (moduleStatus.js gainedSoFar). The
 // yearly worth of the changes leads, since the pot itself starts small (a
 // change worth £900 a year is £2 on its first day); the chart shows the pot
-// filling over the year, split by module, solid to today and pale from
-// there on, so it reads as money coming in from day one. For a subscriber,
+// filling, split by module, solid to today and pale over the year ahead, so
+// it reads as money coming in from day one. For a subscriber,
 // the worth against what they pay. Same oil-slick fill as the score tile.
 
 const DAY = 86400000;
@@ -16,13 +16,9 @@ const DAY = 86400000;
 const asLocal = ms => { const t = new Date(ms); return new Date(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()); };
 const fmtDay = (ms, year) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", ...(year ? { year: "numeric" } : {}), timeZone: "UTC" });
 
-// Each module's colour in the chart, fixed whatever else is banked (colour
-// follows the module). Forecast's colours where it has them, but no red:
-// that's "action needed" elsewhere. The green is a step brighter than
-// SUCCESS so it doesn't read as grey beside the others. Checked with the
-// dataviz validator on HERO_TILE_BG's base (#F7F9F5): passes CVD and
-// normal-vision separation; gold is under 3:1, hence the legend's figures.
-const MODULE_COLOR = { cash: CASH_BLUE, investments: GOLD, pension: "#1f8a4c", studentLoan: STUDENT_PURPLE, mortgage: "#eb6834", personalLoan: "#6250d6" };
+// Each module's colour is its chart colour everywhere (MODULE_CHART_COLOR).
+// Those are soft and some sit close together, so colour never works alone:
+// the legend below, the bands' own labels and the tooltip all name them.
 const SURFACE = "#F7F9F5";
 const titleOf = key => MODULE_META.find(mm => mm.key === key)?.title || key;
 const Dot = ({ color }) => <span style={{width:"8px",height:"8px",borderRadius:"50%",background:color,display:"inline-block",flexShrink:0}}/>;
@@ -46,9 +42,8 @@ export default function GainedFromChanges({ d }) {
   const times = Math.floor(gained.perYear / cost);
   const compare = !paying || gained.perYear <= cost ? null
     : times >= 2 ? `${times}x what you pay for Candid` : "More than you pay for Candid";
-  // Stacked smallest at the bottom, so the bands read top to bottom in the
-  // legend's order (largest first). Colours stay with the module.
-  const keys = gained.byModule.map(g => g.key).reverse();
+  // Largest first: at the bottom of the stack, and top of the legend.
+  const keys = gained.byModule.map(g => g.key);
 
   return (
     <div style={{marginTop:"16px",background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px 18px 16px",boxShadow:"0 4px 18px rgba(22,47,36,0.07)"}}>
@@ -61,12 +56,12 @@ export default function GainedFromChanges({ d }) {
         About {fmt(Math.round(gained.perYear / 12))} a month, estimated, from the changes you've made.
         {compare && <> <span style={{fontWeight:700,color:TEXT}}>{compare}.</span></>}
       </p>
-      <GainChart d={d} keys={keys} soFar={gained.total}/>
+      <GainChart d={d} keys={keys} soFar={gained.total} perYear={gained.perYear}/>
       {/* The legend, and the figures behind the bands: always shown. */}
       <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
         {gained.byModule.map(g => (
           <div key={g.key} style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            {keys.length > 1 && <Dot color={MODULE_COLOR[g.key] || SUCCESS}/>}
+            {keys.length > 1 && <Dot color={MODULE_CHART_COLOR[g.key] || SUCCESS}/>}
             <span style={{fontSize:"13px",color:TEXT,flex:1,minWidth:0}}>{titleOf(g.key)}</span>
             <span style={{fontSize:"13px",color:MUT,whiteSpace:"nowrap"}}><b style={{color:TEXT}}>{fmt(g.perYear)} a year</b> · {fmt(g.gained)} so far</span>
           </div>
@@ -76,12 +71,14 @@ export default function GainedFromChanges({ d }) {
   );
 }
 
-// The pot over a year from the first change, one band per module stacked in
-// `keys` order (bottom first): full colour to today, pale after (if the changes stay in
-// place), with a dashed line along the projected top. Exact at each change,
-// linear between, so the points are just the change days, today and the
-// end. Tap or hover for the figures on any day.
-function GainChart({ d, keys, soFar }) {
+// The pot from the first change to a year from today, one band per module
+// stacked in `keys` order (bottom first): full colour to today, pale after
+// (if the changes stay in place), with a dashed line along the projected
+// top. The year ahead adds exactly the yearly figure, so that's what the end
+// is labelled with, matching the headline. Exact at each change, linear
+// between, so the points are just the change days, today and the end. Tap
+// or hover for the figures on any day.
+function GainChart({ d, keys, soFar, perYear }) {
   const ref = useRef(null);
   const [width, setWidth] = useState(320);
   const [hover, setHover] = useState(null);
@@ -97,8 +94,7 @@ function GainChart({ d, keys, soFar }) {
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const days = bankedChanges(d).map(c => Date.parse(c.on));
   const start = Math.min(today, ...days);
-  // 365 days, the first counted, so a year on the pot is the yearly figure.
-  const end = Math.max(start + 364 * DAY, today + 60 * DAY);
+  const end = today + 365 * DAY;
   // Each module's pot on a day, and the running total up the stack.
   const at = ms => {
     const g = gainedSoFar(d, asLocal(ms));
@@ -126,7 +122,11 @@ function GainChart({ d, keys, soFar }) {
   const showEnd = x(end) - x(today) > 120;
   const todayX = Math.min(Math.max(x(today), 4), width - 4);
   const todayAnchor = todayX < 60 ? "start" : todayX > width - 60 ? "end" : "middle";
-  const colour = k => MODULE_COLOR[k] || SUCCESS;
+  const colour = k => MODULE_CHART_COLOR[k] || SUCCESS;
+  // Each band named at the chart's end where it's tall enough to hold it.
+  const last = points[points.length - 1];
+  const bandLabels = keys.length < 2 ? [] : keys.map((k, i) => ({ k, lo: y(i ? last.tops[i - 1] : 0), hi: y(last.tops[i]) }))
+    .filter(b => b.lo - b.hi >= 13);
 
   const move = e => {
     const r = ref.current.getBoundingClientRect();
@@ -138,14 +138,15 @@ function GainChart({ d, keys, soFar }) {
     <div ref={ref} style={{position:"relative",marginTop:"14px",touchAction:"pan-y"}}
       onPointerMove={move} onPointerDown={move} onPointerLeave={() => setHover(null)}>
       <svg width={width} height={H} role="img" style={{display:"block",overflow:"visible"}}
-        aria-label={`${fmt(soFar)} gained so far; ${fmt(endValue)} by ${fmtDay(end, true)} if the changes stay in place. Figures by module below.`}>
+        aria-label={`${fmt(soFar)} gained so far, and ${fmt(perYear)} more over the next year if the changes stay in place. Figures by module below.`}>
         <line x1={0} x2={width} y1={base} y2={base} stroke="rgba(22,47,36,0.15)" strokeWidth={1}/>
-        {/* A 1.5px line in the tile's colour along each band's top keeps
+        {/* A 2px line in the tile's colour round each band keeps
             neighbouring bands apart. */}
-        {keys.map((k, i) => <path key={`a${k}`} d={band(ahead, i)} fill={colour(k)} opacity={0.22} stroke={SURFACE} strokeWidth={1.5} strokeLinejoin="round"/>)}
-        {past.length > 1 && keys.map((k, i) => <path key={`p${k}`} d={band(past, i)} fill={colour(k)} opacity={0.9} stroke={SURFACE} strokeWidth={1.5} strokeLinejoin="round"/>)}
+        {keys.map((k, i) => <path key={`a${k}`} d={band(ahead, i)} fill={colour(k)} fillOpacity={0.45} stroke={SURFACE} strokeWidth={2} strokeLinejoin="round"/>)}
+        {past.length > 1 && keys.map((k, i) => <path key={`p${k}`} d={band(past, i)} fill={colour(k)} stroke={SURFACE} strokeWidth={2} strokeLinejoin="round"/>)}
+        {bandLabels.map(b => <text key={`l${b.k}`} x={width - 6} y={(b.lo + b.hi) / 2 + 3.5} textAnchor="end" fontSize="10.5" fontWeight="600" fill={TEXT}>{titleOf(b.k)}</text>)}
         <path d={topLine(ahead)} fill="none" stroke="rgba(22,47,36,0.45)" strokeWidth={1.5} strokeDasharray="4 4" strokeLinecap="round"/>
-        {showEnd && !hover && <text x={width} y={y(endValue) - 10} textAnchor="end" fontSize="12" fill={MUT}>{fmt(endValue)} by {fmtDay(end)}</text>}
+        {showEnd && !hover && <text x={width} y={y(endValue) - 10} textAnchor="end" fontSize="12" fill={MUT}>+{fmt(perYear)} over the next year</text>}
         <line x1={todayX} x2={todayX} y1={y(soFar)} y2={base} stroke="rgba(22,47,36,0.35)" strokeWidth={1}/>
         <circle cx={todayX} cy={y(soFar)} r={4.5} fill={TEXT} stroke={SURFACE} strokeWidth={2}/>
         <text x={todayX} y={y(soFar) - 11} textAnchor={todayAnchor} fontSize="12.5" fontWeight="700" fill={TEXT}>{fmt(soFar)} so far</text>
@@ -157,7 +158,7 @@ function GainChart({ d, keys, soFar }) {
         // Inside the chart's top, on the side away from the finger.
         <div style={{position:"absolute",top:0,...(x(hover.ms) > width / 2 ? { left: 0 } : { right: 0 }),width:"200px",pointerEvents:"none",background:"#fff",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"8px",padding:"6px 9px",boxShadow:"0 2px 8px rgba(22,47,36,0.1)",boxSizing:"border-box"}}>
           <div style={{fontSize:"12px",fontWeight:700,color:TEXT}}>{hover.ms > today ? "Projected: " : ""}{fmt(hover.total)} by {fmtDay(hover.ms, hover.ms > today)}</div>
-          {keys.length > 1 && [...keys].reverse().map(k => (
+          {keys.length > 1 && keys.map(k => (
             <div key={k} style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"11.5px",color:MUT,marginTop:"2px"}}>
               <Dot color={colour(k)}/><span style={{flex:1}}>{titleOf(k)}</span><span style={{color:TEXT}}>{fmt(hover.by[k] || 0)}</span>
             </div>

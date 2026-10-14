@@ -6,6 +6,7 @@ import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { retirementAgeFor } from "../../lib/metrics.js";
+import { MODULE_CHART_COLOR, chartEdge } from "../../design-tokens.js";
 
 // Mobile Forecast screen — a "Surplus" comparison view (multi-strategy line
 // chart + low/mid/high table) and a "Net worth" view (single projected net
@@ -45,20 +46,16 @@ function buildYearTicks(horizon) {
 // Net worth breakdown rows — colour, and the assumption/liquidity copy shown
 // when a row is expanded. Liquidity is a genuine, important distinction the
 // figures above don't otherwise convey (a pension pot isn't spendable today
-// the way cash is), not an invented feature. Colours are deliberately the
-// same hex values as the matching Surplus-chart strategy in CandidApp.jsx's
-// FORECAST_COLORS (Cash savings/Stocks & Shares ISA/Pension.../Mortgage
-// overpayment/Student loan overpayment) — hardcoded rather than imported so
-// this stays a plain module-level literal (see the mobile circular-import
-// note: referencing a CandidApp.jsx-imported token at module scope here
-// risks a TDZ crash), but the intent is that the two Forecast tabs read as
-// one colour language rather than two unrelated charts.
+// the way cash is), not an invented feature. Colours are each
+// module's chart colour (design-tokens.js MODULE_CHART_COLOR), the same as
+// the Surplus chart's and Home's, imported straight from design-tokens.js
+// (not via CandidApp.jsx, which risks a TDZ crash at module scope).
 const NW_ROW_META = {
-  Cash:               { color:"#1a6fa3",               liquidity:"Available today — no restrictions." },
-  Investments:        { color:"#c4963a",               liquidity:"Available today if needed, though selling outside an ISA may trigger Capital Gains Tax." },
-  Pension:            { color:"#2d6b4a", locked:true,  liquidity:"Locked until your private pension access age (currently 55, rising to 57 from 2028) — not accessible today." },
-  "Property equity":  { color:"#c0392b", locked:true,  liquidity:"Illiquid — accessing this value means selling or remortgaging." },
-  Debts:              { color:"#8a4fae",               liquidity:"What you still owe — reduces what you could access, not an asset itself." },
+  Cash:               { color:MODULE_CHART_COLOR.cash, liquidity:"Available today — no restrictions." },
+  Investments:        { color:MODULE_CHART_COLOR.investments, liquidity:"Available today if needed, though selling outside an ISA may trigger Capital Gains Tax." },
+  Pension:            { color:MODULE_CHART_COLOR.pension, locked:true, liquidity:"Locked until your private pension access age (currently 55, rising to 57 from 2028) — not accessible today." },
+  "Property equity":  { color:MODULE_CHART_COLOR.mortgage, locked:true, liquidity:"Illiquid — accessing this value means selling or remortgaging." },
+  Debts:              { color:MODULE_CHART_COLOR.personalLoan, liquidity:"What you still owe — reduces what you could access, not an asset itself." },
 };
 
 export default function MobileForecastScreen({ d, m }) {
@@ -186,13 +183,18 @@ export default function MobileForecastScreen({ d, m }) {
                 <text x={chart.PL-6} y={chart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
               </g>
             ))}
-            {/* strategy lines */}
-            {chart.paths.map(p => (
-              <g key={p.label}>
-                <path d={p.path} fill="none" stroke={FORECAST_COLORS[p.label]||MUT} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx={p.lastX} cy={p.lastY} r="3.5" fill={FORECAST_COLORS[p.label]||MUT}/>
-              </g>
-            ))}
+            {/* strategy lines, each over a darker outline of its own colour
+                so the paler chart colours stay visible on white */}
+            {chart.paths.map(p => {
+              const color = FORECAST_COLORS[p.label] || MUT;
+              return (
+                <g key={p.label}>
+                  <path d={p.path} fill="none" stroke={chartEdge(color)} strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d={p.path} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx={p.lastX} cy={p.lastY} r="3.5" fill={color} stroke={chartEdge(color)} strokeWidth="1.5"/>
+                </g>
+              );
+            })}
             {/* X-axis + year/age ticks — first anchors left, last anchors right,
                 so labels never spill past the chart's own edges. */}
             <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.VH-chart.PB} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
@@ -332,7 +334,7 @@ export default function MobileForecastScreen({ d, m }) {
                       </div>
                     </div>
                     <div style={{height:"8px",borderRadius:"4px",background:"#ede7db",overflow:"hidden",marginTop:"8px"}}>
-                      <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G}}/>
+                      <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G,boxShadow:`inset 0 0 0 1px ${chartEdge(meta.color||G)}`}}/>
                     </div>
                     {isOpen && (
                       <div style={{marginTop:"10px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}} onClick={e => e.stopPropagation()}>
