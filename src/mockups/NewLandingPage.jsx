@@ -216,9 +216,18 @@ export default function NewLandingPage() {
            any desktop size). */
         .hero-copy { padding-top: 11.25%; }
         @media (max-width: 860px) {
-          .hero-grid { grid-template-columns: 1fr; gap: 8px; }
+          /* minmax(0, ...) so nothing in the copy can widen the column past
+             the screen and push the hero off its right edge. */
+          .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
           .hero-copy { padding-top: 0; }
           .hero-phone { max-width: 440px; margin: 0 auto; width: 100%; }
+        }
+        /* On a phone the reassurance line is wider than the screen, so the
+           button takes the column's full width and the line wraps under it. */
+        @media (max-width: 520px) {
+          .hero-cta { display: flex !important; }
+          .hero-cta > button { padding-left: 16px !important; padding-right: 16px !important; white-space: nowrap; }
+          .hero-reassure { flex-wrap: wrap; justify-content: flex-start !important; gap: 8px 16px !important; }
         }
       `}</style>
       <div style={{ padding: "56px 24px 88px" }}>
@@ -246,10 +255,10 @@ export default function NewLandingPage() {
           </motion.p>
           {/* The button and the reassurances under it share one width: the
               line sets it (one row, never wrapping) and the button stretches
-              to match. */}
-          <motion.div variants={heroItem} style={{ display: "inline-flex", flexDirection: "column", alignItems: "stretch" }}>
+              to match. Phones wrap the line instead (.hero-cta above). */}
+          <motion.div variants={heroItem} className="hero-cta" style={{ display: "inline-flex", flexDirection: "column", alignItems: "stretch" }}>
             <StartCheckButton source="hero" size="large" />
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "14px", marginTop: "16px", whiteSpace: "nowrap" }}>
+            <div className="hero-reassure" style={{ display: "flex", justifyContent: "space-between", gap: "14px", marginTop: "16px", whiteSpace: "nowrap" }}>
               {["First module free", "No card needed", "About 3 minutes"].map(t => (
                 <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "14px", fontWeight: 600, color: G }}>
                   <Check size={15} color={GOLD} strokeWidth={3} />{t}
