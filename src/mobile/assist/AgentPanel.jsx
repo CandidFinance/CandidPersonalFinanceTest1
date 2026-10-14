@@ -51,7 +51,9 @@ export default function AgentPanel({ o, onOpened }) {
   const act = path => post(path).then(setStatus).catch(() => setProblem("Couldn't reach the agent."));
   const start = () => {
     setProblem(null);
-    post("/start", { url: o.url, provider: o.provider, product: o.product, amount: o.amount, isa: !!o.isa })
+    // Cash moves are from the user's existing savings, so that's the source
+    // of funds the application is given.
+    post("/start", { url: o.url, provider: o.provider, product: o.product, amount: o.amount, isa: !!o.isa, sourceOfFunds: "Savings" })
       .then(s => s.error === "already running" ? attach() : s.error ? setProblem(s.error) : setStatus(s))
       .catch(() => setProblem("The agent isn't running. It starts with npm run dev."));
   };
@@ -92,7 +94,7 @@ export default function AgentPanel({ o, onOpened }) {
           <div style={{ fontSize: "13.5px", fontWeight: 700, color: TEXT }}>Claude wants to:</div>
           <ul style={{ margin: "6px 0 10px", paddingLeft: "18px", fontSize: "13px", color: TEXT, lineHeight: 1.6 }}>
             {status.pending.actions.map((a, i) => (
-              <li key={i}>{a.kind === "type" ? <>Type <b>{a.value}</b> into {a.field}</> : a.kind === "pick" ? <>Pick <b>{a.value}</b> in {a.field}</> : <>Choose <b>{a.field}</b> ({a.value})</>}</li>
+              <li key={i}>{a.kind === "type" ? <>Type <b>{a.value}</b> into {a.field}</> : a.kind === "pick" ? <>Pick <b>{a.value}</b> in {a.field}</> : a.kind === "tick" ? <>Tick <b>{a.field}</b> ({a.value})</> : <>Choose <b>{a.field}</b> ({a.value})</>}</li>
             ))}
           </ul>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>

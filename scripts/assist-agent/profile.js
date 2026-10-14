@@ -26,6 +26,7 @@ export const PROFILE_INPUTS = [
   { key: "countryOfBirth", label: "Country of birth", kind: "text" },
   { key: "employmentStatus", label: "Employment status", kind: "choice", options: ["Employed", "Self-employed", "Retired", "Student", "Unemployed", "Not working"] },
   { key: "occupation", label: "Occupation", kind: "text" },
+  { key: "industry", label: "Industry you work in", kind: "text", hint: "For example, Healthcare" },
   { key: "annualIncome", label: "Annual income before tax (£)", kind: "number" },
   { key: "incomeSource", label: "Where your income comes from", kind: "choice", options: ["Employment", "Self-employment", "Pension", "Benefits", "Property", "Investments", "Inheritance"] },
   { key: "incomeCountry", label: "Country your income comes from", kind: "text", hint: "For example, United Kingdom" },
@@ -33,6 +34,8 @@ export const PROFILE_INPUTS = [
   { key: "usPerson", label: "US citizen or US tax resident", kind: "choice", options: YES_NO },
   { key: "politicallyExposed", label: "Politically exposed person", kind: "choice", options: YES_NO },
   { key: "sourceOfFunds", label: "Where the money you'll pay in comes from", kind: "choice", options: ["Savings", "Salary", "Inheritance", "Gift", "Property sale", "Investments", "Pension"] },
+  { key: "fundsFromOverseas", label: "Does any of the money you'll pay in come from outside the UK?", kind: "choice", options: YES_NO },
+  { key: "contactPreference", label: "How you'd like providers to contact you", kind: "choice", options: ["Email", "Text", "Phone", "Post"] },
 ];
 export const INPUT_KEYS = PROFILE_INPUTS.map(f => f.key);
 
@@ -46,6 +49,8 @@ export const PROFILE_FIELDS = {
   mobileInternational: "Mobile number starting +44 (a field expecting the international form)",
   mobileWithoutCode: "Mobile number without +44 or the leading 0 (when +44 is shown or picked separately)",
   mobileCountryCode: "Country code of the mobile (+44), for a separate code dropdown",
+  fullName: "Full name (first, middle and last)",
+  accountHolderName: "Linked account holder's name (first and last name)",
   addressSearch: "Address line 1 and postcode together, for a type-ahead address search box",
   annualIncome: "Annual income before tax, £",
   monthlyIncome: "Monthly income before tax, £ (annual ÷ 12)",
@@ -85,13 +90,17 @@ export function phoneForms(s) {
 // The profile's values by key, plus the forms worked out from them. Blanks
 // and unknown keys are dropped.
 export function profileValues(profile, extra = {}) {
-  const v = { ...profile, ...extra };
+  const v = { ...profile, ...Object.fromEntries(Object.entries(extra).filter(([, x]) => x != null)) };
   const dob = isoDate(v.dateOfBirth);
   if (dob) { v.dateOfBirth = dob; const [y, m, d] = dob.split("-"); v.dobYear ??= y; v.dobMonth ??= m; v.dobDay ??= d; }
   Object.assign(v, phoneForms(v.mobile));
   const annual = money(v.annualIncome);
   if (annual != null) { v.annualIncome = String(annual); v.monthlyIncome ??= String(Math.round(annual / 12)); }
   if (v.addressLine1 && v.postcode) v.addressSearch ??= `${v.addressLine1}, ${v.postcode}`;
+  if (String(v.firstName ?? "").trim() && String(v.lastName ?? "").trim()) {
+    v.fullName ??= [v.firstName, v.middleNames, v.lastName].filter(x => String(x ?? "").trim()).join(" ");
+    v.accountHolderName ??= `${v.firstName} ${v.lastName}`;
+  }
   const out = {};
   for (const k of Object.keys(PROFILE_FIELDS)) if (v[k] != null && String(v[k]).trim() !== "") out[k] = String(v[k]).trim();
   return out;
@@ -144,7 +153,8 @@ const SYNONYMS = {
   property: ["property", "rental income", "rent", "property income"],
   "property sale": ["property sale", "sale of property", "house sale"],
   investments: ["investments", "investment income", "dividends"],
-  savings: ["savings", "existing savings"],
+  savings: ["savings", "existing savings", "savings from income", "my savings"],
+  email: ["email", "e mail"], text: ["text", "sms", "text message"], phone: ["phone", "telephone", "phone call", "call"], post: ["post", "letter", "mail by post"],
 };
 const COUNTRY_KEYS = new Set(["nationality", "countryOfBirth", "incomeCountry"]);
 const NUMERIC_KEYS = new Set(["annualIncome", "monthlyIncome", "depositAmount", "yearsAtAddress"]);

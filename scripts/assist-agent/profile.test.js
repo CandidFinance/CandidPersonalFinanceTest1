@@ -87,6 +87,26 @@ test("options: an address is picked by line 1, never a near miss", () => {
   assert.equal(matchOption("12 Example Street", list, "addressLine1"), null);
 });
 
+test("what Candid knows about the move overrides the profile, but a blank doesn't wipe it", () => {
+  assert.equal(profileValues({ sourceOfFunds: "Salary" }, { sourceOfFunds: "Savings" }).sourceOfFunds, "Savings");
+  assert.equal(profileValues({ sourceOfFunds: "Salary" }, { sourceOfFunds: undefined }).sourceOfFunds, "Salary");
+});
+
+test("full name and account holder's name come from the name fields", () => {
+  const v = profileValues({ firstName: "Sam", middleNames: "James", lastName: "Example" });
+  assert.equal(v.fullName, "Sam James Example");
+  assert.equal(v.accountHolderName, "Sam Example");
+});
+
+test("industry, money from overseas and contact preference reach the agent, and match", () => {
+  const v = profileValues({ industry: "Healthcare", fundsFromOverseas: "No", contactPreference: "Text" });
+  assert.deepEqual(v, { industry: "Healthcare", fundsFromOverseas: "No", contactPreference: "Text" });
+  assert.equal(matchOption("Text", ["Post", "SMS", "Phone", "Email"], "contactPreference"), "SMS");
+  assert.equal(matchOption("Phone", ["Post", "Text message", "Telephone", "E-mail"], "contactPreference"), "Telephone");
+  assert.equal(matchOption("Email", ["Post", "Text message", "Telephone", "E-mail"], "contactPreference"), "E-mail");
+  assert.equal(matchOption("Savings", ["Salary", "Savings from income", "Inheritance"], "sourceOfFunds"), "Savings from income");
+});
+
 test("an ambiguous option is left for the user, not guessed", () => {
   assert.equal(matchOption("Employed", ["Full-time employed", "Self-employed"], "employmentStatus"), null);
 });

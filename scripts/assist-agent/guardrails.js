@@ -4,8 +4,10 @@
 //  - It only types or picks values from the user's own profile, by key, or
 //    answers the user gives in Candid when it asks (ask_user). It never
 //    makes an answer up.
-//  - It never ticks a checkbox. Declarations, terms and marketing consents
-//    are the user's to agree to.
+//  - It ticks a checkbox only as an answer from the profile (source of
+//    funds: Savings; contact by: Email). Declarations, terms, consents and
+//    marketing boxes are the user's to tick, judged by the box's label and
+//    the question it sits under.
 //  - It never presses a button that agrees, declares, submits an
 //    application, signs in, or moves money.
 //  - It stops and hands over as soon as a page asks for a password, a
@@ -39,6 +41,16 @@ export function fillBlocked(item) {
   if (/^cc-/.test(item.autocomplete || "") || item.autocomplete === "one-time-code") return "Card details and one-time codes are yours to enter.";
   if (/national insurance|\bni\b number|sort code|account number|\biban\b/i.test(item.label || "")) return "Your NI number and bank details are yours to enter.";
   return null;
+}
+
+// Checkboxes that agree, declare or consent to something, whatever the
+// profile says: the user ticks these. Others are answers (a "tick all that
+// apply" list) the agent may tick from the profile.
+const NOT_AN_ANSWER = /\b(agree|accept|consent|confirm|declar\w*|certify|true|correct|accurate|read|understand|acknowledge|terms|conditions|privacy|policy|marketing|offers?|promotions?|newsletters?|news|updates|keep me|hear (about|from)|third part\w*|partners|remember me|signed in)\b/i;
+export function tickBlocked(item) {
+  if (!item) return "That box isn't on the page any more.";
+  const words = `${item.label || ""} ${item.text || ""} ${item.group || ""}`;
+  return NOT_AN_ANSWER.test(words) ? "This box agrees, declares or consents to something, so it's yours to tick." : null;
 }
 
 // Whether the page itself means it's the user's turn, before the model is

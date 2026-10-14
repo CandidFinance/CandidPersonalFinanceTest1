@@ -78,8 +78,11 @@ const activeOption = page => page.evaluate(() => {
 export async function pickOption(page, item, ref, want, key) {
   const el = loc(page, ref);
   if (item.tag === "select") {
-    const match = matchOption(want, item.options, key);
-    if (!match) return { error: "no option matches", seen: item.options };
+    // Every option, from the page: long lists (occupations) are cut short in
+    // the snapshot.
+    const options = await el.evaluate(s => [...s.options].map(o => o.text.trim()));
+    const match = matchOption(want, options, key);
+    if (!match) return { error: "no option matches", seen: options };
     await el.selectOption({ label: match });
     return { picked: match };
   }
@@ -128,7 +131,7 @@ export async function listOptions(page, ref) {
   await page.keyboard.press("Escape").catch(() => {});
   await page.waitForTimeout(200);
   if (texts.length && (await gatherOptions(page, false)).length) await loc(page, ref).click().catch(() => {}); // some only close on a second click
-  return texts.slice(0, 40);
+  return texts.slice(0, 300);
 }
 
 // A dropdown that isn't a <select>.
