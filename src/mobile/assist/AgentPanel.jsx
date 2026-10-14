@@ -24,6 +24,14 @@ export default function AgentPanel({ o, onOpened }) {
   const [missing, setMissing] = useState([]);
   const active = status && ["starting", "working", "approve", "ask", "your_turn"].includes(status.state);
   const idle = !status || status.state === "idle";
+  // A run for another account, still going (started from another tile, or
+  // before Assist was closed): shown with a Stop, never a second start.
+  const elsewhere = active && status.provider !== o.provider;
+
+  // Picks up a run already under way, so closing and reopening Assist (or a
+  // refresh) doesn't lose it.
+  const attach = () => get("/status").then(s => { if (["starting", "working", "approve", "ask", "your_turn"].includes(s.state) || s.provider === o.provider) setStatus(s); }).catch(() => {});
+  useEffect(() => { attach(); }, []);
 
   // The profile fields still empty, asked for before a run starts.
   useEffect(() => { if (idle) get("/profile").then(r => setMissing(r.missing || [])).catch(() => {}); }, [idle]);
@@ -44,7 +52,7 @@ export default function AgentPanel({ o, onOpened }) {
   const start = () => {
     setProblem(null);
     post("/start", { url: o.url, provider: o.provider, product: o.product, amount: o.amount, isa: !!o.isa })
-      .then(s => s.error ? setProblem(s.error) : setStatus(s))
+      .then(s => s.error === "already running" ? attach() : s.error ? setProblem(s.error) : setStatus(s))
       .catch(() => setProblem("The agent isn't running. It starts with npm run dev."));
   };
 
@@ -52,6 +60,14 @@ export default function AgentPanel({ o, onOpened }) {
   const button = (bg, fg = WHITE) => ({ background: bg, color: fg, border: bg === "none" ? "none" : "none", borderRadius: "100px", padding: "9px 14px", fontSize: "13px", fontWeight: 700, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" });
   const quiet = { background: "none", border: "none", padding: "9px 4px", fontSize: "13px", fontWeight: 700, color: G, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px" };
   const box = { marginTop: "12px", padding: "12px 14px", borderRadius: "12px", background: "rgba(22,47,36,0.04)" };
+
+  if (elsewhere) return (
+    <div style={box}>
+      <div style={{ fontSize: "13.5px", color: TEXT, lineHeight: 1.5 }}>Claude is still on {status.provider}'s application. Stop it to start this one.</div>
+      <button type="button" onClick={() => act("/stop")} style={{ ...quiet, color: MUT }}><Square size={12}/>Stop it</button>
+      {problem && <p style={{ ...small, color: "#b3261e", margin: "6px 0 0" }}>{problem}</p>}
+    </div>
+  );
 
   if (idle) return (
     <div style={box}>

@@ -193,37 +193,44 @@ async function callClaude(messages, profileKeys) {
   return body;
 }
 
+// After waiting on the user: back to work, unless they stopped the run
+// meanwhile (a stopped run must stay stopped, or it blocks the next start).
+const resume = me => { if (!me.stop) me.state = "working"; };
+
 // Asks Candid to approve a batch of actions; resolves true/false.
 async function approve(actions) {
-  if (run.allowAll) return true;
-  run.pending = { actions };
-  run.state = "approve";
+  const me = run;
+  if (me.allowAll) return true;
+  me.pending = { actions };
+  me.state = "approve";
   const answer = await waitFor();
-  run.pending = null;
-  run.state = "working";
-  if (answer === "allow_all") run.allowAll = true;
+  me.pending = null;
+  resume(me);
+  if (answer === "allow_all") me.allowAll = true;
   return answer === "approve" || answer === "allow_all";
 }
 
 async function handOver(reason, steps) {
-  run.handoff = { reason, steps };
-  run.state = "your_turn";
+  const me = run;
+  me.handoff = { reason, steps };
+  me.state = "your_turn";
   note(`Your turn: ${reason}`, "handoff");
   const answer = await waitFor();
-  run.handoff = null;
-  run.state = "working";
+  me.handoff = null;
+  resume(me);
   return answer;
 }
 
 // Asks the user a question in Candid; resolves with their answer
 // ({ value, remember }) or "stop".
 async function ask(question) {
-  run.question = { id: Date.now().toString(36), ...question };
-  run.state = "ask";
+  const me = run;
+  me.question = { id: Date.now().toString(36), ...question };
+  me.state = "ask";
   note(`Asking you: ${question.question}`, "ask");
   const answer = await waitFor();
-  run.question = null;
-  run.state = "working";
+  me.question = null;
+  resume(me);
   return answer;
 }
 
@@ -352,7 +359,12 @@ async function runTool(page, name, input) {
   return `Unknown tool ${name}`;
 }
 
-async function agentLoop(job) {
+// One run's loop. `me` is its own run: once the user stops it or a new run
+// replaces it, the loop ends at its next step instead of acting on the new
+// run's state or browser.
+const ACTIVE = ["starting", "working", "approve", "ask", "your_turn"];
+async function agentLoop(job, me) {
+  const gone = () => run !== me || me.stop;
   const profile = loadProfile();
   if (!profile) throw new Error("No profile: copy scripts/assist-agent/profile.example.json to profile.local.json and fill it in.");
   if (!apiKey()) throw new Error("No ANTHROPIC_API_KEY in .env.local.");
@@ -366,6 +378,14 @@ async function agentLoop(job) {
   try { context = await chromium.launchPersistentContext(dir, { headless, channel: "chrome", viewport: null }); }
   catch { context = await chromium.launchPersistentContext(dir, { headless, viewport: null }); }
   run.context = context;
+  if (gone()) { context.close().catch(() => {}); return; }
+  // Closing the browser window ends the run, even while it waits on the user.
+  context.on("close", () => {
+    if (run !== me || !ACTIVE.includes(me.state)) return;
+    me.stop = true; me.state = "stopped"; me.pending = me.question = me.handoff = null;
+    note("The browser window was closed.", "done");
+    wake("stop");
+  });
   const page = context.pages()[0] || await context.newPage();
   context.on("page", p => { run.page = p; }); // follow a new tab if the site opens one
   run.page = page;
@@ -375,8 +395,9 @@ async function agentLoop(job) {
 
   const messages = [{ role: "user", content: `Open this account for the user: ${job.provider} ${job.product || ""}${job.isa ? " (a Cash ISA)" : ""}. They plan to pay in £${Math.round(job.amount || 0)} (but you never pay anything in). The browser is on the provider's page now. Start with read_page, find how to apply, and fill in the application.` }];
 
-  for (let step = 0; step < MAX_STEPS && !run.stop; step++) {
+  for (let step = 0; step < MAX_STEPS && !gone(); step++) {
     const reply = await callClaude(messages, Object.keys(run.values));
+    if (gone()) return;
     messages.push({ role: "assistant", content: reply.content });
     const said = reply.content.filter(b => b.type === "text").map(b => b.text).join(" ").trim();
     if (said) note(said, "claude");
@@ -384,7 +405,7 @@ async function agentLoop(job) {
     if (!calls.length) { messages.push({ role: "user", content: "Carry on with a tool, or call finish." }); continue; }
     const results = [];
     for (const call of calls) {
-      if (run.stop) break;
+      if (gone()) return;
       const page = run.page;
       let out;
       if (call.name === "finish") {
@@ -395,29 +416,30 @@ async function agentLoop(job) {
       }
       if (call.name === "hand_to_user") {
         const answer = await handOver(call.input.reason, call.input.steps || []);
-        if (answer === "stop") { run.stop = true; break; }
+        if (answer === "stop" || gone()) return;
         out = "The user has done their part and handed back. Read the page and carry on from where it is now.";
       } else {
         out = await runTool(page, call.name, call.input);
+        if (gone()) return;
         // A page that needs the user hands over straight away, whatever
         // the model does next.
         if (call.name === "read_page") {
           const stop = pageHandoff(run.lastSnap);
           if (stop) {
             const answer = await handOver(stop, ["Do this part in the browser window.", "Then press Hand back in Candid."]);
-            if (answer === "stop") { run.stop = true; break; }
+            if (answer === "stop" || gone()) return;
             out = "The user did that part and handed back. Read the page again and carry on.";
           }
         }
       }
       results.push({ type: "tool_result", tool_use_id: call.id, content: out });
     }
-    if (run.stop) break;
+    if (gone()) return;
     messages.push({ role: "user", content: results });
     // Keep the conversation short: old page reads are the bulk of it.
     if (messages.length > 24) messages.splice(1, 2);
   }
-  if (run.state !== "done") { run.state = "stopped"; note(run.stop ? "Stopped." : "Stopped after too many steps.", "done"); }
+  if (run === me && run.state !== "done") { run.state = "stopped"; note(run.stop ? "Stopped." : "Stopped after too many steps.", "done"); }
 }
 
 // ── The local server Candid talks to ─────────────────────────────────────────
@@ -454,16 +476,16 @@ http.createServer(async (req, res) => {
   if (req.method === "POST" && url.pathname === "/start") {
     const job = await readBody(req);
     if (!job.url || !/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])/.test(job.url)) return send(res, req, 400, { error: "needs an https url" });
-    if (run && ["starting", "working", "approve", "ask", "your_turn"].includes(run.state)) return send(res, req, 409, { error: "already running" });
+    if (run && ACTIVE.includes(run.state)) return send(res, req, 409, { error: "already running", provider: run.job.provider });
     if (run?.context) run.context.close().catch(() => {});
-    run = newRun(job);
-    agentLoop(job).catch(e => { run.state = "error"; run.error = e.message; note(e.message, "error"); });
+    const me = run = newRun(job);
+    agentLoop(job, me).catch(e => { if (run !== me || me.stop) return; me.state = "error"; me.error = e.message; note(e.message, "error"); });
     return send(res, req, 200, publicState());
   }
   if (req.method === "POST" && ["/approve", "/allow-all", "/decline", "/handback", "/stop"].includes(url.pathname)) {
     if (!run) return send(res, req, 409, { error: "nothing running" });
     const value = { "/approve": "approve", "/allow-all": "allow_all", "/decline": "decline", "/handback": "handback", "/stop": "stop" }[url.pathname];
-    if (value === "stop") { run.stop = true; run.state = "stopped"; note("Stopped by you.", "done"); }
+    if (value === "stop") { run.stop = true; run.state = "stopped"; run.pending = run.question = run.handoff = null; note("Stopped by you.", "done"); }
     wake(value);
     return send(res, req, 200, publicState());
   }
