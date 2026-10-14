@@ -143,10 +143,11 @@ export function entryChat(d, variant = { opener: 0, checkIn: 0 }) {
 }
 
 // How long a message takes to read, so the next one doesn't arrive before
-// it's been read: 300 words a minute (quicker than the 240 average for
-// silent reading, which felt slow in testing), plus a moment to look. The
-// messages are kept short so the whole intro takes about 15 seconds.
-export const READING_WPM = 300;
+// it's been read: 330 words a minute (quicker than the 240 average for
+// silent reading, which felt slow in testing; up 10% from 300), plus a
+// moment to look. The messages are kept short so the whole intro takes
+// about 15 seconds.
+export const READING_WPM = 330;
 export function readingMs(text) {
   const words = String(text).trim().split(/\s+/).filter(Boolean).length;
   return 300 + Math.round(words * 60000 / READING_WPM);
