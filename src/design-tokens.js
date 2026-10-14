@@ -148,8 +148,9 @@ export const PROVIDER_TILE_SHADOW = "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 
 // Home's hero tile (the Candid score): a soft wash in Candid's own colours,
 // pale tints of the brand greens (SUCCESS from the top left, PENSION_RAS's
 // teal-green from the top right) and a warm hint of GOLD from the bottom
-// right, over a near-white green. The one tile on Home with a fill of its
-// own, light enough for dark text and the score's band colours. (A cooler
+// right, over a near-white green. Worn only by Home's headline tiles (the
+// score, and Gained from your changes), light enough for dark text and the
+// score's band colours. (A cooler
 // version with lilac and pink, b7a6e7e, is in git history for a future white
 // background.)
 export const HERO_TILE_BG = [

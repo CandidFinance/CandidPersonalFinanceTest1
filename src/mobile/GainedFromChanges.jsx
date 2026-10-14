@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
-import { G, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../design-tokens.js";
+import { MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD, HERO_TILE_BG, CASH_BLUE, GOLD, STUDENT_PURPLE } from "../design-tokens.js";
 import { bankedChanges, gainedSoFar, MODULE_META } from "../lib/moduleStatus.js";
 import { hasAccess, accessInfo, PLANS } from "../lib/entitlement.js";
 import { fmt } from "../lib/format.js";
@@ -8,17 +7,27 @@ import { fmt } from "../lib/format.js";
 // Home's "Gained from your changes" (moduleStatus.js gainedSoFar). The
 // yearly worth of the changes leads, since the pot itself starts small (a
 // change worth £900 a year is £2 on its first day); the chart shows the pot
-// filling over the year, solid to today and dashed from there on, so it
-// reads as money coming in from day one. For a subscriber, the worth against
-// what they pay. A section background, not a card (CLAUDE.md rule 3).
+// filling over the year, split by module, solid to today and pale from
+// there on, so it reads as money coming in from day one. For a subscriber,
+// the worth against what they pay. Same oil-slick fill as the score tile.
 
 const DAY = 86400000;
 // A UTC-midnight day number as the local date gainedSoFar reads.
 const asLocal = ms => { const t = new Date(ms); return new Date(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()); };
 const fmtDay = (ms, year) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", ...(year ? { year: "numeric" } : {}), timeZone: "UTC" });
 
+// Each module's colour in the chart, fixed whatever else is banked (colour
+// follows the module). Forecast's colours where it has them, but no red:
+// that's "action needed" elsewhere. The green is a step brighter than
+// SUCCESS so it doesn't read as grey beside the others. Checked with the
+// dataviz validator on HERO_TILE_BG's base (#F7F9F5): passes CVD and
+// normal-vision separation; gold is under 3:1, hence the legend's figures.
+const MODULE_COLOR = { cash: CASH_BLUE, investments: GOLD, pension: "#1f8a4c", studentLoan: STUDENT_PURPLE, mortgage: "#eb6834", personalLoan: "#6250d6" };
+const SURFACE = "#F7F9F5";
+const titleOf = key => MODULE_META.find(mm => mm.key === key)?.title || key;
+const Dot = ({ color }) => <span style={{width:"8px",height:"8px",borderRadius:"50%",background:color,display:"inline-block",flexShrink:0}}/>;
+
 export default function GainedFromChanges({ d }) {
-  const [open, setOpen] = useState(false);
   const gained = gainedSoFar(d);
   const kicker = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
 
@@ -37,9 +46,12 @@ export default function GainedFromChanges({ d }) {
   const times = Math.floor(gained.perYear / cost);
   const compare = !paying || gained.perYear <= cost ? null
     : times >= 2 ? `${times}x what you pay for Candid` : "More than you pay for Candid";
+  // Stacked smallest at the bottom, so the bands read top to bottom in the
+  // legend's order (largest first). Colours stay with the module.
+  const keys = gained.byModule.map(g => g.key).reverse();
 
   return (
-    <div style={{marginTop:"16px",background:"rgba(45,107,74,0.07)",borderRadius:RADIUS_CARD,padding:"18px 18px 14px"}}>
+    <div style={{marginTop:"16px",background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px 18px 16px",boxShadow:"0 4px 18px rgba(22,47,36,0.07)"}}>
       <div style={kicker}>Gained from your changes</div>
       <div style={{display:"flex",alignItems:"baseline",gap:"6px",marginTop:"6px"}}>
         <span style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:SUCCESS,lineHeight:1.1}}>{fmt(gained.perYear)}</span>
@@ -49,30 +61,27 @@ export default function GainedFromChanges({ d }) {
         About {fmt(Math.round(gained.perYear / 12))} a month, estimated, from the changes you've made.
         {compare && <> <span style={{fontWeight:700,color:TEXT}}>{compare}.</span></>}
       </p>
-      <GainChart d={d} soFar={gained.total}/>
-      <button type="button" onClick={() => setOpen(o => !o)}
-        style={{marginTop:"10px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:G,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
-        By module<ChevronDown size={14} style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
-      </button>
-      {open && (
-        <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
-          {gained.byModule.map(g => (
-            <div key={g.key} style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"12px"}}>
-              <span style={{fontSize:"13px",color:TEXT}}>{MODULE_META.find(mm => mm.key === g.key)?.title || g.key}</span>
-              <span style={{fontSize:"13px",color:MUT,whiteSpace:"nowrap"}}><b style={{color:TEXT}}>{fmt(g.perYear)} a year</b> · {fmt(g.gained)} so far</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <GainChart d={d} keys={keys} soFar={gained.total}/>
+      {/* The legend, and the figures behind the bands: always shown. */}
+      <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
+        {gained.byModule.map(g => (
+          <div key={g.key} style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            {keys.length > 1 && <Dot color={MODULE_COLOR[g.key] || SUCCESS}/>}
+            <span style={{fontSize:"13px",color:TEXT,flex:1,minWidth:0}}>{titleOf(g.key)}</span>
+            <span style={{fontSize:"13px",color:MUT,whiteSpace:"nowrap"}}><b style={{color:TEXT}}>{fmt(g.perYear)} a year</b> · {fmt(g.gained)} so far</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-// The pot over a year from the first change: solid to today, dashed after
-// (if the changes stay in place). Exact at each change, linear between, so
-// the points are just the change days, today and the end. Tap or hover for
-// the figure on any day.
-function GainChart({ d, soFar }) {
+// The pot over a year from the first change, one band per module stacked in
+// `keys` order (bottom first): full colour to today, pale after (if the changes stay in
+// place), with a dashed line along the projected top. Exact at each change,
+// linear between, so the points are just the change days, today and the
+// end. Tap or hover for the figures on any day.
+function GainChart({ d, keys, soFar }) {
   const ref = useRef(null);
   const [width, setWidth] = useState(320);
   const [hover, setHover] = useState(null);
@@ -90,52 +99,69 @@ function GainChart({ d, soFar }) {
   const start = Math.min(today, ...days);
   // 365 days, the first counted, so a year on the pot is the yearly figure.
   const end = Math.max(start + 364 * DAY, today + 60 * DAY);
-  const at = ms => gainedSoFar(d, asLocal(ms)).total;
-  const points = [...new Set([start, ...days, today, end])].sort((a, b) => a - b).map(ms => ({ ms, v: at(ms) }));
-  const top = Math.max(1, points[points.length - 1].v);
+  // Each module's pot on a day, and the running total up the stack.
+  const at = ms => {
+    const g = gainedSoFar(d, asLocal(ms));
+    const by = Object.fromEntries(g.byModule.map(m => [m.key, m.gained]));
+    let sum = 0;
+    return { ms, total: g.total, by, tops: keys.map(k => (sum += by[k] || 0)) };
+  };
+  const points = [...new Set([start, ...days, today, end])].sort((a, b) => a - b).map(at);
+  const top = Math.max(1, ...points.map(p => p.tops[p.tops.length - 1]));
 
-  const H = 120, padTop = 26, padBottom = 20;
+  const H = 130, padTop = 26, padBottom = 20;
   const x = ms => ((ms - start) / (end - start)) * width;
   const y = v => padTop + (1 - v / top) * (H - padTop - padBottom);
   const base = H - padBottom;
-  const line = pts => pts.map((p, i) => `${i ? "L" : "M"}${x(p.ms).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
+  const xy = (ms, v) => `${x(ms).toFixed(1)},${y(v).toFixed(1)}`;
+  // Band i between the stack's level i-1 and level i, over `pts`.
+  const band = (pts, i) => {
+    const upper = pts.map(p => xy(p.ms, p.tops[i]));
+    const lower = [...pts].reverse().map(p => xy(p.ms, i ? p.tops[i - 1] : 0));
+    return `M${upper.join(" L")} L${lower.join(" L")} Z`;
+  };
   const past = points.filter(p => p.ms <= today), ahead = points.filter(p => p.ms >= today);
-  const area = `${line(past)} L${x(today).toFixed(1)},${base} L${x(start).toFixed(1)},${base} Z`;
-  const endValue = points[points.length - 1].v;
-  // The end label only when it won't run into today's.
+  const topLine = pts => pts.map((p, i) => `${i ? "L" : "M"}${xy(p.ms, p.tops[p.tops.length - 1])}`).join(" ");
+  const endValue = points[points.length - 1].total;
   const showEnd = x(end) - x(today) > 120;
   const todayX = Math.min(Math.max(x(today), 4), width - 4);
   const todayAnchor = todayX < 60 ? "start" : todayX > width - 60 ? "end" : "middle";
+  const colour = k => MODULE_COLOR[k] || SUCCESS;
 
   const move = e => {
     const r = ref.current.getBoundingClientRect();
     const ms = start + Math.round(Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1) * (end - start) / DAY) * DAY;
-    setHover({ ms, v: at(ms) });
+    setHover(at(ms));
   };
-  const tip = hover && (hover.ms > today ? `Projected: ${fmt(hover.v)} by ${fmtDay(hover.ms, true)}` : `${fmt(hover.v)} by ${fmtDay(hover.ms)}`);
 
   return (
     <div ref={ref} style={{position:"relative",marginTop:"14px",touchAction:"pan-y"}}
       onPointerMove={move} onPointerDown={move} onPointerLeave={() => setHover(null)}>
       <svg width={width} height={H} role="img" style={{display:"block",overflow:"visible"}}
-        aria-label={`${fmt(soFar)} gained so far; ${fmt(endValue)} by ${fmtDay(end, true)} if the changes stay in place.`}>
+        aria-label={`${fmt(soFar)} gained so far; ${fmt(endValue)} by ${fmtDay(end, true)} if the changes stay in place. Figures by module below.`}>
         <line x1={0} x2={width} y1={base} y2={base} stroke="rgba(22,47,36,0.15)" strokeWidth={1}/>
-        <path d={area} fill={SUCCESS} opacity={0.14}/>
-        <path d={line(ahead)} fill="none" stroke={SUCCESS} strokeWidth={2} strokeDasharray="4 4" opacity={0.55} strokeLinecap="round"/>
-        <path d={line(past)} fill="none" stroke={SUCCESS} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>
+        {/* A 1.5px line in the tile's colour along each band's top keeps
+            neighbouring bands apart. */}
+        {keys.map((k, i) => <path key={`a${k}`} d={band(ahead, i)} fill={colour(k)} opacity={0.22} stroke={SURFACE} strokeWidth={1.5} strokeLinejoin="round"/>)}
+        {past.length > 1 && keys.map((k, i) => <path key={`p${k}`} d={band(past, i)} fill={colour(k)} opacity={0.9} stroke={SURFACE} strokeWidth={1.5} strokeLinejoin="round"/>)}
+        <path d={topLine(ahead)} fill="none" stroke="rgba(22,47,36,0.45)" strokeWidth={1.5} strokeDasharray="4 4" strokeLinecap="round"/>
         {showEnd && !hover && <text x={width} y={y(endValue) - 10} textAnchor="end" fontSize="12" fill={MUT}>{fmt(endValue)} by {fmtDay(end)}</text>}
-        <circle cx={todayX} cy={y(soFar)} r={5} fill={SUCCESS} stroke="#eef3ee" strokeWidth={2}/>
-        <text x={todayX} y={y(soFar) - 12} textAnchor={todayAnchor} fontSize="12.5" fontWeight="700" fill={TEXT}>{fmt(soFar)} so far</text>
+        <line x1={todayX} x2={todayX} y1={y(soFar)} y2={base} stroke="rgba(22,47,36,0.35)" strokeWidth={1}/>
+        <circle cx={todayX} cy={y(soFar)} r={4.5} fill={TEXT} stroke={SURFACE} strokeWidth={2}/>
+        <text x={todayX} y={y(soFar) - 11} textAnchor={todayAnchor} fontSize="12.5" fontWeight="700" fill={TEXT}>{fmt(soFar)} so far</text>
         <text x={0} y={H - 4} fontSize="11" fill={MUT}>{fmtDay(start)}</text>
         <text x={width} y={H - 4} textAnchor="end" fontSize="11" fill={MUT}>{fmtDay(end, true)}</text>
-        {hover && <>
-          <line x1={x(hover.ms)} x2={x(hover.ms)} y1={padTop - 8} y2={base} stroke="rgba(22,47,36,0.3)" strokeWidth={1}/>
-          <circle cx={x(hover.ms)} cy={y(hover.v)} r={4} fill={SUCCESS} stroke="#eef3ee" strokeWidth={2}/>
-        </>}
+        {hover && <line x1={x(hover.ms)} x2={x(hover.ms)} y1={padTop - 8} y2={base} stroke="rgba(22,47,36,0.4)" strokeWidth={1}/>}
       </svg>
       {hover && (
-        <div style={{position:"absolute",top:"-6px",left:Math.min(Math.max(x(hover.ms) - 110, 0), width - 220),width:"220px",textAlign:"center",pointerEvents:"none"}}>
-          <span style={{display:"inline-block",background:"#fff",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"8px",padding:"4px 8px",fontSize:"12px",fontWeight:600,color:TEXT,whiteSpace:"nowrap",boxShadow:"0 2px 8px rgba(22,47,36,0.1)"}}>{tip}</span>
+        // Inside the chart's top, on the side away from the finger.
+        <div style={{position:"absolute",top:0,...(x(hover.ms) > width / 2 ? { left: 0 } : { right: 0 }),width:"200px",pointerEvents:"none",background:"#fff",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"8px",padding:"6px 9px",boxShadow:"0 2px 8px rgba(22,47,36,0.1)",boxSizing:"border-box"}}>
+          <div style={{fontSize:"12px",fontWeight:700,color:TEXT}}>{hover.ms > today ? "Projected: " : ""}{fmt(hover.total)} by {fmtDay(hover.ms, hover.ms > today)}</div>
+          {keys.length > 1 && [...keys].reverse().map(k => (
+            <div key={k} style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"11.5px",color:MUT,marginTop:"2px"}}>
+              <Dot color={colour(k)}/><span style={{flex:1}}>{titleOf(k)}</span><span style={{color:TEXT}}>{fmt(hover.by[k] || 0)}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
