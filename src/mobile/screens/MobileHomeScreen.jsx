@@ -138,8 +138,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         {mobileGreeting(d)}
       </h1>
 
-      {/* The hero: the score, the one tile on Home with a fill of its own (a
-          pale iridescent wash, HERO_TILE_BG), so it reads as the headline.
+      {/* The hero: the score, in a pale iridescent wash (HERO_TILE_BG) that
+          only it and "Gained from your changes" wear, so they read as the
+          headlines.
           The ring in the score's band colour, the opportunity, and the
           opportunities by size opening in place. Nothing says where to start:
           that would be advice (src/lib/priorities.js only ranks by £). */}
