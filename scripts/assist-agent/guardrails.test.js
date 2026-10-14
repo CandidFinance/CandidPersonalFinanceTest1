@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { clickBlocked, fillBlocked, pageHandoff, profileValues } from "./guardrails.js";
+import { clickBlocked, fillBlocked, pageHandoff } from "./guardrails.js";
 
 test("never presses agree, declare, submit, sign in or money buttons, nor ticks boxes", () => {
   for (const text of ["I agree", "Accept and continue", "Submit application", "Confirm and open account", "Log in", "Fund your account", "Make a deposit", "I declare that"]) {
@@ -26,9 +26,4 @@ test("hands over for passwords, codes, uploads, cards and ID checks", () => {
   assert.ok(pageHandoff({ flags: { frames: ["https://sdk.onfido.com/x"] } }));
   assert.ok(pageHandoff({ flags: {}, text: "Now take a selfie" }));
   assert.equal(pageHandoff({ flags: { frames: ["https://www.google.com/recaptcha"] }, text: "Your details" }), null);
-});
-
-test("profile values: only known keys, blanks dropped, date of birth split", () => {
-  const v = profileValues({ firstName: "Sam", lastName: " ", dateOfBirth: "1993-04-07", niNumber: "QQ123456C" }, { depositAmount: 20000 });
-  assert.deepEqual(v, { firstName: "Sam", dateOfBirth: "1993-04-07", dobDay: "07", dobMonth: "04", dobYear: "1993", depositAmount: "20000" });
 });

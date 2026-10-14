@@ -1,9 +1,9 @@
 // The rules the account-opening agent can't break, enforced here in code
 // rather than left to the model. Pure, unit tested in guardrails.test.js.
 //
-//  - It only types or picks values from the user's own profile, by key. It
-//    never makes an answer up, so every question it answers is one the
-//    user answered in advance (profile.local.json).
+//  - It only types or picks values from the user's own profile, by key, or
+//    answers the user gives in Candid when it asks (ask_user). It never
+//    makes an answer up.
 //  - It never ticks a checkbox. Declarations, terms and marketing consents
 //    are the user's to agree to.
 //  - It never presses a button that agrees, declares, submits an
@@ -11,46 +11,7 @@
 //  - It stops and hands over as soon as a page asks for a password, a
 //    one-time code, a file (ID), card details, or shows an identity check.
 
-// What the agent may fill, and how each is described to the user. Anything
-// else on a form (NI number, bank details, passwords) is left to the user.
-export const PROFILE_FIELDS = {
-  title: "Title",
-  firstName: "First name",
-  middleNames: "Middle names",
-  lastName: "Last name",
-  dateOfBirth: "Date of birth (YYYY-MM-DD)",
-  dobDay: "Day of birth",
-  dobMonth: "Month of birth",
-  dobYear: "Year of birth",
-  email: "Email",
-  mobile: "Mobile number",
-  addressLine1: "Address line 1",
-  addressLine2: "Address line 2",
-  town: "Town or city",
-  county: "County",
-  postcode: "Postcode",
-  yearsAtAddress: "Years at this address",
-  nationality: "Nationality",
-  countryOfBirth: "Country of birth",
-  employmentStatus: "Employment status",
-  occupation: "Occupation",
-  annualIncome: "Annual income",
-  taxResidency: "Tax residency",
-  usPerson: "US citizen or US tax resident",
-  politicallyExposed: "Politically exposed person",
-  sourceOfFunds: "Where the money comes from",
-  depositAmount: "Amount to pay in (from Candid)",
-};
-
-// The profile's values by key, with the date of birth also split into parts.
-export function profileValues(profile, extra = {}) {
-  const v = { ...profile, ...extra };
-  const dob = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v.dateOfBirth || "");
-  if (dob) { v.dobYear ??= dob[1]; v.dobMonth ??= dob[2]; v.dobDay ??= dob[3]; }
-  const out = {};
-  for (const k of Object.keys(PROFILE_FIELDS)) if (v[k] != null && String(v[k]).trim() !== "") out[k] = String(v[k]).trim();
-  return out;
-}
+// What the agent may fill, and in what form, is in profile.js.
 
 // Buttons and links the agent must never press, by their label.
 const BLOCKED_CLICK = [
