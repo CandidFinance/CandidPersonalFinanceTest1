@@ -215,6 +215,8 @@ Version 1 works out the badge when the app opens. Push notifications and pay-day
 - [ ] Email reminders for rate periods ending (Resend is set up), so it reaches users who don't open the app.
 - [ ] An optional "rate ends on" date for cash accounts entered by hand.
 
+**Account-opening agent on mobile, and app-only providers:** see `assist-mobile-roadmap.md`.
+
 **Version 1 scope**
 - [ ] The widget, the badge, and the walkthrough shell (GuidedFlow plus grounded free text)
 - [ ] Walkthrough: move cash to a higher-rate account
