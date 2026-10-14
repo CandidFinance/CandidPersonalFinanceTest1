@@ -128,6 +128,12 @@ test("gained so far: each banked change counted by the day since it was made", a
   assert.equal(later.total, Math.round(900 * 60 / 365));
   assert.equal(later.perYear, 900);
   assert.deepEqual(later.byModule, [{ key: "pension", gained: later.total, perYear: 900 }]);
+  // The tax year so far: from 6 April only, the change counting from then.
+  const { taxYearStart } = await import("./moduleStatus.js");
+  assert.equal(taxYearStart(new Date(2027, 3, 5)), "2026-04-06");
+  assert.equal(taxYearStart(new Date(2027, 3, 6)), "2027-04-06");
+  assert.equal(gainedSoFar(made, new Date(2027, 3, 15), "2027-04-06").total, Math.round(900 * 10 / 365));
+  assert.equal(gainedSoFar(made, new Date(2027, 2, 1), "2026-04-06").total, later.total);
   // Before it was made: nothing yet.
   assert.equal(gainedSoFar(made, new Date(2026, 11, 1)).total, 0);
   // A correction logs no change.

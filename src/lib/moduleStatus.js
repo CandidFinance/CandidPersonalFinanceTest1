@@ -2,6 +2,7 @@ import { moduleAnswered } from "./appEntry.js";
 import { MODULE_GUIDES } from "./moduleGuide.js";
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby } from "lucide-react";
 import { fmt } from "./format.js";
+import { taxYearOf } from "./taxYear.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement } from "./pension.js";
@@ -415,6 +416,8 @@ export function bankPatch(d, key, amount, made, on = new Date().toISOString().sl
 // dated counts from BANK_LOG_START, the day dating began. An estimate, like
 // the £ it comes from.
 export const BANK_LOG_START = "2026-10-14";
+// The first day of the tax year `now` is in, as "YYYY-MM-DD".
+export const taxYearStart = (now = new Date()) => `${taxYearOf(now)}-04-06`;
 export function bankedChanges(d) {
   return Object.entries(d.moduleBaselines || {}).flatMap(([key, base]) => {
     const dated = base.changes || [];
@@ -422,13 +425,16 @@ export function bankedChanges(d) {
     return [...(undated > 0 ? [{ key, perYear: undated, on: BANK_LOG_START }] : []), ...dated.map(c => ({ key, ...c }))];
   });
 }
-export function gainedSoFar(d, now = new Date()) {
+// `from` ("YYYY-MM-DD"), if given, counts only the days from then: the
+// tax year so far (taxYearStart), say.
+export function gainedSoFar(d, now = new Date(), from = null) {
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const since = from ? Date.parse(from) : -Infinity;
   const byModule = {};
   let total = 0, perYear = 0;
   const changes = bankedChanges(d);
   for (const c of changes) {
-    const days = Math.max(0, Math.round((today - Date.parse(c.on)) / 86400000) + 1);
+    const days = Math.max(0, Math.round((today - Math.max(Date.parse(c.on), since)) / 86400000) + 1);
     const gained = c.perYear * days / 365;
     const mod = byModule[c.key] || (byModule[c.key] = { gained: 0, perYear: 0 });
     mod.gained += gained;
