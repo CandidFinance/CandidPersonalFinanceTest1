@@ -113,3 +113,28 @@ test("banked: what a module's £ has come down by since it was first answered", 
   assert.equal(ab.moduleList.find(x => x.key === "cash").pending, 0);
   assert.equal(ab.moduleList.find(x => x.key === "pension").pending, 900);
 });
+
+test("gained so far: each banked change counted by the day since it was made", async () => {
+  const { computeModuleStatuses, baselinePatch, bankPatch, gainedSoFar, BANK_LOG_START } = await import("./moduleStatus.js");
+  const d = { age: "32", salary: "45000", selectedModules: ["pension"], hasPension: "yes", pensionStatus: "yes", myContribution: "3", employerMatch: "5", potValue: "30000", pensionType: "relief" };
+  const acted = { ...d, myContribution: "5", moduleBaselines: baselinePatch(d, computeModuleStatuses(d, calcMetrics(d))) };
+  // Nothing banked: nothing gained.
+  assert.deepEqual(gainedSoFar(acted), { total: 0, perYear: 0, count: 0, byModule: [] });
+  // £900 a year banked on 1 Jan: the day itself counts, so 1 Jan is 1 day in.
+  const made = { ...acted, moduleBaselines: bankPatch(acted, "pension", 0, true, "2027-01-01") };
+  assert.deepEqual(made.moduleBaselines.pension.changes, [{ perYear: 900, on: "2027-01-01" }]);
+  assert.equal(gainedSoFar(made, new Date(2027, 0, 1)).total, Math.round(900 / 365));
+  const later = gainedSoFar(made, new Date(2027, 2, 1));
+  assert.equal(later.total, Math.round(900 * 60 / 365));
+  assert.equal(later.perYear, 900);
+  assert.deepEqual(later.byModule, [{ key: "pension", gained: later.total }]);
+  // Before it was made: nothing yet.
+  assert.equal(gainedSoFar(made, new Date(2026, 11, 1)).total, 0);
+  // A correction logs no change.
+  assert.deepEqual(bankPatch(acted, "pension", 0, false).pension.changes, []);
+  // Banked before changes were dated counts from the day dating began.
+  const old = { moduleBaselines: { cash: { amount: 0, answers: "[]", banked: 365 } } };
+  const start = new Date(BANK_LOG_START + "T12:00:00");
+  assert.equal(gainedSoFar(old, start).total, 1);
+  assert.equal(gainedSoFar(old, new Date(start.getTime() + 9 * 86400000)).total, 10);
+});
