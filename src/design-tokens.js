@@ -39,33 +39,22 @@ export const STUDENT_PURPLE = "#8a4fae"; // "Student loan overpayment"
 export const PENSION_RAS    = "#1e7a5a"; // "Pension (relief at source)"
 
 // ── Chart colours: one per module, the same in every chart (Home's pot,
-// both Forecast tabs), so Pension is always deep sage. Candid's chart
-// palette. Soft by design, so colour alone doesn't tell the modules apart
-// (pink and sand barely differ, and the light four are under 3:1 on white):
-// every chart using them also has a legend or labels, a 2px gap in the
-// surface colour between touching fills, and lines drawn over a darker
-// outline (chartEdge).
-export const CHART_PINK        = "#EDB9B2";
-export const CHART_BUTTER      = "#F3DC8C";
-export const CHART_LIGHT_SAGE  = "#A9BF95";
-export const CHART_DEEP_SAGE   = "#7A8A5E";
-export const CHART_SAND        = "#D9C2A7";
-export const CHART_BROWN       = "#7A5235";
+// both Forecast tabs), so Pension is always the same green. Red is also
+// the "action needed" colour elsewhere; in a chart it only means Mortgage.
+// The green is a step brighter than SUCCESS so it doesn't read as grey
+// beside the others. Checked with the dataviz validator on #F7F9F5: every
+// pair clears normal-vision separation, but purple and blue are close for
+// red-green colour blindness, so every chart using these also names its
+// modules (a legend, a table or a tooltip). (A softer earth-tone palette,
+// 1b71db2, is in git history; its pale colours needed outlined lines.)
 export const MODULE_CHART_COLOR = {
-  cash:         CHART_LIGHT_SAGE,
-  investments:  CHART_BUTTER,
-  pension:      CHART_DEEP_SAGE,
-  studentLoan:  CHART_PINK,
-  mortgage:     CHART_BROWN,   // and property equity
-  personalLoan: CHART_SAND,    // and Forecast's "Debts"
+  cash:         CASH_BLUE,
+  investments:  GOLD,
+  pension:      "#1f8a4c",
+  studentLoan:  STUDENT_PURPLE,
+  mortgage:     CRITICAL,    // and property equity
+  personalLoan: "#e87ba4",   // and Forecast's "Debts"
 };
-// The darker outline a chart line is drawn over: its own colour, 45% of the
-// way to the brand dark green, so a pale line stays visible on white.
-export function chartEdge(hex) {
-  const mix = (a, b) => Math.round(a + (b - a) * 0.45);
-  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-  return `rgb(${mix(r, 0x16)},${mix(g, 0x2f)},${mix(b, 0x24)})`;
-}
 
 export const SC = { ok: SUCCESS, attention: GOLD, critical: CRITICAL, na: MUT, unknown: MUT };
 

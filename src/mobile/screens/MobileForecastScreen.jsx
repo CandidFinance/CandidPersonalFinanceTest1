@@ -6,7 +6,7 @@ import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { retirementAgeFor } from "../../lib/metrics.js";
-import { MODULE_CHART_COLOR, chartEdge } from "../../design-tokens.js";
+import { MODULE_CHART_COLOR } from "../../design-tokens.js";
 
 // Mobile Forecast screen — a "Surplus" comparison view (multi-strategy line
 // chart + low/mid/high table) and a "Net worth" view (single projected net
@@ -183,15 +183,13 @@ export default function MobileForecastScreen({ d, m }) {
                 <text x={chart.PL-6} y={chart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
               </g>
             ))}
-            {/* strategy lines, each over a darker outline of its own colour
-                so the paler chart colours stay visible on white */}
+            {/* strategy lines */}
             {chart.paths.map(p => {
               const color = FORECAST_COLORS[p.label] || MUT;
               return (
                 <g key={p.label}>
-                  <path d={p.path} fill="none" stroke={chartEdge(color)} strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d={p.path} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <circle cx={p.lastX} cy={p.lastY} r="3.5" fill={color} stroke={chartEdge(color)} strokeWidth="1.5"/>
+                  <circle cx={p.lastX} cy={p.lastY} r="3.5" fill={color}/>
                 </g>
               );
             })}
@@ -334,7 +332,7 @@ export default function MobileForecastScreen({ d, m }) {
                       </div>
                     </div>
                     <div style={{height:"8px",borderRadius:"4px",background:"#ede7db",overflow:"hidden",marginTop:"8px"}}>
-                      <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G,boxShadow:`inset 0 0 0 1px ${chartEdge(meta.color||G)}`}}/>
+                      <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G}}/>
                     </div>
                     {isOpen && (
                       <div style={{marginTop:"10px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}} onClick={e => e.stopPropagation()}>
