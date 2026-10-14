@@ -24,7 +24,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { clickBlocked, fillBlocked, tickBlocked, pageHandoff } from "./guardrails.js";
+import { clickBlocked, fillBlocked, tickBlocked, bankField, bankAnswer, redact, pageHandoff } from "./guardrails.js";
 import { PROFILE_FIELDS, PROFILE_INPUTS, INPUT_KEYS, profileValues, missingInputs, valueFor, matchOption, isoDate, formatDate, canonicalAnswer } from "./profile.js";
 import { loc, typeInto, pickOption, listOptions, isCustomDropdown } from "./browser.js";
 
@@ -64,7 +64,7 @@ function saveProfile(patch) {
 // state: idle | starting | working | approve | ask | your_turn | done | stopped | error
 let run = null;
 const newRun = job => ({
-  id: Date.now().toString(36), job, state: "starting", log: [], pending: null, handoff: null, question: null, values: {},
+  id: Date.now().toString(36), job, state: "starting", log: [], pending: null, handoff: null, question: null, values: {}, secrets: [],
   result: null, error: null, allowAll: false, stop: false, waiter: null,
 });
 // Each run is also written to runs/<id>.jsonl (gitignored), so a run that
@@ -142,7 +142,16 @@ async function snapshot(page) {
     return {
       url: location.href, title: document.title,
       headings: [...document.querySelectorAll("h1, h2, h3")].filter(visible).map(textOf).slice(0, 12),
-      text: (document.body.innerText || "").replace(/\n{2,}/g, "\n").slice(0, 3000),
+      // The visible text, without what's inside dropdowns: innerText counts
+      // every <option>, and a 300-long occupation list would use up the
+      // whole allowance before the rest of the page. Options are listed
+      // with each control instead.
+      text: (() => {
+        const parts = [];
+        const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode: n => !n.textContent.trim() || n.parentElement.closest("select, script, style, noscript, template") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+        while (walk.nextNode()) { const p = walk.currentNode.parentElement; if (p.checkVisibility ? p.checkVisibility() : visible(p)) parts.push(walk.currentNode.textContent.replace(/\s+/g, " ").trim()); }
+        return parts.join("\n").slice(0, 3000);
+      })(),
       items: items.slice(0, 160),
       flags: {
         password: [...document.querySelectorAll("input[type=password]")].some(visible),
@@ -203,7 +212,7 @@ Rules:
 - fundsFromOverseas = No means none of the money comes from outside the UK, so the answer to "does any of it come from outside the UK / EU / US / Canada, Australia, New Zealand (CANZAK)" is No. If it's Yes, ask_user.
 - contactPreference is how the user prefers to be contacted; it is not consent to marketing.
 - Occupation and industry: pick_option with occupation or industry. If no option clearly matches, ask_user with the same ref (and, for a type-ahead list, the options pick_option listed).
-- Account holder's name for a linked account is accountHolderName. Sort codes and account numbers are blocked: hand them to the user.
+- Account holder's name for a linked account is accountHolderName. For a sort code or account number, ask_user with that field's ref (for a sort code split into three boxes, the first box): the user types it in Candid and it's entered for you. It's never saved and you never see it, so don't ask for it to be repeated back.
 - When the user hands back, read the page and carry on from where it is now.
 - Finish when the confirmation page shows the account is open (give the account name and any reference), or if you can't go further.
 Keep the "why" for each action and each question short and plain: they're shown to the user.`;
@@ -258,6 +267,35 @@ async function ask(question) {
   me.question = null;
   resume(me);
   return answer;
+}
+
+// A linked account's sort code or account number: asked for in Candid, typed
+// straight in, and never saved. The digits are kept in memory only to hide
+// them from what the model reads and the run log, until the run ends; the
+// model is never told them.
+async function askBank(page, snap, item, input) {
+  const name = bank => bank === "sortCode" ? "sort code" : "account number";
+  const bank = bankField(item);
+  const answer = await ask({ question: input.question, field: item.label || null, kind: "bank", options: [], profileKey: null });
+  if (answer === "stop") { run.stop = true; return "The user stopped."; }
+  const digits = bankAnswer(bank, answer?.value);
+  if (!digits) return `The user's answer wasn't a ${bank === "sortCode" ? "6-digit sort code" : "8-digit account number"}. ask_user again, or hand it to the user.`;
+  run.secrets.push(digits);
+  try {
+    if (bank === "sortCode" && item.maxlength && item.maxlength <= 2) {
+      // Three boxes of two digits: this one and the two after it.
+      const i = snap.items.indexOf(item);
+      const boxes = snap.items.slice(i, i + 3);
+      if (boxes.length < 3 || boxes.some(b => b.tag !== "input" || !(b.maxlength <= 2))) throw new Error("couldn't find all three sort code boxes");
+      for (const [n, b] of boxes.entries()) await typeInto(loc(page, b.ref), digits.slice(n * 2, n * 2 + 2));
+    } else {
+      const dashed = bank === "sortCode" && (item.maxlength === 8 || /\d\d-\d\d-\d\d|xx-xx-xx|00-00-00/i.test(item.placeholder || ""));
+      await typeInto(loc(page, item.ref), dashed ? digits.match(/../g).join("-") : digits);
+    }
+    note(`Entered your ${name(bank)}`);
+    run.lastSnap = null;
+    return `The user's ${name(bank)} has been entered. It isn't saved, and it's hidden from you. Read the page and carry on.`;
+  } catch (e) { return `The user answered, but entering it failed: ${redact(e.message.split("\n")[0], run.secrets)}. Hand this field to the user.`; }
 }
 
 async function runTool(page, name, input) {
@@ -340,6 +378,8 @@ async function runTool(page, name, input) {
   if (name === "ask_user") {
     const item = input.ref ? byRef(snap, input.ref) : null;
     if (input.ref && !item) return "That field isn't on the page any more. Read the page again.";
+    const bank = item ? bankField(item) : null;
+    if (bank) return askBank(page, snap, item, input);
     const blocked = item && fillBlocked(item);
     if (blocked) return `Not for ask_user: ${blocked} Hand it to the user.`;
     const refOptions = (input.options || []).filter(o => o.ref);
@@ -471,6 +511,7 @@ async function agentLoop(job, me) {
           }
         }
       }
+      out = redact(out, me.secrets); // a review page showing bank details
       record({ kind: "result", tool: call.name, out: String(out).slice(0, 30000) });
       results.push({ type: "tool_result", tool_use_id: call.id, content: out });
     }
@@ -519,7 +560,9 @@ http.createServer(async (req, res) => {
     if (run && ACTIVE.includes(run.state)) return send(res, req, 409, { error: "already running", provider: run.job.provider });
     if (run?.context) run.context.close().catch(() => {});
     const me = run = newRun(job);
-    agentLoop(job, me).catch(e => { if (run !== me || me.stop) return; me.state = "error"; me.error = e.message; note(e.message, "error"); });
+    agentLoop(job, me)
+      .catch(e => { if (run !== me || me.stop) return; me.state = "error"; me.error = redact(e.message, me.secrets); note(me.error, "error"); })
+      .finally(() => { me.secrets = []; }); // bank details gone with the run
     return send(res, req, 200, publicState());
   }
   if (req.method === "POST" && ["/approve", "/allow-all", "/decline", "/handback", "/stop"].includes(url.pathname)) {

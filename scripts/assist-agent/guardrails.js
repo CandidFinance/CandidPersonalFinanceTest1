@@ -8,6 +8,9 @@
 //    funds: Savings; contact by: Email). Declarations, terms, consents and
 //    marketing boxes are the user's to tick, judged by the box's label and
 //    the question it sits under.
+//  - A linked account's sort code and account number are typed only from
+//    what the user enters in Candid for that form. They're never saved, and
+//    hidden from what the model reads and from the run log.
 //  - It never presses a button that agrees, declares, submits an
 //    application, signs in, or moves money.
 //  - It stops and hands over as soon as a page asks for a password, a
@@ -39,7 +42,18 @@ export function fillBlocked(item) {
   if (item.type === "file") return "Uploading ID is yours to do.";
   if (item.type === "checkbox" || item.role === "checkbox") return "Checkboxes are yours to tick.";
   if (/^cc-/.test(item.autocomplete || "") || item.autocomplete === "one-time-code") return "Card details and one-time codes are yours to enter.";
-  if (/national insurance|\bni\b number|sort code|account number|\biban\b/i.test(item.label || "")) return "Your NI number and bank details are yours to enter.";
+  if (/national insurance|\bni\b number|\biban\b/i.test(item.label || "")) return "Your NI number is yours to enter.";
+  if (bankField(item)) return "Sort codes and account numbers never come from the profile: ask_user for it. The answer is used once and never saved.";
+  return null;
+}
+
+// A linked account's sort code or account number. These are only ever typed
+// from an answer the user gives in Candid for this one form (ask_user): never
+// from the profile, never saved, never shown to the model.
+export function bankField(item) {
+  const label = `${item?.label || ""} ${item?.placeholder || ""}`;
+  if (/sort\s*code/i.test(label)) return "sortCode";
+  if (/account\s*(number|no\b)/i.test(label)) return "accountNumber";
   return null;
 }
 
@@ -65,4 +79,21 @@ export function pageHandoff(snapshot) {
   if ((f.frames || []).some(src => ID_CHECK_FRAMES.test(src))) return "This page is checking your identity.";
   if (/\b(take a selfie|scan your (passport|driving licence|id))\b/i.test(snapshot.text || "")) return "This page is checking your identity.";
   return null;
+}
+
+// A sort code (6 digits) or account number (8 digits) the user typed, as
+// digits, or null if it isn't one.
+export function bankAnswer(kind, value) {
+  const d = String(value ?? "").replace(/[\s-]/g, "");
+  if (!/^\d+$/.test(d)) return null;
+  return (kind === "sortCode" ? d.length === 6 : d.length === 8) ? d : null;
+}
+
+// Text with each of `secrets` (digit strings) hidden, however it's spaced or
+// dashed, before the model reads it or the run log keeps it.
+export function redact(text, secrets = []) {
+  let out = String(text);
+  // Longest first, so a sort code can't match inside an account number.
+  for (const s of [...secrets].sort((a, b) => b.length - a.length)) out = out.replace(new RegExp(s.split("").join("[\\s-]?"), "g"), "[hidden]");
+  return out;
 }

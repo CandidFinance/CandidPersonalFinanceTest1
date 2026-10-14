@@ -109,7 +109,8 @@ export default function AgentPanel({ o, onOpened }) {
         <div>
           <div style={{ fontSize: "13.5px", fontWeight: 700, color: TEXT }}>Claude needs an answer from you</div>
           <ProfileTile key={status.question.id} label={status.question.question} field={status.question.field} kind={status.question.kind} options={status.question.options}
-            remember={!!status.question.profileKey} action="Enter it" onAnswer={(value, remember) => post("/answer", { value, remember }).then(setStatus).catch(() => setProblem("Couldn't reach the agent."))}/>
+            remember={!!status.question.profileKey} action="Enter it"
+            disclosure={status.question.kind === "bank" ? "Used once, to fill in this form. Candid never saves your sort code or account number, not in your profile or anywhere else, and Claude never sees it." : null} onAnswer={(value, remember) => post("/answer", { value, remember }).then(setStatus).catch(() => setProblem("Couldn't reach the agent."))}/>
         </div>
       )}
 
