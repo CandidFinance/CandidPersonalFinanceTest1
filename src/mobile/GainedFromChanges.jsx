@@ -127,6 +127,9 @@ function GainChart({ d, keys, from, soFar }) {
   const topLine = pts => pts.map((p, i) => `${i ? "L" : "M"}${xy(p.ms, p.tops[p.tops.length - 1])}`).join(" ");
   const todayX = Math.min(Math.max(x(today), 4), width - 4);
   const todayAnchor = todayX < 60 ? "start" : todayX > width - 60 ? "end" : "middle";
+  // Today's date sits on the date row under the dot; the year's first and
+  // last dates give way when it would run into them.
+  const showStart = todayX > 90, showEnd = todayX < width - 120;
   const colour = k => MODULE_CHART_COLOR[k] || SUCCESS;
 
   const move = e => {
@@ -149,8 +152,9 @@ function GainChart({ d, keys, from, soFar }) {
         <line x1={todayX} x2={todayX} y1={y(soFar)} y2={base} stroke="rgba(22,47,36,0.35)" strokeWidth={1}/>
         <circle cx={todayX} cy={y(soFar)} r={4.5} fill={TEXT} stroke={SURFACE} strokeWidth={2}/>
         <text x={todayX} y={y(soFar) - 11} textAnchor={todayAnchor} fontSize="12.5" fontWeight="700" fill={TEXT}>{fmt(soFar)} so far</text>
-        <text x={0} y={H - 4} fontSize="11" fill={MUT}>{fmtDay(start)}</text>
-        <text x={width} y={H - 4} textAnchor="end" fontSize="11" fill={MUT}>{fmtDay(end, true)}</text>
+        {showStart && <text x={0} y={H - 4} fontSize="11" fill={MUT}>{fmtDay(start)}</text>}
+        {showEnd && <text x={width} y={H - 4} textAnchor="end" fontSize="11" fill={MUT}>{fmtDay(end, true)}</text>}
+        <text x={todayX} y={H - 4} textAnchor={todayAnchor} fontSize="11" fontWeight="700" fill={TEXT}>{fmtDay(today)}</text>
         {hover && <line x1={x(hover.ms)} x2={x(hover.ms)} y1={padTop - 8} y2={base} stroke="rgba(22,47,36,0.4)" strokeWidth={1}/>}
       </svg>
       {hover && (

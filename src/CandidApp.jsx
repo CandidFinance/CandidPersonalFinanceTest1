@@ -18,7 +18,7 @@ const ASSIST_MODULE_LABELS = { ...Object.fromEntries(MODULE_META.map(mm => [mm.k
 import { buildFinancialSummary, buildDashboardPrompt, buildFallbackInsights, buildRateLimitedFallback } from "./lib/aiPrompt.js";
 import { fvSingle, fvAnnuity, simulateAmortisation, calcForecast, calcForecastSeries, buildForecastAssumptions, calcLoanMarginalReturnCurve } from "./lib/forecast.js";
 import { ALL_STEP_DEFS, getActiveSteps, FIELD_CAPS, capField } from "./lib/onboarding.js";
-import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, chartEdge, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK, PILL_HEIGHT } from "./design-tokens.js";
+import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, CRITICAL, CASH_BLUE, STUDENT_PURPLE, PENSION_RAS, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK, PILL_HEIGHT } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
@@ -2865,13 +2865,10 @@ function ForecastScreen({ d, m }) {
               const color = FORECAST_COLORS[p.label] || MUT;
               return (
                 <g key={p.label}>
-                  {/* Over a darker outline of its own colour, so the paler
-                      chart colours stay visible on white. */}
-                  <path d={p.d} fill="none" stroke={chartEdge(color)} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d={p.d} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
                   {p.termDot && (
                     <>
-                      <circle cx={p.termDot.x} cy={p.termDot.y} r="5" fill={color} stroke={chartEdge(color)} strokeWidth="1.5"/>
+                      <circle cx={p.termDot.x} cy={p.termDot.y} r="5" fill={color}/>
                       <text x={p.termDot.x + 8} y={p.termDot.y + 4} fontSize={svgFont(10,isMobile)} fontWeight="600" fill={TEXT}>{p.termDot.label}</text>
                     </>
                   )}
