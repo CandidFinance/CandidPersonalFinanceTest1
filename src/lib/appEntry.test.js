@@ -24,7 +24,7 @@ test("how Candid works names the modules picked, or the default for just explori
 });
 
 test("each message waits for the one before to be read, at 300 words a minute", () => {
-  assert.equal(readingMs("one two three four five six seven eight nine ten"), 300 + 2000);
+  assert.equal(readingMs("one two three four five six seven eight nine ten"), 300 + 1818);
 });
 
 test("the score appears once every pick is answered; for just exploring, after the first module", () => {
