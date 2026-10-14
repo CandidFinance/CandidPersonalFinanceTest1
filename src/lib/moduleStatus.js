@@ -397,12 +397,45 @@ export function pendingBank(d, key, amount) {
   if (!base || base.answers === ownAnswers(d, key)) return 0;
   return base.amount > amount ? Math.round(base.amount - amount) : 0;
 }
-export function bankPatch(d, key, amount, made) {
+// Each change the user says they made is also logged with its date
+// (`changes`: [{ perYear, on }]), so Home can show what the changes have
+// added up to so far (gainedSoFar).
+export function bankPatch(d, key, amount, made, on = new Date().toISOString().slice(0, 10)) {
   const base = d.moduleBaselines[key];
+  const add = made ? pendingBank(d, key, amount) : 0;
   return { ...d.moduleBaselines, [key]: {
     amount: Math.round(amount), answers: ownAnswers(d, key),
-    banked: (base.banked || 0) + (made ? pendingBank(d, key, amount) : 0),
+    banked: (base.banked || 0) + add,
+    changes: [...(base.changes || []), ...(add > 0 ? [{ perYear: add, on }] : [])],
   } };
+}
+
+// ── Gained so far: each banked change's £ a year, counted by the day from
+// the day it was made (that day included). Banked before changes were
+// dated counts from BANK_LOG_START, the day dating began. An estimate, like
+// the £ it comes from.
+export const BANK_LOG_START = "2026-10-14";
+export function bankedChanges(d) {
+  return Object.entries(d.moduleBaselines || {}).flatMap(([key, base]) => {
+    const dated = base.changes || [];
+    const undated = (base.banked || 0) - dated.reduce((sum, c) => sum + c.perYear, 0);
+    return [...(undated > 0 ? [{ key, perYear: undated, on: BANK_LOG_START }] : []), ...dated.map(c => ({ key, ...c }))];
+  });
+}
+export function gainedSoFar(d, now = new Date()) {
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const byModule = {};
+  let total = 0, perYear = 0;
+  const changes = bankedChanges(d);
+  for (const c of changes) {
+    const days = Math.max(0, Math.round((today - Date.parse(c.on)) / 86400000) + 1);
+    const gained = c.perYear * days / 365;
+    byModule[c.key] = (byModule[c.key] || 0) + gained;
+    total += gained;
+    perYear += c.perYear;
+  }
+  return { total: Math.round(total), perYear: Math.round(perYear), count: changes.length,
+    byModule: Object.entries(byModule).map(([key, gained]) => ({ key, gained: Math.round(gained) })).sort((a, b) => b.gained - a.gained) };
 }
 // The baselines with any newly answered module added, or null if none is
 // new. Lump sums (Kids, £ by 18) aren't comparable, so aren't tracked.
