@@ -430,12 +430,14 @@ export function gainedSoFar(d, now = new Date()) {
   for (const c of changes) {
     const days = Math.max(0, Math.round((today - Date.parse(c.on)) / 86400000) + 1);
     const gained = c.perYear * days / 365;
-    byModule[c.key] = (byModule[c.key] || 0) + gained;
+    const mod = byModule[c.key] || (byModule[c.key] = { gained: 0, perYear: 0 });
+    mod.gained += gained;
+    mod.perYear += c.perYear;
     total += gained;
     perYear += c.perYear;
   }
   return { total: Math.round(total), perYear: Math.round(perYear), count: changes.length,
-    byModule: Object.entries(byModule).map(([key, gained]) => ({ key, gained: Math.round(gained) })).sort((a, b) => b.gained - a.gained) };
+    byModule: Object.entries(byModule).map(([key, mod]) => ({ key, gained: Math.round(mod.gained), perYear: Math.round(mod.perYear) })).sort((a, b) => b.perYear - a.perYear) };
 }
 // The baselines with any newly answered module added, or null if none is
 // new. Lump sums (Kids, £ by 18) aren't comparable, so aren't tracked.

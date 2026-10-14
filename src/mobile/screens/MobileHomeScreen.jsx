@@ -6,7 +6,7 @@ import { isLocked } from "../../lib/unlock.js";
 import ScoreDonut from "../ScoreDonut.jsx";
 import { scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../CandidApp.jsx";
 import { HERO_TILE_BG } from "../../design-tokens.js";
-import { getModuleBreakdown, calcCandidScore, gainedSoFar, MODULE_META } from "../../lib/moduleStatus.js";
+import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
@@ -15,6 +15,7 @@ import { moduleEstimate } from "../../lib/crossModule.js";
 import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import GoalsCard from "./GoalsCard.jsx";
+import GainedFromChanges from "../GainedFromChanges.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
@@ -62,7 +63,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   const [scoreOpen, setScoreOpen] = useState(false);
   const reduceMotion = useReducedMotion();
   const [netWorthOpen, setNetWorthOpen] = useState(false);
-  const [gainedOpen, setGainedOpen] = useState(false);
 
   // Computed live from `statuses` (see calcCandidScore) rather than read from
   // insights.score — reacts instantly and for free to any change in `d`, from
@@ -125,7 +125,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   const plan = priorities.map(p => ({ ...p, done: (completedModules || []).includes(p.key) }));
   const stepsDone = plan.filter(p => p.done).length;
   const { totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
-  const gained = gainedSoFar(d);
   const { assets, liabilities } = netWorthBreakdown(d, m);
   const netWorthPositive = m.netWorth >= 0;
   // How much of the picture the score covers: a high score from one module
@@ -216,37 +215,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         )}
       </div>
 
-      {/* Gained so far: what the changes the user says they've made have
-          added up to, growing by the day (moduleStatus.js gainedSoFar). Not
-          a card: plain section on the page, the module breakdown opening in
-          place. Before any change, one line on how it fills. */}
-      <div style={{marginTop:"22px"}}>
-        <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Gained from your changes</div>
-        {gained.count > 0 ? <>
-          <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:SUCCESS,lineHeight:1.15,marginTop:"6px"}}>{fmt(gained.total)}</div>
-          <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"4px 0 0"}}>
-            So far, estimated. The changes you've made are worth {fmt(gained.perYear)} a year, adding up each day.
-          </p>
-          <button type="button" onClick={() => setGainedOpen(o => !o)}
-            style={{marginTop:"8px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:G,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
-            By module<ChevronDown size={14} style={{transform:gainedOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
-          </button>
-          {gainedOpen && (
-            <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
-              {gained.byModule.map(g => (
-                <div key={g.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <span style={{fontSize:"13px",color:TEXT}}>{MODULE_META.find(mm => mm.key === g.key)?.title || g.key}</span>
-                  <span style={{fontSize:"13px",fontWeight:600,color:TEXT}}>{fmt(g.gained)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </> : (
-          <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
-            When you make a change and update your figures in a module, what it's worth adds up here.
-          </p>
-        )}
-      </div>
+      {/* What the changes the user says they've made are worth, and the pot
+          they've added up to (GainedFromChanges.jsx). */}
+      <GainedFromChanges d={d}/>
 
       {/* Asked once, after the score appears; never blocks anything. */}
       {!d.goalsAsked && <GoalsCard d={d} set={set} onDone={onGoalsDone}/>}

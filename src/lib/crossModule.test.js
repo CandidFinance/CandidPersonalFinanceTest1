@@ -127,7 +127,7 @@ test("gained so far: each banked change counted by the day since it was made", a
   const later = gainedSoFar(made, new Date(2027, 2, 1));
   assert.equal(later.total, Math.round(900 * 60 / 365));
   assert.equal(later.perYear, 900);
-  assert.deepEqual(later.byModule, [{ key: "pension", gained: later.total }]);
+  assert.deepEqual(later.byModule, [{ key: "pension", gained: later.total, perYear: 900 }]);
   // Before it was made: nothing yet.
   assert.equal(gainedSoFar(made, new Date(2026, 11, 1)).total, 0);
   // A correction logs no change.
