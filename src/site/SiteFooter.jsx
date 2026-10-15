@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { G, GOLD, SERIF } from "../design-tokens.js";
 import { askConsentAgain } from "../lib/consent.js";
+import RegulatoryDisclaimer from "./RegulatoryDisclaimer.jsx";
 
 // Shared across every marketing-site page — extracted so Home, The Problem
 // and How it works don't each carry their own copy of the legal/company
@@ -18,9 +19,7 @@ export default function SiteFooter() {
           66 Paul Street, London, England, EC2A 4NA
         </div>
       </div>
-      <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", lineHeight: 1.6, maxWidth: "560px" }}>
-        Candid provides financial guidance and education only – not regulated financial advice. Always consider your personal circumstances and consult a qualified adviser for complex situations.
-      </div>
+      <RegulatoryDisclaimer />
       <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
         <span>© 2026 Candid Finance</span>
         <Link to="/what-candid-is" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>What Candid is and isn't</Link>

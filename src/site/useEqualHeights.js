@@ -1,4 +1,8 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
+
+// useLayoutEffect warns when the homepage is rendered to HTML at build time
+// (scripts/prerender-home.js); there's nothing to measure there anyway.
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 // Site-wide rule: tiles that belong to the same set (e.g. the four "How it
 // works" steps, or a row of calculator cards) must match each other's box
@@ -18,7 +22,7 @@ import { useLayoutEffect, useRef } from "react";
 export function useEqualHeights(count) {
   const nodes = useRef([]);
 
-  useLayoutEffect(() => {
+  useBrowserLayoutEffect(() => {
     function apply() {
       const els = nodes.current.filter(Boolean);
       if (els.length < 2) return;

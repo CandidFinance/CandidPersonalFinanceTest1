@@ -1,5 +1,32 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/the-problem", "destination": "/app-shell.html" },
+    { "source": "/how-it-works", "destination": "/app-shell.html" },
+    { "source": "/signin", "destination": "/app-shell.html" },
+    { "source": "/what-candid-is", "destination": "/app-shell.html" },
+    { "source": "/beta", "destination": "/app-shell.html" },
+    { "source": "/welcome", "destination": "/app-shell.html" },
+    { "source": "/welcome-back", "destination": "/app-shell.html" },
+    { "source": "/admin/feedback", "destination": "/app-shell.html" },
+    { "source": "/admin/rates", "destination": "/app-shell.html" },
+    { "source": "/assessment/:step", "destination": "/app-shell.html" },
+    { "source": "/dashboard", "destination": "/app-shell.html" },
+    { "source": "/modules", "destination": "/app-shell.html" },
+    { "source": "/forecast", "destination": "/app-shell.html" },
+    { "source": "/chat", "destination": "/app-shell.html" },
+    { "source": "/module/:moduleKey", "destination": "/app-shell.html" },
+    { "source": "/app/home", "destination": "/app-shell.html" },
+    { "source": "/app/modules", "destination": "/app-shell.html" },
+    { "source": "/app/forecast", "destination": "/app-shell.html" },
+    { "source": "/app/inputs", "destination": "/app-shell.html" },
+    { "source": "/app/chat", "destination": "/app-shell.html" },
+    { "source": "/app/module/:moduleKey", "destination": "/app-shell.html" },
+    { "source": "/app/property", "destination": "/app-shell.html" },
+    { "source": "/app/property/mortgage", "destination": "/app-shell.html" },
+    { "source": "/app/property/rent-vs-buy", "destination": "/app-shell.html" },
+    { "source": "/app/assessment/:step", "destination": "/app-shell.html" },
+    { "source": "/app/start", "destination": "/app-shell.html" }
+  ],
   "crons": [{ "path": "/api/rates", "schedule": "0 6 * * *" }],
   "functions": { "api/rates.js": { "maxDuration": 60 } }
 }

@@ -110,6 +110,16 @@ const TheProblemPage = lazy(() => import("./site/TheProblemPage.jsx"))
 const HowItWorksPage = lazy(() => import("./site/HowItWorksPage.jsx"))
 const SignInPage = lazy(() => import("./site/SignInPage.jsx"))
 const WhatCandidIsPage = lazy(() => import("./site/WhatCandidIsPage.jsx"))
+const NotFoundPage = lazy(() => import("./site/NotFoundPage.jsx"))
+
+// The homepage's HTML, rendered into index.html at build time so crawlers
+// can read it (scripts/prerender-home.js). Read before React takes over the
+// root, and shown until LandingPage's own code has loaded, so the page
+// doesn't blank out in between. Empty on every other route (app-shell.html).
+const prerenderedHome = document.getElementById("root").innerHTML
+function PrerenderedHome() {
+  return prerenderedHome ? <div dangerouslySetInnerHTML={{ __html: prerenderedHome }} /> : null
+}
 
 // ── Welcome back screen ───────────────────────────────────────────────────────
 function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStartFresh }) {
@@ -195,7 +205,7 @@ function RootRoute() {
   if (isTrueLayerBounce) {
     return <Navigate to={`/app/assessment/5${window.location.search}`} replace />;
   }
-  return <Suspense fallback={null}><LandingPage /></Suspense>;
+  return <Suspense fallback={<PrerenderedHome />}><LandingPage /></Suspense>;
 }
 
 // ── Returning-visitor screen ── same content/behaviour as the old root
@@ -306,7 +316,9 @@ function AppRoutes() {
           <Route path="/app/assessment/:step" />
           <Route path="/app/start" />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* The server answers unknown addresses with 404.html (vercel.json);
+            this covers links followed inside the site. */}
+        <Route path="*" element={<Suspense fallback={null}><NotFoundPage /></Suspense>} />
       </Routes>
 
       <CookieNotice />

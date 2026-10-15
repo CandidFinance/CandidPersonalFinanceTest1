@@ -4,6 +4,7 @@ import { ClipboardList, Scale, Search, Compass, GraduationCap, PoundSterling, Ho
 import posthog from "posthog-js";
 import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../design-tokens.js";
 import SiteLayout from "./SiteLayout.jsx";
+import AuthorBio from "./AuthorBio.jsx";
 import StartCheckButton, { CTA_BLUE } from "./StartCheckButton.jsx";
 import { EASE_STEADY, riseIn, pullTogether, heroStagger, heroItem } from "./motion.js";
 import { useEqualHeights } from "./useEqualHeights.js";
@@ -441,6 +442,8 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+
+      <AuthorBio />
 
       {/* ── FINAL CTA ── */}
       <div style={{ padding: "0 24px 96px", textAlign: "center" }}>
