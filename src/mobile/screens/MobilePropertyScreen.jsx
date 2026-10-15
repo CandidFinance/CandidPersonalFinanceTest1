@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import posthog from "posthog-js";
 import { Home, ChevronRight } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, WHITE } from "../../design-tokens.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "../../lib/waterfall.js";
 import DecisionWaterfall from "../property/DecisionWaterfall.jsx";

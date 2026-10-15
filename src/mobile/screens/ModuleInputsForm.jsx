@@ -1,4 +1,5 @@
-import { G, WHITE, MUT, TEXT, PillSlider } from "../../CandidApp.jsx";
+import { G, WHITE, MUT, TEXT } from "../../design-tokens.js";
+import { PillSlider } from "../PillSlider.jsx";
 import { MODULE_GUIDES } from "../../lib/moduleGuide.js";
 import { capField } from "../../lib/onboarding.js";
 import { withAnswered } from "../../lib/appEntry.js";

@@ -1,11 +1,7 @@
 // Candid design tokens — single source of truth for colour, type, and the
 // handful of spacing/radius values that are genuinely consistent app-wide.
 // Values were extracted as-is from CandidApp.jsx's inline styles (Sept 2026
-// design-tokens audit) — this is a refactor, not a redesign: every value
-// here is unchanged, only its source moved. CandidApp.jsx imports and
-// re-exports the palette/type/SC/forecast tokens, so every existing
-// `import { G, GOLD, ... } from "../../CandidApp.jsx"` (mobile screens,
-// desktop components, etc.) keeps working unchanged.
+// design-tokens audit). Every file imports its tokens from here directly.
 
 // ── Palette ──────────────────────────────────────────────────────────────
 // Brand
@@ -30,6 +26,7 @@ export const INPUT_BG_DARK = "#0f2018";
 export const SUCCESS  = "#2d6b4a"; // "on track" / positive state
 export const WARNING  = "#d9822b"; // scoreBand's 4th tier only — sits between GOLD and CRITICAL
 export const CRITICAL = "#c0392b"; // "action needed" / error state
+export const ERROR_TEXT = "#b3261e"; // error messages under forms and buttons
 
 // Forecast-chart-only accents. Named (rather than left inline) because the
 // Surplus chart and the Net Worth breakdown both need to use the same hex
@@ -119,7 +116,7 @@ export const FONT_SIZE = {
 // ── Header / nav wordmark ────────────────────────────────────────────────
 // The "Candid." wordmark's font/weight/colour-per-background, shared by
 // every header in the app — CandidApp.jsx's in-app `NavBar` and the
-// marketing site's `NewSiteHeader` both build their wordmark style off
+// marketing site's `SiteHeader` both build their wordmark style off
 // these rather than re-declaring it, so a change here (or a GOLD/SERIF
 // change) can't quietly stop reaching one of them. Each context still
 // picks its own font-size (they're different-height bars), so only

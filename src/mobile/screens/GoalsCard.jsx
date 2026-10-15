@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { G, WHITE, MUT, TEXT, RADIUS_CARD } from "../../CandidApp.jsx";
+import { G, WHITE, MUT, TEXT, RADIUS_CARD } from "../../design-tokens.js";
 import { GOAL_CHOICES, goalsWith } from "../../lib/appEntry.js";
 
 // The goals the entry doesn't ask, asked once on home after the score

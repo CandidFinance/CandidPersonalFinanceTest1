@@ -1,9 +1,8 @@
 import { isaUsedThisYear } from "./isa.js";
 // Shared onboarding step definitions and field caps — pure logic, no
-// CandidApp.jsx imports, so both the desktop wizard (OnboardingScreen/
-// OnboardingStep) and the mobile wizard (MobileOnboardingScreen) read from a
-// single source of truth and can never disagree on which steps exist or what
-// a field's hard cap is.
+// CandidApp.jsx imports, so the wizard (MobileOnboardingScreen), Edit inputs
+// and the app shell read from a single source of truth and can never
+// disagree on which steps exist or what a field's hard cap is.
 
 export const ALL_STEP_DEFS = [
   { id:"modules",     label:"Focus",           shortLabel:"Focus",       mobileLabel:"Focus", always:true },

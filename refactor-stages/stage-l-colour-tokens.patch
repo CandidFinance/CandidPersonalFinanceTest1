@@ -1,0 +1,1118 @@
+diff --git a/src/admin/FeedbackAdmin.jsx b/src/admin/FeedbackAdmin.jsx
+index 27d395d..70cd8a0 100644
+--- a/src/admin/FeedbackAdmin.jsx
++++ b/src/admin/FeedbackAdmin.jsx
+@@ -1,6 +1,6 @@
+ import { useState } from "react";
+ import { NavBar } from "../NavBar.jsx";
+-import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "../design-tokens.js";
++import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS, ERROR_TEXT } from "../design-tokens.js";
+ 
+ // ── Internal feedback admin (password-gated server-side, see api/feedback.js) ─
+ // No persistence of the password across reloads by design — this shows real
+@@ -50,7 +50,7 @@ export default function FeedbackAdmin() {
+             <button type="submit" disabled={loading || !password} style={{ width: "100%", padding: "11px", background: (loading || !password) ? "rgba(22,47,36,0.25)" : G, border: "none", borderRadius: "8px", color: WHITE, fontSize: "14px", fontWeight: 600, cursor: (loading || !password) ? "not-allowed" : "pointer", fontFamily: SANS }}>
+               {loading ? "Checking…" : "View feedback"}
+             </button>
+-            {error && <div style={{ color: "#b3261e", fontSize: "13px", marginTop: "10px" }}>{error}</div>}
++            {error && <div style={{ color: ERROR_TEXT, fontSize: "13px", marginTop: "10px" }}>{error}</div>}
+           </form>
+         </div>
+       </div>
+diff --git a/src/admin/RatesAdmin.jsx b/src/admin/RatesAdmin.jsx
+index 04a8872..29625da 100644
+--- a/src/admin/RatesAdmin.jsx
++++ b/src/admin/RatesAdmin.jsx
+@@ -1,6 +1,6 @@
+ import { useState } from "react";
+ import { NavBar } from "../NavBar.jsx";
+-import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "../design-tokens.js";
++import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS, ERROR_TEXT } from "../design-tokens.js";
+ 
+ // Internal review page for the weekly savings rate feed (api/rates.js).
+ // Same password as the feedback admin, and like it, nothing is remembered
+@@ -9,7 +9,7 @@ import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "../design-tokens.js";
+ // from the page, the sources and how their last check went, and what's live.
+ 
+ const CHANGE_LABEL = { new: "New product", rate_change: "Big rate change", missing: "No longer on the page" };
+-const STATUS_COLOR = { ok: "#2d6b4a", unchanged: "#2d6b4a", no_rates: "#b9661a", no_content: "#b9661a", fetch_failed: "#b3261e", extract_failed: "#b3261e", error: "#b3261e" };
++const STATUS_COLOR = { ok: SUCCESS, unchanged: SUCCESS, no_rates: "#b9661a", no_content: "#b9661a", fetch_failed: ERROR_TEXT, extract_failed: ERROR_TEXT, error: ERROR_TEXT };
+ 
+ const cell = { padding: "8px 10px", borderBottom: "1px solid rgba(22,47,36,0.1)", fontSize: "13px", color: TEXT, verticalAlign: "top", textAlign: "left" };
+ const head = { ...cell, fontWeight: 700, color: G, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", borderBottom: `2px solid ${G}`, whiteSpace: "nowrap" };
+@@ -63,7 +63,7 @@ export default function RatesAdmin() {
+             <button type="submit" disabled={!!busy || !password} style={{ ...button(true), width: "100%", padding: "11px", fontSize: "14px", opacity: (busy || !password) ? 0.4 : 1 }}>
+               {busy ? "Checking..." : "Open"}
+             </button>
+-            {error && <div style={{ color: "#b3261e", fontSize: "13px", marginTop: "10px" }}>{error}</div>}
++            {error && <div style={{ color: ERROR_TEXT, fontSize: "13px", marginTop: "10px" }}>{error}</div>}
+           </form>
+         </div>
+       </div>
+@@ -81,7 +81,7 @@ export default function RatesAdmin() {
+           </button>
+           <span style={{ fontSize: "12px", color: MUT }}>The daily job checks any page not read for 6 days, so each is read about once a week.</span>
+         </div>
+-        {error && <div style={{ color: "#b3261e", fontSize: "13px", marginTop: "10px" }}>{error}</div>}
++        {error && <div style={{ color: ERROR_TEXT, fontSize: "13px", marginTop: "10px" }}>{error}</div>}
+         {lastRun && (
+           <div style={{ marginTop: "12px", fontSize: "12.5px", color: TEXT, background: WHITE, borderRadius: "8px", padding: "10px 12px" }}>
+             {lastRun.length === 0 ? "Nothing to check." : lastRun.map((r, i) => (
+@@ -179,7 +179,7 @@ export default function RatesAdmin() {
+                         {s.android_app_url && <a href={s.android_app_url} target="_blank" rel="noopener noreferrer" style={{ color: G }}>Google Play</a>}
+                         <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                           {s.app_links_confirmed_at
+-                            ? <span style={{ color: "#2d6b4a", fontWeight: 600 }}>Confirmed</span>
++                            ? <span style={{ color: SUCCESS, fontWeight: 600 }}>Confirmed</span>
+                             : <>
+                                 <span style={{ color: "#b9661a", fontWeight: 600, marginRight: "8px" }}>Not confirmed</span>
+                                 <button type="button" style={button(true)} disabled={!!busy} onClick={() => call("POST", { action: "confirm_app_links", id: s.id }, s.id)}>Confirm</button>
+diff --git a/src/design-tokens.js b/src/design-tokens.js
+index 935fbce..2ef0838 100644
+--- a/src/design-tokens.js
++++ b/src/design-tokens.js
+@@ -26,6 +26,7 @@ export const INPUT_BG_DARK = "#0f2018";
+ export const SUCCESS  = "#2d6b4a"; // "on track" / positive state
+ export const WARNING  = "#d9822b"; // scoreBand's 4th tier only — sits between GOLD and CRITICAL
+ export const CRITICAL = "#c0392b"; // "action needed" / error state
++export const ERROR_TEXT = "#b3261e"; // error messages under forms and buttons
+ 
+ // Forecast-chart-only accents. Named (rather than left inline) because the
+ // Surplus chart and the Net Worth breakdown both need to use the same hex
+diff --git a/src/mobile/MobileReminderAction.jsx b/src/mobile/MobileReminderAction.jsx
+index 55f244a..d2877bc 100644
+--- a/src/mobile/MobileReminderAction.jsx
++++ b/src/mobile/MobileReminderAction.jsx
+@@ -1,6 +1,6 @@
+ import { useState } from "react";
+ import { Bell, BellRing, Mail, CalendarPlus, Check } from "lucide-react";
+-import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL } from "../design-tokens.js";
++import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL, SUCCESS } from "../design-tokens.js";
+ import { triggerCalendarReminder, nextAvailableWorkingDay } from "./reminders.js";
+ import { buildMailtoUrl, draftAsText } from "./emailDrafts.js";
+ 
+@@ -59,7 +59,7 @@ export default function MobileReminderAction({ id, title, description, email })
+ 
+   const stepBtn = (done) => ({
+     display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", width:"100%", marginTop:"8px",
+-    background: done ? "rgba(45,107,74,0.1)" : G, color: done ? "#2d6b4a" : WHITE,
++    background: done ? "rgba(45,107,74,0.1)" : G, color: done ? SUCCESS : WHITE,
+     border:"none", borderRadius:RADIUS_PILL, padding:"10px 14px", fontSize:"13px", fontWeight:700, fontFamily:SANS, cursor:"pointer",
+   });
+   const stepNum = { width:"20px", height:"20px", borderRadius:"50%", background:G, color:WHITE, fontSize:"11px", fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 };
+diff --git a/src/mobile/ScoreDonut.jsx b/src/mobile/ScoreDonut.jsx
+index 3e829b2..374d1ca 100644
+--- a/src/mobile/ScoreDonut.jsx
++++ b/src/mobile/ScoreDonut.jsx
+@@ -1,4 +1,4 @@
+-import { CDARK, TEXT, MUT, SERIF } from "../design-tokens.js";
++import { CDARK, TEXT, MUT, SERIF, WHITE } from "../design-tokens.js";
+ 
+ // The Candid score as a ring that fills to the score, with the score in the
+ // centre. Presentational only: Home animates `value` (the fill on first
+@@ -22,7 +22,7 @@ export default function ScoreDonut({ value, color, size = 112, stroke = 10, onDa
+         )}
+       </svg>
+       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+-        <span style={{fontFamily:SERIF,fontSize:`${Math.round(size * 0.3)}px`,fontWeight:700,color:onDark ? "#ffffff" : TEXT,lineHeight:1}}>{value}</span>
++        <span style={{fontFamily:SERIF,fontSize:`${Math.round(size * 0.3)}px`,fontWeight:700,color:onDark ? WHITE : TEXT,lineHeight:1}}>{value}</span>
+         <span style={{fontSize:"11px",color:onDark ? "rgba(255,255,255,0.6)" : MUT,marginTop:"3px"}}>/100</span>
+       </div>
+     </div>
+diff --git a/src/mobile/assist/AgentPanel.jsx b/src/mobile/assist/AgentPanel.jsx
+index 3eb8745..9417f17 100644
+--- a/src/mobile/assist/AgentPanel.jsx
++++ b/src/mobile/assist/AgentPanel.jsx
+@@ -1,6 +1,6 @@
+ import { useEffect, useState } from "react";
+ import { Bot, Hand, Square } from "lucide-react";
+-import { G, WHITE, MUT, TEXT, SANS } from "../../design-tokens.js";
++import { G, WHITE, MUT, TEXT, SANS, ERROR_TEXT } from "../../design-tokens.js";
+ import ProfileTile from "./ProfileTile.jsx";
+ 
+ // "Let Claude start it": hands a picked account to the local account-opening
+@@ -67,7 +67,7 @@ export default function AgentPanel({ o, onOpened }) {
+     <div style={box}>
+       <div style={{ fontSize: "13.5px", color: TEXT, lineHeight: 1.5 }}>Claude is still on {status.provider}'s application. Stop it to start this one.</div>
+       <button type="button" onClick={() => act("/stop")} style={{ ...quiet, color: MUT }}><Square size={12}/>Stop it</button>
+-      {problem && <p style={{ ...small, color: "#b3261e", margin: "6px 0 0" }}>{problem}</p>}
++      {problem && <p style={{ ...small, color: ERROR_TEXT, margin: "6px 0 0" }}>{problem}</p>}
+     </div>
+   );
+ 
+@@ -82,7 +82,7 @@ export default function AgentPanel({ o, onOpened }) {
+       )}
+       <button type="button" onClick={start} style={button(G)}><Bot size={15}/>Let Claude start it</button>
+       <p style={{ ...small, margin: "8px 0 0" }}>Opens {o.provider}'s site in a browser window on this computer and fills in the application from your profile. You approve what it types, and do the ID checks, declarations and paying in yourself.</p>
+-      {problem && <p style={{ ...small, color: "#b3261e", margin: "6px 0 0" }}>{problem}</p>}
++      {problem && <p style={{ ...small, color: ERROR_TEXT, margin: "6px 0 0" }}>{problem}</p>}
+     </div>
+   );
+ 
+@@ -145,7 +145,7 @@ export default function AgentPanel({ o, onOpened }) {
+         </ul>
+       )}
+       {active && <button type="button" onClick={() => act("/stop")} style={{ ...quiet, color: MUT }}><Square size={12}/>Stop</button>}
+-      {problem && <p style={{ ...small, color: "#b3261e", margin: "6px 0 0" }}>{problem}</p>}
++      {problem && <p style={{ ...small, color: ERROR_TEXT, margin: "6px 0 0" }}>{problem}</p>}
+     </div>
+   );
+ }
+diff --git a/src/mobile/deepdive/MobileCashDeepDive.jsx b/src/mobile/deepdive/MobileCashDeepDive.jsx
+index 754c73a..70c9fa1 100644
+--- a/src/mobile/deepdive/MobileCashDeepDive.jsx
++++ b/src/mobile/deepdive/MobileCashDeepDive.jsx
+@@ -9,7 +9,7 @@ import MobileProductListTile from "../MobileProductListTile.jsx";
+ import InfoButton from "../InfoButton.jsx";
+ import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
+ import { buildReminderSubject } from "../reminders.js";
+-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE } from "../../design-tokens.js";
++import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, SUCCESS, CDARK, CRITICAL } from "../../design-tokens.js";
+ 
+ // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
+ // moduleKey==="cash" — CandidApp.jsx). Keeps the opportunity strip, the
+@@ -29,7 +29,7 @@ function AccountLines({ lines, rowStyle }) {
+     const name = l.product && !l.provider.toLowerCase().includes(l.product.toLowerCase()) ? `${l.provider} · ${l.product}` : l.provider;
+     return (
+       <div key={i} style={{padding:"4px 0"}}>
+-        <div style={{...rowStyle,padding:0}}><span>{fmt(l.amount)} at {l.ratePct.toFixed(2)}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(l.interest)}/yr</span></div>
++        <div style={{...rowStyle,padding:0}}><span>{fmt(l.amount)} at {l.ratePct.toFixed(2)}%</span><span style={{fontWeight:700,color:SUCCESS}}>{fmt(l.interest)}/yr</span></div>
+         <div style={{fontSize:"11.5px",color:MUT,lineHeight:1.45}}>
+           {name}{l.cap != null && ` · up to ${fmt(l.cap)}`}{l.fscsLimited && " · the most FSCS protects with one bank"}{l.extra != null && anchorRate != null && ` · ${fmt(l.extra)}/yr more than at ${anchorRate.toFixed(2)}%`}
+         </div>
+@@ -43,7 +43,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
+   const stepLabelRow = { display:"flex", alignItems:"center", gap:"6px", marginTop:"8px", marginBottom:"2px" };
+   const stepLabel = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase" };
+-  const stepCaption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, marginTop:"6px", background:"#ede7db", borderRadius:"8px", padding:"8px 10px" };
++  const stepCaption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, marginTop:"6px", background:CDARK, borderRadius:"8px", padding:"8px 10px" };
+   const isaRatePct = topRate(savingsRates, true)?.rate_aer ?? null;
+   const nonIsaRatePct = topRate(savingsRates, false)?.rate_aer ?? null;
+   const {
+@@ -77,7 +77,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+   const runwayTarget = m.emergencyBuffer;
+   const runwayCurrent = m.totalLiquid;
+   const runwayPctRaw = runwayTarget > 0 ? (runwayCurrent / runwayTarget) * 100 : 0;
+-  const runwayTierColor = runwayPctRaw >= 100 ? "#2d6b4a" : runwayPctRaw >= 33 ? GOLD : "#c0392b";
++  const runwayTierColor = runwayPctRaw >= 100 ? SUCCESS : runwayPctRaw >= 33 ? GOLD : CRITICAL;
+   const runwayLabel = runwayPctRaw >= 150 ? "More than sufficient" : runwayPctRaw >= 100 ? "Sufficient" : runwayPctRaw >= 33 ? "Borderline" : "Insufficient";
+   const runwayMarkerPct = runwayTarget > 0 ? Math.min(100, (runwayPctRaw / 200) * 100) : 0;
+ 
+@@ -108,7 +108,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+           </div>
+           <span style={{fontSize:"12.5px",color:MUT}}>{m.runwayMonths.toFixed(1)} mo</span>
+         </div>
+-        <div style={{position:"relative",width:"100%",height:"12px",borderRadius:"6px",background:`linear-gradient(90deg,#c0392b 0%,${GOLD} 33%,#2d6b4a 60%,#1e4d35 100%)`}}>
++        <div style={{position:"relative",width:"100%",height:"12px",borderRadius:"6px",background:`linear-gradient(90deg,${CRITICAL} 0%,${GOLD} 33%,${SUCCESS} 60%,#1e4d35 100%)`}}>
+           <div style={{position:"absolute",left:`${runwayMarkerPct}%`,top:"-3px",bottom:"-3px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)"}}/>
+         </div>
+         <div style={{display:"flex",justifyContent:"space-between",marginTop:"5px"}}>
+@@ -121,7 +121,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+       {showEmergencyWin && (
+         <MobileWinTile number={emergencyWinNumber} title="Build your emergency fund"
+           headline={`${fmt(m.emergencyShortfall)} more needed to reach your ${m.bufferMonths}-month target`}
+-          tagLabel="Priority" tagColor="#c0392b">
++          tagLabel="Priority" tagColor={CRITICAL}>
+           <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:monthsToCloseGap?"10px":0}}>
+             You hold {fmt(m.totalLiquid)} against a {fmt(m.emergencyBuffer)} target — a {fmt(m.emergencyShortfall)} gap. Sort this before any tax optimisation below.
+           </p>
+@@ -159,14 +159,14 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+                   <div style={stepLabel}>{l.section}</div>
+                   <div style={rowStyle}>
+                     <span>{fmt(o.amount)} in {accountName(o)} at {o.ratePct.toFixed(2)}%{o.pb ? " (an average)" : ""}</span>
+-                    <span style={{fontWeight:700,color:"#2d6b4a",whiteSpace:"nowrap",paddingLeft:"8px"}}>+{fmt(o.gain)}/yr</span>
++                    <span style={{fontWeight:700,color:SUCCESS,whiteSpace:"nowrap",paddingLeft:"8px"}}>+{fmt(o.gain)}/yr</span>
+                   </div>
+                   {fromBonds > 0 && <div style={{fontSize:"11.5px",color:MUT,marginTop:"-3px"}}>{fmt(fromBonds)} of it from your Premium Bonds</div>}
+                 </div>
+               );
+             })}
+             <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"10px 0"}}/>
+-            <div style={{...rowStyle,fontWeight:700,color:"#2d6b4a"}}><span>Together, after tax</span><span>{fmt(opp.currentKept + opp.bondsPrize + opp.gain)}/yr</span></div>
++            <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Together, after tax</span><span>{fmt(opp.currentKept + opp.bondsPrize + opp.gain)}/yr</span></div>
+             <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,marginTop:"4px"}}>
+               The highest-earning option in each, worked out together so no money is counted twice. Candid Assist, bottom right, lists the other providers in each and how to move.
+             </p>
+@@ -175,7 +175,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+           <div>
+             <div style={rowStyle}><span>Interest you earn now, before tax</span><span style={{fontWeight:600}}>{fmt(currentGrossTotal)}/yr</span></div>
+             {m.cash > 0 && currentTaxCost > 0 && (
+-              <div style={{...rowStyle,color:"#c0392b"}}><span>Tax due at {trPct}%</span><span>{fmt(currentTaxCost)}</span></div>
++              <div style={{...rowStyle,color:CRITICAL}}><span>Tax due at {trPct}%</span><span>{fmt(currentTaxCost)}</span></div>
+             )}
+             <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"8px 0"}}/>
+ 
+@@ -186,7 +186,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+                   <InfoButton onClick={() => setOpenInfo(o => o==="step1"?null:"step1")} open={openInfo==="step1"}/>
+                 </div>
+                 {isaLines.length > 0 ? <AccountLines lines={isaLines} rowStyle={rowStyle}/> : (
+-                  <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (highest rate)</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step1IsaInterest)}/yr</span></div>
++                  <div style={rowStyle}><span>{fmt(step1Isa)} at {isaRateDisplay} (highest rate)</span><span style={{fontWeight:700,color:SUCCESS}}>{fmt(step1IsaInterest)}/yr</span></div>
+                 )}
+                 {openInfo === "step1" && (
+                   <p style={stepCaption}>{fmt(step1Isa)} is your remaining ISA allowance this tax year. {isaLines.length > 1
+@@ -205,7 +205,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+                 {savingsLines.length > 0 ? <AccountLines lines={savingsLines} rowStyle={rowStyle}/> : (
+                   <div style={rowStyle}><span>{fmt(step2Savings)} at {nonIsaRateDisplay} (highest rate)</span><span style={{fontWeight:600}}>{fmt(step2SavingsInterest)}/yr</span></div>
+                 )}
+-                <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?"#2d6b4a":TEXT}}><span>Extra from switching</span><span>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
++                <div style={{...rowStyle,fontWeight:700,color:step2Delta>0?SUCCESS:TEXT}}><span>Extra from switching</span><span>{step2Delta>0?"+":""}{fmt(Math.max(0,step2Delta))}/yr</span></div>
+                 {openInfo === "step2" && (
+                   <p style={stepCaption}>£{psaLimit.toLocaleString("en-GB")}/yr is your Personal Savings Allowance (PSA) — savings interest that's tax-free outside an ISA, based on your tax band. You're already earning {fmt(step2CurrentInterest)}/yr on this money at your current rate; moving it to today's highest non-ISA rate ({nonIsaRateDisplay}) is worth an extra {fmt(Math.max(0,step2Delta))}/yr on top — not {fmt(step2SavingsInterest)}/yr from scratch.</p>
+                 )}
+@@ -214,7 +214,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+             {step3Pb > 0 && (
+               <div>
+                 <div style={stepLabel}>Then Premium Bonds (tax-free avg.)</div>
+-                <div style={rowStyle}><span>{fmt(step3Pb)} at ~{(PB_RATE*100).toFixed(2)}%</span><span style={{fontWeight:700,color:"#2d6b4a"}}>{fmt(step3PbInterest)}/yr</span></div>
++                <div style={rowStyle}><span>{fmt(step3Pb)} at ~{(PB_RATE*100).toFixed(2)}%</span><span style={{fontWeight:700,color:SUCCESS}}>{fmt(step3PbInterest)}/yr</span></div>
+               </div>
+             )}
+ 
+@@ -226,7 +226,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
+             <p style={{fontSize:"10.5px",color:MUT,marginTop:"-2px",marginBottom:"8px"}}>= {m.savingsRate}% on your cash + {(PB_RATE*100).toFixed(1)}% on Premium Bonds, blended</p>
+             <div style={rowStyle}><span>{fmt(keptAmount)} @ {optimalBlendedRatePct.toFixed(2)}% — the best average rate</span><span>{fmt(optimisedTotal)}/yr</span></div>
+             <p style={{fontSize:"10.5px",color:MUT,marginTop:"-2px",marginBottom:"8px"}}>= {isaRateDisplay} ISA + {nonIsaRateDisplay} savings + {(PB_RATE*100).toFixed(1)}% Premium Bonds, blended</p>
+-            <div style={{...rowStyle,fontWeight:700,color:optimisationGain>0?"#2d6b4a":TEXT}}>
++            <div style={{...rowStyle,fontWeight:700,color:optimisationGain>0?SUCCESS:TEXT}}>
+               <span>{optimisationGain>0?"You can earn":"Difference"}</span><span>{optimisationGain>0?"+":""}{fmt(optimisationGain)}/yr</span>
+             </div>
+           </div>
+diff --git a/src/mobile/deepdive/MobileInvestmentsDeepDive.jsx b/src/mobile/deepdive/MobileInvestmentsDeepDive.jsx
+index d589487..a5783e9 100644
+--- a/src/mobile/deepdive/MobileInvestmentsDeepDive.jsx
++++ b/src/mobile/deepdive/MobileInvestmentsDeepDive.jsx
+@@ -8,7 +8,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
+ import InfoButton from "../InfoButton.jsx";
+ import { buildReminderSubject } from "../reminders.js";
+ import { firstName } from "../copy.js";
+-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
++import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CRITICAL, CDARK, SUCCESS } from "../../design-tokens.js";
+ import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
+ 
+ // Trimmed mobile version of desktop's Investments deep dive (ModuleDeepDive,
+@@ -133,7 +133,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
+               <div style={rowStyle}><span>Profit so far</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
+               <div style={rowStyle}><span>Less: tax-free allowance left</span><span>−{fmt(m.crystallisable)}</span></div>
+               <div style={{...rowStyle,borderTop:"1px solid rgba(22,47,36,0.1)",fontWeight:600}}><span>Profit above the allowance</span><span>{fmt(taxableSurplus)}</span></div>
+-              <div style={{...rowStyle,fontWeight:700,color:instantSellTax>0?"#c0392b":G}}><span>Tax if you sold it all today ({cgtRatePct}%)</span><span>{fmt(instantSellTax)}</span></div>
++              <div style={{...rowStyle,fontWeight:700,color:instantSellTax>0?CRITICAL:G}}><span>Tax if you sold it all today ({cgtRatePct}%)</span><span>{fmt(instantSellTax)}</span></div>
+             </div>
+ 
+             {instantSellTax > 0 ? (
+@@ -141,7 +141,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
+                 <div style={{display:"flex",gap:"8px",marginBottom:"6px"}}>
+                   <div style={{flex:1,background:WHITE,border:"1.5px solid rgba(192,57,43,0.25)",borderRadius:"10px",padding:"10px 12px"}}>
+                     <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Sell it all today</div>
+-                    <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:"#c0392b"}}>{fmt(instantSellTax)}</div>
++                    <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:CRITICAL}}>{fmt(instantSellTax)}</div>
+                     <div style={{fontSize:"10.5px",color:MUT,marginTop:"2px"}}>Tax due</div>
+                   </div>
+                   <div style={{flex:1,background:"rgba(196,150,58,0.1)",border:`1.5px solid ${GOLD}`,borderRadius:"10px",padding:"10px 12px"}}>
+@@ -165,7 +165,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
+                     I've sold some — update my figures
+                   </button>
+                 ) : (
+-                  <div style={{background:"#ede7db",borderRadius:"10px",padding:"12px 14px"}}>
++                  <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px"}}>
+                     <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Record what you sold</div>
+                     <div style={{display:"flex",gap:"8px"}}>
+                       <PillMoneyInput label="Amount sold" value={amountSoldInput} onChange={setAmountSoldInput}/>
+@@ -190,18 +190,18 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
+                   <InfoButton onClick={() => setOpenInfo(o => o==="bnb"?null:"bnb")} open={openInfo==="bnb"}/>
+                 </div>
+                 {openInfo === "bnb" && (
+-                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
++                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
+                     HMRC's "30-day rule" cancels the gain if you repurchase the same shares within 30 days. Buying back inside an ISA or pension sidesteps this — outside a wrapper, wait 30 days or buy a similarly-exposed fund instead.
+                   </p>
+                 )}
+               </div>
+               <div>
+                 <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+-                  <span style={{fontSize:"12.5px",fontWeight:600,color:"#c0392b"}}>Use it or lose it</span>
++                  <span style={{fontSize:"12.5px",fontWeight:600,color:CRITICAL}}>Use it or lose it</span>
+                   <InfoButton onClick={() => setOpenInfo(o => o==="useit"?null:"useit")} open={openInfo==="useit"}/>
+                 </div>
+                 {openInfo === "useit" && (
+-                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
++                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
+                     The £3,000 exemption doesn't carry over — whatever's unused is gone on April 5th.
+                   </p>
+                 )}
+@@ -222,7 +222,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
+         headline={m.isaHeadroom > 0
+           ? `${fmt(m.isaHeadroom)} remaining.`
+           : "You've used your full £20,000 ISA allowance this tax year."}
+-        tagLabel="Future opportunity" tagColor="#2d6b4a"
++        tagLabel="Future opportunity" tagColor={SUCCESS}
+         reminder={m.isaHeadroom > 0 ? {
+           id: "investments-isa-allowance",
+           title: buildReminderSubject(fmt(m.isaHeadroom), "Unused ISA allowance"),
+diff --git a/src/mobile/deepdive/MobilePensionDeepDive.jsx b/src/mobile/deepdive/MobilePensionDeepDive.jsx
+index 45987d1..6dad665 100644
+--- a/src/mobile/deepdive/MobilePensionDeepDive.jsx
++++ b/src/mobile/deepdive/MobilePensionDeepDive.jsx
+@@ -24,7 +24,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
+ import { buildReminderSubject } from "../reminders.js";
+ import { firstName } from "../copy.js";
+ import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
+-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
++import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CDARK, SUCCESS, CRITICAL } from "../../design-tokens.js";
+ import { EXTRA_COLOR, PayInMore, CliffEdge, LookingAhead } from "./PensionLookingAhead.jsx";
+ 
+ const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` }));
+@@ -47,7 +47,7 @@ function YearToggle({ value, onChange }) {
+       {[{v:true,label:"Had a scheme"},{v:false,label:"No scheme"}].map(opt => (
+         <button key={String(opt.v)} onClick={() => onChange(opt.v)} style={{
+           border:"none",borderRadius:"100px",padding:"6px 12px",fontSize:"11.5px",fontWeight:600,cursor:"pointer",
+-          background:value===opt.v?G:"#ede7db",color:value===opt.v?WHITE:MUT,
++          background:value===opt.v?G:CDARK,color:value===opt.v?WHITE:MUT,
+         }}>{opt.label}</button>
+       ))}
+     </div>
+@@ -82,7 +82,7 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
+           {applied ? <><Check size={13}/> Updated</> : "Update"}
+         </button>
+       </div>
+-      {applied && <p style={{fontSize:"11px",color:"#2d6b4a",marginTop:"6px",lineHeight:1.5}}>Saved — your Candid score now reflects this.</p>}
++      {applied && <p style={{fontSize:"11px",color:SUCCESS,marginTop:"6px",lineHeight:1.5}}>Saved — your Candid score now reflects this.</p>}
+     </div>
+   );
+ }
+@@ -216,7 +216,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+             <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>sacrifice needed</div>
+           </div>
+           <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 6px"}}>
+-            <div style={{fontFamily:SERIF,fontSize:"16px",color:"#2d6b4a",fontWeight:700}}>{fmt(taper.taperTaxSaving)}</div>
++            <div style={{fontFamily:SERIF,fontSize:"16px",color:SUCCESS,fontWeight:700}}>{fmt(taper.taperTaxSaving)}</div>
+             <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax saved</div>
+           </div>
+           <div style={{background:"rgba(196,150,58,0.18)",borderRadius:"8px",padding:"10px 6px"}}>
+@@ -227,7 +227,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+       )}
+       {d.hasKids === "yes" && (
+         <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"10px",padding:"12px 14px",marginBottom:"8px"}}>
+-          <div style={{fontSize:"10.5px",fontWeight:700,color:"#c0392b",letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"6px"}}>Also at stake: your childcare support</div>
++          <div style={{fontSize:"10.5px",fontWeight:700,color:CRITICAL,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"6px"}}>Also at stake: your childcare support</div>
+           <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
+             Tax-Free Childcare and free childcare hours are lost entirely — not tapered — the moment either parent crosses £100,000. Staying under it can be worth £5,000–£7,500 per child a year.
+           </p>
+@@ -318,7 +318,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+         const extra = traj.extraGain;
+         const maxExtra = calcPensionGrowthTrajectory(d, m, EXTRA_PCT_OPTIONS.at(-1).value).extraGain;
+         const maxBar = Math.max(...traj.bars.map(b => b.value + (b.key === "now" ? 0 : maxExtra)), 1);
+-        const barColors = { now:"rgba(196,150,58,0.5)", retirement:GOLD, optimised:"#2d6b4a", bonus:"rgba(45,107,74,0.7)" };
++        const barColors = { now:"rgba(196,150,58,0.5)", retirement:GOLD, optimised:SUCCESS, bonus:"rgba(45,107,74,0.7)" };
+         // Short labels for narrow mobile columns — the bars themselves are a
+         // cumulative staircase (see calcPensionGrowthTrajectory), so each
+         // label after "Optimised" is a running "+lever" on top of the last,
+@@ -354,7 +354,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+                         their value was higher. */}
+                     <div style={{height:"36px",flexShrink:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
+                       {uplift > 0 && (
+-                        <div style={{fontSize:"9px",fontWeight:700,color:"#2d6b4a",background:"rgba(45,107,74,0.12)",borderRadius:"100px",padding:"1px 6px",whiteSpace:"nowrap",marginBottom:"3px"}}>+{fmtBig(uplift)}</div>
++                        <div style={{fontSize:"9px",fontWeight:700,color:SUCCESS,background:"rgba(45,107,74,0.12)",borderRadius:"100px",padding:"1px 6px",whiteSpace:"nowrap",marginBottom:"3px"}}>+{fmtBig(uplift)}</div>
+                       )}
+                       <div style={{fontSize:"13px",fontWeight:700,fontFamily:SERIF,color:TEXT,whiteSpace:"nowrap"}}>{fmtBig(total)}</div>
+                     </div>
+@@ -429,18 +429,18 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+               <div style={rowStyle}><span>Your contribution — {myPct}% of salary</span><span style={{fontWeight:600}}>{fmt(yourContribAmount)}/yr</span></div>
+               <div style={rowStyle}><span>Employer match cap — {empCapPct}% of salary</span><span style={{fontWeight:600}}>{fmt(employerCapAmount)}/yr</span></div>
+               <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"6px 0"}}/>
+-              <div style={{...rowStyle,fontWeight:700,color:"#2d6b4a"}}><span>Uplift if you match the cap</span><span>+{fmt(m.missedMatch)}/yr</span></div>
++              <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Uplift if you match the cap</span><span>+{fmt(m.missedMatch)}/yr</span></div>
+             </div>
+           ) : (
+             <div>
+               <div style={rowStyle}><span>Contribute {illustrativeRate}% of salary</span><span style={{fontWeight:600}}>{fmt(illustrativeAmount)}/yr</span></div>
+               <div style={rowStyle}><span>Tax relief at {trPct}%</span><span>−{fmt(illustrativeRelief)}/yr</span></div>
+               {empCapPct > 0 && (
+-                <div style={{...rowStyle,color:"#2d6b4a"}}><span>Employer matches {empCapPct}%</span><span style={{fontWeight:600}}>+{fmt(employerCapAmount)}/yr</span></div>
++                <div style={{...rowStyle,color:SUCCESS}}><span>Employer matches {empCapPct}%</span><span style={{fontWeight:600}}>+{fmt(employerCapAmount)}/yr</span></div>
+               )}
+               <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"6px 0"}}/>
+               <div style={{...rowStyle,fontWeight:700}}><span>Net cost to you</span><span>{fmt(illustrativeNetCost)}/yr</span></div>
+-              <div style={{...rowStyle,fontWeight:700,color:"#2d6b4a"}}><span>Goes into your pension</span><span>{fmt(illustrativeAmount + (empCapPct>0?employerCapAmount:0))}/yr</span></div>
++              <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Goes into your pension</span><span>{fmt(illustrativeAmount + (empCapPct>0?employerCapAmount:0))}/yr</span></div>
+             </div>
+           )}
+           {set && <QuickUpdateContribution d={d} myPct={myPct} suggested={contributing ? empCapPct : illustrativeRate} set={set}/>}
+@@ -511,7 +511,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+             Had a scheme in earlier years but didn't use the full £60,000 allowance? Carry the unused part forward for up to 3 years. Capped at 100% of this year's earnings ({fmt(cf.cfRelevantEarnings)}).
+           </p>
+           {cf.cfBreakdown.map((y, i) => (
+-            <div key={y.label} style={{background:"#ede7db",borderRadius:"10px",padding:"10px 12px",marginBottom:"8px"}}>
++            <div key={y.label} style={{background:CDARK,borderRadius:"10px",padding:"10px 12px",marginBottom:"8px"}}>
+               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+                 <div style={{fontSize:"12px",fontWeight:700,color:G}}>{y.label}</div>
+                 <YearToggle value={y.hadScheme} onChange={v => setCfYears(prev => prev.map((yy,idx) => idx===i ? {...yy, hadScheme:v} : yy))}/>
+@@ -522,7 +522,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+                   <input type="number" value={y.contribution} placeholder="0"
+                     onChange={e => { const v = e.target.value; setCfYears(prev => prev.map((yy,idx) => idx===i ? {...yy, contribution:v} : yy)); }}
+                     style={{width:"90px",padding:"5px 8px",fontSize:"16px",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"6px",background:WHITE}}/>
+-                  <span style={{fontSize:"11.5px",color:"#2d6b4a",fontWeight:600}}>{fmt(y.unused)} unused</span>
++                  <span style={{fontSize:"11.5px",color:SUCCESS,fontWeight:600}}>{fmt(y.unused)} unused</span>
+                 </div>
+               )}
+             </div>
+@@ -532,7 +532,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+             <div style={rowStyle}><span>+ Unused from last 3 years</span><span>{fmt(cf.cfTotalUnused)}</span></div>
+             <div style={{...rowStyle,fontWeight:700}}><span>Theoretical maximum</span><span>{fmt(cf.cfTheoreticalMax)}</span></div>
+             {cf.cfEarningsCapped && (
+-              <div style={{...rowStyle,color:"#c0392b",marginTop:"4px"}}>
++              <div style={{...rowStyle,color:CRITICAL,marginTop:"4px"}}>
+                 <span>Capped at 100% of earnings</span><span style={{fontWeight:700}}>{fmt(cf.cfMaxContributable)}</span>
+               </div>
+             )}
+@@ -579,7 +579,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+ 
+           {(bs.crossesTaper || bs.crossesAR) && (
+             <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:"8px",padding:"8px 10px",marginBottom:"14px",display:"flex",gap:"8px",alignItems:"flex-start"}}>
+-              <AlertTriangle size={13} style={{flexShrink:0,marginTop:"2px"}} color="#c0392b"/>
++              <AlertTriangle size={13} style={{flexShrink:0,marginTop:"2px"}} color={CRITICAL}/>
+               <div style={{fontSize:"11.5px",color:MUT,lineHeight:1.5}}>
+                 {bs.crossesTaper && !bs.crossesAR ? "Your bonus crosses the 60% taper zone (£100k–£125,140)." : "Your bonus spans the 40% → 60% taper → 45% rate bands."} Sacrificing the portion in that zone is especially valuable.
+               </div>
+@@ -588,20 +588,20 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+ 
+           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"10px"}}>
+             <div style={{background:"rgba(45,107,74,0.06)",border:"1px solid rgba(45,107,74,0.22)",borderRadius:"8px",padding:"10px 10px"}}>
+-              <div style={{fontSize:"8.5px",fontWeight:700,color:"#2d6b4a",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>You receive</div>
++              <div style={{fontSize:"8.5px",fontWeight:700,color:SUCCESS,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>You receive</div>
+               <div style={{fontFamily:SERIF,fontSize:"15px",color:G,fontWeight:700,marginBottom:"4px"}}>{fmt(bs.totalReceived)}</div>
+               <div style={{fontSize:"10.5px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
+-                {bs.sacrificedAmt > 0 && <span style={{color:"#2d6b4a",fontWeight:500}}>Pension: {fmt(bs.sacrificedAmt)}</span>}
++                {bs.sacrificedAmt > 0 && <span style={{color:SUCCESS,fontWeight:500}}>Pension: {fmt(bs.sacrificedAmt)}</span>}
+                 {bs.takeHomeCash > 0 && <span>Cash: {fmt(bs.takeHomeCash)}</span>}
+-                {bs.employerNISave > 0 && d.employmentStatus !== "self_employed" && <span style={{color:"#2d6b4a",marginTop:"2px"}}>+{fmt(bs.employerNISave)} employer NI*</span>}
++                {bs.employerNISave > 0 && d.employmentStatus !== "self_employed" && <span style={{color:SUCCESS,marginTop:"2px"}}>+{fmt(bs.employerNISave)} employer NI*</span>}
+               </div>
+             </div>
+             <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"8px",padding:"10px 10px"}}>
+-              <div style={{fontSize:"8.5px",fontWeight:700,color:"#c0392b",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>Paid to HMRC{bs.bonusSlRate>0?" + SLC":""}</div>
++              <div style={{fontSize:"8.5px",fontWeight:700,color:CRITICAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>Paid to HMRC{bs.bonusSlRate>0?" + SLC":""}</div>
+               <div style={{fontFamily:SERIF,fontSize:"15px",color:TEXT,fontWeight:700,marginBottom:"4px"}}>{sacrificePct===100?fmt(0):fmt(bs.totalDeducted)}</div>
+               <div style={{fontSize:"10.5px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
+                 {sacrificePct===100
+-                  ? <span style={{color:"#2d6b4a",fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}>Nothing <PartyPopper size={11}/></span>
++                  ? <span style={{color:SUCCESS,fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}>Nothing <PartyPopper size={11}/></span>
+                   : <>{bs.taxOnCash>0 && <span>Tax: {fmt(bs.taxOnCash)}</span>}{bs.niOnCash>0 && <span>NI: {fmt(bs.niOnCash)}</span>}{bs.slOnCash>0 && <span>Student loan: {fmt(bs.slOnCash)}</span>}</>}
+               </div>
+             </div>
+@@ -614,7 +614,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+             <InfoButton onClick={() => setShowFVInfo(o => !o)} open={showFVInfo}/>
+           </div>
+           {showFVInfo && (
+-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,background:"#ede7db",borderRadius:"8px",padding:"8px 10px",marginTop:"6px"}}>
++            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,background:CDARK,borderRadius:"8px",padding:"8px 10px",marginTop:"6px"}}>
+               Assumes this amount is left untouched in your pension until retirement, growing 6% a year less 2% inflation, so it's in today's money.
+               {bs.bonusSlRate > 0 && bs.loanBal > 0 && (bs.slOnCash <= 0
+                 ? " None of the bonus is taken as cash, so no student loan deduction applies to it."
+diff --git a/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx b/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
+index 07bc55e..3d9bd35 100644
+--- a/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
++++ b/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
+@@ -10,7 +10,7 @@ import { PillSlider } from "../PillSlider.jsx";
+ import MobileWinTile from "../MobileWinTile.jsx";
+ import PillMoneyInput from "../PillMoneyInput.jsx";
+ import { ExploreToggle } from "../ModuleScreenParts.jsx";
+-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE } from "../../design-tokens.js";
++import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, CDARK, CRITICAL, SUCCESS } from "../../design-tokens.js";
+ 
+ // Overpayment slider stops — round amounts, dropping any that sit within 10%
+ // of the full balance (e.g. a £20,500 loan shouldn't show both "£20k" and
+@@ -135,7 +135,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+         </div>
+ 
+         {editingBalance && (
+-          <div style={{background:"#ede7db",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
++          <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
+             <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Update your balance</div>
+             <PillMoneyInput label="New balance" value={balanceInput} onChange={setManualBalanceInput}/>
+             <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
+@@ -168,7 +168,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+           )}
+         </p>
+         {editingStart && (
+-          <div style={{background:"#ede7db",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
++          <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
+             <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>When repayments started</div>
+             <PillMoneyInput label="April of" unit="" value={startValue} onChange={v => setStartInput(v ?? null)}/>
+             <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
+@@ -207,10 +207,10 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+             : sl.effectiveBenefit <= 0
+               ? `The highest savings rate (${sl.cashRate}%) beats your ${sl.slRatePct}% loan rate`
+               : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your ${sl.slRatePct}% loan rate`}
+-          tagLabel={worthOverpaying ? "Today" : "Not optimal"} tagColor={worthOverpaying ? GOLD : "#c0392b"}>
++          tagLabel={worthOverpaying ? "Today" : "Not optimal"} tagColor={worthOverpaying ? GOLD : CRITICAL}>
+           {sl.balanceGrowing && (
+             <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
+-              <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Why your balance is growing</div>
++              <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Why your balance is growing</div>
+               <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
+                 Repayments (9% of what you earn over the threshold) haven't caught up with the interest yet. At a {fmt(sl.inflectionSalary)} salary they'd match it, and above that your balance starts falling.
+               </p>
+@@ -222,11 +222,11 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+           ) : (
+             <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0"}}>Step 2 — You don't currently hold cash above your emergency buffer; the comparison still applies to any spare cash you build up.</p>
+           )}
+-          <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0?"#2d6b4a":"#c0392b"}}>
++          <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0?SUCCESS:CRITICAL}}>
+             <span>Step 3 — {sl.slRatePct}% loan vs {sl.cashRate}% highest savings</span>
+             <span>{sl.effectiveBenefit > 0 ? `Repay wins by ${sl.effectiveBenefit}%` : `Savings win by ${Math.abs(sl.effectiveBenefit)}%`}</span>
+           </div>
+-          <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?"#2d6b4a":"#c0392b"}}>
++          <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?SUCCESS:CRITICAL}}>
+             <span>Step 4 — {sl.slRatePct}% loan vs {sl.pensionGrowthPct}% assumed pension growth</span>
+             <span>{sl.pensionGap > 0 ? `Repay wins by ${sl.pensionGap}%` : sl.pensionGap === 0 ? "Level — repaying is guaranteed" : `Pension wins by ${Math.abs(sl.pensionGap)}%`}</span>
+           </div>
+@@ -250,7 +250,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"4px",textAlign:"center"}}>
+             <div>
+               <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Saved</div>
+-              <div style={{fontFamily:SERIF,fontSize:"27px",color:savedVsBase>0?"#2d6b4a":G,fontWeight:700,marginTop:"4px",lineHeight:1.15}}>{fmt(Math.max(0,savedVsBase))}</div>
++              <div style={{fontFamily:SERIF,fontSize:"27px",color:savedVsBase>0?SUCCESS:G,fontWeight:700,marginTop:"4px",lineHeight:1.15}}>{fmt(Math.max(0,savedVsBase))}</div>
+             </div>
+             <div>
+               <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{selectedScenario.clearYr ? "Clears in" : "Written off"}</div>
+@@ -263,7 +263,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+           </div>
+           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,marginTop:"12px",marginBottom:"14px"}}>
+             vs {baseProjection.clearYr ? `clearing in ${baseProjection.clearYr} yrs` : `${fmt(baseProjection.writeOffBal)} written off`} and {fmt(baseProjection.totalPaid)} repaid with no overpayment.
+-            {selectedScenario.crossesInflection && <span style={{color:"#2d6b4a",fontWeight:600}}> From here your balance starts falling.</span>}
++            {selectedScenario.crossesInflection && <span style={{color:SUCCESS,fontWeight:600}}> From here your balance starts falling.</span>}
+           </p>
+           <PillSlider value={overpayAmt} onChange={setOverpayAmt} options={overpayOptions.map(amt => ({ value:amt, label: amt===fullAmt ? "Full" : fmtK(amt) }))}/>
+ 
+diff --git a/src/mobile/deepdive/PensionLookingAhead.jsx b/src/mobile/deepdive/PensionLookingAhead.jsx
+index 77e90e4..77b2cb9 100644
+--- a/src/mobile/deepdive/PensionLookingAhead.jsx
++++ b/src/mobile/deepdive/PensionLookingAhead.jsx
+@@ -5,7 +5,7 @@ import { SALARY_GROWTH_RATES } from "../../lib/metrics.js";
+ import { AlertTriangle, PiggyBank, Users, CalendarClock, ChevronRight, ChevronDown } from "lucide-react";
+ import { LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "../../lib/pension.js";
+ import { fmt, fmtBig } from "../../lib/format.js";
+-import { G, MUT, TEXT, SERIF } from "../../design-tokens.js";
++import { G, MUT, TEXT, SERIF, SUCCESS } from "../../design-tokens.js";
+ import MobileWinTile from "../MobileWinTile.jsx";
+ import { ADVISER_LINK } from "../GuidanceNote.jsx";
+ 
+@@ -41,7 +41,6 @@ export function PayInMore({ traj, tr }) {
+ }
+ 
+ // A labelled £ figure over a bar, the bars in a group sharing one scale.
+-const SUCCESS_GREEN = "#2d6b4a";
+ function AmountBar({ label, value, color, scale, size = 17, pounds = fmt }) {
+   return (
+     <div style={{marginTop:"10px"}}>
+@@ -63,7 +62,7 @@ const AMBER = "#b7791f";
+ export function CliffEdge({ cliff, onSeeMore }) {
+   const [open, setOpen] = useState(false);
+   const bars = [
+-    { label: "In your pension, before the limit", value: cliff.before, color: SUCCESS_GREEN },
++    { label: "In your pension, before the limit", value: cliff.before, color: SUCCESS },
+     { label: "In your pension, after the limit", value: cliff.after, color: AMBER },
+     { label: "In an ISA", value: cliff.isa, color: G },
+   ];
+diff --git a/src/mobile/onboarding/MobileCashTiersList.jsx b/src/mobile/onboarding/MobileCashTiersList.jsx
+index 095c9a3..9f6bb3b 100644
+--- a/src/mobile/onboarding/MobileCashTiersList.jsx
++++ b/src/mobile/onboarding/MobileCashTiersList.jsx
+@@ -35,7 +35,7 @@ export default function MobileCashTiersList({ d, set }) {
+           <PillMoneyInput label="Amount" value={tier.amount || null} onChange={v => updateTier(i, { amount: capField("isaPrevCash", v ?? "") })}/>
+           <PillMoneyInput label="Rate" unit="%" value={tier.rate || null} onChange={v => updateTier(i, { rate: capField("savingsRate", v ?? "") })}/>
+           {tiers.length > 1 && (
+-            <button type="button" onClick={() => removeTier(i)} aria-label="Remove account" style={{background:"none",border:"none",padding:"6px",cursor:"pointer",flexShrink:0,color:"#6b6b6b"}}>
++            <button type="button" onClick={() => removeTier(i)} aria-label="Remove account" style={{background:"none",border:"none",padding:"6px",cursor:"pointer",flexShrink:0,color:MUT}}>
+               <X size={16}/>
+             </button>
+           )}
+diff --git a/src/mobile/onboarding/MobileOnboardingStep.jsx b/src/mobile/onboarding/MobileOnboardingStep.jsx
+index e9a0967..6b22508 100644
+--- a/src/mobile/onboarding/MobileOnboardingStep.jsx
++++ b/src/mobile/onboarding/MobileOnboardingStep.jsx
+@@ -1,6 +1,6 @@
+ import { useState } from "react";
+ import { AlertTriangle, Home, Star, Baby, RefreshCw, Shield, Lightbulb, Check } from "lucide-react";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../../design-tokens.js";
++import { G, GOLD, WHITE, MUT, TEXT, SERIF, CDARK, CRITICAL } from "../../design-tokens.js";
+ import { MODULE_META } from "../../lib/moduleStatus.js";
+ import { PillSlider } from "../PillSlider.jsx";
+ import { capField, isaThisYearTotal } from "../../lib/onboarding.js";
+@@ -214,7 +214,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
+           </div>
+           <PillSlider value={d.employmentStatus || "employed"} onChange={v => set("employmentStatus", v)} options={EMPLOYMENT_STATUS_OPTIONS}/>
+           {showEmploymentInfo && (
+-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"8px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
++            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"8px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
+               We factor this into your analysis — whether you're employed, self-employed or not working changes which levers are actually available to you, so we can work out what's genuinely optimal for your position rather than giving generic advice.
+             </p>
+           )}
+@@ -285,7 +285,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
+             <PillMoneyInput label="From previous years" value={d.isaPrevCash || null} onChange={v => set("isaPrevCash", capField("isaPrevCash", v ?? ""))}/>
+           </div>
+           {isaOver && (
+-            <div style={{marginTop:"8px",fontSize:"11.5px",color:"#c0392b",fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
++            <div style={{marginTop:"8px",fontSize:"11.5px",color:CRITICAL,fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+               <AlertTriangle size={12} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaTotal)} — exceeds the £20,000 allowance.</span>
+             </div>
+           )}
+@@ -316,7 +316,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
+               <PillMoneyInput label="Other ISA" value={d.isaThisYearOther || null} onChange={v => set("isaThisYearOther", capField("isaThisYearOther", v ?? ""))}/>
+             </div>
+             {isaOver && (
+-              <div style={{marginBottom:"14px",fontSize:"11.5px",color:"#c0392b",fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
++              <div style={{marginBottom:"14px",fontSize:"11.5px",color:CRITICAL,fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+                 <AlertTriangle size={12} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaTotal)} — exceeds the £20,000 allowance.</span>
+               </div>
+             )}
+diff --git a/src/mobile/property/BorrowingCheck.jsx b/src/mobile/property/BorrowingCheck.jsx
+index 3c80475..ef164b3 100644
+--- a/src/mobile/property/BorrowingCheck.jsx
++++ b/src/mobile/property/BorrowingCheck.jsx
+@@ -4,7 +4,7 @@ import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBa
+ import { Plus, Minus } from "lucide-react";
+ import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
+ import EmptyResultCard from "./EmptyResultCard.jsx";
+-import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE } from "../../design-tokens.js";
++import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, CDARK } from "../../design-tokens.js";
+ import { PillSlider } from "../PillSlider.jsx";
+ import { capField } from "../../lib/onboarding.js";
+ import { affordableMaxPrice } from "../../lib/monthlyBudget.js";
+@@ -128,7 +128,7 @@ export function PurchaseInputs({ d, m, set }) {
+   const [soleInfoOpen, setSoleInfoOpen] = useState(false);
+   const [advancedOpen, setAdvancedOpen] = useState(false);
+   const caption = { fontSize:"11.5px", color:MUT, lineHeight:1.5, margin:0 };
+-  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
++  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
+   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"6px", display:"flex", alignItems:"center", gap:"6px" };
+   const columns = { display:"flex", gap:"10px", flexWrap:"wrap" };
+   const column = { flex:1, minWidth:COLUMN_MIN };
+@@ -263,7 +263,7 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
+   const [incomeInfoOpen, setIncomeInfoOpen] = useState(false);
+   const [stampDutyInfoOpen, setStampDutyInfoOpen] = useState(false);
+   const [breakdownOpen, setBreakdownOpen] = useState(false);
+-  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
++  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
+   const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
+   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
+   const figure = { fontFamily:SERIF, fontSize:"26px", fontWeight:700, color:TEXT, lineHeight:1.2 };
+diff --git a/src/mobile/property/MortgageStep.jsx b/src/mobile/property/MortgageStep.jsx
+index 70fb0b1..f73e25d 100644
+--- a/src/mobile/property/MortgageStep.jsx
++++ b/src/mobile/property/MortgageStep.jsx
+@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react";
+ import EmptyResultCard from "./EmptyResultCard.jsx";
+ import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
+ import { PillSlider } from "../PillSlider.jsx";
+-import { STATUS_TILE, PROVIDER_TILE_SHADOW, G, MUT, TEXT, SERIF, SC, WHITE } from "../../design-tokens.js";
++import { STATUS_TILE, PROVIDER_TILE_SHADOW, G, MUT, TEXT, SERIF, SC, WHITE, CDARK } from "../../design-tokens.js";
+ import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
+ import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
+ import { fmt } from "../../lib/format.js";
+@@ -93,7 +93,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult
+   const [budgetInfoOpen, setBudgetInfoOpen] = useState(false);
+   const resultRef = useRef(null);
+   const why = useWhyInfo({ d, m });
+-  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
++  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
+   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
+   const sectionHeading = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"10px" };
+   const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"18px 0 14px" };
+diff --git a/src/mobile/property/RentVsBuyParts.jsx b/src/mobile/property/RentVsBuyParts.jsx
+index 6400972..61a08fd 100644
+--- a/src/mobile/property/RentVsBuyParts.jsx
++++ b/src/mobile/property/RentVsBuyParts.jsx
+@@ -1,7 +1,7 @@
+ import { useState, useEffect } from "react";
+ import { useElementWidth } from "../useElementWidth.js";
+ import { CircleAlert } from "lucide-react";
+-import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC } from "../../design-tokens.js";
++import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC, CDARK } from "../../design-tokens.js";
+ import { STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
+ import { fmt, fmtCompact } from "../../lib/format.js";
+ 
+@@ -133,7 +133,7 @@ export function RateChoice({ outcomes, ratePct, chosen, onChoose }) {
+         return (
+           <button key={o.scenario} type="button" onClick={() => onChoose(o.scenario)} aria-pressed={active} style={{
+             flex:1, minWidth:0, border:"none", borderRadius:"12px", padding:"8px 4px", fontFamily:"inherit", cursor:"pointer",
+-            background:active ? G : "#ede7db", color:active ? WHITE : TEXT, textAlign:"center",
++            background:active ? G : CDARK, color:active ? WHITE : TEXT, textAlign:"center",
+           }}>
+             <div style={{fontSize:"10.5px",fontWeight:600,color:active ? "rgba(255,255,255,0.8)" : MUT}}>{o.label}</div>
+             <div style={{fontSize:"14px",fontWeight:700,margin:"1px 0"}}>{Math.round(rateFor(o.scenario) * 100) / 100}%</div>
+diff --git a/src/mobile/property/RentVsBuyStep.jsx b/src/mobile/property/RentVsBuyStep.jsx
+index 2609e8c..fbff44b 100644
+--- a/src/mobile/property/RentVsBuyStep.jsx
++++ b/src/mobile/property/RentVsBuyStep.jsx
+@@ -1,6 +1,6 @@
+ import { useState, useRef } from "react";
+ import { ArrowUp, CircleAlert } from "lucide-react";
+-import { MUT, TEXT, SERIF, WHITE, SC, WARNING } from "../../design-tokens.js";
++import { MUT, TEXT, SERIF, WHITE, SC, WARNING, CDARK } from "../../design-tokens.js";
+ import { PillSlider } from "../PillSlider.jsx";
+ import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, ISA_ALLOWANCE } from "../../lib/rentVsBuy.js";
+ import { breakevenLine } from "../../lib/propertyReveal.js";
+@@ -45,7 +45,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
+   const [ownInfoOpen, setOwnInfoOpen] = useState(false);
+   const why = useWhyInfo({ d, m, regionalRows });
+   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
+-  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
++  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
+   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
+ 
+   const input = rentVsBuyInputs(d, m, regionalRows, "moderate", marketRates);
+diff --git a/src/mobile/property/useWhyInfo.jsx b/src/mobile/property/useWhyInfo.jsx
+index 79dda81..1f10d4c 100644
+--- a/src/mobile/property/useWhyInfo.jsx
++++ b/src/mobile/property/useWhyInfo.jsx
+@@ -1,5 +1,5 @@
+ import { useState } from "react";
+-import { MUT } from "../../design-tokens.js";
++import { MUT, CDARK } from "../../design-tokens.js";
+ import { whyLine } from "../../lib/propertyGuide.js";
+ import InfoButton from "../InfoButton.jsx";
+ 
+@@ -12,7 +12,7 @@ export default function useWhyInfo(ctx) {
+   const [openId, setOpenId] = useState(null);
+   const button = id => <InfoButton open={openId === id} onClick={() => setOpenId(o => o === id ? null : id)}/>;
+   const panel = (...ids) => ids.includes(openId) ? (
+-    <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,background:"#ede7db",borderRadius:"8px",padding:"8px 10px",margin:"8px 0 0"}}>
++    <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,background:CDARK,borderRadius:"8px",padding:"8px 10px",margin:"8px 0 0"}}>
+       {whyLine(openId, ctx)}
+     </p>
+   ) : null;
+diff --git a/src/mobile/screens/MobileChatScreen.jsx b/src/mobile/screens/MobileChatScreen.jsx
+index 136b930..b44d159 100644
+--- a/src/mobile/screens/MobileChatScreen.jsx
++++ b/src/mobile/screens/MobileChatScreen.jsx
+@@ -1,5 +1,5 @@
+ import { MessageCircle, Send } from "lucide-react";
+-import { GOLD, MUT, TEXT, SERIF } from "../../design-tokens.js";
++import { GOLD, MUT, TEXT, SERIF, CDARK } from "../../design-tokens.js";
+ 
+ // Mobile Chat screen — matches the mockup's placeholder layout (icon badge,
+ // headline, description, "Coming soon" pill, disabled input bar), with the
+@@ -19,7 +19,7 @@ export default function MobileChatScreen() {
+           Coming soon
+         </div>
+       </div>
+-      <div style={{display:"flex",alignItems:"center",gap:"10px",background:"#ede7db",borderRadius:"100px",padding:"12px 16px",opacity:0.6}}>
++      <div style={{display:"flex",alignItems:"center",gap:"10px",background:CDARK,borderRadius:"100px",padding:"12px 16px",opacity:0.6}}>
+         <span style={{fontSize:"14px",color:MUT,flex:1}}>Ask Candid...</span>
+         <Send size={18} color={MUT}/>
+       </div>
+diff --git a/src/mobile/screens/MobileEntryScreen.jsx b/src/mobile/screens/MobileEntryScreen.jsx
+index 2d88882..0ac9d99 100644
+--- a/src/mobile/screens/MobileEntryScreen.jsx
++++ b/src/mobile/screens/MobileEntryScreen.jsx
+@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
+ import { motion, MotionConfig } from "framer-motion";
+ import { Check, ChevronLeft } from "lucide-react";
+ import { NavBar } from "../../NavBar.jsx";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS } from "../../design-tokens.js";
++import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, CREAM } from "../../design-tokens.js";
+ import { ENTRY_QUESTIONS, toHandFor, entryChat, readingMs, CHAT_VARIANTS } from "../../lib/appEntry.js";
+ import GuidedFlow from "../property/GuidedFlow.jsx";
+ 
+@@ -25,14 +25,14 @@ export default function MobileEntryScreen({ d, m, set, onDone }) {
+   // The chat fills the screen like a messaging app: the page itself doesn't
+   // scroll, the conversation does.
+   if (part === "chat") return (
+-    <div style={{height:"100dvh",background:"#faf7f0",display:"flex",flexDirection:"column",overflow:"hidden"}}>
++    <div style={{height:"100dvh",background:CREAM,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+       <NavBar light center="How Candid works"/>
+       <HowCandidWorks d={d} onDone={onDone}/>
+     </div>
+   );
+ 
+   return (
+-    <div style={{minHeight:"100vh",background:"#faf7f0",display:"flex",flexDirection:"column"}}>
++    <div style={{minHeight:"100vh",background:CREAM,display:"flex",flexDirection:"column"}}>
+       <NavBar light center="Getting started"/>
+       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
+         {part === "questions" && (
+diff --git a/src/mobile/screens/MobileForecastScreen.jsx b/src/mobile/screens/MobileForecastScreen.jsx
+index 71c987b..86a3093 100644
+--- a/src/mobile/screens/MobileForecastScreen.jsx
++++ b/src/mobile/screens/MobileForecastScreen.jsx
+@@ -7,7 +7,7 @@ import { fmt, fmtCompact } from "../../lib/format.js";
+ import PillMoneyInput from "../PillMoneyInput.jsx";
+ import InfoButton from "../InfoButton.jsx";
+ import { retirementAgeFor } from "../../lib/metrics.js";
+-import { MODULE_CHART_COLOR, WHITE, MUT, TEXT, G, GOLD, SERIF, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_CARD } from "../../design-tokens.js";
++import { MODULE_CHART_COLOR, WHITE, MUT, TEXT, G, GOLD, SERIF, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_CARD, CDARK, CRITICAL } from "../../design-tokens.js";
+ 
+ // Mobile Forecast screen — a "Surplus" comparison view (multi-strategy line
+ // chart + low/mid/high table) and a "Net worth" view (single projected net
+@@ -227,7 +227,7 @@ export default function MobileForecastScreen({ d, m }) {
+                 <div style={{fontSize:"11px",color:MUT,marginTop:"3px",lineHeight:1.4}}>{o.note}</div>
+               )}
+               {isOpen && a && (
+-                <div style={{marginTop:"8px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
++                <div style={{marginTop:"8px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
+                   {a.lines.map((line,i) => (
+                     <p key={i} style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>{line}</p>
+                   ))}
+@@ -288,7 +288,7 @@ export default function MobileForecastScreen({ d, m }) {
+               <InfoButton onClick={() => setShowNwAssumptions(o => !o)} open={showNwAssumptions}/>
+             </div>
+             {showNwAssumptions && (
+-              <div style={{marginBottom:"12px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
++              <div style={{marginBottom:"12px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
+                 <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
+                 <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
+                 <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
+@@ -315,15 +315,15 @@ export default function MobileForecastScreen({ d, m }) {
+                         {meta.locked && <Lock size={12} color={MUT}/>}
+                       </div>
+                       <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+-                        <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:row.negative?"#c0392b":G}}>{row.negative?"−":""}{fmt(row.value)}</span>
++                        <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:row.negative?CRITICAL:G}}>{row.negative?"−":""}{fmt(row.value)}</span>
+                         <ChevronRight size={13} color={MUT} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
+                       </div>
+                     </div>
+-                    <div style={{height:"8px",borderRadius:"4px",background:"#ede7db",overflow:"hidden",marginTop:"8px"}}>
++                    <div style={{height:"8px",borderRadius:"4px",background:CDARK,overflow:"hidden",marginTop:"8px"}}>
+                       <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G}}/>
+                     </div>
+                     {isOpen && (
+-                      <div style={{marginTop:"10px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}} onClick={e => e.stopPropagation()}>
++                      <div style={{marginTop:"10px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}} onClick={e => e.stopPropagation()}>
+                         {row.label === "Pension" && age && (
+                           <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
+                             <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:G}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
+diff --git a/src/mobile/screens/MobileHomeScreen.jsx b/src/mobile/screens/MobileHomeScreen.jsx
+index 743a912..9bdc59a 100644
+--- a/src/mobile/screens/MobileHomeScreen.jsx
++++ b/src/mobile/screens/MobileHomeScreen.jsx
+@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
+ import { ChevronDown, ChevronRight, Check, Lock } from "lucide-react";
+ import { isLocked } from "../../lib/unlock.js";
+ import ScoreDonut from "../ScoreDonut.jsx";
+-import { HERO_TILE_BG, scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../design-tokens.js";
++import { HERO_TILE_BG, scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD, CRITICAL } from "../../design-tokens.js";
+ import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
+ import { fmt } from "../../lib/format.js";
+ import { mobileGreeting } from "../copy.js";
+@@ -247,22 +247,22 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
+           <ChevronDown size={14} color={MUT} style={{transform:netWorthOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
+         </div>
+         <div style={{display:"flex",alignItems:"baseline",gap:"8px",marginTop:"6px"}}>
+-          <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:netWorthPositive?TEXT:"#c0392b"}}>{fmt(Math.abs(m.netWorth))}</span>
++          <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:netWorthPositive?TEXT:CRITICAL}}>{fmt(Math.abs(m.netWorth))}</span>
+         </div>
+         <div style={{display:"flex",gap:"20px",marginTop:"10px"}}>
+           <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+-            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:"#2d6b4a",display:"inline-block"}}/>
++            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:SUCCESS,display:"inline-block"}}/>
+             <span style={{fontSize:"12.5px",color:MUT}}>Assets <b style={{color:TEXT}}>{fmt(m.totalAssets)}</b></span>
+           </div>
+           <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+-            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:"#c0392b",display:"inline-block"}}/>
++            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:CRITICAL,display:"inline-block"}}/>
+             <span style={{fontSize:"12.5px",color:MUT}}>Liabilities <b style={{color:TEXT}}>{fmt(m.totalLiabilities)}</b></span>
+           </div>
+         </div>
+         {netWorthOpen && (assets.length > 0 || liabilities.length > 0) && (
+           <div style={{marginTop:"16px",paddingTop:"14px",borderTop:`1px solid rgba(22,47,36,0.08)`,display:"flex",flexDirection:"column",gap:"10px"}}>
+             {assets.length > 0 && (
+-              <div style={{fontSize:"10.5px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.08em",textTransform:"uppercase"}}>Assets</div>
++              <div style={{fontSize:"10.5px",fontWeight:700,color:SUCCESS,letterSpacing:"0.08em",textTransform:"uppercase"}}>Assets</div>
+             )}
+             {assets.map((a,i) => (
+               <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+@@ -271,7 +271,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
+               </div>
+             ))}
+             {liabilities.length > 0 && (
+-              <div style={{fontSize:"10.5px",fontWeight:700,color:"#c0392b",letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"6px"}}>Liabilities</div>
++              <div style={{fontSize:"10.5px",fontWeight:700,color:CRITICAL,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"6px"}}>Liabilities</div>
+             )}
+             {liabilities.map((l,i) => (
+               <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+diff --git a/src/mobile/screens/MobileInputsScreen.jsx b/src/mobile/screens/MobileInputsScreen.jsx
+index d828252..5257fde 100644
+--- a/src/mobile/screens/MobileInputsScreen.jsx
++++ b/src/mobile/screens/MobileInputsScreen.jsx
+@@ -1,7 +1,7 @@
+ import { hasAccess, accessInfo, openBillingPortal, PLANS } from "../../lib/entitlement.js";
+ import { useEffect, useRef, useState } from "react";
+ import { ChevronDown, ChevronRight, User } from "lucide-react";
+-import { G, WHITE, MUT, TEXT, SERIF } from "../../design-tokens.js";
++import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
+ import { MODULE_META } from "../../lib/moduleStatus.js";
+ import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
+ import ModuleInputsForm from "./ModuleInputsForm.jsx";
+@@ -142,7 +142,7 @@ function Subscription() {
+         style={{background:"none",border:"none",padding:"8px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+         Manage subscription
+       </button>}
+-      {error && <div style={{fontSize:"12px",color:"#b3261e"}}>{error}</div>}
++      {error && <div style={{fontSize:"12px",color:ERROR_TEXT}}>{error}</div>}
+     </div>
+   );
+ }
+diff --git a/src/mobile/screens/MobileModuleDeepDive.jsx b/src/mobile/screens/MobileModuleDeepDive.jsx
+index 3c8a8c5..3c2bcec 100644
+--- a/src/mobile/screens/MobileModuleDeepDive.jsx
++++ b/src/mobile/screens/MobileModuleDeepDive.jsx
+@@ -3,7 +3,7 @@ import BankConfirm from "../BankConfirm.jsx";
+ import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
+ import { useState } from "react";
+ import { Check, Coins } from "lucide-react";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC } from "../../design-tokens.js";
++import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, SUCCESS } from "../../design-tokens.js";
+ import { MODULE_META } from "../../lib/moduleStatus.js";
+ import { statusLabel } from "../statusLabel.js";
+ import MobileCashDeepDive from "../deepdive/MobileCashDeepDive.jsx";
+@@ -83,7 +83,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
+           )}
+           <button onClick={handleReviewed} style={{
+             width:"100%",background:"transparent",border:`1.3px solid ${isComplete?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
+-            color:isComplete?"#2d6b4a":G,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,cursor:"pointer",
++            color:isComplete?SUCCESS:G,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,cursor:"pointer",
+             display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",
+             animation: flashing ? "btnGoldTint 0.4s ease-out" : "none",
+           }}>
+diff --git a/src/mobile/screens/MobileModulesScreen.jsx b/src/mobile/screens/MobileModulesScreen.jsx
+index a32fac8..71b4963 100644
+--- a/src/mobile/screens/MobileModulesScreen.jsx
++++ b/src/mobile/screens/MobileModulesScreen.jsx
+@@ -1,6 +1,6 @@
+ import { useState } from "react";
+ import { Check, Users, Coins, ChevronRight, Home } from "lucide-react";
+-import { SUCCESS, G, GOLD, WHITE, MUT, TEXT, SERIF, SC } from "../../design-tokens.js";
++import { SUCCESS, G, GOLD, WHITE, MUT, TEXT, SERIF, SC, CDARK } from "../../design-tokens.js";
+ import { getModuleBreakdown, MODULE_META } from "../../lib/moduleStatus.js";
+ import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
+ import { fmt, fmtCompact } from "../../lib/format.js";
+@@ -89,7 +89,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
+             {modulesWithRec.length > 1 && [{ key:"category", label:"By category" }, { key:"amount", label:"By £ impact" }].map(opt => (
+               <button key={opt.key} onClick={() => setSortMode(opt.key)} style={{
+                 border:"none",borderRadius:"100px",padding:"7px 14px",fontSize:"12.5px",fontWeight:600,cursor:"pointer",
+-                background:sortMode===opt.key?G:"#ede7db",color:sortMode===opt.key?WHITE:MUT,
++                background:sortMode===opt.key?G:CDARK,color:sortMode===opt.key?WHITE:MUT,
+               }}>{opt.label}</button>
+             ))}
+           </div>
+@@ -178,7 +178,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
+                         onMarkReviewed(mm.key);
+                       }} style={{
+                         width:"100%",background:"transparent",border:`1.3px solid ${reviewed?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
+-                        color:reviewed?"#2d6b4a":G,borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,cursor:"pointer",
++                        color:reviewed?SUCCESS:G,borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,cursor:"pointer",
+                         display:"flex",alignItems:"center",justifyContent:"center",gap:"5px",
+                       }}>
+                         {reviewed ? <><Check size={13}/> Reviewed</> : "Mark as reviewed"}
+diff --git a/src/mobile/screens/MobileOnboardingScreen.jsx b/src/mobile/screens/MobileOnboardingScreen.jsx
+index d56b0a7..f48e00a 100644
+--- a/src/mobile/screens/MobileOnboardingScreen.jsx
++++ b/src/mobile/screens/MobileOnboardingScreen.jsx
+@@ -1,5 +1,5 @@
+ import { useEffect } from "react";
+-import { G, GOLD, WHITE, MUT, TEXT } from "../../design-tokens.js";
++import { G, GOLD, WHITE, MUT, TEXT, CREAM } from "../../design-tokens.js";
+ import { NavBar } from "../../NavBar.jsx";
+ import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
+ 
+@@ -18,7 +18,7 @@ export default function MobileOnboardingScreen({ step, steps, d, set, insights,
+   const isLastStep = step === steps.length - 1;
+ 
+   return (
+-    <div style={{minHeight:"100vh",background:"#faf7f0",display:"flex",flexDirection:"column"}}>
++    <div style={{minHeight:"100vh",background:CREAM,display:"flex",flexDirection:"column"}}>
+       <NavBar light center={`Step ${step+1} of ${steps.length}`} onLogoClick={insights ? onBackToDashboard : undefined}/>
+       <div style={{padding:"16px 20px 0"}}>
+         <div style={{height:"4px",borderRadius:"2px",background:"rgba(22,47,36,0.1)",overflow:"hidden"}}>
+@@ -28,7 +28,7 @@ export default function MobileOnboardingScreen({ step, steps, d, set, insights,
+       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
+         <MobileOnboardingStep stepId={stepId} d={d} set={set}/>
+       </div>
+-      <div style={{position:"sticky",bottom:0,background:"#faf7f0",padding:"14px 20px",paddingBottom:"calc(14px + env(safe-area-inset-bottom, 0px))",display:"flex",flexDirection:"column",gap:"8px"}}>
++      <div style={{position:"sticky",bottom:0,background:CREAM,padding:"14px 20px",paddingBottom:"calc(14px + env(safe-area-inset-bottom, 0px))",display:"flex",flexDirection:"column",gap:"8px"}}>
+         <div style={{display:"flex",gap:"10px"}}>
+           <button onClick={onBack} style={{flex:1,padding:"13px",background:"transparent",border:"1.5px solid rgba(22,47,36,0.22)",borderRadius:"100px",fontSize:"14px",color:TEXT,fontWeight:600,cursor:"pointer"}}>← Back</button>
+           <button onClick={onContinue} disabled={continueDisabled} style={{
+diff --git a/src/mobile/screens/MobileUnlock.jsx b/src/mobile/screens/MobileUnlock.jsx
+index 026ea67..283a5bf 100644
+--- a/src/mobile/screens/MobileUnlock.jsx
++++ b/src/mobile/screens/MobileUnlock.jsx
+@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
+ import { motion } from "framer-motion";
+ import posthog from "posthog-js";
+ import { Lock, X } from "lucide-react";
+-import { G, GOLD, MUT, TEXT, SERIF, WHITE } from "../../design-tokens.js";
++import { G, GOLD, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT } from "../../design-tokens.js";
+ import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
+ import { fmt } from "../../lib/format.js";
+ import { unlockAsk, validEmail } from "../../lib/unlock.js";
+@@ -88,7 +88,7 @@ function PaywallSheet({ children }) {
+         style={{position:"absolute",inset:0,background:"rgba(22,47,36,0.28)",backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)"}}/>
+       <motion.div role="dialog" aria-modal="true" aria-label="Subscribe to Candid"
+         initial={{ opacity: 0, scale: 0.94, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 340, damping: 30 }}
+-        style={{position:"relative",background:"#faf7f0",borderRadius:"22px",boxShadow:"0 18px 50px rgba(22,47,36,0.28)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",
++        style={{position:"relative",background:CREAM,borderRadius:"22px",boxShadow:"0 18px 50px rgba(22,47,36,0.28)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",
+           padding:"20px",maxWidth:"440px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
+         <button type="button" onClick={() => navigate("/app/modules")} aria-label="Close"
+           style={{position:"absolute",top:"12px",right:"14px",width:"32px",height:"32px",borderRadius:"50%",border:"none",background:"rgba(22,47,36,0.07)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+@@ -156,7 +156,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
+       <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
+         {busy && !panel ? "Opening checkout…" : "Subscribe and unlock everything"}
+       </button>
+-      {error && !panel && <div style={{fontSize:"12.5px",color:"#b3261e",margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
++      {error && !panel && <div style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
+       <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
+         Every module's figures and options, kept up to date as rates change. Cancel any time, and get a full refund within 14 days of first subscribing. Payments by Stripe. By subscribing you agree to our <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>.
+       </p>
+@@ -182,7 +182,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
+                 {panel === "restore" ? "Send link" : "Sign up"}
+               </button>
+             </div>
+-            {error && <div style={{fontSize:"12px",color:"#b3261e",margin:"6px 0 0 6px"}}>{error}</div>}
++            {error && <div style={{fontSize:"12px",color:ERROR_TEXT,margin:"6px 0 0 6px"}}>{error}</div>}
+             {panel === "alerts" && <p style={{fontSize:"11.5px",color:MUT,margin:"8px 0 0"}}>Unsubscribe any time. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>}
+           </form>
+         )
+diff --git a/src/mockups/NewSiteLayout.jsx b/src/mockups/NewSiteLayout.jsx
+index 7a14f4c..a3ce58f 100644
+--- a/src/mockups/NewSiteLayout.jsx
++++ b/src/mockups/NewSiteLayout.jsx
+@@ -1,4 +1,4 @@
+-import { SANS } from "../design-tokens.js";
++import { SANS, CREAM, WHITE } from "../design-tokens.js";
+ import NewSiteHeader, { HEADER_HEIGHT } from "./NewSiteHeader.jsx";
+ import SiteFooter from "./SiteFooter.jsx";
+ 
+@@ -6,7 +6,7 @@ import SiteFooter from "./SiteFooter.jsx";
+ // and the footer. `children` is just that page's own content between the two.
+ export default function NewSiteLayout({ children }) {
+   return (
+-    <div style={{ background: "linear-gradient(180deg, #faf7f0 0%, #ffffff 60%, #ffffff 100%)" }}>
++    <div style={{ background: `linear-gradient(180deg, ${CREAM} 0%, ${WHITE} 60%, ${WHITE} 100%)` }}>
+       <div style={{ fontFamily: SANS }}>
+         <NewSiteHeader />
+         {/* Reserves the header's own height — the header is `position: fixed`
+diff --git a/src/mockups/SignInPage.jsx b/src/mockups/SignInPage.jsx
+index bcc98b9..69aa30d 100644
+--- a/src/mockups/SignInPage.jsx
++++ b/src/mockups/SignInPage.jsx
+@@ -1,7 +1,7 @@
+ import { useEffect, useRef, useState } from "react";
+ import { Link } from "react-router-dom";
+ import posthog from "posthog-js";
+-import { G, MUT, TEXT, SERIF, WHITE } from "../design-tokens.js";
++import { G, MUT, TEXT, SERIF, WHITE, ERROR_TEXT } from "../design-tokens.js";
+ import { requestRestore, signInWithLink } from "../lib/entitlement.js";
+ import { validEmail } from "../lib/unlock.js";
+ import NewSiteLayout from "./NewSiteLayout.jsx";
+@@ -68,7 +68,7 @@ export default function SignInPage() {
+                 style={{width:"100%",background:busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
+                 {busy ? "Sending…" : "Email me a sign-in link"}
+               </button>
+-              {error && <div style={{fontSize:"13px",color:"#b3261e"}}>{error}</div>}
++              {error && <div style={{fontSize:"13px",color:ERROR_TEXT}}>{error}</div>}
+             </form>
+             <p style={{...p,fontSize:"13.5px",marginTop:"20px"}}>Not subscribed? Your answers stay on the device you used. <Link to="/app/start" style={link}>Start a check</Link></p>
+           </>

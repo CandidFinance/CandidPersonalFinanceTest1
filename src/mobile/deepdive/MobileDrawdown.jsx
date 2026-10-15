@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { fmt } from "../../lib/format.js";
-import { G, WHITE, MUT, TEXT, SERIF, SANS, CDARK, RADIUS_PILL, PILL_HEIGHT, FONT_SIZE, PillSlider } from "../../CandidApp.jsx";
+import { G, WHITE, MUT, TEXT, SERIF, SANS, CDARK, RADIUS_PILL, PILL_HEIGHT, FONT_SIZE } from "../../design-tokens.js";
+import { PillSlider } from "../PillSlider.jsx";
 import { calcDrawdown, bestDrawdown, defaultDrawdownYears, drawdownYearOptions, phaseChange, pensionIhtLine } from "../../lib/drawdown.js";
 import { GROWTH_REAL_PCT } from "../../lib/growth.js";
 import { MONEY_PURCHASE_ANNUAL_ALLOWANCE } from "../../lib/pension.js";

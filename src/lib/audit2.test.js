@@ -1,4 +1,4 @@
-// The audit's follow-ups, as agreed (finance-engine-audit.md, section 3, Q1
+// The audit's follow-ups, as agreed (docs/finance-engine-audit.md, section 3, Q1
 // to Q14 and FSCS), each written before its change.
 import { test } from "node:test";
 import assert from "node:assert/strict";

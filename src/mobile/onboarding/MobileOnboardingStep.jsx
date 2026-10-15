@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { AlertTriangle, Home, Star, Baby, RefreshCw, Shield, Lightbulb, Check } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, MODULE_META, PillSlider } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, CDARK, CRITICAL } from "../../design-tokens.js";
+import { MODULE_META } from "../../lib/moduleStatus.js";
+import { PillSlider } from "../PillSlider.jsx";
 import { capField, isaThisYearTotal } from "../../lib/onboarding.js";
 import { estimatePensionPot, CAREER_START_AGE } from "../../lib/pension.js";
 import { resolveSlRate } from "../../lib/studentLoan.js";
@@ -10,9 +12,8 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import MobileCashTiersList from "./MobileCashTiersList.jsx";
 import InfoButton from "../InfoButton.jsx";
 
-// The 4 active MVP modules a user can pick from on the "Focus" step — same
-// keys/icons as desktop's MODULE_SELECT_TILES (CandidApp.jsx), sourced from
-// the shared MODULE_META instead of a second hardcoded list.
+// The 4 active MVP modules a user can pick from on the "Focus" step, with
+// their names and icons from the shared MODULE_META.
 const PICKABLE_MODULE_KEYS = ["cash", "investments", "pension", "studentLoan"];
 
 const TRAJECTORY_OPTIONS = [
@@ -42,8 +43,7 @@ const STUDENT_LOAN_OPTIONS = [
   { value:"plan5", label:"Plan 5" },
 ];
 
-// "Your goals" step, right after module selection — same keys/fields as
-// desktop's GOAL_TILES (CandidApp.jsx). Multi-select except "exploring",
+// "Your goals" step, right after module selection. Multi-select except "exploring",
 // which stands in for "none of the above" and clears every other selection.
 const GOAL_TILES = [
   { key:"buy_house",          icon:Home,      label:"Buy a house" },
@@ -60,12 +60,7 @@ const GOAL_TIMEFRAME_OPTIONS = [
   { value:"5plus", label:"5+ yrs"  },
 ];
 
-// Preset-buttons-plus-range-slider for a single £ target — mobile-styled
-// twin of desktop's GoalAmountSlider (CandidApp.jsx). A plain function
-// declaration, not an object literal, so referencing G/WHITE/SERIF inside its
-// body is safe despite the circular-import TDZ hazard noted above: those are
-// only read when the function is called at render time, well after
-// CandidApp.jsx has finished initializing.
+// Preset-buttons-plus-range-slider for a single £ target.
 function GoalAmountSlider({ label, value, onChange, max, step, presets }) {
   const v = +value || 0;
   return (
@@ -84,10 +79,8 @@ function GoalAmountSlider({ label, value, onChange, max, step, presets }) {
   );
 }
 
-// Mobile-native rebuild of desktop's OnboardingStep (CandidApp.jsx) — same
-// step ids, same `d`/`set` writes (values land in the exact same fields), but
-// mobile-density copy and PillMoneyInput/PillSlider primitives instead of
-// desktop's boxed FmtInput/Toggle/two-column Field grids. Steps not yet built
+// One onboarding step by id (ALL_STEP_DEFS), writing its answers into `d`
+// with PillMoneyInput/PillSlider primitives. Steps not yet built
 // for mobile fall through to a placeholder rather than blocking the flow —
 // Continue isn't disabled on any module-specific step, so onboarding can
 // still be completed end to end while later steps are built out.
@@ -97,10 +90,6 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
   const [showEmploymentInfo, setShowEmploymentInfo] = useState(false);
   const [potEstimated, setPotEstimated] = useState(false); // true only right after the "estimate it" button is used, so the caption doesn't linger over a manually-typed figure
-  // Defined inside the component, not at module scope — this file is part of
-  // a circular import with CandidApp.jsx (which imports it via the
-  // onboarding screen), so G/SERIF/etc aren't initialized yet when the module
-  // itself first evaluates. Safe once read at render time instead.
   const questionHeading = bare ? { display:"none" } : { fontFamily:SERIF, fontSize:"22px", color:G, fontWeight:700, marginBottom:"8px", textAlign:"center" };
   const questionSub = bare ? { display:"none" } : { fontSize:"13px", color:MUT, lineHeight:1.5, textAlign:"center", marginBottom:"24px" };
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
@@ -225,7 +214,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
           </div>
           <PillSlider value={d.employmentStatus || "employed"} onChange={v => set("employmentStatus", v)} options={EMPLOYMENT_STATUS_OPTIONS}/>
           {showEmploymentInfo && (
-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"8px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"8px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
               We factor this into your analysis — whether you're employed, self-employed or not working changes which levers are actually available to you, so we can work out what's genuinely optimal for your position rather than giving generic advice.
             </p>
           )}
@@ -296,7 +285,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
             <PillMoneyInput label="From previous years" value={d.isaPrevCash || null} onChange={v => set("isaPrevCash", capField("isaPrevCash", v ?? ""))}/>
           </div>
           {isaOver && (
-            <div style={{marginTop:"8px",fontSize:"11.5px",color:"#c0392b",fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+            <div style={{marginTop:"8px",fontSize:"11.5px",color:CRITICAL,fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
               <AlertTriangle size={12} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaTotal)} — exceeds the £20,000 allowance.</span>
             </div>
           )}
@@ -317,47 +306,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
         <label style={fieldLabel}>Do you have investments?</label>
         <PillSlider value={d.hasInvestments} onChange={v => set("hasInvestments", v)} options={YES_NO_OPTIONS}/>
 
-        {d.hasInvestments === "yes" && (
-          <div style={{marginTop:"22px"}}>
-            <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px"}}>ISA contributions this tax year</div>
-            <p style={{fontSize:"11px",color:MUT,marginTop:0,marginBottom:"10px"}}>Shared £20,000 limit with any Cash ISA</p>
-            <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
-              <PillMoneyInput label="S&S ISA" value={d.isaThisYearSS || null} onChange={v => set("isaThisYearSS", capField("isaThisYearSS", v ?? ""))}/>
-              <PillMoneyInput label="LISA" value={d.isaThisYearLISA || null} onChange={v => set("isaThisYearLISA", capField("isaThisYearLISA", v ?? ""))}/>
-              <PillMoneyInput label="Other ISA" value={d.isaThisYearOther || null} onChange={v => set("isaThisYearOther", capField("isaThisYearOther", v ?? ""))}/>
-            </div>
-            {isaOver && (
-              <div style={{marginBottom:"14px",fontSize:"11.5px",color:"#c0392b",fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
-                <AlertTriangle size={12} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaTotal)} — exceeds the £20,000 allowance.</span>
-              </div>
-            )}
-
-            <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px",marginTop:"18px"}}>ISA balance from previous years</div>
-            <div style={{display:"flex",gap:"8px",marginBottom:"6px"}}>
-              <PillMoneyInput label="S&S ISA" value={d.isaPrevSS || null} onChange={v => set("isaPrevSS", capField("isaPrevSS", v ?? ""))}/>
-              <PillMoneyInput label="LISA" value={d.isaPrevLISA || null} onChange={v => set("isaPrevLISA", capField("isaPrevLISA", v ?? ""))}/>
-              <PillMoneyInput label="Other" value={d.isaPrevOther || null} onChange={v => set("isaPrevOther", capField("isaPrevOther", v ?? ""))}/>
-            </div>
-            {prevTotal > 0 && <p style={{fontSize:"11.5px",color:MUT,marginTop:0,marginBottom:"18px"}}>Total previous years: {fmt(prevTotal)}</p>}
-
-            <PillMoneyInput label="Investments outside an ISA" value={d.unwrappedValue || null} onChange={v => set("unwrappedValue", capField("unwrappedValue", v ?? ""))}/>
-            <div style={{marginTop:"10px"}}>
-              <PillMoneyInput label="Estimated unrealised gains" value={d.unrealisedGains || null} onChange={v => set("unrealisedGains", capField("unrealisedGains", v ?? ""))}/>
-              <p style={{fontSize:"11px",color:MUT,marginTop:"6px"}}>Profit above what you paid, for investments outside an ISA/pension</p>
-            </div>
-
-            <div style={{marginTop:"18px"}}>
-              <label style={fieldLabel}>Have you sold any investments or property outside an ISA or pension this tax year?</label>
-              <PillSlider value={d.hasSoldAssetsOutsideWrapper || "no"} onChange={v => { set("hasSoldAssetsOutsideWrapper", v); if (v === "no") set("realisedCgtGains", ""); }} options={YES_NO_OPTIONS}/>
-              {d.hasSoldAssetsOutsideWrapper === "yes" && (
-                <div style={{marginTop:"10px"}}>
-                  <p style={{fontSize:"11px",color:MUT,marginTop:0,marginBottom:"8px"}}>We ask this to track your £3,000 CGT allowance.</p>
-                  <PillMoneyInput label="Estimated total profit" value={d.realisedCgtGains || null} onChange={v => set("realisedCgtGains", capField("realisedCgtGains", v ?? ""))}/>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <InvestmentsDetails d={d} set={set} isaOver={isaOver} isaTotal={isaTotal} prevTotal={prevTotal} fieldLabel={fieldLabel}/>
       </div>
     );
   }
@@ -376,56 +325,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
           else { set("pensionUnknown", false); set("hasPension", v); set("pensionStatus", v); }
         }} options={PENSION_STATUS_OPTIONS}/>
 
-        {d.pensionUnknown ? (
-          <div style={{background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
-            <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}>No problem — this is really common. Your report will walk you through how to find out. Until you know, it takes a few points off your score.</p>
-          </div>
-        ) : contributing ? (
-          <div style={{marginTop:"18px"}}>
-            <div style={{display:"flex",gap:"10px",marginBottom:"14px"}}>
-              <PillMoneyInput label="Your contribution" unit="%" value={d.myContribution || null} onChange={v => set("myContribution", capField("myContribution", v ?? ""))}/>
-              <PillMoneyInput label="Employer match cap" unit="%" value={d.employerMatch || null} onChange={v => set("employerMatch", capField("employerMatch", v ?? ""))}/>
-            </div>
-
-            <div style={{display:"flex",gap:"10px",marginBottom:"4px"}}>
-              <div style={{flex:1}}>
-                <PillMoneyInput label="Main pot value" value={d.potValue || null} onChange={v => { setPotEstimated(false); set("potValue", capField("potValue", v ?? "")); }}/>
-                {+d.age > 0 && +d.salary > 0 && (
-                  <button type="button" onClick={() => { set("potValue", String(estimatePensionPot(d))); setPotEstimated(true); }} style={{background:"none",border:"none",color:GOLD,fontSize:"11px",fontWeight:600,cursor:"pointer",padding:"4px 0 0",display:"block"}}>
-                    Don't know? Estimate it
-                  </button>
-                )}
-              </div>
-              <div style={{flex:1}}>
-                <PillMoneyInput label="Other pots combined" value={d.potValue2 || null} onChange={v => set("potValue2", capField("potValue2", v ?? ""))}/>
-              </div>
-            </div>
-            {potEstimated && +d.potValue > 0 && (
-              <p style={{fontSize:"10.5px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:"14px"}}>
-                Estimated assuming you've worked and contributed since age {CAREER_START_AGE}, at{" "}
-                {((+d.myContribution||0)+(+d.employerMatch||0)) > 0 ? `your stated ${(+d.myContribution||0)+(+d.employerMatch||0)}% combined rate` : "the UK auto-enrolment minimum (8%)"}, growing at 6% p.a. — a rough order of magnitude, not a real balance.
-              </p>
-            )}
-
-            <div style={{display:"flex",gap:"10px",marginTop:"14px",marginBottom:"18px"}}>
-              <PillMoneyInput label="Target retirement age" unit="" value={d.retirementAge || null} onChange={v => set("retirementAge", Math.min(80, v ?? 0) || "")}/>
-              <PillMoneyInput label="NI years completed" unit="" value={d.niYears || null} onChange={v => set("niYears", v == null ? "" : String(Math.min(35, Math.max(0, v))))}/>
-            </div>
-            <p style={{fontSize:"11px",color:MUT,marginTop:"-12px",marginBottom:"18px"}}>35 NI years gives the full State Pension — check yours free at gov.uk/check-state-pension</p>
-
-            <label style={fieldLabel}>How are contributions made?</label>
-            <PillSlider value={d.pensionType||""} onChange={v=>set("pensionType",v)} options={PENSION_TYPE_OPTIONS}/>
-            <p style={{fontSize:"11px",color:MUT,marginTop:"6px",lineHeight:1.5}}>
-              {d.pensionType==="sacrifice" ? "Comes off your gross pay before tax — check your payslip for a deduction before income tax." :
-               d.pensionType==="relief"   ? "Comes from your take-home pay — your provider claims basic rate relief, you claim higher rate via self-assessment." :
-               "Check your payslip — if the deduction appears before tax is calculated, it's likely salary sacrifice."}
-            </p>
-          </div>
-        ) : (
-          <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
-            <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}><strong>This could be where the biggest gap is.</strong> We'll show what it could be worth.</p>
-          </div>
-        )}
+        <PensionDetails d={d} contributing={contributing} set={set} setPotEstimated={setPotEstimated} potEstimated={potEstimated} fieldLabel={fieldLabel}/>
       </div>
     );
   }
@@ -468,5 +368,113 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
       <h2 style={questionHeading}>{stepMeta?.title || "This step"}</h2>
       <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>This step isn't built for mobile yet — tap Continue for now, or finish this on desktop.</p>
     </div>
+  );
+}
+
+// The investments step's follow-ups, once the user says they invest.
+function InvestmentsDetails({ d, set, isaOver, isaTotal, prevTotal, fieldLabel }) {
+  return (
+    <>
+      {d.hasInvestments === "yes" && (
+        <div style={{marginTop:"22px"}}>
+          <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px"}}>ISA contributions this tax year</div>
+          <p style={{fontSize:"11px",color:MUT,marginTop:0,marginBottom:"10px"}}>Shared £20,000 limit with any Cash ISA</p>
+          <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
+            <PillMoneyInput label="S&S ISA" value={d.isaThisYearSS || null} onChange={v => set("isaThisYearSS", capField("isaThisYearSS", v ?? ""))}/>
+            <PillMoneyInput label="LISA" value={d.isaThisYearLISA || null} onChange={v => set("isaThisYearLISA", capField("isaThisYearLISA", v ?? ""))}/>
+            <PillMoneyInput label="Other ISA" value={d.isaThisYearOther || null} onChange={v => set("isaThisYearOther", capField("isaThisYearOther", v ?? ""))}/>
+          </div>
+          {isaOver && (
+            <div style={{marginBottom:"14px",fontSize:"11.5px",color:CRITICAL,fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+              <AlertTriangle size={12} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaTotal)} — exceeds the £20,000 allowance.</span>
+            </div>
+          )}
+
+          <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px",marginTop:"18px"}}>ISA balance from previous years</div>
+          <div style={{display:"flex",gap:"8px",marginBottom:"6px"}}>
+            <PillMoneyInput label="S&S ISA" value={d.isaPrevSS || null} onChange={v => set("isaPrevSS", capField("isaPrevSS", v ?? ""))}/>
+            <PillMoneyInput label="LISA" value={d.isaPrevLISA || null} onChange={v => set("isaPrevLISA", capField("isaPrevLISA", v ?? ""))}/>
+            <PillMoneyInput label="Other" value={d.isaPrevOther || null} onChange={v => set("isaPrevOther", capField("isaPrevOther", v ?? ""))}/>
+          </div>
+          {prevTotal > 0 && <p style={{fontSize:"11.5px",color:MUT,marginTop:0,marginBottom:"18px"}}>Total previous years: {fmt(prevTotal)}</p>}
+
+          <PillMoneyInput label="Investments outside an ISA" value={d.unwrappedValue || null} onChange={v => set("unwrappedValue", capField("unwrappedValue", v ?? ""))}/>
+          <div style={{marginTop:"10px"}}>
+            <PillMoneyInput label="Estimated unrealised gains" value={d.unrealisedGains || null} onChange={v => set("unrealisedGains", capField("unrealisedGains", v ?? ""))}/>
+            <p style={{fontSize:"11px",color:MUT,marginTop:"6px"}}>Profit above what you paid, for investments outside an ISA/pension</p>
+          </div>
+
+          <div style={{marginTop:"18px"}}>
+            <label style={fieldLabel}>Have you sold any investments or property outside an ISA or pension this tax year?</label>
+            <PillSlider value={d.hasSoldAssetsOutsideWrapper || "no"} onChange={v => { set("hasSoldAssetsOutsideWrapper", v); if (v === "no") set("realisedCgtGains", ""); }} options={YES_NO_OPTIONS}/>
+            {d.hasSoldAssetsOutsideWrapper === "yes" && (
+              <div style={{marginTop:"10px"}}>
+                <p style={{fontSize:"11px",color:MUT,marginTop:0,marginBottom:"8px"}}>We ask this to track your £3,000 CGT allowance.</p>
+                <PillMoneyInput label="Estimated total profit" value={d.realisedCgtGains || null} onChange={v => set("realisedCgtGains", capField("realisedCgtGains", v ?? ""))}/>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// The pension step's follow-ups: an estimate when the user isn't sure, or
+// the contribution and pot figures.
+function PensionDetails({ d, contributing, set, setPotEstimated, potEstimated, fieldLabel }) {
+  return (
+    <>
+      {d.pensionUnknown ? (
+        <div style={{background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
+          <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}>No problem — this is really common. Your report will walk you through how to find out. Until you know, it takes a few points off your score.</p>
+        </div>
+      ) : contributing ? (
+        <div style={{marginTop:"18px"}}>
+          <div style={{display:"flex",gap:"10px",marginBottom:"14px"}}>
+            <PillMoneyInput label="Your contribution" unit="%" value={d.myContribution || null} onChange={v => set("myContribution", capField("myContribution", v ?? ""))}/>
+            <PillMoneyInput label="Employer match cap" unit="%" value={d.employerMatch || null} onChange={v => set("employerMatch", capField("employerMatch", v ?? ""))}/>
+          </div>
+
+          <div style={{display:"flex",gap:"10px",marginBottom:"4px"}}>
+            <div style={{flex:1}}>
+              <PillMoneyInput label="Main pot value" value={d.potValue || null} onChange={v => { setPotEstimated(false); set("potValue", capField("potValue", v ?? "")); }}/>
+              {+d.age > 0 && +d.salary > 0 && (
+                <button type="button" onClick={() => { set("potValue", String(estimatePensionPot(d))); setPotEstimated(true); }} style={{background:"none",border:"none",color:GOLD,fontSize:"11px",fontWeight:600,cursor:"pointer",padding:"4px 0 0",display:"block"}}>
+                  Don't know? Estimate it
+                </button>
+              )}
+            </div>
+            <div style={{flex:1}}>
+              <PillMoneyInput label="Other pots combined" value={d.potValue2 || null} onChange={v => set("potValue2", capField("potValue2", v ?? ""))}/>
+            </div>
+          </div>
+          {potEstimated && +d.potValue > 0 && (
+            <p style={{fontSize:"10.5px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:"14px"}}>
+              Estimated assuming you've worked and contributed since age {CAREER_START_AGE}, at{" "}
+              {((+d.myContribution||0)+(+d.employerMatch||0)) > 0 ? `your stated ${(+d.myContribution||0)+(+d.employerMatch||0)}% combined rate` : "the UK auto-enrolment minimum (8%)"}, growing at 6% p.a. — a rough order of magnitude, not a real balance.
+            </p>
+          )}
+
+          <div style={{display:"flex",gap:"10px",marginTop:"14px",marginBottom:"18px"}}>
+            <PillMoneyInput label="Target retirement age" unit="" value={d.retirementAge || null} onChange={v => set("retirementAge", Math.min(80, v ?? 0) || "")}/>
+            <PillMoneyInput label="NI years completed" unit="" value={d.niYears || null} onChange={v => set("niYears", v == null ? "" : String(Math.min(35, Math.max(0, v))))}/>
+          </div>
+          <p style={{fontSize:"11px",color:MUT,marginTop:"-12px",marginBottom:"18px"}}>35 NI years gives the full State Pension — check yours free at gov.uk/check-state-pension</p>
+
+          <label style={fieldLabel}>How are contributions made?</label>
+          <PillSlider value={d.pensionType||""} onChange={v=>set("pensionType",v)} options={PENSION_TYPE_OPTIONS}/>
+          <p style={{fontSize:"11px",color:MUT,marginTop:"6px",lineHeight:1.5}}>
+            {d.pensionType==="sacrifice" ? "Comes off your gross pay before tax — check your payslip for a deduction before income tax." :
+             d.pensionType==="relief"   ? "Comes from your take-home pay — your provider claims basic rate relief, you claim higher rate via self-assessment." :
+             "Check your payslip — if the deduction appears before tax is calculated, it's likely salary sacrifice."}
+          </p>
+        </div>
+      ) : (
+        <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
+          <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}><strong>This could be where the biggest gap is.</strong> We'll show what it could be worth.</p>
+        </div>
+      )}
+    </>
   );
 }

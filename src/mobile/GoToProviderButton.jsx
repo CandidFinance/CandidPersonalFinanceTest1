@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import { G, WHITE, MUT, RADIUS_PILL, FONT_SIZE, SANS } from "../CandidApp.jsx";
+import { G, WHITE, MUT, RADIUS_PILL, FONT_SIZE, SANS } from "../design-tokens.js";
 import { INVESTMENT_PROVIDERS, getSavedProvider, saveProvider, openInvestmentProvider } from "../utils/deepLinks.js";
 
 // High-contrast "go straight to my platform" CTA. Uses a native <select>

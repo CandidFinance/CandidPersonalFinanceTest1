@@ -1,6 +1,5 @@
 import crypto from "crypto";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
 
 // Subscriptions: the first module's answer is free, every one after it needs
 // a subscription (src/lib/unlock.js). One function for all of it, routed by
@@ -36,7 +35,7 @@ const MAIL_REPLY_TO = "admin@candid-finance.co.uk";
 
 // The live site and local dev, plus any hostnames in BILLING_EXTRA_HOSTS
 // (comma-separated), for trying checkout on a Vercel preview in test mode.
-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1",
+const BILLING_HOSTNAMES = [...ALLOWED_HOSTNAMES,
   ...(process.env.BILLING_EXTRA_HOSTS || "").split(",").map(h => h.trim()).filter(Boolean)];
 // Statuses that keep access: past_due while Stripe retries a failed payment.
 const ACTIVE = ["active", "trialing", "past_due"];
@@ -46,27 +45,14 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // The app's inputs are a few kB; this is a ceiling, not a target.
 const MAX_STATE_CHARS = 200000;
 
-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
-  : null;
-const limiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, "10 m"), prefix: "ratelimit:billing" });
-const restoreLimiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(3, "1 h"), prefix: "ratelimit:billing-restore" });
+const limiter = rateLimiter(30, "10 m", "ratelimit:billing");
+const restoreLimiter = rateLimiter(3, "1 h", "ratelimit:billing-restore");
+const restoreEmailLimiter = rateLimiter(5, "1 d", "ratelimit:billing-restore-email");
 
 const configured = () => !!(STRIPE_KEY && WEBHOOK_SECRET && PRICES.monthly && PRICES.yearly && TOKEN_SECRET && SUPA_URL && SERVICE_KEY);
 
-function clientIp(req) {
-  const f = req.headers["x-forwarded-for"];
-  return f ? f.split(",")[0].trim() : req.socket?.remoteAddress || "unknown";
-}
 // The site the request came from, if it's ours: where checkout returns to.
-function ourOrigin(req) {
-  const value = req.headers.origin || req.headers.referer;
-  if (!value) return null;
-  try {
-    const u = new URL(value);
-    return ALLOWED_HOSTNAMES.includes(u.hostname) ? u.origin : null;
-  } catch { return null; }
-}
+const ourOrigin = req => allowedOrigin(req, BILLING_HOSTNAMES);
 const cleanEmail = e => typeof e === "string" && EMAIL_RE.test(e.trim()) ? e.trim().toLowerCase() : null;
 
 // ── Tokens: base64url(JSON) + "." + HMAC ─────────────────────────────────
@@ -79,8 +65,7 @@ function makeToken(email, kind, ttl) {
 function readToken(token, kind) {
   if (typeof token !== "string" || !token.includes(".")) return null;
   const [body, mac] = token.split(".");
-  const expected = sign(body);
-  if (mac.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(expected))) return null;
+  if (!safeEqual(mac, sign(body))) return null;
   try {
     const t = JSON.parse(Buffer.from(body, "base64url").toString());
     return t.k === kind && t.x > Date.now() ? cleanEmail(t.e) : null;
@@ -172,10 +157,7 @@ function stripeSigned(raw, header) {
   const t = +parts.t;
   if (!t || Math.abs(Date.now() / 1000 - t) > 300) return false;
   const expected = crypto.createHmac("sha256", WEBHOOK_SECRET).update(`${t}.${raw}`).digest("hex");
-  return header.split(",").filter(p => p.startsWith("v1=")).some(p => {
-    const v = p.slice(3);
-    return v.length === expected.length && crypto.timingSafeEqual(Buffer.from(v), Buffer.from(expected));
-  });
+  return header.split(",").filter(p => p.startsWith("v1=")).some(p => safeEqual(p.slice(3), expected));
 }
 async function webhook(req, res, raw) {
   if (!stripeSigned(raw, req.headers["stripe-signature"])) return res.status(400).json({ error: "Bad signature" });
@@ -252,6 +234,10 @@ async function restore(req, body, res, origin) {
   if (!email) return res.status(400).json({ error: "Enter a valid email address" });
   if (restoreLimiter) {
     const { success } = await restoreLimiter.limit(`${clientIp(req)}:${email}`);
+    if (!success) return res.status(429).json({ error: "Too many requests. Try again later." });
+  }
+  if (restoreEmailLimiter) {
+    const { success } = await restoreEmailLimiter.limit(email);
     if (!success) return res.status(429).json({ error: "Too many requests. Try again later." });
   }
   const access = accessFor(await rowFor(email));

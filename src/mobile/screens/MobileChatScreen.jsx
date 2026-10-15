@@ -1,10 +1,9 @@
 import { MessageCircle, Send } from "lucide-react";
-import { GOLD, MUT, TEXT, SERIF } from "../../CandidApp.jsx";
+import { GOLD, MUT, TEXT, SERIF, CDARK } from "../../design-tokens.js";
 
 // Mobile Chat screen — matches the mockup's placeholder layout (icon badge,
-// headline, description, "Coming soon" pill, disabled input bar), but reuses
-// desktop's own ChatScreen copy (CandidApp.jsx) rather than the mockup's
-// illustrative text, so the messaging stays one voice across the app.
+// headline, description, "Coming soon" pill, disabled input bar), with the
+// app's own copy rather than the mockup's illustrative text.
 export default function MobileChatScreen() {
   return (
     <div style={{display:"flex",flexDirection:"column",minHeight:"65vh"}}>
@@ -20,7 +19,7 @@ export default function MobileChatScreen() {
           Coming soon
         </div>
       </div>
-      <div style={{display:"flex",alignItems:"center",gap:"10px",background:"#ede7db",borderRadius:"100px",padding:"12px 16px",opacity:0.6}}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",background:CDARK,borderRadius:"100px",padding:"12px 16px",opacity:0.6}}>
         <span style={{fontSize:"14px",color:MUT,flex:1}}>Ask Candid...</span>
         <Send size={18} color={MUT}/>
       </div>

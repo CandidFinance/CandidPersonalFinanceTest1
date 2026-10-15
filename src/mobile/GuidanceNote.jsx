@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { G, MUT, TEXT, SERIF } from "../CandidApp.jsx";
-import { CREAM } from "../design-tokens.js";
+import { CREAM, G, MUT, TEXT, SERIF } from "../design-tokens.js";
 
 // Candid is guidance, not advice, said where people read their figures:
 // briefly as a module page opens (GuidanceIntro), then once more at the foot

@@ -1,4 +1,4 @@
-import { CDARK, TEXT, MUT, SERIF } from "../CandidApp.jsx";
+import { CDARK, TEXT, MUT, SERIF, WHITE } from "../design-tokens.js";
 
 // The Candid score as a ring that fills to the score, with the score in the
 // centre. Presentational only: Home animates `value` (the fill on first
@@ -22,7 +22,7 @@ export default function ScoreDonut({ value, color, size = 112, stroke = 10, onDa
         )}
       </svg>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-        <span style={{fontFamily:SERIF,fontSize:`${Math.round(size * 0.3)}px`,fontWeight:700,color:onDark ? "#ffffff" : TEXT,lineHeight:1}}>{value}</span>
+        <span style={{fontFamily:SERIF,fontSize:`${Math.round(size * 0.3)}px`,fontWeight:700,color:onDark ? WHITE : TEXT,lineHeight:1}}>{value}</span>
         <span style={{fontSize:"11px",color:onDark ? "rgba(255,255,255,0.6)" : MUT,marginTop:"3px"}}>/100</span>
       </div>
     </div>

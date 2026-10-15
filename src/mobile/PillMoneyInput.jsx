@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { formatThousands } from "../lib/format.js";
-import { MUT, TEXT, CDARK, PILL_HEIGHT, FONT_SIZE } from "../CandidApp.jsx";
+import { MUT, TEXT, CDARK, PILL_HEIGHT, FONT_SIZE } from "../design-tokens.js";
 
 // ── Answer text inside a pill: the same as PillSlider's options (body size,
 // 600 weight, the app's sans font), so a typed £ figure and a Yes/No choice

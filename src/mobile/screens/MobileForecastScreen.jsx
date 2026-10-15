@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from "react";
+import { useMemo, useState } from "react";
+import { useElementWidth } from "../useElementWidth.js";
 import { Lock, ChevronRight } from "lucide-react";
-import { WHITE, MUT, TEXT, G, GOLD, SERIF, PillSlider, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_CARD } from "../../CandidApp.jsx";
+import { PillSlider } from "../PillSlider.jsx";
 import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { retirementAgeFor } from "../../lib/metrics.js";
-import { MODULE_CHART_COLOR } from "../../design-tokens.js";
+import { MODULE_CHART_COLOR, WHITE, MUT, TEXT, G, GOLD, SERIF, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_CARD, CDARK, CRITICAL } from "../../design-tokens.js";
 
 // Mobile Forecast screen — a "Surplus" comparison view (multi-strategy line
 // chart + low/mid/high table) and a "Net worth" view (single projected net
@@ -48,8 +49,7 @@ function buildYearTicks(horizon) {
 // figures above don't otherwise convey (a pension pot isn't spendable today
 // the way cash is), not an invented feature. Colours are each
 // module's chart colour (design-tokens.js MODULE_CHART_COLOR), the same as
-// the Surplus chart's and Home's, imported straight from design-tokens.js
-// (not via CandidApp.jsx, which risks a TDZ crash at module scope).
+// the Surplus chart's and Home's.
 const NW_ROW_META = {
   Cash:               { color:MODULE_CHART_COLOR.cash, liquidity:"Available today — no restrictions." },
   Investments:        { color:MODULE_CHART_COLOR.investments, liquidity:"Available today if needed, though selling outside an ISA may trigger Capital Gains Tax." },
@@ -75,64 +75,20 @@ export default function MobileForecastScreen({ d, m }) {
   const HORIZON_OPTIONS = milestoneAges.length
     ? milestoneAges.map(targetAge => ({ value: targetAge - age, label: `Age ${targetAge}` }))
     : [{value:5,label:"5yr"},{value:10,label:"10yr"},{value:20,label:"20yr"},{value:40,label:"40yr"}];
-  const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
   const [horizon, setHorizon] = useState(() => HORIZON_OPTIONS[0]?.value ?? 10);
   const [surplus, setSurplus] = useState(null);
   const [lumpSum, setLumpSum] = useState(null);
   const [openTip, setOpenTip] = useState(null);
   const [showNwAssumptions, setShowNwAssumptions] = useState(false);
-  const chartWrapRef = useRef(null);
-  // Measured in real CSS pixels so the viewBox always matches the rendered
-  // width 1:1 — stretching a small fixed viewBox to fill a wider container
-  // (via preserveAspectRatio="none") scaled strokes/text non-uniformly and
-  // made the chart look blurry/distorted.
-  const [chartWidth, setChartWidth] = useState(340);
-  useEffect(() => {
-    const el = chartWrapRef.current;
-    if (!el) return;
-    const update = () => setChartWidth(el.clientWidth || 340);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [view]);
+  // Re-measured when the view switches: each view has its own chart.
+  const [chartWrapRef, chartWidth] = useElementWidth(340, [view]);
 
-  const forecast = calcForecast(d, m, surplus, horizon, lumpSum ?? 0);
-  const series = calcForecastSeries(d, m, surplus, horizon, lumpSum ?? 0);
-  const assumptions = buildForecastAssumptions(d, m);
-  const netWorthRows = calcNetWorthTrajectory(d, m, horizon);
+  // Not rerun when only the chart's width or an open row changes.
+  const forecast = useMemo(() => calcForecast(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
+  const series = useMemo(() => calcForecastSeries(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
+  const assumptions = useMemo(() => buildForecastAssumptions(d, m), [d, m]);
 
-  const chart = (() => {
-    const allValues = series.series.flatMap(s => s.values);
-    const yMax = Math.max(1, ...allValues);
-    const VW = chartWidth, VH = 150, PL = 34, PR = 4, PT = 8, PB = 20;
-    const cW = VW - PL - PR, cH = VH - PT - PB;
-    const sx = i => PL + (i / horizon) * cW;
-    const sy = v => PT + (1 - v / yMax) * cH;
-    const paths = series.series.map(s => {
-      const endIdx = s.termYear != null ? s.termYear : s.values.length - 1;
-      const path = s.values.slice(0, endIdx + 1).map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
-      const lastIdx = Math.min(endIdx, s.values.length - 1);
-      return { label: s.label, path, lastX: sx(lastIdx), lastY: sy(s.values[lastIdx]) };
-    });
-    const yTicks = [0, 0.5, 1].map(f => yMax * f);
-    const xTicks = buildYearTicks(horizon);
-    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks };
-  })();
 
-  const nwChart = (() => {
-    const values = netWorthRows.map(r => r.netWorth);
-    const yMin = Math.min(0, ...values);
-    const yMax = Math.max(1, ...values);
-    const VW = chartWidth, VH = 150, PL = 40, PR = 4, PT = 8, PB = 20;
-    const cW = VW - PL - PR, cH = VH - PT - PB;
-    const sx = i => PL + (i / horizon) * cW;
-    const sy = v => PT + (1 - (v - yMin) / (yMax - yMin || 1)) * cH;
-    const path = values.map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
-    const yTicks = [0, 0.5, 1].map(f => yMin + (yMax - yMin) * f);
-    const xTicks = buildYearTicks(horizon);
-    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, yTicks, xTicks, lastX: sx(horizon), lastY: sy(values[horizon]) };
-  })();
 
   return (
     <div>
@@ -155,212 +111,264 @@ export default function MobileForecastScreen({ d, m }) {
       </div>
 
       {view === "surplus" ? (
-        <>
+        <SurplusView surplus={surplus} m={m} setSurplus={setSurplus} lumpSum={lumpSum} setLumpSum={setLumpSum} horizon={horizon} chartWrapRef={chartWrapRef} age={age} forecast={forecast} openTip={openTip} assumptions={assumptions} setOpenTip={setOpenTip} series={series} chartWidth={chartWidth}/>
+      ) : (
+        <NetWorthView age={age} horizon={horizon} chartWrapRef={chartWrapRef} setShowNwAssumptions={setShowNwAssumptions} showNwAssumptions={showNwAssumptions} m={m} openRow={openRow} setOpenRow={setOpenRow} d={d} chartWidth={chartWidth}/>
+      )}
+    </div>
+  );
+}
+
+// The Surplus view: what your monthly surplus and a lump sum could grow to,
+// by where they go.
+function SurplusView({ surplus, m, setSurplus, lumpSum, setLumpSum, horizon, chartWrapRef, age, forecast, openTip, assumptions, setOpenTip, series, chartWidth }) {
+  const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
+  const chart = (() => {
+    const allValues = series.series.flatMap(s => s.values);
+    const yMax = Math.max(1, ...allValues);
+    const VW = chartWidth, VH = 150, PL = 34, PR = 4, PT = 8, PB = 20;
+    const cW = VW - PL - PR, cH = VH - PT - PB;
+    const sx = i => PL + (i / horizon) * cW;
+    const sy = v => PT + (1 - v / yMax) * cH;
+    const paths = series.series.map(s => {
+      const endIdx = s.termYear != null ? s.termYear : s.values.length - 1;
+      const path = s.values.slice(0, endIdx + 1).map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
+      const lastIdx = Math.min(endIdx, s.values.length - 1);
+      return { label: s.label, path, lastX: sx(lastIdx), lastY: sy(s.values[lastIdx]) };
+    });
+    const yTicks = [0, 0.5, 1].map(f => yMax * f);
+    const xTicks = buildYearTicks(horizon);
+    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks };
+  })();
+  return (
+    <>
+      <>
       <div style={{display:"flex",gap:"10px",marginTop:"14px"}}>
-        <PillMoneyInput label="Monthly surplus" value={surplus != null ? surplus : Math.round(m.monthlySurplus)} onChange={setSurplus}/>
-        <PillMoneyInput label="Lump sum today" value={lumpSum} onChange={setLumpSum}/>
+      <PillMoneyInput label="Monthly surplus" value={surplus != null ? surplus : Math.round(m.monthlySurplus)} onChange={setSurplus}/>
+      <PillMoneyInput label="Lump sum today" value={lumpSum} onChange={setLumpSum}/>
       </div>
 
       <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
-        <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>
-          Projected value · {horizon} years
-        </div>
-        <div style={{display:"flex",gap:"14px",marginTop:"8px",flexWrap:"wrap"}}>
-          {chart.paths.map(p => (
-            <div key={p.label} style={{display:"flex",alignItems:"center",gap:"5px"}}>
-              <span style={{width:"7px",height:"7px",borderRadius:"50%",background:FORECAST_COLORS[p.label]||MUT,display:"inline-block"}}/>
-              <span style={{fontSize:"11.5px",color:TEXT}}>{FORECAST_SHORT_LABEL[p.label]||p.label}</span>
-            </div>
-          ))}
-        </div>
-
-        <div ref={chartWrapRef} style={{marginTop:"10px"}}>
-          <svg width={chart.VW} height={chart.VH} viewBox={`0 0 ${chart.VW} ${chart.VH}`} style={{display:"block"}}>
-            {/* Y-axis gridlines + ballpark labels */}
-            {chart.yTicks.map((v,i) => (
-              <g key={i}>
-                <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.sy(v)} y2={chart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
-                <text x={chart.PL-6} y={chart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
-              </g>
-            ))}
-            {/* strategy lines */}
-            {chart.paths.map(p => {
-              const color = FORECAST_COLORS[p.label] || MUT;
-              return (
-                <g key={p.label}>
-                  <path d={p.path} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <circle cx={p.lastX} cy={p.lastY} r="3.5" fill={color}/>
-                </g>
-              );
-            })}
-            {/* X-axis + year/age ticks — first anchors left, last anchors right,
-                so labels never spill past the chart's own edges. */}
-            <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.VH-chart.PB} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
-            {chart.xTicks.map((yr,i) => (
-              <text key={i} x={chart.sx(yr)} y={chart.VH-chart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
-                textAnchor={i===0?"start":i===chart.xTicks.length-1?"end":"middle"}>
-                {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
-              </text>
-            ))}
-            <line x1={chart.PL} x2={chart.PL} y1={chart.PT} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
-          </svg>
-        </div>
-
-        <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
-
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
-          <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Estimate at {horizonLabel(horizon)}</span>
-          <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px"}}>
-            <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Low</span>
-            <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Mid</span>
-            <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>High</span>
-          </div>
-        </div>
-        {forecast.options.map((o,i) => {
-          const isOpen = openTip === o.label;
-          const a = assumptions[o.label];
-          return (
-            <div key={o.label} style={{padding:"10px 0",borderBottom:i===forecast.options.length-1?"none":"1px solid rgba(22,47,36,0.06)"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0}}>
-                  <span style={{width:"8px",height:"8px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
-                  <span style={{fontSize:"13px",color:TEXT,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{FORECAST_SHORT_LABEL[o.label]||o.label}</span>
-                  {a && (
-                    <InfoButton onClick={() => setOpenTip(isOpen ? null : o.label)} open={isOpen}/>
-                  )}
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px",flexShrink:0}}>
-                  <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.low)}</span>
-                  <span style={{fontFamily:SERIF,fontSize:"12.5px",color:TEXT,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
-                  <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.high)}</span>
-                </div>
-              </div>
-              {o.note && (
-                <div style={{fontSize:"11px",color:MUT,marginTop:"3px",lineHeight:1.4}}>{o.note}</div>
-              )}
-              {isOpen && a && (
-                <div style={{marginTop:"8px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
-                  {a.lines.map((line,i) => (
-                    <p key={i} style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>{line}</p>
-                  ))}
-                  <div style={{display:"flex",gap:"14px",marginTop:"2px",fontSize:"11px",color:MUT}}>
-                    <span>Low <b style={{color:TEXT}}>{a.rates.low}</b></span>
-                    <span>Central <b style={{color:G}}>{a.rates.central}</b></span>
-                    <span>High <b style={{color:TEXT}}>{a.rates.high}</b></span>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>
+        Projected value · {horizon} years
       </div>
-        </>
-      ) : (
-        <>
-          <div style={{display:"flex",gap:"14px",marginTop:"14px"}}>
-            <div style={{flex:1}}>
-              <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Today</div>
-              <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[0].netWorth)}</div>
-            </div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{age ? `At age ${age+horizon}` : `In ${horizon} yrs`}</div>
-              <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[horizon].netWorth)}</div>
-            </div>
+      <div style={{display:"flex",gap:"14px",marginTop:"8px",flexWrap:"wrap"}}>
+        {chart.paths.map(p => (
+          <div key={p.label} style={{display:"flex",alignItems:"center",gap:"5px"}}>
+            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:FORECAST_COLORS[p.label]||MUT,display:"inline-block"}}/>
+            <span style={{fontSize:"11.5px",color:TEXT}}>{FORECAST_SHORT_LABEL[p.label]||p.label}</span>
           </div>
+        ))}
+      </div>
 
-          <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
-            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginBottom:"8px"}}>
-              Projected net worth · {horizon} years
+      <div ref={chartWrapRef} style={{marginTop:"10px"}}>
+        <svg width={chart.VW} height={chart.VH} viewBox={`0 0 ${chart.VW} ${chart.VH}`} style={{display:"block"}}>
+          {/* Y-axis gridlines + ballpark labels */}
+          {chart.yTicks.map((v,i) => (
+            <g key={i}>
+              <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.sy(v)} y2={chart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
+              <text x={chart.PL-6} y={chart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
+            </g>
+          ))}
+          {/* strategy lines */}
+          {chart.paths.map(p => {
+            const color = FORECAST_COLORS[p.label] || MUT;
+            return (
+              <g key={p.label}>
+                <path d={p.path} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx={p.lastX} cy={p.lastY} r="3.5" fill={color}/>
+              </g>
+            );
+          })}
+          {/* X-axis + year/age ticks — first anchors left, last anchors right,
+              so labels never spill past the chart's own edges. */}
+          <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.VH-chart.PB} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
+          {chart.xTicks.map((yr,i) => (
+            <text key={i} x={chart.sx(yr)} y={chart.VH-chart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
+              textAnchor={i===0?"start":i===chart.xTicks.length-1?"end":"middle"}>
+              {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
+            </text>
+          ))}
+          <line x1={chart.PL} x2={chart.PL} y1={chart.PT} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
+        </svg>
+      </div>
+
+      <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
+
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
+        <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Estimate at {horizonLabel(horizon)}</span>
+        <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px"}}>
+          <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Low</span>
+          <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Mid</span>
+          <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>High</span>
+        </div>
+      </div>
+      {forecast.options.map((o,i) => {
+        const isOpen = openTip === o.label;
+        const a = assumptions[o.label];
+        return (
+          <div key={o.label} style={{padding:"10px 0",borderBottom:i===forecast.options.length-1?"none":"1px solid rgba(22,47,36,0.06)"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0}}>
+                <span style={{width:"8px",height:"8px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
+                <span style={{fontSize:"13px",color:TEXT,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{FORECAST_SHORT_LABEL[o.label]||o.label}</span>
+                {a && (
+                  <InfoButton onClick={() => setOpenTip(isOpen ? null : o.label)} open={isOpen}/>
+                )}
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px",flexShrink:0}}>
+                <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.low)}</span>
+                <span style={{fontFamily:SERIF,fontSize:"12.5px",color:TEXT,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
+                <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.high)}</span>
+              </div>
             </div>
-            <div ref={chartWrapRef}>
-              <svg width={nwChart.VW} height={nwChart.VH} viewBox={`0 0 ${nwChart.VW} ${nwChart.VH}`} style={{display:"block"}}>
-                {nwChart.yTicks.map((v,i) => (
-                  <g key={i}>
-                    <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.sy(v)} y2={nwChart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
-                    <text x={nwChart.PL-6} y={nwChart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
-                  </g>
+            {o.note && (
+              <div style={{fontSize:"11px",color:MUT,marginTop:"3px",lineHeight:1.4}}>{o.note}</div>
+            )}
+            {isOpen && a && (
+              <div style={{marginTop:"8px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
+                {a.lines.map((line,i) => (
+                  <p key={i} style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>{line}</p>
                 ))}
-                <path d={nwChart.path} fill="none" stroke={G} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx={nwChart.lastX} cy={nwChart.lastY} r="3.5" fill={G}/>
-                <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.VH-nwChart.PB} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
-                {nwChart.xTicks.map((yr,i) => (
-                  <text key={i} x={nwChart.sx(yr)} y={nwChart.VH-nwChart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
-                    textAnchor={i===0?"start":i===nwChart.xTicks.length-1?"end":"middle"}>
-                    {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
-                  </text>
-                ))}
-                <line x1={nwChart.PL} x2={nwChart.PL} y1={nwChart.PT} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
-              </svg>
-            </div>
-
-            <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
-
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"12px"}}>
-              <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Breakdown {age ? `at age ${age+horizon}` : `at ${horizon}yrs`}</span>
-              <InfoButton onClick={() => setShowNwAssumptions(o => !o)} open={showNwAssumptions}/>
-            </div>
-            {showNwAssumptions && (
-              <div style={{marginBottom:"12px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
+                <div style={{display:"flex",gap:"14px",marginTop:"2px",fontSize:"11px",color:MUT}}>
+                  <span>Low <b style={{color:TEXT}}>{a.rates.low}</b></span>
+                  <span>Central <b style={{color:G}}>{a.rates.central}</b></span>
+                  <span>High <b style={{color:TEXT}}>{a.rates.high}</b></span>
+                </div>
               </div>
             )}
-            {(() => {
-              const r = netWorthRows[horizon];
-              const rows = [
-                { label:"Cash", value:r.cash, assumption:`Grown at your effective savings rate (${(m.effectiveSavingsRate||3.5).toFixed(1)}% p.a.). Assumes cash never exceeds your ${fmt(m.emergencyBuffer)} emergency fund target — once reached, further surplus is assumed invested instead (see Investments).` },
-                { label:"Investments", value:r.investments, assumption:`Today's ISA + unwrapped balance grown at 7% p.a. nominal — an illustrative long-term equity return, not guaranteed. Once your cash buffer is topped up, all further monthly surplus is assumed fully invested into the market.` },
-                { label:"Pension", value:r.pension, assumption:"Your pot plus ongoing contributions, grown at 6% p.a. — the same rate calcMetrics uses for your projected pot elsewhere in the app." },
-                ...(r.propertyEquity > 0 ? [{ label:"Property equity", value:r.propertyEquity, assumption:"Property value held flat (no house-price growth assumed) — equity grows only as your mortgage is paid down at its real rate and repayment." }] : []),
-                ...(r.debts > 0 ? [{ label:"Debts", value:r.debts, negative:true, assumption:"Remaining student loan and/or personal loan balance, projected forward at their real interest rates and repayments." }] : []),
-              ];
-              const maxVal = Math.max(...rows.map(row => Math.abs(row.value)), 1);
-              return rows.map((row,i) => {
-                const meta = NW_ROW_META[row.label] || {};
-                const isOpen = openRow === row.label;
-                return (
-                  <div key={row.label} onClick={() => setOpenRow(isOpen ? null : row.label)} style={{padding:"12px 0",borderBottom:i===rows.length-1?"none":"1px solid rgba(22,47,36,0.06)",cursor:"pointer"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                        <span style={{fontSize:"15px",color:TEXT}}>{row.label}</span>
-                        {meta.locked && <Lock size={12} color={MUT}/>}
-                      </div>
-                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                        <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:row.negative?"#c0392b":G}}>{row.negative?"−":""}{fmt(row.value)}</span>
-                        <ChevronRight size={13} color={MUT} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
-                      </div>
-                    </div>
-                    <div style={{height:"8px",borderRadius:"4px",background:"#ede7db",overflow:"hidden",marginTop:"8px"}}>
-                      <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G}}/>
-                    </div>
-                    {isOpen && (
-                      <div style={{marginTop:"10px",background:"#ede7db",borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}} onClick={e => e.stopPropagation()}>
-                        {row.label === "Pension" && age && (
-                          <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
-                            <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:G}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
-                            <span style={{fontSize:"12.5px",color:MUT}}>years until available (from age {PENSION_ACCESS_AGE})</span>
-                          </div>
-                        )}
-                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0}}>{row.assumption}</p>
-                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0,fontWeight:600}}>{meta.liquidity}</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              });
-            })()}
+          </div>
+        );
+      })}
+      </div>
+      </>
+    </>
+  );
+}
+
+// The Net worth view: the projection chart and the breakdown by what you
+// own and owe, each row opening on its assumptions.
+function NetWorthView({ age, horizon, chartWrapRef, setShowNwAssumptions, showNwAssumptions, m, openRow, setOpenRow, d, chartWidth }) {
+  const netWorthRows = calcNetWorthTrajectory(d, m, horizon);
+  const nwChart = (() => {
+    const values = netWorthRows.map(r => r.netWorth);
+    const yMin = Math.min(0, ...values);
+    const yMax = Math.max(1, ...values);
+    const VW = chartWidth, VH = 150, PL = 40, PR = 4, PT = 8, PB = 20;
+    const cW = VW - PL - PR, cH = VH - PT - PB;
+    const sx = i => PL + (i / horizon) * cW;
+    const sy = v => PT + (1 - (v - yMin) / (yMax - yMin || 1)) * cH;
+    const path = values.map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
+    const yTicks = [0, 0.5, 1].map(f => yMin + (yMax - yMin) * f);
+    const xTicks = buildYearTicks(horizon);
+    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, yTicks, xTicks, lastX: sx(horizon), lastY: sy(values[horizon]) };
+  })();
+  return (
+    <>
+      <>
+        <div style={{display:"flex",gap:"14px",marginTop:"14px"}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Today</div>
+            <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[0].netWorth)}</div>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{age ? `At age ${age+horizon}` : `In ${horizon} yrs`}</div>
+            <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[horizon].netWorth)}</div>
+          </div>
+        </div>
+
+        <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
+          <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginBottom:"8px"}}>
+            Projected net worth · {horizon} years
+          </div>
+          <div ref={chartWrapRef}>
+            <svg width={nwChart.VW} height={nwChart.VH} viewBox={`0 0 ${nwChart.VW} ${nwChart.VH}`} style={{display:"block"}}>
+              {nwChart.yTicks.map((v,i) => (
+                <g key={i}>
+                  <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.sy(v)} y2={nwChart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
+                  <text x={nwChart.PL-6} y={nwChart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
+                </g>
+              ))}
+              <path d={nwChart.path} fill="none" stroke={G} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx={nwChart.lastX} cy={nwChart.lastY} r="3.5" fill={G}/>
+              <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.VH-nwChart.PB} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
+              {nwChart.xTicks.map((yr,i) => (
+                <text key={i} x={nwChart.sx(yr)} y={nwChart.VH-nwChart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
+                  textAnchor={i===0?"start":i===nwChart.xTicks.length-1?"end":"middle"}>
+                  {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
+                </text>
+              ))}
+              <line x1={nwChart.PL} x2={nwChart.PL} y1={nwChart.PT} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
+            </svg>
           </div>
 
-          <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-            <div>
-              <div style={{fontSize:"13px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
-              <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>See how your net worth stacks up by age and income.</div>
-            </div>
-            <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
+          <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
+
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"12px"}}>
+            <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Breakdown {age ? `at age ${age+horizon}` : `at ${horizon}yrs`}</span>
+            <InfoButton onClick={() => setShowNwAssumptions(o => !o)} open={showNwAssumptions}/>
           </div>
-        </>
-      )}
-    </div>
+          {showNwAssumptions && (
+            <div style={{marginBottom:"12px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
+              <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
+              <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
+              <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
+            </div>
+          )}
+          {(() => {
+            const r = netWorthRows[horizon];
+            const rows = [
+              { label:"Cash", value:r.cash, assumption:`Grown at your effective savings rate (${(m.effectiveSavingsRate||3.5).toFixed(1)}% p.a.). Assumes cash never exceeds your ${fmt(m.emergencyBuffer)} emergency fund target — once reached, further surplus is assumed invested instead (see Investments).` },
+              { label:"Investments", value:r.investments, assumption:`Today's ISA + unwrapped balance grown at 7% p.a. nominal — an illustrative long-term equity return, not guaranteed. Once your cash buffer is topped up, all further monthly surplus is assumed fully invested into the market.` },
+              { label:"Pension", value:r.pension, assumption:"Your pot plus ongoing contributions, grown at 6% p.a. — the same rate calcMetrics uses for your projected pot elsewhere in the app." },
+              ...(r.propertyEquity > 0 ? [{ label:"Property equity", value:r.propertyEquity, assumption:"Property value held flat (no house-price growth assumed) — equity grows only as your mortgage is paid down at its real rate and repayment." }] : []),
+              ...(r.debts > 0 ? [{ label:"Debts", value:r.debts, negative:true, assumption:"Remaining student loan and/or personal loan balance, projected forward at their real interest rates and repayments." }] : []),
+            ];
+            const maxVal = Math.max(...rows.map(row => Math.abs(row.value)), 1);
+            return rows.map((row,i) => {
+              const meta = NW_ROW_META[row.label] || {};
+              const isOpen = openRow === row.label;
+              return (
+                <div key={row.label} onClick={() => setOpenRow(isOpen ? null : row.label)} style={{padding:"12px 0",borderBottom:i===rows.length-1?"none":"1px solid rgba(22,47,36,0.06)",cursor:"pointer"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                      <span style={{fontSize:"15px",color:TEXT}}>{row.label}</span>
+                      {meta.locked && <Lock size={12} color={MUT}/>}
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                      <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:row.negative?CRITICAL:G}}>{row.negative?"−":""}{fmt(row.value)}</span>
+                      <ChevronRight size={13} color={MUT} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
+                    </div>
+                  </div>
+                  <div style={{height:"8px",borderRadius:"4px",background:CDARK,overflow:"hidden",marginTop:"8px"}}>
+                    <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G}}/>
+                  </div>
+                  {isOpen && (
+                    <div style={{marginTop:"10px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}} onClick={e => e.stopPropagation()}>
+                      {row.label === "Pension" && age && (
+                        <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
+                          <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:G}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
+                          <span style={{fontSize:"12.5px",color:MUT}}>years until available (from age {PENSION_ACCESS_AGE})</span>
+                        </div>
+                      )}
+                      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0}}>{row.assumption}</p>
+                      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0,fontWeight:600}}>{meta.liquidity}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
+        </div>
+
+        <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+          <div>
+            <div style={{fontSize:"13px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
+            <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>See how your net worth stacks up by age and income.</div>
+          </div>
+          <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
+        </div>
+      </>
+    </>
   );
 }

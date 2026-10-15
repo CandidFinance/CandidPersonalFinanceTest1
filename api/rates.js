@@ -1,7 +1,6 @@
 import crypto from "crypto";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-import { EXTRACTION_TOOL, EXTRACTION_SYSTEM, htmlToText, planChanges, reviewDedupeKey, rowFields } from "../src/lib/rateFeed.js";
+import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
+import { EXTRACTION_TOOL, EXTRACTION_SYSTEM, htmlToText, planChanges, reviewDedupeKey } from "../src/lib/rateFeed.js";
 import { cleanIosAppUrl, cleanAndroidAppUrl } from "../src/lib/appLinks.js";
 
 // The savings rate feed, one route for both callers:
@@ -18,7 +17,6 @@ const SUPA_URL = process.env.VITE_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_PASSWORD = process.env.FEEDBACK_ADMIN_PASSWORD;
 const CRON_SECRET = process.env.CRON_SECRET;
-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
 
 const MODEL = "claude-haiku-4-5-20251001";
 const RECHECK_AFTER_DAYS = 6;
@@ -28,22 +26,7 @@ const RUN_BUDGET_MS = 45000;
 const FETCH_TIMEOUT_MS = 15000;
 const USER_AGENT = "Mozilla/5.0 (compatible; CandidRateCheck/1.0; +https://candid-finance.co.uk)";
 
-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
-  : null;
-const attemptLimiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(20, "10 m"), prefix: "ratelimit:rates-admin" });
-
-function safeEqual(supplied, expected) {
-  if (typeof supplied !== "string" || !expected) return false;
-  const a = Buffer.from(supplied), b = Buffer.from(expected);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
-}
-
-function isAllowedOrigin(req) {
-  const value = req.headers.origin || req.headers.referer;
-  if (!value) return false;
-  try { return ALLOWED_HOSTNAMES.includes(new URL(value).hostname); } catch { return false; }
-}
+const attemptLimiter = rateLimiter(20, "10 m", "ratelimit:rates-admin");
 
 // ── Supabase (service role) ──────────────────────────────────────────────────
 async function db(path, { method = "GET", body, prefer } = {}) {
@@ -191,7 +174,7 @@ const confirmedAppLinks = source => source?.app_links_confirmed_at
 
 async function resolveReview(id, approve) {
   const [review] = await db(`savings_rate_reviews?id=eq.${id}&resolved_at=is.null&select=*,rate_sources(provider_name,url,ios_app_url,android_app_url,app_links_confirmed_at,app_only)`);
-  if (!review) throw new Error("Review not found or already resolved");
+  if (!review) throw Object.assign(new Error("Review not found or already resolved"), { http: 404 });
   const now = new Date().toISOString();
   if (approve) {
     if (review.change_type === "new") {
@@ -242,9 +225,14 @@ export default async function handler(req, res) {
 
   // Vercel Cron: GET with the cron secret.
   if (req.method === "GET" && CRON_SECRET && safeEqual(req.headers.authorization, `Bearer ${CRON_SECRET}`)) {
-    const results = await runRefresh();
-    console.log("[api/rates] cron run:", JSON.stringify(results));
-    return res.status(200).json({ results });
+    try {
+      const results = await runRefresh();
+      console.log("[api/rates] cron run:", JSON.stringify(results));
+      return res.status(200).json({ results });
+    } catch (e) {
+      console.error("[api/rates] cron run failed:", e);
+      return res.status(500).json({ error: "Rate check failed" });
+    }
   }
 
   // Everything else is the admin page.
@@ -252,8 +240,7 @@ export default async function handler(req, res) {
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
   if (attemptLimiter) {
     try {
-      const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
-      const { success } = await attemptLimiter.limit(ip);
+      const { success } = await attemptLimiter.limit(clientIp(req));
       if (!success) return res.status(429).json({ error: "Too many attempts, try again shortly" });
     } catch (e) {
       console.error("[api/rates] rate-limit check failed:", e?.message);
@@ -311,6 +298,6 @@ export default async function handler(req, res) {
   } catch (e) {
     if (e.http) return res.status(e.http).json({ error: e.message });
     console.error("[api/rates] admin action failed:", e);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: "Something went wrong. The details are in the function log." });
   }
 }

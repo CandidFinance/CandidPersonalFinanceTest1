@@ -2,7 +2,7 @@
 // module is opened, after which the module's own screen shows its answer.
 // Same question fields and walk-through as Property (src/lib/propertyGuide.js,
 // GuidedFlow); unit tested in moduleGuide.test.js. Spec:
-// onboarding-guided-questions.md.
+// docs/onboarding-guided-questions.md.
 //
 // Every module starts with the shared figures it needs (sharedQuestions.js),
 // each asked only if Candid doesn't have it yet, so the first module asks a

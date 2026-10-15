@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Check, Users, Coins, ChevronRight, Home } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
-import { SUCCESS } from "../../design-tokens.js";
-import { getModuleBreakdown } from "../../lib/moduleStatus.js";
+import { SUCCESS, G, GOLD, WHITE, MUT, TEXT, SERIF, SC, CDARK } from "../../design-tokens.js";
+import { getModuleBreakdown, MODULE_META } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel } from "../statusLabel.js";
@@ -90,7 +89,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
             {modulesWithRec.length > 1 && [{ key:"category", label:"By category" }, { key:"amount", label:"By £ impact" }].map(opt => (
               <button key={opt.key} onClick={() => setSortMode(opt.key)} style={{
                 border:"none",borderRadius:"100px",padding:"7px 14px",fontSize:"12.5px",fontWeight:600,cursor:"pointer",
-                background:sortMode===opt.key?G:"#ede7db",color:sortMode===opt.key?WHITE:MUT,
+                background:sortMode===opt.key?G:CDARK,color:sortMode===opt.key?WHITE:MUT,
               }}>{opt.label}</button>
             ))}
           </div>
@@ -179,7 +178,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
                         onMarkReviewed(mm.key);
                       }} style={{
                         width:"100%",background:"transparent",border:`1.3px solid ${reviewed?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
-                        color:reviewed?"#2d6b4a":G,borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,cursor:"pointer",
+                        color:reviewed?SUCCESS:G,borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,cursor:"pointer",
                         display:"flex",alignItems:"center",justifyContent:"center",gap:"5px",
                       }}>
                         {reviewed ? <><Check size={13}/> Reviewed</> : "Mark as reviewed"}

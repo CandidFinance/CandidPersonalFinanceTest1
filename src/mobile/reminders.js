@@ -1,3 +1,5 @@
+import { reportStorageFailure } from "../lib/storage.js";
+
 // Shared "add a calendar reminder" logic for mobile Win tiles' Bell action.
 // No native app / calendar permission exists in a web PWA, so this generates
 // a standard .ics file and hands it to the OS via a direct navigation to a
@@ -41,7 +43,7 @@ function countOtherSetReminders(excludeId) {
       }
     }
     return count;
-  } catch { return 0; }
+  } catch (e) { reportStorageFailure("count_reminders", e); return 0; }
 }
 
 // The working day a given reminder should land on: next working day, plus

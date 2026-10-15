@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../CandidApp.jsx";
+import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../design-tokens.js";
 import MobileReminderAction from "./MobileReminderAction.jsx";
 
 // Compact, tap-to-expand "Win" tile for mobile module deep-dive pages —
-// mirrors desktop's numbered ExpandableInvestmentItem (CandidApp.jsx) but at
-// mobile density, and reuses the same expand pattern already established in
+// numbered, at mobile density, and reuses the same expand pattern already established in
 // MobileModulesScreen (white card, chevron rotate on open). `reminder`
 // (optional {id,title,description,email}) adds a labelled "Remind me" action
 // pill at the bottom of the expanded tile, turning the Win into something

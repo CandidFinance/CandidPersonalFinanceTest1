@@ -1,15 +1,16 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension } from "../../lib/studentLoan.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
+import { PillSlider } from "../PillSlider.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { ExploreToggle } from "../ModuleScreenParts.jsx";
-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
+import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, CDARK, CRITICAL, SUCCESS } from "../../design-tokens.js";
 
 // Overpayment slider stops — round amounts, dropping any that sit within 10%
 // of the full balance (e.g. a £20,500 loan shouldn't show both "£20k" and
@@ -34,29 +35,15 @@ function buildOverpayOptions(loanBal) {
 // can't drift between mobile and desktop.
 // Leads with the answer and the comparison behind it; the overpayment model
 // and the return chart sit under "Explore what-ifs", closed at first.
-// `onShowReveal` replays the answer step by step ("Explain this").
-export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecordLoanOverpayment, onShowReveal }) {
-  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
+export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverpayment }) {
   const [exploreOpen, setExploreOpen] = useState(false); // before the chart's measuring effect, which waits for it
   const [editingBalance, setEditingBalance] = useState(false);
   // null = still following the overpayment slider automatically; a number
   // once the user types their own value into the editor, which then stops
   // tracking further slider movement (their explicit edit wins).
   const [manualBalanceInput, setManualBalanceInput] = useState(null);
-  const chartWrapRef = useRef(null);
-  // Measured in real CSS pixels so the viewBox always matches the rendered
-  // width 1:1 — see mobile Forecast's chart for the same pattern/rationale.
-  const [chartWidth, setChartWidth] = useState(300);
-  useEffect(() => {
-    const el = chartWrapRef.current;
-    if (!el) return;
-    const update = () => setChartWidth(el.clientWidth || 300);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-    // The chart sits under "Explore what-ifs": measure it once that's open.
-  }, [exploreOpen]);
+  // The chart sits under "Explore what-ifs": measured once that's open.
+  const [chartWrapRef, chartWidth] = useElementWidth(300, [exploreOpen]);
   // Default overpayment slider position: the largest round amount the user's
   // spare cash could actually cover, falling back to the smallest option.
   // Computed from `m` alone (no `sl`/guard dependency) so this hook can stay
@@ -81,19 +68,49 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
   const surplusCash = m.surplusCash || 0;
   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
 
-  const fullAmt = Math.round(m.loanBal);
   const overpayOptions = buildOverpayOptions(m.loanBal);
   const { scenarios, baseProjection } = calcOverpaymentScenarios(m, sl, [overpayAmt]);
   const selectedScenario = scenarios[0];
-  const savedVsBase = selectedScenario ? baseProjection.totalPaid - selectedScenario.totalPaid : 0;
 
+
+
+
+  return (
+    <div>
+      {worthOverpaying && (
+        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
+          </div>
+          <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
+          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Better off overpaying than saving the money</div>
+        </div>
+      )}
+
+      <LoanTrajectory m={m} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput}/>
+
+      {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
+
+      <OverpayingTile sl={sl} worthOverpaying={worthOverpaying} m={m} surplusCash={surplusCash}/>
+
+      {(sl.willClear && overpayOptions.length > 0 && selectedScenario || curve) && (
+        <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="overpaying, and loan vs pension"/>
+      )}
+
+      <ExploreWhatIfs exploreOpen={exploreOpen} sl={sl} overpayOptions={overpayOptions} selectedScenario={selectedScenario} worthOverpaying={worthOverpaying} baseProjection={baseProjection} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} surplusCash={surplusCash} curve={curve} chartWrapRef={chartWrapRef} m={m}/>
+    </div>
+  );
+}
+
+// Your loan trajectory: the balance year by year to when it clears or is
+// written off.
+function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput }) {
   const stats = [
     { label:"Interest rate", value:`${sl.slRatePct}%` },
     { label:"Annual interest", value:`${fmt(sl.annualInterest)}/yr` },
     { label:"Annual repayments", value:`${fmt(sl.annualRep)}/yr` },
     { label: sl.clearYr ? "Clears in" : "Written off after", value: sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs` },
   ];
-
   // Suggests the balance after paying the currently-selected slider amount,
   // rather than a blank/current-balance starting point — if the user came
   // here having just modelled an overpayment above, that's almost certainly
@@ -109,7 +126,6 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
     closeBalanceEditor();
   };
   const cashDelta = Math.max(0, Math.round(m.loanBal) - balanceInput);
-
   // When repayments started decides when the loan is written off. Estimated
   // from age unless the user says (studentLoan.js slFirstDueYear).
   const startValue = startInput ?? sl.firstDueYear;
@@ -118,19 +134,8 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
     setEditingStart(false); setStartInput(null);
   };
   const resetStart = () => { if (set) set("slFirstDueYear", ""); setEditingStart(false); setStartInput(null); };
-
   return (
-    <div>
-      {worthOverpaying && (
-        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
-            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
-          </div>
-          <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
-          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Better off overpaying than saving the money</div>
-        </div>
-      )}
-
+    <>
       <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
         <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your loan trajectory</div>
 
@@ -147,7 +152,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
         </div>
 
         {editingBalance && (
-          <div style={{background:"#ede7db",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
+          <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
             <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Update your balance</div>
             <PillMoneyInput label="New balance" value={balanceInput} onChange={setManualBalanceInput}/>
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
@@ -180,7 +185,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
           )}
         </p>
         {editingStart && (
-          <div style={{background:"#ede7db",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
+          <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
             <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>When repayments started</div>
             <PillMoneyInput label="April of" unit="" value={startValue} onChange={v => setStartInput(v ?? null)}/>
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
@@ -206,9 +211,16 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
                   : "See the win below for what overpaying could save you."}
         </p>
       </div>
+    </>
+  );
+}
 
-      {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
-
+// The overpaying tile: whether overpaying beats saving or the pension, and
+// by how much a year.
+function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
+  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
+  return (
+    <>
       {sl.willClear && (
         <MobileWinTile
           title={sl.balanceGrowing ? "Your loan balance is growing" : worthOverpaying ? "Overpaying your student loan" : "What overpaying would do"}
@@ -219,10 +231,10 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
             : sl.effectiveBenefit <= 0
               ? `The highest savings rate (${sl.cashRate}%) beats your ${sl.slRatePct}% loan rate`
               : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your ${sl.slRatePct}% loan rate`}
-          tagLabel={worthOverpaying ? "Today" : "Not optimal"} tagColor={worthOverpaying ? GOLD : "#c0392b"}>
+          tagLabel={worthOverpaying ? "Today" : "Not optimal"} tagColor={worthOverpaying ? GOLD : CRITICAL}>
           {sl.balanceGrowing && (
             <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
-              <div style={{fontSize:"11px",fontWeight:700,color:"#c0392b",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Why your balance is growing</div>
+              <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Why your balance is growing</div>
               <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
                 Repayments (9% of what you earn over the threshold) haven't caught up with the interest yet. At a {fmt(sl.inflectionSalary)} salary they'd match it, and above that your balance starts falling.
               </p>
@@ -234,11 +246,11 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
           ) : (
             <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0"}}>Step 2 — You don't currently hold cash above your emergency buffer; the comparison still applies to any spare cash you build up.</p>
           )}
-          <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0?"#2d6b4a":"#c0392b"}}>
+          <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0?SUCCESS:CRITICAL}}>
             <span>Step 3 — {sl.slRatePct}% loan vs {sl.cashRate}% highest savings</span>
             <span>{sl.effectiveBenefit > 0 ? `Repay wins by ${sl.effectiveBenefit}%` : `Savings win by ${Math.abs(sl.effectiveBenefit)}%`}</span>
           </div>
-          <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?"#2d6b4a":"#c0392b"}}>
+          <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?SUCCESS:CRITICAL}}>
             <span>Step 4 — {sl.slRatePct}% loan vs {sl.pensionGrowthPct}% assumed pension growth</span>
             <span>{sl.pensionGap > 0 ? `Repay wins by ${sl.pensionGap}%` : sl.pensionGap === 0 ? "Level — repaying is guaranteed" : `Pension wins by ${Math.abs(sl.pensionGap)}%`}</span>
           </div>
@@ -247,11 +259,17 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
           </p>
         </MobileWinTile>
       )}
+    </>
+  );
+}
 
-      {(sl.willClear && overpayOptions.length > 0 && selectedScenario || curve) && (
-        <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="overpaying, and loan vs pension"/>
-      )}
-
+// Under "Explore what-ifs": modelling a lump sum overpayment, and the
+// return on each pound overpaid against putting it in the pension.
+function ExploreWhatIfs({ exploreOpen, sl, overpayOptions, selectedScenario, worthOverpaying, baseProjection, overpayAmt, setOverpayAmt, surplusCash, curve, chartWrapRef, m }) {
+  const fullAmt = Math.round(m.loanBal);
+  const savedVsBase = selectedScenario ? baseProjection.totalPaid - selectedScenario.totalPaid : 0;
+  return (
+    <>
       {exploreOpen && (<>
       {sl.willClear && overpayOptions.length > 0 && selectedScenario && (
         <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
@@ -262,7 +280,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"4px",textAlign:"center"}}>
             <div>
               <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Saved</div>
-              <div style={{fontFamily:SERIF,fontSize:"27px",color:savedVsBase>0?"#2d6b4a":G,fontWeight:700,marginTop:"4px",lineHeight:1.15}}>{fmt(Math.max(0,savedVsBase))}</div>
+              <div style={{fontFamily:SERIF,fontSize:"27px",color:savedVsBase>0?SUCCESS:G,fontWeight:700,marginTop:"4px",lineHeight:1.15}}>{fmt(Math.max(0,savedVsBase))}</div>
             </div>
             <div>
               <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{selectedScenario.clearYr ? "Clears in" : "Written off"}</div>
@@ -275,7 +293,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
           </div>
           <p style={{fontSize:"11px",color:MUT,lineHeight:1.5,marginTop:"12px",marginBottom:"14px"}}>
             vs {baseProjection.clearYr ? `clearing in ${baseProjection.clearYr} yrs` : `${fmt(baseProjection.writeOffBal)} written off`} and {fmt(baseProjection.totalPaid)} repaid with no overpayment.
-            {selectedScenario.crossesInflection && <span style={{color:"#2d6b4a",fontWeight:600}}> From here your balance starts falling.</span>}
+            {selectedScenario.crossesInflection && <span style={{color:SUCCESS,fontWeight:600}}> From here your balance starts falling.</span>}
           </p>
           <PillSlider value={overpayAmt} onChange={setOverpayAmt} options={overpayOptions.map(amt => ({ value:amt, label: amt===fullAmt ? "Full" : fmtK(amt) }))}/>
 
@@ -337,7 +355,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, insights, onRecor
         );
       })()}
       </>)}
-    </div>
+    </>
   );
 }
 

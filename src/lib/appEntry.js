@@ -1,6 +1,6 @@
 // The app's entry, and what the home screen offers a user who
 // hasn't had a report yet. Pure logic, unit tested in appEntry.test.js.
-// Spec: onboarding-guided-questions.md.
+// Spec: docs/onboarding-guided-questions.md.
 //
 // The entry's picks are saved as `interests`, never `selectedModules`: the
 // calculations read `selectedModules` as "this module's figures are in"
@@ -220,7 +220,7 @@ export function scorePicks(d) {
 // entry is answered, so it covers everything the user said they cared about
 // that it measures. With none picked ("Just exploring", or only Property):
 // after their first scored module. Worked out by the code, no AI report
-// (score-without-ai-plan.md).
+// (docs/score-without-ai-plan.md).
 export function scoreUnlocked(d, propertyDone = false) {
   const chosen = scorePicks(d);
   const done = doneModules(d, propertyDone);

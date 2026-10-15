@@ -2,7 +2,7 @@
 // screen, each with a one-line "why it matters", the first time someone opens
 // a step. Afterwards the step shows its usual inputs. Pure definitions with
 // no React (the screens are in src/mobile/property/GuidedFlow.jsx), unit
-// tested in propertyGuide.test.js. Spec: property-guided-onboarding.md.
+// tested in propertyGuide.test.js. Spec: docs/property-guided-onboarding.md.
 //
 // Every question writes to the same saved input the step's own inputs use,
 // so the two views can never disagree. Figures quoted in the copy are read

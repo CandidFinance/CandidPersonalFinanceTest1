@@ -1,5 +1,5 @@
 import { Check, ChevronRight, Home } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../CandidApp.jsx";
+import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
 import { MODULE_META } from "../lib/moduleStatus.js";
 import { MODULE_PITCH } from "../lib/appEntry.js";

@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import { MUT } from "../../CandidApp.jsx";
+import { MUT } from "../../design-tokens.js";
 
 // The down arrow at the foot of a Property result card that opens its
 // details. The card it sits in uses CARD_PADDING_WITH_CHEVRON, so the arrow,

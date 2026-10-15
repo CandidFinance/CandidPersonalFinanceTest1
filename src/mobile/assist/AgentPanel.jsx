@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bot, Hand, Square } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SANS } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SANS, ERROR_TEXT } from "../../design-tokens.js";
 import ProfileTile from "./ProfileTile.jsx";
 
 // "Let Claude start it": hands a picked account to the local account-opening
@@ -59,7 +59,7 @@ export default function AgentPanel({ o, onOpened }) {
   };
 
   const small = { fontSize: "12.5px", color: MUT, lineHeight: 1.5 };
-  const button = (bg, fg = WHITE) => ({ background: bg, color: fg, border: bg === "none" ? "none" : "none", borderRadius: "100px", padding: "9px 14px", fontSize: "13px", fontWeight: 700, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" });
+  const button = (bg, fg = WHITE) => ({ background: bg, color: fg, border: "none", borderRadius: "100px", padding: "9px 14px", fontSize: "13px", fontWeight: 700, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" });
   const quiet = { background: "none", border: "none", padding: "9px 4px", fontSize: "13px", fontWeight: 700, color: G, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px" };
   const box = { marginTop: "12px", padding: "12px 14px", borderRadius: "12px", background: "rgba(22,47,36,0.04)" };
 
@@ -67,7 +67,7 @@ export default function AgentPanel({ o, onOpened }) {
     <div style={box}>
       <div style={{ fontSize: "13.5px", color: TEXT, lineHeight: 1.5 }}>Claude is still on {status.provider}'s application. Stop it to start this one.</div>
       <button type="button" onClick={() => act("/stop")} style={{ ...quiet, color: MUT }}><Square size={12}/>Stop it</button>
-      {problem && <p style={{ ...small, color: "#b3261e", margin: "6px 0 0" }}>{problem}</p>}
+      {problem && <p style={{ ...small, color: ERROR_TEXT, margin: "6px 0 0" }}>{problem}</p>}
     </div>
   );
 
@@ -82,7 +82,7 @@ export default function AgentPanel({ o, onOpened }) {
       )}
       <button type="button" onClick={start} style={button(G)}><Bot size={15}/>Let Claude start it</button>
       <p style={{ ...small, margin: "8px 0 0" }}>Opens {o.provider}'s site in a browser window on this computer and fills in the application from your profile. You approve what it types, and do the ID checks, declarations and paying in yourself.</p>
-      {problem && <p style={{ ...small, color: "#b3261e", margin: "6px 0 0" }}>{problem}</p>}
+      {problem && <p style={{ ...small, color: ERROR_TEXT, margin: "6px 0 0" }}>{problem}</p>}
     </div>
   );
 
@@ -145,7 +145,7 @@ export default function AgentPanel({ o, onOpened }) {
         </ul>
       )}
       {active && <button type="button" onClick={() => act("/stop")} style={{ ...quiet, color: MUT }}><Square size={12}/>Stop</button>}
-      {problem && <p style={{ ...small, color: "#b3261e", margin: "6px 0 0" }}>{problem}</p>}
+      {problem && <p style={{ ...small, color: ERROR_TEXT, margin: "6px 0 0" }}>{problem}</p>}
     </div>
   );
 }

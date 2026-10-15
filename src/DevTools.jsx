@@ -6,7 +6,9 @@
 // we confirmed this chunk is absent from a real production build.
 import { useState } from "react";
 import { Wrench } from "lucide-react";
-import { calcMetrics, computeModuleStatuses, MODULE_META, sanitizeForMvp, G, GOLD, CREAM, INPUT_BG_DARK } from "./CandidApp.jsx";
+import { calcMetrics } from "./lib/metrics.js";
+import { computeModuleStatuses, MODULE_META, sanitizeForMvp } from "./lib/moduleStatus.js";
+import { G, GOLD, CREAM, INPUT_BG_DARK } from "./design-tokens.js";
 
 const CUSTOM_PRESETS_KEY = "candid_dev_custom_presets";
 

@@ -1,0 +1,4309 @@
+diff --git a/src/CandidApp.jsx b/src/CandidApp.jsx
+index 5bc9646..afedf5b 100644
+--- a/src/CandidApp.jsx
++++ b/src/CandidApp.jsx
+@@ -26,11 +26,10 @@ import { MODULE_REVEALS } from "./lib/moduleReveal.js";
+ import { appUnlocked, scoreUnlocked, withAnswered } from "./lib/appEntry.js";
+ import { moduleGuideStarts } from "./lib/moduleGuide.js";
+ import { rollTaxYear } from "./lib/taxYear.js";
+-import { borrowingInputs, calcBorrowingCheck } from "./lib/borrowing.js";
+-import { mortgageInputs, mortgageSummary } from "./lib/mortgage.js";
+ import { readinessMissing } from "./lib/propertyReadiness.js";
+-import { rentVsBuyInputs, calcRentVsBuy } from "./lib/rentVsBuy.js";
+-import { monthlyBudget, affordableMaxPrice } from "./lib/monthlyBudget.js";
++import { selectRows, updateRow } from "./lib/supabase.js";
++import { propertyRowFields } from "./lib/reportRow.js";
++import { useReportRow } from "./useReportRow.js";
+ 
+ // Re-exported for the files that import them from here (DevTools.jsx and
+ // the mobile screens); src/lib/ is their canonical source.
+@@ -40,94 +39,6 @@ export { MODULE_META, computeModuleStatuses, sanitizeForMvp } from "./lib/module
+ // Module names for Candid Assist's labels and "Elsewhere" list.
+ const ASSIST_MODULE_LABELS = { ...Object.fromEntries(MODULE_META.map(mm => [mm.key, mm.title])), property: "Property" };
+ 
+-// ── Supabase client — module level, no package needed ─────────────────────────
+-const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
+-const SUPA_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+-// No writes from automated browsers (Playwright test runs), so they don't add
+-// rows that look like users.
+-const SUPA_WRITES = typeof navigator === "undefined" || !navigator.webdriver;
+-// Only source of production visibility for Supabase failures — DEV console.warn is
+-// stripped from the production build, so without this, every read/write below can
+-// fail completely silently (this is how an RLS gap and an AI-report failure
+-// once went undetected).
+-function reportSupabaseFailure(table, operation, errorMessage, status) {
+-  if (import.meta.env.DEV) console.warn(`[Candid] Supabase ${operation} on "${table}" failed:`, errorMessage, status ? `(HTTP ${status})` : "(network error)");
+-  posthog.capture("supabase_operation_failed", { table, operation, error_message: errorMessage, status: status ?? null });
+-}
+-async function supaInsert(table, row) {
+-  if (!SUPA_URL || !SUPA_KEY || !SUPA_WRITES) return null;
+-  try {
+-    // ?select=id: anon only has column-level SELECT on `id` (lock_down_test_table_rls),
+-    // so returning the full row makes PostgREST reject the whole insert with a 401.
+-    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?select=id`, {
+-      method: "POST",
+-      headers: {
+-        "Content-Type": "application/json",
+-        "apikey": SUPA_KEY,
+-        "Authorization": `Bearer ${SUPA_KEY}`,
+-        "Prefer": "return=representation",
+-      },
+-      body: JSON.stringify(row),
+-    });
+-    const data = await res.json();
+-    // A non-2xx response (e.g. an RLS rejection or an unknown table) never throws —
+-    // fetch() resolves normally, so this must be checked explicitly or it silently
+-    // falls through to the Array.isArray check below and returns null unreported.
+-    if (!res.ok) {
+-      reportSupabaseFailure(table, "insert", data?.message || JSON.stringify(data), res.status);
+-      return null;
+-    }
+-    return Array.isArray(data) && data[0]?.id ? data[0].id : null;
+-  } catch(e) {
+-    reportSupabaseFailure(table, "insert", e?.message || String(e));
+-    return null;
+-  }
+-}
+-async function supaSelect(table, query = "") {
+-  if (!SUPA_URL || !SUPA_KEY) return null;
+-  try {
+-    const res = await fetch(`${SUPA_URL}/rest/v1/${table}${query}`, {
+-      headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}` },
+-    });
+-    if (!res.ok) {
+-      const data = await res.json().catch(() => null);
+-      reportSupabaseFailure(table, "select", data?.message || `HTTP ${res.status}`, res.status);
+-      return null;
+-    }
+-    return await res.json();
+-  } catch(e) {
+-    reportSupabaseFailure(table, "select", e?.message || String(e));
+-    return null;
+-  }
+-}
+-// PATCH one row by id, reporting failures like supaInsert does. Every column
+-// in the patch needs its own anon column-level UPDATE grant on `test`, or
+-// PostgREST rejects the whole update. Returns "ok", "missing" (no row with
+-// that id: a PATCH that matches nothing still succeeds, so it's checked via
+-// the returned ids, which anon can read), "failed" or "skipped" (no
+-// Supabase config).
+-async function supaUpdateRow(table, rowId, patch) {
+-  if (!SUPA_URL || !SUPA_KEY || !SUPA_WRITES) return "skipped";
+-  if (!rowId) return "missing";
+-  try {
+-    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(rowId)}&select=id`, {
+-      method: "PATCH",
+-      headers: { "Content-Type":"application/json", "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Prefer":"return=representation" },
+-      body: JSON.stringify(patch),
+-    });
+-    if (!res.ok) {
+-      const data = await res.json().catch(() => null);
+-      reportSupabaseFailure(table, "update", data?.message || `HTTP ${res.status}`, res.status);
+-      return "failed";
+-    }
+-    const rows = await res.json().catch(() => null);
+-    return Array.isArray(rows) && rows.length === 0 ? "missing" : "ok";
+-  } catch(e) {
+-    reportSupabaseFailure(table, "update", e?.message || String(e));
+-    return "failed";
+-  }
+-}
+-
+ // Design tokens (src/design-tokens.js), re-exported for the files that
+ // import them from here.
+ export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK, PILL_HEIGHT };
+@@ -339,7 +250,6 @@ export default function AppShell() {
+   const d = useMemo(() => sanitizeForMvp(rawD), [rawD]);
+   const [insights]                              = useState(loadSavedInsights);
+   const [completedModules, setCompletedModules] = useState(loadCompletedModules);
+-  const supaRowId = useRef(null);
+   // Where a mobile edit started from a screen other than Home (e.g. the
+   // Property screen's "Add Cash & savings", see openMobileStep) returns to
+   // once the user regenerates or goes back to their report. Cleared if they
+@@ -398,17 +308,6 @@ export default function AppShell() {
+     return () => window.removeEventListener("pagehide", handlePageHide, { capture: true });
+   }, []);
+ 
+-  async function supaUpdate(patch) {
+-    if (!supaRowId.current || !SUPA_URL || !SUPA_KEY || !SUPA_WRITES) return;
+-    try {
+-      await fetch(`${SUPA_URL}/rest/v1/test?id=eq.${supaRowId.current}`, {
+-        method: "PATCH",
+-        headers: { "Content-Type":"application/json", "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Prefer":"return=minimal" },
+-        body: JSON.stringify(patch),
+-      });
+-    } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Supabase update failed:", e); }
+-  }
+-
+   const set = (k, v) => setRawD(p => ({...p, [k]:v}));
+ 
+   // Records a student loan overpayment made outside the app (e.g. via the
+@@ -500,7 +399,7 @@ export default function AppShell() {
+   const [assistState, setAssistState] = useState({ open: false, itemId: null, step: "overview", isaChoice: null, isaChoice2: null, savingsChoice: null, savingsChoice2: null, pbChoice: null, accountChoice: null, done: {} });
+   useEffect(() => {
+     let cancelled = false;
+-    supaSelect("savings_rates", "?select=id,provider_name,product_name,account_type,rate_aer,max_balance,bonus_rate,bonus_months,rate_after,app_only,ios_app_url,android_app_url,product_url,updated_at,is_isa&order=rate_aer.desc")
++    selectRows("savings_rates", "?select=id,provider_name,product_name,account_type,rate_aer,max_balance,bonus_rate,bonus_months,rate_after,app_only,ios_app_url,android_app_url,product_url,updated_at,is_isa&order=rate_aer.desc")
+       .then(rows => { if (!cancelled) setSavingsRates(rows || []); });
+     return () => { cancelled = true; };
+   }, []);
+@@ -512,7 +411,7 @@ export default function AppShell() {
+   const [regionalRates, setRegionalRates] = useState(null);
+   useEffect(() => {
+     let cancelled = false;
+-    supaSelect("property_regional_rates", "?select=region,rent_growth_pct,house_price_growth_pct")
++    selectRows("property_regional_rates", "?select=region,rent_growth_pct,house_price_growth_pct")
+       .then(rows => { if (!cancelled) setRegionalRates(rows); });
+     return () => { cancelled = true; };
+   }, []);
+@@ -578,6 +477,8 @@ export default function AppShell() {
+   }, [savingsRates]);
+   const m = useMemo(() => calcMetrics(d, marketRates), [d, marketRates]);
+   const statuses = useMemo(() => computeModuleStatuses(d, m, marketRates), [d, m, marketRates]);
++  // The user's row in Supabase: its id, inserting it and PATCHing it.
++  const { currentRowId, insertReportRow, saveRow, rowInputFields, rowReportFields } = useReportRow(d, m, statuses);
+   // Each module's £ when first answered, for what's been banked since
+   // (moduleStatus.js bankedFor).
+   useEffect(() => {
+@@ -589,82 +490,9 @@ export default function AppShell() {
+   // are sent (not the values already there when it opens), once they've
+   // settled for 2 seconds so typing a price doesn't PATCH per keystroke; an
+   // edit still pending when the user leaves the screen is sent straight away.
+-  // Includes the user's own pension figures, which the Property screen can
+-  // ask for when the Pension module wasn't chosen, and the shared figures its
+-  // walk-through asks (salary, monthly spending): someone arriving from a
+-  // shared Property link may answer nothing else, and the row is created at
+-  // entry, before those are known.
+-  const propertyPatch = useMemo(() => {
+-    if (!pathname.startsWith("/app/property")) return null;
+-    const b = borrowingInputs(d, m);
+-    const r = calcBorrowingCheck(b);
+-    const mi = mortgageInputs(d, r.loanNeeded);
+-    const num = v => (v === "" || v == null || isNaN(+v)) ? null : Math.round(+v);
+-    const pct = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
+-    const yesNo = v => v === "yes" ? true : v === "no" ? false : null;
+-    const rvbInput = rentVsBuyInputs(d, m, regionalRates, "moderate", marketRates);
+-    // £0 rent is an answer (living with family, say), as on the screen.
+-    const rvb = num(d.propertyMonthlyRent) != null && b.price > 0 ? calcRentVsBuy(rvbInput) : null;
+-    // supabase/hand-run/supabase_property_budget_migration.sql
+-    const budget = monthlyBudget(d, m);
+-    const most = b.price > 0 ? affordableMaxPrice(d, m) : null;
+-    return {
+-      property_buying_mode: d.propertyBuyingMode === "together" ? "together" : "alone",
+-      property_price: num(d.propertyPrice),
+-      property_cash_available: Math.round(b.cashAvailable),
+-      property_stamp_duty: b.price > 0 && b.stampDutyDetail ? Math.round(b.stampDuty) : null,
+-      property_fees: Math.round(b.fees),
+-      property_loan_needed: b.price > 0 ? Math.round(r.loanNeeded) : null,
+-      property_income_multiple: b.price > 0 && r.multiple != null ? Math.round(r.multiple * 100) / 100 : null,
+-      salary: +d.salary||null,
+-      other_income: +d.otherIncome||null,
+-      tax_band: m.taxBandLabel,
+-      monthly_expenses: +d.monthlyExpenses||null,
+-      partner_salary: num(d.partnerSalary),
+-      partner_other_income: num(d.partnerOtherIncome),
+-      partner_pension_my_pct: pct(d.partnerMyContribution),
+-      partner_pension_employer_pct: pct(d.partnerEmployerMatch),
+-      partner_isa_this_year: num(d.partnerIsaThisYear),
+-      pension_my_pct: +d.myContribution||null,
+-      pension_employer_pct: +d.employerMatch||null,
+-      property_region: d.propertyRegion || null,
+-      property_first_time_buyer: yesNo(d.propertyFirstTimeBuyer),
+-      partner_first_time_buyer: yesNo(d.partnerFirstTimeBuyer),
+-      property_sole_property: yesNo(d.propertySoleProperty),
+-      // The mortgage figures the calculation used (the user's or the defaults).
+-      property_mortgage_term_years: mi.termYears,
+-      property_mortgage_fixed_years: mi.fixedYears,
+-      property_mortgage_rate: mi.ratePct,
+-      property_remortgage_fee: Math.round(mi.remortgageFee),
+-      property_monthly_repayment: r.loanNeeded > 0 ? Math.round(mortgageSummary(mi).monthlyPayment) : null,
+-      property_monthly_rent: num(d.propertyMonthlyRent),
+-      property_horizon_years: rvbInput.horizonYears,
+-      property_tenure: rvbInput.tenure,
+-      property_ground_rent: rvbInput.tenure === "leasehold" ? num(d.propertyGroundRent) : null,
+-      property_ground_rent_growth: rvbInput.tenure === "leasehold" ? pct(d.propertyGroundRentGrowth) : null,
+-      property_service_charge: rvbInput.tenure === "leasehold" ? num(d.propertyServiceCharge) : null,
+-      // The assumptions the calculation used (the user's or the defaults).
+-      property_house_price_growth: rvbInput.housePriceGrowthPct,
+-      property_rent_growth: rvbInput.rentGrowthPct,
+-      property_investment_return: rvbInput.investmentReturnPct,
+-      property_dividend_yield: rvbInput.returnType === "invested" ? rvbInput.dividendYieldPct : null,
+-      property_breakeven_year: rvb ? rvb.breakevenYear : null,
+-      // Buyer's net wealth less the renter's at the horizon (moderate).
+-      property_wealth_gap: rvb ? Math.round(rvb.gapAtHorizon) : null,
+-      // What they'd have left each month once they own it, and the most they
+-      // could afford with that as a limit (src/lib/monthlyBudget.js).
+-      property_take_home: budget ? Math.round(budget.takeHome) : null,
+-      property_other_spending: budget ? Math.round(budget.otherSpending) : null,
+-      property_budget_left: budget ? Math.round(budget.left) : null,
+-      property_budget_left_if_rates_rise: budget && budget.leftIfRatesRise != null ? Math.round(budget.leftIfRatesRise) : null,
+-      property_budget_status: budget ? budget.status : null,
+-      property_max_price: most ? most.price : null,
+-      property_max_price_limit: most ? most.limit : null,
+-      // supabase/hand-run/supabase_spending_scope_migration.sql: buying together, whether the
+-      // spending figure is the household's or their own.
+-      property_spending_scope: d.propertyBuyingMode === "together" && d.propertySpendingScope ? d.propertySpendingScope : null,
+-    };
+-  }, [pathname, d, m, regionalRates, marketRates]);
++  // The row is created at entry, before most of these are known.
++  const propertyPatch = useMemo(() => pathname.startsWith("/app/property") ? propertyRowFields(d, m, regionalRates, marketRates) : null,
++    [pathname, d, m, regionalRates, marketRates]);
+   const propertyBaseline = useRef(null);
+   const pendingPropertyPatch = useRef(null);
+   // The insert in flight when a Property save has had to create the report
+@@ -681,12 +509,11 @@ export default function AppShell() {
+       const full = { ...patch, property_updated_at: new Date().toISOString() };
+       if (creatingReportRow.current) {
+         const id = await creatingReportRow.current;
+-        if (id) supaUpdateRow("test", id, full);
++        if (id) updateRow("test", id, full);
+         return;
+       }
+-      let rowId = supaRowId.current;
+-      if (!rowId) { try { rowId = localStorage.getItem('candid_report_row_id'); } catch(e) {} }
+-      const outcome = await supaUpdateRow("test", rowId, full);
++      const rowId = currentRowId();
++      const outcome = await updateRow("test", rowId, full);
+       if (outcome === "missing") {
+         // This browser's report never got a row (it was made while report
+         // saves were failing, before 29 Sept 2026) or the row is gone. Create
+@@ -718,119 +545,12 @@ export default function AppShell() {
+       const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
+       if (!prev.includes(key)) {
+         posthog.capture("module_completed", { module_key: key, total_completed: next.length });
+-        supaUpdate({ modules_completed: next.length });
++        updateRow("test", currentRowId(), { modules_completed: next.length });
+       }
+       return next;
+     });
+   }
+ 
+-  // The user's inputs as `test` columns. Written when the row is inserted,
+-  // and PATCHed as each module's questions are answered and when a report is
+-  // made: every one has an anon UPDATE grant (supabase/hand-run/supabase_entry_row_migration.sql),
+-  // or the whole PATCH would be refused.
+-  function rowInputFields() {
+-    return {
+-      email: d.email || null,
+-      name: d.name || null,
+-      interests: (d.interests || []).join(", ") || null,
+-      // supabase/hand-run/supabase_financial_goals_migration.sql
+-      financial_goals: (d.financialGoals || []).join(", ") || null,
+-      age: +d.age||null,
+-      salary: +d.salary||null,
+-      other_income: +d.otherIncome||null,
+-      tax_band: m.taxBandLabel,
+-      salary_trajectory: d.salaryTrajectory||null,
+-      monthly_expenses: +d.monthlyExpenses||null,
+-      cash_savings: +d.cashSavings||null,
+-      savings_rate: +d.savingsRate||null,
+-      premium_bonds: +d.premiumBonds||null,
+-      has_investments: d.hasInvestments === "yes",
+-      isa_this_year: m.isaUsedThisYear||null,
+-      isa_previous: (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0)||null,
+-      isa_type: d.isaType||null,
+-      unwrapped_investments: +d.unwrappedValue||null,
+-      has_pension: d.hasPension === "yes",
+-      pension_my_pct: +d.myContribution||null,
+-      pension_employer_pct: +d.employerMatch||null,
+-      pension_pot: +d.potValue||null,
+-      retirement_age: +d.retirementAge||null,
+-      has_student_loan: d.studentLoan !== "none",
+-      student_loan_plan: d.studentLoan !== "none" ? d.studentLoan : null,
+-      student_loan_balance: +d.loanBalance||null,
+-      has_mortgage: d.hasMortgage === "yes",
+-      mortgage_balance: +d.mortgageBalance||null,
+-      mortgage_rate: +d.mortgageRate||null,
+-      mortgage_provider: d.mortgageProvider||null,
+-      has_personal_loan: d.hasPersonalLoan === "yes",
+-      personal_loan_balance: +d.personalLoanBalance||null,
+-      personal_loan_rate: +d.personalLoanRate||null,
+-      personal_loan_provider: d.personalLoanProvider||null,
+-      has_bonus: d.hasBonus === "yes",
+-      bonus_amount: +d.bonusAmount||null,
+-      has_kids: d.hasKids === "yes",
+-      num_kids: +d.numKids||null,
+-    };
+-  }
+-  // The report's own columns: its score, and the modules' total opportunity
+-  // and critical ones at the time.
+-  function rowReportFields(score) {
+-    const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
+-    const totalOpp = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
+-    return {
+-      candid_score: score,
+-      total_opportunity_gbp: Math.round(totalOpp / 100) * 100,
+-      critical_modules: criticals,
+-    };
+-  }
+-
+-  // Writes the user's row to `test` and remembers its id, in memory and in
+-  // localStorage so a later visit can still PATCH it. Called at the app's
+-  // entry (no score yet), and when a report or a Property save
+-  // finds this browser has no row yet (see saveRow, propertyPatch). `extra`
+-  // adds columns to the insert, the Property fields in that case.
+-  async function insertReportRow(score, extra = {}) {
+-    // Written once, ever, by main.jsx's getAcquisition()/handleStart() — read back
+-    // here rather than re-derived, so the ORIGINAL first-touch source (not whatever
+-    // UTM params happen to be in the URL right now) lands on the report row.
+-    let acquisition = {};
+-    try { acquisition = JSON.parse(localStorage.getItem('candid_acquisition') || '{}'); } catch(e) {}
+-    const rowId = await supaInsert("test", {
+-      ...extra,
+-      session_id: posthog.get_distinct_id?.() || null,
+-      ...rowInputFields(),
+-      ...rowReportFields(score),
+-      modules_completed: 0,
+-      feedback_submitted: false,
+-      acquisition_source: acquisition.source || "direct",
+-      acquisition_medium: acquisition.medium || null,
+-      acquisition_campaign: acquisition.campaign || null,
+-      referred_by: acquisition.referred_by || null,
+-      first_visit_at: acquisition.first_visit_at || null,
+-      assessment_started_at: localStorage.getItem('candid_assessment_started_at') || null,
+-      returned: false,
+-      confidence_score: (() => { const v = localStorage.getItem('candid_confidence_score'); return v ? parseInt(v, 10) : null; })(),
+-    });
+-    if (rowId) {
+-      supaRowId.current = rowId;
+-      // Mirrored to localStorage (not just the in-memory ref) so a later
+-      // "welcome back" visit — a fresh AppShell mount — can still PATCH
+-      // `returned` onto the same row.
+-      try { localStorage.setItem('candid_report_row_id', rowId); } catch(e) {}
+-    }
+-    return rowId;
+-  }
+-
+-  // One row per user: PATCH this browser's row with `fields`, or insert it
+-  // if there isn't one (made before rows were created at entry, or gone).
+-  // `score` is for that insert.
+-  async function saveRow(fields, score = null) {
+-    let rowId = supaRowId.current;
+-    if (!rowId) { try { rowId = localStorage.getItem('candid_report_row_id'); } catch(e) {} }
+-    const outcome = await supaUpdateRow("test", rowId, fields);
+-    if (outcome === "missing") return insertReportRow(score);
+-    return rowId;
+-  }
+-
+   // Saving a module's answers waits a render (rowSaveTick), so the last
+   // answer, set the moment before the walk-through ended, is in `d`.
+   const [rowSaveTick, setRowSaveTick] = useState(0);
+diff --git a/src/lib/characterisation.snapshot.json b/src/lib/characterisation.snapshot.json
+index 1a49dd0..e62385c 100644
+--- a/src/lib/characterisation.snapshot.json
++++ b/src/lib/characterisation.snapshot.json
+@@ -2583,6 +2583,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": "buy_house, consolidate",
++     "age": 34,
++     "salary": 72000,
++     "other_income": 2000,
++     "tax_band": "higher",
++     "salary_trajectory": "moderate",
++     "monthly_expenses": 2200,
++     "cash_savings": 18000,
++     "savings_rate": 1.5,
++     "premium_bonds": 5000,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 15000,
++     "isa_type": "stocks",
++     "unwrapped_investments": 6000,
++     "has_pension": true,
++     "pension_my_pct": 3,
++     "pension_employer_pct": 5,
++     "pension_pot": 55000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan2",
++     "student_loan_balance": 22000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": 5000,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 58,
++     "total_opportunity_gbp": 5100,
++     "critical_modules": "pension"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 16400,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 72000,
++     "other_income": 2000,
++     "tax_band": "higher",
++     "monthly_expenses": 2200,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 3,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -4915,6 +5011,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": "buy_house, consolidate",
++     "age": 34,
++     "salary": 72000,
++     "other_income": 2000,
++     "tax_band": "higher",
++     "salary_trajectory": "moderate",
++     "monthly_expenses": 2200,
++     "cash_savings": 18000,
++     "savings_rate": 1.5,
++     "premium_bonds": 5000,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 15000,
++     "isa_type": "stocks",
++     "unwrapped_investments": 6000,
++     "has_pension": true,
++     "pension_my_pct": 3,
++     "pension_employer_pct": 5,
++     "pension_pot": 55000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan2",
++     "student_loan_balance": 22000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": 5000,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 58,
++     "total_opportunity_gbp": 5100,
++     "critical_modules": "pension"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 16400,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 72000,
++     "other_income": 2000,
++     "tax_band": "higher",
++     "monthly_expenses": 2200,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 3,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 2.119565217391304,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -7293,6 +7485,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 29,
++     "salary": 48000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 12000,
++     "savings_rate": 2.8,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 20000,
++     "isa_previous": 10000,
++     "isa_type": "stocks",
++     "unwrapped_investments": 2000,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 20000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 84,
++     "total_opportunity_gbp": 300,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 11600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 48000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -9498,6 +9786,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 29,
++     "salary": 48000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 12000,
++     "savings_rate": 2.8,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 20000,
++     "isa_previous": 10000,
++     "isa_type": "stocks",
++     "unwrapped_investments": 2000,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 20000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 84,
++     "total_opportunity_gbp": 300,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 11600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 48000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 2.8,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -11925,6 +12309,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 40,
++     "salary": 95000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1600,
++     "cash_savings": 45000,
++     "savings_rate": 2,
++     "premium_bonds": 8000,
++     "has_investments": true,
++     "isa_this_year": 3000,
++     "isa_previous": 9000,
++     "isa_type": "stocks",
++     "unwrapped_investments": 10000,
++     "has_pension": true,
++     "pension_my_pct": 6,
++     "pension_employer_pct": 6,
++     "pension_pot": 70000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 2200,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 48200,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 95000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1600,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 6,
++     "pension_employer_pct": 6,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -14135,6 +14615,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 40,
++     "salary": 95000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1600,
++     "cash_savings": 45000,
++     "savings_rate": 2,
++     "premium_bonds": 8000,
++     "has_investments": true,
++     "isa_this_year": 3000,
++     "isa_previous": 9000,
++     "isa_type": "stocks",
++     "unwrapped_investments": 10000,
++     "has_pension": true,
++     "pension_my_pct": 6,
++     "pension_employer_pct": 6,
++     "pension_pot": 70000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 2300,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 48200,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 95000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1600,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 6,
++     "pension_employer_pct": 6,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 2.3547169811320754,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -15497,6 +16073,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 24,
++     "salary": 26000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1200,
++     "cash_savings": 500,
++     "savings_rate": null,
++     "premium_bonds": null,
++     "has_investments": false,
++     "isa_this_year": null,
++     "isa_previous": null,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": false,
++     "pension_my_pct": null,
++     "pension_employer_pct": null,
++     "pension_pot": null,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 82,
++     "total_opportunity_gbp": 0,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 0,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 26000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1200,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": null,
++     "pension_employer_pct": null,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -16694,6 +17366,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 24,
++     "salary": 26000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1200,
++     "cash_savings": 500,
++     "savings_rate": null,
++     "premium_bonds": null,
++     "has_investments": false,
++     "isa_this_year": null,
++     "isa_previous": null,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": false,
++     "pension_my_pct": null,
++     "pension_employer_pct": null,
++     "pension_pot": null,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 82,
++     "total_opportunity_gbp": 0,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 0,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 26000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1200,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": null,
++     "pension_employer_pct": null,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 0,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -19218,6 +19986,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 45,
++     "salary": 112000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 3500,
++     "cash_savings": 60000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 4,
++     "pension_employer_pct": 4,
++     "pension_pot": 180000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan1",
++     "student_loan_balance": 6000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": 15000,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 66,
++     "total_opportunity_gbp": 15000,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 49500,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 112000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 3500,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 4,
++     "pension_employer_pct": 4,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -21513,6 +22377,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 45,
++     "salary": 112000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 3500,
++     "cash_savings": 60000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 4,
++     "pension_employer_pct": 4,
++     "pension_pot": 180000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan1",
++     "student_loan_balance": 6000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": 15000,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 66,
++     "total_opportunity_gbp": 14900,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 49500,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 112000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 3500,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 4,
++     "pension_employer_pct": 4,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 2.9,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -23925,6 +24885,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 52,
++     "salary": 240000,
++     "other_income": 12000,
++     "tax_band": "additional",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 6000,
++     "cash_savings": 150000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 20000,
++     "isa_previous": 200000,
++     "isa_type": "stocks",
++     "unwrapped_investments": 90000,
++     "has_pension": true,
++     "pension_my_pct": 10,
++     "pension_employer_pct": 8,
++     "pension_pot": 650000,
++     "retirement_age": 60,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 66,
++     "total_opportunity_gbp": 1700,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 132000,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 240000,
++     "other_income": 12000,
++     "tax_band": "additional",
++     "monthly_expenses": 6000,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 10,
++     "pension_employer_pct": 8,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -26209,6 +27265,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 52,
++     "salary": 240000,
++     "other_income": 12000,
++     "tax_band": "additional",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 6000,
++     "cash_savings": 150000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 20000,
++     "isa_previous": 200000,
++     "isa_type": "stocks",
++     "unwrapped_investments": 90000,
++     "has_pension": true,
++     "pension_my_pct": 10,
++     "pension_employer_pct": 8,
++     "pension_pot": 650000,
++     "retirement_age": 60,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 66,
++     "total_opportunity_gbp": 1400,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 132000,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 240000,
++     "other_income": 12000,
++     "tax_band": "additional",
++     "monthly_expenses": 6000,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 10,
++     "pension_employer_pct": 8,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 3,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -28655,6 +29807,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 38,
++     "salary": 60000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 25000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 8,
++     "pension_employer_pct": null,
++     "pension_pot": 45000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 1300,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 19600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 60000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 8,
++     "pension_employer_pct": null,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -30853,6 +32101,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 38,
++     "salary": 60000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 25000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 8,
++     "pension_employer_pct": null,
++     "pension_pot": 45000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 1300,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 19600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 60000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 8,
++     "pension_employer_pct": null,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 1,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -33326,6 +34670,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 27,
++     "salary": 38000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 10000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan4",
++     "student_loan_balance": 31000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 84,
++     "total_opportunity_gbp": 300,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 4600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 38000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -35626,6 +37066,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 27,
++     "salary": 38000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 10000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan4",
++     "student_loan_balance": 31000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 84,
++     "total_opportunity_gbp": 300,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 4600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 38000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 2.5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -38092,6 +39628,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 22,
++     "salary": 29000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1400,
++     "cash_savings": 3000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 2000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan5",
++     "student_loan_balance": 48000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 92,
++     "total_opportunity_gbp": 0,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 0,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 29000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1400,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -40393,6 +42025,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 22,
++     "salary": 29000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1400,
++     "cash_savings": 3000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 2000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan5",
++     "student_loan_balance": 48000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 92,
++     "total_opportunity_gbp": 0,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 0,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 29000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1400,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 3.5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -42865,6 +44593,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 30,
++     "salary": 52000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 10000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "postgrad",
++     "student_loan_balance": 14000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 76,
++     "total_opportunity_gbp": 500,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 4600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 52000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -45164,6 +46988,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 30,
++     "salary": 52000,
++     "other_income": null,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 10000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "postgrad",
++     "student_loan_balance": 14000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 76,
++     "total_opportunity_gbp": 500,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 4600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 52000,
++     "other_income": null,
++     "tax_band": "basic",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 2.5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -47653,6 +49573,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 59,
++     "salary": 68000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 80000,
++     "savings_rate": 2.5,
++     "premium_bonds": 50000,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 420000,
++     "retirement_age": 62,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 700,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 124600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 68000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -49924,6 +51940,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 59,
++     "salary": 68000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 80000,
++     "savings_rate": 2.5,
++     "premium_bonds": 50000,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 420000,
++     "retirement_age": 62,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 400,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 124600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 68000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 4.4423076923076925,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -52358,6 +54470,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 68,
++     "salary": null,
++     "other_income": 9000,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 40000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 300000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 1200,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 34600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": null,
++     "other_income": 9000,
++     "tax_band": "basic",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -54544,6 +56752,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 68,
++     "salary": null,
++     "other_income": 9000,
++     "tax_band": "basic",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 40000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 300000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 1300,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 34600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": null,
++     "other_income": 9000,
++     "tax_band": "basic",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 2,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -56972,6 +59276,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 22000,
++     "savings_rate": 1.2,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 84,
++     "total_opportunity_gbp": 1100,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 16600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -59152,6 +61552,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 22000,
++     "savings_rate": 1.2,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 1200,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 16600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 1.2,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -60501,6 +62997,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 10000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": false,
++     "pension_my_pct": null,
++     "pension_employer_pct": null,
++     "pension_pot": null,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 92,
++     "total_opportunity_gbp": 0,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 4600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": null,
++     "pension_employer_pct": null,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -61677,6 +64269,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 10000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": false,
++     "pension_my_pct": null,
++     "pension_employer_pct": null,
++     "pension_pot": null,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 92,
++     "total_opportunity_gbp": 0,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 4600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": null,
++     "pension_employer_pct": null,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 2.5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -64522,6 +67210,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": "property",
++     "financial_goals": "buy_house",
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 45000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 82,
++     "total_opportunity_gbp": 500,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": 325000,
++     "property_cash_available": 39600,
++     "property_stamp_duty": 1250,
++     "property_fees": 2500,
++     "property_loan_needed": 289150,
++     "property_income_multiple": 5.26,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": "london",
++     "property_first_time_buyer": true,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": 1465,
++     "property_monthly_rent": 1650,
++     "property_horizon_years": 10,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.1,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": 1,
++     "property_wealth_gap": 150716,
++     "property_take_home": 3401,
++     "property_other_spending": 150,
++     "property_budget_left": 1515,
++     "property_budget_left_if_rates_rise": 1282,
++     "property_budget_status": "ok",
++     "property_max_price": 284000,
++     "property_max_price_limit": "income",
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -67150,6 +69934,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": "property",
++     "financial_goals": "buy_house",
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 45000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 82,
++     "total_opportunity_gbp": 300,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": 325000,
++     "property_cash_available": 39600,
++     "property_stamp_duty": 1250,
++     "property_fees": 2500,
++     "property_loan_needed": 289150,
++     "property_income_multiple": 5.26,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": "london",
++     "property_first_time_buyer": true,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": 1465,
++     "property_monthly_rent": 1650,
++     "property_horizon_years": 10,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.1,
++     "property_investment_return": 4,
++     "property_dividend_yield": null,
++     "property_breakeven_year": 1,
++     "property_wealth_gap": 154951,
++     "property_take_home": 3401,
++     "property_other_spending": 150,
++     "property_budget_left": 1515,
++     "property_budget_left_if_rates_rise": 1282,
++     "property_budget_status": "ok",
++     "property_max_price": 284000,
++     "property_max_price_limit": "income",
++     "property_spending_scope": null
++    }
+    }
+   }
+  },
+@@ -69974,6 +72854,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": "property",
++     "financial_goals": null,
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 70000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan2",
++     "student_loan_balance": 38000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 1500,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "together",
++     "property_price": 450000,
++     "property_cash_available": 64600,
++     "property_stamp_duty": 12500,
++     "property_fees": 2500,
++     "property_loan_needed": 400400,
++     "property_income_multiple": 4.17,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": 41000,
++     "partner_other_income": null,
++     "partner_pension_my_pct": 4,
++     "partner_pension_employer_pct": 3,
++     "partner_isa_this_year": 2000,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": "south_east",
++     "property_first_time_buyer": true,
++     "partner_first_time_buyer": false,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.6,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": 2053,
++     "property_monthly_rent": 1900,
++     "property_horizon_years": 5,
++     "property_tenure": "leasehold",
++     "property_ground_rent": 250,
++     "property_ground_rent_growth": null,
++     "property_service_charge": 1800,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 2.6,
++     "property_investment_return": 6,
++     "property_dividend_yield": 2,
++     "property_breakeven_year": 3,
++     "property_wealth_gap": 35217,
++     "property_take_home": 5873,
++     "property_other_spending": 0,
++     "property_budget_left": 3550,
++     "property_budget_left_if_rates_rise": 3225,
++     "property_budget_status": "ok",
++     "property_max_price": 480000,
++     "property_max_price_limit": "income",
++     "property_spending_scope": "household"
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -72581,6 +75557,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": "property",
++     "financial_goals": null,
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 70000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": true,
++     "student_loan_plan": "plan2",
++     "student_loan_balance": 38000,
++     "has_mortgage": false,
++     "mortgage_balance": null,
++     "mortgage_rate": null,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": null,
++     "personal_loan_rate": null,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": null
++    },
++    "report": {
++     "candid_score": 74,
++     "total_opportunity_gbp": 1300,
++     "critical_modules": "cash"
++    },
++    "property": {
++     "property_buying_mode": "together",
++     "property_price": 450000,
++     "property_cash_available": 64600,
++     "property_stamp_duty": 12500,
++     "property_fees": 2500,
++     "property_loan_needed": 400400,
++     "property_income_multiple": 4.17,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": 41000,
++     "partner_other_income": null,
++     "partner_pension_my_pct": 4,
++     "partner_pension_employer_pct": 3,
++     "partner_isa_this_year": 2000,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": "south_east",
++     "property_first_time_buyer": true,
++     "partner_first_time_buyer": false,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.6,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": 2053,
++     "property_monthly_rent": 1900,
++     "property_horizon_years": 5,
++     "property_tenure": "leasehold",
++     "property_ground_rent": 250,
++     "property_ground_rent_growth": null,
++     "property_service_charge": 1800,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 2.6,
++     "property_investment_return": 6,
++     "property_dividend_yield": 2,
++     "property_breakeven_year": 3,
++     "property_wealth_gap": 35217,
++     "property_take_home": 5873,
++     "property_other_spending": 0,
++     "property_budget_left": 3550,
++     "property_budget_left_if_rates_rise": 3225,
++     "property_budget_status": "ok",
++     "property_max_price": 480000,
++     "property_max_price_limit": "income",
++     "property_spending_scope": "household"
++    }
+    }
+   }
+  },
+@@ -74913,6 +77985,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 10000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": 180000,
++     "mortgage_rate": 5.4,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": 8000,
++     "personal_loan_rate": 11.9,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": 2
++    },
++    "report": {
++     "candid_score": 92,
++     "total_opportunity_gbp": 200,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 4600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   },
+   "ratesLoading": {
+@@ -77072,6 +80240,102 @@
+      ],
+      "disclaimer": "Listed alphabetically. Not a recommendation, and not every provider: Candid isn't paid by any of them. Fees as each provider published them, October 2026; check them, and the provider's terms, before opening anything. Before moving an existing pension, check for exit fees and any guaranteed benefits you'd lose."
+     }
++   },
++   "reportRow": {
++    "inputs": {
++     "email": null,
++     "name": null,
++     "interests": null,
++     "financial_goals": null,
++     "age": 32,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "salary_trajectory": "stable",
++     "monthly_expenses": 1800,
++     "cash_savings": 10000,
++     "savings_rate": 2.5,
++     "premium_bonds": null,
++     "has_investments": true,
++     "isa_this_year": 5000,
++     "isa_previous": 8000,
++     "isa_type": "stocks",
++     "unwrapped_investments": null,
++     "has_pension": true,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "pension_pot": 30000,
++     "retirement_age": 65,
++     "has_student_loan": false,
++     "student_loan_plan": null,
++     "student_loan_balance": null,
++     "has_mortgage": false,
++     "mortgage_balance": 180000,
++     "mortgage_rate": 5.4,
++     "mortgage_provider": null,
++     "has_personal_loan": false,
++     "personal_loan_balance": 8000,
++     "personal_loan_rate": 11.9,
++     "personal_loan_provider": null,
++     "has_bonus": false,
++     "bonus_amount": null,
++     "has_kids": false,
++     "num_kids": 2
++    },
++    "report": {
++     "candid_score": 92,
++     "total_opportunity_gbp": 300,
++     "critical_modules": ""
++    },
++    "property": {
++     "property_buying_mode": "alone",
++     "property_price": null,
++     "property_cash_available": 4600,
++     "property_stamp_duty": null,
++     "property_fees": 2500,
++     "property_loan_needed": null,
++     "property_income_multiple": null,
++     "salary": 55000,
++     "other_income": null,
++     "tax_band": "higher",
++     "monthly_expenses": 1800,
++     "partner_salary": null,
++     "partner_other_income": null,
++     "partner_pension_my_pct": null,
++     "partner_pension_employer_pct": null,
++     "partner_isa_this_year": null,
++     "pension_my_pct": 5,
++     "pension_employer_pct": 5,
++     "property_region": null,
++     "property_first_time_buyer": null,
++     "partner_first_time_buyer": null,
++     "property_sole_property": true,
++     "property_mortgage_term_years": 30,
++     "property_mortgage_fixed_years": 5,
++     "property_mortgage_rate": 4.5,
++     "property_remortgage_fee": 1000,
++     "property_monthly_repayment": null,
++     "property_monthly_rent": null,
++     "property_horizon_years": 5,
++     "property_tenure": "freehold",
++     "property_ground_rent": null,
++     "property_ground_rent_growth": null,
++     "property_service_charge": null,
++     "property_house_price_growth": 3,
++     "property_rent_growth": 3.8,
++     "property_investment_return": 2.5,
++     "property_dividend_yield": null,
++     "property_breakeven_year": null,
++     "property_wealth_gap": null,
++     "property_take_home": null,
++     "property_other_spending": null,
++     "property_budget_left": null,
++     "property_budget_left_if_rates_rise": null,
++     "property_budget_status": null,
++     "property_max_price": null,
++     "property_max_price_limit": null,
++     "property_spending_scope": null
++    }
+    }
+   }
+  }
+diff --git a/src/lib/characterisation.test.js b/src/lib/characterisation.test.js
+index f1f4515..a2ad383 100644
+--- a/src/lib/characterisation.test.js
++++ b/src/lib/characterisation.test.js
+@@ -31,6 +31,7 @@ import { calcAnnualAllowanceRoom, calcBonusSacrificePotential, calcPensionGrowth
+ import { getActiveSteps } from "./onboarding.js";
+ import { rollTaxYear } from "./taxYear.js";
+ import { getModuleProducts } from "../mobile/moduleProducts.js";
++import { rowInputFields, rowReportFields, propertyRowFields } from "./reportRow.js";
+ 
+ const SNAPSHOT = new URL("./characterisation.snapshot.json", import.meta.url);
+ 
+@@ -187,6 +188,8 @@ function runProfile(raw, market) {
+     pension: attempt(() => ({ aaRoom: calcAnnualAllowanceRoom(d, m), bonus: calcBonusSacrificePotential(d, m), growth: calcPensionGrowthTrajectory(d, m) })),
+     // The provider lists the Cash, Investments and Pension screens show.
+     products: attempt(() => Object.fromEntries(["cash", "investments", "pension"].map(k => [k, getModuleProducts(k, d, m, market.rows || null)]))),
++    // The columns written to the user's row in Supabase.
++    reportRow: attempt(() => ({ inputs: rowInputFields(d, m), report: rowReportFields(statuses, calcCandidScore(statuses)), property: propertyRowFields(d, m, REGIONAL, market) })),
+   };
+ }
+ 
+diff --git a/src/lib/reportRow.js b/src/lib/reportRow.js
+new file mode 100644
+index 0000000..265ad90
+--- /dev/null
++++ b/src/lib/reportRow.js
+@@ -0,0 +1,144 @@
++// The user's row in Supabase's `test` table, as columns: what the app
++// writes when the row is inserted and each time it's PATCHed (useReportRow.js
++// does the writing). Every column has an anon UPDATE grant
++// (supabase/hand-run/supabase_entry_row_migration.sql), or the whole PATCH
++// would be refused.
++import { borrowingInputs, calcBorrowingCheck } from "./borrowing.js";
++import { mortgageInputs, mortgageSummary } from "./mortgage.js";
++import { rentVsBuyInputs, calcRentVsBuy } from "./rentVsBuy.js";
++import { monthlyBudget, affordableMaxPrice } from "./monthlyBudget.js";
++
++// The user's inputs. Written when the row is inserted, and PATCHed as each
++// module's questions are answered and when the score first shows.
++export function rowInputFields(d, m) {
++  return {
++    email: d.email || null,
++    name: d.name || null,
++    interests: (d.interests || []).join(", ") || null,
++    // supabase/hand-run/supabase_financial_goals_migration.sql
++    financial_goals: (d.financialGoals || []).join(", ") || null,
++    age: +d.age||null,
++    salary: +d.salary||null,
++    other_income: +d.otherIncome||null,
++    tax_band: m.taxBandLabel,
++    salary_trajectory: d.salaryTrajectory||null,
++    monthly_expenses: +d.monthlyExpenses||null,
++    cash_savings: +d.cashSavings||null,
++    savings_rate: +d.savingsRate||null,
++    premium_bonds: +d.premiumBonds||null,
++    has_investments: d.hasInvestments === "yes",
++    isa_this_year: m.isaUsedThisYear||null,
++    isa_previous: (+d.isaPrevCash||0)+(+d.isaPrevSS||0)+(+d.isaPrevLISA||0)+(+d.isaPrevOther||0)||null,
++    isa_type: d.isaType||null,
++    unwrapped_investments: +d.unwrappedValue||null,
++    has_pension: d.hasPension === "yes",
++    pension_my_pct: +d.myContribution||null,
++    pension_employer_pct: +d.employerMatch||null,
++    pension_pot: +d.potValue||null,
++    retirement_age: +d.retirementAge||null,
++    has_student_loan: d.studentLoan !== "none",
++    student_loan_plan: d.studentLoan !== "none" ? d.studentLoan : null,
++    student_loan_balance: +d.loanBalance||null,
++    has_mortgage: d.hasMortgage === "yes",
++    mortgage_balance: +d.mortgageBalance||null,
++    mortgage_rate: +d.mortgageRate||null,
++    mortgage_provider: d.mortgageProvider||null,
++    has_personal_loan: d.hasPersonalLoan === "yes",
++    personal_loan_balance: +d.personalLoanBalance||null,
++    personal_loan_rate: +d.personalLoanRate||null,
++    personal_loan_provider: d.personalLoanProvider||null,
++    has_bonus: d.hasBonus === "yes",
++    bonus_amount: +d.bonusAmount||null,
++    has_kids: d.hasKids === "yes",
++    num_kids: +d.numKids||null,
++  };
++}
++
++// The report's own columns: its score, and the modules' total opportunity
++// and critical ones at the time.
++export function rowReportFields(statuses, score) {
++  const criticals = Object.entries(statuses).filter(([,v]) => v.status === "critical").map(([k]) => k).join(",");
++  const totalOpp = Object.entries(statuses).reduce((sum, [,v]) => sum + Math.min(v.impact||0, 99998), 0);
++  return {
++    candid_score: score,
++    total_opportunity_gbp: Math.round(totalOpp / 100) * 100,
++    critical_modules: criticals,
++  };
++}
++
++// The Property screen's inputs and results (src/lib/borrowing.js,
++// mortgage.js, rentVsBuy.js, monthlyBudget.js), sent once the user edits
++// them there. Includes the user's own pension figures, which the Property
++// screen can ask for when the Pension module wasn't chosen, and the shared
++// figures its walk-through asks (salary, monthly spending): someone arriving
++// from a shared Property link may answer nothing else.
++export function propertyRowFields(d, m, regionalRates, marketRates) {
++  const b = borrowingInputs(d, m);
++  const r = calcBorrowingCheck(b);
++  const mi = mortgageInputs(d, r.loanNeeded);
++  const num = v => (v === "" || v == null || isNaN(+v)) ? null : Math.round(+v);
++  const pct = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
++  const yesNo = v => v === "yes" ? true : v === "no" ? false : null;
++  const rvbInput = rentVsBuyInputs(d, m, regionalRates, "moderate", marketRates);
++  // £0 rent is an answer (living with family, say), as on the screen.
++  const rvb = num(d.propertyMonthlyRent) != null && b.price > 0 ? calcRentVsBuy(rvbInput) : null;
++  // supabase/hand-run/supabase_property_budget_migration.sql
++  const budget = monthlyBudget(d, m);
++  const most = b.price > 0 ? affordableMaxPrice(d, m) : null;
++  return {
++    property_buying_mode: d.propertyBuyingMode === "together" ? "together" : "alone",
++    property_price: num(d.propertyPrice),
++    property_cash_available: Math.round(b.cashAvailable),
++    property_stamp_duty: b.price > 0 && b.stampDutyDetail ? Math.round(b.stampDuty) : null,
++    property_fees: Math.round(b.fees),
++    property_loan_needed: b.price > 0 ? Math.round(r.loanNeeded) : null,
++    property_income_multiple: b.price > 0 && r.multiple != null ? Math.round(r.multiple * 100) / 100 : null,
++    salary: +d.salary||null,
++    other_income: +d.otherIncome||null,
++    tax_band: m.taxBandLabel,
++    monthly_expenses: +d.monthlyExpenses||null,
++    partner_salary: num(d.partnerSalary),
++    partner_other_income: num(d.partnerOtherIncome),
++    partner_pension_my_pct: pct(d.partnerMyContribution),
++    partner_pension_employer_pct: pct(d.partnerEmployerMatch),
++    partner_isa_this_year: num(d.partnerIsaThisYear),
++    pension_my_pct: +d.myContribution||null,
++    pension_employer_pct: +d.employerMatch||null,
++    property_region: d.propertyRegion || null,
++    property_first_time_buyer: yesNo(d.propertyFirstTimeBuyer),
++    partner_first_time_buyer: yesNo(d.partnerFirstTimeBuyer),
++    property_sole_property: yesNo(d.propertySoleProperty),
++    // The mortgage figures the calculation used (the user's or the defaults).
++    property_mortgage_term_years: mi.termYears,
++    property_mortgage_fixed_years: mi.fixedYears,
++    property_mortgage_rate: mi.ratePct,
++    property_remortgage_fee: Math.round(mi.remortgageFee),
++    property_monthly_repayment: r.loanNeeded > 0 ? Math.round(mortgageSummary(mi).monthlyPayment) : null,
++    property_monthly_rent: num(d.propertyMonthlyRent),
++    property_horizon_years: rvbInput.horizonYears,
++    property_tenure: rvbInput.tenure,
++    property_ground_rent: rvbInput.tenure === "leasehold" ? num(d.propertyGroundRent) : null,
++    property_ground_rent_growth: rvbInput.tenure === "leasehold" ? pct(d.propertyGroundRentGrowth) : null,
++    property_service_charge: rvbInput.tenure === "leasehold" ? num(d.propertyServiceCharge) : null,
++    // The assumptions the calculation used (the user's or the defaults).
++    property_house_price_growth: rvbInput.housePriceGrowthPct,
++    property_rent_growth: rvbInput.rentGrowthPct,
++    property_investment_return: rvbInput.investmentReturnPct,
++    property_dividend_yield: rvbInput.returnType === "invested" ? rvbInput.dividendYieldPct : null,
++    property_breakeven_year: rvb ? rvb.breakevenYear : null,
++    // Buyer's net wealth less the renter's at the horizon (moderate).
++    property_wealth_gap: rvb ? Math.round(rvb.gapAtHorizon) : null,
++    // What they'd have left each month once they own it, and the most they
++    // could afford with that as a limit (src/lib/monthlyBudget.js).
++    property_take_home: budget ? Math.round(budget.takeHome) : null,
++    property_other_spending: budget ? Math.round(budget.otherSpending) : null,
++    property_budget_left: budget ? Math.round(budget.left) : null,
++    property_budget_left_if_rates_rise: budget && budget.leftIfRatesRise != null ? Math.round(budget.leftIfRatesRise) : null,
++    property_budget_status: budget ? budget.status : null,
++    property_max_price: most ? most.price : null,
++    property_max_price_limit: most ? most.limit : null,
++    // supabase/hand-run/supabase_spending_scope_migration.sql: buying together, whether the
++    // spending figure is the household's or their own.
++    property_spending_scope: d.propertyBuyingMode === "together" && d.propertySpendingScope ? d.propertySpendingScope : null,
++  };
++}
+diff --git a/src/lib/supabase.js b/src/lib/supabase.js
+new file mode 100644
+index 0000000..31c6890
+--- /dev/null
++++ b/src/lib/supabase.js
+@@ -0,0 +1,96 @@
++// The browser's calls to Supabase: its REST API with the anon key, no SDK.
++// Every failure goes to the reporter main.jsx sets (PostHog), the only
++// production view of them: fetch() doesn't throw on an HTTP error, so a
++// refused read or write would otherwise fail silently (this is how an RLS
++// gap and an AI-report failure once went undetected).
++const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
++const SUPA_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY;
++// No writes from automated browsers (Playwright test runs), so they don't add
++// rows that look like users.
++const SUPA_WRITES = typeof navigator === "undefined" || !navigator.webdriver;
++
++let onFailure = () => {};
++// `report({ table, operation, error_message, status })` is called on each failure.
++export function setSupabaseFailureReporter(report) { onFailure = report; }
++
++function reportFailure(table, operation, errorMessage, status) {
++  if (import.meta.env?.DEV) console.warn(`[Candid] Supabase ${operation} on "${table}" failed:`, errorMessage, status ? `(HTTP ${status})` : "(network error)");
++  onFailure({ table, operation, error_message: errorMessage, status: status ?? null });
++}
++
++// Inserts a row and returns its id, or null if it wasn't written.
++export async function insertRow(table, row) {
++  if (!SUPA_URL || !SUPA_KEY || !SUPA_WRITES) return null;
++  try {
++    // ?select=id: anon only has column-level SELECT on `id` (lock_down_test_table_rls),
++    // so returning the full row makes PostgREST reject the whole insert with a 401.
++    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?select=id`, {
++      method: "POST",
++      headers: {
++        "Content-Type": "application/json",
++        "apikey": SUPA_KEY,
++        "Authorization": `Bearer ${SUPA_KEY}`,
++        "Prefer": "return=representation",
++      },
++      body: JSON.stringify(row),
++    });
++    const data = await res.json();
++    // A non-2xx response (e.g. an RLS rejection or an unknown table) never throws —
++    // fetch() resolves normally, so this must be checked explicitly or it silently
++    // falls through to the Array.isArray check below and returns null unreported.
++    if (!res.ok) {
++      reportFailure(table, "insert", data?.message || JSON.stringify(data), res.status);
++      return null;
++    }
++    return Array.isArray(data) && data[0]?.id ? data[0].id : null;
++  } catch(e) {
++    reportFailure(table, "insert", e?.message || String(e));
++    return null;
++  }
++}
++
++// The rows `query` selects (a PostgREST query string, from "?"), or null.
++export async function selectRows(table, query = "") {
++  if (!SUPA_URL || !SUPA_KEY) return null;
++  try {
++    const res = await fetch(`${SUPA_URL}/rest/v1/${table}${query}`, {
++      headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}` },
++    });
++    if (!res.ok) {
++      const data = await res.json().catch(() => null);
++      reportFailure(table, "select", data?.message || `HTTP ${res.status}`, res.status);
++      return null;
++    }
++    return await res.json();
++  } catch(e) {
++    reportFailure(table, "select", e?.message || String(e));
++    return null;
++  }
++}
++
++// PATCH one row by id. Every column in the patch needs its own anon
++// column-level UPDATE grant on `test`, or PostgREST rejects the whole update.
++// Returns "ok", "missing" (no row with that id: a PATCH that matches nothing
++// still succeeds, so it's checked via the returned ids, which anon can read),
++// "failed" or "skipped" (no Supabase config).
++export async function updateRow(table, rowId, patch) {
++  if (!SUPA_URL || !SUPA_KEY || !SUPA_WRITES) return "skipped";
++  if (!rowId) return "missing";
++  try {
++    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(rowId)}&select=id`, {
++      method: "PATCH",
++      headers: { "Content-Type":"application/json", "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Prefer":"return=representation" },
++      body: JSON.stringify(patch),
++    });
++    if (!res.ok) {
++      const data = await res.json().catch(() => null);
++      reportFailure(table, "update", data?.message || `HTTP ${res.status}`, res.status);
++      return "failed";
++    }
++    const rows = await res.json().catch(() => null);
++    return Array.isArray(rows) && rows.length === 0 ? "missing" : "ok";
++  } catch(e) {
++    reportFailure(table, "update", e?.message || String(e));
++    return "failed";
++  }
++}
+diff --git a/src/main.jsx b/src/main.jsx
+index 06ef3c7..8e7f902 100644
+--- a/src/main.jsx
++++ b/src/main.jsx
+@@ -8,12 +8,10 @@ import ErrorBoundary from "./ErrorBoundary.jsx"
+ import FeedbackAdmin from "./admin/FeedbackAdmin.jsx"
+ import CookieNotice from "./CookieNotice.jsx"
+ import { getConsent, analyticsPersistence } from "./lib/consent.js"
++import { setSupabaseFailureReporter, updateRow } from "./lib/supabase.js"
+ import { appEntryPath } from "./mockups/StartCheckButton.jsx"
+ const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
+ 
+-const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
+-const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+-
+ // ── Acquisition attribution — captured once per browser, ever ─────────────────
+ // PostHog's own native first-touch mechanism ($initial_utm_source etc.) never
+ // actually activates in this app: it's gated behind person profile creation,
+@@ -52,8 +50,8 @@ const acquisition = getAcquisition()
+ // These catches only ever fire on a genuine thrown error (storage blocked/
+ // disabled, quota exceeded, corrupted JSON) — every call site already guards
+ // the merely-missing-key case with a ternary/if before touching the catch.
+-// Unconditional console.error (not DEV-gated, unlike reportSupabaseFailure in
+-// CandidApp.jsx) since these were previously silent in every environment.
++// Unconditional console.error (not DEV-gated, unlike Supabase failures in
++// src/lib/supabase.js) since these were previously silent in every environment.
+ function reportStorageFailure(context, e) {
+   console.error(`[Candid] localStorage failed — ${context}:`, e?.message || e);
+   posthog.capture("local_storage_failed", { context, error_message: e?.message || String(e) });
+@@ -75,6 +73,8 @@ if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
+     opt_out_capturing_by_default: getConsent() === "denied",
+   })
+ }
++// Every failed Supabase read or write in the browser (src/lib/supabase.js).
++setSupabaseFailureReporter(failure => posthog.capture("supabase_operation_failed", failure))
+ posthog.register({
+   acquisition_source: acquisition.source,
+   acquisition_medium: acquisition.medium,
+@@ -209,13 +209,7 @@ function WelcomeBackRoute() {
+     posthog.capture("user_returned");
+     try {
+       const rowId = localStorage.getItem('candid_report_row_id');
+-      if (rowId && SUPA_URL && SUPA_KEY) {
+-        fetch(`${SUPA_URL}/rest/v1/test?id=eq.${rowId}`, {
+-          method: "PATCH",
+-          headers: { "Content-Type": "application/json", apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, Prefer: "return=minimal" },
+-          body: JSON.stringify({ returned: true }),
+-        }).catch(() => {});
+-      }
++      if (rowId) updateRow("test", rowId, { returned: true });
+     } catch (e) { reportStorageFailure("welcome_back_mark_returned", e); }
+     // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-once
+   }, []);
+diff --git a/src/useReportRow.js b/src/useReportRow.js
+new file mode 100644
+index 0000000..37683e3
+--- /dev/null
++++ b/src/useReportRow.js
+@@ -0,0 +1,81 @@
++import { useRef } from "react";
++import posthog from "posthog-js";
++import { insertRow, updateRow } from "./lib/supabase.js";
++import { rowInputFields, rowReportFields } from "./lib/reportRow.js";
++
++const ROW_ID_KEY = "candid_report_row_id";
++
++// The user's one row in Supabase's `test` table: inserting it, PATCHing it,
++// and remembering its id. Rebuilt each render, so every function reads the
++// latest `d`, `m` and `statuses`. The functions are named as the app shell
++// uses them; the effects that decide when to save stay in the shell.
++export function useReportRow(d, m, statuses) {
++  const rowId = useRef(null);
++
++  // This browser's row: the one inserted this visit, or the one an earlier
++  // visit saved.
++  function currentRowId() {
++    if (rowId.current) return rowId.current;
++    try { return localStorage.getItem(ROW_ID_KEY); } catch(e) { return null; }
++  }
++
++  // Writes the user's row to `test` and remembers its id, in memory and in
++  // localStorage so a later visit can still PATCH it. Called at the app's
++  // entry (no score yet), and when a report or a Property save
++  // finds this browser has no row yet (see saveRow, propertyPatch). `extra`
++  // adds columns to the insert, the Property fields in that case.
++  async function insertReportRow(score, extra = {}) {
++    // Written once, ever, by main.jsx's getAcquisition() — read back here
++    // rather than re-derived, so the ORIGINAL first-touch source (not whatever
++    // UTM params happen to be in the URL right now) lands on the report row.
++    let acquisition = {};
++    try { acquisition = JSON.parse(localStorage.getItem('candid_acquisition') || '{}'); } catch(e) {}
++    // Blocked storage leaves these unknown rather than stopping the insert.
++    let assessmentStartedAt = null, confidenceScore = null;
++    try {
++      assessmentStartedAt = localStorage.getItem('candid_assessment_started_at') || null;
++      const v = localStorage.getItem('candid_confidence_score');
++      confidenceScore = v ? parseInt(v, 10) : null;
++    } catch(e) {}
++    const id = await insertRow("test", {
++      ...extra,
++      session_id: posthog.get_distinct_id?.() || null,
++      ...rowInputFields(d, m),
++      ...rowReportFields(statuses, score),
++      modules_completed: 0,
++      feedback_submitted: false,
++      acquisition_source: acquisition.source || "direct",
++      acquisition_medium: acquisition.medium || null,
++      acquisition_campaign: acquisition.campaign || null,
++      referred_by: acquisition.referred_by || null,
++      first_visit_at: acquisition.first_visit_at || null,
++      assessment_started_at: assessmentStartedAt,
++      returned: false,
++      confidence_score: confidenceScore,
++    });
++    if (id) {
++      rowId.current = id;
++      // Mirrored to localStorage (not just the in-memory ref) so a later
++      // "welcome back" visit — a fresh AppShell mount — can still PATCH
++      // `returned` onto the same row.
++      try { localStorage.setItem(ROW_ID_KEY, id); } catch(e) {}
++    }
++    return id;
++  }
++
++  // One row per user: PATCH this browser's row with `fields`, or insert it
++  // if there isn't one (made before rows were created at entry, or gone).
++  // `score` is for that insert.
++  async function saveRow(fields, score = null) {
++    const id = currentRowId();
++    const outcome = await updateRow("test", id, fields);
++    if (outcome === "missing") return insertReportRow(score);
++    return id;
++  }
++
++  return {
++    currentRowId, insertReportRow, saveRow,
++    rowInputFields: () => rowInputFields(d, m),
++    rowReportFields: score => rowReportFields(statuses, score),
++  };
++}

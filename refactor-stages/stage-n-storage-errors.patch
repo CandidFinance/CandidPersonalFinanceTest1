@@ -1,0 +1,458 @@
+diff --git a/src/CandidApp.jsx b/src/CandidApp.jsx
+index 2f709d5..8704fcd 100644
+--- a/src/CandidApp.jsx
++++ b/src/CandidApp.jsx
+@@ -30,6 +30,7 @@ import { readinessMissing } from "./lib/propertyReadiness.js";
+ import { selectRows, updateRow } from "./lib/supabase.js";
+ import { propertyRowFields } from "./lib/reportRow.js";
+ import { useReportRow } from "./useReportRow.js";
++import { reportStorageFailure } from "./lib/storage.js";
+ 
+ // Module names for Candid Assist's labels and "Elsewhere" list.
+ const ASSIST_MODULE_LABELS = { ...Object.fromEntries(MODULE_META.map(mm => [mm.key, mm.title])), property: "Property" };
+@@ -135,7 +136,7 @@ function loadInitialData() {
+       const reportDate = localStorage.getItem('candid_insights_date');
+       return rollTaxYear({ ...BLANK_DATA, ...JSON.parse(saved) }, now, reportDate ? new Date(reportDate) : null);
+     }
+-  } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to load saved inputs from localStorage:", e); }
++  } catch(e) { reportStorageFailure("load_inputs", e); }
+   return rollTaxYear(BLANK_DATA, now);
+ }
+ 
+@@ -143,7 +144,7 @@ function loadSavedInsights() {
+   try {
+     const saved = localStorage.getItem('candid_insights');
+     if (saved) return JSON.parse(saved);
+-  } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to load saved insights from localStorage:", e); }
++  } catch(e) { reportStorageFailure("load_insights", e); }
+   return null;
+ }
+ 
+@@ -154,7 +155,7 @@ function loadCompletedModules() {
+   try {
+     const saved = localStorage.getItem('candid_completed_modules');
+     if (saved) return JSON.parse(saved);
+-  } catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to load reviewed modules from localStorage:", e); }
++  } catch(e) { reportStorageFailure("load_completed_modules", e); }
+   return [];
+ }
+ 
+@@ -310,12 +311,12 @@ export default function AppShell() {
+ 
+   useEffect(() => {
+     try { localStorage.setItem('candid_inputs', JSON.stringify(rawD)); }
+-    catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist inputs to localStorage:", e); }
++    catch(e) { reportStorageFailure("save_inputs", e); }
+   }, [rawD]);
+ 
+   useEffect(() => {
+     try { localStorage.setItem('candid_completed_modules', JSON.stringify(completedModules)); }
+-    catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist reviewed modules to localStorage:", e); }
++    catch(e) { reportStorageFailure("save_completed_modules", e); }
+   }, [completedModules]);
+ 
+   // ── Savings rates — fetched once here (not per-component) since Assist and
+@@ -432,7 +433,7 @@ export default function AppShell() {
+       if (!patch) return;
+       pendingPropertyPatch.current = null;
+       propertyBaseline.current = JSON.stringify(patch);
+-      if (patch.salary) { try { localStorage.setItem('candid_property_income_saved', '1'); } catch(e) {} }
++      if (patch.salary) { try { localStorage.setItem('candid_property_income_saved', '1'); } catch(e) { reportStorageFailure("save_property_income_flag", e); } }
+       const full = { ...patch, property_updated_at: new Date().toISOString() };
+       if (creatingReportRow.current) {
+         const id = await creatingReportRow.current;
+@@ -457,7 +458,7 @@ export default function AppShell() {
+       // row (the patch left it out), so it's sent once on the next visit.
+       // Only when there is one: a newcomer's row is still being created.
+       let incomeSaved = true;
+-      try { incomeSaved = !!localStorage.getItem('candid_property_income_saved'); } catch(e) {}
++      try { incomeSaved = !!localStorage.getItem('candid_property_income_saved'); } catch(e) { reportStorageFailure("read_property_income_flag", e); }
+       propertyBaseline.current = !incomeSaved && propertyPatch.salary ? "" : json;
+       if (propertyBaseline.current === json) return;
+     }
+diff --git a/src/lib/consent.js b/src/lib/consent.js
+index f62b231..c92ed47 100644
+--- a/src/lib/consent.js
++++ b/src/lib/consent.js
+@@ -1,4 +1,5 @@
+ import posthog from "posthog-js";
++import { reportStorageFailure } from "./storage.js";
+ 
+ // Analytics cookies, only with consent. Until someone chooses, PostHog keeps
+ // everything in memory (no cookies, no local or session storage), so a visit
+@@ -13,6 +14,7 @@ export function getConsent() {
+     const v = localStorage.getItem(KEY);
+     return v === "granted" || v === "denied" ? v : null;
+   } catch (e) {
++    reportStorageFailure("read_cookie_choice", e);
+     return null;
+   }
+ }
+@@ -24,7 +26,7 @@ export function analyticsPersistence(choice) {
+ 
+ export function setConsent(choice) {
+   const before = getConsent();
+-  try { localStorage.setItem(KEY, choice); } catch (e) {}
++  try { localStorage.setItem(KEY, choice); } catch (e) { reportStorageFailure("save_cookie_choice", e); }
+   if (!posthog.__loaded) return;
+   if (choice === "granted") {
+     posthog.set_config({ persistence: analyticsPersistence(choice) });
+@@ -39,6 +41,6 @@ export function setConsent(choice) {
+ 
+ // "Cookie settings" in the site footer: ask again.
+ export function askConsentAgain() {
+-  try { localStorage.removeItem(KEY); } catch (e) {}
++  try { localStorage.removeItem(KEY); } catch (e) { reportStorageFailure("clear_cookie_choice", e); }
+   window.dispatchEvent(new Event(CONSENT_RESET_EVENT));
+ }
+diff --git a/src/lib/entitlement.js b/src/lib/entitlement.js
+index 54930bc..d66f243 100644
+--- a/src/lib/entitlement.js
++++ b/src/lib/entitlement.js
+@@ -1,3 +1,5 @@
++import { reportStorageFailure } from "./storage.js";
++
+ // Whether this browser has a Candid subscription (api/billing.js). Kept in
+ // localStorage, never in the user's inputs (`d`, which is synced to their
+ // row): a signed token naming their email, and what the server last said
+@@ -16,10 +18,10 @@ export const PLANS = {
+ export const ANNUAL_SAVING_PCT = Math.round((1 - PLANS.yearly.amount / (PLANS.monthly.amount * 12)) * 100);
+ 
+ function read() {
+-  try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; }
++  try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { reportStorageFailure("read_subscription", e); return null; }
+ }
+ function write(v) {
+-  try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch {}
++  try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch (e) { reportStorageFailure("save_subscription", e); }
+   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("candid-access", { detail: v }));
+ }
+ 
+@@ -95,7 +97,7 @@ export async function signInWithLink(restoreToken) {
+     try {
+       localStorage.setItem("candid_inputs", JSON.stringify(r.state.inputs));
+       if (Array.isArray(r.state.completedModules)) localStorage.setItem("candid_completed_modules", JSON.stringify(r.state.completedModules));
+-    } catch {}
++    } catch (e) { reportStorageFailure("save_signed_in_answers", e); }
+   }
+   return "signed-in";
+ }
+diff --git a/src/lib/storage.js b/src/lib/storage.js
+new file mode 100644
+index 0000000..40b3853
+--- /dev/null
++++ b/src/lib/storage.js
+@@ -0,0 +1,24 @@
++// One way to handle a failed localStorage read or write: report it and carry
++// on with the fallback. Storage can be blocked (private browsing, browser
++// settings), full, or hold corrupt JSON, and none of that should stop the
++// app. main.jsx sends the reports to PostHog. Each context is reported once
++// per page load, so storage that's full and written on every change doesn't
++// flood it. Failures before the reporter is set (reads at module load) are
++// kept and sent once it is.
++let reporter = null;
++const pending = [];
++const reported = new Set();
++
++// `report(context, error)` is called for each failure.
++export function setStorageFailureReporter(report) {
++  reporter = report;
++  while (pending.length) report(...pending.shift());
++}
++
++// `context` names what was being read or written, e.g. "load_inputs".
++export function reportStorageFailure(context, error) {
++  if (reported.has(context)) return;
++  reported.add(context);
++  if (reporter) reporter(context, error);
++  else pending.push([context, error]);
++}
+diff --git a/src/lib/storage.test.js b/src/lib/storage.test.js
+new file mode 100644
+index 0000000..f922f19
+--- /dev/null
++++ b/src/lib/storage.test.js
+@@ -0,0 +1,17 @@
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { reportStorageFailure, setStorageFailureReporter } from "./storage.js";
++
++test("storage failures before the reporter is set are kept, then sent once each", () => {
++  const boom = new Error("QuotaExceededError");
++  reportStorageFailure("save_inputs", boom);
++  reportStorageFailure("save_inputs", boom);
++  reportStorageFailure("read_subscription", boom);
++  const seen = [];
++  setStorageFailureReporter((context, e) => seen.push([context, e.message]));
++  assert.deepEqual(seen, [["save_inputs", "QuotaExceededError"], ["read_subscription", "QuotaExceededError"]]);
++  // Later failures go straight out, still once per context.
++  reportStorageFailure("save_inputs", boom);
++  reportStorageFailure("load_inputs", boom);
++  assert.deepEqual(seen.map(([c]) => c), ["save_inputs", "read_subscription", "load_inputs"]);
++});
+diff --git a/src/main.jsx b/src/main.jsx
+index bd3d0d9..bac8aa5 100644
+--- a/src/main.jsx
++++ b/src/main.jsx
+@@ -10,6 +10,7 @@ import FeedbackAdmin from "./admin/FeedbackAdmin.jsx"
+ import CookieNotice from "./CookieNotice.jsx"
+ import { getConsent, analyticsPersistence } from "./lib/consent.js"
+ import { setSupabaseFailureReporter, updateRow } from "./lib/supabase.js"
++import { setStorageFailureReporter, reportStorageFailure } from "./lib/storage.js"
+ import { appEntryPath } from "./site/StartCheckButton.jsx"
+ const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
+ // The app (/app/*) is its own chunk, so the marketing site doesn't download
+@@ -31,7 +32,7 @@ function getAcquisition() {
+   try {
+     const existing = localStorage.getItem('candid_acquisition')
+     if (existing) return { ...JSON.parse(existing), fresh: false }
+-  } catch (e) {}
++  } catch (e) { reportStorageFailure("read_acquisition", e) }
+   const p = new URLSearchParams(window.location.search)
+   // A ?ref=<id> referral link is treated as equivalent to a
+   // utm_source=referral&utm_medium=referral link, with the referring user's
+@@ -45,22 +46,11 @@ function getAcquisition() {
+     referred_by: ref || null,
+     first_visit_at: new Date().toISOString(),
+   }
+-  try { localStorage.setItem('candid_acquisition', JSON.stringify(record)) } catch (e) {}
++  try { localStorage.setItem('candid_acquisition', JSON.stringify(record)) } catch (e) { reportStorageFailure("save_acquisition", e) }
+   return { ...record, fresh: true }
+ }
+ const acquisition = getAcquisition()
+ 
+-// ── localStorage failure visibility ────────────────────────────────────────
+-// These catches only ever fire on a genuine thrown error (storage blocked/
+-// disabled, quota exceeded, corrupted JSON) — every call site already guards
+-// the merely-missing-key case with a ternary/if before touching the catch.
+-// Unconditional console.error (not DEV-gated, unlike Supabase failures in
+-// src/lib/supabase.js) since these were previously silent in every environment.
+-function reportStorageFailure(context, e) {
+-  console.error(`[Candid] localStorage failed — ${context}:`, e?.message || e);
+-  posthog.capture("local_storage_failed", { context, error_message: e?.message || String(e) });
+-}
+-
+ // ── Analytics — runs once at module load, production only ─────────────────────
+ if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
+   posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+@@ -79,6 +69,13 @@ if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
+ }
+ // Every failed Supabase read or write in the browser (src/lib/supabase.js).
+ setSupabaseFailureReporter(failure => posthog.capture("supabase_operation_failed", failure))
++// Every failed localStorage read or write (src/lib/storage.js). These only
++// fire on a genuine error (storage blocked or full, corrupt JSON), never on a
++// key that just isn't there, so the console error isn't limited to dev.
++setStorageFailureReporter((context, e) => {
++  console.error(`[Candid] localStorage failed — ${context}:`, e?.message || e)
++  posthog.capture("local_storage_failed", { context, error_message: e?.message || String(e) })
++})
+ posthog.register({
+   acquisition_source: acquisition.source,
+   acquisition_medium: acquisition.medium,
+diff --git a/src/mobile/MobileReminderAction.jsx b/src/mobile/MobileReminderAction.jsx
+index d2877bc..3bca79f 100644
+--- a/src/mobile/MobileReminderAction.jsx
++++ b/src/mobile/MobileReminderAction.jsx
+@@ -1,4 +1,5 @@
+ import { useState } from "react";
++import { reportStorageFailure } from "../lib/storage.js";
+ import { Bell, BellRing, Mail, CalendarPlus, Check } from "lucide-react";
+ import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL, SUCCESS } from "../design-tokens.js";
+ import { triggerCalendarReminder, nextAvailableWorkingDay } from "./reminders.js";
+@@ -25,7 +26,7 @@ import { buildMailtoUrl, draftAsText } from "./emailDrafts.js";
+ export default function MobileReminderAction({ id, title, description, email }) {
+   const storageKey = `candid_reminder_${id}`;
+   const [isSet, setIsSet] = useState(() => {
+-    try { return localStorage.getItem(storageKey) === "1"; } catch { return false; }
++    try { return localStorage.getItem(storageKey) === "1"; } catch (e) { reportStorageFailure("read_reminder", e); return false; }
+   });
+   const [panelOpen, setPanelOpen] = useState(false);
+   const [emailOpened, setEmailOpened] = useState(false);
+@@ -38,7 +39,7 @@ export default function MobileReminderAction({ id, title, description, email })
+       description: email ? `${description}\n\n${draftAsText(email)}` : description,
+       date: reminderDate,
+     });
+-    try { localStorage.setItem(storageKey, "1"); } catch {}
++    try { localStorage.setItem(storageKey, "1"); } catch (e) { reportStorageFailure("save_reminder", e); }
+     setIsSet(true);
+   };
+ 
+diff --git a/src/mobile/assist/CandidAssist.jsx b/src/mobile/assist/CandidAssist.jsx
+index 81089f3..0705204 100644
+--- a/src/mobile/assist/CandidAssist.jsx
++++ b/src/mobile/assist/CandidAssist.jsx
+@@ -1,4 +1,5 @@
+ import { useEffect, useMemo, useRef, useState } from "react";
++import { reportStorageFailure } from "../../lib/storage.js";
+ import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
+ import { Sparkles, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+ import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER } from "../../design-tokens.js";
+@@ -31,8 +32,8 @@ import { pct, bondsIn, fromName, ratesDate, sectionLabel, primaryButton, textBut
+ // panel keeps its place as the user moves around the app.
+ 
+ const SEEN_KEY = "candid_assist_seen";
+-const readSeen = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || []; } catch { return []; } };
+-const writeSeen = list => { try { localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-20))); } catch {} };
++const readSeen = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || []; } catch (e) { reportStorageFailure("read_assist_seen", e); return []; } };
++const writeSeen = list => { try { localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-20))); } catch (e) { reportStorageFailure("save_assist_seen", e); } };
+ const WIDE = 640;
+ 
+ // `page`: the module the user is on (null on Home, Modules and Forecast).
+diff --git a/src/mobile/reminders.js b/src/mobile/reminders.js
+index 8916ec7..c62a196 100644
+--- a/src/mobile/reminders.js
++++ b/src/mobile/reminders.js
+@@ -1,3 +1,5 @@
++import { reportStorageFailure } from "../lib/storage.js";
++
+ // Shared "add a calendar reminder" logic for mobile Win tiles' Bell action.
+ // No native app / calendar permission exists in a web PWA, so this generates
+ // a standard .ics file and hands it to the OS via a direct navigation to a
+@@ -41,7 +43,7 @@ function countOtherSetReminders(excludeId) {
+       }
+     }
+     return count;
+-  } catch { return 0; }
++  } catch (e) { reportStorageFailure("count_reminders", e); return 0; }
+ }
+ 
+ // The working day a given reminder should land on: next working day, plus
+diff --git a/src/mobile/screens/MobileEntryScreen.jsx b/src/mobile/screens/MobileEntryScreen.jsx
+index 0ac9d99..1ad0ba9 100644
+--- a/src/mobile/screens/MobileEntryScreen.jsx
++++ b/src/mobile/screens/MobileEntryScreen.jsx
+@@ -1,4 +1,5 @@
+ import { useEffect, useRef, useState } from "react";
++import { reportStorageFailure } from "../../lib/storage.js";
+ import { motion, MotionConfig } from "framer-motion";
+ import { Check, ChevronLeft } from "lucide-react";
+ import { NavBar } from "../../NavBar.jsx";
+@@ -19,7 +20,7 @@ export default function MobileEntryScreen({ d, m, set, onDone }) {
+   // reads it from (confidence_score).
+   const save = (field, value) => {
+     set(field, value);
+-    if (field === "confidence") { try { localStorage.setItem("candid_confidence_score", String(value)); } catch (e) {} }
++    if (field === "confidence") { try { localStorage.setItem("candid_confidence_score", String(value)); } catch (e) { reportStorageFailure("save_confidence", e); } }
+   };
+ 
+   // The chat fills the screen like a messaging app: the page itself doesn't
+diff --git a/src/site/SignInPage.jsx b/src/site/SignInPage.jsx
+index 82d55e6..c36a10a 100644
+--- a/src/site/SignInPage.jsx
++++ b/src/site/SignInPage.jsx
+@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
+ import posthog from "posthog-js";
+ import { G, MUT, TEXT, SERIF, WHITE, ERROR_TEXT } from "../design-tokens.js";
+ import { requestRestore, signInWithLink } from "../lib/entitlement.js";
++import { reportStorageFailure } from "../lib/storage.js";
+ import { validEmail } from "../lib/unlock.js";
+ import SiteLayout from "./SiteLayout.jsx";
+ 
+@@ -29,7 +30,7 @@ export default function SignInPage() {
+       // The app reads what's now in this browser when it opens. With no
+       // answers saved yet, they start the questions, already subscribed.
+       let hasAnswers = false;
+-      try { hasAnswers = !!JSON.parse(localStorage.getItem("candid_inputs") || "null")?.appEntered; } catch {}
++      try { hasAnswers = !!JSON.parse(localStorage.getItem("candid_inputs") || "null")?.appEntered; } catch (e) { reportStorageFailure("read_inputs_after_sign_in", e); }
+       window.location.replace(hasAnswers ? "/app/home" : "/app/start");
+     }).catch(() => setStage("invalid"));
+   }, [restore]);
+diff --git a/src/site/StartCheckButton.jsx b/src/site/StartCheckButton.jsx
+index b551732..5505df2 100644
+--- a/src/site/StartCheckButton.jsx
++++ b/src/site/StartCheckButton.jsx
+@@ -3,6 +3,7 @@ import posthog from "posthog-js";
+ import { motion } from "framer-motion";
+ import { ArrowRight } from "lucide-react";
+ import { WHITE, SANS } from "../design-tokens.js";
++import { reportStorageFailure } from "../lib/storage.js";
+ 
+ // Apple's own button blue — the one accent colour on the marketing pages that
+ // departs from Candid's usual green/gold, reserved for the main CTA.
+@@ -17,7 +18,7 @@ export function appEntryPath() {
+     const savedInputs = localStorage.getItem('candid_inputs');
+     const hasSavedInsights = !!localStorage.getItem('candid_insights');
+     if (savedInputs && (hasSavedInsights || JSON.parse(savedInputs).appEntered)) return "/app/home";
+-  } catch (e) {}
++  } catch (e) { reportStorageFailure("read_inputs_for_entry", e); }
+   return "/app/start";
+ }
+ 
+diff --git a/src/useReportRow.js b/src/useReportRow.js
+index 37683e3..cd9d1cc 100644
+--- a/src/useReportRow.js
++++ b/src/useReportRow.js
+@@ -2,6 +2,7 @@ import { useRef } from "react";
+ import posthog from "posthog-js";
+ import { insertRow, updateRow } from "./lib/supabase.js";
+ import { rowInputFields, rowReportFields } from "./lib/reportRow.js";
++import { reportStorageFailure } from "./lib/storage.js";
+ 
+ const ROW_ID_KEY = "candid_report_row_id";
+ 
+@@ -16,7 +17,7 @@ export function useReportRow(d, m, statuses) {
+   // visit saved.
+   function currentRowId() {
+     if (rowId.current) return rowId.current;
+-    try { return localStorage.getItem(ROW_ID_KEY); } catch(e) { return null; }
++    try { return localStorage.getItem(ROW_ID_KEY); } catch(e) { reportStorageFailure("read_row_id", e); return null; }
+   }
+ 
+   // Writes the user's row to `test` and remembers its id, in memory and in
+@@ -29,14 +30,14 @@ export function useReportRow(d, m, statuses) {
+     // rather than re-derived, so the ORIGINAL first-touch source (not whatever
+     // UTM params happen to be in the URL right now) lands on the report row.
+     let acquisition = {};
+-    try { acquisition = JSON.parse(localStorage.getItem('candid_acquisition') || '{}'); } catch(e) {}
++    try { acquisition = JSON.parse(localStorage.getItem('candid_acquisition') || '{}'); } catch(e) { reportStorageFailure("read_acquisition_for_row", e); }
+     // Blocked storage leaves these unknown rather than stopping the insert.
+     let assessmentStartedAt = null, confidenceScore = null;
+     try {
+       assessmentStartedAt = localStorage.getItem('candid_assessment_started_at') || null;
+       const v = localStorage.getItem('candid_confidence_score');
+       confidenceScore = v ? parseInt(v, 10) : null;
+-    } catch(e) {}
++    } catch(e) { reportStorageFailure("read_row_markers", e); }
+     const id = await insertRow("test", {
+       ...extra,
+       session_id: posthog.get_distinct_id?.() || null,
+@@ -58,7 +59,7 @@ export function useReportRow(d, m, statuses) {
+       // Mirrored to localStorage (not just the in-memory ref) so a later
+       // "welcome back" visit — a fresh AppShell mount — can still PATCH
+       // `returned` onto the same row.
+-      try { localStorage.setItem(ROW_ID_KEY, id); } catch(e) {}
++      try { localStorage.setItem(ROW_ID_KEY, id); } catch(e) { reportStorageFailure("save_row_id", e); }
+     }
+     return id;
+   }
+diff --git a/src/utils/deepLinks.js b/src/utils/deepLinks.js
+index c6638fc..fb72bc7 100644
+--- a/src/utils/deepLinks.js
++++ b/src/utils/deepLinks.js
+@@ -1,3 +1,5 @@
++import { reportStorageFailure } from "../lib/storage.js";
++
+ // Deep-link map for "go straight to my platform" actions — lets someone who
+ // already holds an account with one of these providers jump into that
+ // provider's app (or its web login if the app isn't installed) in one tap,
+@@ -38,7 +40,8 @@ export function getSavedProvider(storageKey) {
+   try {
+     const key = localStorage.getItem(storageKey);
+     return INVESTMENT_PROVIDERS.find(p => p.key === key) || null;
+-  } catch {
++  } catch (e) {
++    reportStorageFailure("read_saved_provider", e);
+     return null; // storage blocked (private mode, etc.) — just ask again
+   }
+ }
+@@ -46,8 +49,9 @@ export function getSavedProvider(storageKey) {
+ export function saveProvider(storageKey, providerKey) {
+   try {
+     localStorage.setItem(storageKey, providerKey);
+-  } catch {
++  } catch (e) {
+     // best-effort only — a failed save just means we ask again next time
++    reportStorageFailure("save_provider", e);
+   }
+ }
+ 

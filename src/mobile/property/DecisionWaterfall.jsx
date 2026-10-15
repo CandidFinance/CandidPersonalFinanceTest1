@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CircleAlert, CircleCheck, CircleDashed, ChevronRight } from "lucide-react";
-import { G, MUT, TEXT, SERIF, SC, WHITE, MODULE_META } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../design-tokens.js";
+import { MODULE_META } from "../../lib/moduleStatus.js";
 import { runWaterfall, waterfallInputs, VISIBLE_CHECKS, ISA_ALLOWANCE, EMERGENCY_RANGE_MONTHS } from "../../lib/waterfall.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt } from "../../lib/format.js";
@@ -22,9 +23,6 @@ const TITLES = {
 };
 
 // Each tile's single state indicator.
-// Built at render time, not module scope: this file is part of the
-// circular import with CandidApp.jsx (via MobilePropertyScreen), so tokens
-// imported from it can't be relied on while the module first evaluates.
 function stateIcon(state) {
   return {
     attention: { Icon: CircleAlert, color: SC.attention },

@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { COOKIE_DOMAIN } from "../../server/http.js";
 
 // Sandbox only — see truelayer/callback.js for the corresponding exchange.
 const AUTH_BASE = "https://auth.truelayer-sandbox.com";
@@ -6,10 +7,6 @@ const SCOPES = ["accounts", "balance", "transactions", "offline_access"];
 const STATE_COOKIE = "tl_state";
 const STATE_TTL_SECONDS = 600;
 const MAX_EMAIL_LEN = 254;
-// Vercel redirects between the apex and www hosts, and a host-scoped cookie
-// doesn't survive that hop — scoping to the parent domain (leading dot) makes
-// it valid on both candid-finance.co.uk and www.candid-finance.co.uk.
-const COOKIE_DOMAIN = ".candid-finance.co.uk";
 
 export default function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end();
@@ -46,12 +43,6 @@ export default function handler(req, res) {
     `state=${state}`,
   ].join("&");
 
-  const location = `${AUTH_BASE}/?${query}`;
-  // Temporary diagnostic — compare redirectUri character-for-character against
-  // what's registered in TrueLayer Console. Remove once the mismatch is found.
-  console.log("[truelayer/auth-link] redirect_uri (raw env value):", JSON.stringify(redirectUri));
-  console.log("[truelayer/auth-link] full auth URL sent to TrueLayer:", location);
-
-  res.writeHead(302, { Location: location });
+  res.writeHead(302, { Location: `${AUTH_BASE}/?${query}` });
   res.end();
 }

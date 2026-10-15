@@ -1,5 +1,5 @@
 import { Lock } from "lucide-react";
-import { G, MUT } from "../../CandidApp.jsx";
+import { G, MUT } from "../../design-tokens.js";
 
 const STEPS = [
   { key:"readiness", label:"1. Readiness" },

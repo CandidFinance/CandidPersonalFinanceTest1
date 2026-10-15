@@ -10,7 +10,7 @@
 // student loan, say), in which case no reveal or "Explain this" is offered.
 
 import { fmt } from "./format.js";
-import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.js";
+import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE } from "./pension.js";
 import { bestDrawdown, defaultDrawdownYears } from "./drawdown.js";
 import { retirementAgeFor } from "./metrics.js";
 import { calcCashOptimisation } from "./cash.js";

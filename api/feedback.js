@@ -1,9 +1,4 @@
-import crypto from "crypto";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-
-// ── Layer 1: only our own site (or local dev) may call this route ────────────
-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
+import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
 
 // service_role — never VITE_-prefixed, so it's never bundled to the client.
 // The `test` table's RLS now denies SELECT to everyone except service_role
@@ -13,45 +8,9 @@ const SUPA_URL = process.env.VITE_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_PASSWORD = process.env.FEEDBACK_ADMIN_PASSWORD;
 
-// ── Layer 2: durable brute-force guard on the shared password ────────────────
-// This gates real users' free-text opinions, not just AI spend like
-// api/claude.js's limiter — tighter window, same durable-Redis pattern so it
-// isn't reset by every cold start / bypassed across concurrent instances.
-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
-  : null;
-
-const attemptLimiter = redis && new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(20, "10 m"),
-  prefix: "ratelimit:feedback-admin",
-});
-
-function getClientIp(req) {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return req.socket?.remoteAddress || "unknown";
-}
-
-function isAllowedOrigin(req) {
-  const value = req.headers.origin || req.headers.referer;
-  if (!value) return false;
-  try {
-    return ALLOWED_HOSTNAMES.includes(new URL(value).hostname);
-  } catch {
-    return false;
-  }
-}
-
-// Constant-time compare so a wrong-but-close guess can't be distinguished
-// from a wrong guess by response timing.
-function passwordMatches(supplied, expected) {
-  if (typeof supplied !== "string") return false;
-  const a = Buffer.from(supplied);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(a, b);
-}
+// Brute-force guard on the shared password: this gates real users'
+// free-text opinions, so a tight window.
+const attemptLimiter = rateLimiter(20, "10 m", "ratelimit:feedback-admin");
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end();
@@ -63,11 +22,12 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Service temporarily unavailable" });
   }
 
+  // Only our own site (or local dev) may call this route.
   if (!isAllowedOrigin(req)) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const ip = getClientIp(req);
+  const ip = clientIp(req);
   if (attemptLimiter) {
     try {
       const { success } = await attemptLimiter.limit(ip);
@@ -77,7 +37,7 @@ export default async function handler(req, res) {
     }
   }
 
-  if (!passwordMatches(req.headers["x-admin-password"], ADMIN_PASSWORD)) {
+  if (!safeEqual(req.headers["x-admin-password"], ADMIN_PASSWORD)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

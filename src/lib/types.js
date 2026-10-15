@@ -1,0 +1,350 @@
+// The shapes of the data that runs through Candid, as JSDoc for editors and
+// readers (there's no TypeScript build). The engine's main functions refer to
+// them, e.g. `@param {import("./types.js").Inputs} d`.
+//
+// Inputs keep numbers as the strings the user typed ("" when blank), read
+// with `+d.salary || 0`; choices are option values ("yes", "no", "plan2").
+// BLANK_DATA in src/CandidApp.jsx is every field's starting value. The
+// metrics and statuses fields are calcMetrics' and computeModuleStatuses'
+// outputs, as the characterisation test records them.
+
+/**
+ * Entry, progress and the app's own state
+ * @typedef {Object} EntryInputs
+ * @property {string} name
+ * @property {string} email
+ * @property {string[]} interests Modules picked at the entry, plus "property" or "exploring".
+ * @property {boolean} appEntered Been through the entry, which opens the app.
+ * @property {string[]} selectedModules Modules whose questions have been answered or skipped.
+ * @property {string[]} [answeredModules] Modules whose walk-through was finished.
+ * @property {string[]} goalPicks
+ * @property {boolean} goalsAsked
+ * @property {boolean} scoreShown The Candid score has appeared (recorded once).
+ * @property {string[]} financialGoals
+ * @property {string} houseTargetAmount
+ * @property {string} houseTimeframe
+ * @property {string} bigPurchaseTargetAmount
+ * @property {string} bigPurchaseTimeframe
+ * @property {string} [confidence] The entry's confidence answer.
+ * @property {number} [inputsTaxYear] The tax year the "this tax year" figures belong to (rollTaxYear).
+ * @property {Object<string, {banked: number}>} [moduleBaselines] Each module's £ when first answered (moduleStatus.js).
+ * @property {boolean} [unlockGate] Came in after the paywall shipped (unlock.js).
+ * @property {string[]} [unlockedModules]
+ * @property {boolean} [unlockCallOk]
+ * @property {string} [unlockFeedback]
+ * @property {boolean} [alertsOptIn]
+ */
+
+/**
+ * About you and income
+ * @typedef {Object} IncomeInputs
+ * @property {string} age
+ * @property {string} salary
+ * @property {string} otherIncome
+ * @property {string} dividendIncome
+ * @property {string} bonusAmount
+ * @property {string} [hasBonus]
+ * @property {string} salaryTrajectory "stable", "moderate"...
+ * @property {string} employmentStatus "employed", "self_employed" or "not_working".
+ * @property {boolean} [employmentAsked]
+ * @property {string} [hasExtraIncome]
+ * @property {string} monthlyExpenses
+ * @property {string} higherBuffer
+ * @property {string} [emergencyMonths]
+ */
+
+/**
+ * Cash and savings
+ * @typedef {Object} CashInputs
+ * @property {string} cashSavings The single figure, used when there are no cash tiers.
+ * @property {string} savingsRate
+ * @property {string} premiumBonds
+ * @property {string} [hasPremiumBonds]
+ * @property {string} cashAccessType
+ * @property {{amount: string, rate: string, name?: string}[]} cashTiers One row per account.
+ * @property {string} [hasCashIsaThisYear]
+ */
+
+/**
+ * Investments and ISAs
+ * @typedef {Object} InvestmentInputs
+ * @property {string} hasInvestments
+ * @property {string} isaUsedThisYear Older inputs only; see isa.js.
+ * @property {string} isaPreviousBalance
+ * @property {string} isaType
+ * @property {string} unwrappedValue
+ * @property {string} [hasUnwrapped]
+ * @property {string} unrealisedGains
+ * @property {string} hasSoldAssetsOutsideWrapper
+ * @property {string} realisedCgtGains
+ * @property {string} isaThisYearCash
+ * @property {string} isaThisYearSS
+ * @property {string} isaThisYearLISA
+ * @property {string} isaThisYearOther
+ * @property {string} hasOtherIsaThisYear
+ * @property {string} isaThisYearOtherTypes
+ * @property {string} [hasLisa]
+ * @property {string} isaPrevCash
+ * @property {string} isaPrevSS
+ * @property {string} isaPrevLISA
+ * @property {string} isaPrevOther
+ */
+
+/**
+ * Pension
+ * @typedef {Object} PensionInputs
+ * @property {string} hasPension
+ * @property {string} [pensionStatus]
+ * @property {boolean} pensionUnknown
+ * @property {string} [hasPensionPot]
+ * @property {string} [hasOldPensions]
+ * @property {string} myContribution % of salary.
+ * @property {string} employerMatch % of salary.
+ * @property {string} potValue
+ * @property {string} potValue2
+ * @property {string} retirementAge
+ * @property {string} pensionType "sacrifice" or "relief".
+ * @property {string} niYears
+ * @property {string} [statePensionAmount]
+ * @property {string} [pensionAccess]
+ * @property {string} [pensionProtection]
+ * @property {string} [pensionProtectedAmount]
+ * @property {string} [taxFreeCashTaken]
+ */
+
+/**
+ * Student loan
+ * @typedef {Object} StudentLoanInputs
+ * @property {string} studentLoan "none", "plan1", "plan2", "plan4", "plan5" or "postgrad".
+ * @property {string} loanBalance
+ * @property {string} studentLoanRate
+ * @property {string} [slPlanAnswer]
+ * @property {string} [slPlanResult]
+ * @property {string} [slCountry]
+ * @property {string} [slCourse]
+ * @property {string} [slStart]
+ * @property {string} [slStudyYears]
+ * @property {string} [slFinishYear]
+ * @property {string} [slFirstDueYear]
+ * @property {string} [slTuition]
+ * @property {string} [slMaintenance]
+ * @property {string} [slBalanceEstimate]
+ * @property {string} [slBalanceResult]
+ */
+
+/**
+ * Buying a home (Property). Partner figures are asked only when buying together.
+ * @typedef {Object} PropertyInputs
+ * @property {string} propertyBuyingMode "alone" or "together".
+ * @property {string} propertyPrice
+ * @property {string} propertyCashAvailable
+ * @property {string} propertyStampDuty The user's own figure, for Scotland and Wales.
+ * @property {string} propertyFees
+ * @property {string} partnerSalary
+ * @property {string} partnerOtherIncome
+ * @property {string} partnerMyContribution
+ * @property {string} partnerEmployerMatch
+ * @property {string} partnerIsaThisYear
+ * @property {string} propertyRegion A PROPERTY_REGIONS value (regions.js).
+ * @property {string} propertyFirstTimeBuyer
+ * @property {string} partnerFirstTimeBuyer
+ * @property {string} propertySoleProperty
+ * @property {string} [propertyUkResident]
+ * @property {string} propertyMortgageTerm
+ * @property {string} propertyFixedYears
+ * @property {string} propertyMortgageRate
+ * @property {string} propertyRemortgageFee
+ * @property {string} propertyMonthlyRent
+ * @property {string} propertyHorizonYears
+ * @property {string} propertyTenure "freehold" or "leasehold".
+ * @property {string} propertyGroundRent
+ * @property {string} propertyGroundRentGrowth
+ * @property {string} propertyServiceCharge
+ * @property {string} propertyHousePriceGrowth
+ * @property {string} propertyRentGrowth
+ * @property {string} propertyInvestmentReturn
+ * @property {string} propertyDividendYield
+ * @property {string} propertyRenterMoney "cash" or "invested".
+ * @property {string} propertyCashReturn
+ * @property {string} propertyMaintenancePct
+ * @property {string} propertyLeaseholdMaintenance
+ * @property {string} propertySellingCosts
+ * @property {string} propertySpendingScope "household" or "mine", buying together.
+ * @property {boolean} propertyGuideReadinessDone
+ * @property {boolean} propertyGuideMortgageDone
+ * @property {boolean} propertyGuideRentVsBuyDone
+ */
+
+/**
+ * Mortgage, loans and family: modules hidden for now (HIDE_MVP_MODULES).
+ * @typedef {Object} OtherModuleInputs
+ * @property {string} hasMortgage
+ * @property {string} mortgageType
+ * @property {string} mortgageBalance
+ * @property {string} mortgageRate
+ * @property {string} monthlyMortgage
+ * @property {string} [mortgageOfferRate]
+ * @property {string} fixExpiryMonth
+ * @property {string} fixExpiryYear
+ * @property {string} mortgageProvider
+ * @property {string} propertyEquity
+ * @property {boolean} ownsOutright
+ * @property {string} outrightPropertyValue
+ * @property {string} hasPersonalLoan
+ * @property {string} personalLoanBalance
+ * @property {string} personalLoanRate
+ * @property {string} personalLoanMonthly
+ * @property {string} personalLoanTermRemaining
+ * @property {string} personalLoanAnnualExtra
+ * @property {string} personalLoanProvider
+ * @property {Object[]} [debts] Debts for the Property waterfall (waterfall.js).
+ * @property {string} hasKids
+ * @property {string} numKids
+ * @property {string} kidsAges
+ * @property {string} hasJISA
+ * @property {string} juniorISAValue
+ * @property {string} savingsGoal
+ * @property {string} investHorizon
+ * @property {string} inheritDirection
+ * @property {string} estateValue
+ * @property {string} hasWill
+ */
+
+/**
+ * Candid Assist (assist.js)
+ * @typedef {Object} AssistInputs
+ * @property {Object<string, string>|null} assistSnoozed Per item, the figures the user said "not now" to.
+ * @property {boolean} assistSkipIsa
+ * @property {boolean} assistSkipPb
+ * @property {Object[]} assistAccounts Accounts opened through Assist.
+ */
+
+/**
+ * The user's answers (`d`), kept in localStorage as `candid_inputs`.
+ * @typedef {EntryInputs & IncomeInputs & CashInputs & InvestmentInputs & PensionInputs & StudentLoanInputs & PropertyInputs & OtherModuleInputs & AssistInputs} Inputs
+ */
+
+/**
+ * Today's best savings rates, from the rate feed (CandidApp.jsx marketRates).
+ * Empty while the rates are loading.
+ * @typedef {Object} MarketRates
+ * @property {number} [isaRate] Best easy-access cash ISA rate, %.
+ * @property {number} [nonIsaRate] Best easy-access savings rate, %.
+ * @property {Object[]|null} [rows] The savings_rates rows, for spreading cash across accounts.
+ */
+
+/**
+ * Income and tax
+ * @typedef {Object} IncomeMetrics
+ * @property {number} salary
+ * @property {number} adjustedNetIncome
+ * @property {number} nonSavingsIncome
+ * @property {string} taxBandLabel
+ * @property {number} tr Marginal income tax rate on salary, as a fraction.
+ * @property {number} savingsTr Tax rate on savings interest, as a fraction.
+ * @property {number} taxYear
+ * @property {number} salarySacrifice
+ * @property {number} salaryGrowthRate
+ * @property {number} monthlyTakeHome
+ * @property {number} monthlySurplus
+ * @property {number} expenses
+ */
+
+/**
+ * Cash
+ * @typedef {Object} CashMetrics
+ * @property {number} cash
+ * @property {number} bonds Premium Bonds.
+ * @property {number} totalLiquid
+ * @property {number} runwayMonths
+ * @property {number} bufferMonths
+ * @property {number} emergencyFund
+ * @property {number} emergencyBuffer
+ * @property {number} emergencyShortfall
+ * @property {number} emergencyExcess
+ * @property {number} surplusCash
+ * @property {number} savingsRate
+ * @property {number} effectiveSavingsRate
+ * @property {number} bestSavingsRate
+ * @property {number} annualYieldGap
+ * @property {number} cashMoveAmount
+ * @property {boolean} cashExcessNotWorthMoving
+ */
+
+/**
+ * ISAs and investments
+ * @typedef {Object} IsaMetrics
+ * @property {number} isaHeadroom
+ * @property {number} cashIsaHeadroom
+ * @property {number} isaUsedThisYear
+ * @property {number} crystallisable
+ * @property {number} cgtSaving
+ * @property {number} cgtRate
+ * @property {number} remainingCgtAllowance
+ */
+
+/**
+ * Pension and State Pension
+ * @typedef {Object} PensionMetrics
+ * @property {string|null} pensionStatus
+ * @property {string} pensionType
+ * @property {number} missedMatch Employer match left unclaimed, £ a year.
+ * @property {number} projectedPot
+ * @property {number} years Years to retirement.
+ * @property {number} statePensionWeekly
+ * @property {number} statePensionAnnual
+ * @property {number} niYearsToFull
+ * @property {boolean} pastStatePensionAge
+ */
+
+/**
+ * Student loan
+ * @typedef {Object} StudentLoanMetrics
+ * @property {number} loanBal
+ * @property {boolean} loanBalEstimated
+ * @property {number} annualRepayment
+ * @property {number} slRepaymentRegular
+ * @property {number} slEarnings
+ * @property {boolean} willClear
+ */
+
+/**
+ * Net worth, property and the hidden modules
+ * @typedef {Object} NetWorthMetrics
+ * @property {number} totalAssets
+ * @property {number} totalLiabilities
+ * @property {number} netWorth
+ * @property {number} propertyEquity
+ * @property {number} propertyValue
+ * @property {number|null} ltv
+ * @property {number|null} daysToFixExpiry
+ * @property {number} personalLoanAnnualRepayment
+ * @property {number|null} personalLoanPayoffMonths
+ */
+
+/**
+ * What calcMetrics works out from the inputs (`m`). Amounts are £ a year
+ * unless the name says otherwise; rates are fractions (tr: 0.4) unless
+ * they're named in %.
+ * @typedef {IncomeMetrics & CashMetrics & IsaMetrics & PensionMetrics & StudentLoanMetrics & NetWorthMetrics} Metrics
+ */
+
+/**
+ * One module's state, from computeModuleStatuses.
+ * @typedef {Object} ModuleStatus
+ * @property {"ok"|"attention"|"critical"|"na"|"unknown"} status
+ * @property {number} impact £ a year at stake, for ordering and the score.
+ * @property {string|null} impactLabel
+ * @property {number} amount The £ the module's screen leads with.
+ * @property {number} [potentialAmount] Pension only.
+ * @property {boolean} [belowThreshold] Student loan only: earnings are under the repayment threshold.
+ * @property {boolean} [amountIsLumpSum] Kids only: the amount is a one-off, not a year's.
+ */
+
+/**
+ * Every module's state, by module key (cash, investments, pension,
+ * studentLoan, mortgage, personalLoan, kids).
+ * @typedef {Object<string, ModuleStatus>} Statuses
+ */
+
+export {};

@@ -1,11 +1,10 @@
 import { X, Plus } from "lucide-react";
-import { GOLD, MUT, CDARK, PILL_HEIGHT } from "../../CandidApp.jsx";
+import { GOLD, MUT, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
 import PillMoneyInput, { PILL_ANSWER_TEXT, pillFieldStyle } from "../PillMoneyInput.jsx";
 import { capField } from "../../lib/onboarding.js";
 
-// Repeatable "one row per cash account" list for the onboarding Cash step —
-// mobile equivalent of desktop's inline cashTiers grid (OnboardingStep,
-// CandidApp.jsx). Same data shape ([{amount,rate}]) and same field caps, so
+// Repeatable "one row per cash account" list for the onboarding Cash step:
+// cashTiers' data shape ([{amount,rate}]) and FIELD_CAPS' field caps, so
 // values written here read back identically everywhere else in the app.
 // Each account can also have a name (optional), which Candid Assist uses to
 // say exactly which account money would move from.
@@ -36,7 +35,7 @@ export default function MobileCashTiersList({ d, set }) {
           <PillMoneyInput label="Amount" value={tier.amount || null} onChange={v => updateTier(i, { amount: capField("isaPrevCash", v ?? "") })}/>
           <PillMoneyInput label="Rate" unit="%" value={tier.rate || null} onChange={v => updateTier(i, { rate: capField("savingsRate", v ?? "") })}/>
           {tiers.length > 1 && (
-            <button type="button" onClick={() => removeTier(i)} aria-label="Remove account" style={{background:"none",border:"none",padding:"6px",cursor:"pointer",flexShrink:0,color:"#6b6b6b"}}>
+            <button type="button" onClick={() => removeTier(i)} aria-label="Remove account" style={{background:"none",border:"none",padding:"6px",cursor:"pointer",flexShrink:0,color:MUT}}>
               <X size={16}/>
             </button>
           )}

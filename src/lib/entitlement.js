@@ -1,3 +1,5 @@
+import { reportStorageFailure } from "./storage.js";
+
 // Whether this browser has a Candid subscription (api/billing.js). Kept in
 // localStorage, never in the user's inputs (`d`, which is synced to their
 // row): a signed token naming their email, and what the server last said
@@ -16,10 +18,10 @@ export const PLANS = {
 export const ANNUAL_SAVING_PCT = Math.round((1 - PLANS.yearly.amount / (PLANS.monthly.amount * 12)) * 100);
 
 function read() {
-  try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; }
+  try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { reportStorageFailure("read_subscription", e); return null; }
 }
 function write(v) {
-  try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch {}
+  try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch (e) { reportStorageFailure("save_subscription", e); }
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("candid-access", { detail: v }));
 }
 
@@ -95,7 +97,7 @@ export async function signInWithLink(restoreToken) {
     try {
       localStorage.setItem("candid_inputs", JSON.stringify(r.state.inputs));
       if (Array.isArray(r.state.completedModules)) localStorage.setItem("candid_completed_modules", JSON.stringify(r.state.completedModules));
-    } catch {}
+    } catch (e) { reportStorageFailure("save_signed_in_answers", e); }
   }
   return "signed-in";
 }

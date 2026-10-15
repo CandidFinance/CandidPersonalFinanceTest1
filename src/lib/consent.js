@@ -1,4 +1,5 @@
 import posthog from "posthog-js";
+import { reportStorageFailure } from "./storage.js";
 
 // Analytics cookies, only with consent. Until someone chooses, PostHog keeps
 // everything in memory (no cookies, no local or session storage), so a visit
@@ -13,6 +14,7 @@ export function getConsent() {
     const v = localStorage.getItem(KEY);
     return v === "granted" || v === "denied" ? v : null;
   } catch (e) {
+    reportStorageFailure("read_cookie_choice", e);
     return null;
   }
 }
@@ -24,7 +26,7 @@ export function analyticsPersistence(choice) {
 
 export function setConsent(choice) {
   const before = getConsent();
-  try { localStorage.setItem(KEY, choice); } catch (e) {}
+  try { localStorage.setItem(KEY, choice); } catch (e) { reportStorageFailure("save_cookie_choice", e); }
   if (!posthog.__loaded) return;
   if (choice === "granted") {
     posthog.set_config({ persistence: analyticsPersistence(choice) });
@@ -39,6 +41,6 @@ export function setConsent(choice) {
 
 // "Cookie settings" in the site footer: ask again.
 export function askConsentAgain() {
-  try { localStorage.removeItem(KEY); } catch (e) {}
+  try { localStorage.removeItem(KEY); } catch (e) { reportStorageFailure("clear_cookie_choice", e); }
   window.dispatchEvent(new Event(CONSENT_RESET_EVENT));
 }

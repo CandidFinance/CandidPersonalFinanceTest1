@@ -1,5 +1,5 @@
 // One customer's life, a tax year at a time, with or without Candid
-// (investor-personas.md). `simulate` runs an archetype (archetypes.js) on an
+// (docs/investor-personas.md). `simulate` runs an archetype (archetypes.js) on an
 // economic path with a set of Candid's levers switched on; with none, it's
 // the life without Candid (inertia).
 //
@@ -20,7 +20,7 @@ import { calcStampDuty } from "../../src/lib/stampDuty.js";
 import * as R from "./rules.js";
 
 // Candid's levers. "today" levers are in the app now (or partly); "roadmap"
-// levers aren't built yet (investor-personas.md, section 1).
+// levers aren't built yet (docs/investor-personas.md, section 1).
 export const LEVERS = {
   cash:          { group: "today",   label: "Better savings rates, after tax" },
   pensionMatch:  { group: "today",   label: "Full employer pension match" },
@@ -450,7 +450,7 @@ export function simulate(arch, { path = "base", levers = [], actionRate = 0, mem
     };
     const cashSubs = people.map(() => 0);
     const moveCash = (i, isaOnly) => {
-      const p = people[i], x = inc[i];
+      const x = inc[i];
       const tiers = accounts.map((acc, k) => ({ acc, k })).filter(({ acc }) => !acc.isa);
       const d = {
         salary: String(Math.round(x.ani)), age: String(x.age), inputsTaxYear: y,
@@ -509,15 +509,15 @@ export function simulate(arch, { path = "base", levers = [], actionRate = 0, mem
     // ── Interest, prizes and investment returns ──
     const surplusBeforeInterest = sum(inc, x => x.net) + cbGross - hicbc + tfc - spending * pay * livingFactor - housing * (rent > 0 ? livingFactor : 1) - childcare - debtPayments
       - sum(inc, x => x.slOverpay) - oneOff - subscription;
-    let taxableInterest = 0, taxFree = 0;
+    let taxableInterest = 0;
     for (const acc of accounts) {
       const flowShare = acc === inflow() ? surplusBeforeInterest / 2 : 0;
       const r = rateOf(acc, e, member) / 100;
       const interest = Math.max(0, acc.amount + flowShare) * r;
-      if (acc.isa) taxFree += interest; else taxableInterest += interest;
+      if (!acc.isa) taxableInterest += interest;
       acc.amount += interest;
     }
-    const prizes = pb * e.premiumBonds / 100; pb += prizes; taxFree += prizes;
+    const prizes = pb * e.premiumBonds / 100; pb += prizes;
     for (const p of people) { const g = p.lisa * (member ? e.bestCashIsa : e.midMarket) / 100; p.lisa += g; }
     let savingsTaxTotal = 0, dividendTaxTotal = 0, cgtTotal = 0;
     for (const [i, p] of people.entries()) {

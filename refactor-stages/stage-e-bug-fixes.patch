@@ -1,0 +1,50 @@
+diff --git a/src/CandidApp.jsx b/src/CandidApp.jsx
+index 5181147..1adadc0 100644
+--- a/src/CandidApp.jsx
++++ b/src/CandidApp.jsx
+@@ -328,7 +328,7 @@ export default function AppShell() {
+   const location = useLocation();
+   const params = useParams();
+   const pathname = location.pathname;
+-  const assessmentStepNum = pathname.startsWith("/assessment/") ? parseInt(params.step, 10) : null;
++  const assessmentStepNum = pathname.startsWith("/app/assessment/") ? parseInt(params.step, 10) : null;
+ 
+   // rawD is the true persisted state — never mutated by the MVP hide, so any
+   // mortgage/personal-loan/kids answers a user already saved before the MVP
+@@ -339,8 +339,6 @@ export default function AppShell() {
+   const d = useMemo(() => sanitizeForMvp(rawD), [rawD]);
+   const [insights]                              = useState(loadSavedInsights);
+   const [completedModules, setCompletedModules] = useState(loadCompletedModules);
+-  const [feedbackOpen,    setFeedbackOpen]    = useState(false);
+-  const feedbackFired = useRef(false);
+   const supaRowId = useRef(null);
+   // Where a mobile edit started from a screen other than Home (e.g. the
+   // Property screen's "Add Cash & savings", see openMobileStep) returns to
+@@ -380,7 +378,7 @@ export default function AppShell() {
+     : null;
+   useEffect(() => {
+     function handlePageHide() {
+-      if (pathnameRef.current?.startsWith("/assessment/") && !assessmentCompletedRef.current) {
++      if (pathnameRef.current?.startsWith("/app/assessment/") && !assessmentCompletedRef.current) {
+         const stepN = assessmentStepRef.current;
+         // sendBeacon transport — same one PostHog's own $pageleave uses — so this
+         // has a real chance of actually reaching the server as the page unloads.
+@@ -715,18 +713,6 @@ export default function AppShell() {
+     return () => clearTimeout(t);
+   }, [propertyPatch]);
+ 
+-  // One-shot feedback trigger: 3s after all modules reviewed
+-  useEffect(() => {
+-    if (feedbackFired.current || !insights) return;
+-    const activeCount = Object.values(statuses).filter(s => s.status !== "na").length;
+-    if (activeCount > 0 && completedModules.length >= activeCount) {
+-      const t3 = setTimeout(() => {
+-        if (!feedbackFired.current) { feedbackFired.current = true; setFeedbackOpen(true); posthog.capture("feedback_modal_shown", { trigger: "completion" }); }
+-      }, 3000);
+-      return () => clearTimeout(t3);
+-    }
+-  }, [completedModules]);
+-
+   function markModuleComplete(key) {
+     setCompletedModules(prev => {
+       const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];

@@ -1,4 +1,4 @@
-import { MUT, WHITE } from "../CandidApp.jsx";
+import { MUT, WHITE } from "../design-tokens.js";
 
 // Shared circular "?" toggle for a short collapsed explanatory note — same
 // convention on every deep-dive/onboarding screen that needs one. Used to be

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { reportStorageFailure } from "../../lib/storage.js";
 import { motion, MotionConfig } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
-import { NavBar } from "../../CandidApp.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS } from "../../design-tokens.js";
+import { NavBar } from "../../NavBar.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, CREAM } from "../../design-tokens.js";
 import { ENTRY_QUESTIONS, toHandFor, entryChat, readingMs, CHAT_VARIANTS } from "../../lib/appEntry.js";
 import GuidedFlow from "../property/GuidedFlow.jsx";
 
@@ -10,7 +11,7 @@ import GuidedFlow from "../property/GuidedFlow.jsx";
 // confident they feel, what they'd like help with), then what's good to
 // have to hand, marked as the questions being done, then how Candid works,
 // as messages from Candid with replies to tap. Spec:
-// onboarding-guided-questions.md.
+// docs/onboarding-guided-questions.md.
 export default function MobileEntryScreen({ d, m, set, onDone }) {
   const [part, setPart] = useState("questions");
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [part]);
@@ -19,20 +20,20 @@ export default function MobileEntryScreen({ d, m, set, onDone }) {
   // reads it from (confidence_score).
   const save = (field, value) => {
     set(field, value);
-    if (field === "confidence") { try { localStorage.setItem("candid_confidence_score", String(value)); } catch (e) {} }
+    if (field === "confidence") { try { localStorage.setItem("candid_confidence_score", String(value)); } catch (e) { reportStorageFailure("save_confidence", e); } }
   };
 
   // The chat fills the screen like a messaging app: the page itself doesn't
   // scroll, the conversation does.
   if (part === "chat") return (
-    <div style={{height:"100dvh",background:"#faf7f0",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{height:"100dvh",background:CREAM,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <NavBar light center="How Candid works"/>
       <HowCandidWorks d={d} onDone={onDone}/>
     </div>
   );
 
   return (
-    <div style={{minHeight:"100vh",background:"#faf7f0",display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh",background:CREAM,display:"flex",flexDirection:"column"}}>
       <NavBar light center="Getting started"/>
       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
         {part === "questions" && (

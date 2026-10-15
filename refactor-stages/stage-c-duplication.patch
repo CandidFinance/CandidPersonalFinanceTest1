@@ -1,0 +1,272 @@
+diff --git a/src/CandidApp.jsx b/src/CandidApp.jsx
+index 3652ba1..7d4ee70 100644
+--- a/src/CandidApp.jsx
++++ b/src/CandidApp.jsx
+@@ -395,6 +395,9 @@ function loadCompletedModules() {
+   return [];
+ }
+ 
++// Screens open at their top, not where the last one was scrolled to.
++const scrollToTop = () => window.scrollTo({ top: 0, behavior: "instant" });
++
+ export default function AppShell() {
+   const navigate = useNavigate();
+   const location = useLocation();
+@@ -1089,7 +1092,7 @@ export default function AppShell() {
+           set("appEntered", true);
+           setRowSaveTick(t => t + 1);
+           navigate(takeAssessmentReturnPath());
+-          window.scrollTo({ top: 0, behavior: "instant" });
++          scrollToTop();
+         }}
+       />
+     );
+@@ -1105,6 +1108,10 @@ export default function AppShell() {
+     </button>
+   );
+   const editInputsButton = editInputsFor(null);
++  // The way back from a module page, the Property steps and a walk-through.
++  const modulesBackButton = (
++    <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
++  );
+ 
+   // On every tab-bar screen (MobileLayout renders it).
+   // Assist deals with the module page it's on (null: an overview page).
+@@ -1144,14 +1151,12 @@ export default function AppShell() {
+     if (propertyStep !== "readiness" && readinessMissing(d, m).length > 0) return <Navigate to="/app/property" replace />;
+     return (
+       <MobileLayout assist={assistNode} activeTab="modules"
+-        headerRight={
+-          <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+-        }>
++        headerRight={modulesBackButton}>
+         <MobilePropertyScreen step={propertyStep} d={d} m={m} set={set} regionalRows={regionalRates} marketRates={marketRates} onAddInputs={openMobileStep}
+           onOpenModule={key => navigate(`/app/module/${key}`)}
+           onSelectStep={next => {
+             navigate(PROPERTY_STEP_PATHS[next] || "/app/property");
+-            window.scrollTo({ top: 0, behavior: "instant" });
++            scrollToTop();
+           }}/>
+       </MobileLayout>
+     );
+@@ -1165,13 +1170,13 @@ export default function AppShell() {
+ 
+   if (pathname === "/app/inputs") {
+     const open = new URLSearchParams(window.location.search).get("open");
+-    const back = () => { const to = inputsReturnPath.current || "/app/home"; inputsReturnPath.current = null; navigate(to); window.scrollTo({ top: 0, behavior: "instant" }); };
++    const back = () => { const to = inputsReturnPath.current || "/app/home"; inputsReturnPath.current = null; navigate(to); scrollToTop(); };
+     return (
+       <MobileLayout assist={assistNode} activeTab={null}
+         headerRight={<button onClick={back} style={{background:G,border:"none",borderRadius:"100px",padding:"7px 16px",cursor:"pointer",color:WHITE,fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>Done</button>}>
+         <MobileInputsScreen key={open || "all"} d={d} m={m} set={set} open={open}
+           onStartModule={key => navigate(`/app/module/${key}`)}
+-          onOpenModule={key => { inputsReturnPath.current = null; navigate(`/app/module/${key}`); window.scrollTo({ top: 0, behavior: "instant" }); }}
++          onOpenModule={key => { inputsReturnPath.current = null; navigate(`/app/module/${key}`); scrollToTop(); }}
+ />
+       </MobileLayout>
+     );
+@@ -1195,9 +1200,7 @@ export default function AppShell() {
+     if (moduleGuideStarts(mobileActiveModule, d) || moduleRerun === mobileActiveModule) {
+       return (
+         <MobileLayout assist={assistNode} activeTab="modules"
+-          headerRight={
+-            <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+-          }>
++          headerRight={modulesBackButton}>
+           <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} rerun={moduleRerun === mobileActiveModule}
+             onDone={(how, at) => {
+               const selected = d.selectedModules || [];
+@@ -1220,7 +1223,7 @@ export default function AppShell() {
+               }
+               setModuleRerun(null);
+               setRowSaveTick(t => t + 1);
+-              window.scrollTo({ top: 0, behavior: "instant" });
++              scrollToTop();
+             }}/>
+         </MobileLayout>
+       );
+@@ -1233,9 +1236,7 @@ export default function AppShell() {
+     if (isLocked(d, mobileActiveModule)) {
+       return (
+         <MobileLayout assist={assistNode} activeTab="modules"
+-          headerRight={
+-            <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+-          }>
++          headerRight={modulesBackButton}>
+           <MobileUnlock moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses}
+             onLeaveEmail={email => {
+               set("email", email); set("alertsOptIn", true);
+@@ -1256,14 +1257,12 @@ export default function AppShell() {
+     if (revealModule === mobileActiveModule && revealSteps) {
+       return (
+         <MobileLayout assist={assistNode} activeTab="modules"
+-          headerRight={
+-            <button onClick={() => navigate("/app/modules")} style={{background:"none",border:"none",padding:0,color:G,fontSize:FONT_SIZE.BODY,fontWeight:700,cursor:"pointer"}}>‹ Modules</button>
+-          }>
++          headerRight={modulesBackButton}>
+           <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps}
+             onDone={(how, step) => {
+               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
+               setRevealModule(null);
+-              window.scrollTo({ top: 0, behavior: "instant" });
++              scrollToTop();
+             }}/>
+         </MobileLayout>
+       );
+diff --git a/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx b/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
+index 5841e8d..e6d1054 100644
+--- a/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
++++ b/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
+@@ -1,4 +1,5 @@
+-import { useState, useRef, useEffect } from "react";
++import { useState } from "react";
++import { useElementWidth } from "../useElementWidth.js";
+ import { useNavigate } from "react-router-dom";
+ import { loanAlternatives } from "../../lib/crossModule.js";
+ import { ExternalLink, Wrench, ChevronRight } from "lucide-react";
+@@ -42,20 +43,8 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+   // once the user types their own value into the editor, which then stops
+   // tracking further slider movement (their explicit edit wins).
+   const [manualBalanceInput, setManualBalanceInput] = useState(null);
+-  const chartWrapRef = useRef(null);
+-  // Measured in real CSS pixels so the viewBox always matches the rendered
+-  // width 1:1 — see mobile Forecast's chart for the same pattern/rationale.
+-  const [chartWidth, setChartWidth] = useState(300);
+-  useEffect(() => {
+-    const el = chartWrapRef.current;
+-    if (!el) return;
+-    const update = () => setChartWidth(el.clientWidth || 300);
+-    update();
+-    const ro = new ResizeObserver(update);
+-    ro.observe(el);
+-    return () => ro.disconnect();
+-    // The chart sits under "Explore what-ifs": measure it once that's open.
+-  }, [exploreOpen]);
++  // The chart sits under "Explore what-ifs": measured once that's open.
++  const [chartWrapRef, chartWidth] = useElementWidth(300, [exploreOpen]);
+   // Default overpayment slider position: the largest round amount the user's
+   // spare cash could actually cover, falling back to the smallest option.
+   // Computed from `m` alone (no `sl`/guard dependency) so this hook can stay
+diff --git a/src/mobile/property/MortgageStep.jsx b/src/mobile/property/MortgageStep.jsx
+index 7b218f6..d083b7e 100644
+--- a/src/mobile/property/MortgageStep.jsx
++++ b/src/mobile/property/MortgageStep.jsx
+@@ -1,4 +1,5 @@
+-import { useState, useRef, useEffect } from "react";
++import { useState, useRef } from "react";
++import { useElementWidth } from "../useElementWidth.js";
+ import { motion } from "framer-motion";
+ import { ChevronRight } from "lucide-react";
+ import EmptyResultCard from "./EmptyResultCard.jsx";
+@@ -35,17 +36,7 @@ const SPENDING_SCOPE_OPTIONS = [{ value:"mine", label:"Just mine" }, { value:"ho
+ // Measured in real pixels so the viewBox matches the rendered width 1:1
+ // (same approach as NetCostChart in RentVsBuyStep).
+ function RepaymentPath({ payment, fixedYears, termYears, outcomes }) {
+-  const wrapRef = useRef(null);
+-  const [width, setWidth] = useState(320);
+-  useEffect(() => {
+-    const el = wrapRef.current;
+-    if (!el) return;
+-    const update = () => setWidth(el.clientWidth || 320);
+-    update();
+-    const ro = new ResizeObserver(update);
+-    ro.observe(el);
+-    return () => ro.disconnect();
+-  }, []);
++  const [wrapRef, width] = useElementWidth(320);
+   const colour = { stress: SC.critical, moderate: TEXT, lower: SC.ok };
+   const H = 112, PT = 14, PB = 14, GUTTER = 66, LABEL_GAP = 30;
+   const plotW = Math.max(60, width - GUTTER);
+diff --git a/src/mobile/property/RentVsBuyStep.jsx b/src/mobile/property/RentVsBuyStep.jsx
+index d902f45..6574aef 100644
+--- a/src/mobile/property/RentVsBuyStep.jsx
++++ b/src/mobile/property/RentVsBuyStep.jsx
+@@ -1,4 +1,5 @@
+ import { useState, useRef, useEffect } from "react";
++import { useElementWidth } from "../useElementWidth.js";
+ import { ArrowUp, CircleAlert } from "lucide-react";
+ import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC, WARNING, PillSlider } from "../../CandidApp.jsx";
+ import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, ISA_ALLOWANCE } from "../../lib/rentVsBuy.js";
+@@ -75,17 +76,7 @@ function Timeline({ rows, selectedYear, onSelect }) {
+ // Measured in real pixels so the viewBox matches the rendered width 1:1
+ // (same approach as MobileForecastScreen).
+ function NetCostChart({ rows, buyingAtStart, selectedYear }) {
+-  const wrapRef = useRef(null);
+-  const [width, setWidth] = useState(320);
+-  useEffect(() => {
+-    const el = wrapRef.current;
+-    if (!el) return;
+-    const update = () => setWidth(el.clientWidth || 320);
+-    update();
+-    const ro = new ResizeObserver(update);
+-    ro.observe(el);
+-    return () => ro.disconnect();
+-  }, []);
++  const [wrapRef, width] = useElementWidth(320);
+   const n = rows.length, H = 120, PT = 8, PB = 6;
+   const buying = [buyingAtStart, ...rows.map(r => r.buying.netCost)];
+   const renting = [0, ...rows.map(r => r.renting.netCost)];
+diff --git a/src/mobile/screens/MobileForecastScreen.jsx b/src/mobile/screens/MobileForecastScreen.jsx
+index def1890..625d5e5 100644
+--- a/src/mobile/screens/MobileForecastScreen.jsx
++++ b/src/mobile/screens/MobileForecastScreen.jsx
+@@ -1,4 +1,5 @@
+-import { useState, useRef, useEffect } from "react";
++import { useState } from "react";
++import { useElementWidth } from "../useElementWidth.js";
+ import { Lock, ChevronRight } from "lucide-react";
+ import { WHITE, MUT, TEXT, G, GOLD, SERIF, PillSlider, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_CARD } from "../../CandidApp.jsx";
+ import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
+@@ -81,21 +82,8 @@ export default function MobileForecastScreen({ d, m }) {
+   const [lumpSum, setLumpSum] = useState(null);
+   const [openTip, setOpenTip] = useState(null);
+   const [showNwAssumptions, setShowNwAssumptions] = useState(false);
+-  const chartWrapRef = useRef(null);
+-  // Measured in real CSS pixels so the viewBox always matches the rendered
+-  // width 1:1 — stretching a small fixed viewBox to fill a wider container
+-  // (via preserveAspectRatio="none") scaled strokes/text non-uniformly and
+-  // made the chart look blurry/distorted.
+-  const [chartWidth, setChartWidth] = useState(340);
+-  useEffect(() => {
+-    const el = chartWrapRef.current;
+-    if (!el) return;
+-    const update = () => setChartWidth(el.clientWidth || 340);
+-    update();
+-    const ro = new ResizeObserver(update);
+-    ro.observe(el);
+-    return () => ro.disconnect();
+-  }, [view]);
++  // Re-measured when the view switches: each view has its own chart.
++  const [chartWrapRef, chartWidth] = useElementWidth(340, [view]);
+ 
+   const forecast = calcForecast(d, m, surplus, horizon, lumpSum ?? 0);
+   const series = calcForecastSeries(d, m, surplus, horizon, lumpSum ?? 0);
+diff --git a/src/mobile/useElementWidth.js b/src/mobile/useElementWidth.js
+new file mode 100644
+index 0000000..f701135
+--- /dev/null
++++ b/src/mobile/useElementWidth.js
+@@ -0,0 +1,23 @@
++import { useEffect, useRef, useState } from "react";
++
++// A chart's width in real CSS pixels, kept current with a ResizeObserver, so
++// its SVG viewBox matches the rendered width 1:1 (stretching a fixed viewBox
++// scales strokes and text unevenly). Returns [ref, width]: put `ref` on the
++// element to measure. `fallback` is the width before the first measurement,
++// or whenever the element measures 0. `deps` re-measure when they change,
++// e.g. once a section holding the chart opens.
++export function useElementWidth(fallback, deps = []) {
++  const ref = useRef(null);
++  const [width, setWidth] = useState(fallback);
++  useEffect(() => {
++    const el = ref.current;
++    if (!el) return;
++    const update = () => setWidth(el.clientWidth || fallback);
++    update();
++    const ro = new ResizeObserver(update);
++    ro.observe(el);
++    return () => ro.disconnect();
++    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-measures on the caller's deps
++  }, deps);
++  return [ref, width];
++}

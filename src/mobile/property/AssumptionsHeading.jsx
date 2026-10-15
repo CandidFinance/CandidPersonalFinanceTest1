@@ -1,4 +1,4 @@
-import { G, MUT } from "../../CandidApp.jsx";
+import { G, MUT } from "../../design-tokens.js";
 
 // The line above a Property step's inputs, with "Walk me through it" on the
 // right to rerun the step's guided walk-through (GuidedFlow). Shared so
