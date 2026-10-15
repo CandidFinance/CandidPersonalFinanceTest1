@@ -10,13 +10,31 @@
 //   <candid-footer></candid-footer>
 //       The site footer, with the regulatory disclaimer.
 //
-// Every page also gets its OpenGraph and Twitter card tags (addSocialMeta).
+// Every page also gets its OpenGraph and Twitter card tags (addSocialMeta)
+// and the company's Organization structured data (addOrganization).
 import { DISCLAIMER, DISCLAIMER_DETAIL } from "./disclaimer.js";
 
 export const SITE_URL = "https://www.candid-finance.co.uk";
 // Shared image for pages that don't name their own og:image. 1200x630, made
 // by scripts/social-images.js.
 export const DEFAULT_SOCIAL_IMAGE = `${SITE_URL}/og/home.png`;
+export const COMPANIES_HOUSE_URL = "https://find-and-update.company-information.service.gov.uk/company/17383565";
+
+// Schema.org Organization, on every page. Other JSON-LD on a page refers to
+// it by "@id" (e.g. a calculator's "publisher").
+export const ORGANIZATION = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${SITE_URL}/#organization`,
+  name: "Candid Personal Finance Ltd",
+  alternateName: "Candid",
+  url: `${SITE_URL}/`,
+  logo: `${SITE_URL}/icon-512.png`,
+  identifier: { "@type": "PropertyValue", propertyID: "UK Companies House company number", value: "17383565" },
+  address: { "@type": "PostalAddress", streetAddress: "66 Paul Street", addressLocality: "London", postalCode: "EC2A 4NA", addressCountry: "GB" },
+  founder: { "@type": "Person", name: "Harvey Preston" },
+  sameAs: [COMPANIES_HOUSE_URL],
+};
 
 export function renderLastUpdated(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date))) {
@@ -34,6 +52,7 @@ export function renderFooter() {
     <p style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;line-height:1.6;">${DISCLAIMER_DETAIL}</p>
     <p style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:10px;line-height:1.6;">
       © 2026 Candid Personal Finance Ltd · Company no. 17383565 ·
+      <a href="/about.html" style="${link}">About</a> ·
       <a href="/privacy.html" style="${link}">Privacy</a> ·
       <a href="/terms.html" style="${link}">Terms</a>
     </p>
@@ -60,7 +79,7 @@ export function addSocialMeta(html) {
     ["property", "og:type", "website"],
     ["property", "og:url", url],
     ["property", "og:image", image],
-    ["property", "og:site_name", "Candid"],
+    ["property", "og:site_name", "Candid Finance"],
     ["name", "twitter:card", "summary_large_image"],
     ["name", "twitter:title", title],
     ["name", "twitter:description", description],
@@ -71,8 +90,13 @@ export function addSocialMeta(html) {
   return html.replace("</head>", `    ${markup}\n  </head>`);
 }
 
+export function addOrganization(html) {
+  const json = JSON.stringify(ORGANIZATION, null, 2).replace(/\n/g, "\n    ");
+  return html.replace("</head>", `    <script type="application/ld+json">\n    ${json}\n    </script>\n  </head>`);
+}
+
 export function applySitePartials(html) {
-  const out = addSocialMeta(html)
+  const out = addOrganization(addSocialMeta(html))
     .replace(/<candid-last-updated\s+date=["']([^"']*)["']\s*><\/candid-last-updated>/g, (_, date) => renderLastUpdated(date))
     .replace(/<candid-footer><\/candid-footer>/g, renderFooter());
   const leftover = out.match(/<candid-[a-z-]+[^>]*>/);

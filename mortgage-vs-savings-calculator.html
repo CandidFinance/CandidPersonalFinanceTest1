@@ -13,14 +13,39 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Mortgage Overpayment vs High-Yield Savings Calculator",
-    "url": "https://www.candid-finance.co.uk/mortgage-vs-savings-calculator.html",
-    "description": "Free UK calculator — compares overpaying a mortgage against holding the same cash in a savings account or Cash ISA until a fixed-rate deal ends, accounting for the Personal Savings Allowance.",
-    "applicationCategory": "FinanceApplication",
-    "operatingSystem": "Any",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
-    "publisher": { "@type": "Organization", "name": "Candid Personal Finance Ltd" }
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "Mortgage Overpayment vs High-Yield Savings Calculator",
+        "url": "https://www.candid-finance.co.uk/mortgage-vs-savings-calculator.html",
+        "description": "Free UK calculator — compares overpaying a mortgage against holding the same cash in a savings account or Cash ISA until a fixed-rate deal ends, accounting for the Personal Savings Allowance.",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "All",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
+        "publisher": { "@id": "https://www.candid-finance.co.uk/#organization" }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Why does the Personal Savings Allowance matter when comparing overpaying a mortgage with saving?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Interest from a standard (non-ISA) savings account counts as taxable income. Your Personal Savings Allowance lets you earn some of it tax-free each year: {{PSA_BASIC}} for basic-rate taxpayers, {{PSA_HIGHER}} for higher-rate and {{PSA_ADDITIONAL}} for additional-rate. Above that, interest is taxed at your marginal rate. A Cash ISA is tax-free regardless of amount, which is why it's usually the fairer comparison against mortgage overpayment for higher earners."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "When does overpaying the mortgage tend to win, and when does saving?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Overpaying tends to come out ahead when your mortgage rate is meaningfully higher than the after-tax return you'd get from saving instead, which is common for additional-rate taxpayers in a standard savings account, since {{ADDITIONAL_RATE}} tax can wipe out much of the headline rate. Saving tends to win when you have access to a Cash ISA at a rate close to your mortgage rate, since none of that return is lost to tax, and you keep the cash accessible rather than locked into your home. Early Repayment Charges on many fixed mortgages are a separate reason to prefer saving until the fix actually ends."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -131,7 +156,7 @@
     <div id="bridge" style="display:none;background:#faf7f0;border:1.5px dashed rgba(22,47,36,0.3);border-radius:14px;padding:22px 24px;margin-top:22px;">
       <div style="font-size:11px;font-weight:800;color:#C4963A;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Your mortgage fix is only part of the equation</div>
       <p style="margin-top:0;">See how your overpayments compare against pension match gaps and ISA allowances. Candid checks your whole picture in about 5 minutes, and your first module is free.</p>
-      <a href="/" style="display:inline-block;margin-top:14px;background:#162F24;color:#faf7f0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture →</a>
+      <a href="/app/start" style="display:inline-block;margin-top:14px;background:#162F24;color:#faf7f0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;">See your full picture →</a>
     </div>
 
     <!-- ── Explainer content (static, for search + trust) ──────────────── -->
@@ -146,6 +171,7 @@
       <tr><td>Higher rate</td><td>{{PSA_HIGHER}}/yr</td><td>{{HIGHER_RATE}}</td></tr>
       <tr><td>Additional rate</td><td>{{PSA_ADDITIONAL}}</td><td>{{ADDITIONAL_RATE}} (on all of it)</td></tr>
     </table>
+    <p style="font-size:13px;line-height:1.6;"><strong>Sources and method.</strong> Allowances and tax rates are the current UK figures, the same ones Candid's app calculates with: <a href="https://www.gov.uk/apply-tax-free-interest-on-savings">HMRC: tax on savings interest and the Personal Savings Allowance</a> and <a href="https://www.gov.uk/individual-savings-accounts">GOV.UK: Individual Savings Accounts</a>. Savings rates move with the <a href="https://www.bankofengland.co.uk/monetary-policy/the-interest-rate-bank-rate">Bank of England's Bank Rate</a>; the default rate above is the best rate in Candid's own savings rates table, and you can type your own. The calculator compounds both options monthly over the time left on your fix and shows one central estimate.</p>
 
     <h2>When overpaying tends to win, and when saving does</h2>
     <p>As a rule of thumb: overpaying tends to come out ahead when your mortgage rate is meaningfully higher than the after-tax return you'd get from saving instead — which is common for additional-rate taxpayers in a standard savings account, since {{ADDITIONAL_RATE}} tax can wipe out much of the headline rate. Saving tends to win when you have access to a Cash ISA at a rate close to your mortgage rate, since none of that return is lost to tax, and you keep the cash accessible rather than locked into your home. Early Repayment Charges on many fixed mortgages are a separate reason to prefer saving until the fix actually ends — check your mortgage terms before overpaying beyond any penalty-free allowance.</p>

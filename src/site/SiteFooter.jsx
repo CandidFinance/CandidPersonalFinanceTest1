@@ -23,6 +23,7 @@ export default function SiteFooter() {
       <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
         <span>© 2026 Candid Finance</span>
         <Link to="/what-candid-is" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>What Candid is and isn't</Link>
+        <a href="/about.html" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>About</a>
         <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Privacy Policy</a>
         <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Terms of Service</a>
         <button type="button" onClick={askConsentAgain} style={{ background: "none", border: "none", padding: 0, font: "inherit", color: "rgba(255,255,255,0.35)", cursor: "pointer" }}>Cookie settings</button>
