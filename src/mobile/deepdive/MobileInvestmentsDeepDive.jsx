@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fmt } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, getModuleProducts, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
+import { getModuleProducts } from "../moduleProducts.js";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProviderTile from "../MobileProviderTile.jsx";
 import GoToProviderButton from "../GoToProviderButton.jsx";
@@ -8,7 +8,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
+import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CRITICAL, CDARK, SUCCESS } from "../../design-tokens.js";
 import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 
 // Trimmed mobile version of desktop's Investments deep dive (ModuleDeepDive,
@@ -21,9 +21,8 @@ import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 // savingsRates wired into the mobile route yet, and inline charts need
 // mobile-specific redesign, not a direct port).
 // Leads with the answer: the tax-free profit tile only when there's profit to
-// talk about, otherwise the ISA allowance first. `onShowReveal` replays the
-// answer step by step ("Explain this").
-export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrystallisedGain, onShowReveal }) {
+// talk about, otherwise the ISA allowance first.
+export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrystallisedGain }) {
   const [openInfo, setOpenInfo] = useState(null); // "bnb" | "useit" | "isa" | null
   const [loggingGain, setLoggingGain] = useState(false);
   const [amountSoldInput, setAmountSoldInput] = useState(null);
@@ -134,7 +133,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
               <div style={rowStyle}><span>Profit so far</span><span style={{fontWeight:600}}>{fmt(totalGains)}</span></div>
               <div style={rowStyle}><span>Less: tax-free allowance left</span><span>−{fmt(m.crystallisable)}</span></div>
               <div style={{...rowStyle,borderTop:"1px solid rgba(22,47,36,0.1)",fontWeight:600}}><span>Profit above the allowance</span><span>{fmt(taxableSurplus)}</span></div>
-              <div style={{...rowStyle,fontWeight:700,color:instantSellTax>0?"#c0392b":G}}><span>Tax if you sold it all today ({cgtRatePct}%)</span><span>{fmt(instantSellTax)}</span></div>
+              <div style={{...rowStyle,fontWeight:700,color:instantSellTax>0?CRITICAL:G}}><span>Tax if you sold it all today ({cgtRatePct}%)</span><span>{fmt(instantSellTax)}</span></div>
             </div>
 
             {instantSellTax > 0 ? (
@@ -142,7 +141,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
                 <div style={{display:"flex",gap:"8px",marginBottom:"6px"}}>
                   <div style={{flex:1,background:WHITE,border:"1.5px solid rgba(192,57,43,0.25)",borderRadius:"10px",padding:"10px 12px"}}>
                     <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Sell it all today</div>
-                    <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:"#c0392b"}}>{fmt(instantSellTax)}</div>
+                    <div style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:CRITICAL}}>{fmt(instantSellTax)}</div>
                     <div style={{fontSize:"10.5px",color:MUT,marginTop:"2px"}}>Tax due</div>
                   </div>
                   <div style={{flex:1,background:"rgba(196,150,58,0.1)",border:`1.5px solid ${GOLD}`,borderRadius:"10px",padding:"10px 12px"}}>
@@ -166,7 +165,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
                     I've sold some — update my figures
                   </button>
                 ) : (
-                  <div style={{background:"#ede7db",borderRadius:"10px",padding:"12px 14px"}}>
+                  <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px"}}>
                     <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Record what you sold</div>
                     <div style={{display:"flex",gap:"8px"}}>
                       <PillMoneyInput label="Amount sold" value={amountSoldInput} onChange={setAmountSoldInput}/>
@@ -191,18 +190,18 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
                   <InfoButton onClick={() => setOpenInfo(o => o==="bnb"?null:"bnb")} open={openInfo==="bnb"}/>
                 </div>
                 {openInfo === "bnb" && (
-                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
+                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
                     HMRC's "30-day rule" cancels the gain if you repurchase the same shares within 30 days. Buying back inside an ISA or pension sidesteps this — outside a wrapper, wait 30 days or buy a similarly-exposed fund instead.
                   </p>
                 )}
               </div>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                  <span style={{fontSize:"12.5px",fontWeight:600,color:"#c0392b"}}>Use it or lose it</span>
+                  <span style={{fontSize:"12.5px",fontWeight:600,color:CRITICAL}}>Use it or lose it</span>
                   <InfoButton onClick={() => setOpenInfo(o => o==="useit"?null:"useit")} open={openInfo==="useit"}/>
                 </div>
                 {openInfo === "useit" && (
-                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:"#ede7db",borderRadius:"8px",padding:"8px 10px"}}>
+                  <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"6px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
                     The £3,000 exemption doesn't carry over — whatever's unused is gone on April 5th.
                   </p>
                 )}
@@ -223,7 +222,7 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
         headline={m.isaHeadroom > 0
           ? `${fmt(m.isaHeadroom)} remaining.`
           : "You've used your full £20,000 ISA allowance this tax year."}
-        tagLabel="Future opportunity" tagColor="#2d6b4a"
+        tagLabel="Future opportunity" tagColor={SUCCESS}
         reminder={m.isaHeadroom > 0 ? {
           id: "investments-isa-allowance",
           title: buildReminderSubject(fmt(m.isaHeadroom), "Unused ISA allowance"),

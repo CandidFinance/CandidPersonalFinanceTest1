@@ -3,15 +3,19 @@ import ReactDOM from "react-dom/client"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLocation } from "react-router-dom"
 import posthog from "posthog-js"
 import { MotionConfig } from "framer-motion"
-import CandidApp, { PageWrap, NavBar, ContentWrap, G, GOLD, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "./CandidApp.jsx"
+import { NavBar } from "./NavBar.jsx"
+import { G, GOLD, SERIF, SANS } from "./design-tokens.js"
 import ErrorBoundary from "./ErrorBoundary.jsx"
+import FeedbackAdmin from "./admin/FeedbackAdmin.jsx"
 import CookieNotice from "./CookieNotice.jsx"
 import { getConsent, analyticsPersistence } from "./lib/consent.js"
-import { appEntryPath } from "./mockups/StartCheckButton.jsx"
+import { setSupabaseFailureReporter, updateRow } from "./lib/supabase.js"
+import { setStorageFailureReporter, reportStorageFailure } from "./lib/storage.js"
+import { appEntryPath } from "./site/StartCheckButton.jsx"
 const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
-
-const SUPA_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+// The app (/app/*) is its own chunk, so the marketing site doesn't download
+// it; it loads the first time an /app page opens.
+const CandidApp = lazy(() => import("./CandidApp.jsx"))
 
 // ── Acquisition attribution — captured once per browser, ever ─────────────────
 // PostHog's own native first-touch mechanism ($initial_utm_source etc.) never
@@ -28,12 +32,12 @@ function getAcquisition() {
   try {
     const existing = localStorage.getItem('candid_acquisition')
     if (existing) return { ...JSON.parse(existing), fresh: false }
-  } catch (e) {}
+  } catch (e) { reportStorageFailure("read_acquisition", e) }
   const p = new URLSearchParams(window.location.search)
   // A ?ref=<id> referral link is treated as equivalent to a
   // utm_source=referral&utm_medium=referral link, with the referring user's
-  // own id (their posthog distinct_id, reused rather than minting a new one —
-  // see ReferralCTA in CandidApp.jsx) carried alongside as referred_by.
+  // own id (their posthog distinct_id, reused rather than minting a new one)
+  // carried alongside as referred_by.
   const ref = p.get('ref')
   const record = {
     source: ref ? 'referral' : (p.get('utm_source') || 'direct'),
@@ -42,21 +46,10 @@ function getAcquisition() {
     referred_by: ref || null,
     first_visit_at: new Date().toISOString(),
   }
-  try { localStorage.setItem('candid_acquisition', JSON.stringify(record)) } catch (e) {}
+  try { localStorage.setItem('candid_acquisition', JSON.stringify(record)) } catch (e) { reportStorageFailure("save_acquisition", e) }
   return { ...record, fresh: true }
 }
 const acquisition = getAcquisition()
-
-// ── localStorage failure visibility ────────────────────────────────────────
-// These catches only ever fire on a genuine thrown error (storage blocked/
-// disabled, quota exceeded, corrupted JSON) — every call site already guards
-// the merely-missing-key case with a ternary/if before touching the catch.
-// Unconditional console.error (not DEV-gated, unlike reportSupabaseFailure in
-// CandidApp.jsx) since these were previously silent in every environment.
-function reportStorageFailure(context, e) {
-  console.error(`[Candid] localStorage failed — ${context}:`, e?.message || e);
-  posthog.capture("local_storage_failed", { context, error_message: e?.message || String(e) });
-}
 
 // ── Analytics — runs once at module load, production only ─────────────────────
 if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
@@ -74,6 +67,15 @@ if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_KEY) {
     opt_out_capturing_by_default: getConsent() === "denied",
   })
 }
+// Every failed Supabase read or write in the browser (src/lib/supabase.js).
+setSupabaseFailureReporter(failure => posthog.capture("supabase_operation_failed", failure))
+// Every failed localStorage read or write (src/lib/storage.js). These only
+// fire on a genuine error (storage blocked or full, corrupt JSON), never on a
+// key that just isn't there, so the console error isn't limited to dev.
+setStorageFailureReporter((context, e) => {
+  console.error(`[Candid] localStorage failed — ${context}:`, e?.message || e)
+  posthog.capture("local_storage_failed", { context, error_message: e?.message || String(e) })
+})
 posthog.register({
   acquisition_source: acquisition.source,
   acquisition_medium: acquisition.medium,
@@ -101,13 +103,13 @@ if (SHOW_DEV_TOOLS) {
 }
 
 // The live marketing site — rebuilt at /new during review, now promoted to
-// "/" itself (see RootRoute below). Kept lazy so the desktop app bundle
-// (CandidApp.jsx) doesn't pull this in and vice versa.
-const NewLandingPage = lazy(() => import("./mockups/NewLandingPage.jsx"))
-const TheProblemPage = lazy(() => import("./mockups/TheProblemPage.jsx"))
-const HowItWorksPage = lazy(() => import("./mockups/HowItWorksPage.jsx"))
-const SignInPage = lazy(() => import("./mockups/SignInPage.jsx"))
-const WhatCandidIsPage = lazy(() => import("./mockups/WhatCandidIsPage.jsx"))
+// "/" itself (see RootRoute below). Lazy, like the app itself, so each
+// page downloads only its own code.
+const LandingPage = lazy(() => import("./site/LandingPage.jsx"))
+const TheProblemPage = lazy(() => import("./site/TheProblemPage.jsx"))
+const HowItWorksPage = lazy(() => import("./site/HowItWorksPage.jsx"))
+const SignInPage = lazy(() => import("./site/SignInPage.jsx"))
+const WhatCandidIsPage = lazy(() => import("./site/WhatCandidIsPage.jsx"))
 
 // ── Welcome back screen ───────────────────────────────────────────────────────
 function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStartFresh }) {
@@ -169,116 +171,6 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
   );
 }
 
-// ── Internal feedback admin (password-gated server-side, see api/feedback.js) ─
-// No persistence of the password across reloads by design — this shows real
-// users' free-text opinions, so the convenience of "stay logged in" isn't
-// worth it for a page opened rarely by one person.
-function FeedbackAdmin() {
-  const [password, setPassword] = useState("");
-  const [rows, setRows] = useState(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/feedback", { headers: { "x-admin-password": password } });
-      if (res.status === 401) { setError("Wrong password"); setLoading(false); return; }
-      if (res.status === 429) { setError("Too many attempts — try again shortly"); setLoading(false); return; }
-      if (!res.ok) { setError("Something went wrong fetching feedback"); setLoading(false); return; }
-      const data = await res.json();
-      setRows(data.rows);
-    } catch (e) {
-      setError("Network error");
-    }
-    setLoading(false);
-  }
-
-  const cellStyle = { padding: "10px 14px", borderBottom: "1px solid rgba(22,47,36,0.1)", fontSize: "13px", color: TEXT, verticalAlign: "top", textAlign: "left" };
-  const headStyle = { ...cellStyle, fontWeight: 700, color: G, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", borderBottom: `2px solid ${G}`, whiteSpace: "nowrap" };
-
-  if (!rows) {
-    return (
-      <div style={{ minHeight: "100vh", background: CREAM, display: "flex", flexDirection: "column" }}>
-        <NavBar center="Feedback admin"/>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, padding: "24px" }}>
-          <form onSubmit={handleSubmit} style={{ background: WHITE, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "340px", boxShadow: "0 8px 32px rgba(22,47,36,0.1)" }}>
-            <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, marginBottom: "18px" }}>Feedback admin</div>
-            <input
-              type="password"
-              autoFocus
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Password"
-              style={{ width: "100%", padding: "10px 12px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "14px", fontFamily: SANS, marginBottom: "12px" }}
-            />
-            <button type="submit" disabled={loading || !password} style={{ width: "100%", padding: "11px", background: (loading || !password) ? "rgba(22,47,36,0.25)" : G, border: "none", borderRadius: "8px", color: WHITE, fontSize: "14px", fontWeight: 600, cursor: (loading || !password) ? "not-allowed" : "pointer", fontFamily: SANS }}>
-              {loading ? "Checking…" : "View feedback"}
-            </button>
-            {error && <div style={{ color: "#b3261e", fontSize: "13px", marginTop: "10px" }}>{error}</div>}
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ minHeight: "100vh", background: CREAM, display: "flex", flexDirection: "column" }}>
-      <NavBar center="Feedback admin"/>
-      <div style={{ fontFamily: SANS, padding: "32px 24px" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div style={{ fontFamily: SERIF, fontSize: "22px", fontWeight: 700, color: G, marginBottom: "4px" }}>Feedback ({rows.length})</div>
-          <div style={{ fontSize: "12px", color: MUT, marginBottom: "20px" }}>Most recent first</div>
-          {rows.length === 0 ? (
-            <div style={{ color: MUT, fontSize: "14px" }}>No feedback submitted yet.</div>
-          ) : (
-            <div style={{ overflowX: "auto", background: WHITE, borderRadius: "10px" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={headStyle}>When</th>
-                    <th style={headStyle}>Session</th>
-                    <th style={headStyle}>Confidence</th>
-                    <th style={headStyle}>Q1: Knew something new?</th>
-                    <th style={{ ...headStyle, minWidth: "220px" }}>Q2: Most useful thing</th>
-                    <th style={{ ...headStyle, minWidth: "220px" }}>Q3: Would change anything?</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map(r => (
-                    <tr key={r.id}>
-                      <td style={cellStyle}>{new Date(r.created_at).toLocaleString("en-GB")}</td>
-                      <td style={{ ...cellStyle, fontFamily: "monospace", fontSize: "11px", color: MUT }}>{r.session_id || "—"}</td>
-                      <td style={cellStyle}>{r.confidence_score ?? "—"}</td>
-                      <td style={cellStyle}>{r.post_feedback_knew_something || "—"}</td>
-                      <td style={{ ...cellStyle, whiteSpace: "pre-wrap" }}>{r.post_feedback_useful_text || "—"}</td>
-                      <td style={{ ...cellStyle, whiteSpace: "pre-wrap" }}>
-                        {r.post_feedback_would_change || "—"}
-                        {r.post_feedback_change_details ? ` — ${r.post_feedback_change_details}` : ""}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Root route ("/") ── the live marketing site, for everyone, except a
-// TrueLayer bounce. TrueLayer's bank-connect callback and hosted-payment-page
-// redirect always land here (never inside the app — the API callback
-// redirects to the site root, and the hosted payment page redirects straight
-// to return_uri with no server hop), so this checks for those params first
-// and forwards into the mobile-native wizard's Cash & savings step (route 5
-// — MobileOnboardingStep shares the same ALL_STEP_DEFS/step numbering as the
-// desktop wizard, and already has its own TrueLayer connect UI) with the
-// query string intact, instead of ever rendering the marketing page.
 // The old report flow (questions at /assessment, an AI-written report at
 // /dashboard, the desktop modules) is switched off: each old address goes
 // to the app's own page for it (advice-vs-guidance review, fix 5).
@@ -288,13 +180,22 @@ function LegacyRedirect({ to }) {
   return <Navigate to={to(params) + search} replace />;
 }
 
+// ── Root route ("/") ── the live marketing site, for everyone, except a
+// TrueLayer bounce. TrueLayer's bank-connect callback and hosted-payment-page
+// redirect always land here (never inside the app — the API callback
+// redirects to the site root, and the hosted payment page redirects straight
+// to return_uri with no server hop), so this checks for those params first
+// and forwards into the wizard's Cash & savings step (route 5 — it shares
+// ALL_STEP_DEFS' step numbering, and already has its own TrueLayer connect
+// UI) with the query string intact, instead of ever rendering the marketing
+// page.
 function RootRoute() {
   const search = new URLSearchParams(window.location.search);
   const isTrueLayerBounce = search.get('truelayer') || search.get('truelayer_payment');
   if (isTrueLayerBounce) {
     return <Navigate to={`/app/assessment/5${window.location.search}`} replace />;
   }
-  return <Suspense fallback={null}><NewLandingPage /></Suspense>;
+  return <Suspense fallback={null}><LandingPage /></Suspense>;
 }
 
 // ── Returning-visitor screen ── same content/behaviour as the old root
@@ -309,13 +210,7 @@ function WelcomeBackRoute() {
     posthog.capture("user_returned");
     try {
       const rowId = localStorage.getItem('candid_report_row_id');
-      if (rowId && SUPA_URL && SUPA_KEY) {
-        fetch(`${SUPA_URL}/rest/v1/test?id=eq.${rowId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, Prefer: "return=minimal" },
-          body: JSON.stringify({ returned: true }),
-        }).catch(() => {});
-      }
+      if (rowId) updateRow("test", rowId, { returned: true });
     } catch (e) { reportStorageFailure("welcome_back_mark_returned", e); }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-once
   }, []);
@@ -352,7 +247,7 @@ function BetaRedirect() {
 function CandidAppLayout() {
   return (
     <div id="candid-app" style={{ minHeight: "100vh" }}>
-      <CandidApp />
+      <Suspense fallback={null}><CandidApp /></Suspense>
     </div>
   );
 }
@@ -388,17 +283,16 @@ function AppRoutes() {
         <Route path="/welcome-back" element={<WelcomeBackRoute />} />
         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
         <Route path="/admin/rates" element={<Suspense fallback={null}><RatesAdmin /></Suspense>} />
-        {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
-            holds — d, insights, completedModules, one-shot modal refs, etc.)
-            stays mounted across navigation between all three of these paths,
-            branching on the URL internally the same way it used to branch on
-            local `screen` state. */}
         <Route path="/assessment/:step" element={<LegacyRedirect to={p => `/app/assessment/${p.step}`} />} />
         <Route path="/dashboard" element={<LegacyRedirect to={() => "/app/home"} />} />
         <Route path="/modules" element={<LegacyRedirect to={() => "/app/modules"} />} />
         <Route path="/forecast" element={<LegacyRedirect to={() => "/app/forecast"} />} />
         <Route path="/chat" element={<LegacyRedirect to={() => "/app/chat"} />} />
         <Route path="/module/:moduleKey" element={<LegacyRedirect to={p => `/app/module/${p.moduleKey}`} />} />
+        {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
+            holds — d, insights, completedModules, refs, etc.) stays mounted
+            across navigation between all of these paths, branching on the
+            URL internally. */}
         <Route element={<CandidAppLayout key={devReloadKey} />}>
           <Route path="/app/home" />
           <Route path="/app/modules" />

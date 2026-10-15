@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import { MUT, TEXT, CDARK, FONT_SIZE, PILL_HEIGHT } from "../../CandidApp.jsx";
+import { MUT, TEXT, CDARK, FONT_SIZE, PILL_HEIGHT } from "../../design-tokens.js";
 import { pillFieldStyle } from "../PillMoneyInput.jsx";
 
 // Dropdown pill, PILL_HEIGHT tall like every other input pill. A native

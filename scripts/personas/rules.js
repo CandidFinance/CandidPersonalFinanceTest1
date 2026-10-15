@@ -1,5 +1,5 @@
 // The economy and the tax rules, year by year, for the customer-lives model
-// (investor-personas.md, section 2). Year 1 is the 2026/27 tax year; a tax
+// (docs/investor-personas.md, section 2). Year 1 is the 2026/27 tax year; a tax
 // year is named by the calendar year it starts in, as in src/lib/taxYear.js.
 //
 // Rates in the app that change on a set date come from the app's own tax.js

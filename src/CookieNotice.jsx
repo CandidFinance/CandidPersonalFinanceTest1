@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { G, WHITE, MUT, TEXT } from "./CandidApp.jsx";
+import { G, WHITE, MUT, TEXT } from "./design-tokens.js";
 import { getConsent, setConsent, CONSENT_RESET_EVENT } from "./lib/consent.js";
 
 // The cookie notice (src/lib/consent.js), across the site and the app until

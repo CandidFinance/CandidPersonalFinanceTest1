@@ -1,3 +1,5 @@
+import { reportStorageFailure } from "../lib/storage.js";
+
 // Deep-link map for "go straight to my platform" actions — lets someone who
 // already holds an account with one of these providers jump into that
 // provider's app (or its web login if the app isn't installed) in one tap,
@@ -38,7 +40,8 @@ export function getSavedProvider(storageKey) {
   try {
     const key = localStorage.getItem(storageKey);
     return INVESTMENT_PROVIDERS.find(p => p.key === key) || null;
-  } catch {
+  } catch (e) {
+    reportStorageFailure("read_saved_provider", e);
     return null; // storage blocked (private mode, etc.) — just ask again
   }
 }
@@ -46,8 +49,9 @@ export function getSavedProvider(storageKey) {
 export function saveProvider(storageKey, providerKey) {
   try {
     localStorage.setItem(storageKey, providerKey);
-  } catch {
+  } catch (e) {
     // best-effort only — a failed save just means we ask again next time
+    reportStorageFailure("save_provider", e);
   }
 }
 

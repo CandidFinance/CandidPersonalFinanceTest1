@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ExternalLink, ChevronRight } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../CandidApp.jsx";
-import { PROVIDER_TILE_FADE_CLEAR } from "../design-tokens.js";
+import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../design-tokens.js";
 
 // Collapsible "Best [X] right now" provider-rate tile — collapsed by default
 // to roughly 2 rows' worth of height: the 1st row fully visible, the 2nd

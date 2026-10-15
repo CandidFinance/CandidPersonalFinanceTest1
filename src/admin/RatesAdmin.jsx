@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { NavBar, G, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "../CandidApp.jsx";
+import { NavBar } from "../NavBar.jsx";
+import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS, ERROR_TEXT } from "../design-tokens.js";
 
 // Internal review page for the weekly savings rate feed (api/rates.js).
 // Same password as the feedback admin, and like it, nothing is remembered
@@ -8,7 +9,7 @@ import { NavBar, G, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "../CandidApp.js
 // from the page, the sources and how their last check went, and what's live.
 
 const CHANGE_LABEL = { new: "New product", rate_change: "Big rate change", missing: "No longer on the page" };
-const STATUS_COLOR = { ok: "#2d6b4a", unchanged: "#2d6b4a", no_rates: "#b9661a", no_content: "#b9661a", fetch_failed: "#b3261e", extract_failed: "#b3261e", error: "#b3261e" };
+const STATUS_COLOR = { ok: SUCCESS, unchanged: SUCCESS, no_rates: "#b9661a", no_content: "#b9661a", fetch_failed: ERROR_TEXT, extract_failed: ERROR_TEXT, error: ERROR_TEXT };
 
 const cell = { padding: "8px 10px", borderBottom: "1px solid rgba(22,47,36,0.1)", fontSize: "13px", color: TEXT, verticalAlign: "top", textAlign: "left" };
 const head = { ...cell, fontWeight: 700, color: G, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", borderBottom: `2px solid ${G}`, whiteSpace: "nowrap" };
@@ -62,7 +63,7 @@ export default function RatesAdmin() {
             <button type="submit" disabled={!!busy || !password} style={{ ...button(true), width: "100%", padding: "11px", fontSize: "14px", opacity: (busy || !password) ? 0.4 : 1 }}>
               {busy ? "Checking..." : "Open"}
             </button>
-            {error && <div style={{ color: "#b3261e", fontSize: "13px", marginTop: "10px" }}>{error}</div>}
+            {error && <div style={{ color: ERROR_TEXT, fontSize: "13px", marginTop: "10px" }}>{error}</div>}
           </form>
         </div>
       </div>
@@ -80,7 +81,7 @@ export default function RatesAdmin() {
           </button>
           <span style={{ fontSize: "12px", color: MUT }}>The daily job checks any page not read for 6 days, so each is read about once a week.</span>
         </div>
-        {error && <div style={{ color: "#b3261e", fontSize: "13px", marginTop: "10px" }}>{error}</div>}
+        {error && <div style={{ color: ERROR_TEXT, fontSize: "13px", marginTop: "10px" }}>{error}</div>}
         {lastRun && (
           <div style={{ marginTop: "12px", fontSize: "12.5px", color: TEXT, background: WHITE, borderRadius: "8px", padding: "10px 12px" }}>
             {lastRun.length === 0 ? "Nothing to check." : lastRun.map((r, i) => (
@@ -178,7 +179,7 @@ export default function RatesAdmin() {
                         {s.android_app_url && <a href={s.android_app_url} target="_blank" rel="noopener noreferrer" style={{ color: G }}>Google Play</a>}
                         <div style={{ fontSize: "12px", marginTop: "4px" }}>
                           {s.app_links_confirmed_at
-                            ? <span style={{ color: "#2d6b4a", fontWeight: 600 }}>Confirmed</span>
+                            ? <span style={{ color: SUCCESS, fontWeight: 600 }}>Confirmed</span>
                             : <>
                                 <span style={{ color: "#b9661a", fontWeight: 600, marginRight: "8px" }}>Not confirmed</span>
                                 <button type="button" style={button(true)} disabled={!!busy} onClick={() => call("POST", { action: "confirm_app_links", id: s.id }, s.id)}>Confirm</button>

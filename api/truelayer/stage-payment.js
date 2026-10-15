@@ -1,7 +1,6 @@
 import crypto from "crypto";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
 import * as tlSigning from "truelayer-signing";
+import { isAllowedOrigin, clientIp, redis, rateLimiter } from "../../server/http.js";
 
 // Sandbox only — stages a mock bank-transfer pay-in via TrueLayer's Payments
 // API v3 and hands back a hosted payment page URL for the human to complete
@@ -12,7 +11,6 @@ const AUTH_BASE = "https://auth.truelayer-sandbox.com";
 const API_BASE = "https://api.truelayer-sandbox.com";
 const HOSTED_PAGE_BASE = "https://payment.truelayer-sandbox.com/payments";
 const PAYMENTS_PATH = "/v3/payments";
-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
 const APP_ORIGIN = "https://candid-finance.co.uk";
 
 // Fixed staging amount per spec — deliberately not accepted from the client,
@@ -35,31 +33,7 @@ const MOCK_USER = { name: "Candid Sandbox User", email: "sandbox-user@candid-fin
 const IP_LIMIT = 5;
 const IP_WINDOW = "10 m";
 
-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
-  : null;
-
-const ipLimiter = redis && new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(IP_LIMIT, IP_WINDOW),
-  prefix: "ratelimit:truelayer-payment:ip",
-});
-
-function getClientIp(req) {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return req.socket?.remoteAddress || "unknown";
-}
-
-function isAllowedOrigin(req) {
-  const value = req.headers.origin || req.headers.referer;
-  if (!value) return false;
-  try {
-    return ALLOWED_HOSTNAMES.includes(new URL(value).hostname);
-  } catch {
-    return false;
-  }
-}
+const ipLimiter = rateLimiter(IP_LIMIT, IP_WINDOW, "ratelimit:truelayer-payment:ip");
 
 // TrueLayer env vars store the PEM with literal "\n" (real newlines don't
 // survive most env var UIs) — decode back to a real multi-line PEM here.
@@ -105,13 +79,13 @@ export default async function handler(req, res) {
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
 
   if (!redis) {
-    // Fails closed, same reasoning as api/claude.js — this stages a (mock)
-    // payment, so missing config should never silently disable the guard.
+    // Fails closed: this stages a (mock) payment, so missing config should
+    // never silently disable the guard.
     console.error("[truelayer/stage-payment] UPSTASH_REDIS_REST_URL/TOKEN not configured — refusing to serve without rate limiting");
     return res.status(503).json({ error: "Service temporarily unavailable" });
   }
 
-  const ip = getClientIp(req);
+  const ip = clientIp(req);
   try {
     const { success } = await ipLimiter.limit(ip);
     if (!success) return res.status(429).json({ error: "Too many requests" });
@@ -132,7 +106,7 @@ export default async function handler(req, res) {
     accessToken = await fetchAccessToken();
   } catch (e) {
     console.error("[truelayer/stage-payment] token request failed:", e);
-    return res.status(502).json({ error: "Could not authenticate with TrueLayer", detail: e.message });
+    return res.status(502).json({ error: "Could not authenticate with TrueLayer" });
   }
 
   const returnUri = process.env.TRUELAYER_PAYMENTS_RETURN_URI || `${APP_ORIGIN}/?truelayer_payment=return`;
@@ -184,7 +158,7 @@ export default async function handler(req, res) {
     }
   } catch (e) {
     console.error("[truelayer/stage-payment] payment staging failed:", e);
-    return res.status(502).json({ error: "Could not stage payment with TrueLayer", detail: e.message });
+    return res.status(502).json({ error: "Could not stage payment with TrueLayer" });
   }
 
   const { id: paymentId, resource_token: resourceToken, status } = data;

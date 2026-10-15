@@ -1,5 +1,5 @@
-// One test per error found in the 2026/27 engine audit (finance-engine-audit.md
-// at the repo root), each written before its fix. Rules and sources are in
+// One test per error found in the 2026/27 engine audit (docs/finance-engine-audit.md),
+// each written before its fix. Rules and sources are in
 // the report, by the same numbers.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -9,7 +9,6 @@ import { calcBonusSacrifice, missedPensionRelief, pensionReturnRatio, inRetireme
 import { savingsTax } from "./assist.js";
 import { calcCashOptimisation } from "./cash.js";
 import { resolveSlRate } from "./studentLoan.js";
-import { buildFinancialSummary } from "./aiPrompt.js";
 
 const near = (a, b, tol = 0.01) => assert.ok(Math.abs(a - b) <= tol, `${a} is not ${b}`);
 
@@ -91,13 +90,6 @@ test("F10: the projected pot counts only the employer's matched share", () => {
   const annuity = (Math.pow(1.04, 35) - 1) / 0.04;
   near(m.projectedPot, 50000 * 0.06 * annuity, 1);
   near(calcPensionGrowthTrajectory(d, m).bars.find(b => b.key === "retirement").value, m.projectedPot, 1);
-});
-
-test("F11: the chat is told about the 60% band between £100,000 and £125,140", () => {
-  const d = { salary: "110000" };
-  assert.match(buildFinancialSummary(d, calcMetrics(d), {}).taxBand, /60%/);
-  const d2 = { salary: "70000" };
-  assert.match(buildFinancialSummary(d2, calcMetrics(d2), {}).taxBand, /Higher rate/);
 });
 
 test("F12: no retirement mode before the minimum pension age (55, then 57 from April 2028)", () => {

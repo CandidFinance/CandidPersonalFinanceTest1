@@ -3,7 +3,8 @@ import BankConfirm from "../BankConfirm.jsx";
 import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
 import { useState } from "react";
 import { Check, Coins } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, SUCCESS } from "../../design-tokens.js";
+import { MODULE_META } from "../../lib/moduleStatus.js";
 import { statusLabel } from "../statusLabel.js";
 import MobileCashDeepDive from "../deepdive/MobileCashDeepDive.jsx";
 import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx";
@@ -22,12 +23,9 @@ const CONTENT_BY_KEY = {
   pension: MobilePensionDeepDive,
 };
 
-// `onWalkThrough` reruns the module's questions (MobileModuleGuide): with no
-// inputs on this screen, that's how answers are edited, hence "Edit answers".
 // `onShowReveal` replays its answer step by step (MobileModuleReveal), where
-// the module has one; the module's own screen places that "Explain this"
-// link next to the figure it explains.
-export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insights, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain, onWalkThrough, onShowReveal }) {
+// the module has one; its "Explain this" link sits beside the module's name.
+export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain, onShowReveal }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
   // Status has exactly one visual indicator here — the dot below. The
@@ -66,16 +64,11 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
         {/* The answer step by step, beside the module's name on every
             module, rather than inside the page. */}
         {onShowReveal && <div style={{alignSelf:"flex-start",marginTop:"6px"}}><ExplainLink onClick={onShowReveal}/></div>}
-        {onWalkThrough && (
-          <button type="button" onClick={onWalkThrough} style={{background:"none",border:"none",padding:0,color:G,fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap",alignSelf:"flex-start",marginTop:"4px"}}>
-            Edit answers
-          </button>
-        )}
       </div>
       {set && <BankConfirm d={d} set={set} moduleKey={moduleKey} title={meta?.title || moduleKey} amount={statuses[moduleKey]?.amount || 0}/>}
 
       {Content ? (
-        <Content d={d} m={m} statuses={statuses} insights={insights} savingsRates={savingsRates} set={set} onShowReveal={onShowReveal} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain}/>
+        <Content d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain}/>
       ) : (
         <p style={{fontSize:"14px",color:MUT,lineHeight:1.6}}>This deep dive isn't built for mobile yet — check back soon, or view it on desktop.</p>
       )}
@@ -90,7 +83,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, insigh
           )}
           <button onClick={handleReviewed} style={{
             width:"100%",background:"transparent",border:`1.3px solid ${isComplete?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
-            color:isComplete?"#2d6b4a":G,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,cursor:"pointer",
+            color:isComplete?SUCCESS:G,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,cursor:"pointer",
             display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",
             animation: flashing ? "btnGoldTint 0.4s ease-out" : "none",
           }}>

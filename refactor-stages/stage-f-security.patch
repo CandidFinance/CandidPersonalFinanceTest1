@@ -1,0 +1,149 @@
+diff --git a/api/billing.js b/api/billing.js
+index 54178b3..564c342 100644
+--- a/api/billing.js
++++ b/api/billing.js
+@@ -51,6 +51,7 @@ const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_R
+   : null;
+ const limiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, "10 m"), prefix: "ratelimit:billing" });
+ const restoreLimiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(3, "1 h"), prefix: "ratelimit:billing-restore" });
++const restoreEmailLimiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, "1 d"), prefix: "ratelimit:billing-restore-email" });
+ 
+ const configured = () => !!(STRIPE_KEY && WEBHOOK_SECRET && PRICES.monthly && PRICES.yearly && TOKEN_SECRET && SUPA_URL && SERVICE_KEY);
+ 
+@@ -69,6 +70,13 @@ function ourOrigin(req) {
+ }
+ const cleanEmail = e => typeof e === "string" && EMAIL_RE.test(e.trim()) ? e.trim().toLowerCase() : null;
+ 
++// Constant-time string compare. Lengths are compared in bytes, as
++// timingSafeEqual needs: equal string lengths can still differ in bytes.
++function safeEqual(a, b) {
++  const x = Buffer.from(a), y = Buffer.from(b);
++  return x.length === y.length && crypto.timingSafeEqual(x, y);
++}
++
+ // ── Tokens: base64url(JSON) + "." + HMAC ─────────────────────────────────
+ const b64 = s => Buffer.from(s).toString("base64url");
+ const sign = body => crypto.createHmac("sha256", TOKEN_SECRET).update(body).digest("base64url");
+@@ -79,8 +87,7 @@ function makeToken(email, kind, ttl) {
+ function readToken(token, kind) {
+   if (typeof token !== "string" || !token.includes(".")) return null;
+   const [body, mac] = token.split(".");
+-  const expected = sign(body);
+-  if (mac.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(expected))) return null;
++  if (!safeEqual(mac, sign(body))) return null;
+   try {
+     const t = JSON.parse(Buffer.from(body, "base64url").toString());
+     return t.k === kind && t.x > Date.now() ? cleanEmail(t.e) : null;
+@@ -172,10 +179,7 @@ function stripeSigned(raw, header) {
+   const t = +parts.t;
+   if (!t || Math.abs(Date.now() / 1000 - t) > 300) return false;
+   const expected = crypto.createHmac("sha256", WEBHOOK_SECRET).update(`${t}.${raw}`).digest("hex");
+-  return header.split(",").filter(p => p.startsWith("v1=")).some(p => {
+-    const v = p.slice(3);
+-    return v.length === expected.length && crypto.timingSafeEqual(Buffer.from(v), Buffer.from(expected));
+-  });
++  return header.split(",").filter(p => p.startsWith("v1=")).some(p => safeEqual(p.slice(3), expected));
+ }
+ async function webhook(req, res, raw) {
+   if (!stripeSigned(raw, req.headers["stripe-signature"])) return res.status(400).json({ error: "Bad signature" });
+@@ -254,6 +258,10 @@ async function restore(req, body, res, origin) {
+     const { success } = await restoreLimiter.limit(`${clientIp(req)}:${email}`);
+     if (!success) return res.status(429).json({ error: "Too many requests. Try again later." });
+   }
++  if (restoreEmailLimiter) {
++    const { success } = await restoreEmailLimiter.limit(email);
++    if (!success) return res.status(429).json({ error: "Too many requests. Try again later." });
++  }
+   const access = accessFor(await rowFor(email));
+   // The same answer either way, so the form doesn't reveal who subscribes.
+   if (access.active && RESEND_KEY) {
+diff --git a/api/rates.js b/api/rates.js
+index 9b28f29..6f837ed 100644
+--- a/api/rates.js
++++ b/api/rates.js
+@@ -191,7 +191,7 @@ const confirmedAppLinks = source => source?.app_links_confirmed_at
+ 
+ async function resolveReview(id, approve) {
+   const [review] = await db(`savings_rate_reviews?id=eq.${id}&resolved_at=is.null&select=*,rate_sources(provider_name,url,ios_app_url,android_app_url,app_links_confirmed_at,app_only)`);
+-  if (!review) throw new Error("Review not found or already resolved");
++  if (!review) throw Object.assign(new Error("Review not found or already resolved"), { http: 404 });
+   const now = new Date().toISOString();
+   if (approve) {
+     if (review.change_type === "new") {
+@@ -311,6 +311,6 @@ export default async function handler(req, res) {
+   } catch (e) {
+     if (e.http) return res.status(e.http).json({ error: e.message });
+     console.error("[api/rates] admin action failed:", e);
+-    return res.status(500).json({ error: e.message });
++    return res.status(500).json({ error: "Something went wrong. The details are in the function log." });
+   }
+ }
+diff --git a/api/truelayer/auth-link.js b/api/truelayer/auth-link.js
+index 992d183..e9c87c7 100644
+--- a/api/truelayer/auth-link.js
++++ b/api/truelayer/auth-link.js
+@@ -46,12 +46,6 @@ export default function handler(req, res) {
+     `state=${state}`,
+   ].join("&");
+ 
+-  const location = `${AUTH_BASE}/?${query}`;
+-  // Temporary diagnostic — compare redirectUri character-for-character against
+-  // what's registered in TrueLayer Console. Remove once the mismatch is found.
+-  console.log("[truelayer/auth-link] redirect_uri (raw env value):", JSON.stringify(redirectUri));
+-  console.log("[truelayer/auth-link] full auth URL sent to TrueLayer:", location);
+-
+-  res.writeHead(302, { Location: location });
++  res.writeHead(302, { Location: `${AUTH_BASE}/?${query}` });
+   res.end();
+ }
+diff --git a/api/truelayer/callback.js b/api/truelayer/callback.js
+index 72ed954..912eab3 100644
+--- a/api/truelayer/callback.js
++++ b/api/truelayer/callback.js
+@@ -100,23 +100,15 @@ export default async function handler(req, res) {
+   const { code, state, error } = req.query;
+   const cookies = parseCookies(req);
+ 
+-  // Temporary diagnostic — remove once invalid_state is root-caused.
+-  console.log("[truelayer/callback] raw Cookie header:", JSON.stringify(req.headers.cookie || null));
+-  console.log("[truelayer/callback] parsed tl_state cookie:", JSON.stringify(cookies[STATE_COOKIE] || null));
+-  console.log("[truelayer/callback] raw state query param:", JSON.stringify(state || null));
+-
+   if (error) return redirectWithError(res, String(error));
+ 
+   let nonce, email;
+   try {
+     ({ nonce, email } = JSON.parse(Buffer.from(String(state), "base64url").toString("utf8")));
+-    console.log("[truelayer/callback] decoded state ->", JSON.stringify({ nonce, email }));
+-  } catch (e) {
+-    console.log("[truelayer/callback] failed to decode state param:", e.message);
++  } catch {
+     return redirectWithError(res, "invalid_state");
+   }
+   if (!code || !nonce || nonce !== cookies[STATE_COOKIE]) {
+-    console.log("[truelayer/callback] state mismatch — code present:", !!code, "| nonce from state:", JSON.stringify(nonce), "| nonce from cookie:", JSON.stringify(cookies[STATE_COOKIE]));
+     return redirectWithError(res, "invalid_state");
+   }
+ 
+diff --git a/api/truelayer/stage-payment.js b/api/truelayer/stage-payment.js
+index 744bb96..97e1d6b 100644
+--- a/api/truelayer/stage-payment.js
++++ b/api/truelayer/stage-payment.js
+@@ -132,7 +132,7 @@ export default async function handler(req, res) {
+     accessToken = await fetchAccessToken();
+   } catch (e) {
+     console.error("[truelayer/stage-payment] token request failed:", e);
+-    return res.status(502).json({ error: "Could not authenticate with TrueLayer", detail: e.message });
++    return res.status(502).json({ error: "Could not authenticate with TrueLayer" });
+   }
+ 
+   const returnUri = process.env.TRUELAYER_PAYMENTS_RETURN_URI || `${APP_ORIGIN}/?truelayer_payment=return`;
+@@ -184,7 +184,7 @@ export default async function handler(req, res) {
+     }
+   } catch (e) {
+     console.error("[truelayer/stage-payment] payment staging failed:", e);
+-    return res.status(502).json({ error: "Could not stage payment with TrueLayer", detail: e.message });
++    return res.status(502).json({ error: "Could not stage payment with TrueLayer" });
+   }
+ 
+   const { id: paymentId, resource_token: resourceToken, status } = data;

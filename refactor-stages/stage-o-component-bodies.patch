@@ -1,0 +1,1796 @@
+diff --git a/src/mobile/deepdive/MobilePensionDeepDive.jsx b/src/mobile/deepdive/MobilePensionDeepDive.jsx
+index 6dad665..14f681d 100644
+--- a/src/mobile/deepdive/MobilePensionDeepDive.jsx
++++ b/src/mobile/deepdive/MobilePensionDeepDive.jsx
+@@ -113,21 +113,8 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+   const taxFreeCash = calcTaxFreeCash(d);
+   const retired = inRetirement(d);
+   const trPct = Math.round(m.tr * 100);
+-  const myPct = +d.myContribution || 0;
+-  const empCapPct = +d.employerMatch || 0;
+   const showMatchWin = notPayingIn || (contributing && m.missedMatch > 0);
+-  // Not paying in: "Start" only when there's no pension yet.
+-  const matchWinTitle = contributing ? "Your employer's match" : taxFreeCash.pot > 0 ? "Paying into your pension" : "Starting a pension";
+-  const matchWinHeadline = !contributing
+-    ? `Every £${100-trPct} becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
+-    : `Up to ${fmt(m.missedMatch)}/yr`;
+ 
+-  const yourContribAmount = m.salary * myPct / 100;
+-  const employerCapAmount = m.salary * empCapPct / 100;
+-  const illustrativeRate = empCapPct > 0 ? empCapPct : 5;
+-  const illustrativeAmount = m.salary * illustrativeRate / 100;
+-  const illustrativeRelief = Math.round(illustrativeAmount * m.tr);
+-  const illustrativeNetCost = Math.round(illustrativeAmount - illustrativeRelief);
+ 
+   // Same taper and bonus figures as the Dashboard (computeModuleStatuses),
+   // both limited to the Annual Allowance room left this year.
+@@ -140,10 +127,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+ 
+   const hasStatedBonus = (+d.bonusAmount||0) > 0;
+   const bonusSacrifice = calcBonusSacrificePotential(d, m);
+-  const bonusPotential = bonusSacrifice.standalone;
+-  const bs = calcBonusSacrifice(d, m, bonusInput, sacrificePct);
+ 
+-  const traj = calcPensionGrowthTrajectory(d, m, extraPct);
+   const products = getModuleProducts("pension", d, m);
+ 
+   // Salary Sacrifice Tax Saver (folded into the existing £100k-taper win
+@@ -310,6 +294,92 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+       )}
+ 
+       {/* The hero: how the pot could grow to retirement. */}
++      <GrowthChart showExplore={showExplore} d={d} m={m} showTrajInfo={showTrajInfo} setShowTrajInfo={setShowTrajInfo} extraPct={extraPct} setExtraPct={setExtraPct} cliff={cliff} setAheadOpen={setAheadOpen}/>
++
++      <EmployerMatchTile showMatchWin={showMatchWin} win1Num={win1Num} m={m} d={d} trPct={trPct} contributing={contributing} rowStyle={rowStyle} set={set} taxFreeCash={taxFreeCash}/>
++
++      {showSacrificeCalc && taper.recoverable && sacrificeTile}
++
++      {aa.inAATaper && (
++        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
++          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Worth knowing</div>
++          <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:"0 0 6px",fontWeight:600}}>
++            Your Annual Allowance may be reduced to approximately {fmt(aa.approxAA)} this tax year (down from £60,000).
++          </p>
++          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
++            Once adjusted income passes £260,000, your allowance shrinks £1 for every £2 above that, down to a £10,000 floor.{" "}
++            {cf.showCarryForward
++              ? "Carry forward unused allowance from the last 3 tax years to contribute more without a charge — use the calculator below."
++              : "Carry forward unused allowance from the last 3 tax years to contribute more without a charge — check your provider's statements or HMRC account for an exact figure."}
++          </p>
++        </div>
++      )}
++
++      {/* Tax-free cash on its own: a pot capped by the Lump Sum Allowance,
++          before drawdown planning applies. */}
++      {d.hasPension === "yes" && taxFreeCash.pot > 0 && taxFreeCash.capped && !drawdownBest && taxFreeCashBlock}
++
++      {drawdownBest && (
++        <MobileWinTile number={drawdownNum} title="Plan drawing your pension" tagLabel="Strategy" defaultOpen={!showMatchWin}
++          headline="Choose how many years to draw it over, and how to take the tax-free cash">
++          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
++            <Pill value={compact(taxFreeCash.pot)} caption="Pension pot"/>
++            <Pill value={compact(taxFreeCash.taxFree)} caption={`Tax-free cash${taxFreeCash.taken > 0 ? " left" : ""}`}
++              info={<InfoButton onClick={() => setShowTaxFreeInfo(o => !o)} open={showTaxFreeInfo}/>}/>
++          </div>
++          {showTaxFreeInfo && (
++            <p style={{fontSize:"12px",color:TEXT,lineHeight:1.55,margin:"8px 0 0"}}>{taxFreeCashText}</p>
++          )}
++          <MobileDrawdown d={d} m={m} bare/>
++        </MobileWinTile>
++      )}
++
++
++      {d.pensionAccess === "income" && (
++        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
++          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Worth knowing</div>
++          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
++            Having drawn an income, up to {fmt(MONEY_PURCHASE_ANNUAL_ALLOWANCE)} a year can go into your pensions with tax relief: the Money Purchase Annual Allowance. Employer payments count towards it.
++          </p>
++        </div>
++      )}
++
++      {/* The what-if tools, closed at first. */}
++      {/* Retired with no earnings, the what-ifs (paying in more, a bonus,
++          growth to retirement) don't apply. */}
++      {showExplore && (
++        <MobileWinTile number={exploreNum} title="Explore what-ifs" tagLabel="What if"
++          headline={`${hasStatedBonus ? "Paying in your bonus" : "Paying a bonus into your pension"}${cf.showCarryForward ? ", and using past years' allowance" : ""}`}>
++      {showSacrificeCalc && !taper.recoverable && sacrificeTile}
++
++      <CarryForwardTile cf={cf} win3Num={win3Num} setCfYears={setCfYears} rowStyle={rowStyle} aa={aa}/>
++
++      <BonusTile hasStatedBonus={hasStatedBonus} win4Num={win4Num} bonusSacrifice={bonusSacrifice} d={d} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m}/>
++
++
++        </MobileWinTile>
++      )}
++
++      {aheadNum && <div id="looking-ahead" style={{scrollMarginTop:"80px"}}><LookingAhead d={d} outlook={outlook} cliff={cliff} number={aheadNum} open={aheadOpen} onOpenChange={setAheadOpen}/></div>}
++
++      {/* Where to do it: a numbered tile like the others, the providers
++          inside it once opened. */}
++      {providersNum && (
++        <MobileWinTile provider number={providersNum} title="Pension providers to compare" tagLabel="Providers"
++          headline={`${products.products.length} providers, listed alphabetically`}>
++          <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
++        </MobileWinTile>
++      )}
++    </div>
++  );
++}
++
++// The hero: how the pot could grow to retirement, with what paying in
++// more would add on top.
++function GrowthChart({ showExplore, d, m, showTrajInfo, setShowTrajInfo, extraPct, setExtraPct, cliff, setAheadOpen }) {
++  const traj = calcPensionGrowthTrajectory(d, m, extraPct);
++  return (
++    <>
+       {showExplore && traj.showTrajectory && (() => {
+         // What paying more in adds sits on top of every bar after Now (the
+         // same extra, grown the same, whichever path it joins), so each bar
+@@ -401,7 +471,28 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+           </div>
+         );
+       })()}
++    </>
++  );
++}
+ 
++// The employer match tile: what's being left unclaimed, or, without a
++// pension yet, what starting one would cost after tax relief.
++function EmployerMatchTile({ showMatchWin, win1Num, m, d, trPct, contributing, rowStyle, set, taxFreeCash }) {
++  const myPct = +d.myContribution || 0;
++  const empCapPct = +d.employerMatch || 0;
++  // Not paying in: "Start" only when there's no pension yet.
++  const matchWinTitle = contributing ? "Your employer's match" : taxFreeCash.pot > 0 ? "Paying into your pension" : "Starting a pension";
++  const matchWinHeadline = !contributing
++    ? `Every £${100-trPct} becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
++    : `Up to ${fmt(m.missedMatch)}/yr`;
++  const yourContribAmount = m.salary * myPct / 100;
++  const employerCapAmount = m.salary * empCapPct / 100;
++  const illustrativeRate = empCapPct > 0 ? empCapPct : 5;
++  const illustrativeAmount = m.salary * illustrativeRate / 100;
++  const illustrativeRelief = Math.round(illustrativeAmount * m.tr);
++  const illustrativeNetCost = Math.round(illustrativeAmount - illustrativeRelief);
++  return (
++    <>
+       {showMatchWin && (
+         <MobileWinTile number={win1Num} title={matchWinTitle} headline={matchWinHeadline} tagLabel="Today"
+           reminder={{
+@@ -446,61 +537,14 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+           {set && <QuickUpdateContribution d={d} myPct={myPct} suggested={contributing ? empCapPct : illustrativeRate} set={set}/>}
+         </MobileWinTile>
+       )}
++    </>
++  );
++}
+ 
+-      {showSacrificeCalc && taper.recoverable && sacrificeTile}
+-
+-      {aa.inAATaper && (
+-        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
+-          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Worth knowing</div>
+-          <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:"0 0 6px",fontWeight:600}}>
+-            Your Annual Allowance may be reduced to approximately {fmt(aa.approxAA)} this tax year (down from £60,000).
+-          </p>
+-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
+-            Once adjusted income passes £260,000, your allowance shrinks £1 for every £2 above that, down to a £10,000 floor.{" "}
+-            {cf.showCarryForward
+-              ? "Carry forward unused allowance from the last 3 tax years to contribute more without a charge — use the calculator below."
+-              : "Carry forward unused allowance from the last 3 tax years to contribute more without a charge — check your provider's statements or HMRC account for an exact figure."}
+-          </p>
+-        </div>
+-      )}
+-
+-      {/* Tax-free cash on its own: a pot capped by the Lump Sum Allowance,
+-          before drawdown planning applies. */}
+-      {d.hasPension === "yes" && taxFreeCash.pot > 0 && taxFreeCash.capped && !drawdownBest && taxFreeCashBlock}
+-
+-      {drawdownBest && (
+-        <MobileWinTile number={drawdownNum} title="Plan drawing your pension" tagLabel="Strategy" defaultOpen={!showMatchWin}
+-          headline="Choose how many years to draw it over, and how to take the tax-free cash">
+-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+-            <Pill value={compact(taxFreeCash.pot)} caption="Pension pot"/>
+-            <Pill value={compact(taxFreeCash.taxFree)} caption={`Tax-free cash${taxFreeCash.taken > 0 ? " left" : ""}`}
+-              info={<InfoButton onClick={() => setShowTaxFreeInfo(o => !o)} open={showTaxFreeInfo}/>}/>
+-          </div>
+-          {showTaxFreeInfo && (
+-            <p style={{fontSize:"12px",color:TEXT,lineHeight:1.55,margin:"8px 0 0"}}>{taxFreeCashText}</p>
+-          )}
+-          <MobileDrawdown d={d} m={m} bare/>
+-        </MobileWinTile>
+-      )}
+-
+-
+-      {d.pensionAccess === "income" && (
+-        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
+-          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Worth knowing</div>
+-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
+-            Having drawn an income, up to {fmt(MONEY_PURCHASE_ANNUAL_ALLOWANCE)} a year can go into your pensions with tax relief: the Money Purchase Annual Allowance. Employer payments count towards it.
+-          </p>
+-        </div>
+-      )}
+-
+-      {/* The what-if tools, closed at first. */}
+-      {/* Retired with no earnings, the what-ifs (paying in more, a bonus,
+-          growth to retirement) don't apply. */}
+-      {showExplore && (
+-        <MobileWinTile number={exploreNum} title="Explore what-ifs" tagLabel="What if"
+-          headline={`${hasStatedBonus ? "Paying in your bonus" : "Paying a bonus into your pension"}${cf.showCarryForward ? ", and using past years' allowance" : ""}`}>
+-      {showSacrificeCalc && !taper.recoverable && sacrificeTile}
+-
++// "Pay in more using past years' allowance": carry forward, year by year.
++function CarryForwardTile({ cf, win3Num, setCfYears, rowStyle, aa }) {
++  return (
++    <>
+       {cf.showCarryForward && (
+         <MobileWinTile number={win3Num} title="Pay in more using past years' allowance"
+           headline={cf.cfTotalUnused > 0
+@@ -547,7 +591,17 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+           )}
+         </MobileWinTile>
+       )}
++    </>
++  );
++}
+ 
++// "Your bonus and your pension": what sacrificing some of a stated bonus
++// keeps, or, with no bonus stated, how to add one.
++function BonusTile({ hasStatedBonus, win4Num, bonusSacrifice, d, sacrificePct, setSacrificePct, bonusInput, setBonusInput, setShowFVInfo, showFVInfo, m }) {
++  const bonusPotential = bonusSacrifice.standalone;
++  const bs = calcBonusSacrifice(d, m, bonusInput, sacrificePct);
++  return (
++    <>
+       {hasStatedBonus ? (
+         <MobileWinTile number={win4Num} title="Your bonus and your pension"
+           headline={bonusSacrifice.room <= 0
+@@ -633,22 +687,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
+           </p>
+         </div>
+       )}
+-
+-
+-        </MobileWinTile>
+-      )}
+-
+-      {aheadNum && <div id="looking-ahead" style={{scrollMarginTop:"80px"}}><LookingAhead d={d} outlook={outlook} cliff={cliff} number={aheadNum} open={aheadOpen} onOpenChange={setAheadOpen}/></div>}
+-
+-      {/* Where to do it: a numbered tile like the others, the providers
+-          inside it once opened. */}
+-      {providersNum && (
+-        <MobileWinTile provider number={providersNum} title="Pension providers to compare" tagLabel="Providers"
+-          headline={`${products.products.length} providers, listed alphabetically`}>
+-          <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
+-        </MobileWinTile>
+-      )}
+-    </div>
++    </>
+   );
+ }
+ 
+diff --git a/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx b/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
+index 3d9bd35..93f24bb 100644
+--- a/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
++++ b/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
+@@ -36,7 +36,6 @@ function buildOverpayOptions(loanBal) {
+ // Leads with the answer and the comparison behind it; the overpayment model
+ // and the return chart sit under "Explore what-ifs", closed at first.
+ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverpayment }) {
+-  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
+   const [exploreOpen, setExploreOpen] = useState(false); // before the chart's measuring effect, which waits for it
+   const [editingBalance, setEditingBalance] = useState(false);
+   // null = still following the overpayment slider automatically; a number
+@@ -69,19 +68,49 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+   const surplusCash = m.surplusCash || 0;
+   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
+ 
+-  const fullAmt = Math.round(m.loanBal);
+   const overpayOptions = buildOverpayOptions(m.loanBal);
+   const { scenarios, baseProjection } = calcOverpaymentScenarios(m, sl, [overpayAmt]);
+   const selectedScenario = scenarios[0];
+-  const savedVsBase = selectedScenario ? baseProjection.totalPaid - selectedScenario.totalPaid : 0;
+ 
++
++
++
++  return (
++    <div>
++      {worthOverpaying && (
++        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
++          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
++            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
++          </div>
++          <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
++          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Better off overpaying than saving the money</div>
++        </div>
++      )}
++
++      <LoanTrajectory m={m} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput}/>
++
++      {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
++
++      <OverpayingTile sl={sl} worthOverpaying={worthOverpaying} m={m} surplusCash={surplusCash}/>
++
++      {(sl.willClear && overpayOptions.length > 0 && selectedScenario || curve) && (
++        <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="overpaying, and loan vs pension"/>
++      )}
++
++      <ExploreWhatIfs exploreOpen={exploreOpen} sl={sl} overpayOptions={overpayOptions} selectedScenario={selectedScenario} worthOverpaying={worthOverpaying} baseProjection={baseProjection} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} surplusCash={surplusCash} curve={curve} chartWrapRef={chartWrapRef} m={m}/>
++    </div>
++  );
++}
++
++// Your loan trajectory: the balance year by year to when it clears or is
++// written off.
++function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput }) {
+   const stats = [
+     { label:"Interest rate", value:`${sl.slRatePct}%` },
+     { label:"Annual interest", value:`${fmt(sl.annualInterest)}/yr` },
+     { label:"Annual repayments", value:`${fmt(sl.annualRep)}/yr` },
+     { label: sl.clearYr ? "Clears in" : "Written off after", value: sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs` },
+   ];
+-
+   // Suggests the balance after paying the currently-selected slider amount,
+   // rather than a blank/current-balance starting point — if the user came
+   // here having just modelled an overpayment above, that's almost certainly
+@@ -97,7 +126,6 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+     closeBalanceEditor();
+   };
+   const cashDelta = Math.max(0, Math.round(m.loanBal) - balanceInput);
+-
+   // When repayments started decides when the loan is written off. Estimated
+   // from age unless the user says (studentLoan.js slFirstDueYear).
+   const startValue = startInput ?? sl.firstDueYear;
+@@ -106,19 +134,8 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+     setEditingStart(false); setStartInput(null);
+   };
+   const resetStart = () => { if (set) set("slFirstDueYear", ""); setEditingStart(false); setStartInput(null); };
+-
+   return (
+-    <div>
+-      {worthOverpaying && (
+-        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+-            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
+-          </div>
+-          <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayAnnualBenefit)}/yr</div>
+-          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Better off overpaying than saving the money</div>
+-        </div>
+-      )}
+-
++    <>
+       <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+         <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your loan trajectory</div>
+ 
+@@ -194,9 +211,16 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+                   : "See the win below for what overpaying could save you."}
+         </p>
+       </div>
++    </>
++  );
++}
+ 
+-      {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
+-
++// The overpaying tile: whether overpaying beats saving or the pension, and
++// by how much a year.
++function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
++  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
++  return (
++    <>
+       {sl.willClear && (
+         <MobileWinTile
+           title={sl.balanceGrowing ? "Your loan balance is growing" : worthOverpaying ? "Overpaying your student loan" : "What overpaying would do"}
+@@ -235,11 +259,17 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+           </p>
+         </MobileWinTile>
+       )}
++    </>
++  );
++}
+ 
+-      {(sl.willClear && overpayOptions.length > 0 && selectedScenario || curve) && (
+-        <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="overpaying, and loan vs pension"/>
+-      )}
+-
++// Under "Explore what-ifs": modelling a lump sum overpayment, and the
++// return on each pound overpaid against putting it in the pension.
++function ExploreWhatIfs({ exploreOpen, sl, overpayOptions, selectedScenario, worthOverpaying, baseProjection, overpayAmt, setOverpayAmt, surplusCash, curve, chartWrapRef, m }) {
++  const fullAmt = Math.round(m.loanBal);
++  const savedVsBase = selectedScenario ? baseProjection.totalPaid - selectedScenario.totalPaid : 0;
++  return (
++    <>
+       {exploreOpen && (<>
+       {sl.willClear && overpayOptions.length > 0 && selectedScenario && (
+         <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+@@ -325,7 +355,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
+         );
+       })()}
+       </>)}
+-    </div>
++    </>
+   );
+ }
+ 
+diff --git a/src/mobile/onboarding/MobileOnboardingStep.jsx b/src/mobile/onboarding/MobileOnboardingStep.jsx
+index 6b22508..88a3aae 100644
+--- a/src/mobile/onboarding/MobileOnboardingStep.jsx
++++ b/src/mobile/onboarding/MobileOnboardingStep.jsx
+@@ -306,47 +306,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
+         <label style={fieldLabel}>Do you have investments?</label>
+         <PillSlider value={d.hasInvestments} onChange={v => set("hasInvestments", v)} options={YES_NO_OPTIONS}/>
+ 
+-        {d.hasInvestments === "yes" && (
+-          <div style={{marginTop:"22px"}}>
+-            <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px"}}>ISA contributions this tax year</div>
+-            <p style={{fontSize:"11px",color:MUT,marginTop:0,marginBottom:"10px"}}>Shared £20,000 limit with any Cash ISA</p>
+-            <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
+-              <PillMoneyInput label="S&S ISA" value={d.isaThisYearSS || null} onChange={v => set("isaThisYearSS", capField("isaThisYearSS", v ?? ""))}/>
+-              <PillMoneyInput label="LISA" value={d.isaThisYearLISA || null} onChange={v => set("isaThisYearLISA", capField("isaThisYearLISA", v ?? ""))}/>
+-              <PillMoneyInput label="Other ISA" value={d.isaThisYearOther || null} onChange={v => set("isaThisYearOther", capField("isaThisYearOther", v ?? ""))}/>
+-            </div>
+-            {isaOver && (
+-              <div style={{marginBottom:"14px",fontSize:"11.5px",color:CRITICAL,fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
+-                <AlertTriangle size={12} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaTotal)} — exceeds the £20,000 allowance.</span>
+-              </div>
+-            )}
+-
+-            <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px",marginTop:"18px"}}>ISA balance from previous years</div>
+-            <div style={{display:"flex",gap:"8px",marginBottom:"6px"}}>
+-              <PillMoneyInput label="S&S ISA" value={d.isaPrevSS || null} onChange={v => set("isaPrevSS", capField("isaPrevSS", v ?? ""))}/>
+-              <PillMoneyInput label="LISA" value={d.isaPrevLISA || null} onChange={v => set("isaPrevLISA", capField("isaPrevLISA", v ?? ""))}/>
+-              <PillMoneyInput label="Other" value={d.isaPrevOther || null} onChange={v => set("isaPrevOther", capField("isaPrevOther", v ?? ""))}/>
+-            </div>
+-            {prevTotal > 0 && <p style={{fontSize:"11.5px",color:MUT,marginTop:0,marginBottom:"18px"}}>Total previous years: {fmt(prevTotal)}</p>}
+-
+-            <PillMoneyInput label="Investments outside an ISA" value={d.unwrappedValue || null} onChange={v => set("unwrappedValue", capField("unwrappedValue", v ?? ""))}/>
+-            <div style={{marginTop:"10px"}}>
+-              <PillMoneyInput label="Estimated unrealised gains" value={d.unrealisedGains || null} onChange={v => set("unrealisedGains", capField("unrealisedGains", v ?? ""))}/>
+-              <p style={{fontSize:"11px",color:MUT,marginTop:"6px"}}>Profit above what you paid, for investments outside an ISA/pension</p>
+-            </div>
+-
+-            <div style={{marginTop:"18px"}}>
+-              <label style={fieldLabel}>Have you sold any investments or property outside an ISA or pension this tax year?</label>
+-              <PillSlider value={d.hasSoldAssetsOutsideWrapper || "no"} onChange={v => { set("hasSoldAssetsOutsideWrapper", v); if (v === "no") set("realisedCgtGains", ""); }} options={YES_NO_OPTIONS}/>
+-              {d.hasSoldAssetsOutsideWrapper === "yes" && (
+-                <div style={{marginTop:"10px"}}>
+-                  <p style={{fontSize:"11px",color:MUT,marginTop:0,marginBottom:"8px"}}>We ask this to track your £3,000 CGT allowance.</p>
+-                  <PillMoneyInput label="Estimated total profit" value={d.realisedCgtGains || null} onChange={v => set("realisedCgtGains", capField("realisedCgtGains", v ?? ""))}/>
+-                </div>
+-              )}
+-            </div>
+-          </div>
+-        )}
++        <InvestmentsDetails d={d} set={set} isaOver={isaOver} isaTotal={isaTotal} prevTotal={prevTotal} fieldLabel={fieldLabel}/>
+       </div>
+     );
+   }
+@@ -365,56 +325,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
+           else { set("pensionUnknown", false); set("hasPension", v); set("pensionStatus", v); }
+         }} options={PENSION_STATUS_OPTIONS}/>
+ 
+-        {d.pensionUnknown ? (
+-          <div style={{background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
+-            <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}>No problem — this is really common. Your report will walk you through how to find out. Until you know, it takes a few points off your score.</p>
+-          </div>
+-        ) : contributing ? (
+-          <div style={{marginTop:"18px"}}>
+-            <div style={{display:"flex",gap:"10px",marginBottom:"14px"}}>
+-              <PillMoneyInput label="Your contribution" unit="%" value={d.myContribution || null} onChange={v => set("myContribution", capField("myContribution", v ?? ""))}/>
+-              <PillMoneyInput label="Employer match cap" unit="%" value={d.employerMatch || null} onChange={v => set("employerMatch", capField("employerMatch", v ?? ""))}/>
+-            </div>
+-
+-            <div style={{display:"flex",gap:"10px",marginBottom:"4px"}}>
+-              <div style={{flex:1}}>
+-                <PillMoneyInput label="Main pot value" value={d.potValue || null} onChange={v => { setPotEstimated(false); set("potValue", capField("potValue", v ?? "")); }}/>
+-                {+d.age > 0 && +d.salary > 0 && (
+-                  <button type="button" onClick={() => { set("potValue", String(estimatePensionPot(d))); setPotEstimated(true); }} style={{background:"none",border:"none",color:GOLD,fontSize:"11px",fontWeight:600,cursor:"pointer",padding:"4px 0 0",display:"block"}}>
+-                    Don't know? Estimate it
+-                  </button>
+-                )}
+-              </div>
+-              <div style={{flex:1}}>
+-                <PillMoneyInput label="Other pots combined" value={d.potValue2 || null} onChange={v => set("potValue2", capField("potValue2", v ?? ""))}/>
+-              </div>
+-            </div>
+-            {potEstimated && +d.potValue > 0 && (
+-              <p style={{fontSize:"10.5px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:"14px"}}>
+-                Estimated assuming you've worked and contributed since age {CAREER_START_AGE}, at{" "}
+-                {((+d.myContribution||0)+(+d.employerMatch||0)) > 0 ? `your stated ${(+d.myContribution||0)+(+d.employerMatch||0)}% combined rate` : "the UK auto-enrolment minimum (8%)"}, growing at 6% p.a. — a rough order of magnitude, not a real balance.
+-              </p>
+-            )}
+-
+-            <div style={{display:"flex",gap:"10px",marginTop:"14px",marginBottom:"18px"}}>
+-              <PillMoneyInput label="Target retirement age" unit="" value={d.retirementAge || null} onChange={v => set("retirementAge", Math.min(80, v ?? 0) || "")}/>
+-              <PillMoneyInput label="NI years completed" unit="" value={d.niYears || null} onChange={v => set("niYears", v == null ? "" : String(Math.min(35, Math.max(0, v))))}/>
+-            </div>
+-            <p style={{fontSize:"11px",color:MUT,marginTop:"-12px",marginBottom:"18px"}}>35 NI years gives the full State Pension — check yours free at gov.uk/check-state-pension</p>
+-
+-            <label style={fieldLabel}>How are contributions made?</label>
+-            <PillSlider value={d.pensionType||""} onChange={v=>set("pensionType",v)} options={PENSION_TYPE_OPTIONS}/>
+-            <p style={{fontSize:"11px",color:MUT,marginTop:"6px",lineHeight:1.5}}>
+-              {d.pensionType==="sacrifice" ? "Comes off your gross pay before tax — check your payslip for a deduction before income tax." :
+-               d.pensionType==="relief"   ? "Comes from your take-home pay — your provider claims basic rate relief, you claim higher rate via self-assessment." :
+-               "Check your payslip — if the deduction appears before tax is calculated, it's likely salary sacrifice."}
+-            </p>
+-          </div>
+-        ) : (
+-          <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
+-            <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}><strong>This could be where the biggest gap is.</strong> We'll show what it could be worth.</p>
+-          </div>
+-        )}
++        <PensionDetails d={d} contributing={contributing} set={set} setPotEstimated={setPotEstimated} potEstimated={potEstimated} fieldLabel={fieldLabel}/>
+       </div>
+     );
+   }
+@@ -459,3 +370,111 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
+     </div>
+   );
+ }
++
++// The investments step's follow-ups, once the user says they invest.
++function InvestmentsDetails({ d, set, isaOver, isaTotal, prevTotal, fieldLabel }) {
++  return (
++    <>
++      {d.hasInvestments === "yes" && (
++        <div style={{marginTop:"22px"}}>
++          <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px"}}>ISA contributions this tax year</div>
++          <p style={{fontSize:"11px",color:MUT,marginTop:0,marginBottom:"10px"}}>Shared £20,000 limit with any Cash ISA</p>
++          <div style={{display:"flex",gap:"8px",marginBottom:"10px"}}>
++            <PillMoneyInput label="S&S ISA" value={d.isaThisYearSS || null} onChange={v => set("isaThisYearSS", capField("isaThisYearSS", v ?? ""))}/>
++            <PillMoneyInput label="LISA" value={d.isaThisYearLISA || null} onChange={v => set("isaThisYearLISA", capField("isaThisYearLISA", v ?? ""))}/>
++            <PillMoneyInput label="Other ISA" value={d.isaThisYearOther || null} onChange={v => set("isaThisYearOther", capField("isaThisYearOther", v ?? ""))}/>
++          </div>
++          {isaOver && (
++            <div style={{marginBottom:"14px",fontSize:"11.5px",color:CRITICAL,fontWeight:700,display:"flex",alignItems:"flex-start",gap:"5px"}}>
++              <AlertTriangle size={12} style={{flexShrink:0,marginTop:"1px"}}/><span>Total this year across all ISA types: {fmt(isaTotal)} — exceeds the £20,000 allowance.</span>
++            </div>
++          )}
++
++          <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"3px",marginTop:"18px"}}>ISA balance from previous years</div>
++          <div style={{display:"flex",gap:"8px",marginBottom:"6px"}}>
++            <PillMoneyInput label="S&S ISA" value={d.isaPrevSS || null} onChange={v => set("isaPrevSS", capField("isaPrevSS", v ?? ""))}/>
++            <PillMoneyInput label="LISA" value={d.isaPrevLISA || null} onChange={v => set("isaPrevLISA", capField("isaPrevLISA", v ?? ""))}/>
++            <PillMoneyInput label="Other" value={d.isaPrevOther || null} onChange={v => set("isaPrevOther", capField("isaPrevOther", v ?? ""))}/>
++          </div>
++          {prevTotal > 0 && <p style={{fontSize:"11.5px",color:MUT,marginTop:0,marginBottom:"18px"}}>Total previous years: {fmt(prevTotal)}</p>}
++
++          <PillMoneyInput label="Investments outside an ISA" value={d.unwrappedValue || null} onChange={v => set("unwrappedValue", capField("unwrappedValue", v ?? ""))}/>
++          <div style={{marginTop:"10px"}}>
++            <PillMoneyInput label="Estimated unrealised gains" value={d.unrealisedGains || null} onChange={v => set("unrealisedGains", capField("unrealisedGains", v ?? ""))}/>
++            <p style={{fontSize:"11px",color:MUT,marginTop:"6px"}}>Profit above what you paid, for investments outside an ISA/pension</p>
++          </div>
++
++          <div style={{marginTop:"18px"}}>
++            <label style={fieldLabel}>Have you sold any investments or property outside an ISA or pension this tax year?</label>
++            <PillSlider value={d.hasSoldAssetsOutsideWrapper || "no"} onChange={v => { set("hasSoldAssetsOutsideWrapper", v); if (v === "no") set("realisedCgtGains", ""); }} options={YES_NO_OPTIONS}/>
++            {d.hasSoldAssetsOutsideWrapper === "yes" && (
++              <div style={{marginTop:"10px"}}>
++                <p style={{fontSize:"11px",color:MUT,marginTop:0,marginBottom:"8px"}}>We ask this to track your £3,000 CGT allowance.</p>
++                <PillMoneyInput label="Estimated total profit" value={d.realisedCgtGains || null} onChange={v => set("realisedCgtGains", capField("realisedCgtGains", v ?? ""))}/>
++              </div>
++            )}
++          </div>
++        </div>
++      )}
++    </>
++  );
++}
++
++// The pension step's follow-ups: an estimate when the user isn't sure, or
++// the contribution and pot figures.
++function PensionDetails({ d, contributing, set, setPotEstimated, potEstimated, fieldLabel }) {
++  return (
++    <>
++      {d.pensionUnknown ? (
++        <div style={{background:"rgba(22,47,36,0.04)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
++          <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}>No problem — this is really common. Your report will walk you through how to find out. Until you know, it takes a few points off your score.</p>
++        </div>
++      ) : contributing ? (
++        <div style={{marginTop:"18px"}}>
++          <div style={{display:"flex",gap:"10px",marginBottom:"14px"}}>
++            <PillMoneyInput label="Your contribution" unit="%" value={d.myContribution || null} onChange={v => set("myContribution", capField("myContribution", v ?? ""))}/>
++            <PillMoneyInput label="Employer match cap" unit="%" value={d.employerMatch || null} onChange={v => set("employerMatch", capField("employerMatch", v ?? ""))}/>
++          </div>
++
++          <div style={{display:"flex",gap:"10px",marginBottom:"4px"}}>
++            <div style={{flex:1}}>
++              <PillMoneyInput label="Main pot value" value={d.potValue || null} onChange={v => { setPotEstimated(false); set("potValue", capField("potValue", v ?? "")); }}/>
++              {+d.age > 0 && +d.salary > 0 && (
++                <button type="button" onClick={() => { set("potValue", String(estimatePensionPot(d))); setPotEstimated(true); }} style={{background:"none",border:"none",color:GOLD,fontSize:"11px",fontWeight:600,cursor:"pointer",padding:"4px 0 0",display:"block"}}>
++                  Don't know? Estimate it
++                </button>
++              )}
++            </div>
++            <div style={{flex:1}}>
++              <PillMoneyInput label="Other pots combined" value={d.potValue2 || null} onChange={v => set("potValue2", capField("potValue2", v ?? ""))}/>
++            </div>
++          </div>
++          {potEstimated && +d.potValue > 0 && (
++            <p style={{fontSize:"10.5px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:"14px"}}>
++              Estimated assuming you've worked and contributed since age {CAREER_START_AGE}, at{" "}
++              {((+d.myContribution||0)+(+d.employerMatch||0)) > 0 ? `your stated ${(+d.myContribution||0)+(+d.employerMatch||0)}% combined rate` : "the UK auto-enrolment minimum (8%)"}, growing at 6% p.a. — a rough order of magnitude, not a real balance.
++            </p>
++          )}
++
++          <div style={{display:"flex",gap:"10px",marginTop:"14px",marginBottom:"18px"}}>
++            <PillMoneyInput label="Target retirement age" unit="" value={d.retirementAge || null} onChange={v => set("retirementAge", Math.min(80, v ?? 0) || "")}/>
++            <PillMoneyInput label="NI years completed" unit="" value={d.niYears || null} onChange={v => set("niYears", v == null ? "" : String(Math.min(35, Math.max(0, v))))}/>
++          </div>
++          <p style={{fontSize:"11px",color:MUT,marginTop:"-12px",marginBottom:"18px"}}>35 NI years gives the full State Pension — check yours free at gov.uk/check-state-pension</p>
++
++          <label style={fieldLabel}>How are contributions made?</label>
++          <PillSlider value={d.pensionType||""} onChange={v=>set("pensionType",v)} options={PENSION_TYPE_OPTIONS}/>
++          <p style={{fontSize:"11px",color:MUT,marginTop:"6px",lineHeight:1.5}}>
++            {d.pensionType==="sacrifice" ? "Comes off your gross pay before tax — check your payslip for a deduction before income tax." :
++             d.pensionType==="relief"   ? "Comes from your take-home pay — your provider claims basic rate relief, you claim higher rate via self-assessment." :
++             "Check your payslip — if the deduction appears before tax is calculated, it's likely salary sacrifice."}
++          </p>
++        </div>
++      ) : (
++        <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px",marginTop:"14px"}}>
++          <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0}}><strong>This could be where the biggest gap is.</strong> We'll show what it could be worth.</p>
++        </div>
++      )}
++    </>
++  );
++}
+diff --git a/src/mobile/property/BorrowingCheck.jsx b/src/mobile/property/BorrowingCheck.jsx
+index ef164b3..0f6f9cf 100644
+--- a/src/mobile/property/BorrowingCheck.jsx
++++ b/src/mobile/property/BorrowingCheck.jsx
+@@ -263,11 +263,30 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
+   const [incomeInfoOpen, setIncomeInfoOpen] = useState(false);
+   const [stampDutyInfoOpen, setStampDutyInfoOpen] = useState(false);
+   const [breakdownOpen, setBreakdownOpen] = useState(false);
++  const input = borrowingInputs(d, m);
++
++  return (
++    <div>
++      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
++        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>How much you'd need to borrow</div>
++        <ExplainLink onClick={input.price > 0 ? onExplain : null}/>
++      </div>
++      {input.price > 0 ? (
++          <LoanBreakdown breakdownOpen={breakdownOpen} input={input} stampDutyInfoOpen={stampDutyInfoOpen} setStampDutyInfoOpen={setStampDutyInfoOpen} incomeInfoOpen={incomeInfoOpen} setIncomeInfoOpen={setIncomeInfoOpen} setBreakdownOpen={setBreakdownOpen} d={d} m={m}/>
++      ) : (
++        <EmptyResultCard text={emptyText}/>
++      )}
++    </div>
++  );
++}
++
++// The loan needed against what lenders typically offer, with the costs
++// behind it.
++function LoanBreakdown({ breakdownOpen, input, stampDutyInfoOpen, setStampDutyInfoOpen, incomeInfoOpen, setIncomeInfoOpen, setBreakdownOpen, d, m }) {
+   const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
+   const row = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", fontSize:"13.5px", color:TEXT, padding:"6px 0" };
+   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
+   const figure = { fontFamily:SERIF, fontSize:"26px", fontWeight:700, color:TEXT, lineHeight:1.2 };
+-  const input = borrowingInputs(d, m);
+   const r = calcBorrowingCheck(input);
+   const together = input.incomes.length > 1;
+   const sd = input.stampDutyDetail;
+@@ -280,121 +299,112 @@ export function LoanTile({ d, m, emptyText = "Update your assumptions below to s
+   const times = multipleText(r);
+   const most = affordableMaxPrice(d, m);
+   const minDeposit = `${Math.round(MIN_DEPOSIT_PCT * 100)}%`;
+-
+   return (
+-    <div>
+-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+-        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>How much you'd need to borrow</div>
+-        <ExplainLink onClick={input.price > 0 ? onExplain : null}/>
+-      </div>
+-      {input.price > 0 ? (
+-          <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
+-            style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON,border:borderColor ? `2px solid ${borderColor}` : "none"}}>
+-            <div style={{display:"flex",gap:"24px"}}>
+-              <div>
+-                <div style={figureLabel}>Loan needed</div>
+-                <div style={figure}>{fmt(r.loanNeeded)}</div>
+-              </div>
+-              {times && r.loanNeeded > 0 && (
+-                <div>
+-                  <div style={figureLabel}>Times income</div>
+-                  <div style={{...figure,color:bandColor || TEXT}}>{times}x</div>
+-                </div>
+-              )}
++    <>
++      <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
++        style={{background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON,border:borderColor ? `2px solid ${borderColor}` : "none"}}>
++        <div style={{display:"flex",gap:"24px"}}>
++          <div>
++            <div style={figureLabel}>Loan needed</div>
++            <div style={figure}>{fmt(r.loanNeeded)}</div>
++          </div>
++          {times && r.loanNeeded > 0 && (
++            <div>
++              <div style={figureLabel}>Times income</div>
++              <div style={{...figure,color:bandColor || TEXT}}>{times}x</div>
+             </div>
++          )}
++        </div>
+ 
+-            {r.loanNeeded === 0 ? (
+-              <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:"10px 0 0"}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
+-            ) : r.multiple == null ? (
+-              <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>Candid doesn't have an income figure to compare this against, and lenders base how much they'll lend on income.</p>
+-            ) : (
+-              <>
+-                <MultipleBar multiple={r.multiple} band={r.band}/>
+-                {r.band === "stretch" && (
+-                  <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+-                    That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}. Some lenders go to 5 to {HIGH_EARNER_MULTIPLE}x for higher earners.
+-                  </p>
+-                )}
+-                {r.band === "beyond" && (
+-                  <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+-                    That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}, and above the {HIGH_EARNER_MULTIPLE}x some lenders go to for higher earners.
+-                  </p>
+-                )}
+-              </>
+-            )}
+-            {r.depositShort > 0 && (
++        {r.loanNeeded === 0 ? (
++          <p style={{fontSize:"13px",fontWeight:700,color:SC.ok,margin:"10px 0 0"}}>No mortgage needed: cash covers the price, stamp duty and fees.</p>
++        ) : r.multiple == null ? (
++          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>Candid doesn't have an income figure to compare this against, and lenders base how much they'll lend on income.</p>
++        ) : (
++          <>
++            <MultipleBar multiple={r.multiple} band={r.band}/>
++            {r.band === "stretch" && (
+               <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
+-                Most lenders need a deposit of at least {minDeposit}. You'd need {fmt(r.depositShort)} more.
++                That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}. Some lenders go to 5 to {HIGH_EARNER_MULTIPLE}x for higher earners.
+               </p>
+             )}
+-
+-            {/* The other way round: the highest price their income and cash
+-                allow (maxPriceFor), and which of the two sets it. */}
+-            {most && (
+-              <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
+-                <div style={figureLabel}>The most you could afford</div>
+-                {most.price > 0 ? (<>
+-                  <div style={{...figure,fontSize:"22px"}}>{fmt(most.price)}</div>
+-                  <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>
+-                    {most.limit === "deposit"
+-                      ? `Your deposit sets this: most lenders need at least ${minDeposit} of the price. Your income alone would allow more.`
+-                      : most.limit === "budget"
+-                        ? `Your monthly budget sets this: at ${Math.round(most.testRatePct * 100) / 100}%, the mortgage and upkeep would use what's left after your other spending.`
+-                        : `Where the loan reaches ${LENDER_INCOME_MULTIPLE}x ${incomePhrase}.`}
+-                  </p>
+-                </>) : (
+-                  <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"4px 0 0"}}>
+-                    {most.limit === "budget"
+-                      ? "Your spending already uses your take-home pay, so there's no room for a mortgage."
+-                      : `Your cash needs to cover the fees and a ${minDeposit} deposit first.`}
+-                  </p>
+-                )}
+-              </div>
++            {r.band === "beyond" && (
++              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
++                That's {fmt(r.gapAboveMultiple)} more than {LENDER_INCOME_MULTIPLE}x {incomePhrase}, and above the {HIGH_EARNER_MULTIPLE}x some lenders go to for higher earners.
++              </p>
+             )}
++          </>
++        )}
++        {r.depositShort > 0 && (
++          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
++            Most lenders need a deposit of at least {minDeposit}. You'd need {fmt(r.depositShort)} more.
++          </p>
++        )}
+ 
+-            {/* The cash-to-deposit breakdown, collapsed by default so the
+-                headline result and the inputs below fit on one screen. */}
+-            {breakdownOpen && (<>
+-            <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>
+-            <div style={row}><span>Cash available</span><span>{fmt(input.cashAvailable)}</span></div>
+-            <div style={row}>
+-              <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
+-                Stamp duty
+-                {sd && <InfoButton open={stampDutyInfoOpen} onClick={() => setStampDutyInfoOpen(o => !o)}/>}
+-              </span>
+-              {/* Scotland and Wales: nothing to subtract until they enter
+-                  their own figure, so say it's left out rather than £0. */}
+-              {!sd ? <span style={{color:MUT}}>Add location</span>
+-                : !sd.supported && !(input.stampDuty > 0) ? <span style={{color:MUT}}>Not included</span>
+-                : <Cost value={input.stampDuty}/>}
+-            </div>
+-            {sd && stampDutyInfoOpen && <StampDutyBreakdown sd={sd} style={{...explainer,margin:"4px 0 6px"}}/>}
+-            <div style={row}><span>Legal and survey fees</span><Cost value={input.fees}/></div>
+-            <div style={{...row,fontWeight:700}}><span>Deposit</span><span>{fmt(r.usableDeposit)}</span></div>
+-            <div style={row}>
+-              <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
+-                {together ? "Combined income" : "Income"}
+-                <InfoButton open={incomeInfoOpen} onClick={() => setIncomeInfoOpen(o => !o)}/>
+-              </span>
+-              <span>{fmt(r.income)}</span>
+-            </div>
+-            {incomeInfoOpen && (
+-              <p style={{...explainer,marginTop:"4px"}}>
+-                Salary plus other income{together ? ", for both of you" : ""}. Bonuses and dividends aren't included, as lenders treat them case by case. This is a guide, not a lending decision.
++        {/* The other way round: the highest price their income and cash
++            allow (maxPriceFor), and which of the two sets it. */}
++        {most && (
++          <div style={{marginTop:"14px",paddingTop:"12px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
++            <div style={figureLabel}>The most you could afford</div>
++            {most.price > 0 ? (<>
++              <div style={{...figure,fontSize:"22px"}}>{fmt(most.price)}</div>
++              <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>
++                {most.limit === "deposit"
++                  ? `Your deposit sets this: most lenders need at least ${minDeposit} of the price. Your income alone would allow more.`
++                  : most.limit === "budget"
++                    ? `Your monthly budget sets this: at ${Math.round(most.testRatePct * 100) / 100}%, the mortgage and upkeep would use what's left after your other spending.`
++                    : `Where the loan reaches ${LENDER_INCOME_MULTIPLE}x ${incomePhrase}.`}
+               </p>
+-            )}
+-            {r.upfrontShortfall > 0 && (
+-              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>
+-                Cash available is {fmt(r.upfrontShortfall)} short of covering stamp duty and fees, so none of it is left for a deposit.
++            </>) : (
++              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"4px 0 0"}}>
++                {most.limit === "budget"
++                  ? "Your spending already uses your take-home pay, so there's no room for a mortgage."
++                  : `Your cash needs to cover the fees and a ${minDeposit} deposit first.`}
+               </p>
+             )}
+-            </>)}
+-            <ExpandChevron open={breakdownOpen} onToggle={() => setBreakdownOpen(o => !o)} label="the breakdown"/>
+-          </motion.div>
+-      ) : (
+-        <EmptyResultCard text={emptyText}/>
+-      )}
+-    </div>
++          </div>
++        )}
++
++        {/* The cash-to-deposit breakdown, collapsed by default so the
++            headline result and the inputs below fit on one screen. */}
++        {breakdownOpen && (<>
++        <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 8px"}}/>
++        <div style={row}><span>Cash available</span><span>{fmt(input.cashAvailable)}</span></div>
++        <div style={row}>
++          <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
++            Stamp duty
++            {sd && <InfoButton open={stampDutyInfoOpen} onClick={() => setStampDutyInfoOpen(o => !o)}/>}
++          </span>
++          {/* Scotland and Wales: nothing to subtract until they enter
++              their own figure, so say it's left out rather than £0. */}
++          {!sd ? <span style={{color:MUT}}>Add location</span>
++            : !sd.supported && !(input.stampDuty > 0) ? <span style={{color:MUT}}>Not included</span>
++            : <Cost value={input.stampDuty}/>}
++        </div>
++        {sd && stampDutyInfoOpen && <StampDutyBreakdown sd={sd} style={{...explainer,margin:"4px 0 6px"}}/>}
++        <div style={row}><span>Legal and survey fees</span><Cost value={input.fees}/></div>
++        <div style={{...row,fontWeight:700}}><span>Deposit</span><span>{fmt(r.usableDeposit)}</span></div>
++        <div style={row}>
++          <span style={{display:"flex",alignItems:"center",gap:"6px"}}>
++            {together ? "Combined income" : "Income"}
++            <InfoButton open={incomeInfoOpen} onClick={() => setIncomeInfoOpen(o => !o)}/>
++          </span>
++          <span>{fmt(r.income)}</span>
++        </div>
++        {incomeInfoOpen && (
++          <p style={{...explainer,marginTop:"4px"}}>
++            Salary plus other income{together ? ", for both of you" : ""}. Bonuses and dividends aren't included, as lenders treat them case by case. This is a guide, not a lending decision.
++          </p>
++        )}
++        {r.upfrontShortfall > 0 && (
++          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>
++            Cash available is {fmt(r.upfrontShortfall)} short of covering stamp duty and fees, so none of it is left for a deposit.
++          </p>
++        )}
++        </>)}
++        <ExpandChevron open={breakdownOpen} onToggle={() => setBreakdownOpen(o => !o)} label="the breakdown"/>
++      </motion.div>
++    </>
+   );
+ }
+ 
+diff --git a/src/mobile/property/RentVsBuyStep.jsx b/src/mobile/property/RentVsBuyStep.jsx
+index fbff44b..8358f37 100644
+--- a/src/mobile/property/RentVsBuyStep.jsx
++++ b/src/mobile/property/RentVsBuyStep.jsx
+@@ -45,8 +45,6 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
+   const [ownInfoOpen, setOwnInfoOpen] = useState(false);
+   const why = useWhyInfo({ d, m, regionalRows });
+   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
+-  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
+-  const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
+ 
+   const input = rentVsBuyInputs(d, m, regionalRows, "moderate", marketRates);
+   // Any rent figure, £0 included (living with family, say): the result
+@@ -61,28 +59,7 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
+   const result = rentGiven ? (outcomes ? outcomes[rateScenario] : calcRentVsBuy(input)) : null;
+   const leasehold = input.tenure === "leasehold";
+   const cash = input.returnType === "cash";
+-  const together = input.people.length > 1;
+-  const last = result?.years.at(-1);
+-  const shown = result ? (result.years.find(y => y.year === selectedYear) || last) : null;
+   const buyingAhead = result ? result.gapAtHorizon > 0 : false;
+-  // How much the answer leans on house prices, for the rate option chosen.
+-  // Buying the user can't afford month to month: the comparison assumes they
+-  // pay it, so it says so above the answer (src/lib/monthlyBudget.js).
+-  const budget = result ? monthlyBudget(d, m) : null;
+-  const budgetWarning = !budget ? null
+-    : budget.status === "short" ? { color: SC.critical, text: `Buying would leave you ${fmt(-budget.left)} short each month, so this assumes money you don't have.` }
+-    : budget.leftIfRatesRise != null && budget.leftIfRatesRise < 0 ? { color: WARNING, text: `If rates are higher from year ${budget.ratesRise.year}, buying would leave you ${fmt(-budget.leftIfRatesRise)} short each month.` }
+-    : null;
+-  const leans = result ? breakevenLine(breakevenGrowthPct(outcomes ? { ...input, mortgageScenario: rateScenario } : input), buyingAhead) : null;
+-  const isaRoomNow = input.alreadyInIsa + input.people.reduce((s, p) => s + p.isaHeadroom, 0);
+-  const buyingCostLines = shown ? [
+-    { label:"Mortgage interest", value:shown.buying.mortgageInterest },
+-    { label:"Maintenance", value:shown.buying.maintenance },
+-    ...(leasehold ? [{ label:"Ground rent", value:shown.buying.groundRent }, { label:"Service charge", value:shown.buying.serviceCharge }] : []),
+-    ...(shown.buying.stampDutyAndFees > 0 ? [{ label:"Stamp duty and fees", value:shown.buying.stampDutyAndFees }] : []),
+-    ...(shown.buying.remortgageFees > 0 ? [{ label:"Remortgage fees", value:shown.buying.remortgageFees }] : []),
+-    { label:"Selling costs", value:shown.buying.sellingCosts },
+-  ] : [];
+ 
+   // The inputs, below the result (see the layout note above the component).
+   const inputs = (
+@@ -128,6 +105,43 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
+       <p style={{fontSize:"12.5px",color:TEXT,margin:"6px 0 0"}}>
+         Rents {pct(input.rentGrowthPct)} a year · upkeep {leasehold ? `${fmt(input.leaseholdMaintenance)} a year` : `${pct(input.maintenancePct)} of the value a year`} · selling costs {pct(input.sellingCostsPct)} · {cash ? `cash ${pct(input.investmentReturnPct)}` : `invested ${pct(input.investmentReturnPct)}`}
+       </p>
++      <RentVsBuyAssumptions assumptionsOpen={assumptionsOpen} input={input} set={set} leasehold={leasehold} why={why} cash={cash} d={d}/>
++    </>
++  );
++
++  return (
++    <div>
++      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
++        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Which leaves you better off</div>
++        {/* "Explain this" replays the answer step by step. */}
++        <ExplainLink onClick={result && !holdResult ? onExplain : null}/>
++      </div>
++      {!result || holdResult ? (
++        <EmptyResultCard text={guide ? "Answer a few questions below to compare renting with buying." : "Add your monthly rent below to compare renting with buying."}/>
++      ) : (
++        <RentVsBuyResult resultRef={resultRef} result={result} buyingAhead={buyingAhead} outcomes={outcomes} remortgageYear={remortgageYear} rateInfoOpen={rateInfoOpen} setRateInfoOpen={setRateInfoOpen} input={input} rateScenario={rateScenario} setRateScenario={setRateScenario} detailsOpen={detailsOpen} setSelectedYear={setSelectedYear} framingOpen={framingOpen} setFramingOpen={setFramingOpen} costsInfoOpen={costsInfoOpen} setCostsInfoOpen={setCostsInfoOpen} earningsInfoOpen={earningsInfoOpen} setEarningsInfoOpen={setEarningsInfoOpen} cash={cash} ownInfoOpen={ownInfoOpen} setOwnInfoOpen={setOwnInfoOpen} setDetailsOpen={setDetailsOpen} selectedYear={selectedYear} d={d} m={m} leasehold={leasehold}/>
++      )}
++      {result && !holdResult && (
++        <StickySummaryBar watchRef={resultRef} label="Back to which leaves you better off">
++          <SummaryLabel>After {years(result.horizonYears)}</SummaryLabel>
++          <SummaryFigure color={TEXT}>{buyingAhead ? "Buying" : "Renting"}</SummaryFigure>
++          <span style={{fontSize:"12.5px",fontWeight:600,color:MUT}}>~{fmtCompact(Math.abs(result.gapAtHorizon))} ahead</span>
++        </StickySummaryBar>
++      )}
++
++      <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"18px 0 14px"}}/>
++      {guide || (<>
++        <AssumptionsHeading text="Set your rent vs buy assumptions." onWalkThrough={onWalkThrough}/>
++        {inputs}
++      </>)}
++    </div>
++  );
++}
++
++// The assumptions the answer uses, each editable, behind "Assumptions".
++function RentVsBuyAssumptions({ assumptionsOpen, input, set, leasehold, why, cash, d }) {
++  return (
++    <>
+       {assumptionsOpen && (
+         <div style={{marginTop:"10px"}}>
+           <div style={{display:"flex",gap:"10px"}}>
+@@ -171,164 +185,169 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
+       )}
+     </>
+   );
++}
+ 
++// The answer: buying or renting ahead at the horizon, year by year, with
++// the rates choice and what's behind the figures.
++function RentVsBuyResult({ resultRef, result, buyingAhead, outcomes, remortgageYear, rateInfoOpen, setRateInfoOpen, input, rateScenario, setRateScenario, detailsOpen, setSelectedYear, framingOpen, setFramingOpen, costsInfoOpen, setCostsInfoOpen, earningsInfoOpen, setEarningsInfoOpen, cash, ownInfoOpen, setOwnInfoOpen, setDetailsOpen, selectedYear, d, m, leasehold }) {
++  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
++  const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase" };
++  const together = input.people.length > 1;
++  const last = result?.years.at(-1);
++  const shown = result ? (result.years.find(y => y.year === selectedYear) || last) : null;
++  // How much the answer leans on house prices, for the rate option chosen.
++  // Buying the user can't afford month to month: the comparison assumes they
++  // pay it, so it says so above the answer (src/lib/monthlyBudget.js).
++  const budget = result ? monthlyBudget(d, m) : null;
++  const budgetWarning = !budget ? null
++    : budget.status === "short" ? { color: SC.critical, text: `Buying would leave you ${fmt(-budget.left)} short each month, so this assumes money you don't have.` }
++    : budget.leftIfRatesRise != null && budget.leftIfRatesRise < 0 ? { color: WARNING, text: `If rates are higher from year ${budget.ratesRise.year}, buying would leave you ${fmt(-budget.leftIfRatesRise)} short each month.` }
++    : null;
++  const leans = result ? breakevenLine(breakevenGrowthPct(outcomes ? { ...input, mortgageScenario: rateScenario } : input), buyingAhead) : null;
++  const isaRoomNow = input.alreadyInIsa + input.people.reduce((s, p) => s + p.isaHeadroom, 0);
++  const buyingCostLines = shown ? [
++    { label:"Mortgage interest", value:shown.buying.mortgageInterest },
++    { label:"Maintenance", value:shown.buying.maintenance },
++    ...(leasehold ? [{ label:"Ground rent", value:shown.buying.groundRent }, { label:"Service charge", value:shown.buying.serviceCharge }] : []),
++    ...(shown.buying.stampDutyAndFees > 0 ? [{ label:"Stamp duty and fees", value:shown.buying.stampDutyAndFees }] : []),
++    ...(shown.buying.remortgageFees > 0 ? [{ label:"Remortgage fees", value:shown.buying.remortgageFees }] : []),
++    { label:"Selling costs", value:shown.buying.sellingCosts },
++  ] : [];
+   return (
+-    <div>
+-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
+-        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Which leaves you better off</div>
+-        {/* "Explain this" replays the answer step by step. */}
+-        <ExplainLink onClick={result && !holdResult ? onExplain : null}/>
+-      </div>
+-      {!result || holdResult ? (
+-        <EmptyResultCard text={guide ? "Answer a few questions below to compare renting with buying." : "Add your monthly rent below to compare renting with buying."}/>
+-      ) : (
+-        <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
+-          style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON}}>
+-            {budgetWarning && (
+-              <div style={{display:"flex",alignItems:"flex-start",gap:"6px",fontSize:"12.5px",fontWeight:600,color:TEXT,lineHeight:1.45,marginBottom:"12px"}}>
+-                <CircleAlert size={15} color={budgetWarning.color} style={{flexShrink:0,marginTop:"1px"}}/>
+-                {budgetWarning.text}
+-              </div>
+-            )}
+-            {/* The answer, centred: buying or renting, larger, with by how
+-                much on the same line at its usual size. */}
+-            <div style={{textAlign:"center"}}>
+-              <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
+-              <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:"10px",flexWrap:"wrap",marginTop:"2px"}}>
+-                <span style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:TEXT,lineHeight:1.15}}>{buyingAhead ? "Buying" : "Renting"}</span>
+-                <span style={{display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"13px",color:TEXT}}>
+-                  <ArrowUp size={14} color={SC.ok} strokeWidth={2.6}/>
+-                  ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}
+-                </span>
+-              </div>
+-              {leans && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>{leans}</p>}
++    <>
++      <motion.div ref={resultRef} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.4}}
++        style={{scrollMarginTop:"16px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:CARD_PADDING_WITH_CHEVRON}}>
++          {budgetWarning && (
++            <div style={{display:"flex",alignItems:"flex-start",gap:"6px",fontSize:"12.5px",fontWeight:600,color:TEXT,lineHeight:1.45,marginBottom:"12px"}}>
++              <CircleAlert size={15} color={budgetWarning.color} style={{flexShrink:0,marginTop:"1px"}}/>
++              {budgetWarning.text}
+             </div>
++          )}
++          {/* The answer, centred: buying or renting, larger, with by how
++              much on the same line at its usual size. */}
++          <div style={{textAlign:"center"}}>
++            <div style={figureLabel}>Better off after {years(result.horizonYears)}</div>
++            <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:"10px",flexWrap:"wrap",marginTop:"2px"}}>
++              <span style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:TEXT,lineHeight:1.15}}>{buyingAhead ? "Buying" : "Renting"}</span>
++              <span style={{display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"13px",color:TEXT}}>
++                <ArrowUp size={14} color={SC.ok} strokeWidth={2.6}/>
++                ~{fmtCompact(Math.abs(result.gapAtHorizon))} vs {buyingAhead ? "renting" : "buying"}
++              </span>
++            </div>
++            {leans && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>{leans}</p>}
++          </div>
+ 
+-            {outcomes && (
+-              <div style={{marginTop:"14px"}}>
+-                <div style={{...figureLabel,display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px"}}>
+-                  Mortgage rate from year {remortgageYear}
+-                  <InfoButton open={rateInfoOpen} onClick={() => setRateInfoOpen(o => !o)}/>
+-                </div>
+-                {rateInfoOpen && (
+-                  <p style={{...explainer,marginBottom:"8px"}}>
+-                    Your {input.mortgage.fixedYears}-year fix ends before you'd sell, so you'd remortgage at whatever rates are then. Each option shows the result if they're {STRESS_REMORTGAGE_UPLIFT} points higher, the same or {STRESS_REMORTGAGE_UPLIFT} points lower. Higher payments mean the renter puts aside more each month; lower payments, less.
+-                  </p>
+-                )}
+-                <RateChoice outcomes={outcomes} ratePct={input.mortgage.ratePct} chosen={rateScenario} onChoose={setRateScenario}/>
++          {outcomes && (
++            <div style={{marginTop:"14px"}}>
++              <div style={{...figureLabel,display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px"}}>
++                Mortgage rate from year {remortgageYear}
++                <InfoButton open={rateInfoOpen} onClick={() => setRateInfoOpen(o => !o)}/>
+               </div>
+-            )}
++              {rateInfoOpen && (
++                <p style={{...explainer,marginBottom:"8px"}}>
++                  Your {input.mortgage.fixedYears}-year fix ends before you'd sell, so you'd remortgage at whatever rates are then. Each option shows the result if they're {STRESS_REMORTGAGE_UPLIFT} points higher, the same or {STRESS_REMORTGAGE_UPLIFT} points lower. Higher payments mean the renter puts aside more each month; lower payments, less.
++                </p>
++              )}
++              <RateChoice outcomes={outcomes} ratePct={input.mortgage.ratePct} chosen={rateScenario} onChoose={setRateScenario}/>
++            </div>
++          )}
+ 
+-            {/* Collapsed, a negative-equity warning still shows in one line,
+-                so it can't be missed; the full note is in the details. */}
+-            {!detailsOpen && result.negativeEquityYears.length > 0 && (
+-              <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"12px",fontSize:"13px",fontWeight:700,color:SC.critical}}>
+-                <CircleAlert size={15} style={{flexShrink:0}}/>
+-                {negativeEquityText(result.negativeEquityYears)}
+-              </div>
+-            )}
++          {/* Collapsed, a negative-equity warning still shows in one line,
++              so it can't be missed; the full note is in the details. */}
++          {!detailsOpen && result.negativeEquityYears.length > 0 && (
++            <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"12px",fontSize:"13px",fontWeight:700,color:SC.critical}}>
++              <CircleAlert size={15} style={{flexShrink:0}}/>
++              {negativeEquityText(result.negativeEquityYears)}
++            </div>
++          )}
+ 
+-            {/* The chart, timeline and year-by-year breakdown, collapsed by
+-                default so the result and the inputs below fit on one screen. */}
+-            {detailsOpen && (<>
+-            <NetCostChart rows={result.years} selectedYear={shown.year}
+-              buyingAtStart={result.years[0].buying.stampDutyAndFees + input.price * input.sellingCostsPct / 100}/>
+-            <Timeline rows={result.years} selectedYear={shown.year} onSelect={y => setSelectedYear(y)}/>
++          {/* The chart, timeline and year-by-year breakdown, collapsed by
++              default so the result and the inputs below fit on one screen. */}
++          {detailsOpen && (<>
++          <NetCostChart rows={result.years} selectedYear={shown.year}
++            buyingAtStart={result.years[0].buying.stampDutyAndFees + input.price * input.sellingCostsPct / 100}/>
++          <Timeline rows={result.years} selectedYear={shown.year} onSelect={y => setSelectedYear(y)}/>
+ 
+-            <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 12px"}}/>
+-            <div style={{...figureLabel,display:"flex",alignItems:"center",gap:"6px"}}>
+-              If you sold after {years(shown.year)}
+-              <InfoButton open={framingOpen} onClick={() => setFramingOpen(o => !o)}/>
+-            </div>
+-            {framingOpen && (
+-              <p style={{...explainer,marginTop:"6px"}}>
+-                Renting or buying, a home costs money to live in. Buying costs interest, upkeep and the costs of buying and selling, while the whole home {input.housePriceGrowthPct < 0 ? "falls" : "rises"} in value. Renting costs rent, while your money grows elsewhere. Every figure is a total since the day you'd buy.
+-              </p>
+-            )}
+-            <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 12px"}}>{whyText(shown)}</p>
+-            <NegativeEquity result={result} shown={shown} fixedYears={input.mortgage.fixedYears}
+-              onShowRatesUp={outcomes ? () => setRateScenario("stress") : null} ratesUpShown={rateScenario === "stress"}/>
++          <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"16px 0 12px"}}/>
++          <div style={{...figureLabel,display:"flex",alignItems:"center",gap:"6px"}}>
++            If you sold after {years(shown.year)}
++            <InfoButton open={framingOpen} onClick={() => setFramingOpen(o => !o)}/>
++          </div>
++          {framingOpen && (
++            <p style={{...explainer,marginTop:"6px"}}>
++              Renting or buying, a home costs money to live in. Buying costs interest, upkeep and the costs of buying and selling, while the whole home {input.housePriceGrowthPct < 0 ? "falls" : "rises"} in value. Renting costs rent, while your money grows elsewhere. Every figure is a total since the day you'd buy.
++            </p>
++          )}
++          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 12px"}}>{whyText(shown)}</p>
++          <NegativeEquity result={result} shown={shown} fixedYears={input.mortgage.fixedYears}
++            onShowRatesUp={outcomes ? () => setRateScenario("stress") : null} ratesUpShown={rateScenario === "stress"}/>
+ 
+-            <Comparison
+-              heading={shown.year === 1 ? "Year 1" : `Years 1 to ${shown.year}`}
+-              rows={[
+-                { label:"Costs", kind:"cost", buying:shown.buying.notRecovered, renting:shown.renting.notRecovered,
+-                  info:{
+-                    button: <InfoButton open={costsInfoOpen} onClick={() => setCostsInfoOpen(o => !o)}/>,
+-                    panel: costsInfoOpen && (
+-                      <div style={explainer}>
+-                        <div style={{fontWeight:600,marginBottom:"2px"}}>Ownership cost</div>
+-                        {buyingCostLines.map(l => (
+-                          <div key={l.label} style={{display:"flex",justifyContent:"space-between",gap:"10px"}}><span>{l.label}</span><span>{fmt(l.value)}</span></div>
+-                        ))}
+-                        <div style={{fontWeight:600,margin:"6px 0 2px"}}>Rental cost</div>
+-                        <div style={{display:"flex",justifyContent:"space-between",gap:"10px"}}><span>Rent</span><span>{fmt(shown.renting.notRecovered)}</span></div>
+-                      </div>
+-                    ),
+-                  } },
+-                { label:"Growth", kind:"gain", buying:shown.buying.priceRise, renting:shown.renting.earnings - shown.renting.tax,
+-                  info:{
+-                    button: <InfoButton open={earningsInfoOpen} onClick={() => setEarningsInfoOpen(o => !o)}/>,
+-                    panel: earningsInfoOpen && (
+-                      <div style={explainer}>
+-                        <p style={{margin:0}}>
+-                          Buying: the {shown.buying.priceRise >= 0 ? "rise" : "fall"} in the whole home's value, at {pct(Math.abs(input.housePriceGrowthPct))} a year.
+-                        </p>
+-                        <p style={{margin:"6px 0 0"}}>
+-                          Renting: the growth in wealth from money not going into the property, {cash ? "interest" : "investment returns"} of {fmt(shown.renting.earnings)}, less {fmt(shown.renting.tax)} in tax. That's on the {fmt(input.upfront)} kept {cash ? "in cash" : "invested"} instead of spent on the deposit, stamp duty and fees, plus what's put aside each month instead of the buyer's higher costs.
+-                        </p>
+-                        <p style={{margin:"6px 0 0"}}>
+-                          About {fmt(Math.min(input.upfront, isaRoomNow))} of the starting money sits in ISAs, tax-free. After this year, Candid assumes {together ? "each of you adds" : "you add"} to ISAs only what {together ? "you each" : "you"} could save from income, up to {fmt(ISA_ALLOWANCE)} a year: about {fmt(input.people[0].isaCapacity)} for you{together ? ` and ${fmt(input.people[1].isaCapacity)} for your partner` : ""}.
+-                        </p>
+-                        {together && input.partnerEstimate && (
+-                          <p style={{margin:"6px 0 0"}}>
+-                            {input.partnerEstimate.shared
+-                              ? `Your partner's take-home pay is roughly ${fmt(input.partnerEstimate.takeHome)} a year. With your spending shared, together you'd have about ${fmt(input.partnerEstimate.householdSurplus)} a year to save, split between you by take-home pay.`
+-                              : `Your partner's take-home pay is roughly ${fmt(input.partnerEstimate.takeHome)} a year. Scaling your monthly costs to their salary puts theirs at about ${fmt(input.partnerEstimate.costs / 12)} a month, leaving around ${fmt(input.partnerEstimate.surplus)} a year to save.`}
+-                          </p>
+-                        )}
+-                      </div>
+-                    ),
+-                  } },
+-                { label:"Cost of living there", kind:"net", buying:shown.buying.netCost, renting:shown.renting.netCost },
+-                { label:"A month", kind:"month", buying:shown.buying.netCost / (shown.year * 12), renting:shown.renting.netCost / (shown.year * 12) },
+-                { label:"Your own money", kind:"own", buying:shown.buying.ownMoneyIn, renting:Math.max(0, shown.renting.ownMoneyIn),
+-                  info:{
+-                    button: <InfoButton open={ownInfoOpen} onClick={() => setOwnInfoOpen(o => !o)}/>,
+-                    panel: ownInfoOpen && (
+-                      <div style={explainer}>
+-                        <p style={{margin:0}}>Still yours either way, so not a cost.</p>
+-                        <p style={{margin:"6px 0 0"}}>
+-                          {shown.buying.priceRise >= 0
+-                            ? "Buying: your deposit and the loan paid off, which you get back when you sell."
+-                            : "Buying: your deposit and the loan paid off. The fall in the home's value comes out of this when you sell, which is why it's counted under Growth."}
+-                        </p>
++          <Comparison
++            heading={shown.year === 1 ? "Year 1" : `Years 1 to ${shown.year}`}
++            rows={[
++              { label:"Costs", kind:"cost", buying:shown.buying.notRecovered, renting:shown.renting.notRecovered,
++                info:{
++                  button: <InfoButton open={costsInfoOpen} onClick={() => setCostsInfoOpen(o => !o)}/>,
++                  panel: costsInfoOpen && (
++                    <div style={explainer}>
++                      <div style={{fontWeight:600,marginBottom:"2px"}}>Ownership cost</div>
++                      {buyingCostLines.map(l => (
++                        <div key={l.label} style={{display:"flex",justifyContent:"space-between",gap:"10px"}}><span>{l.label}</span><span>{fmt(l.value)}</span></div>
++                      ))}
++                      <div style={{fontWeight:600,margin:"6px 0 2px"}}>Rental cost</div>
++                      <div style={{display:"flex",justifyContent:"space-between",gap:"10px"}}><span>Rent</span><span>{fmt(shown.renting.notRecovered)}</span></div>
++                    </div>
++                  ),
++                } },
++              { label:"Growth", kind:"gain", buying:shown.buying.priceRise, renting:shown.renting.earnings - shown.renting.tax,
++                info:{
++                  button: <InfoButton open={earningsInfoOpen} onClick={() => setEarningsInfoOpen(o => !o)}/>,
++                  panel: earningsInfoOpen && (
++                    <div style={explainer}>
++                      <p style={{margin:0}}>
++                        Buying: the {shown.buying.priceRise >= 0 ? "rise" : "fall"} in the whole home's value, at {pct(Math.abs(input.housePriceGrowthPct))} a year.
++                      </p>
++                      <p style={{margin:"6px 0 0"}}>
++                        Renting: the growth in wealth from money not going into the property, {cash ? "interest" : "investment returns"} of {fmt(shown.renting.earnings)}, less {fmt(shown.renting.tax)} in tax. That's on the {fmt(input.upfront)} kept {cash ? "in cash" : "invested"} instead of spent on the deposit, stamp duty and fees, plus what's put aside each month instead of the buyer's higher costs.
++                      </p>
++                      <p style={{margin:"6px 0 0"}}>
++                        About {fmt(Math.min(input.upfront, isaRoomNow))} of the starting money sits in ISAs, tax-free. After this year, Candid assumes {together ? "each of you adds" : "you add"} to ISAs only what {together ? "you each" : "you"} could save from income, up to {fmt(ISA_ALLOWANCE)} a year: about {fmt(input.people[0].isaCapacity)} for you{together ? ` and ${fmt(input.people[1].isaCapacity)} for your partner` : ""}.
++                      </p>
++                      {together && input.partnerEstimate && (
+                         <p style={{margin:"6px 0 0"}}>
+-                          {shown.renting.ownMoneyIn > 0
+-                            ? `Renting: the ${fmt(input.upfront)} you didn't spend on buying, ${shown.renting.ownMoneyIn >= input.upfront ? "plus" : "less"} ${fmt(Math.abs(shown.renting.ownMoneyIn - input.upfront))} ${shown.renting.ownMoneyIn >= input.upfront ? "put aside" : "taken out to cover the higher rent"}.`
+-                            : "Renting: paying the higher rent would have used up all of the renter's savings."}
++                          {input.partnerEstimate.shared
++                            ? `Your partner's take-home pay is roughly ${fmt(input.partnerEstimate.takeHome)} a year. With your spending shared, together you'd have about ${fmt(input.partnerEstimate.householdSurplus)} a year to save, split between you by take-home pay.`
++                            : `Your partner's take-home pay is roughly ${fmt(input.partnerEstimate.takeHome)} a year. Scaling your monthly costs to their salary puts theirs at about ${fmt(input.partnerEstimate.costs / 12)} a month, leaving around ${fmt(input.partnerEstimate.surplus)} a year to save.`}
+                         </p>
+-                      </div>
+-                    ),
+-                  } },
+-              ]}/>
+-            </>)}
+-            <ExpandChevron open={detailsOpen} onToggle={() => setDetailsOpen(o => !o)} label="the details"/>
+-        </motion.div>
+-      )}
+-      {result && !holdResult && (
+-        <StickySummaryBar watchRef={resultRef} label="Back to which leaves you better off">
+-          <SummaryLabel>After {years(result.horizonYears)}</SummaryLabel>
+-          <SummaryFigure color={TEXT}>{buyingAhead ? "Buying" : "Renting"}</SummaryFigure>
+-          <span style={{fontSize:"12.5px",fontWeight:600,color:MUT}}>~{fmtCompact(Math.abs(result.gapAtHorizon))} ahead</span>
+-        </StickySummaryBar>
+-      )}
+-
+-      <hr style={{border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",margin:"18px 0 14px"}}/>
+-      {guide || (<>
+-        <AssumptionsHeading text="Set your rent vs buy assumptions." onWalkThrough={onWalkThrough}/>
+-        {inputs}
+-      </>)}
+-    </div>
++                      )}
++                    </div>
++                  ),
++                } },
++              { label:"Cost of living there", kind:"net", buying:shown.buying.netCost, renting:shown.renting.netCost },
++              { label:"A month", kind:"month", buying:shown.buying.netCost / (shown.year * 12), renting:shown.renting.netCost / (shown.year * 12) },
++              { label:"Your own money", kind:"own", buying:shown.buying.ownMoneyIn, renting:Math.max(0, shown.renting.ownMoneyIn),
++                info:{
++                  button: <InfoButton open={ownInfoOpen} onClick={() => setOwnInfoOpen(o => !o)}/>,
++                  panel: ownInfoOpen && (
++                    <div style={explainer}>
++                      <p style={{margin:0}}>Still yours either way, so not a cost.</p>
++                      <p style={{margin:"6px 0 0"}}>
++                        {shown.buying.priceRise >= 0
++                          ? "Buying: your deposit and the loan paid off, which you get back when you sell."
++                          : "Buying: your deposit and the loan paid off. The fall in the home's value comes out of this when you sell, which is why it's counted under Growth."}
++                      </p>
++                      <p style={{margin:"6px 0 0"}}>
++                        {shown.renting.ownMoneyIn > 0
++                          ? `Renting: the ${fmt(input.upfront)} you didn't spend on buying, ${shown.renting.ownMoneyIn >= input.upfront ? "plus" : "less"} ${fmt(Math.abs(shown.renting.ownMoneyIn - input.upfront))} ${shown.renting.ownMoneyIn >= input.upfront ? "put aside" : "taken out to cover the higher rent"}.`
++                          : "Renting: paying the higher rent would have used up all of the renter's savings."}
++                      </p>
++                    </div>
++                  ),
++                } },
++            ]}/>
++          </>)}
++          <ExpandChevron open={detailsOpen} onToggle={() => setDetailsOpen(o => !o)} label="the details"/>
++      </motion.div>
++    </>
+   );
+ }
+diff --git a/src/mobile/screens/MobileForecastScreen.jsx b/src/mobile/screens/MobileForecastScreen.jsx
+index 86a3093..69d25b4 100644
+--- a/src/mobile/screens/MobileForecastScreen.jsx
++++ b/src/mobile/screens/MobileForecastScreen.jsx
+@@ -75,7 +75,6 @@ export default function MobileForecastScreen({ d, m }) {
+   const HORIZON_OPTIONS = milestoneAges.length
+     ? milestoneAges.map(targetAge => ({ value: targetAge - age, label: `Age ${targetAge}` }))
+     : [{value:5,label:"5yr"},{value:10,label:"10yr"},{value:20,label:"20yr"},{value:40,label:"40yr"}];
+-  const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
+   const [horizon, setHorizon] = useState(() => HORIZON_OPTIONS[0]?.value ?? 10);
+   const [surplus, setSurplus] = useState(null);
+   const [lumpSum, setLumpSum] = useState(null);
+@@ -88,39 +87,8 @@ export default function MobileForecastScreen({ d, m }) {
+   const forecast = useMemo(() => calcForecast(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
+   const series = useMemo(() => calcForecastSeries(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
+   const assumptions = useMemo(() => buildForecastAssumptions(d, m), [d, m]);
+-  const netWorthRows = calcNetWorthTrajectory(d, m, horizon);
+ 
+-  const chart = (() => {
+-    const allValues = series.series.flatMap(s => s.values);
+-    const yMax = Math.max(1, ...allValues);
+-    const VW = chartWidth, VH = 150, PL = 34, PR = 4, PT = 8, PB = 20;
+-    const cW = VW - PL - PR, cH = VH - PT - PB;
+-    const sx = i => PL + (i / horizon) * cW;
+-    const sy = v => PT + (1 - v / yMax) * cH;
+-    const paths = series.series.map(s => {
+-      const endIdx = s.termYear != null ? s.termYear : s.values.length - 1;
+-      const path = s.values.slice(0, endIdx + 1).map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
+-      const lastIdx = Math.min(endIdx, s.values.length - 1);
+-      return { label: s.label, path, lastX: sx(lastIdx), lastY: sy(s.values[lastIdx]) };
+-    });
+-    const yTicks = [0, 0.5, 1].map(f => yMax * f);
+-    const xTicks = buildYearTicks(horizon);
+-    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks };
+-  })();
+ 
+-  const nwChart = (() => {
+-    const values = netWorthRows.map(r => r.netWorth);
+-    const yMin = Math.min(0, ...values);
+-    const yMax = Math.max(1, ...values);
+-    const VW = chartWidth, VH = 150, PL = 40, PR = 4, PT = 8, PB = 20;
+-    const cW = VW - PL - PR, cH = VH - PT - PB;
+-    const sx = i => PL + (i / horizon) * cW;
+-    const sy = v => PT + (1 - (v - yMin) / (yMax - yMin || 1)) * cH;
+-    const path = values.map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
+-    const yTicks = [0, 0.5, 1].map(f => yMin + (yMax - yMin) * f);
+-    const xTicks = buildYearTicks(horizon);
+-    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, yTicks, xTicks, lastX: sx(horizon), lastY: sy(values[horizon]) };
+-  })();
+ 
+   return (
+     <div>
+@@ -143,212 +111,264 @@ export default function MobileForecastScreen({ d, m }) {
+       </div>
+ 
+       {view === "surplus" ? (
+-        <>
++        <SurplusView surplus={surplus} m={m} setSurplus={setSurplus} lumpSum={lumpSum} setLumpSum={setLumpSum} horizon={horizon} chartWrapRef={chartWrapRef} age={age} forecast={forecast} openTip={openTip} assumptions={assumptions} setOpenTip={setOpenTip} series={series} chartWidth={chartWidth}/>
++      ) : (
++        <NetWorthView age={age} horizon={horizon} chartWrapRef={chartWrapRef} setShowNwAssumptions={setShowNwAssumptions} showNwAssumptions={showNwAssumptions} m={m} openRow={openRow} setOpenRow={setOpenRow} d={d} chartWidth={chartWidth}/>
++      )}
++    </div>
++  );
++}
++
++// The Surplus view: what your monthly surplus and a lump sum could grow to,
++// by where they go.
++function SurplusView({ surplus, m, setSurplus, lumpSum, setLumpSum, horizon, chartWrapRef, age, forecast, openTip, assumptions, setOpenTip, series, chartWidth }) {
++  const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
++  const chart = (() => {
++    const allValues = series.series.flatMap(s => s.values);
++    const yMax = Math.max(1, ...allValues);
++    const VW = chartWidth, VH = 150, PL = 34, PR = 4, PT = 8, PB = 20;
++    const cW = VW - PL - PR, cH = VH - PT - PB;
++    const sx = i => PL + (i / horizon) * cW;
++    const sy = v => PT + (1 - v / yMax) * cH;
++    const paths = series.series.map(s => {
++      const endIdx = s.termYear != null ? s.termYear : s.values.length - 1;
++      const path = s.values.slice(0, endIdx + 1).map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
++      const lastIdx = Math.min(endIdx, s.values.length - 1);
++      return { label: s.label, path, lastX: sx(lastIdx), lastY: sy(s.values[lastIdx]) };
++    });
++    const yTicks = [0, 0.5, 1].map(f => yMax * f);
++    const xTicks = buildYearTicks(horizon);
++    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks };
++  })();
++  return (
++    <>
++      <>
+       <div style={{display:"flex",gap:"10px",marginTop:"14px"}}>
+-        <PillMoneyInput label="Monthly surplus" value={surplus != null ? surplus : Math.round(m.monthlySurplus)} onChange={setSurplus}/>
+-        <PillMoneyInput label="Lump sum today" value={lumpSum} onChange={setLumpSum}/>
++      <PillMoneyInput label="Monthly surplus" value={surplus != null ? surplus : Math.round(m.monthlySurplus)} onChange={setSurplus}/>
++      <PillMoneyInput label="Lump sum today" value={lumpSum} onChange={setLumpSum}/>
+       </div>
+ 
+       <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
+-        <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>
+-          Projected value · {horizon} years
+-        </div>
+-        <div style={{display:"flex",gap:"14px",marginTop:"8px",flexWrap:"wrap"}}>
+-          {chart.paths.map(p => (
+-            <div key={p.label} style={{display:"flex",alignItems:"center",gap:"5px"}}>
+-              <span style={{width:"7px",height:"7px",borderRadius:"50%",background:FORECAST_COLORS[p.label]||MUT,display:"inline-block"}}/>
+-              <span style={{fontSize:"11.5px",color:TEXT}}>{FORECAST_SHORT_LABEL[p.label]||p.label}</span>
+-            </div>
+-          ))}
+-        </div>
++      <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>
++        Projected value · {horizon} years
++      </div>
++      <div style={{display:"flex",gap:"14px",marginTop:"8px",flexWrap:"wrap"}}>
++        {chart.paths.map(p => (
++          <div key={p.label} style={{display:"flex",alignItems:"center",gap:"5px"}}>
++            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:FORECAST_COLORS[p.label]||MUT,display:"inline-block"}}/>
++            <span style={{fontSize:"11.5px",color:TEXT}}>{FORECAST_SHORT_LABEL[p.label]||p.label}</span>
++          </div>
++        ))}
++      </div>
+ 
+-        <div ref={chartWrapRef} style={{marginTop:"10px"}}>
+-          <svg width={chart.VW} height={chart.VH} viewBox={`0 0 ${chart.VW} ${chart.VH}`} style={{display:"block"}}>
+-            {/* Y-axis gridlines + ballpark labels */}
+-            {chart.yTicks.map((v,i) => (
+-              <g key={i}>
+-                <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.sy(v)} y2={chart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
+-                <text x={chart.PL-6} y={chart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
++      <div ref={chartWrapRef} style={{marginTop:"10px"}}>
++        <svg width={chart.VW} height={chart.VH} viewBox={`0 0 ${chart.VW} ${chart.VH}`} style={{display:"block"}}>
++          {/* Y-axis gridlines + ballpark labels */}
++          {chart.yTicks.map((v,i) => (
++            <g key={i}>
++              <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.sy(v)} y2={chart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
++              <text x={chart.PL-6} y={chart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
++            </g>
++          ))}
++          {/* strategy lines */}
++          {chart.paths.map(p => {
++            const color = FORECAST_COLORS[p.label] || MUT;
++            return (
++              <g key={p.label}>
++                <path d={p.path} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
++                <circle cx={p.lastX} cy={p.lastY} r="3.5" fill={color}/>
+               </g>
+-            ))}
+-            {/* strategy lines */}
+-            {chart.paths.map(p => {
+-              const color = FORECAST_COLORS[p.label] || MUT;
+-              return (
+-                <g key={p.label}>
+-                  <path d={p.path} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+-                  <circle cx={p.lastX} cy={p.lastY} r="3.5" fill={color}/>
+-                </g>
+-              );
+-            })}
+-            {/* X-axis + year/age ticks — first anchors left, last anchors right,
+-                so labels never spill past the chart's own edges. */}
+-            <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.VH-chart.PB} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
+-            {chart.xTicks.map((yr,i) => (
+-              <text key={i} x={chart.sx(yr)} y={chart.VH-chart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
+-                textAnchor={i===0?"start":i===chart.xTicks.length-1?"end":"middle"}>
+-                {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
+-              </text>
+-            ))}
+-            <line x1={chart.PL} x2={chart.PL} y1={chart.PT} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
+-          </svg>
+-        </div>
++            );
++          })}
++          {/* X-axis + year/age ticks — first anchors left, last anchors right,
++              so labels never spill past the chart's own edges. */}
++          <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.VH-chart.PB} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
++          {chart.xTicks.map((yr,i) => (
++            <text key={i} x={chart.sx(yr)} y={chart.VH-chart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
++              textAnchor={i===0?"start":i===chart.xTicks.length-1?"end":"middle"}>
++              {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
++            </text>
++          ))}
++          <line x1={chart.PL} x2={chart.PL} y1={chart.PT} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
++        </svg>
++      </div>
+ 
+-        <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
++      <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
+ 
+-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
+-          <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Estimate at {horizonLabel(horizon)}</span>
+-          <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px"}}>
+-            <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Low</span>
+-            <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Mid</span>
+-            <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>High</span>
+-          </div>
++      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
++        <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Estimate at {horizonLabel(horizon)}</span>
++        <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px"}}>
++          <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Low</span>
++          <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Mid</span>
++          <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>High</span>
+         </div>
+-        {forecast.options.map((o,i) => {
+-          const isOpen = openTip === o.label;
+-          const a = assumptions[o.label];
+-          return (
+-            <div key={o.label} style={{padding:"10px 0",borderBottom:i===forecast.options.length-1?"none":"1px solid rgba(22,47,36,0.06)"}}>
+-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+-                <div style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0}}>
+-                  <span style={{width:"8px",height:"8px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
+-                  <span style={{fontSize:"13px",color:TEXT,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{FORECAST_SHORT_LABEL[o.label]||o.label}</span>
+-                  {a && (
+-                    <InfoButton onClick={() => setOpenTip(isOpen ? null : o.label)} open={isOpen}/>
+-                  )}
+-                </div>
+-                <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px",flexShrink:0}}>
+-                  <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.low)}</span>
+-                  <span style={{fontFamily:SERIF,fontSize:"12.5px",color:TEXT,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
+-                  <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.high)}</span>
+-                </div>
++      </div>
++      {forecast.options.map((o,i) => {
++        const isOpen = openTip === o.label;
++        const a = assumptions[o.label];
++        return (
++          <div key={o.label} style={{padding:"10px 0",borderBottom:i===forecast.options.length-1?"none":"1px solid rgba(22,47,36,0.06)"}}>
++            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
++              <div style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0}}>
++                <span style={{width:"8px",height:"8px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
++                <span style={{fontSize:"13px",color:TEXT,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{FORECAST_SHORT_LABEL[o.label]||o.label}</span>
++                {a && (
++                  <InfoButton onClick={() => setOpenTip(isOpen ? null : o.label)} open={isOpen}/>
++                )}
++              </div>
++              <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px",flexShrink:0}}>
++                <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.low)}</span>
++                <span style={{fontFamily:SERIF,fontSize:"12.5px",color:TEXT,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
++                <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.high)}</span>
+               </div>
+-              {o.note && (
+-                <div style={{fontSize:"11px",color:MUT,marginTop:"3px",lineHeight:1.4}}>{o.note}</div>
+-              )}
+-              {isOpen && a && (
+-                <div style={{marginTop:"8px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
+-                  {a.lines.map((line,i) => (
+-                    <p key={i} style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>{line}</p>
+-                  ))}
+-                  <div style={{display:"flex",gap:"14px",marginTop:"2px",fontSize:"11px",color:MUT}}>
+-                    <span>Low <b style={{color:TEXT}}>{a.rates.low}</b></span>
+-                    <span>Central <b style={{color:G}}>{a.rates.central}</b></span>
+-                    <span>High <b style={{color:TEXT}}>{a.rates.high}</b></span>
+-                  </div>
+-                </div>
+-              )}
+             </div>
+-          );
+-        })}
++            {o.note && (
++              <div style={{fontSize:"11px",color:MUT,marginTop:"3px",lineHeight:1.4}}>{o.note}</div>
++            )}
++            {isOpen && a && (
++              <div style={{marginTop:"8px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
++                {a.lines.map((line,i) => (
++                  <p key={i} style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>{line}</p>
++                ))}
++                <div style={{display:"flex",gap:"14px",marginTop:"2px",fontSize:"11px",color:MUT}}>
++                  <span>Low <b style={{color:TEXT}}>{a.rates.low}</b></span>
++                  <span>Central <b style={{color:G}}>{a.rates.central}</b></span>
++                  <span>High <b style={{color:TEXT}}>{a.rates.high}</b></span>
++                </div>
++              </div>
++            )}
++          </div>
++        );
++      })}
+       </div>
+-        </>
+-      ) : (
+-        <>
+-          <div style={{display:"flex",gap:"14px",marginTop:"14px"}}>
+-            <div style={{flex:1}}>
+-              <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Today</div>
+-              <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[0].netWorth)}</div>
+-            </div>
+-            <div style={{flex:1}}>
+-              <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{age ? `At age ${age+horizon}` : `In ${horizon} yrs`}</div>
+-              <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[horizon].netWorth)}</div>
+-            </div>
++      </>
++    </>
++  );
++}
++
++// The Net worth view: the projection chart and the breakdown by what you
++// own and owe, each row opening on its assumptions.
++function NetWorthView({ age, horizon, chartWrapRef, setShowNwAssumptions, showNwAssumptions, m, openRow, setOpenRow, d, chartWidth }) {
++  const netWorthRows = calcNetWorthTrajectory(d, m, horizon);
++  const nwChart = (() => {
++    const values = netWorthRows.map(r => r.netWorth);
++    const yMin = Math.min(0, ...values);
++    const yMax = Math.max(1, ...values);
++    const VW = chartWidth, VH = 150, PL = 40, PR = 4, PT = 8, PB = 20;
++    const cW = VW - PL - PR, cH = VH - PT - PB;
++    const sx = i => PL + (i / horizon) * cW;
++    const sy = v => PT + (1 - (v - yMin) / (yMax - yMin || 1)) * cH;
++    const path = values.map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
++    const yTicks = [0, 0.5, 1].map(f => yMin + (yMax - yMin) * f);
++    const xTicks = buildYearTicks(horizon);
++    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, yTicks, xTicks, lastX: sx(horizon), lastY: sy(values[horizon]) };
++  })();
++  return (
++    <>
++      <>
++        <div style={{display:"flex",gap:"14px",marginTop:"14px"}}>
++          <div style={{flex:1}}>
++            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Today</div>
++            <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[0].netWorth)}</div>
+           </div>
++          <div style={{flex:1}}>
++            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{age ? `At age ${age+horizon}` : `In ${horizon} yrs`}</div>
++            <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[horizon].netWorth)}</div>
++          </div>
++        </div>
+ 
+-          <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
+-            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginBottom:"8px"}}>
+-              Projected net worth · {horizon} years
+-            </div>
+-            <div ref={chartWrapRef}>
+-              <svg width={nwChart.VW} height={nwChart.VH} viewBox={`0 0 ${nwChart.VW} ${nwChart.VH}`} style={{display:"block"}}>
+-                {nwChart.yTicks.map((v,i) => (
+-                  <g key={i}>
+-                    <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.sy(v)} y2={nwChart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
+-                    <text x={nwChart.PL-6} y={nwChart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
+-                  </g>
+-                ))}
+-                <path d={nwChart.path} fill="none" stroke={G} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+-                <circle cx={nwChart.lastX} cy={nwChart.lastY} r="3.5" fill={G}/>
+-                <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.VH-nwChart.PB} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
+-                {nwChart.xTicks.map((yr,i) => (
+-                  <text key={i} x={nwChart.sx(yr)} y={nwChart.VH-nwChart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
+-                    textAnchor={i===0?"start":i===nwChart.xTicks.length-1?"end":"middle"}>
+-                    {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
+-                  </text>
+-                ))}
+-                <line x1={nwChart.PL} x2={nwChart.PL} y1={nwChart.PT} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
+-              </svg>
+-            </div>
++        <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
++          <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginBottom:"8px"}}>
++            Projected net worth · {horizon} years
++          </div>
++          <div ref={chartWrapRef}>
++            <svg width={nwChart.VW} height={nwChart.VH} viewBox={`0 0 ${nwChart.VW} ${nwChart.VH}`} style={{display:"block"}}>
++              {nwChart.yTicks.map((v,i) => (
++                <g key={i}>
++                  <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.sy(v)} y2={nwChart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
++                  <text x={nwChart.PL-6} y={nwChart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
++                </g>
++              ))}
++              <path d={nwChart.path} fill="none" stroke={G} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
++              <circle cx={nwChart.lastX} cy={nwChart.lastY} r="3.5" fill={G}/>
++              <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.VH-nwChart.PB} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
++              {nwChart.xTicks.map((yr,i) => (
++                <text key={i} x={nwChart.sx(yr)} y={nwChart.VH-nwChart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
++                  textAnchor={i===0?"start":i===nwChart.xTicks.length-1?"end":"middle"}>
++                  {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
++                </text>
++              ))}
++              <line x1={nwChart.PL} x2={nwChart.PL} y1={nwChart.PT} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
++            </svg>
++          </div>
+ 
+-            <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
++          <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
+ 
+-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"12px"}}>
+-              <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Breakdown {age ? `at age ${age+horizon}` : `at ${horizon}yrs`}</span>
+-              <InfoButton onClick={() => setShowNwAssumptions(o => !o)} open={showNwAssumptions}/>
++          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"12px"}}>
++            <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Breakdown {age ? `at age ${age+horizon}` : `at ${horizon}yrs`}</span>
++            <InfoButton onClick={() => setShowNwAssumptions(o => !o)} open={showNwAssumptions}/>
++          </div>
++          {showNwAssumptions && (
++            <div style={{marginBottom:"12px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
++              <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
++              <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
++              <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
+             </div>
+-            {showNwAssumptions && (
+-              <div style={{marginBottom:"12px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
+-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
+-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
+-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
+-              </div>
+-            )}
+-            {(() => {
+-              const r = netWorthRows[horizon];
+-              const rows = [
+-                { label:"Cash", value:r.cash, assumption:`Grown at your effective savings rate (${(m.effectiveSavingsRate||3.5).toFixed(1)}% p.a.). Assumes cash never exceeds your ${fmt(m.emergencyBuffer)} emergency fund target — once reached, further surplus is assumed invested instead (see Investments).` },
+-                { label:"Investments", value:r.investments, assumption:`Today's ISA + unwrapped balance grown at 7% p.a. nominal — an illustrative long-term equity return, not guaranteed. Once your cash buffer is topped up, all further monthly surplus is assumed fully invested into the market.` },
+-                { label:"Pension", value:r.pension, assumption:"Your pot plus ongoing contributions, grown at 6% p.a. — the same rate calcMetrics uses for your projected pot elsewhere in the app." },
+-                ...(r.propertyEquity > 0 ? [{ label:"Property equity", value:r.propertyEquity, assumption:"Property value held flat (no house-price growth assumed) — equity grows only as your mortgage is paid down at its real rate and repayment." }] : []),
+-                ...(r.debts > 0 ? [{ label:"Debts", value:r.debts, negative:true, assumption:"Remaining student loan and/or personal loan balance, projected forward at their real interest rates and repayments." }] : []),
+-              ];
+-              const maxVal = Math.max(...rows.map(row => Math.abs(row.value)), 1);
+-              return rows.map((row,i) => {
+-                const meta = NW_ROW_META[row.label] || {};
+-                const isOpen = openRow === row.label;
+-                return (
+-                  <div key={row.label} onClick={() => setOpenRow(isOpen ? null : row.label)} style={{padding:"12px 0",borderBottom:i===rows.length-1?"none":"1px solid rgba(22,47,36,0.06)",cursor:"pointer"}}>
+-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+-                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+-                        <span style={{fontSize:"15px",color:TEXT}}>{row.label}</span>
+-                        {meta.locked && <Lock size={12} color={MUT}/>}
+-                      </div>
+-                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+-                        <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:row.negative?CRITICAL:G}}>{row.negative?"−":""}{fmt(row.value)}</span>
+-                        <ChevronRight size={13} color={MUT} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
+-                      </div>
++          )}
++          {(() => {
++            const r = netWorthRows[horizon];
++            const rows = [
++              { label:"Cash", value:r.cash, assumption:`Grown at your effective savings rate (${(m.effectiveSavingsRate||3.5).toFixed(1)}% p.a.). Assumes cash never exceeds your ${fmt(m.emergencyBuffer)} emergency fund target — once reached, further surplus is assumed invested instead (see Investments).` },
++              { label:"Investments", value:r.investments, assumption:`Today's ISA + unwrapped balance grown at 7% p.a. nominal — an illustrative long-term equity return, not guaranteed. Once your cash buffer is topped up, all further monthly surplus is assumed fully invested into the market.` },
++              { label:"Pension", value:r.pension, assumption:"Your pot plus ongoing contributions, grown at 6% p.a. — the same rate calcMetrics uses for your projected pot elsewhere in the app." },
++              ...(r.propertyEquity > 0 ? [{ label:"Property equity", value:r.propertyEquity, assumption:"Property value held flat (no house-price growth assumed) — equity grows only as your mortgage is paid down at its real rate and repayment." }] : []),
++              ...(r.debts > 0 ? [{ label:"Debts", value:r.debts, negative:true, assumption:"Remaining student loan and/or personal loan balance, projected forward at their real interest rates and repayments." }] : []),
++            ];
++            const maxVal = Math.max(...rows.map(row => Math.abs(row.value)), 1);
++            return rows.map((row,i) => {
++              const meta = NW_ROW_META[row.label] || {};
++              const isOpen = openRow === row.label;
++              return (
++                <div key={row.label} onClick={() => setOpenRow(isOpen ? null : row.label)} style={{padding:"12px 0",borderBottom:i===rows.length-1?"none":"1px solid rgba(22,47,36,0.06)",cursor:"pointer"}}>
++                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
++                    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
++                      <span style={{fontSize:"15px",color:TEXT}}>{row.label}</span>
++                      {meta.locked && <Lock size={12} color={MUT}/>}
+                     </div>
+-                    <div style={{height:"8px",borderRadius:"4px",background:CDARK,overflow:"hidden",marginTop:"8px"}}>
+-                      <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G}}/>
++                    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
++                      <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:row.negative?CRITICAL:G}}>{row.negative?"−":""}{fmt(row.value)}</span>
++                      <ChevronRight size={13} color={MUT} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
+                     </div>
+-                    {isOpen && (
+-                      <div style={{marginTop:"10px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}} onClick={e => e.stopPropagation()}>
+-                        {row.label === "Pension" && age && (
+-                          <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
+-                            <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:G}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
+-                            <span style={{fontSize:"12.5px",color:MUT}}>years until available (from age {PENSION_ACCESS_AGE})</span>
+-                          </div>
+-                        )}
+-                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0}}>{row.assumption}</p>
+-                        <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0,fontWeight:600}}>{meta.liquidity}</p>
+-                      </div>
+-                    )}
+                   </div>
+-                );
+-              });
+-            })()}
+-          </div>
++                  <div style={{height:"8px",borderRadius:"4px",background:CDARK,overflow:"hidden",marginTop:"8px"}}>
++                    <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G}}/>
++                  </div>
++                  {isOpen && (
++                    <div style={{marginTop:"10px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}} onClick={e => e.stopPropagation()}>
++                      {row.label === "Pension" && age && (
++                        <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
++                          <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:G}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
++                          <span style={{fontSize:"12.5px",color:MUT}}>years until available (from age {PENSION_ACCESS_AGE})</span>
++                        </div>
++                      )}
++                      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0}}>{row.assumption}</p>
++                      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0,fontWeight:600}}>{meta.liquidity}</p>
++                    </div>
++                  )}
++                </div>
++              );
++            });
++          })()}
++        </div>
+ 
+-          <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+-            <div>
+-              <div style={{fontSize:"13px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
+-              <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>See how your net worth stacks up by age and income.</div>
+-            </div>
+-            <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
++        <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
++          <div>
++            <div style={{fontSize:"13px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
++            <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>See how your net worth stacks up by age and income.</div>
+           </div>
+-        </>
+-      )}
+-    </div>
++          <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
++        </div>
++      </>
++    </>
+   );
+ }

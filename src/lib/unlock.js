@@ -18,11 +18,17 @@ import { hasAccess } from "./entitlement.js";
 
 export const UNLOCK_GATE_ON = true;
 
+// The local dev server (`npm run dev`) skips the gate, so every module and
+// Assist can be worked on without paying. Production builds and the tests
+// never see import.meta.env.DEV. VITE_DEV_PAYWALL=1 in .env.local puts the
+// gate back locally, to work on the paywall itself.
+const DEV_UNGATED = !!import.meta.env?.DEV && import.meta.env.VITE_DEV_PAYWALL !== "1";
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const validEmail = email => typeof email === "string" && EMAIL_RE.test(email.trim());
 
 export function isLocked(d, key, paid = hasAccess()) {
-  if (!UNLOCK_GATE_ON || d.unlockGate !== true || !SCORED_MODULES.includes(key) || paid) return false;
+  if (!UNLOCK_GATE_ON || DEV_UNGATED || d.unlockGate !== true || !SCORED_MODULES.includes(key) || paid) return false;
   return !(d.unlockedModules || []).includes(key);
 }
 

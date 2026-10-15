@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
+import { useElementWidth } from "../useElementWidth.js";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import EmptyResultCard from "./EmptyResultCard.jsx";
 import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
-import { G, MUT, TEXT, SERIF, SC, WHITE, PillSlider } from "../../CandidApp.jsx";
-import { STATUS_TILE, PROVIDER_TILE_SHADOW } from "../../design-tokens.js";
+import { PillSlider } from "../PillSlider.jsx";
+import { STATUS_TILE, PROVIDER_TILE_SHADOW, G, MUT, TEXT, SERIF, SC, WHITE, CDARK } from "../../design-tokens.js";
 import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
 import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt } from "../../lib/format.js";
@@ -35,17 +36,7 @@ const SPENDING_SCOPE_OPTIONS = [{ value:"mine", label:"Just mine" }, { value:"ho
 // Measured in real pixels so the viewBox matches the rendered width 1:1
 // (same approach as NetCostChart in RentVsBuyStep).
 function RepaymentPath({ payment, fixedYears, termYears, outcomes }) {
-  const wrapRef = useRef(null);
-  const [width, setWidth] = useState(320);
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const update = () => setWidth(el.clientWidth || 320);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const [wrapRef, width] = useElementWidth(320);
   const colour = { stress: SC.critical, moderate: TEXT, lower: SC.ok };
   const H = 112, PT = 14, PB = 14, GUTTER = 66, LABEL_GAP = 30;
   const plotW = Math.max(60, width - GUTTER);
@@ -102,7 +93,7 @@ export default function MortgageStep({ d, m, set, onContinue, guide, holdResult 
   const [budgetInfoOpen, setBudgetInfoOpen] = useState(false);
   const resultRef = useRef(null);
   const why = useWhyInfo({ d, m });
-  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:"#ede7db", borderRadius:"8px", padding:"8px 10px", margin:0 };
+  const explainer = { fontSize:"11.5px", color:MUT, lineHeight:1.5, background:CDARK, borderRadius:"8px", padding:"8px 10px", margin:0 };
   const figureLabel = { fontSize:"10px", fontWeight:600, color:MUT, letterSpacing:"0.06em", textTransform:"uppercase", display:"flex", alignItems:"center", gap:"6px" };
   const sectionHeading = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"10px" };
   const divider = { border:"none", borderTop:"1px solid rgba(22,47,36,0.1)", margin:"18px 0 14px" };

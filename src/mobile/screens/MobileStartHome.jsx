@@ -1,4 +1,4 @@
-import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../CandidApp.jsx";
+import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../design-tokens.js";
 import { moduleOrder, moduleDone, scorePicks, MODULE_PITCH, SCORED_MODULES } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { mobileGreeting } from "../copy.js";

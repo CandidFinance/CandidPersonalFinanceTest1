@@ -3,27 +3,14 @@
 // onboarding fields. No request signing here: TrueLayer's ES512/kid signing is
 // a Payments API concept and doesn't apply to Data API calls, which just use a
 // Bearer access token from a standard OAuth code exchange.
+import { parseCookies, COOKIE_DOMAIN } from "../../server/http.js";
+
 const AUTH_BASE = "https://auth.truelayer-sandbox.com";
 const DATA_BASE = "https://api.truelayer-sandbox.com";
 const STATE_COOKIE = "tl_state";
 const DATA_COOKIE = "tl_data";
 const APP_ORIGIN = "https://candid-finance.co.uk";
 const TRANSACTION_LOOKBACK_DAYS = 90;
-// Must match auth-link.js's Domain exactly — both for the tl_state cookie to
-// carry over an apex/www redirect hop, and because clearing a cookie (Max-Age=0)
-// only works if Domain (and Path) match what it was originally set with;
-// otherwise the clear just sets an unrelated stray cookie and the real one lingers.
-const COOKIE_DOMAIN = ".candid-finance.co.uk";
-
-function parseCookies(req) {
-  const header = req.headers.cookie || "";
-  return Object.fromEntries(
-    header.split(";").filter(Boolean).map(pair => {
-      const idx = pair.indexOf("=");
-      return [pair.slice(0, idx).trim(), decodeURIComponent(pair.slice(idx + 1).trim())];
-    })
-  );
-}
 
 function redirectWithError(res, reason, extraCookies = []) {
   res.setHeader("Set-Cookie", [
@@ -100,23 +87,15 @@ export default async function handler(req, res) {
   const { code, state, error } = req.query;
   const cookies = parseCookies(req);
 
-  // Temporary diagnostic — remove once invalid_state is root-caused.
-  console.log("[truelayer/callback] raw Cookie header:", JSON.stringify(req.headers.cookie || null));
-  console.log("[truelayer/callback] parsed tl_state cookie:", JSON.stringify(cookies[STATE_COOKIE] || null));
-  console.log("[truelayer/callback] raw state query param:", JSON.stringify(state || null));
-
   if (error) return redirectWithError(res, String(error));
 
   let nonce, email;
   try {
     ({ nonce, email } = JSON.parse(Buffer.from(String(state), "base64url").toString("utf8")));
-    console.log("[truelayer/callback] decoded state ->", JSON.stringify({ nonce, email }));
-  } catch (e) {
-    console.log("[truelayer/callback] failed to decode state param:", e.message);
+  } catch {
     return redirectWithError(res, "invalid_state");
   }
   if (!code || !nonce || nonce !== cookies[STATE_COOKIE]) {
-    console.log("[truelayer/callback] state mismatch — code present:", !!code, "| nonce from state:", JSON.stringify(nonce), "| nonce from cookie:", JSON.stringify(cookies[STATE_COOKIE]));
     return redirectWithError(res, "invalid_state");
   }
 

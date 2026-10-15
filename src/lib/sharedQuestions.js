@@ -1,7 +1,7 @@
 // The figures several modules need (employment, salary, other income, age,
 // spending), asked by whichever module's walk-through comes first and never
 // again. Same question fields as src/lib/propertyGuide.js; unit tested in
-// moduleGuide.test.js. Spec: onboarding-guided-questions.md.
+// moduleGuide.test.js. Spec: docs/onboarding-guided-questions.md.
 //
 // "Already asked" can't always be read off the field: employmentStatus
 // defaults to "employed" in a blank profile, so answering it also sets

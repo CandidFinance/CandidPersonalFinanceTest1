@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { reportStorageFailure } from "../lib/storage.js";
 import { Bell, BellRing, Mail, CalendarPlus, Check } from "lucide-react";
-import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL } from "../CandidApp.jsx";
+import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL, SUCCESS } from "../design-tokens.js";
 import { triggerCalendarReminder, nextAvailableWorkingDay } from "./reminders.js";
 import { buildMailtoUrl, draftAsText } from "./emailDrafts.js";
 
@@ -25,7 +26,7 @@ import { buildMailtoUrl, draftAsText } from "./emailDrafts.js";
 export default function MobileReminderAction({ id, title, description, email }) {
   const storageKey = `candid_reminder_${id}`;
   const [isSet, setIsSet] = useState(() => {
-    try { return localStorage.getItem(storageKey) === "1"; } catch { return false; }
+    try { return localStorage.getItem(storageKey) === "1"; } catch (e) { reportStorageFailure("read_reminder", e); return false; }
   });
   const [panelOpen, setPanelOpen] = useState(false);
   const [emailOpened, setEmailOpened] = useState(false);
@@ -38,7 +39,7 @@ export default function MobileReminderAction({ id, title, description, email }) 
       description: email ? `${description}\n\n${draftAsText(email)}` : description,
       date: reminderDate,
     });
-    try { localStorage.setItem(storageKey, "1"); } catch {}
+    try { localStorage.setItem(storageKey, "1"); } catch (e) { reportStorageFailure("save_reminder", e); }
     setIsSet(true);
   };
 
@@ -59,7 +60,7 @@ export default function MobileReminderAction({ id, title, description, email }) 
 
   const stepBtn = (done) => ({
     display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", width:"100%", marginTop:"8px",
-    background: done ? "rgba(45,107,74,0.1)" : G, color: done ? "#2d6b4a" : WHITE,
+    background: done ? "rgba(45,107,74,0.1)" : G, color: done ? SUCCESS : WHITE,
     border:"none", borderRadius:RADIUS_PILL, padding:"10px 14px", fontSize:"13px", fontWeight:700, fontFamily:SANS, cursor:"pointer",
   });
   const stepNum = { width:"20px", height:"20px", borderRadius:"50%", background:G, color:WHITE, fontSize:"11px", fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 };

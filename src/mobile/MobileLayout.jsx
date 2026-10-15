@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { NavBar, CREAM } from "../CandidApp.jsx";
+import { NavBar } from "../NavBar.jsx";
+import { CREAM } from "../design-tokens.js";
 import MobileTabBar from "./MobileTabBar.jsx";
 
 // Shell for every /app/* mobile screen: a light NavBar (the "Candid."

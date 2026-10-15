@@ -1,0 +1,1071 @@
+diff --git a/src/CandidApp.jsx b/src/CandidApp.jsx
+index afedf5b..2f709d5 100644
+--- a/src/CandidApp.jsx
++++ b/src/CandidApp.jsx
+@@ -5,7 +5,7 @@ import { topRate } from "./lib/savingsRates.js";
+ import { calcMetrics } from "./lib/metrics.js";
+ import { MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, calcCandidScore, baselinePatch } from "./lib/moduleStatus.js";
+ import { ALL_STEP_DEFS, getActiveSteps, capField } from "./lib/onboarding.js";
+-import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK, PILL_HEIGHT } from "./design-tokens.js";
++import { G, WHITE, FONT_SIZE } from "./design-tokens.js";
+ import MobileLayout from "./mobile/MobileLayout.jsx";
+ import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
+ import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
+@@ -31,82 +31,9 @@ import { selectRows, updateRow } from "./lib/supabase.js";
+ import { propertyRowFields } from "./lib/reportRow.js";
+ import { useReportRow } from "./useReportRow.js";
+ 
+-// Re-exported for the files that import them from here (DevTools.jsx and
+-// the mobile screens); src/lib/ is their canonical source.
+-export { calcMetrics } from "./lib/metrics.js";
+-export { MODULE_META, computeModuleStatuses, sanitizeForMvp } from "./lib/moduleStatus.js";
+-
+ // Module names for Candid Assist's labels and "Elsewhere" list.
+ const ASSIST_MODULE_LABELS = { ...Object.fromEntries(MODULE_META.map(mm => [mm.key, mm.title])), property: "Property" };
+ 
+-// Design tokens (src/design-tokens.js), re-exported for the files that
+-// import them from here.
+-export { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK, PILL_HEIGHT };
+-
+-// topRate lives in src/lib/savingsRates.js (shared with the public calculator
+-// pages); re-exported here for the screens that import it from this file.
+-export { topRate };
+-
+-// Segmented pill control — single rounded track, equal-width options, active
+-// one filled solid. Compact alternative to Toggle's per-button outlined pills,
+-// used where horizontal space is tight (e.g. Forecast's time-horizon picker).
+-// `compact`: a shorter track for a control inside a tile.
+-export function PillSlider({ value, onChange, options, compact = false }) {
+-  return (
+-    <div style={{display:"flex",background:CDARK,borderRadius:RADIUS_PILL,padding:"3px",gap:"2px",height:compact ? "34px" : PILL_HEIGHT,boxSizing:"border-box"}}>
+-      {options.map(o => (
+-        <button key={o.value} type="button" onClick={() => onChange(o.value)} style={{
+-          flex:1, border:"none", borderRadius:RADIUS_PILL, padding:"0 6px", height:"100%", whiteSpace:"nowrap",
+-          background: value===o.value ? G : "transparent",
+-          color: value===o.value ? WHITE : MUT,
+-          fontSize:compact ? "13px" : FONT_SIZE.BODY, fontWeight:600, cursor:"pointer", fontFamily:SANS, transition:"all 0.15s",
+-        }}>{o.label}</button>
+-      ))}
+-    </div>
+-  );
+-}
+-
+-// Grid (not flex space-between) so the page label stays centred whether or
+-// not `right` is present — with only 2 flex children, space-between shoves
+-// a lone `center` all the way to the far edge instead of the middle.
+-// `light` (the app's own screens; the welcome-back and admin pages keep the
+-// dark-green header) swaps the header to the same
+-// cream as the page background, matching the app-like "no chrome" look of
+-// the Claude Design mockup the mobile build has been targeting all along —
+-// a native app's own header usually doesn't sit in a contrasting color bar.
+-// A hairline border replaces the color-block as the only remaining visual
+-// separation from the content below. In this mode the "Candid." wordmark
+-// sits in the bar itself, above that hairline, in brand green; the bar's
+-// contents are capped to the same 580px / 20px-gutter column as the app's
+-// content so the wordmark left-aligns with the tiles below it.
+-export function NavBar({ right, center, onLogoClick, light }) {
+-  const wordmarkStyle = light
+-    ? {...HEADER_WORDMARK_LIGHT,fontSize:"20px",justifySelf:"start"}
+-    : {...HEADER_WORDMARK_DARK,fontSize:FONT_SIZE.HEADLINE,justifySelf:"start"};
+-  const row = (
+-    <>
+-      <span style={{justifySelf:"start",display:"inline-flex",alignItems:"center",gap:"8px"}}>
+-        {onLogoClick ? (
+-          <button type="button" onClick={onLogoClick} aria-label={light ? "Back to Home" : "Back to Dashboard"} style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
+-        ) : (
+-          <span style={wordmarkStyle}>Candid.</span>
+-        )}
+-      </span>
+-      {center ? <div style={{color:light?"rgba(22,47,36,0.5)":"rgba(255,255,255,0.5)",fontSize:FONT_SIZE.LABEL,fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
+-      <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>
+-    </>
+-  );
+-  const grid = {display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px"};
+-  if (light) return (
+-    <div style={{background:HEADER_BG_LIGHT,borderBottom:"1px solid rgba(22,47,36,0.08)",paddingTop:"env(safe-area-inset-top, 0px)",flexShrink:0}}>
+-      <div style={{...grid,maxWidth:"580px",margin:"0 auto",padding:"14px 20px",width:"100%",boxSizing:"border-box"}}>{row}</div>
+-    </div>
+-  );
+-  return (
+-    <div style={{background:HEADER_BG_DARK,padding:"18px 32px",paddingTop:"calc(18px + env(safe-area-inset-top, 0px))",...grid,flexShrink:0}}>{row}</div>
+-  );
+-}
+-
+ // ── Main app ──────────────────────────────────────────────────────────────────
+ const BLANK_DATA = {
+   // `interests`: the modules picked at the app's entry
+diff --git a/src/CookieNotice.jsx b/src/CookieNotice.jsx
+index 8105851..a01b213 100644
+--- a/src/CookieNotice.jsx
++++ b/src/CookieNotice.jsx
+@@ -1,5 +1,5 @@
+ import { useEffect, useState } from "react";
+-import { G, WHITE, MUT, TEXT } from "./CandidApp.jsx";
++import { G, WHITE, MUT, TEXT } from "./design-tokens.js";
+ import { getConsent, setConsent, CONSENT_RESET_EVENT } from "./lib/consent.js";
+ 
+ // The cookie notice (src/lib/consent.js), across the site and the app until
+diff --git a/src/DevTools.jsx b/src/DevTools.jsx
+index aa788b7..f015bce 100644
+--- a/src/DevTools.jsx
++++ b/src/DevTools.jsx
+@@ -6,7 +6,9 @@
+ // we confirmed this chunk is absent from a real production build.
+ import { useState } from "react";
+ import { Wrench } from "lucide-react";
+-import { calcMetrics, computeModuleStatuses, MODULE_META, sanitizeForMvp, G, GOLD, CREAM, INPUT_BG_DARK } from "./CandidApp.jsx";
++import { calcMetrics } from "./lib/metrics.js";
++import { computeModuleStatuses, MODULE_META, sanitizeForMvp } from "./lib/moduleStatus.js";
++import { G, GOLD, CREAM, INPUT_BG_DARK } from "./design-tokens.js";
+ 
+ const CUSTOM_PRESETS_KEY = "candid_dev_custom_presets";
+ 
+diff --git a/src/NavBar.jsx b/src/NavBar.jsx
+new file mode 100644
+index 0000000..501a3c4
+--- /dev/null
++++ b/src/NavBar.jsx
+@@ -0,0 +1,45 @@
++import { FONT_SIZE, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT } from "./design-tokens.js";
++
++// The header bar on every page: the Candid. wordmark, an optional page
++// label in the middle and an optional action on the right.
++
++// Grid (not flex space-between) so the page label stays centred whether or
++// not `right` is present — with only 2 flex children, space-between shoves
++// a lone `center` all the way to the far edge instead of the middle.
++// `light` (the app's own screens; the welcome-back and admin pages keep the
++// dark-green header) swaps the header to the same
++// cream as the page background, matching the app-like "no chrome" look of
++// the Claude Design mockup the mobile build has been targeting all along —
++// a native app's own header usually doesn't sit in a contrasting color bar.
++// A hairline border replaces the color-block as the only remaining visual
++// separation from the content below. In this mode the "Candid." wordmark
++// sits in the bar itself, above that hairline, in brand green; the bar's
++// contents are capped to the same 580px / 20px-gutter column as the app's
++// content so the wordmark left-aligns with the tiles below it.
++export function NavBar({ right, center, onLogoClick, light }) {
++  const wordmarkStyle = light
++    ? {...HEADER_WORDMARK_LIGHT,fontSize:"20px",justifySelf:"start"}
++    : {...HEADER_WORDMARK_DARK,fontSize:FONT_SIZE.HEADLINE,justifySelf:"start"};
++  const row = (
++    <>
++      <span style={{justifySelf:"start",display:"inline-flex",alignItems:"center",gap:"8px"}}>
++        {onLogoClick ? (
++          <button type="button" onClick={onLogoClick} aria-label={light ? "Back to Home" : "Back to Dashboard"} style={{...wordmarkStyle,background:"none",border:"none",padding:0,cursor:"pointer"}}>Candid.</button>
++        ) : (
++          <span style={wordmarkStyle}>Candid.</span>
++        )}
++      </span>
++      {center ? <div style={{color:light?"rgba(22,47,36,0.5)":"rgba(255,255,255,0.5)",fontSize:FONT_SIZE.LABEL,fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
++      <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>
++    </>
++  );
++  const grid = {display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px"};
++  if (light) return (
++    <div style={{background:HEADER_BG_LIGHT,borderBottom:"1px solid rgba(22,47,36,0.08)",paddingTop:"env(safe-area-inset-top, 0px)",flexShrink:0}}>
++      <div style={{...grid,maxWidth:"580px",margin:"0 auto",padding:"14px 20px",width:"100%",boxSizing:"border-box"}}>{row}</div>
++    </div>
++  );
++  return (
++    <div style={{background:HEADER_BG_DARK,padding:"18px 32px",paddingTop:"calc(18px + env(safe-area-inset-top, 0px))",...grid,flexShrink:0}}>{row}</div>
++  );
++}
+diff --git a/src/admin/FeedbackAdmin.jsx b/src/admin/FeedbackAdmin.jsx
+index 3c89355..27d395d 100644
+--- a/src/admin/FeedbackAdmin.jsx
++++ b/src/admin/FeedbackAdmin.jsx
+@@ -1,5 +1,6 @@
+ import { useState } from "react";
+-import { NavBar, G, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "../CandidApp.jsx";
++import { NavBar } from "../NavBar.jsx";
++import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "../design-tokens.js";
+ 
+ // ── Internal feedback admin (password-gated server-side, see api/feedback.js) ─
+ // No persistence of the password across reloads by design — this shows real
+diff --git a/src/admin/RatesAdmin.jsx b/src/admin/RatesAdmin.jsx
+index 93a9d45..04a8872 100644
+--- a/src/admin/RatesAdmin.jsx
++++ b/src/admin/RatesAdmin.jsx
+@@ -1,5 +1,6 @@
+ import { useState } from "react";
+-import { NavBar, G, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "../CandidApp.jsx";
++import { NavBar } from "../NavBar.jsx";
++import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS } from "../design-tokens.js";
+ 
+ // Internal review page for the weekly savings rate feed (api/rates.js).
+ // Same password as the feedback admin, and like it, nothing is remembered
+diff --git a/src/design-tokens.js b/src/design-tokens.js
+index 73bc181..935fbce 100644
+--- a/src/design-tokens.js
++++ b/src/design-tokens.js
+@@ -1,11 +1,7 @@
+ // Candid design tokens — single source of truth for colour, type, and the
+ // handful of spacing/radius values that are genuinely consistent app-wide.
+ // Values were extracted as-is from CandidApp.jsx's inline styles (Sept 2026
+-// design-tokens audit) — this is a refactor, not a redesign: every value
+-// here is unchanged, only its source moved. CandidApp.jsx imports and
+-// re-exports the palette/type/SC/forecast tokens, so every existing
+-// `import { G, GOLD, ... } from "../../CandidApp.jsx"` (mobile screens,
+-// desktop components, etc.) keeps working unchanged.
++// design-tokens audit). Every file imports its tokens from here directly.
+ 
+ // ── Palette ──────────────────────────────────────────────────────────────
+ // Brand
+diff --git a/src/main.jsx b/src/main.jsx
+index 8e7f902..68a9f96 100644
+--- a/src/main.jsx
++++ b/src/main.jsx
+@@ -3,7 +3,9 @@ import ReactDOM from "react-dom/client"
+ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLocation } from "react-router-dom"
+ import posthog from "posthog-js"
+ import { MotionConfig } from "framer-motion"
+-import CandidApp, { NavBar, G, GOLD, SERIF, SANS } from "./CandidApp.jsx"
++import CandidApp from "./CandidApp.jsx"
++import { NavBar } from "./NavBar.jsx"
++import { G, GOLD, SERIF, SANS } from "./design-tokens.js"
+ import ErrorBoundary from "./ErrorBoundary.jsx"
+ import FeedbackAdmin from "./admin/FeedbackAdmin.jsx"
+ import CookieNotice from "./CookieNotice.jsx"
+diff --git a/src/mobile/GoToProviderButton.jsx b/src/mobile/GoToProviderButton.jsx
+index 18ced86..8512e8b 100644
+--- a/src/mobile/GoToProviderButton.jsx
++++ b/src/mobile/GoToProviderButton.jsx
+@@ -1,6 +1,6 @@
+ import { useState, useEffect } from "react";
+ import { ChevronDown } from "lucide-react";
+-import { G, WHITE, MUT, RADIUS_PILL, FONT_SIZE, SANS } from "../CandidApp.jsx";
++import { G, WHITE, MUT, RADIUS_PILL, FONT_SIZE, SANS } from "../design-tokens.js";
+ import { INVESTMENT_PROVIDERS, getSavedProvider, saveProvider, openInvestmentProvider } from "../utils/deepLinks.js";
+ 
+ // High-contrast "go straight to my platform" CTA. Uses a native <select>
+diff --git a/src/mobile/GuidanceNote.jsx b/src/mobile/GuidanceNote.jsx
+index c9a8b14..e457161 100644
+--- a/src/mobile/GuidanceNote.jsx
++++ b/src/mobile/GuidanceNote.jsx
+@@ -1,8 +1,7 @@
+ import { useEffect, useState } from "react";
+ import { Link } from "react-router-dom";
+ import { motion, useReducedMotion } from "framer-motion";
+-import { G, MUT, TEXT, SERIF } from "../CandidApp.jsx";
+-import { CREAM } from "../design-tokens.js";
++import { CREAM, G, MUT, TEXT, SERIF } from "../design-tokens.js";
+ 
+ // Candid is guidance, not advice, said where people read their figures:
+ // briefly as a module page opens (GuidanceIntro), then once more at the foot
+diff --git a/src/mobile/InfoButton.jsx b/src/mobile/InfoButton.jsx
+index 019965d..d9205a7 100644
+--- a/src/mobile/InfoButton.jsx
++++ b/src/mobile/InfoButton.jsx
+@@ -1,4 +1,4 @@
+-import { MUT, WHITE } from "../CandidApp.jsx";
++import { MUT, WHITE } from "../design-tokens.js";
+ 
+ // Shared circular "?" toggle for a short collapsed explanatory note — same
+ // convention on every deep-dive/onboarding screen that needs one. Used to be
+diff --git a/src/mobile/MobileLayout.jsx b/src/mobile/MobileLayout.jsx
+index e170427..8530436 100644
+--- a/src/mobile/MobileLayout.jsx
++++ b/src/mobile/MobileLayout.jsx
+@@ -1,5 +1,6 @@
+ import { useNavigate } from "react-router-dom";
+-import { NavBar, CREAM } from "../CandidApp.jsx";
++import { NavBar } from "../NavBar.jsx";
++import { CREAM } from "../design-tokens.js";
+ import MobileTabBar from "./MobileTabBar.jsx";
+ 
+ // Shell for every /app/* mobile screen: a light NavBar (the "Candid."
+diff --git a/src/mobile/MobileProductListTile.jsx b/src/mobile/MobileProductListTile.jsx
+index 08c2e63..233b133 100644
+--- a/src/mobile/MobileProductListTile.jsx
++++ b/src/mobile/MobileProductListTile.jsx
+@@ -1,7 +1,6 @@
+ import { useState } from "react";
+ import { ExternalLink, ChevronRight } from "lucide-react";
+-import { G, GOLD, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../CandidApp.jsx";
+-import { PROVIDER_TILE_FADE_CLEAR } from "../design-tokens.js";
++import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../design-tokens.js";
+ 
+ // Collapsible "Best [X] right now" provider-rate tile — collapsed by default
+ // to roughly 2 rows' worth of height: the 1st row fully visible, the 2nd
+diff --git a/src/mobile/MobileProviderTile.jsx b/src/mobile/MobileProviderTile.jsx
+index 4c7b617..d31b870 100644
+--- a/src/mobile/MobileProviderTile.jsx
++++ b/src/mobile/MobileProviderTile.jsx
+@@ -1,7 +1,6 @@
+ import { useState } from "react";
+ import { Landmark, Unlock, ExternalLink, ChevronRight } from "lucide-react";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../CandidApp.jsx";
+-import { PROVIDER_TILE_FADE_CLEAR } from "../design-tokens.js";
++import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../design-tokens.js";
+ 
+ // Static "where to actually do this" provider list for Investments/Pension —
+ // unlike Cash's MobileProductListTile, there's no live-rate data source for
+diff --git a/src/mobile/MobileReminderAction.jsx b/src/mobile/MobileReminderAction.jsx
+index c677fa0..55f244a 100644
+--- a/src/mobile/MobileReminderAction.jsx
++++ b/src/mobile/MobileReminderAction.jsx
+@@ -1,6 +1,6 @@
+ import { useState } from "react";
+ import { Bell, BellRing, Mail, CalendarPlus, Check } from "lucide-react";
+-import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL } from "../CandidApp.jsx";
++import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL } from "../design-tokens.js";
+ import { triggerCalendarReminder, nextAvailableWorkingDay } from "./reminders.js";
+ import { buildMailtoUrl, draftAsText } from "./emailDrafts.js";
+ 
+diff --git a/src/mobile/MobileTabBar.jsx b/src/mobile/MobileTabBar.jsx
+index 9c91c33..0980b87 100644
+--- a/src/mobile/MobileTabBar.jsx
++++ b/src/mobile/MobileTabBar.jsx
+@@ -1,5 +1,5 @@
+ import { Home, LayoutGrid, LineChart, MessageCircle } from "lucide-react";
+-import { G, MUT, WHITE } from "../CandidApp.jsx";
++import { G, MUT, WHITE } from "../design-tokens.js";
+ 
+ // Single source of truth for the app's bottom nav.
+ export const MOBILE_NAV_ITEMS = [
+diff --git a/src/mobile/MobileWinTile.jsx b/src/mobile/MobileWinTile.jsx
+index 675cb58..543fda2 100644
+--- a/src/mobile/MobileWinTile.jsx
++++ b/src/mobile/MobileWinTile.jsx
+@@ -1,6 +1,6 @@
+ import { useState } from "react";
+ import { ChevronRight } from "lucide-react";
+-import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../CandidApp.jsx";
++import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../design-tokens.js";
+ import MobileReminderAction from "./MobileReminderAction.jsx";
+ 
+ // Compact, tap-to-expand "Win" tile for mobile module deep-dive pages —
+diff --git a/src/mobile/ModuleScreenParts.jsx b/src/mobile/ModuleScreenParts.jsx
+index 91c634a..711ac0a 100644
+--- a/src/mobile/ModuleScreenParts.jsx
++++ b/src/mobile/ModuleScreenParts.jsx
+@@ -1,5 +1,5 @@
+ import { Plus, Minus } from "lucide-react";
+-import { G, MUT } from "../CandidApp.jsx";
++import { G, MUT } from "../design-tokens.js";
+ 
+ // Shared by the module screens (src/mobile/deepdive), so they lead with the
+ // answer the same way: "Explain this" beside the figure, replaying the answer
+diff --git a/src/mobile/ModuleStartRow.jsx b/src/mobile/ModuleStartRow.jsx
+index 06abe3c..bb6c5d7 100644
+--- a/src/mobile/ModuleStartRow.jsx
++++ b/src/mobile/ModuleStartRow.jsx
+@@ -1,5 +1,5 @@
+ import { Check, ChevronRight, Home } from "lucide-react";
+-import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../CandidApp.jsx";
++import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../design-tokens.js";
+ import { fmt } from "../lib/format.js";
+ import { MODULE_META } from "../lib/moduleStatus.js";
+ import { MODULE_PITCH } from "../lib/appEntry.js";
+diff --git a/src/mobile/PillMoneyInput.jsx b/src/mobile/PillMoneyInput.jsx
+index 1ce2e30..9e8494a 100644
+--- a/src/mobile/PillMoneyInput.jsx
++++ b/src/mobile/PillMoneyInput.jsx
+@@ -1,6 +1,6 @@
+ import { useState, useRef, useEffect } from "react";
+ import { formatThousands } from "../lib/format.js";
+-import { MUT, TEXT, CDARK, PILL_HEIGHT, FONT_SIZE } from "../CandidApp.jsx";
++import { MUT, TEXT, CDARK, PILL_HEIGHT, FONT_SIZE } from "../design-tokens.js";
+ 
+ // ── Answer text inside a pill: the same as PillSlider's options (body size,
+ // 600 weight, the app's sans font), so a typed £ figure and a Yes/No choice
+diff --git a/src/mobile/PillSlider.jsx b/src/mobile/PillSlider.jsx
+new file mode 100644
+index 0000000..794ee89
+--- /dev/null
++++ b/src/mobile/PillSlider.jsx
+@@ -0,0 +1,20 @@
++import { G, CDARK, MUT, WHITE, SANS, RADIUS_PILL, FONT_SIZE, PILL_HEIGHT } from "../design-tokens.js";
++
++// Segmented pill control — single rounded track, equal-width options, active
++// one filled solid. Used where horizontal space is tight (e.g. Forecast's
++// time-horizon picker).
++// `compact`: a shorter track for a control inside a tile.
++export function PillSlider({ value, onChange, options, compact = false }) {
++  return (
++    <div style={{display:"flex",background:CDARK,borderRadius:RADIUS_PILL,padding:"3px",gap:"2px",height:compact ? "34px" : PILL_HEIGHT,boxSizing:"border-box"}}>
++      {options.map(o => (
++        <button key={o.value} type="button" onClick={() => onChange(o.value)} style={{
++          flex:1, border:"none", borderRadius:RADIUS_PILL, padding:"0 6px", height:"100%", whiteSpace:"nowrap",
++          background: value===o.value ? G : "transparent",
++          color: value===o.value ? WHITE : MUT,
++          fontSize:compact ? "13px" : FONT_SIZE.BODY, fontWeight:600, cursor:"pointer", fontFamily:SANS, transition:"all 0.15s",
++        }}>{o.label}</button>
++      ))}
++    </div>
++  );
++}
+diff --git a/src/mobile/ScoreDonut.jsx b/src/mobile/ScoreDonut.jsx
+index 621e87b..3e829b2 100644
+--- a/src/mobile/ScoreDonut.jsx
++++ b/src/mobile/ScoreDonut.jsx
+@@ -1,4 +1,4 @@
+-import { CDARK, TEXT, MUT, SERIF } from "../CandidApp.jsx";
++import { CDARK, TEXT, MUT, SERIF } from "../design-tokens.js";
+ 
+ // The Candid score as a ring that fills to the score, with the score in the
+ // centre. Presentational only: Home animates `value` (the fill on first
+diff --git a/src/mobile/deepdive/MobileCashDeepDive.jsx b/src/mobile/deepdive/MobileCashDeepDive.jsx
+index 1db778e..754c73a 100644
+--- a/src/mobile/deepdive/MobileCashDeepDive.jsx
++++ b/src/mobile/deepdive/MobileCashDeepDive.jsx
+@@ -2,14 +2,14 @@ import { useState } from "react";
+ import { calcCashOptimisation } from "../../lib/cash.js";
+ import { cashOpportunity, accountName } from "../../lib/assist.js";
+ import { fmt, fmtCompact } from "../../lib/format.js";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, topRate, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE } from "../../CandidApp.jsx";
++import { topRate } from "../../lib/savingsRates.js";
+ import { getModuleProducts } from "../moduleProducts.js";
+ import MobileWinTile from "../MobileWinTile.jsx";
+ import MobileProductListTile from "../MobileProductListTile.jsx";
+ import InfoButton from "../InfoButton.jsx";
+ import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
+ import { buildReminderSubject } from "../reminders.js";
+-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
++import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE } from "../../design-tokens.js";
+ 
+ // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
+ // moduleKey==="cash" — CandidApp.jsx). Keeps the opportunity strip, the
+diff --git a/src/mobile/deepdive/MobileDrawdown.jsx b/src/mobile/deepdive/MobileDrawdown.jsx
+index 314dfdc..dbbe6aa 100644
+--- a/src/mobile/deepdive/MobileDrawdown.jsx
++++ b/src/mobile/deepdive/MobileDrawdown.jsx
+@@ -1,6 +1,7 @@
+ import { useState } from "react";
+ import { fmt } from "../../lib/format.js";
+-import { G, WHITE, MUT, TEXT, SERIF, SANS, CDARK, RADIUS_PILL, PILL_HEIGHT, FONT_SIZE, PillSlider } from "../../CandidApp.jsx";
++import { G, WHITE, MUT, TEXT, SERIF, SANS, CDARK, RADIUS_PILL, PILL_HEIGHT, FONT_SIZE } from "../../design-tokens.js";
++import { PillSlider } from "../PillSlider.jsx";
+ import { calcDrawdown, bestDrawdown, defaultDrawdownYears, drawdownYearOptions, phaseChange, pensionIhtLine } from "../../lib/drawdown.js";
+ import { GROWTH_REAL_PCT } from "../../lib/growth.js";
+ import { MONEY_PURCHASE_ANNUAL_ALLOWANCE } from "../../lib/pension.js";
+diff --git a/src/mobile/deepdive/MobileInvestmentsDeepDive.jsx b/src/mobile/deepdive/MobileInvestmentsDeepDive.jsx
+index a1425a4..d589487 100644
+--- a/src/mobile/deepdive/MobileInvestmentsDeepDive.jsx
++++ b/src/mobile/deepdive/MobileInvestmentsDeepDive.jsx
+@@ -1,6 +1,5 @@
+ import { useState } from "react";
+ import { fmt } from "../../lib/format.js";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
+ import { getModuleProducts } from "../moduleProducts.js";
+ import MobileWinTile from "../MobileWinTile.jsx";
+ import MobileProviderTile from "../MobileProviderTile.jsx";
+@@ -9,7 +8,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
+ import InfoButton from "../InfoButton.jsx";
+ import { buildReminderSubject } from "../reminders.js";
+ import { firstName } from "../copy.js";
+-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
++import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
+ import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
+ 
+ // Trimmed mobile version of desktop's Investments deep dive (ModuleDeepDive,
+diff --git a/src/mobile/deepdive/MobilePensionDeepDive.jsx b/src/mobile/deepdive/MobilePensionDeepDive.jsx
+index fc30974..45987d1 100644
+--- a/src/mobile/deepdive/MobilePensionDeepDive.jsx
++++ b/src/mobile/deepdive/MobilePensionDeepDive.jsx
+@@ -12,7 +12,7 @@ import { bestDrawdown, defaultDrawdownYears } from "../../lib/drawdown.js";
+ import { taxYearFor } from "../../lib/taxYear.js";
+ import { capField } from "../../lib/onboarding.js";
+ import { fmt, fmtCompact, fmtBig } from "../../lib/format.js";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, PillSlider, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../CandidApp.jsx";
++import { PillSlider } from "../PillSlider.jsx";
+ import { getModuleProducts } from "../moduleProducts.js";
+ import MobileWinTile from "../MobileWinTile.jsx";
+ import MobileDrawdown, { compact, Pill } from "./MobileDrawdown.jsx";
+@@ -24,7 +24,7 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
+ import { buildReminderSubject } from "../reminders.js";
+ import { firstName } from "../copy.js";
+ import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
+-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
++import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
+ import { EXTRA_COLOR, PayInMore, CliffEdge, LookingAhead } from "./PensionLookingAhead.jsx";
+ 
+ const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` }));
+diff --git a/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx b/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
+index e6d1054..07bc55e 100644
+--- a/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
++++ b/src/mobile/deepdive/MobileStudentLoanDeepDive.jsx
+@@ -6,11 +6,11 @@ import { ExternalLink, Wrench, ChevronRight } from "lucide-react";
+ import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension } from "../../lib/studentLoan.js";
+ import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
+ import { fmt, fmtK } from "../../lib/format.js";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PillSlider, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE } from "../../CandidApp.jsx";
++import { PillSlider } from "../PillSlider.jsx";
+ import MobileWinTile from "../MobileWinTile.jsx";
+ import PillMoneyInput from "../PillMoneyInput.jsx";
+ import { ExploreToggle } from "../ModuleScreenParts.jsx";
+-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW } from "../../design-tokens.js";
++import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE } from "../../design-tokens.js";
+ 
+ // Overpayment slider stops — round amounts, dropping any that sit within 10%
+ // of the full balance (e.g. a £20,500 loan shouldn't show both "£20k" and
+diff --git a/src/mobile/deepdive/PensionLookingAhead.jsx b/src/mobile/deepdive/PensionLookingAhead.jsx
+index 769abde..77e90e4 100644
+--- a/src/mobile/deepdive/PensionLookingAhead.jsx
++++ b/src/mobile/deepdive/PensionLookingAhead.jsx
+@@ -5,7 +5,7 @@ import { SALARY_GROWTH_RATES } from "../../lib/metrics.js";
+ import { AlertTriangle, PiggyBank, Users, CalendarClock, ChevronRight, ChevronDown } from "lucide-react";
+ import { LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "../../lib/pension.js";
+ import { fmt, fmtBig } from "../../lib/format.js";
+-import { G, MUT, TEXT, SERIF } from "../../CandidApp.jsx";
++import { G, MUT, TEXT, SERIF } from "../../design-tokens.js";
+ import MobileWinTile from "../MobileWinTile.jsx";
+ import { ADVISER_LINK } from "../GuidanceNote.jsx";
+ 
+diff --git a/src/mobile/onboarding/MobileCashTiersList.jsx b/src/mobile/onboarding/MobileCashTiersList.jsx
+index 47c3d21..095c9a3 100644
+--- a/src/mobile/onboarding/MobileCashTiersList.jsx
++++ b/src/mobile/onboarding/MobileCashTiersList.jsx
+@@ -1,5 +1,5 @@
+ import { X, Plus } from "lucide-react";
+-import { GOLD, MUT, CDARK, PILL_HEIGHT } from "../../CandidApp.jsx";
++import { GOLD, MUT, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
+ import PillMoneyInput, { PILL_ANSWER_TEXT, pillFieldStyle } from "../PillMoneyInput.jsx";
+ import { capField } from "../../lib/onboarding.js";
+ 
+diff --git a/src/mobile/onboarding/MobileOnboardingStep.jsx b/src/mobile/onboarding/MobileOnboardingStep.jsx
+index 76bbde4..e9a0967 100644
+--- a/src/mobile/onboarding/MobileOnboardingStep.jsx
++++ b/src/mobile/onboarding/MobileOnboardingStep.jsx
+@@ -1,6 +1,8 @@
+ import { useState } from "react";
+ import { AlertTriangle, Home, Star, Baby, RefreshCw, Shield, Lightbulb, Check } from "lucide-react";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, MODULE_META, PillSlider } from "../../CandidApp.jsx";
++import { G, GOLD, WHITE, MUT, TEXT, SERIF } from "../../design-tokens.js";
++import { MODULE_META } from "../../lib/moduleStatus.js";
++import { PillSlider } from "../PillSlider.jsx";
+ import { capField, isaThisYearTotal } from "../../lib/onboarding.js";
+ import { estimatePensionPot, CAREER_START_AGE } from "../../lib/pension.js";
+ import { resolveSlRate } from "../../lib/studentLoan.js";
+@@ -58,11 +60,7 @@ const GOAL_TIMEFRAME_OPTIONS = [
+   { value:"5plus", label:"5+ yrs"  },
+ ];
+ 
+-// Preset-buttons-plus-range-slider for a single £ target. A plain function
+-// declaration, not an object literal, so referencing G/WHITE/SERIF inside its
+-// body is safe despite the circular-import TDZ hazard noted above: those are
+-// only read when the function is called at render time, well after
+-// CandidApp.jsx has finished initializing.
++// Preset-buttons-plus-range-slider for a single £ target.
+ function GoalAmountSlider({ label, value, onChange, max, step, presets }) {
+   const v = +value || 0;
+   return (
+@@ -92,10 +90,6 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
+   const [showAdditionalIncome, setShowAdditionalIncome] = useState(false);
+   const [showEmploymentInfo, setShowEmploymentInfo] = useState(false);
+   const [potEstimated, setPotEstimated] = useState(false); // true only right after the "estimate it" button is used, so the caption doesn't linger over a manually-typed figure
+-  // Defined inside the component, not at module scope — this file is part of
+-  // a circular import with CandidApp.jsx (which imports it via the
+-  // onboarding screen), so G/SERIF/etc aren't initialized yet when the module
+-  // itself first evaluates. Safe once read at render time instead.
+   const questionHeading = bare ? { display:"none" } : { fontFamily:SERIF, fontSize:"22px", color:G, fontWeight:700, marginBottom:"8px", textAlign:"center" };
+   const questionSub = bare ? { display:"none" } : { fontSize:"13px", color:MUT, lineHeight:1.5, textAlign:"center", marginBottom:"24px" };
+   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
+diff --git a/src/mobile/property/AssumptionsHeading.jsx b/src/mobile/property/AssumptionsHeading.jsx
+index 94f29ac..f8a84a8 100644
+--- a/src/mobile/property/AssumptionsHeading.jsx
++++ b/src/mobile/property/AssumptionsHeading.jsx
+@@ -1,4 +1,4 @@
+-import { G, MUT } from "../../CandidApp.jsx";
++import { G, MUT } from "../../design-tokens.js";
+ 
+ // The line above a Property step's inputs, with "Walk me through it" on the
+ // right to rerun the step's guided walk-through (GuidedFlow). Shared so
+diff --git a/src/mobile/property/BorrowingCheck.jsx b/src/mobile/property/BorrowingCheck.jsx
+index e08087d..3c80475 100644
+--- a/src/mobile/property/BorrowingCheck.jsx
++++ b/src/mobile/property/BorrowingCheck.jsx
+@@ -4,7 +4,8 @@ import StickySummaryBar, { SummaryLabel, SummaryFigure } from "./StickySummaryBa
+ import { Plus, Minus } from "lucide-react";
+ import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
+ import EmptyResultCard from "./EmptyResultCard.jsx";
+-import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE, PillSlider } from "../../CandidApp.jsx";
++import { G, MUT, TEXT, SERIF, SANS, SC, WARNING, WHITE } from "../../design-tokens.js";
++import { PillSlider } from "../PillSlider.jsx";
+ import { capField } from "../../lib/onboarding.js";
+ import { affordableMaxPrice } from "../../lib/monthlyBudget.js";
+ import { borrowingInputs, calcBorrowingCheck, MIN_DEPOSIT_PCT, suggestedCashAvailable, cashIsaBalance, multipleBar, LENDER_INCOME_MULTIPLE, HIGH_EARNER_MULTIPLE, BAR_MAX_MULTIPLE, EMERGENCY_KEEP_BACK_MONTHS } from "../../lib/borrowing.js";
+@@ -36,9 +37,6 @@ function multipleText(r) {
+ // Colour and caption for calcBorrowingCheck's band: green up to 4.5x,
+ // orange to 5.5x, red above. Drives the times-income figure, the bar and
+ // the result tile's border.
+-// Built at render time, not module scope: this file is part of the
+-// circular import with CandidApp.jsx (via MobilePropertyScreen), so tokens
+-// imported from it can't be relied on while the module first evaluates.
+ function bandStyle(band) {
+   return {
+     within:  { color: SC.ok,       caption: `Within the ${LENDER_INCOME_MULTIPLE}x most lenders use` },
+diff --git a/src/mobile/property/DecisionWaterfall.jsx b/src/mobile/property/DecisionWaterfall.jsx
+index 437641d..7d4d058 100644
+--- a/src/mobile/property/DecisionWaterfall.jsx
++++ b/src/mobile/property/DecisionWaterfall.jsx
+@@ -1,6 +1,7 @@
+ import { useState } from "react";
+ import { CircleAlert, CircleCheck, CircleDashed, ChevronRight } from "lucide-react";
+-import { G, MUT, TEXT, SERIF, SC, WHITE, MODULE_META } from "../../CandidApp.jsx";
++import { G, MUT, TEXT, SERIF, SC, WHITE } from "../../design-tokens.js";
++import { MODULE_META } from "../../lib/moduleStatus.js";
+ import { runWaterfall, waterfallInputs, VISIBLE_CHECKS, ISA_ALLOWANCE, EMERGENCY_RANGE_MONTHS } from "../../lib/waterfall.js";
+ import { capField } from "../../lib/onboarding.js";
+ import { fmt } from "../../lib/format.js";
+@@ -22,9 +23,6 @@ const TITLES = {
+ };
+ 
+ // Each tile's single state indicator.
+-// Built at render time, not module scope: this file is part of the
+-// circular import with CandidApp.jsx (via MobilePropertyScreen), so tokens
+-// imported from it can't be relied on while the module first evaluates.
+ function stateIcon(state) {
+   return {
+     attention: { Icon: CircleAlert, color: SC.attention },
+diff --git a/src/mobile/property/EmptyResultCard.jsx b/src/mobile/property/EmptyResultCard.jsx
+index 86c056b..c672f5e 100644
+--- a/src/mobile/property/EmptyResultCard.jsx
++++ b/src/mobile/property/EmptyResultCard.jsx
+@@ -1,4 +1,4 @@
+-import { WHITE, TEXT } from "../../CandidApp.jsx";
++import { WHITE, TEXT } from "../../design-tokens.js";
+ 
+ // A Property step's result card before it has the figures it needs: the
+ // card's shape in grey, blurred, with one line (`text`) saying what fills it
+diff --git a/src/mobile/property/ExpandChevron.jsx b/src/mobile/property/ExpandChevron.jsx
+index e6d55cd..05e9cf8 100644
+--- a/src/mobile/property/ExpandChevron.jsx
++++ b/src/mobile/property/ExpandChevron.jsx
+@@ -1,5 +1,5 @@
+ import { ChevronDown } from "lucide-react";
+-import { MUT } from "../../CandidApp.jsx";
++import { MUT } from "../../design-tokens.js";
+ 
+ // The down arrow at the foot of a Property result card that opens its
+ // details. The card it sits in uses CARD_PADDING_WITH_CHEVRON, so the arrow,
+diff --git a/src/mobile/property/GuidedFlow.jsx b/src/mobile/property/GuidedFlow.jsx
+index e3664aa..48cdb4f 100644
+--- a/src/mobile/property/GuidedFlow.jsx
++++ b/src/mobile/property/GuidedFlow.jsx
+@@ -1,7 +1,7 @@
+ import { useState, useRef } from "react";
+ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+ import { Check, ChevronLeft } from "lucide-react";
+-import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../CandidApp.jsx";
++import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
+ import { capField } from "../../lib/onboarding.js";
+ import { neededAtStart, visibleQuestions, countSettled } from "../../lib/propertyGuide.js";
+ import PillMoneyInput, { pillFieldStyle } from "../PillMoneyInput.jsx";
+diff --git a/src/mobile/property/MortgageStep.jsx b/src/mobile/property/MortgageStep.jsx
+index d083b7e..70fb0b1 100644
+--- a/src/mobile/property/MortgageStep.jsx
++++ b/src/mobile/property/MortgageStep.jsx
+@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
+ import { ChevronRight } from "lucide-react";
+ import EmptyResultCard from "./EmptyResultCard.jsx";
+ import ExpandChevron, { CARD_PADDING_WITH_CHEVRON } from "./ExpandChevron.jsx";
+-import { G, MUT, TEXT, SERIF, SC, WHITE, PillSlider } from "../../CandidApp.jsx";
+-import { STATUS_TILE, PROVIDER_TILE_SHADOW } from "../../design-tokens.js";
++import { PillSlider } from "../PillSlider.jsx";
++import { STATUS_TILE, PROVIDER_TILE_SHADOW, G, MUT, TEXT, SERIF, SC, WHITE } from "../../design-tokens.js";
+ import { borrowingInputs, calcBorrowingCheck } from "../../lib/borrowing.js";
+ import { mortgageInputs, mortgageSummary, FIXED_PERIOD_OPTIONS, STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
+ import { fmt } from "../../lib/format.js";
+diff --git a/src/mobile/property/PillSelect.jsx b/src/mobile/property/PillSelect.jsx
+index aa824b7..0ff78cf 100644
+--- a/src/mobile/property/PillSelect.jsx
++++ b/src/mobile/property/PillSelect.jsx
+@@ -1,5 +1,5 @@
+ import { ChevronDown } from "lucide-react";
+-import { MUT, TEXT, CDARK, FONT_SIZE, PILL_HEIGHT } from "../../CandidApp.jsx";
++import { MUT, TEXT, CDARK, FONT_SIZE, PILL_HEIGHT } from "../../design-tokens.js";
+ import { pillFieldStyle } from "../PillMoneyInput.jsx";
+ 
+ // Dropdown pill, PILL_HEIGHT tall like every other input pill. A native
+diff --git a/src/mobile/property/PropertySteps.jsx b/src/mobile/property/PropertySteps.jsx
+index 08dcc26..3d8e7b1 100644
+--- a/src/mobile/property/PropertySteps.jsx
++++ b/src/mobile/property/PropertySteps.jsx
+@@ -1,5 +1,5 @@
+ import { Lock } from "lucide-react";
+-import { G, MUT } from "../../CandidApp.jsx";
++import { G, MUT } from "../../design-tokens.js";
+ 
+ const STEPS = [
+   { key:"readiness", label:"1. Readiness" },
+diff --git a/src/mobile/property/RentVsBuyParts.jsx b/src/mobile/property/RentVsBuyParts.jsx
+index 2729a6f..6400972 100644
+--- a/src/mobile/property/RentVsBuyParts.jsx
++++ b/src/mobile/property/RentVsBuyParts.jsx
+@@ -1,7 +1,7 @@
+ import { useState, useEffect } from "react";
+ import { useElementWidth } from "../useElementWidth.js";
+ import { CircleAlert } from "lucide-react";
+-import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC } from "../../CandidApp.jsx";
++import { G, GOLD, MUT, TEXT, SERIF, WHITE, SC } from "../../design-tokens.js";
+ import { STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
+ import { fmt, fmtCompact } from "../../lib/format.js";
+ 
+diff --git a/src/mobile/property/RentVsBuyStep.jsx b/src/mobile/property/RentVsBuyStep.jsx
+index dfb9a48..2609e8c 100644
+--- a/src/mobile/property/RentVsBuyStep.jsx
++++ b/src/mobile/property/RentVsBuyStep.jsx
+@@ -1,6 +1,7 @@
+ import { useState, useRef } from "react";
+ import { ArrowUp, CircleAlert } from "lucide-react";
+-import { MUT, TEXT, SERIF, WHITE, SC, WARNING, PillSlider } from "../../CandidApp.jsx";
++import { MUT, TEXT, SERIF, WHITE, SC, WARNING } from "../../design-tokens.js";
++import { PillSlider } from "../PillSlider.jsx";
+ import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, ISA_ALLOWANCE } from "../../lib/rentVsBuy.js";
+ import { breakevenLine } from "../../lib/propertyReveal.js";
+ import { monthlyBudget } from "../../lib/monthlyBudget.js";
+diff --git a/src/mobile/property/StickySummaryBar.jsx b/src/mobile/property/StickySummaryBar.jsx
+index 826341f..364729a 100644
+--- a/src/mobile/property/StickySummaryBar.jsx
++++ b/src/mobile/property/StickySummaryBar.jsx
+@@ -1,10 +1,8 @@
+ import { useState, useEffect } from "react";
+ import { motion, AnimatePresence } from "framer-motion";
+-import { WHITE, MUT, SERIF } from "../../CandidApp.jsx";
++import { WHITE, MUT, SERIF } from "../../design-tokens.js";
+ 
+-// The bar's small caption and its headline figure. Styles are built at
+-// render time: this file is in the circular import with CandidApp.jsx, so
+-// its tokens can't be relied on while the module first evaluates.
++// The bar's small caption and its headline figure.
+ export function SummaryLabel({ children }) {
+   return <span style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>{children}</span>;
+ }
+diff --git a/src/mobile/property/useWhyInfo.jsx b/src/mobile/property/useWhyInfo.jsx
+index 4bde96c..79dda81 100644
+--- a/src/mobile/property/useWhyInfo.jsx
++++ b/src/mobile/property/useWhyInfo.jsx
+@@ -1,5 +1,5 @@
+ import { useState } from "react";
+-import { MUT } from "../../CandidApp.jsx";
++import { MUT } from "../../design-tokens.js";
+ import { whyLine } from "../../lib/propertyGuide.js";
+ import InfoButton from "../InfoButton.jsx";
+ 
+diff --git a/src/mobile/screens/GoalsCard.jsx b/src/mobile/screens/GoalsCard.jsx
+index f205c17..697f305 100644
+--- a/src/mobile/screens/GoalsCard.jsx
++++ b/src/mobile/screens/GoalsCard.jsx
+@@ -1,5 +1,5 @@
+ import { Check } from "lucide-react";
+-import { G, WHITE, MUT, TEXT, RADIUS_CARD } from "../../CandidApp.jsx";
++import { G, WHITE, MUT, TEXT, RADIUS_CARD } from "../../design-tokens.js";
+ import { GOAL_CHOICES, goalsWith } from "../../lib/appEntry.js";
+ 
+ // The goals the entry doesn't ask, asked once on home after the score
+diff --git a/src/mobile/screens/MobileChatScreen.jsx b/src/mobile/screens/MobileChatScreen.jsx
+index 1bc72d1..136b930 100644
+--- a/src/mobile/screens/MobileChatScreen.jsx
++++ b/src/mobile/screens/MobileChatScreen.jsx
+@@ -1,5 +1,5 @@
+ import { MessageCircle, Send } from "lucide-react";
+-import { GOLD, MUT, TEXT, SERIF } from "../../CandidApp.jsx";
++import { GOLD, MUT, TEXT, SERIF } from "../../design-tokens.js";
+ 
+ // Mobile Chat screen — matches the mockup's placeholder layout (icon badge,
+ // headline, description, "Coming soon" pill, disabled input bar), with the
+diff --git a/src/mobile/screens/MobileEntryScreen.jsx b/src/mobile/screens/MobileEntryScreen.jsx
+index d87a1c5..2d88882 100644
+--- a/src/mobile/screens/MobileEntryScreen.jsx
++++ b/src/mobile/screens/MobileEntryScreen.jsx
+@@ -1,7 +1,7 @@
+ import { useEffect, useRef, useState } from "react";
+ import { motion, MotionConfig } from "framer-motion";
+ import { Check, ChevronLeft } from "lucide-react";
+-import { NavBar } from "../../CandidApp.jsx";
++import { NavBar } from "../../NavBar.jsx";
+ import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS } from "../../design-tokens.js";
+ import { ENTRY_QUESTIONS, toHandFor, entryChat, readingMs, CHAT_VARIANTS } from "../../lib/appEntry.js";
+ import GuidedFlow from "../property/GuidedFlow.jsx";
+diff --git a/src/mobile/screens/MobileForecastScreen.jsx b/src/mobile/screens/MobileForecastScreen.jsx
+index 625d5e5..93e328f 100644
+--- a/src/mobile/screens/MobileForecastScreen.jsx
++++ b/src/mobile/screens/MobileForecastScreen.jsx
+@@ -1,13 +1,13 @@
+ import { useState } from "react";
+ import { useElementWidth } from "../useElementWidth.js";
+ import { Lock, ChevronRight } from "lucide-react";
+-import { WHITE, MUT, TEXT, G, GOLD, SERIF, PillSlider, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_CARD } from "../../CandidApp.jsx";
++import { PillSlider } from "../PillSlider.jsx";
+ import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
+ import { fmt, fmtCompact } from "../../lib/format.js";
+ import PillMoneyInput from "../PillMoneyInput.jsx";
+ import InfoButton from "../InfoButton.jsx";
+ import { retirementAgeFor } from "../../lib/metrics.js";
+-import { MODULE_CHART_COLOR } from "../../design-tokens.js";
++import { MODULE_CHART_COLOR, WHITE, MUT, TEXT, G, GOLD, SERIF, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_CARD } from "../../design-tokens.js";
+ 
+ // Mobile Forecast screen — a "Surplus" comparison view (multi-strategy line
+ // chart + low/mid/high table) and a "Net worth" view (single projected net
+@@ -49,8 +49,7 @@ function buildYearTicks(horizon) {
+ // figures above don't otherwise convey (a pension pot isn't spendable today
+ // the way cash is), not an invented feature. Colours are each
+ // module's chart colour (design-tokens.js MODULE_CHART_COLOR), the same as
+-// the Surplus chart's and Home's, imported straight from design-tokens.js
+-// (not via CandidApp.jsx, which risks a TDZ crash at module scope).
++// the Surplus chart's and Home's.
+ const NW_ROW_META = {
+   Cash:               { color:MODULE_CHART_COLOR.cash, liquidity:"Available today — no restrictions." },
+   Investments:        { color:MODULE_CHART_COLOR.investments, liquidity:"Available today if needed, though selling outside an ISA may trigger Capital Gains Tax." },
+diff --git a/src/mobile/screens/MobileHomeScreen.jsx b/src/mobile/screens/MobileHomeScreen.jsx
+index a40d22a..743a912 100644
+--- a/src/mobile/screens/MobileHomeScreen.jsx
++++ b/src/mobile/screens/MobileHomeScreen.jsx
+@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
+ import { ChevronDown, ChevronRight, Check, Lock } from "lucide-react";
+ import { isLocked } from "../../lib/unlock.js";
+ import ScoreDonut from "../ScoreDonut.jsx";
+-import { scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../CandidApp.jsx";
+-import { HERO_TILE_BG } from "../../design-tokens.js";
++import { HERO_TILE_BG, scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../design-tokens.js";
+ import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
+ import { fmt } from "../../lib/format.js";
+ import { mobileGreeting } from "../copy.js";
+diff --git a/src/mobile/screens/MobileInputsScreen.jsx b/src/mobile/screens/MobileInputsScreen.jsx
+index 2c9fe1d..d828252 100644
+--- a/src/mobile/screens/MobileInputsScreen.jsx
++++ b/src/mobile/screens/MobileInputsScreen.jsx
+@@ -1,7 +1,8 @@
+ import { hasAccess, accessInfo, openBillingPortal, PLANS } from "../../lib/entitlement.js";
+ import { useEffect, useRef, useState } from "react";
+ import { ChevronDown, ChevronRight, User } from "lucide-react";
+-import { G, WHITE, MUT, TEXT, SERIF, MODULE_META } from "../../CandidApp.jsx";
++import { G, WHITE, MUT, TEXT, SERIF } from "../../design-tokens.js";
++import { MODULE_META } from "../../lib/moduleStatus.js";
+ import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
+ import ModuleInputsForm from "./ModuleInputsForm.jsx";
+ import { SCORED_MODULES } from "../../lib/appEntry.js";
+diff --git a/src/mobile/screens/MobileModuleDeepDive.jsx b/src/mobile/screens/MobileModuleDeepDive.jsx
+index 5a64d70..3c8a8c5 100644
+--- a/src/mobile/screens/MobileModuleDeepDive.jsx
++++ b/src/mobile/screens/MobileModuleDeepDive.jsx
+@@ -3,7 +3,8 @@ import BankConfirm from "../BankConfirm.jsx";
+ import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
+ import { useState } from "react";
+ import { Check, Coins } from "lucide-react";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
++import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC } from "../../design-tokens.js";
++import { MODULE_META } from "../../lib/moduleStatus.js";
+ import { statusLabel } from "../statusLabel.js";
+ import MobileCashDeepDive from "../deepdive/MobileCashDeepDive.jsx";
+ import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx";
+diff --git a/src/mobile/screens/MobileModuleGuide.jsx b/src/mobile/screens/MobileModuleGuide.jsx
+index 6d2f436..a9e8c97 100644
+--- a/src/mobile/screens/MobileModuleGuide.jsx
++++ b/src/mobile/screens/MobileModuleGuide.jsx
+@@ -1,5 +1,5 @@
+ import { useEffect } from "react";
+-import { G, TEXT, MUT, SERIF } from "../../CandidApp.jsx";
++import { G, TEXT, MUT, SERIF } from "../../design-tokens.js";
+ import { MODULE_META } from "../../lib/moduleStatus.js";
+ import { MODULE_GUIDES } from "../../lib/moduleGuide.js";
+ import GuidedFlow from "../property/GuidedFlow.jsx";
+diff --git a/src/mobile/screens/MobileModuleReveal.jsx b/src/mobile/screens/MobileModuleReveal.jsx
+index ad20e26..15e62c7 100644
+--- a/src/mobile/screens/MobileModuleReveal.jsx
++++ b/src/mobile/screens/MobileModuleReveal.jsx
+@@ -1,7 +1,7 @@
+ import { useState, useEffect } from "react";
+ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+ import { ChevronLeft } from "lucide-react";
+-import { G, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
++import { G, MUT, TEXT, SERIF, WHITE } from "../../design-tokens.js";
+ import { MODULE_META } from "../../lib/moduleStatus.js";
+ 
+ // A module's answer in three steps (src/lib/moduleReveal.js): the answer,
+diff --git a/src/mobile/screens/MobileModulesScreen.jsx b/src/mobile/screens/MobileModulesScreen.jsx
+index 279ef91..a32fac8 100644
+--- a/src/mobile/screens/MobileModulesScreen.jsx
++++ b/src/mobile/screens/MobileModulesScreen.jsx
+@@ -1,8 +1,7 @@
+ import { useState } from "react";
+ import { Check, Users, Coins, ChevronRight, Home } from "lucide-react";
+-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, MODULE_META } from "../../CandidApp.jsx";
+-import { SUCCESS } from "../../design-tokens.js";
+-import { getModuleBreakdown } from "../../lib/moduleStatus.js";
++import { SUCCESS, G, GOLD, WHITE, MUT, TEXT, SERIF, SC } from "../../design-tokens.js";
++import { getModuleBreakdown, MODULE_META } from "../../lib/moduleStatus.js";
+ import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
+ import { fmt, fmtCompact } from "../../lib/format.js";
+ import { statusLabel } from "../statusLabel.js";
+diff --git a/src/mobile/screens/MobileOnboardingScreen.jsx b/src/mobile/screens/MobileOnboardingScreen.jsx
+index f02f808..d56b0a7 100644
+--- a/src/mobile/screens/MobileOnboardingScreen.jsx
++++ b/src/mobile/screens/MobileOnboardingScreen.jsx
+@@ -1,5 +1,6 @@
+ import { useEffect } from "react";
+-import { G, GOLD, WHITE, MUT, TEXT, NavBar } from "../../CandidApp.jsx";
++import { G, GOLD, WHITE, MUT, TEXT } from "../../design-tokens.js";
++import { NavBar } from "../../NavBar.jsx";
+ import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
+ 
+ // The onboarding wizard: `d`/`set` data flow, Continue disabled only on an
+diff --git a/src/mobile/screens/MobilePropertyScreen.jsx b/src/mobile/screens/MobilePropertyScreen.jsx
+index bc9036c..0ff6e01 100644
+--- a/src/mobile/screens/MobilePropertyScreen.jsx
++++ b/src/mobile/screens/MobilePropertyScreen.jsx
+@@ -1,7 +1,7 @@
+ import { useRef, useState } from "react";
+ import posthog from "posthog-js";
+ import { Home, ChevronRight } from "lucide-react";
+-import { G, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
++import { G, MUT, TEXT, SERIF, WHITE } from "../../design-tokens.js";
+ import { readinessMissing } from "../../lib/propertyReadiness.js";
+ import { runWaterfall, waterfallInputs, VISIBLE_CHECKS } from "../../lib/waterfall.js";
+ import DecisionWaterfall from "../property/DecisionWaterfall.jsx";
+diff --git a/src/mobile/screens/MobileStartHome.jsx b/src/mobile/screens/MobileStartHome.jsx
+index f65c97f..d4afcf5 100644
+--- a/src/mobile/screens/MobileStartHome.jsx
++++ b/src/mobile/screens/MobileStartHome.jsx
+@@ -1,4 +1,4 @@
+-import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../CandidApp.jsx";
++import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../design-tokens.js";
+ import { moduleOrder, moduleDone, scorePicks, MODULE_PITCH, SCORED_MODULES } from "../../lib/appEntry.js";
+ import { readinessMissing } from "../../lib/propertyReadiness.js";
+ import { mobileGreeting } from "../copy.js";
+diff --git a/src/mobile/screens/MobileUnlock.jsx b/src/mobile/screens/MobileUnlock.jsx
+index e139d31..026ea67 100644
+--- a/src/mobile/screens/MobileUnlock.jsx
++++ b/src/mobile/screens/MobileUnlock.jsx
+@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
+ import { motion } from "framer-motion";
+ import posthog from "posthog-js";
+ import { Lock, X } from "lucide-react";
+-import { G, GOLD, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
++import { G, GOLD, MUT, TEXT, SERIF, WHITE } from "../../design-tokens.js";
+ import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
+ import { fmt } from "../../lib/format.js";
+ import { unlockAsk, validEmail } from "../../lib/unlock.js";
+diff --git a/src/mobile/screens/ModuleInputsForm.jsx b/src/mobile/screens/ModuleInputsForm.jsx
+index ec45c7c..059c5cd 100644
+--- a/src/mobile/screens/ModuleInputsForm.jsx
++++ b/src/mobile/screens/ModuleInputsForm.jsx
+@@ -1,4 +1,5 @@
+-import { G, WHITE, MUT, TEXT, PillSlider } from "../../CandidApp.jsx";
++import { G, WHITE, MUT, TEXT } from "../../design-tokens.js";
++import { PillSlider } from "../PillSlider.jsx";
+ import { MODULE_GUIDES } from "../../lib/moduleGuide.js";
+ import { capField } from "../../lib/onboarding.js";
+ import { withAnswered } from "../../lib/appEntry.js";
+diff --git a/src/mockups/FinancesModuleTiles.jsx b/src/mockups/FinancesModuleTiles.jsx
+index 2ebef14..4fa39c3 100644
+--- a/src/mockups/FinancesModuleTiles.jsx
++++ b/src/mockups/FinancesModuleTiles.jsx
+@@ -1,5 +1,5 @@
+ import { motion, useReducedMotion } from "framer-motion";
+-import { G, GOLD, MUT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER } from "../CandidApp.jsx";
++import { G, GOLD, MUT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER } from "../design-tokens.js";
+ import { riseIn, pullTogether } from "./motion.js";
+ 
+ // Replaces an earlier heptagon-of-tiles-with-connecting-lines diagram —
+diff --git a/src/mockups/HowItWorksPage.jsx b/src/mockups/HowItWorksPage.jsx
+index ce7b39c..0b24596 100644
+--- a/src/mockups/HowItWorksPage.jsx
++++ b/src/mockups/HowItWorksPage.jsx
+@@ -2,7 +2,7 @@ import { useEffect } from "react";
+ import { motion, useReducedMotion } from "framer-motion";
+ import { ClipboardList, Scale, Search, Compass } from "lucide-react";
+ import posthog from "posthog-js";
+-import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
++import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../design-tokens.js";
+ import NewSiteLayout from "./NewSiteLayout.jsx";
+ import StartCheckButton from "./StartCheckButton.jsx";
+ import { riseIn, pullTogether } from "./motion.js";
+diff --git a/src/mockups/NewLandingPage.jsx b/src/mockups/NewLandingPage.jsx
+index 6ab2f2d..75ee6cd 100644
+--- a/src/mockups/NewLandingPage.jsx
++++ b/src/mockups/NewLandingPage.jsx
+@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
+ import { motion, useReducedMotion, useInView, useScroll, useTransform, animate } from "framer-motion";
+ import { ClipboardList, Scale, Search, Compass, GraduationCap, PoundSterling, Home as HomeIcon, Check, ArrowRight } from "lucide-react";
+ import posthog from "posthog-js";
+-import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
++import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../design-tokens.js";
+ import NewSiteLayout from "./NewSiteLayout.jsx";
+ import StartCheckButton, { CTA_BLUE } from "./StartCheckButton.jsx";
+ import { EASE_STEADY, riseIn, pullTogether, heroStagger, heroItem } from "./motion.js";
+diff --git a/src/mockups/NewSiteHeader.jsx b/src/mockups/NewSiteHeader.jsx
+index b5b354a..a2b2992 100644
+--- a/src/mockups/NewSiteHeader.jsx
++++ b/src/mockups/NewSiteHeader.jsx
+@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
+ import { motion } from "framer-motion";
+ import posthog from "posthog-js";
+ import { Menu, X } from "lucide-react";
+-import { G, GOLD, MUT, SANS, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT } from "../CandidApp.jsx";
++import { G, GOLD, MUT, SANS, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT } from "../design-tokens.js";
+ import { appEntryPath, CTA_BLUE, CTA_LABEL } from "./StartCheckButton.jsx";
+ import { EASE_STEADY } from "./motion.js";
+ 
+diff --git a/src/mockups/NewSiteLayout.jsx b/src/mockups/NewSiteLayout.jsx
+index 2c27f26..7a14f4c 100644
+--- a/src/mockups/NewSiteLayout.jsx
++++ b/src/mockups/NewSiteLayout.jsx
+@@ -1,4 +1,4 @@
+-import { SANS } from "../CandidApp.jsx";
++import { SANS } from "../design-tokens.js";
+ import NewSiteHeader, { HEADER_HEIGHT } from "./NewSiteHeader.jsx";
+ import SiteFooter from "./SiteFooter.jsx";
+ 
+diff --git a/src/mockups/SignInPage.jsx b/src/mockups/SignInPage.jsx
+index 08489bd..bcc98b9 100644
+--- a/src/mockups/SignInPage.jsx
++++ b/src/mockups/SignInPage.jsx
+@@ -1,7 +1,7 @@
+ import { useEffect, useRef, useState } from "react";
+ import { Link } from "react-router-dom";
+ import posthog from "posthog-js";
+-import { G, MUT, TEXT, SERIF, WHITE } from "../CandidApp.jsx";
++import { G, MUT, TEXT, SERIF, WHITE } from "../design-tokens.js";
+ import { requestRestore, signInWithLink } from "../lib/entitlement.js";
+ import { validEmail } from "../lib/unlock.js";
+ import NewSiteLayout from "./NewSiteLayout.jsx";
+diff --git a/src/mockups/SiteFooter.jsx b/src/mockups/SiteFooter.jsx
+index 00929ff..a3b66ff 100644
+--- a/src/mockups/SiteFooter.jsx
++++ b/src/mockups/SiteFooter.jsx
+@@ -1,5 +1,5 @@
+ import { Link } from "react-router-dom";
+-import { G, GOLD, SERIF } from "../CandidApp.jsx";
++import { G, GOLD, SERIF } from "../design-tokens.js";
+ import { askConsentAgain } from "../lib/consent.js";
+ 
+ // Shared across every marketing-site page — extracted so Home, The Problem
+diff --git a/src/mockups/StartCheckButton.jsx b/src/mockups/StartCheckButton.jsx
+index 8ae9ec8..b551732 100644
+--- a/src/mockups/StartCheckButton.jsx
++++ b/src/mockups/StartCheckButton.jsx
+@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
+ import posthog from "posthog-js";
+ import { motion } from "framer-motion";
+ import { ArrowRight } from "lucide-react";
+-import { WHITE, SANS } from "../CandidApp.jsx";
++import { WHITE, SANS } from "../design-tokens.js";
+ 
+ // Apple's own button blue — the one accent colour on the marketing pages that
+ // departs from Candid's usual green/gold, reserved for the main CTA.
+diff --git a/src/mockups/TheProblemPage.jsx b/src/mockups/TheProblemPage.jsx
+index d7f46c1..8996a5e 100644
+--- a/src/mockups/TheProblemPage.jsx
++++ b/src/mockups/TheProblemPage.jsx
+@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
+ import { motion, useReducedMotion } from "framer-motion";
+ import { Layers, Clock, DoorClosed, TrendingUp, Home as HomeIcon, Users, CheckCircle2 } from "lucide-react";
+ import posthog from "posthog-js";
+-import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../CandidApp.jsx";
++import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../design-tokens.js";
+ import NewSiteLayout from "./NewSiteLayout.jsx";
+ import StartCheckButton from "./StartCheckButton.jsx";
+ import FinancesModuleTiles from "./FinancesModuleTiles.jsx";
+diff --git a/src/mockups/WhatCandidIsPage.jsx b/src/mockups/WhatCandidIsPage.jsx
+index 489a873..70123ec 100644
+--- a/src/mockups/WhatCandidIsPage.jsx
++++ b/src/mockups/WhatCandidIsPage.jsx
+@@ -1,4 +1,4 @@
+-import { G, MUT, TEXT, SERIF } from "../CandidApp.jsx";
++import { G, MUT, TEXT, SERIF } from "../design-tokens.js";
+ import NewSiteLayout from "./NewSiteLayout.jsx";
+ 
+ // What Candid is and isn't: guidance, not advice, said in full. Linked from

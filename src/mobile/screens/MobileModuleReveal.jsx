@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, WHITE } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 
 // A module's answer in three steps (src/lib/moduleReveal.js): the answer,

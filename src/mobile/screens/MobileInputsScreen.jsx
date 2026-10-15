@@ -1,7 +1,8 @@
 import { hasAccess, accessInfo, openBillingPortal, PLANS } from "../../lib/entitlement.js";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, User } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SERIF, MODULE_META } from "../../CandidApp.jsx";
+import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
+import { MODULE_META } from "../../lib/moduleStatus.js";
 import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
 import { SCORED_MODULES } from "../../lib/appEntry.js";
@@ -141,7 +142,7 @@ function Subscription() {
         style={{background:"none",border:"none",padding:"8px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
         Manage subscription
       </button>}
-      {error && <div style={{fontSize:"12px",color:"#b3261e"}}>{error}</div>}
+      {error && <div style={{fontSize:"12px",color:ERROR_TEXT}}>{error}</div>}
     </div>
   );
 }

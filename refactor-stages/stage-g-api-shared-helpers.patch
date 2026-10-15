@@ -1,0 +1,460 @@
+diff --git a/api/billing.js b/api/billing.js
+index 564c342..7136cbd 100644
+--- a/api/billing.js
++++ b/api/billing.js
+@@ -1,6 +1,5 @@
+ import crypto from "crypto";
+-import { Ratelimit } from "@upstash/ratelimit";
+-import { Redis } from "@upstash/redis";
++import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
+ 
+ // Subscriptions: the first module's answer is free, every one after it needs
+ // a subscription (src/lib/unlock.js). One function for all of it, routed by
+@@ -36,7 +35,7 @@ const MAIL_REPLY_TO = "admin@candid-finance.co.uk";
+ 
+ // The live site and local dev, plus any hostnames in BILLING_EXTRA_HOSTS
+ // (comma-separated), for trying checkout on a Vercel preview in test mode.
+-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1",
++const BILLING_HOSTNAMES = [...ALLOWED_HOSTNAMES,
+   ...(process.env.BILLING_EXTRA_HOSTS || "").split(",").map(h => h.trim()).filter(Boolean)];
+ // Statuses that keep access: past_due while Stripe retries a failed payment.
+ const ACTIVE = ["active", "trialing", "past_due"];
+@@ -46,37 +45,16 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+ // The app's inputs are a few kB; this is a ceiling, not a target.
+ const MAX_STATE_CHARS = 200000;
+ 
+-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+-  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+-  : null;
+-const limiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, "10 m"), prefix: "ratelimit:billing" });
+-const restoreLimiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(3, "1 h"), prefix: "ratelimit:billing-restore" });
+-const restoreEmailLimiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, "1 d"), prefix: "ratelimit:billing-restore-email" });
++const limiter = rateLimiter(30, "10 m", "ratelimit:billing");
++const restoreLimiter = rateLimiter(3, "1 h", "ratelimit:billing-restore");
++const restoreEmailLimiter = rateLimiter(5, "1 d", "ratelimit:billing-restore-email");
+ 
+ const configured = () => !!(STRIPE_KEY && WEBHOOK_SECRET && PRICES.monthly && PRICES.yearly && TOKEN_SECRET && SUPA_URL && SERVICE_KEY);
+ 
+-function clientIp(req) {
+-  const f = req.headers["x-forwarded-for"];
+-  return f ? f.split(",")[0].trim() : req.socket?.remoteAddress || "unknown";
+-}
+ // The site the request came from, if it's ours: where checkout returns to.
+-function ourOrigin(req) {
+-  const value = req.headers.origin || req.headers.referer;
+-  if (!value) return null;
+-  try {
+-    const u = new URL(value);
+-    return ALLOWED_HOSTNAMES.includes(u.hostname) ? u.origin : null;
+-  } catch { return null; }
+-}
++const ourOrigin = req => allowedOrigin(req, BILLING_HOSTNAMES);
+ const cleanEmail = e => typeof e === "string" && EMAIL_RE.test(e.trim()) ? e.trim().toLowerCase() : null;
+ 
+-// Constant-time string compare. Lengths are compared in bytes, as
+-// timingSafeEqual needs: equal string lengths can still differ in bytes.
+-function safeEqual(a, b) {
+-  const x = Buffer.from(a), y = Buffer.from(b);
+-  return x.length === y.length && crypto.timingSafeEqual(x, y);
+-}
+-
+ // ── Tokens: base64url(JSON) + "." + HMAC ─────────────────────────────────
+ const b64 = s => Buffer.from(s).toString("base64url");
+ const sign = body => crypto.createHmac("sha256", TOKEN_SECRET).update(body).digest("base64url");
+diff --git a/api/feedback.js b/api/feedback.js
+index 44e4046..77908d5 100644
+--- a/api/feedback.js
++++ b/api/feedback.js
+@@ -1,9 +1,4 @@
+-import crypto from "crypto";
+-import { Ratelimit } from "@upstash/ratelimit";
+-import { Redis } from "@upstash/redis";
+-
+-// ── Layer 1: only our own site (or local dev) may call this route ────────────
+-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
++import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
+ 
+ // service_role — never VITE_-prefixed, so it's never bundled to the client.
+ // The `test` table's RLS now denies SELECT to everyone except service_role
+@@ -13,45 +8,9 @@ const SUPA_URL = process.env.VITE_SUPABASE_URL;
+ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+ const ADMIN_PASSWORD = process.env.FEEDBACK_ADMIN_PASSWORD;
+ 
+-// ── Layer 2: durable brute-force guard on the shared password ────────────────
+-// This gates real users' free-text opinions, not just AI spend like
+-// api/claude.js's limiter — tighter window, same durable-Redis pattern so it
+-// isn't reset by every cold start / bypassed across concurrent instances.
+-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+-  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+-  : null;
+-
+-const attemptLimiter = redis && new Ratelimit({
+-  redis,
+-  limiter: Ratelimit.slidingWindow(20, "10 m"),
+-  prefix: "ratelimit:feedback-admin",
+-});
+-
+-function getClientIp(req) {
+-  const forwarded = req.headers["x-forwarded-for"];
+-  if (forwarded) return forwarded.split(",")[0].trim();
+-  return req.socket?.remoteAddress || "unknown";
+-}
+-
+-function isAllowedOrigin(req) {
+-  const value = req.headers.origin || req.headers.referer;
+-  if (!value) return false;
+-  try {
+-    return ALLOWED_HOSTNAMES.includes(new URL(value).hostname);
+-  } catch {
+-    return false;
+-  }
+-}
+-
+-// Constant-time compare so a wrong-but-close guess can't be distinguished
+-// from a wrong guess by response timing.
+-function passwordMatches(supplied, expected) {
+-  if (typeof supplied !== "string") return false;
+-  const a = Buffer.from(supplied);
+-  const b = Buffer.from(expected);
+-  if (a.length !== b.length) return false;
+-  return crypto.timingSafeEqual(a, b);
+-}
++// Brute-force guard on the shared password: this gates real users'
++// free-text opinions, so a tight window.
++const attemptLimiter = rateLimiter(20, "10 m", "ratelimit:feedback-admin");
+ 
+ export default async function handler(req, res) {
+   if (req.method !== "GET") return res.status(405).end();
+@@ -63,11 +22,12 @@ export default async function handler(req, res) {
+     return res.status(503).json({ error: "Service temporarily unavailable" });
+   }
+ 
++  // Only our own site (or local dev) may call this route.
+   if (!isAllowedOrigin(req)) {
+     return res.status(403).json({ error: "Forbidden" });
+   }
+ 
+-  const ip = getClientIp(req);
++  const ip = clientIp(req);
+   if (attemptLimiter) {
+     try {
+       const { success } = await attemptLimiter.limit(ip);
+@@ -77,7 +37,7 @@ export default async function handler(req, res) {
+     }
+   }
+ 
+-  if (!passwordMatches(req.headers["x-admin-password"], ADMIN_PASSWORD)) {
++  if (!safeEqual(req.headers["x-admin-password"], ADMIN_PASSWORD)) {
+     return res.status(401).json({ error: "Unauthorized" });
+   }
+ 
+diff --git a/api/rates.js b/api/rates.js
+index 6f837ed..9cc4573 100644
+--- a/api/rates.js
++++ b/api/rates.js
+@@ -1,6 +1,5 @@
+ import crypto from "crypto";
+-import { Ratelimit } from "@upstash/ratelimit";
+-import { Redis } from "@upstash/redis";
++import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
+ import { EXTRACTION_TOOL, EXTRACTION_SYSTEM, htmlToText, planChanges, reviewDedupeKey } from "../src/lib/rateFeed.js";
+ import { cleanIosAppUrl, cleanAndroidAppUrl } from "../src/lib/appLinks.js";
+ 
+@@ -18,7 +17,6 @@ const SUPA_URL = process.env.VITE_SUPABASE_URL;
+ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+ const ADMIN_PASSWORD = process.env.FEEDBACK_ADMIN_PASSWORD;
+ const CRON_SECRET = process.env.CRON_SECRET;
+-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
+ 
+ const MODEL = "claude-haiku-4-5-20251001";
+ const RECHECK_AFTER_DAYS = 6;
+@@ -28,22 +26,7 @@ const RUN_BUDGET_MS = 45000;
+ const FETCH_TIMEOUT_MS = 15000;
+ const USER_AGENT = "Mozilla/5.0 (compatible; CandidRateCheck/1.0; +https://candid-finance.co.uk)";
+ 
+-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+-  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+-  : null;
+-const attemptLimiter = redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(20, "10 m"), prefix: "ratelimit:rates-admin" });
+-
+-function safeEqual(supplied, expected) {
+-  if (typeof supplied !== "string" || !expected) return false;
+-  const a = Buffer.from(supplied), b = Buffer.from(expected);
+-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+-}
+-
+-function isAllowedOrigin(req) {
+-  const value = req.headers.origin || req.headers.referer;
+-  if (!value) return false;
+-  try { return ALLOWED_HOSTNAMES.includes(new URL(value).hostname); } catch { return false; }
+-}
++const attemptLimiter = rateLimiter(20, "10 m", "ratelimit:rates-admin");
+ 
+ // ── Supabase (service role) ──────────────────────────────────────────────────
+ async function db(path, { method = "GET", body, prefer } = {}) {
+@@ -242,9 +225,14 @@ export default async function handler(req, res) {
+ 
+   // Vercel Cron: GET with the cron secret.
+   if (req.method === "GET" && CRON_SECRET && safeEqual(req.headers.authorization, `Bearer ${CRON_SECRET}`)) {
+-    const results = await runRefresh();
+-    console.log("[api/rates] cron run:", JSON.stringify(results));
+-    return res.status(200).json({ results });
++    try {
++      const results = await runRefresh();
++      console.log("[api/rates] cron run:", JSON.stringify(results));
++      return res.status(200).json({ results });
++    } catch (e) {
++      console.error("[api/rates] cron run failed:", e);
++      return res.status(500).json({ error: "Rate check failed" });
++    }
+   }
+ 
+   // Everything else is the admin page.
+@@ -252,8 +240,7 @@ export default async function handler(req, res) {
+   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
+   if (attemptLimiter) {
+     try {
+-      const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
+-      const { success } = await attemptLimiter.limit(ip);
++      const { success } = await attemptLimiter.limit(clientIp(req));
+       if (!success) return res.status(429).json({ error: "Too many attempts, try again shortly" });
+     } catch (e) {
+       console.error("[api/rates] rate-limit check failed:", e?.message);
+diff --git a/api/truelayer/auth-link.js b/api/truelayer/auth-link.js
+index e9c87c7..a0b751f 100644
+--- a/api/truelayer/auth-link.js
++++ b/api/truelayer/auth-link.js
+@@ -1,4 +1,5 @@
+ import crypto from "crypto";
++import { COOKIE_DOMAIN } from "../../server/http.js";
+ 
+ // Sandbox only — see truelayer/callback.js for the corresponding exchange.
+ const AUTH_BASE = "https://auth.truelayer-sandbox.com";
+@@ -6,10 +7,6 @@ const SCOPES = ["accounts", "balance", "transactions", "offline_access"];
+ const STATE_COOKIE = "tl_state";
+ const STATE_TTL_SECONDS = 600;
+ const MAX_EMAIL_LEN = 254;
+-// Vercel redirects between the apex and www hosts, and a host-scoped cookie
+-// doesn't survive that hop — scoping to the parent domain (leading dot) makes
+-// it valid on both candid-finance.co.uk and www.candid-finance.co.uk.
+-const COOKIE_DOMAIN = ".candid-finance.co.uk";
+ 
+ export default function handler(req, res) {
+   if (req.method !== "GET") return res.status(405).end();
+diff --git a/api/truelayer/callback.js b/api/truelayer/callback.js
+index 912eab3..4edc147 100644
+--- a/api/truelayer/callback.js
++++ b/api/truelayer/callback.js
+@@ -3,27 +3,14 @@
+ // onboarding fields. No request signing here: TrueLayer's ES512/kid signing is
+ // a Payments API concept and doesn't apply to Data API calls, which just use a
+ // Bearer access token from a standard OAuth code exchange.
++import { parseCookies, COOKIE_DOMAIN } from "../../server/http.js";
++
+ const AUTH_BASE = "https://auth.truelayer-sandbox.com";
+ const DATA_BASE = "https://api.truelayer-sandbox.com";
+ const STATE_COOKIE = "tl_state";
+ const DATA_COOKIE = "tl_data";
+ const APP_ORIGIN = "https://candid-finance.co.uk";
+ const TRANSACTION_LOOKBACK_DAYS = 90;
+-// Must match auth-link.js's Domain exactly — both for the tl_state cookie to
+-// carry over an apex/www redirect hop, and because clearing a cookie (Max-Age=0)
+-// only works if Domain (and Path) match what it was originally set with;
+-// otherwise the clear just sets an unrelated stray cookie and the real one lingers.
+-const COOKIE_DOMAIN = ".candid-finance.co.uk";
+-
+-function parseCookies(req) {
+-  const header = req.headers.cookie || "";
+-  return Object.fromEntries(
+-    header.split(";").filter(Boolean).map(pair => {
+-      const idx = pair.indexOf("=");
+-      return [pair.slice(0, idx).trim(), decodeURIComponent(pair.slice(idx + 1).trim())];
+-    })
+-  );
+-}
+ 
+ function redirectWithError(res, reason, extraCookies = []) {
+   res.setHeader("Set-Cookie", [
+diff --git a/api/truelayer/session-data.js b/api/truelayer/session-data.js
+index 1c417e9..fa971ae 100644
+--- a/api/truelayer/session-data.js
++++ b/api/truelayer/session-data.js
+@@ -2,31 +2,9 @@
+ // TrueLayer data back to the app via an authenticated same-origin fetch —
+ // never via a URL param, so it can't leak through browser history, server
+ // access logs, or Referer headers.
+-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
+-const DATA_COOKIE = "tl_data";
+-// Must match callback.js's Domain exactly — clearing (Max-Age=0) only works if
+-// Domain (and Path) match what the cookie was originally set with.
+-const COOKIE_DOMAIN = ".candid-finance.co.uk";
+-
+-function parseCookies(req) {
+-  const header = req.headers.cookie || "";
+-  return Object.fromEntries(
+-    header.split(";").filter(Boolean).map(pair => {
+-      const idx = pair.indexOf("=");
+-      return [pair.slice(0, idx).trim(), decodeURIComponent(pair.slice(idx + 1).trim())];
+-    })
+-  );
+-}
++import { parseCookies, isAllowedOrigin, COOKIE_DOMAIN } from "../../server/http.js";
+ 
+-function isAllowedOrigin(req) {
+-  const value = req.headers.origin || req.headers.referer;
+-  if (!value) return false;
+-  try {
+-    return ALLOWED_HOSTNAMES.includes(new URL(value).hostname);
+-  } catch {
+-    return false;
+-  }
+-}
++const DATA_COOKIE = "tl_data";
+ 
+ export default function handler(req, res) {
+   if (req.method !== "GET") return res.status(405).end();
+diff --git a/api/truelayer/stage-payment.js b/api/truelayer/stage-payment.js
+index 97e1d6b..6f0d9e4 100644
+--- a/api/truelayer/stage-payment.js
++++ b/api/truelayer/stage-payment.js
+@@ -1,7 +1,6 @@
+ import crypto from "crypto";
+-import { Ratelimit } from "@upstash/ratelimit";
+-import { Redis } from "@upstash/redis";
+ import * as tlSigning from "truelayer-signing";
++import { isAllowedOrigin, clientIp, redis, rateLimiter } from "../../server/http.js";
+ 
+ // Sandbox only — stages a mock bank-transfer pay-in via TrueLayer's Payments
+ // API v3 and hands back a hosted payment page URL for the human to complete
+@@ -12,7 +11,6 @@ const AUTH_BASE = "https://auth.truelayer-sandbox.com";
+ const API_BASE = "https://api.truelayer-sandbox.com";
+ const HOSTED_PAGE_BASE = "https://payment.truelayer-sandbox.com/payments";
+ const PAYMENTS_PATH = "/v3/payments";
+-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
+ const APP_ORIGIN = "https://candid-finance.co.uk";
+ 
+ // Fixed staging amount per spec — deliberately not accepted from the client,
+@@ -35,31 +33,7 @@ const MOCK_USER = { name: "Candid Sandbox User", email: "sandbox-user@candid-fin
+ const IP_LIMIT = 5;
+ const IP_WINDOW = "10 m";
+ 
+-const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+-  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+-  : null;
+-
+-const ipLimiter = redis && new Ratelimit({
+-  redis,
+-  limiter: Ratelimit.slidingWindow(IP_LIMIT, IP_WINDOW),
+-  prefix: "ratelimit:truelayer-payment:ip",
+-});
+-
+-function getClientIp(req) {
+-  const forwarded = req.headers["x-forwarded-for"];
+-  if (forwarded) return forwarded.split(",")[0].trim();
+-  return req.socket?.remoteAddress || "unknown";
+-}
+-
+-function isAllowedOrigin(req) {
+-  const value = req.headers.origin || req.headers.referer;
+-  if (!value) return false;
+-  try {
+-    return ALLOWED_HOSTNAMES.includes(new URL(value).hostname);
+-  } catch {
+-    return false;
+-  }
+-}
++const ipLimiter = rateLimiter(IP_LIMIT, IP_WINDOW, "ratelimit:truelayer-payment:ip");
+ 
+ // TrueLayer env vars store the PEM with literal "\n" (real newlines don't
+ // survive most env var UIs) — decode back to a real multi-line PEM here.
+@@ -105,13 +79,13 @@ export default async function handler(req, res) {
+   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
+ 
+   if (!redis) {
+-    // Fails closed, same reasoning as api/claude.js — this stages a (mock)
+-    // payment, so missing config should never silently disable the guard.
++    // Fails closed: this stages a (mock) payment, so missing config should
++    // never silently disable the guard.
+     console.error("[truelayer/stage-payment] UPSTASH_REDIS_REST_URL/TOKEN not configured — refusing to serve without rate limiting");
+     return res.status(503).json({ error: "Service temporarily unavailable" });
+   }
+ 
+-  const ip = getClientIp(req);
++  const ip = clientIp(req);
+   try {
+     const { success } = await ipLimiter.limit(ip);
+     if (!success) return res.status(429).json({ error: "Too many requests" });
+diff --git a/server/http.js b/server/http.js
+new file mode 100644
+index 0000000..332b656
+--- /dev/null
++++ b/server/http.js
+@@ -0,0 +1,68 @@
++// Helpers shared by the Vercel functions in api/. Kept outside api/ so this
++// file is never deployed as a function of its own; each function bundles it.
++import crypto from "crypto";
++import { Ratelimit } from "@upstash/ratelimit";
++import { Redis } from "@upstash/redis";
++
++// The live site and local dev: the only origins the functions answer.
++export const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
++
++// Vercel redirects between the apex and www hosts, and a host-scoped cookie
++// doesn't survive that hop. Scoping to the parent domain (leading dot) makes
++// a cookie valid on both. Clearing a cookie (Max-Age=0) only works with the
++// same Domain and Path it was set with, so every cookie uses this one.
++export const COOKIE_DOMAIN = ".candid-finance.co.uk";
++
++// The request's own site (Origin, or Referer when there's no Origin), if it
++// is one of `hostnames`, else null.
++export function allowedOrigin(req, hostnames = ALLOWED_HOSTNAMES) {
++  const value = req.headers.origin || req.headers.referer;
++  if (!value) return null;
++  try {
++    const u = new URL(value);
++    return hostnames.includes(u.hostname) ? u.origin : null;
++  } catch {
++    return null;
++  }
++}
++export const isAllowedOrigin = (req, hostnames) => allowedOrigin(req, hostnames) !== null;
++
++export function clientIp(req) {
++  const forwarded = req.headers["x-forwarded-for"];
++  return forwarded ? forwarded.split(",")[0].trim() : req.socket?.remoteAddress || "unknown";
++}
++
++// A cookie that isn't valid percent-encoding keeps its raw value rather than
++// failing the whole request.
++export function parseCookies(req) {
++  const header = req.headers.cookie || "";
++  return Object.fromEntries(
++    header.split(";").filter(Boolean).map(pair => {
++      const idx = pair.indexOf("=");
++      const value = pair.slice(idx + 1).trim();
++      let decoded = value;
++      try { decoded = decodeURIComponent(value); } catch {}
++      return [pair.slice(0, idx).trim(), decoded];
++    })
++  );
++}
++
++// Constant-time compare, so a near-miss can't be told from a wrong guess by
++// response timing. Lengths are compared in bytes, as timingSafeEqual needs:
++// equal string lengths can still differ in bytes.
++export function safeEqual(supplied, expected) {
++  if (typeof supplied !== "string" || typeof expected !== "string" || !expected) return false;
++  const a = Buffer.from(supplied), b = Buffer.from(expected);
++  return a.length === b.length && crypto.timingSafeEqual(a, b);
++}
++
++// Upstash Redis, durable across cold starts and concurrent instances, or
++// null when it isn't configured.
++export const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
++  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
++  : null;
++
++// A sliding-window limiter on that Redis (null without it): `requests` per
++// `window` (e.g. "10 m"), counted under `prefix`.
++export const rateLimiter = (requests, window, prefix) =>
++  redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(requests, window), prefix });

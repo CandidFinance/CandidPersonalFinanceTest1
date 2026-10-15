@@ -2,31 +2,9 @@
 // TrueLayer data back to the app via an authenticated same-origin fetch —
 // never via a URL param, so it can't leak through browser history, server
 // access logs, or Referer headers.
-const ALLOWED_HOSTNAMES = ["candid-finance.co.uk", "www.candid-finance.co.uk", "localhost", "127.0.0.1"];
+import { parseCookies, isAllowedOrigin, COOKIE_DOMAIN } from "../../server/http.js";
+
 const DATA_COOKIE = "tl_data";
-// Must match callback.js's Domain exactly — clearing (Max-Age=0) only works if
-// Domain (and Path) match what the cookie was originally set with.
-const COOKIE_DOMAIN = ".candid-finance.co.uk";
-
-function parseCookies(req) {
-  const header = req.headers.cookie || "";
-  return Object.fromEntries(
-    header.split(";").filter(Boolean).map(pair => {
-      const idx = pair.indexOf("=");
-      return [pair.slice(0, idx).trim(), decodeURIComponent(pair.slice(idx + 1).trim())];
-    })
-  );
-}
-
-function isAllowedOrigin(req) {
-  const value = req.headers.origin || req.headers.referer;
-  if (!value) return false;
-  try {
-    return ALLOWED_HOSTNAMES.includes(new URL(value).hostname);
-  } catch {
-    return false;
-  }
-}
 
 export default function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end();

@@ -1,4 +1,4 @@
-import { WHITE, TEXT } from "../../CandidApp.jsx";
+import { WHITE, TEXT } from "../../design-tokens.js";
 
 // A Property step's result card before it has the figures it needs: the
 // card's shape in grey, blurred, with one line (`text`) saying what fills it

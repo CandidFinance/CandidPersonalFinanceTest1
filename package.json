@@ -5,17 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && for f in *.html; do [ -e \"dist/$f\" ] || cp \"$f\" \"dist/$f\"; done",
+    "build": "vite build && node scripts/copy-static-pages.js",
     "preview": "vite preview",
     "test": "node --import ./src/lib/testClock.js --test \"src/lib/*.test.js\" \"scripts/personas/*.test.js\" \"scripts/assist-agent/*.test.js\"",
     "assist-agent": "node scripts/assist-agent/agent.js",
     "personas": "node scripts/personas/run.js && node scripts/personas/build-page.js"
   },
   "dependencies": {
-    "@fontsource/dm-sans": "^5.3.0",
-    "@fontsource/playfair-display": "^5.3.0",
-    "@react-pdf/renderer": "^4.5.1",
-    "@supabase/supabase-js": "^2.103.3",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.2",
     "framer-motion": "^13.1.0",

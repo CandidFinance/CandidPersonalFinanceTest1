@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { G, TEXT, MUT, SERIF } from "../../CandidApp.jsx";
+import { G, TEXT, MUT, SERIF } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import { MODULE_GUIDES } from "../../lib/moduleGuide.js";
 import GuidedFlow from "../property/GuidedFlow.jsx";
@@ -9,15 +9,13 @@ import MobileCashTiersList from "../onboarding/MobileCashTiersList.jsx";
 // A module's walk-through (/app/module/:key until its questions are
 // answered): the module's header, its answer held back as a blurred card,
 // then the questions (src/lib/moduleGuide.js). When they're done the module's
-// own screen takes over, and that is the answer. On a rerun ("Walk me through
-// it") there's no blurred card: the user has already seen their answer, and
-// goes back to it, updated, at the end.
+// own screen takes over, and that is the answer.
 
 const RENDERERS = {
   cashAccounts: ({ d, set }) => <MobileCashTiersList d={d} set={set}/>,
 };
 
-export default function MobileModuleGuide({ moduleKey, d, m, set, rerun, onDone }) {
+export default function MobileModuleGuide({ moduleKey, d, m, set, onDone }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const guide = MODULE_GUIDES[moduleKey];
@@ -30,12 +28,12 @@ export default function MobileModuleGuide({ moduleKey, d, m, set, rerun, onDone 
         </div>
         <div style={{flex:1,minWidth:0}}>
           <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
-          <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>{rerun ? "Updating your answers" : "A few questions first"}</div>
+          <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>A few questions first</div>
         </div>
       </div>
-      <GuidedFlow key={`${moduleKey}-${rerun ? "rerun" : "first"}`} questions={guide.questions} d={d} m={m} set={set}
+      <GuidedFlow key={moduleKey} questions={guide.questions} d={d} m={m} set={set}
         renderers={RENDERERS} onDone={onDone}
-        result={rerun ? null : <EmptyResultCard text={guide.emptyText}/>}/>
+        result={<EmptyResultCard text={guide.emptyText}/>}/>
     </div>
   );
 }

@@ -1,0 +1,34 @@
+diff --git a/package.json b/package.json
+index d8079a4..2563510 100644
+--- a/package.json
++++ b/package.json
+@@ -5,7 +5,7 @@
+   "type": "module",
+   "scripts": {
+     "dev": "vite",
+-    "build": "vite build && for f in *.html; do [ -e \"dist/$f\" ] || cp \"$f\" \"dist/$f\"; done",
++    "build": "vite build && node scripts/copy-static-pages.js",
+     "preview": "vite preview",
+     "test": "node --import ./src/lib/testClock.js --test \"src/lib/*.test.js\" \"scripts/personas/*.test.js\" \"scripts/assist-agent/*.test.js\"",
+     "assist-agent": "node scripts/assist-agent/agent.js",
+diff --git a/scripts/copy-static-pages.js b/scripts/copy-static-pages.js
+new file mode 100644
+index 0000000..06895a1
+--- /dev/null
++++ b/scripts/copy-static-pages.js
+@@ -0,0 +1,15 @@
++// The second half of `npm run build`: copies the root .html pages that Vite
++// doesn't build (the privacy policy and terms) into dist/ as they are. The
++// calculator pages are built by Vite (vite.config.js), so they're already in
++// dist/ and are left alone. In Node rather than a shell loop, so the build
++// runs the same on Windows as on Vercel.
++import { copyFileSync, existsSync, readdirSync } from "node:fs";
++import { dirname, join } from "node:path";
++import { fileURLToPath } from "node:url";
++
++const root = join(dirname(fileURLToPath(import.meta.url)), "..");
++for (const file of readdirSync(root)) {
++  if (!file.endsWith(".html") || existsSync(join(root, "dist", file))) continue;
++  copyFileSync(join(root, file), join(root, "dist", file));
++  console.log(`copied ${file} to dist/`);
++}

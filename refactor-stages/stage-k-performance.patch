@@ -1,0 +1,77 @@
+diff --git a/src/main.jsx b/src/main.jsx
+index 68a9f96..511feb9 100644
+--- a/src/main.jsx
++++ b/src/main.jsx
+@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client"
+ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLocation } from "react-router-dom"
+ import posthog from "posthog-js"
+ import { MotionConfig } from "framer-motion"
+-import CandidApp from "./CandidApp.jsx"
+ import { NavBar } from "./NavBar.jsx"
+ import { G, GOLD, SERIF, SANS } from "./design-tokens.js"
+ import ErrorBoundary from "./ErrorBoundary.jsx"
+@@ -13,6 +12,9 @@ import { getConsent, analyticsPersistence } from "./lib/consent.js"
+ import { setSupabaseFailureReporter, updateRow } from "./lib/supabase.js"
+ import { appEntryPath } from "./mockups/StartCheckButton.jsx"
+ const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
++// The app (/app/*) is its own chunk, so the marketing site doesn't download
++// it; it loads the first time an /app page opens.
++const CandidApp = lazy(() => import("./CandidApp.jsx"))
+ 
+ // ── Acquisition attribution — captured once per browser, ever ─────────────────
+ // PostHog's own native first-touch mechanism ($initial_utm_source etc.) never
+@@ -33,8 +35,8 @@ function getAcquisition() {
+   const p = new URLSearchParams(window.location.search)
+   // A ?ref=<id> referral link is treated as equivalent to a
+   // utm_source=referral&utm_medium=referral link, with the referring user's
+-  // own id (their posthog distinct_id, reused rather than minting a new one —
+-  // see ReferralCTA in CandidApp.jsx) carried alongside as referred_by.
++  // own id (their posthog distinct_id, reused rather than minting a new one)
++  // carried alongside as referred_by.
+   const ref = p.get('ref')
+   const record = {
+     source: ref ? 'referral' : (p.get('utm_source') || 'direct'),
+@@ -104,8 +106,8 @@ if (SHOW_DEV_TOOLS) {
+ }
+ 
+ // The live marketing site — rebuilt at /new during review, now promoted to
+-// "/" itself (see RootRoute below). Kept lazy so the app bundle
+-// (CandidApp.jsx) doesn't pull these pages in.
++// "/" itself (see RootRoute below). Lazy, like the app itself, so each
++// page downloads only its own code.
+ const NewLandingPage = lazy(() => import("./mockups/NewLandingPage.jsx"))
+ const TheProblemPage = lazy(() => import("./mockups/TheProblemPage.jsx"))
+ const HowItWorksPage = lazy(() => import("./mockups/HowItWorksPage.jsx"))
+@@ -248,7 +250,7 @@ function BetaRedirect() {
+ function CandidAppLayout() {
+   return (
+     <div id="candid-app" style={{ minHeight: "100vh" }}>
+-      <CandidApp />
++      <Suspense fallback={null}><CandidApp /></Suspense>
+     </div>
+   );
+ }
+diff --git a/src/mobile/screens/MobileForecastScreen.jsx b/src/mobile/screens/MobileForecastScreen.jsx
+index 93e328f..71c987b 100644
+--- a/src/mobile/screens/MobileForecastScreen.jsx
++++ b/src/mobile/screens/MobileForecastScreen.jsx
+@@ -1,4 +1,4 @@
+-import { useState } from "react";
++import { useMemo, useState } from "react";
+ import { useElementWidth } from "../useElementWidth.js";
+ import { Lock, ChevronRight } from "lucide-react";
+ import { PillSlider } from "../PillSlider.jsx";
+@@ -84,9 +84,10 @@ export default function MobileForecastScreen({ d, m }) {
+   // Re-measured when the view switches: each view has its own chart.
+   const [chartWrapRef, chartWidth] = useElementWidth(340, [view]);
+ 
+-  const forecast = calcForecast(d, m, surplus, horizon, lumpSum ?? 0);
+-  const series = calcForecastSeries(d, m, surplus, horizon, lumpSum ?? 0);
+-  const assumptions = buildForecastAssumptions(d, m);
++  // Not rerun when only the chart's width or an open row changes.
++  const forecast = useMemo(() => calcForecast(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
++  const series = useMemo(() => calcForecastSeries(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
++  const assumptions = useMemo(() => buildForecastAssumptions(d, m), [d, m]);
+   const netWorthRows = calcNetWorthTrajectory(d, m, horizon);
+ 
+   const chart = (() => {

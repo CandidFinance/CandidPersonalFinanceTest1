@@ -1,0 +1,325 @@
+diff --git a/README.md b/README.md
+index 26c19f9..416b797 100644
+--- a/README.md
++++ b/README.md
+@@ -23,7 +23,7 @@ npm run build      # production build into dist/
+ | `src/CandidApp.jsx` | The app shell for `/app/*`: saved inputs, Supabase rows, which screen to show |
+ | `src/mobile/` | The app's screens, module pages, Property steps and Candid Assist |
+ | `src/lib/` | The finance engine: tax, pension, cash, student loan, property and forecasts. Plain JavaScript with no React, tested with `node --test` |
+-| `src/mockups/` | The marketing site (`/`, `/the-problem`, `/how-it-works`, `/signin`, `/what-candid-is`) |
++| `src/site/` | The marketing site (`/`, `/the-problem`, `/how-it-works`, `/signin`, `/what-candid-is`) |
+ | `src/admin/` | `/admin/feedback` and `/admin/rates` (password-protected) |
+ | `api/` | Vercel functions: `billing.js` (Stripe), `rates.js` (the savings-rate feed, also a daily cron), `feedback.js`, `truelayer/*` (sandbox only) |
+ | `server/` | Helpers the functions share (origin checks, cookies, rate limits) |
+diff --git a/src/design-tokens.js b/src/design-tokens.js
+index 2ef0838..7f4c0c3 100644
+--- a/src/design-tokens.js
++++ b/src/design-tokens.js
+@@ -116,7 +116,7 @@ export const FONT_SIZE = {
+ // ── Header / nav wordmark ────────────────────────────────────────────────
+ // The "Candid." wordmark's font/weight/colour-per-background, shared by
+ // every header in the app — CandidApp.jsx's in-app `NavBar` and the
+-// marketing site's `NewSiteHeader` both build their wordmark style off
++// marketing site's `SiteHeader` both build their wordmark style off
+ // these rather than re-declaring it, so a change here (or a GOLD/SERIF
+ // change) can't quietly stop reaching one of them. Each context still
+ // picks its own font-size (they're different-height bars), so only
+diff --git a/src/main.jsx b/src/main.jsx
+index 511feb9..bd3d0d9 100644
+--- a/src/main.jsx
++++ b/src/main.jsx
+@@ -10,7 +10,7 @@ import FeedbackAdmin from "./admin/FeedbackAdmin.jsx"
+ import CookieNotice from "./CookieNotice.jsx"
+ import { getConsent, analyticsPersistence } from "./lib/consent.js"
+ import { setSupabaseFailureReporter, updateRow } from "./lib/supabase.js"
+-import { appEntryPath } from "./mockups/StartCheckButton.jsx"
++import { appEntryPath } from "./site/StartCheckButton.jsx"
+ const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
+ // The app (/app/*) is its own chunk, so the marketing site doesn't download
+ // it; it loads the first time an /app page opens.
+@@ -108,11 +108,11 @@ if (SHOW_DEV_TOOLS) {
+ // The live marketing site — rebuilt at /new during review, now promoted to
+ // "/" itself (see RootRoute below). Lazy, like the app itself, so each
+ // page downloads only its own code.
+-const NewLandingPage = lazy(() => import("./mockups/NewLandingPage.jsx"))
+-const TheProblemPage = lazy(() => import("./mockups/TheProblemPage.jsx"))
+-const HowItWorksPage = lazy(() => import("./mockups/HowItWorksPage.jsx"))
+-const SignInPage = lazy(() => import("./mockups/SignInPage.jsx"))
+-const WhatCandidIsPage = lazy(() => import("./mockups/WhatCandidIsPage.jsx"))
++const LandingPage = lazy(() => import("./site/LandingPage.jsx"))
++const TheProblemPage = lazy(() => import("./site/TheProblemPage.jsx"))
++const HowItWorksPage = lazy(() => import("./site/HowItWorksPage.jsx"))
++const SignInPage = lazy(() => import("./site/SignInPage.jsx"))
++const WhatCandidIsPage = lazy(() => import("./site/WhatCandidIsPage.jsx"))
+ 
+ // ── Welcome back screen ───────────────────────────────────────────────────────
+ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStartFresh }) {
+@@ -198,7 +198,7 @@ function RootRoute() {
+   if (isTrueLayerBounce) {
+     return <Navigate to={`/app/assessment/5${window.location.search}`} replace />;
+   }
+-  return <Suspense fallback={null}><NewLandingPage /></Suspense>;
++  return <Suspense fallback={null}><LandingPage /></Suspense>;
+ }
+ 
+ // ── Returning-visitor screen ── same content/behaviour as the old root
+diff --git a/src/mockups/FinancesModuleTiles.jsx b/src/site/FinancesModuleTiles.jsx
+similarity index 100%
+rename from src/mockups/FinancesModuleTiles.jsx
+rename to src/site/FinancesModuleTiles.jsx
+diff --git a/src/mockups/HowItWorksPage.jsx b/src/site/HowItWorksPage.jsx
+similarity index 98%
+rename from src/mockups/HowItWorksPage.jsx
+rename to src/site/HowItWorksPage.jsx
+index 0b24596..b947e39 100644
+--- a/src/mockups/HowItWorksPage.jsx
++++ b/src/site/HowItWorksPage.jsx
+@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
+ import { ClipboardList, Scale, Search, Compass } from "lucide-react";
+ import posthog from "posthog-js";
+ import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../design-tokens.js";
+-import NewSiteLayout from "./NewSiteLayout.jsx";
++import SiteLayout from "./SiteLayout.jsx";
+ import StartCheckButton from "./StartCheckButton.jsx";
+ import { riseIn, pullTogether } from "./motion.js";
+ import { useEqualHeights } from "./useEqualHeights.js";
+@@ -41,7 +41,7 @@ export default function HowItWorksPage() {
+   useEffect(() => { posthog.capture("how_it_works_viewed"); }, []);
+ 
+   return (
+-    <NewSiteLayout>
++    <SiteLayout>
+       <div style={{ padding: "56px 24px 88px", textAlign: "center" }}>
+         <motion.div {...riseIn(reduceMotion)} style={{ maxWidth: "620px", margin: "0 auto" }}>
+           <h1 style={{
+@@ -102,6 +102,6 @@ export default function HowItWorksPage() {
+         </motion.h2>
+         <StartCheckButton source="how_it_works_cta" />
+       </div>
+-    </NewSiteLayout>
++    </SiteLayout>
+   );
+ }
+diff --git a/src/mockups/NewLandingPage.jsx b/src/site/LandingPage.jsx
+similarity index 99%
+rename from src/mockups/NewLandingPage.jsx
+rename to src/site/LandingPage.jsx
+index 75ee6cd..dd4d25c 100644
+--- a/src/mockups/NewLandingPage.jsx
++++ b/src/site/LandingPage.jsx
+@@ -3,7 +3,7 @@ import { motion, useReducedMotion, useInView, useScroll, useTransform, animate }
+ import { ClipboardList, Scale, Search, Compass, GraduationCap, PoundSterling, Home as HomeIcon, Check, ArrowRight } from "lucide-react";
+ import posthog from "posthog-js";
+ import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../design-tokens.js";
+-import NewSiteLayout from "./NewSiteLayout.jsx";
++import SiteLayout from "./SiteLayout.jsx";
+ import StartCheckButton, { CTA_BLUE } from "./StartCheckButton.jsx";
+ import { EASE_STEADY, riseIn, pullTogether, heroStagger, heroItem } from "./motion.js";
+ import { useEqualHeights } from "./useEqualHeights.js";
+@@ -13,7 +13,7 @@ import { useEqualHeights } from "./useEqualHeights.js";
+ // one new idea — a single continuous page background (no more alternating
+ // solid colour blocks), with content laid out as floating tiles over it
+ // rather than full-bleed sections. The header/footer/background shell lives
+-// in NewSiteLayout.jsx, shared with the other tabs. Reviewed at /new before
++// in SiteLayout.jsx, shared with the other tabs. Reviewed at /new before
+ // being promoted to the live "/" (see main.jsx's RootRoute).
+ //
+ // Every entrance animation on this page comes from ./motion.js, which
+@@ -160,7 +160,7 @@ function StatFlipTile({ n, label, source, i, total, reduceMotion }) {
+   );
+ }
+ 
+-export default function NewLandingPage() {
++export default function LandingPage() {
+   const reduceMotion = useReducedMotion();
+   // Both tile sets below have visibly uneven copy lengths, so each is sized
+   // to match whichever tile currently has the most — see useEqualHeights.
+@@ -203,7 +203,7 @@ export default function NewLandingPage() {
+   const phoneFilter = useTransform(phoneFadeProgress, [0, 1], ["blur(0px)", "blur(14px)"]);
+ 
+   return (
+-    <NewSiteLayout>
++    <SiteLayout>
+       {/* ── HERO — copy on the left, app render on the right (stacked on
+           narrow screens). The copy is a cascade, not one block: badge,
+           headline, subhead, CTA and trust line each rise in slightly after
+@@ -449,6 +449,6 @@ export default function NewLandingPage() {
+         </motion.h2>
+         <StartCheckButton source="final_cta" />
+       </div>
+-    </NewSiteLayout>
++    </SiteLayout>
+   );
+ }
+diff --git a/src/mockups/SignInPage.jsx b/src/site/SignInPage.jsx
+similarity index 98%
+rename from src/mockups/SignInPage.jsx
+rename to src/site/SignInPage.jsx
+index 69aa30d..82d55e6 100644
+--- a/src/mockups/SignInPage.jsx
++++ b/src/site/SignInPage.jsx
+@@ -4,7 +4,7 @@ import posthog from "posthog-js";
+ import { G, MUT, TEXT, SERIF, WHITE, ERROR_TEXT } from "../design-tokens.js";
+ import { requestRestore, signInWithLink } from "../lib/entitlement.js";
+ import { validEmail } from "../lib/unlock.js";
+-import NewSiteLayout from "./NewSiteLayout.jsx";
++import SiteLayout from "./SiteLayout.jsx";
+ 
+ // Signing in on a new device. An account comes with a subscription: they
+ // enter the email they subscribed with, and get a link (api/billing.js
+@@ -46,7 +46,7 @@ export default function SignInPage() {
+   const p = { fontSize:"15px", color:MUT, lineHeight:1.6, margin:"12px 0 0" };
+   const link = { color:G, fontWeight:700 };
+   return (
+-    <NewSiteLayout>
++    <SiteLayout>
+       <section style={{maxWidth:"440px",margin:"0 auto",padding:"56px 16px 96px",boxSizing:"border-box"}}>
+         <h1 style={{fontFamily:SERIF,fontSize:"36px",fontWeight:700,color:G,margin:0,lineHeight:1.15}}>Sign in</h1>
+ 
+@@ -74,6 +74,6 @@ export default function SignInPage() {
+           </>
+         )}
+       </section>
+-    </NewSiteLayout>
++    </SiteLayout>
+   );
+ }
+diff --git a/src/mockups/SiteFooter.jsx b/src/site/SiteFooter.jsx
+similarity index 100%
+rename from src/mockups/SiteFooter.jsx
+rename to src/site/SiteFooter.jsx
+diff --git a/src/mockups/NewSiteHeader.jsx b/src/site/SiteHeader.jsx
+similarity index 98%
+rename from src/mockups/NewSiteHeader.jsx
+rename to src/site/SiteHeader.jsx
+index a2b2992..54c6e7b 100644
+--- a/src/mockups/NewSiteHeader.jsx
++++ b/src/site/SiteHeader.jsx
+@@ -8,7 +8,7 @@ import { appEntryPath, CTA_BLUE, CTA_LABEL } from "./StartCheckButton.jsx";
+ import { EASE_STEADY } from "./motion.js";
+ 
+ // Fixed header height, kept in sync with this file's own padding/font-size
+-// choices below — NewSiteLayout uses it to reserve the equivalent space in
++// choices below — SiteLayout uses it to reserve the equivalent space in
+ // the document flow (the header itself is `position: fixed`, so it doesn't
+ // push content down on its own).
+ export const HEADER_HEIGHT = 80;
+@@ -60,7 +60,7 @@ function useNavVisibility(forceVisible) {
+   return visible;
+ }
+ 
+-export default function NewSiteHeader() {
++export default function SiteHeader() {
+   const [mobileOpen, setMobileOpen] = useState(false);
+   const visible = useNavVisibility(mobileOpen);
+   const location = useLocation();
+@@ -69,7 +69,7 @@ export default function NewSiteHeader() {
+ 
+   // Belt-and-braces close triggers — none of these are reachable on desktop
+   // in the first place (there's nothing to open), so none of this touches
+-  // desktop behaviour. Each page mounts its own NewSiteLayout/NewSiteHeader,
++  // desktop behaviour. Each page mounts its own SiteLayout/SiteHeader,
+   // so a route change already remounts this component fresh in practice;
+   // the pathname effect just covers it explicitly too.
+   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+diff --git a/src/mockups/NewSiteLayout.jsx b/src/site/SiteLayout.jsx
+similarity index 83%
+rename from src/mockups/NewSiteLayout.jsx
+rename to src/site/SiteLayout.jsx
+index a3ce58f..709e6ca 100644
+--- a/src/mockups/NewSiteLayout.jsx
++++ b/src/site/SiteLayout.jsx
+@@ -1,14 +1,14 @@
+ import { SANS, CREAM, WHITE } from "../design-tokens.js";
+-import NewSiteHeader, { HEADER_HEIGHT } from "./NewSiteHeader.jsx";
++import SiteHeader, { HEADER_HEIGHT } from "./SiteHeader.jsx";
+ import SiteFooter from "./SiteFooter.jsx";
+ 
+ // Shared shell for every /new page: the fixed hide-on-scroll header + tabs,
+ // and the footer. `children` is just that page's own content between the two.
+-export default function NewSiteLayout({ children }) {
++export default function SiteLayout({ children }) {
+   return (
+     <div style={{ background: `linear-gradient(180deg, ${CREAM} 0%, ${WHITE} 60%, ${WHITE} 100%)` }}>
+       <div style={{ fontFamily: SANS }}>
+-        <NewSiteHeader />
++        <SiteHeader />
+         {/* Reserves the header's own height — the header is `position: fixed`
+             (so it can slide off-screen without leaving a permanent gap),
+             which means it doesn't push this content down on its own. */}
+diff --git a/src/mockups/StartCheckButton.jsx b/src/site/StartCheckButton.jsx
+similarity index 100%
+rename from src/mockups/StartCheckButton.jsx
+rename to src/site/StartCheckButton.jsx
+diff --git a/src/mockups/TheProblemPage.jsx b/src/site/TheProblemPage.jsx
+similarity index 99%
+rename from src/mockups/TheProblemPage.jsx
+rename to src/site/TheProblemPage.jsx
+index 8996a5e..7dec31e 100644
+--- a/src/mockups/TheProblemPage.jsx
++++ b/src/site/TheProblemPage.jsx
+@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
+ import { Layers, Clock, DoorClosed, TrendingUp, Home as HomeIcon, Users, CheckCircle2 } from "lucide-react";
+ import posthog from "posthog-js";
+ import { G, GOLD, WHITE, MUT, SERIF, RADIUS_MODAL } from "../design-tokens.js";
+-import NewSiteLayout from "./NewSiteLayout.jsx";
++import SiteLayout from "./SiteLayout.jsx";
+ import StartCheckButton from "./StartCheckButton.jsx";
+ import FinancesModuleTiles from "./FinancesModuleTiles.jsx";
+ import { EASE_STEADY, riseIn, pullTogether } from "./motion.js";
+@@ -104,7 +104,7 @@ export default function TheProblemPage() {
+   useEffect(() => { posthog.capture("the_problem_viewed"); }, []);
+ 
+   return (
+-    <NewSiteLayout>
++    <SiteLayout>
+       {/* ── HERO ── */}
+       <div style={{ padding: "56px 24px 80px", textAlign: "center" }}>
+         <motion.div {...riseIn(reduceMotion)} style={{ maxWidth: "700px", margin: "0 auto" }}>
+@@ -208,6 +208,6 @@ export default function TheProblemPage() {
+         </motion.h2>
+         <StartCheckButton source="the_problem_cta" />
+       </div>
+-    </NewSiteLayout>
++    </SiteLayout>
+   );
+ }
+diff --git a/src/mockups/WhatCandidIsPage.jsx b/src/site/WhatCandidIsPage.jsx
+similarity index 97%
+rename from src/mockups/WhatCandidIsPage.jsx
+rename to src/site/WhatCandidIsPage.jsx
+index 70123ec..77b2e87 100644
+--- a/src/mockups/WhatCandidIsPage.jsx
++++ b/src/site/WhatCandidIsPage.jsx
+@@ -1,5 +1,5 @@
+ import { G, MUT, TEXT, SERIF } from "../design-tokens.js";
+-import NewSiteLayout from "./NewSiteLayout.jsx";
++import SiteLayout from "./SiteLayout.jsx";
+ 
+ // What Candid is and isn't: guidance, not advice, said in full. Linked from
+ // the foot of every module page (src/mobile/GuidanceNote.jsx), the paywall
+@@ -17,7 +17,7 @@ export default function WhatCandidIsPage() {
+   const p = { fontSize: "15px", color: TEXT, lineHeight: 1.65, margin: "10px 0 0" };
+   const li = { fontSize: "15px", color: TEXT, lineHeight: 1.65, marginTop: "6px" };
+   return (
+-    <NewSiteLayout>
++    <SiteLayout>
+       <section style={{ maxWidth: "640px", margin: "0 auto", padding: "56px 16px 96px", boxSizing: "border-box" }}>
+         <h1 style={{ fontFamily: SERIF, fontSize: "36px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.15 }}>What Candid is, and isn't</h1>
+         <p style={{ ...p, color: MUT }}>Candid is guidance, not financial advice. Here is what that means in practice.</p>
+@@ -51,6 +51,6 @@ export default function WhatCandidIsPage() {
+           ))}
+         </ul>
+       </section>
+-    </NewSiteLayout>
++    </SiteLayout>
+   );
+ }
+diff --git a/src/mockups/motion.js b/src/site/motion.js
+similarity index 100%
+rename from src/mockups/motion.js
+rename to src/site/motion.js
+diff --git a/src/mockups/useEqualHeights.js b/src/site/useEqualHeights.js
+similarity index 100%
+rename from src/mockups/useEqualHeights.js
+rename to src/site/useEqualHeights.js

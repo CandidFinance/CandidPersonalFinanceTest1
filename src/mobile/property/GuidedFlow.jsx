@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../CandidApp.jsx";
+import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
 import { capField } from "../../lib/onboarding.js";
 import { neededAtStart, visibleQuestions, countSettled } from "../../lib/propertyGuide.js";
 import PillMoneyInput, { pillFieldStyle } from "../PillMoneyInput.jsx";

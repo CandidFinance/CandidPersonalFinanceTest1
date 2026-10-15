@@ -1,0 +1,341 @@
+diff --git a/src/CandidApp.jsx b/src/CandidApp.jsx
+index dba24b1..3652ba1 100644
+--- a/src/CandidApp.jsx
++++ b/src/CandidApp.jsx
+@@ -4,8 +4,6 @@ import posthog from "posthog-js";
+ import { topRate, isEasyAccess } from "./lib/savingsRates.js";
+ import { calcMetrics } from "./lib/metrics.js";
+ import { MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, calcCandidScore, baselinePatch } from "./lib/moduleStatus.js";
+-// Module names for Candid Assist's labels and "Elsewhere" list.
+-const ASSIST_MODULE_LABELS = { ...Object.fromEntries(MODULE_META.map(mm => [mm.key, mm.title])), property: "Property" };
+ import { ALL_STEP_DEFS, getActiveSteps, capField } from "./lib/onboarding.js";
+ import { G, GOLD, CREAM, CDARK, TEXT, MUT, WHITE, SERIF, SANS, SUCCESS, WARNING, SC, scoreBand, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_PILL, RADIUS_CARD, RADIUS_MODAL, FONT_SIZE, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT, INPUT_BG_DARK, PILL_HEIGHT } from "./design-tokens.js";
+ import MobileLayout from "./mobile/MobileLayout.jsx";
+@@ -39,6 +37,9 @@ import { monthlyBudget, affordableMaxPrice } from "./lib/monthlyBudget.js";
+ export { calcMetrics } from "./lib/metrics.js";
+ export { MODULE_META, computeModuleStatuses, sanitizeForMvp } from "./lib/moduleStatus.js";
+ 
++// Module names for Candid Assist's labels and "Elsewhere" list.
++const ASSIST_MODULE_LABELS = { ...Object.fromEntries(MODULE_META.map(mm => [mm.key, mm.title])), property: "Property" };
++
+ // ── Supabase client — module level, no package needed ─────────────────────────
+ const SUPA_URL = import.meta.env?.VITE_SUPABASE_URL;
+ const SUPA_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+@@ -47,8 +48,8 @@ const SUPA_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+ const SUPA_WRITES = typeof navigator === "undefined" || !navigator.webdriver;
+ // Only source of production visibility for Supabase failures — DEV console.warn is
+ // stripped from the production build, so without this, every read/write below can
+-// fail completely silently (this is what let the report_pdf_requests RLS gap and
+-// the generateDashboard AI-failure both go undetected).
++// fail completely silently (this is how an RLS gap and an AI-report failure
++// once went undetected).
+ function reportSupabaseFailure(table, operation, errorMessage, status) {
+   if (import.meta.env.DEV) console.warn(`[Candid] Supabase ${operation} on "${table}" failed:`, errorMessage, status ? `(HTTP ${status})` : "(network error)");
+   posthog.capture("supabase_operation_failed", { table, operation, error_message: errorMessage, status: status ?? null });
+@@ -232,8 +233,8 @@ export function PillSlider({ value, onChange, options, compact = false }) {
+ // Grid (not flex space-between) so the page label stays centred whether or
+ // not `right` is present — with only 2 flex children, space-between shoves
+ // a lone `center` all the way to the far edge instead of the middle.
+-// `light` (mobile app only — every desktop call site omits it, so desktop's
+-// dark-green header is completely unchanged) swaps the header to the same
++// `light` (the app's own screens; the welcome-back and admin pages keep the
++// dark-green header) swaps the header to the same
+ // cream as the page background, matching the app-like "no chrome" look of
+ // the Claude Design mockup the mobile build has been targeting all along —
+ // a native app's own header usually doesn't sit in a contrasting color bar.
+@@ -384,7 +385,7 @@ function loadSavedInsights() {
+ }
+ 
+ // Which module keys the user has marked reviewed — persisted so "Reviewed X
+-// of Y modules" (HomeScreen/MobileHomeScreen) reflects real progress across
++// of Y modules" (MobileHomeScreen) reflects real progress across
+ // visits, not just within one session.
+ function loadCompletedModules() {
+   try {
+@@ -565,8 +566,8 @@ export default function AppShell() {
+     catch(e) { if (import.meta.env.DEV) console.warn("[Candid] Failed to persist reviewed modules to localStorage:", e); }
+   }, [completedModules]);
+ 
+-  // ── Savings rates — fetched once here (not per-component) since both Dashboard's
+-  // copy and ModuleDeepDive's Cash tiles need it. null = still loading.
++  // ── Savings rates — fetched once here (not per-component) since Assist and
++  // the Cash screen both need it. null = still loading.
+   const [savingsRates, setSavingsRates] = useState(null);
+   // Candid Assist's panel: open or minimised, and its place in a walkthrough.
+   // Held here, not in the panel, so it survives moving between screens.
+diff --git a/src/lib/onboarding.js b/src/lib/onboarding.js
+index dfd01a4..b5e7bbf 100644
+--- a/src/lib/onboarding.js
++++ b/src/lib/onboarding.js
+@@ -1,9 +1,8 @@
+ import { isaUsedThisYear } from "./isa.js";
+ // Shared onboarding step definitions and field caps — pure logic, no
+-// CandidApp.jsx imports, so both the desktop wizard (OnboardingScreen/
+-// OnboardingStep) and the mobile wizard (MobileOnboardingScreen) read from a
+-// single source of truth and can never disagree on which steps exist or what
+-// a field's hard cap is.
++// CandidApp.jsx imports, so the wizard (MobileOnboardingScreen), Edit inputs
++// and the app shell read from a single source of truth and can never
++// disagree on which steps exist or what a field's hard cap is.
+ 
+ export const ALL_STEP_DEFS = [
+   { id:"modules",     label:"Focus",           shortLabel:"Focus",       mobileLabel:"Focus", always:true },
+diff --git a/src/main.jsx b/src/main.jsx
+index 4c7d942..de09b18 100644
+--- a/src/main.jsx
++++ b/src/main.jsx
+@@ -101,8 +101,8 @@ if (SHOW_DEV_TOOLS) {
+ }
+ 
+ // The live marketing site — rebuilt at /new during review, now promoted to
+-// "/" itself (see RootRoute below). Kept lazy so the desktop app bundle
+-// (CandidApp.jsx) doesn't pull this in and vice versa.
++// "/" itself (see RootRoute below). Kept lazy so the app bundle
++// (CandidApp.jsx) doesn't pull these pages in.
+ const NewLandingPage = lazy(() => import("./mockups/NewLandingPage.jsx"))
+ const TheProblemPage = lazy(() => import("./mockups/TheProblemPage.jsx"))
+ const HowItWorksPage = lazy(() => import("./mockups/HowItWorksPage.jsx"))
+@@ -270,15 +270,6 @@ function FeedbackAdmin() {
+   );
+ }
+ 
+-// ── Root route ("/") ── the live marketing site, for everyone, except a
+-// TrueLayer bounce. TrueLayer's bank-connect callback and hosted-payment-page
+-// redirect always land here (never inside the app — the API callback
+-// redirects to the site root, and the hosted payment page redirects straight
+-// to return_uri with no server hop), so this checks for those params first
+-// and forwards into the mobile-native wizard's Cash & savings step (route 5
+-// — MobileOnboardingStep shares the same ALL_STEP_DEFS/step numbering as the
+-// desktop wizard, and already has its own TrueLayer connect UI) with the
+-// query string intact, instead of ever rendering the marketing page.
+ // The old report flow (questions at /assessment, an AI-written report at
+ // /dashboard, the desktop modules) is switched off: each old address goes
+ // to the app's own page for it (advice-vs-guidance review, fix 5).
+@@ -288,6 +279,15 @@ function LegacyRedirect({ to }) {
+   return <Navigate to={to(params) + search} replace />;
+ }
+ 
++// ── Root route ("/") ── the live marketing site, for everyone, except a
++// TrueLayer bounce. TrueLayer's bank-connect callback and hosted-payment-page
++// redirect always land here (never inside the app — the API callback
++// redirects to the site root, and the hosted payment page redirects straight
++// to return_uri with no server hop), so this checks for those params first
++// and forwards into the wizard's Cash & savings step (route 5 — it shares
++// ALL_STEP_DEFS' step numbering, and already has its own TrueLayer connect
++// UI) with the query string intact, instead of ever rendering the marketing
++// page.
+ function RootRoute() {
+   const search = new URLSearchParams(window.location.search);
+   const isTrueLayerBounce = search.get('truelayer') || search.get('truelayer_payment');
+@@ -388,17 +388,16 @@ function AppRoutes() {
+         <Route path="/welcome-back" element={<WelcomeBackRoute />} />
+         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
+         <Route path="/admin/rates" element={<Suspense fallback={null}><RatesAdmin /></Suspense>} />
+-        {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
+-            holds — d, insights, completedModules, one-shot modal refs, etc.)
+-            stays mounted across navigation between all three of these paths,
+-            branching on the URL internally the same way it used to branch on
+-            local `screen` state. */}
+         <Route path="/assessment/:step" element={<LegacyRedirect to={p => `/app/assessment/${p.step}`} />} />
+         <Route path="/dashboard" element={<LegacyRedirect to={() => "/app/home"} />} />
+         <Route path="/modules" element={<LegacyRedirect to={() => "/app/modules"} />} />
+         <Route path="/forecast" element={<LegacyRedirect to={() => "/app/forecast"} />} />
+         <Route path="/chat" element={<LegacyRedirect to={() => "/app/chat"} />} />
+         <Route path="/module/:moduleKey" element={<LegacyRedirect to={p => `/app/module/${p.moduleKey}`} />} />
++        {/* Pathless layout route: CandidAppLayout (and the CandidApp state it
++            holds — d, insights, completedModules, refs, etc.) stays mounted
++            across navigation between all of these paths, branching on the
++            URL internally. */}
+         <Route element={<CandidAppLayout key={devReloadKey} />}>
+           <Route path="/app/home" />
+           <Route path="/app/modules" />
+diff --git a/src/mobile/MobileTabBar.jsx b/src/mobile/MobileTabBar.jsx
+index 84a304a..9c91c33 100644
+--- a/src/mobile/MobileTabBar.jsx
++++ b/src/mobile/MobileTabBar.jsx
+@@ -1,9 +1,7 @@
+ import { Home, LayoutGrid, LineChart, MessageCircle } from "lucide-react";
+ import { G, MUT, WHITE } from "../CandidApp.jsx";
+ 
+-// Single source of truth for the mobile app's own bottom nav — deliberately
+-// separate from desktop's NAV_ITEMS (CandidApp.jsx) rather than reusing it,
+-// since /app/* routes are a distinct tree from /dashboard, /modules, etc.
++// Single source of truth for the app's bottom nav.
+ export const MOBILE_NAV_ITEMS = [
+   { key:"home", label:"Home", path:"/app/home", icon:Home },
+   { key:"modules", label:"Modules", path:"/app/modules", icon:LayoutGrid },
+diff --git a/src/mobile/MobileWinTile.jsx b/src/mobile/MobileWinTile.jsx
+index bf05474..675cb58 100644
+--- a/src/mobile/MobileWinTile.jsx
++++ b/src/mobile/MobileWinTile.jsx
+@@ -4,8 +4,7 @@ import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVID
+ import MobileReminderAction from "./MobileReminderAction.jsx";
+ 
+ // Compact, tap-to-expand "Win" tile for mobile module deep-dive pages —
+-// mirrors desktop's numbered ExpandableInvestmentItem (CandidApp.jsx) but at
+-// mobile density, and reuses the same expand pattern already established in
++// numbered, at mobile density, and reuses the same expand pattern already established in
+ // MobileModulesScreen (white card, chevron rotate on open). `reminder`
+ // (optional {id,title,description,email}) adds a labelled "Remind me" action
+ // pill at the bottom of the expanded tile, turning the Win into something
+diff --git a/src/mobile/assist/AgentPanel.jsx b/src/mobile/assist/AgentPanel.jsx
+index 7b254f6..3eb8745 100644
+--- a/src/mobile/assist/AgentPanel.jsx
++++ b/src/mobile/assist/AgentPanel.jsx
+@@ -59,7 +59,7 @@ export default function AgentPanel({ o, onOpened }) {
+   };
+ 
+   const small = { fontSize: "12.5px", color: MUT, lineHeight: 1.5 };
+-  const button = (bg, fg = WHITE) => ({ background: bg, color: fg, border: bg === "none" ? "none" : "none", borderRadius: "100px", padding: "9px 14px", fontSize: "13px", fontWeight: 700, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" });
++  const button = (bg, fg = WHITE) => ({ background: bg, color: fg, border: "none", borderRadius: "100px", padding: "9px 14px", fontSize: "13px", fontWeight: 700, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" });
+   const quiet = { background: "none", border: "none", padding: "9px 4px", fontSize: "13px", fontWeight: 700, color: G, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px" };
+   const box = { marginTop: "12px", padding: "12px 14px", borderRadius: "12px", background: "rgba(22,47,36,0.04)" };
+ 
+diff --git a/src/mobile/copy.js b/src/mobile/copy.js
+index d4d7eaa..573527b 100644
+--- a/src/mobile/copy.js
++++ b/src/mobile/copy.js
+@@ -1,10 +1,8 @@
+ import { fmt, fmtCompact } from "../lib/format.js";
+ 
+ // Short-copy variants for the mobile Home screen — plain English, single
+-// clauses, compact currency. Desktop's own inline strings in CandidApp.jsx
+-// are untouched; these exist alongside them, not as a replacement.
++// clauses, compact currency.
+ 
+-// Desktop (CandidApp.jsx HomeScreen): `${d.name ? `Hi ${d.name},` : "Hi,"} here's your Candid report.`
+ export function mobileGreeting(d) {
+   return `Hi${d.name ? " " + d.name.split(" ")[0] : ""}.`;
+ }
+diff --git a/src/mobile/onboarding/MobileCashTiersList.jsx b/src/mobile/onboarding/MobileCashTiersList.jsx
+index fd586ce..47c3d21 100644
+--- a/src/mobile/onboarding/MobileCashTiersList.jsx
++++ b/src/mobile/onboarding/MobileCashTiersList.jsx
+@@ -3,9 +3,8 @@ import { GOLD, MUT, CDARK, PILL_HEIGHT } from "../../CandidApp.jsx";
+ import PillMoneyInput, { PILL_ANSWER_TEXT, pillFieldStyle } from "../PillMoneyInput.jsx";
+ import { capField } from "../../lib/onboarding.js";
+ 
+-// Repeatable "one row per cash account" list for the onboarding Cash step —
+-// mobile equivalent of desktop's inline cashTiers grid (OnboardingStep,
+-// CandidApp.jsx). Same data shape ([{amount,rate}]) and same field caps, so
++// Repeatable "one row per cash account" list for the onboarding Cash step:
++// cashTiers' data shape ([{amount,rate}]) and FIELD_CAPS' field caps, so
+ // values written here read back identically everywhere else in the app.
+ // Each account can also have a name (optional), which Candid Assist uses to
+ // say exactly which account money would move from.
+diff --git a/src/mobile/onboarding/MobileOnboardingStep.jsx b/src/mobile/onboarding/MobileOnboardingStep.jsx
+index 75acd2e..76bbde4 100644
+--- a/src/mobile/onboarding/MobileOnboardingStep.jsx
++++ b/src/mobile/onboarding/MobileOnboardingStep.jsx
+@@ -10,9 +10,8 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
+ import MobileCashTiersList from "./MobileCashTiersList.jsx";
+ import InfoButton from "../InfoButton.jsx";
+ 
+-// The 4 active MVP modules a user can pick from on the "Focus" step — same
+-// keys/icons as desktop's MODULE_SELECT_TILES (CandidApp.jsx), sourced from
+-// the shared MODULE_META instead of a second hardcoded list.
++// The 4 active MVP modules a user can pick from on the "Focus" step, with
++// their names and icons from the shared MODULE_META.
+ const PICKABLE_MODULE_KEYS = ["cash", "investments", "pension", "studentLoan"];
+ 
+ const TRAJECTORY_OPTIONS = [
+@@ -42,8 +41,7 @@ const STUDENT_LOAN_OPTIONS = [
+   { value:"plan5", label:"Plan 5" },
+ ];
+ 
+-// "Your goals" step, right after module selection — same keys/fields as
+-// desktop's GOAL_TILES (CandidApp.jsx). Multi-select except "exploring",
++// "Your goals" step, right after module selection. Multi-select except "exploring",
+ // which stands in for "none of the above" and clears every other selection.
+ const GOAL_TILES = [
+   { key:"buy_house",          icon:Home,      label:"Buy a house" },
+@@ -60,8 +58,7 @@ const GOAL_TIMEFRAME_OPTIONS = [
+   { value:"5plus", label:"5+ yrs"  },
+ ];
+ 
+-// Preset-buttons-plus-range-slider for a single £ target — mobile-styled
+-// twin of desktop's GoalAmountSlider (CandidApp.jsx). A plain function
++// Preset-buttons-plus-range-slider for a single £ target. A plain function
+ // declaration, not an object literal, so referencing G/WHITE/SERIF inside its
+ // body is safe despite the circular-import TDZ hazard noted above: those are
+ // only read when the function is called at render time, well after
+@@ -84,10 +81,8 @@ function GoalAmountSlider({ label, value, onChange, max, step, presets }) {
+   );
+ }
+ 
+-// Mobile-native rebuild of desktop's OnboardingStep (CandidApp.jsx) — same
+-// step ids, same `d`/`set` writes (values land in the exact same fields), but
+-// mobile-density copy and PillMoneyInput/PillSlider primitives instead of
+-// desktop's boxed FmtInput/Toggle/two-column Field grids. Steps not yet built
++// One onboarding step by id (ALL_STEP_DEFS), writing its answers into `d`
++// with PillMoneyInput/PillSlider primitives. Steps not yet built
+ // for mobile fall through to a placeholder rather than blocking the flow —
+ // Continue isn't disabled on any module-specific step, so onboarding can
+ // still be completed end to end while later steps are built out.
+diff --git a/src/mobile/screens/MobileChatScreen.jsx b/src/mobile/screens/MobileChatScreen.jsx
+index f8144a9..1bc72d1 100644
+--- a/src/mobile/screens/MobileChatScreen.jsx
++++ b/src/mobile/screens/MobileChatScreen.jsx
+@@ -2,9 +2,8 @@ import { MessageCircle, Send } from "lucide-react";
+ import { GOLD, MUT, TEXT, SERIF } from "../../CandidApp.jsx";
+ 
+ // Mobile Chat screen — matches the mockup's placeholder layout (icon badge,
+-// headline, description, "Coming soon" pill, disabled input bar), but reuses
+-// desktop's own ChatScreen copy (CandidApp.jsx) rather than the mockup's
+-// illustrative text, so the messaging stays one voice across the app.
++// headline, description, "Coming soon" pill, disabled input bar), with the
++// app's own copy rather than the mockup's illustrative text.
+ export default function MobileChatScreen() {
+   return (
+     <div style={{display:"flex",flexDirection:"column",minHeight:"65vh"}}>
+diff --git a/src/mobile/screens/MobileHomeScreen.jsx b/src/mobile/screens/MobileHomeScreen.jsx
+index 47af618..807d950 100644
+--- a/src/mobile/screens/MobileHomeScreen.jsx
++++ b/src/mobile/screens/MobileHomeScreen.jsx
+@@ -21,15 +21,14 @@ import { readinessMissing } from "../../lib/propertyReadiness.js";
+ // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
+ // (score progress bar, Opportunity pill, expandable Net Worth card, Biggest
+ // Win card), rebuilt against real app data instead of the mockup's sample
+-// numbers. Score labels/colors reuse scoreBand (CandidApp.jsx) — the same
+-// bands as desktop's ScoreRing/ScoreDetailSheet — rather than the mockup's
+-// own wording, so the score reads identically everywhere in the app. Icons
++// numbers. Score labels/colors reuse scoreBand (design-tokens.js) rather
++// than the mockup's own wording, so the score reads identically everywhere in the app. Icons
+ // stay lucide-react (CLAUDE.md rule 2) rather than the mockup's hand-drawn
+ // SVGs.
+ 
+ // Flat asset/liability list for the expandable Net Worth card — a simpler
+-// grouping than desktop's (ISA/unwrapped combined into one "Investments"
+-// line) to match the mockup's information density.
++// grouping (ISA/unwrapped combined into one "Investments" line) to match
++// the mockup's information density.
+ function netWorthBreakdown(d, m) {
+   const isaPrev = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
+   const assets = [
+@@ -73,8 +72,8 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
+ 
+   // The ring fills from empty to the score the first time Home shows it in a
+   // session. After that, a gain counts up from the previous score, the ring
+-  // turning gold while it fills, with a "+N pts" badge (as desktop's ring
+-  // did). No animation for reduced motion. Hooks sit above the early return.
++  // turning gold while it fills, with a "+N pts" badge. No animation for
++  // reduced motion. Hooks sit above the early return.
+   const [shownScore, setShownScore] = useState(() =>
+     reduceMotion ? score : lastShownScore === null ? 0 : lastShownScore < score ? lastShownScore : score);
+   const [gain, setGain] = useState(0);
+diff --git a/src/mobile/screens/MobileOnboardingScreen.jsx b/src/mobile/screens/MobileOnboardingScreen.jsx
+index 7a6aa11..f02f808 100644
+--- a/src/mobile/screens/MobileOnboardingScreen.jsx
++++ b/src/mobile/screens/MobileOnboardingScreen.jsx
+@@ -2,9 +2,8 @@ import { useEffect } from "react";
+ import { G, GOLD, WHITE, MUT, TEXT, NavBar } from "../../CandidApp.jsx";
+ import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
+ 
+-// Mobile-native rebuild of desktop's OnboardingScreen (CandidApp.jsx) — same
+-// `d`/`set` data flow and step-progression rules (Continue disabled only on
+-// an empty module pick or empty name), but full-screen wizard chrome instead
++// The onboarding wizard: `d`/`set` data flow, Continue disabled only on an
++// empty module pick or empty name, and full-screen wizard chrome instead
+ // of the tab-bar MobileLayout: a wizard is a distinct flow, and the tab bar's
+ // destinations don't make sense before a report exists yet.
+ export default function MobileOnboardingScreen({ step, steps, d, set, insights, onBack, onBackToDashboard, onContinue }) {

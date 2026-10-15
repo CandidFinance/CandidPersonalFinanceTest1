@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Landmark, Unlock, ExternalLink, ChevronRight } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../CandidApp.jsx";
-import { PROVIDER_TILE_FADE_CLEAR } from "../design-tokens.js";
+import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, WHITE, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD } from "../design-tokens.js";
 
 // Static "where to actually do this" provider list for Investments/Pension —
 // unlike Cash's MobileProductListTile, there's no live-rate data source for

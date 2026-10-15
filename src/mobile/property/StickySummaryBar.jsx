@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { WHITE, MUT, SERIF } from "../../CandidApp.jsx";
+import { WHITE, MUT, SERIF } from "../../design-tokens.js";
 
-// The bar's small caption and its headline figure. Styles are built at
-// render time: this file is in the circular import with CandidApp.jsx, so
-// its tokens can't be relied on while the module first evaluates.
+// The bar's small caption and its headline figure.
 export function SummaryLabel({ children }) {
   return <span style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>{children}</span>;
 }

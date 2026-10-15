@@ -4,10 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, Check, Lock } from "lucide-react";
 import { isLocked } from "../../lib/unlock.js";
 import ScoreDonut from "../ScoreDonut.jsx";
-import { scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../CandidApp.jsx";
-import { HERO_TILE_BG } from "../../design-tokens.js";
+import { HERO_TILE_BG, scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD, CRITICAL } from "../../design-tokens.js";
 import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
-import { fmt, fmtCompact } from "../../lib/format.js";
+import { fmt } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
 import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, SCORED_MODULES } from "../../lib/appEntry.js";
@@ -21,15 +20,14 @@ import { readinessMissing } from "../../lib/propertyReadiness.js";
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
 // (score progress bar, Opportunity pill, expandable Net Worth card, Biggest
 // Win card), rebuilt against real app data instead of the mockup's sample
-// numbers. Score labels/colors reuse scoreBand (CandidApp.jsx) — the same
-// bands as desktop's ScoreRing/ScoreDetailSheet — rather than the mockup's
-// own wording, so the score reads identically everywhere in the app. Icons
+// numbers. Score labels/colors reuse scoreBand (design-tokens.js) rather
+// than the mockup's own wording, so the score reads identically everywhere in the app. Icons
 // stay lucide-react (CLAUDE.md rule 2) rather than the mockup's hand-drawn
 // SVGs.
 
 // Flat asset/liability list for the expandable Net Worth card — a simpler
-// grouping than desktop's (ISA/unwrapped combined into one "Investments"
-// line) to match the mockup's information density.
+// grouping (ISA/unwrapped combined into one "Investments" line) to match
+// the mockup's information density.
 function netWorthBreakdown(d, m) {
   const isaPrev = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
   const assets = [
@@ -55,7 +53,7 @@ let lastShownScore = null;
 // The score shows once every module picked at the entry is answered
 // (scoreUnlocked), or for a user with an old report; until then, the modules
 // to start with (MobileStartHome). Everything here is worked out by the
-// code: no AI report (score-without-ai-plan.md). `onGoalsDone(how, goals)`
+// code: no AI report (docs/score-without-ai-plan.md). `onGoalsDone(how, goals)`
 // records the goals card being answered or dismissed.
 export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, onGoalsDone, set }) {
   const navigate = useNavigate();
@@ -73,8 +71,8 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
   // The ring fills from empty to the score the first time Home shows it in a
   // session. After that, a gain counts up from the previous score, the ring
-  // turning gold while it fills, with a "+N pts" badge (as desktop's ring
-  // did). No animation for reduced motion. Hooks sit above the early return.
+  // turning gold while it fills, with a "+N pts" badge. No animation for
+  // reduced motion. Hooks sit above the early return.
   const [shownScore, setShownScore] = useState(() =>
     reduceMotion ? score : lastShownScore === null ? 0 : lastShownScore < score ? lastShownScore : score);
   const [gain, setGain] = useState(0);
@@ -249,22 +247,22 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
           <ChevronDown size={14} color={MUT} style={{transform:netWorthOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
         </div>
         <div style={{display:"flex",alignItems:"baseline",gap:"8px",marginTop:"6px"}}>
-          <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:netWorthPositive?TEXT:"#c0392b"}}>{fmt(Math.abs(m.netWorth))}</span>
+          <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:netWorthPositive?TEXT:CRITICAL}}>{fmt(Math.abs(m.netWorth))}</span>
         </div>
         <div style={{display:"flex",gap:"20px",marginTop:"10px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:"#2d6b4a",display:"inline-block"}}/>
+            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:SUCCESS,display:"inline-block"}}/>
             <span style={{fontSize:"12.5px",color:MUT}}>Assets <b style={{color:TEXT}}>{fmt(m.totalAssets)}</b></span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:"#c0392b",display:"inline-block"}}/>
+            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:CRITICAL,display:"inline-block"}}/>
             <span style={{fontSize:"12.5px",color:MUT}}>Liabilities <b style={{color:TEXT}}>{fmt(m.totalLiabilities)}</b></span>
           </div>
         </div>
         {netWorthOpen && (assets.length > 0 || liabilities.length > 0) && (
           <div style={{marginTop:"16px",paddingTop:"14px",borderTop:`1px solid rgba(22,47,36,0.08)`,display:"flex",flexDirection:"column",gap:"10px"}}>
             {assets.length > 0 && (
-              <div style={{fontSize:"10.5px",fontWeight:700,color:"#2d6b4a",letterSpacing:"0.08em",textTransform:"uppercase"}}>Assets</div>
+              <div style={{fontSize:"10.5px",fontWeight:700,color:SUCCESS,letterSpacing:"0.08em",textTransform:"uppercase"}}>Assets</div>
             )}
             {assets.map((a,i) => (
               <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -273,7 +271,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
               </div>
             ))}
             {liabilities.length > 0 && (
-              <div style={{fontSize:"10.5px",fontWeight:700,color:"#c0392b",letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"6px"}}>Liabilities</div>
+              <div style={{fontSize:"10.5px",fontWeight:700,color:CRITICAL,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"6px"}}>Liabilities</div>
             )}
             {liabilities.map((l,i) => (
               <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>

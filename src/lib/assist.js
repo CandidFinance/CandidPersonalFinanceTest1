@@ -2,7 +2,7 @@ import { isEasyAccess, premiumBondsRow } from "./savingsRates.js";
 import { taxFreeInterest, cashIsaLimit } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { PB_RATE } from "./cash.js";
-import { fscsLimitFor, FSCS_DEPOSIT_LIMIT } from "./cashAllocation.js";
+import { fscsLimitFor } from "./cashAllocation.js";
 
 // Candid Assist: what it has to show, worked out from the user's figures and
 // the live rates. The panel (src/mobile/assist/) only displays this.

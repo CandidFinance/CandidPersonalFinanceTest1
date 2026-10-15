@@ -2,7 +2,7 @@
 // modules with money to act on, largest £ a year first, each with its own
 // one-line summary. Plus the line under the score, and the modules that are
 // on track. Pure, unit tested in priorities.test.js. Plan:
-// score-without-ai-plan.md.
+// docs/score-without-ai-plan.md.
 
 import { fmt } from "./format.js";
 import { getModuleBreakdown } from "./moduleStatus.js";

@@ -1,4 +1,4 @@
-// The 20 archetypes of investor-personas.md, section 4, as data for the
+// The 20 archetypes of docs/investor-personas.md, section 4, as data for the
 // engine. Amounts are in today's (2026/27) money. Year 1 is 2026/27; events
 // are keyed by year. `member` lists the years each is a Candid member.
 // The first person is the Candid user; Candid's levers act on their money,

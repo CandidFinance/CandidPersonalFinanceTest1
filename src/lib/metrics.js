@@ -1,4 +1,4 @@
-import { calcIncomeTax, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
+import { ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_REAL_PCT } from "./growth.js";
 import { resolveSlRate, slRepaymentThreshold, SL_REPAYMENT_RATES, slYearsLeft, slThresholdIn, slEarnings, estimateSlBalance } from "./studentLoan.js";
@@ -69,6 +69,11 @@ export function statePensionIncome(d) {
   return stated !== "" && stated != null && !isNaN(+stated) ? Math.max(0, +stated) : STATE_PENSION_FULL;
 }
 
+/**
+ * @param {import("./types.js").Inputs} d
+ * @param {import("./types.js").MarketRates} [marketRates]
+ * @returns {import("./types.js").Metrics}
+ */
 export function calcMetrics(d, marketRates = {}) {
   const { isaRate = 5.1, nonIsaRate = 5.1, rows = null } = marketRates;
   const salaryGrowthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;

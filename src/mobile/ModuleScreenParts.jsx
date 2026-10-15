@@ -1,5 +1,5 @@
 import { Plus, Minus } from "lucide-react";
-import { G, MUT } from "../CandidApp.jsx";
+import { G, MUT } from "../design-tokens.js";
 
 // Shared by the module screens (src/mobile/deepdive), so they lead with the
 // answer the same way: "Explain this" beside the figure, replaying the answer

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import posthog from "posthog-js";
 import { Lock, X } from "lucide-react";
-import { G, GOLD, MUT, TEXT, SERIF, WHITE } from "../../CandidApp.jsx";
+import { G, GOLD, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT } from "../../design-tokens.js";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
@@ -88,7 +88,7 @@ function PaywallSheet({ children }) {
         style={{position:"absolute",inset:0,background:"rgba(22,47,36,0.28)",backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)"}}/>
       <motion.div role="dialog" aria-modal="true" aria-label="Subscribe to Candid"
         initial={{ opacity: 0, scale: 0.94, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 340, damping: 30 }}
-        style={{position:"relative",background:"#faf7f0",borderRadius:"22px",boxShadow:"0 18px 50px rgba(22,47,36,0.28)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",
+        style={{position:"relative",background:CREAM,borderRadius:"22px",boxShadow:"0 18px 50px rgba(22,47,36,0.28)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",
           padding:"20px",maxWidth:"440px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
         <button type="button" onClick={() => navigate("/app/modules")} aria-label="Close"
           style={{position:"absolute",top:"12px",right:"14px",width:"32px",height:"32px",borderRadius:"50%",border:"none",background:"rgba(22,47,36,0.07)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
@@ -156,7 +156,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
       <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
         {busy && !panel ? "Opening checkout…" : "Subscribe and unlock everything"}
       </button>
-      {error && !panel && <div style={{fontSize:"12.5px",color:"#b3261e",margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
+      {error && !panel && <div style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
       <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
         Every module's figures and options, kept up to date as rates change. Cancel any time, and get a full refund within 14 days of first subscribing. Payments by Stripe. By subscribing you agree to our <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>.
       </p>
@@ -182,7 +182,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
                 {panel === "restore" ? "Send link" : "Sign up"}
               </button>
             </div>
-            {error && <div style={{fontSize:"12px",color:"#b3261e",margin:"6px 0 0 6px"}}>{error}</div>}
+            {error && <div style={{fontSize:"12px",color:ERROR_TEXT,margin:"6px 0 0 6px"}}>{error}</div>}
             {panel === "alerts" && <p style={{fontSize:"11.5px",color:MUT,margin:"8px 0 0"}}>Unsubscribe any time. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>}
           </form>
         )

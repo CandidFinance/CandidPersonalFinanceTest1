@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MUT } from "../../CandidApp.jsx";
+import { MUT, CDARK } from "../../design-tokens.js";
 import { whyLine } from "../../lib/propertyGuide.js";
 import InfoButton from "../InfoButton.jsx";
 
@@ -12,7 +12,7 @@ export default function useWhyInfo(ctx) {
   const [openId, setOpenId] = useState(null);
   const button = id => <InfoButton open={openId === id} onClick={() => setOpenId(o => o === id ? null : id)}/>;
   const panel = (...ids) => ids.includes(openId) ? (
-    <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,background:"#ede7db",borderRadius:"8px",padding:"8px 10px",margin:"8px 0 0"}}>
+    <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,background:CDARK,borderRadius:"8px",padding:"8px 10px",margin:"8px 0 0"}}>
       {whyLine(openId, ctx)}
     </p>
   ) : null;

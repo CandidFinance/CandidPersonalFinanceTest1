@@ -68,6 +68,12 @@ export function sanitizeForMvp(d) {
 // Computes status + £ impact for all 8 modules from user data alone.
 // AI response takes precedence for narrative summary; this drives sorting + visibility.
 // marketRates: same shape/contract as calcMetrics — resolved once by the caller.
+/**
+ * @param {import("./types.js").Inputs} d
+ * @param {import("./types.js").Metrics} m
+ * @param {import("./types.js").MarketRates} [marketRates]
+ * @returns {import("./types.js").Statuses}
+ */
 export function computeModuleStatuses(d, m, marketRates = {}) {
   const { isaRate = 5, nonIsaRate = 4.5 } = marketRates;
   const daysToTaxEnd = (() => {
@@ -330,7 +336,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
 
 // A module's status and one-line summary, both worked out by the code
 // (computeModuleStatuses): the AI report no longer has a say, so a module's
-// colour and wording always match its figures (score-without-ai-plan.md).
+// colour and wording always match its figures (docs/score-without-ai-plan.md).
 // Single source of truth for the copy in the Modules list, the score sheet
 // and the module headers. `insights` is no longer read; kept in the
 // signature for existing callers.
@@ -362,6 +368,10 @@ export function getModuleSummary(mm, d, m, statuses, insights) {
 // answering "Not sure" can't score better than an honest answer with nothing
 // to fix — while still costing less than a confirmed critical one.
 const SCORE_PENALTY = { critical: 18, attention: 8, unknown: 8, ok: 0 };
+/**
+ * @param {import("./types.js").Statuses} statuses
+ * @returns {number}
+ */
 export function calcCandidScore(statuses) {
   let score = 100;
   for (const s of Object.values(statuses || {})) {

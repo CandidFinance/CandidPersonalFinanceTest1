@@ -1,9 +1,7 @@
 import { Home, LayoutGrid, LineChart, MessageCircle } from "lucide-react";
-import { G, MUT, WHITE } from "../CandidApp.jsx";
+import { G, MUT, WHITE } from "../design-tokens.js";
 
-// Single source of truth for the mobile app's own bottom nav — deliberately
-// separate from desktop's NAV_ITEMS (CandidApp.jsx) rather than reusing it,
-// since /app/* routes are a distinct tree from /dashboard, /modules, etc.
+// Single source of truth for the app's bottom nav.
 export const MOBILE_NAV_ITEMS = [
   { key:"home", label:"Home", path:"/app/home", icon:Home },
   { key:"modules", label:"Modules", path:"/app/modules", icon:LayoutGrid },
