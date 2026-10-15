@@ -111,14 +111,19 @@ const HowItWorksPage = lazy(() => import("./site/HowItWorksPage.jsx"))
 const SignInPage = lazy(() => import("./site/SignInPage.jsx"))
 const WhatCandidIsPage = lazy(() => import("./site/WhatCandidIsPage.jsx"))
 const NotFoundPage = lazy(() => import("./site/NotFoundPage.jsx"))
+const AboutPage = lazy(() => import("./site/AboutPage.jsx"))
 
-// The homepage's HTML, rendered into index.html at build time so crawlers
-// can read it (scripts/prerender-home.js). Read before React takes over the
-// root, and shown until LandingPage's own code has loaded, so the page
-// doesn't blank out in between. Empty on every other route (app-shell.html).
-const prerenderedHome = document.getElementById("root").innerHTML
-function PrerenderedHome() {
-  return prerenderedHome ? <div dangerouslySetInnerHTML={{ __html: prerenderedHome }} /> : null
+// The page's own HTML, for the routes rendered at build time so crawlers can
+// read them (the homepage and /about, scripts/prerender.js). Read before
+// React takes over the root, and shown until that page's code has loaded,
+// so it doesn't blank out in between. Empty on every other route
+// (app-shell.html), and only shown on the path it was rendered for.
+const prerendered = { path: window.location.pathname, html: document.getElementById("root").innerHTML }
+function Prerendered() {
+  const { pathname } = useLocation()
+  return prerendered.html && pathname === prerendered.path
+    ? <div dangerouslySetInnerHTML={{ __html: prerendered.html }} />
+    : null
 }
 
 // ── Welcome back screen ───────────────────────────────────────────────────────
@@ -205,7 +210,7 @@ function RootRoute() {
   if (isTrueLayerBounce) {
     return <Navigate to={`/app/assessment/5${window.location.search}`} replace />;
   }
-  return <Suspense fallback={<PrerenderedHome />}><LandingPage /></Suspense>;
+  return <Suspense fallback={<Prerendered />}><LandingPage /></Suspense>;
 }
 
 // ── Returning-visitor screen ── same content/behaviour as the old root
@@ -285,6 +290,7 @@ function AppRoutes() {
         <Route path="/how-it-works" element={<Suspense fallback={null}><HowItWorksPage /></Suspense>} />
         <Route path="/signin" element={<Suspense fallback={null}><SignInPage /></Suspense>} />
         <Route path="/what-candid-is" element={<Suspense fallback={null}><WhatCandidIsPage /></Suspense>} />
+        <Route path="/about" element={<Suspense fallback={<Prerendered />}><AboutPage /></Suspense>} />
         {/* The app used to sit behind a beta password here; old links now go
             straight in. */}
         <Route path="/beta" element={<BetaRedirect />} />

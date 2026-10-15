@@ -8,7 +8,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-export const rewrites = JSON.parse(readFileSync(join(root, "vercel.json"), "utf8")).rewrites;
+const config = JSON.parse(readFileSync(join(root, "vercel.json"), "utf8"));
+export const rewrites = config.rewrites;
+// Retired addresses that point somewhere else, e.g. /about.html to /about.
+export const redirects = config.redirects ?? [];
 
 // Vercel's sources here are plain paths with ":name" segments, each
 // matching one segment of the request path.
@@ -16,6 +19,10 @@ export function matchesSource(source, path) {
   const want = source.split("/");
   const got = path.replace(/\/$/, "").split("/");
   return want.length === got.length && want.every((part, i) => part.startsWith(":") ? got[i] !== "" : part === got[i]);
+}
+
+export function redirectFor(path) {
+  return redirects.find(r => matchesSource(r.source, path)) ?? null;
 }
 
 export function rewriteFor(path) {

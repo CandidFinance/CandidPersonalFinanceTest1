@@ -32,7 +32,6 @@ export const ORGANIZATION = {
   logo: `${SITE_URL}/icon-512.png`,
   identifier: { "@type": "PropertyValue", propertyID: "UK Companies House company number", value: "17383565" },
   address: { "@type": "PostalAddress", streetAddress: "66 Paul Street", addressLocality: "London", postalCode: "EC2A 4NA", addressCountry: "GB" },
-  founder: { "@type": "Person", name: "Harvey Preston" },
   sameAs: [COMPANIES_HOUSE_URL],
 };
 
@@ -52,7 +51,7 @@ export function renderFooter() {
     <p style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;line-height:1.6;">${DISCLAIMER_DETAIL}</p>
     <p style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:10px;line-height:1.6;">
       © 2026 Candid Personal Finance Ltd · Company no. 17383565 ·
-      <a href="/about.html" style="${link}">About</a> ·
+      <a href="/about" style="${link}">About</a> ·
       <a href="/privacy.html" style="${link}">Privacy</a> ·
       <a href="/terms.html" style="${link}">Terms</a>
     </p>

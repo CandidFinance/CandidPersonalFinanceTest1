@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 // useLayoutEffect warns when the homepage is rendered to HTML at build time
-// (scripts/prerender-home.js); there's nothing to measure there anyway.
+// (scripts/prerender.js); there's nothing to measure there anyway.
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 // Site-wide rule: tiles that belong to the same set (e.g. the four "How it

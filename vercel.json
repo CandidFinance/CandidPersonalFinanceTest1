@@ -1,9 +1,13 @@
 {
+  "redirects": [
+    { "source": "/about.html", "destination": "/about", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/the-problem", "destination": "/app-shell.html" },
     { "source": "/how-it-works", "destination": "/app-shell.html" },
     { "source": "/signin", "destination": "/app-shell.html" },
     { "source": "/what-candid-is", "destination": "/app-shell.html" },
+    { "source": "/about", "destination": "/prerendered/about.html" },
     { "source": "/beta", "destination": "/app-shell.html" },
     { "source": "/welcome", "destination": "/app-shell.html" },
     { "source": "/welcome-back", "destination": "/app-shell.html" },

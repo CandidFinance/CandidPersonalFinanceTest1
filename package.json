@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/copy-static-pages.js && node scripts/prerender-home.js",
+    "build": "vite build && node scripts/copy-static-pages.js && node scripts/prerender.js",
     "preview": "vite preview",
     "test": "node --import ./src/lib/testClock.js --test \"src/lib/*.test.js\" \"scripts/*.test.js\" \"scripts/personas/*.test.js\" \"scripts/assist-agent/*.test.js\"",
     "assist-agent": "node scripts/assist-agent/agent.js",

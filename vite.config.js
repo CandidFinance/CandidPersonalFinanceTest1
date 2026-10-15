@@ -7,7 +7,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fillFigures } from './src/lib/pageFigures.js'
 import { applySitePartials } from './src/lib/sitePartials.js'
-import { rewriteFor } from './scripts/vercel-routes.js'
+import { redirectFor, rewriteFor } from './scripts/vercel-routes.js'
 
 const root = fileURLToPath(new URL('.', import.meta.url))
 
@@ -34,8 +34,9 @@ const assistAgent = {
   },
 }
 
-// `vite preview` serves dist/ the way Vercel does (vercel.json): real files
-// as they are, the app's routes from app-shell.html, and anything else
+// `vite preview` serves dist/ the way Vercel does (vercel.json): redirects
+// first, then real files as they are, the app's routes from their rewrite
+// (app-shell.html, or a prerendered page), and anything else
 // 404.html with a 404 status. Vite's own preview would answer every unknown
 // path with the homepage.
 const vercelRouting = {
@@ -44,6 +45,11 @@ const vercelRouting = {
     const outDir = join(root, 'dist')
     server.middlewares.use((req, res, next) => {
       const url = new URL(req.url, 'http://localhost')
+      const redirect = redirectFor(url.pathname)
+      if (redirect) {
+        res.writeHead(redirect.permanent ? 308 : 307, { Location: redirect.destination + url.search })
+        return res.end()
+      }
       const file = join(outDir, decodeURIComponent(url.pathname))
       if (url.pathname === '/' || (existsSync(file) && statSync(file).isFile())) return next()
       const destination = rewriteFor(url.pathname)
