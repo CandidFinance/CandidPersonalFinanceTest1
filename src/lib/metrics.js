@@ -1,7 +1,7 @@
 import { ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_REAL_PCT } from "./growth.js";
-import { resolveSlRate, slRepaymentThreshold, SL_REPAYMENT_RATES, slYearsLeft, slThresholdIn, slEarnings, estimateSlBalance } from "./studentLoan.js";
+import { slRateIn, slRepaymentThreshold, SL_REPAYMENT_RATES, slYearsLeft, slThresholdIn, slEarnings, estimateSlBalance } from "./studentLoan.js";
 import { allocateCash } from "./cashAllocation.js";
 import { isaUsedThisYear } from "./isa.js";
 
@@ -132,7 +132,7 @@ export function calcMetrics(d, marketRates = {}) {
     annualRepayment = Math.max(0, (slPay - slThreshold) * slRepayRate);
     slRepaymentRegular = Math.max(0, (slPay - (+d.bonusAmount || 0) - slThreshold) * slRepayRate);
     const yearsLeft = slYearsLeft(d, slYear);
-    willClear = (() => { const r = 1 + resolveSlRate(d, salary); let b = loanBal; for (let y=1; y<=yearsLeft; y++) { const s = slPay * Math.pow(1+slGrow,y-1); b = b*r - Math.max(0,(s-slThresholdIn(d.studentLoan, slYear + y - 1))*slRepayRate); if(b<=0) return true; } return false; })();
+    willClear = (() => { let b = loanBal; for (let y=1; y<=yearsLeft; y++) { const g = Math.pow(1+slGrow,y-1), s = slPay * g; b = b*(1 + slRateIn(d, salary * g, y - 1, slYear)) - Math.max(0,(s-slThresholdIn(d.studentLoan, slYear + y - 1))*slRepayRate); if(b<=0) return true; } return false; })();
   }
   const otherIncome = +d.otherIncome||0;
   const dividendIncome = +d.dividendIncome||0;

@@ -23,7 +23,7 @@ import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
-import { appUnlocked, scoreUnlocked, withAnswered } from "./lib/appEntry.js";
+import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals } from "./lib/appEntry.js";
 import { moduleGuideStarts } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { readinessMissing } from "./lib/propertyReadiness.js";
@@ -527,23 +527,27 @@ export default function AppShell() {
   useEffect(() => {
     if (rowSaveTick) saveRow({ ...rowInputFields(), ...(scoreShowing ? rowReportFields(calcCandidScore(statuses)) : {}) });
   }, [rowSaveTick]);
-  // A shared link straight to Property (/app/property, e.g. from LinkedIn)
-  // opens the app for a newcomer as if they'd picked "Buying a home" at the
-  // entry, so they go straight into Property's walk-through rather than the
-  // homepage. Their row is created once appEntered has landed in `d`.
-  const isPropertyLink = pathname.startsWith("/app/property");
-  const propertyLinkRow = useRef(false);
+  // A shared link straight to Property (/app/property) or a module
+  // (/app/module/studentLoan, e.g. from LinkedIn) opens the app for a
+  // newcomer as if they'd picked it at the entry, so they go straight into
+  // its walk-through rather than the entry's questions or the homepage.
+  // Their row is created once appEntered has landed in `d`.
+  const linkedModule = pathname.startsWith("/app/property") ? "property"
+    : pathname.startsWith("/app/module/") && START_MODULES.includes(pathname.split("/")[3]) ? pathname.split("/")[3]
+    : null;
+  const linkRow = useRef(false);
   useEffect(() => {
-    if (!isPropertyLink || appUnlocked(d, insights)) return;
+    if (!linkedModule || appUnlocked(d, insights)) return;
     set("appEntered", true);
     if (UNLOCK_GATE_ON) set("unlockGate", true);
-    if (!(d.interests || []).length) { set("interests", ["property"]); set("financialGoals", ["buy_house"]); }
-    posthog.capture("app_entered", { interests: "property", via: "property_link" });
-    propertyLinkRow.current = true;
-  }, [isPropertyLink, d.appEntered, insights]);
+    if (linkedModule !== "property") set("answeredModules", []);
+    if (!(d.interests || []).length) { set("interests", [linkedModule]); set("financialGoals", entryGoals([linkedModule])); }
+    posthog.capture("app_entered", { interests: linkedModule, via: linkedModule === "property" ? "property_link" : "module_link" });
+    linkRow.current = true;
+  }, [linkedModule, d.appEntered, insights]);
   useEffect(() => {
-    if (!propertyLinkRow.current || !d.appEntered) return;
-    propertyLinkRow.current = false;
+    if (!linkRow.current || !d.appEntered) return;
+    linkRow.current = false;
     insertReportRow(null);
   }, [d.appEntered]);
 
@@ -596,8 +600,8 @@ export default function AppShell() {
   // bare reload goes home rather than to a broken or empty page.
   const APP_PATHS = ["/app/home", "/app/modules", "/app/forecast", "/app/inputs", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
   if ((APP_PATHS.includes(pathname) || pathname.startsWith("/app/module/")) && !appUnlocked(d, insights)) {
-    // A Property link is let in (the effect above); blank for that moment.
-    if (isPropertyLink) return null;
+    // A Property or module link is let in (the effect above); blank for that moment.
+    if (linkedModule) return null;
     return <Navigate to="/" replace />;
   }
 

@@ -119,6 +119,30 @@ export function slThresholdIn(plan, taxYear) {
   return years > 0 ? base * Math.pow(1 + SL_THRESHOLD_GROWTH_PCT / 100, years) : base;
 }
 
+// ── Interest in later years. This tax year's rate is the published one
+// (resolveSlRate); from next year, RPI is taken at a steady 2% a year,
+// Candid's long-run inflation (growth.js), the same figure the thresholds
+// rise by above: its own assumption, not a forecast. Each year's rate then
+// follows the plan's rule on that year's pay: Plans 1, 4 and 5 charge RPI
+// (Plans 1 and 4 the lower of RPI or base rate + 1%, taken as RPI); Plan 2
+// adds up to 3% across its income band, which moves with its repayment
+// threshold (the band's lower end); the Postgraduate Loan adds 3%. The 6%
+// cap stays, though at 2% RPI nothing reaches it. A rate the user typed in
+// is kept for every year.
+export const SL_RPI_LONG_RUN = INFLATION_PCT / 100;
+export function slRateIn(d, grossSalary, year = 0, taxYear = taxYearFor(d)) {
+  if (year <= 0 || +d.studentLoanRate > 0) return resolveSlRate(d, grossSalary);
+  const rpi = SL_RPI_LONG_RUN;
+  if (d.studentLoan === "plan2") {
+    const lower = slThresholdIn("plan2", taxYear + year);
+    const upper = lower * PLAN2_INCOME_UPPER / PLAN2_INCOME_LOWER;
+    const frac = Math.min(1, Math.max(0, (grossSalary - lower) / (upper - lower)));
+    return Math.min(rpi + frac * PLAN2_MAX_VARIABLE, PLAN2_RATE_CAP);
+  }
+  if (d.studentLoan === "postgrad") return Math.min(rpi + PLAN2_MAX_VARIABLE, PLAN2_RATE_CAP);
+  return rpi;
+}
+
 // ── The pay repayments are taken from: salary and bonus (GOV.UK: "including
 // things like bonuses and overtime"), less pension paid by salary sacrifice,
 // which comes off pay before deductions. Relief-at-source and net-pay
@@ -178,6 +202,12 @@ export function calcStudentLoanScenario(d, m) {
   const growth = m.salaryGrowthRate ?? 0;
   const earnings = m.slEarnings ?? m.salary;
   const repaymentIn = yr => Math.max(0, earnings * Math.pow(1 + growth, yr - 1) - slThresholdIn(d.studentLoan, taxYear + yr - 1)) * repayRateOf(d.studentLoan);
+  // The interest rate each year, on that year's pay (slRateIn): today's
+  // published rate this year, then steady-state RPI.
+  const rateIn = yr => slRateIn(d, m.salary * Math.pow(1 + growth, yr - 1), yr - 1, taxYear);
+  // Each year's rate and repayment, for the overpayment scenarios to run on
+  // the same figures (calcOverpaymentScenarios).
+  const schedule = [];
   let projBal = m.loanBal, writeOffBal = writeOffYr === 0 ? m.loanBal : 0, clearYr = null, totalRepaidProjected = 0;
   // The balance at the end of each year (year 0 = today), for the trajectory
   // chart, and the turning point: the first year repayments overtake the
@@ -185,12 +215,14 @@ export function calcStudentLoanScenario(d, m) {
   const balancePath = [{ yr: 0, bal: Math.round(m.loanBal) }];
   let turningYr = null;
   for (let yr = 1; yr <= writeOffYr; yr++) {
-    const interest = projBal * slInterestRate;
+    const rate = rateIn(yr), due = repaymentIn(yr);
+    schedule.push({ rate: Math.round(rate * 10000) / 10000, repayment: Math.round(due) });
+    const interest = projBal * rate;
     projBal = projBal + interest;
     // Cap the final year's repayment at what's actually left to clear — otherwise
     // a loan that pays off partway through its final year books a full year's
     // repayment against a balance that no longer exists, overstating total repaid.
-    const payment = Math.min(repaymentIn(yr), projBal);
+    const payment = Math.min(due, projBal);
     projBal -= payment;
     totalRepaidProjected += payment;
     if (turningYr === null && payment > interest) turningYr = yr;
@@ -235,7 +267,7 @@ export function calcStudentLoanScenario(d, m) {
     threshold, slInterestRate, slRatePct, annualInterest, annualRep,
     belowThreshold, netAnnualChange, balanceGrowing, inflectionSalary, salaryGapToInflection,
     clearYr, writeOffBal: Math.round(writeOffBal), willClear, totalRepaidProjected,
-    balancePath, turningYr, turningTaxYear, balanceFallingNow, peakBal,
+    balancePath, turningYr, turningTaxYear, balanceFallingNow, peakBal, schedule,
     cashRate, effectiveBenefit, pensionGrowthPct: PENSION_GROWTH_PCT, pensionGap, beatsPension,
     worthOverpaying, overpayAnnualBenefit,
   };
@@ -260,17 +292,21 @@ export function describeLoanVsPension(sl) {
 // already imports resolveSlRate from this file, so importing simulateLoan
 // back here would create a lib-to-lib circular import.
 export function calcOverpaymentScenarios(m, sl, amounts = [5000, 10000, 20000]) {
-  const { writeOffYr, slInterestRate, annualRep, balanceGrowing } = sl;
+  const { writeOffYr, slInterestRate, annualRep, balanceGrowing, schedule = [] } = sl;
   function projectLoan(extraOneOff) {
     let bal = Math.max(0, m.loanBal - extraOneOff);
     let totalPaid = extraOneOff;
     let clearYr = null;
     let writeOffBal = 0;
     for (let yr = 1; yr <= writeOffYr; yr++) {
-      bal = bal * (1 + slInterestRate);
+      // Each year's rate and repayment as the scenario has them (pay rising,
+      // steady-state RPI after this year), so "no overpayment" here matches
+      // the module's own clear date.
+      const { rate = slInterestRate, repayment = annualRep } = schedule[yr - 1] || {};
+      bal = bal * (1 + rate);
       // Cap the final year's repayment at what's actually left to clear — see
       // calcStudentLoanScenario above for why this matters.
-      const payment = Math.min(annualRep, bal);
+      const payment = Math.min(repayment, bal);
       bal -= payment;
       totalPaid += payment;
       if (bal <= 0 && !clearYr) { clearYr = yr; break; }

@@ -373,9 +373,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 2916,
-      "central": 3431,
-      "high": 3603,
+      "low": 2459,
+      "central": 2893,
+      "high": 3038,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -662,8 +662,8 @@
      "pension": 79686,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 16292,
-     "netWorth": 164468
+     "debts": 15763,
+     "netWorth": 164997
     },
     {
      "year": 3,
@@ -672,8 +672,8 @@
      "pension": 88787,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 13178,
-     "netWorth": 205127
+     "debts": 11770,
+     "netWorth": 206536
     },
     {
      "year": 4,
@@ -682,8 +682,8 @@
      "pension": 98434,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 9878,
-     "netWorth": 248257
+     "debts": 7205,
+     "netWorth": 250930
     },
     {
      "year": 5,
@@ -692,8 +692,8 @@
      "pension": 108660,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 6380,
-     "netWorth": 294009
+     "debts": 2076,
+     "netWorth": 298313
     },
     {
      "year": 6,
@@ -702,8 +702,8 @@
      "pension": 119500,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 2672,
-     "netWorth": 342542
+     "debts": 0,
+     "netWorth": 345214
     },
     {
      "year": 7,
@@ -2306,7 +2306,7 @@
      "clearYr": 6,
      "writeOffBal": 0,
      "willClear": true,
-     "totalRepaidProjected": 26782,
+     "totalRepaidProjected": 26122,
      "balancePath": [
       {
        "yr": 0,
@@ -2318,19 +2318,19 @@
       },
       {
        "yr": 2,
-       "bal": 15955
+       "bal": 15763
       },
       {
        "yr": 3,
-       "bal": 12131
+       "bal": 11770
       },
       {
        "yr": 4,
-       "bal": 7706
+       "bal": 7205
       },
       {
        "yr": 5,
-       "bal": 2679
+       "bal": 2076
       },
       {
        "yr": 6,
@@ -2341,6 +2341,32 @@
      "turningTaxYear": 2026,
      "balanceFallingNow": true,
      "peakBal": 22000,
+     "schedule": [
+      {
+       "rate": 0.06,
+       "repayment": 4091
+      },
+      {
+       "rate": 0.05,
+       "repayment": 4428
+      },
+      {
+       "rate": 0.05,
+       "repayment": 4781
+      },
+      {
+       "rate": 0.05,
+       "repayment": 5153
+      },
+      {
+       "rate": 0.05,
+       "repayment": 5490
+      },
+      {
+       "rate": 0.05,
+       "repayment": 5845
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": 1.3,
      "pensionGrowthPct": 6,
@@ -2355,7 +2381,7 @@
        "amt": 5000,
        "clearYr": 5,
        "writeOffBal": 0,
-       "totalPaid": 25144,
+       "totalPaid": 24576,
        "newNetChange": -3070.95,
        "crossesInflection": false
       },
@@ -2363,7 +2389,7 @@
        "amt": 10000,
        "clearYr": 4,
        "writeOffBal": 0,
-       "totalPaid": 23617,
+       "totalPaid": 23387,
        "newNetChange": -3370.95,
        "crossesInflection": false
       },
@@ -2377,9 +2403,9 @@
       }
      ],
      "baseProjection": {
-      "clearYr": 7,
+      "clearYr": 6,
       "writeOffBal": 0,
-      "totalPaid": 27378,
+      "totalPaid": 26122,
       "newNetChange": -2770.95,
       "crossesInflection": false
      }
@@ -3088,9 +3114,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 2916,
-      "central": 3431,
-      "high": 3603,
+      "low": 2459,
+      "central": 2893,
+      "high": 3038,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -3377,8 +3403,8 @@
      "pension": 79686,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 16292,
-     "netWorth": 164468
+     "debts": 15763,
+     "netWorth": 164997
     },
     {
      "year": 3,
@@ -3387,8 +3413,8 @@
      "pension": 88787,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 13178,
-     "netWorth": 205127
+     "debts": 11770,
+     "netWorth": 206536
     },
     {
      "year": 4,
@@ -3397,8 +3423,8 @@
      "pension": 98434,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 9878,
-     "netWorth": 248257
+     "debts": 7205,
+     "netWorth": 250930
     },
     {
      "year": 5,
@@ -3407,8 +3433,8 @@
      "pension": 108660,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 6380,
-     "netWorth": 294009
+     "debts": 2076,
+     "netWorth": 298313
     },
     {
      "year": 6,
@@ -3417,8 +3443,8 @@
      "pension": 119500,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 2672,
-     "netWorth": 342542
+     "debts": 0,
+     "netWorth": 345214
     },
     {
      "year": 7,
@@ -4826,7 +4852,7 @@
      "clearYr": 6,
      "writeOffBal": 0,
      "willClear": true,
-     "totalRepaidProjected": 26782,
+     "totalRepaidProjected": 26122,
      "balancePath": [
       {
        "yr": 0,
@@ -4838,19 +4864,19 @@
       },
       {
        "yr": 2,
-       "bal": 15955
+       "bal": 15763
       },
       {
        "yr": 3,
-       "bal": 12131
+       "bal": 11770
       },
       {
        "yr": 4,
-       "bal": 7706
+       "bal": 7205
       },
       {
        "yr": 5,
-       "bal": 2679
+       "bal": 2076
       },
       {
        "yr": 6,
@@ -4861,6 +4887,32 @@
      "turningTaxYear": 2026,
      "balanceFallingNow": true,
      "peakBal": 22000,
+     "schedule": [
+      {
+       "rate": 0.06,
+       "repayment": 4091
+      },
+      {
+       "rate": 0.05,
+       "repayment": 4428
+      },
+      {
+       "rate": 0.05,
+       "repayment": 4781
+      },
+      {
+       "rate": 0.05,
+       "repayment": 5153
+      },
+      {
+       "rate": 0.05,
+       "repayment": 5490
+      },
+      {
+       "rate": 0.05,
+       "repayment": 5845
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": 0.9,
      "pensionGrowthPct": 6,
@@ -4875,7 +4927,7 @@
        "amt": 5000,
        "clearYr": 5,
        "writeOffBal": 0,
-       "totalPaid": 25144,
+       "totalPaid": 24576,
        "newNetChange": -3070.95,
        "crossesInflection": false
       },
@@ -4883,7 +4935,7 @@
        "amt": 10000,
        "clearYr": 4,
        "writeOffBal": 0,
-       "totalPaid": 23617,
+       "totalPaid": 23387,
        "newNetChange": -3370.95,
        "crossesInflection": false
       },
@@ -4897,9 +4949,9 @@
       }
      ],
      "baseProjection": {
-      "clearYr": 7,
+      "clearYr": 6,
       "writeOffBal": 0,
-      "totalPaid": 27378,
+      "totalPaid": 26122,
       "newNetChange": -2770.95,
       "crossesInflection": false
      }
@@ -7340,6 +7392,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4104
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -9699,6 +9757,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4104
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -12178,6 +12242,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 8037
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -14556,6 +14626,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 8037
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -15984,6 +16060,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 2340
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -17335,6 +17417,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 2340
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -19897,6 +19985,12 @@
      "turningTaxYear": 2026,
      "balanceFallingNow": true,
      "peakBal": 6000,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 9009
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -22360,6 +22454,12 @@
      "turningTaxYear": 2026,
      "balanceFallingNow": true,
      "peakBal": 6000,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 9009
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -24862,6 +24962,7 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -27282,6 +27383,7 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -29780,6 +29882,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 5400
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -32146,6 +32254,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 5400
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -32780,7 +32894,7 @@
      {
       "label": "Your position",
       "title": "You're not expected to clear this loan before it's written off.",
-      "body": "Your balance is still growing. It starts falling from April 2047, when repayments overtake the interest."
+      "body": "Your balance is still growing. It starts falling from April 2033, when repayments overtake the interest."
      },
      {
       "label": "Why",
@@ -32804,9 +32918,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 10096,
-      "central": 11878,
-      "high": 12472,
+      "low": 4487,
+      "central": 5279,
+      "high": 5543,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -32871,30 +32985,30 @@
       "values": [
        0,
        143,
-       608,
-       1409,
-       2557,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999
+       368,
+       750,
+       1293,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950
       ]
      },
      {
@@ -33084,7 +33198,7 @@
      "propertyEquity": 0,
      "mortgageBalance": 0,
      "debts": 32064,
-     "netWorth": 35330
+     "netWorth": 35329
     },
     {
      "year": 2,
@@ -33093,8 +33207,8 @@
      "pension": 41536,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 33171,
-     "netWorth": 49482
+     "debts": 32432,
+     "netWorth": 50220
     },
     {
      "year": 3,
@@ -33103,8 +33217,8 @@
      "pension": 47828,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 34323,
-     "netWorth": 64509
+     "debts": 32742,
+     "netWorth": 66090
     },
     {
      "year": 4,
@@ -33113,8 +33227,8 @@
      "pension": 54498,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 35523,
-     "netWorth": 80466
+     "debts": 32991,
+     "netWorth": 82998
     },
     {
      "year": 5,
@@ -33123,8 +33237,8 @@
      "pension": 61568,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 36772,
-     "netWorth": 97411
+     "debts": 33175,
+     "netWorth": 101008
     },
     {
      "year": 6,
@@ -33133,8 +33247,8 @@
      "pension": 69062,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 38072,
-     "netWorth": 115403
+     "debts": 33293,
+     "netWorth": 120182
     },
     {
      "year": 7,
@@ -33143,8 +33257,8 @@
      "pension": 77005,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 39426,
-     "netWorth": 134509
+     "debts": 33342,
+     "netWorth": 140592
     },
     {
      "year": 8,
@@ -33153,8 +33267,8 @@
      "pension": 85426,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 40835,
-     "netWorth": 154795
+     "debts": 33318,
+     "netWorth": 162312
     },
     {
      "year": 9,
@@ -33163,8 +33277,8 @@
      "pension": 94351,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 42302,
-     "netWorth": 176337
+     "debts": 33219,
+     "netWorth": 185419
     },
     {
      "year": 10,
@@ -33173,8 +33287,8 @@
      "pension": 103812,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 43828,
-     "netWorth": 199210
+     "debts": 33042,
+     "netWorth": 209996
     },
     {
      "year": 11,
@@ -33183,8 +33297,8 @@
      "pension": 113841,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 45418,
-     "netWorth": 223497
+     "debts": 32784,
+     "netWorth": 236131
     },
     {
      "year": 12,
@@ -33193,8 +33307,8 @@
      "pension": 124472,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 47073,
-     "netWorth": 249286
+     "debts": 32442,
+     "netWorth": 263917
     },
     {
      "year": 13,
@@ -33203,8 +33317,8 @@
      "pension": 135740,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 48795,
-     "netWorth": 276669
+     "debts": 32012,
+     "netWorth": 293452
     },
     {
      "year": 14,
@@ -33213,8 +33327,8 @@
      "pension": 147684,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 50588,
-     "netWorth": 305743
+     "debts": 31491,
+     "netWorth": 324841
     },
     {
      "year": 15,
@@ -33223,8 +33337,8 @@
      "pension": 160345,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 52455,
-     "netWorth": 336615
+     "debts": 30875,
+     "netWorth": 358195
     },
     {
      "year": 16,
@@ -33233,8 +33347,8 @@
      "pension": 173766,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 54398,
-     "netWorth": 369394
+     "debts": 30161,
+     "netWorth": 393631
     },
     {
      "year": 17,
@@ -33243,8 +33357,8 @@
      "pension": 187992,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 56421,
-     "netWorth": 404197
+     "debts": 29346,
+     "netWorth": 431273
     },
     {
      "year": 18,
@@ -33253,8 +33367,8 @@
      "pension": 203072,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 58527,
-     "netWorth": 441151
+     "debts": 28425,
+     "netWorth": 471253
     },
     {
      "year": 19,
@@ -33263,8 +33377,8 @@
      "pension": 219056,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 60719,
-     "netWorth": 480387
+     "debts": 27395,
+     "netWorth": 513711
     },
     {
      "year": 20,
@@ -33273,8 +33387,8 @@
      "pension": 235999,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 63001,
-     "netWorth": 522046
+     "debts": 26251,
+     "netWorth": 558796
     },
     {
      "year": 21,
@@ -33283,8 +33397,8 @@
      "pension": 253959,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 65377,
-     "netWorth": 566277
+     "debts": 24990,
+     "netWorth": 606664
     },
     {
      "year": 22,
@@ -33293,8 +33407,8 @@
      "pension": 272997,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 67850,
-     "netWorth": 613240
+     "debts": 23606,
+     "netWorth": 657483
     },
     {
      "year": 23,
@@ -33303,8 +33417,8 @@
      "pension": 293177,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 70424,
-     "netWorth": 663101
+     "debts": 22097,
+     "netWorth": 711428
     },
     {
      "year": 24,
@@ -33313,8 +33427,8 @@
      "pension": 314567,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 73104,
-     "netWorth": 716039
+     "debts": 20457,
+     "netWorth": 768686
     },
     {
      "year": 25,
@@ -33323,8 +33437,8 @@
      "pension": 337241,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 75894,
-     "netWorth": 772245
+     "debts": 18682,
+     "netWorth": 829457
     },
     {
      "year": 26,
@@ -34644,7 +34758,7 @@
      "inflectionSalary": 47917,
      "salaryGapToInflection": 9917,
      "clearYr": null,
-     "writeOffBal": 44391,
+     "writeOffBal": 18682,
      "willClear": false,
      "totalRepaidProjected": 28028,
      "balancePath": [
@@ -34658,105 +34772,207 @@
       },
       {
        "yr": 2,
-       "bal": 33106
+       "bal": 32432
       },
       {
        "yr": 3,
-       "bal": 34124
+       "bal": 32742
       },
       {
        "yr": 4,
-       "bal": 35117
+       "bal": 32991
       },
       {
        "yr": 5,
-       "bal": 36082
+       "bal": 33175
       },
       {
        "yr": 6,
-       "bal": 37015
+       "bal": 33293
       },
       {
        "yr": 7,
-       "bal": 37916
+       "bal": 33342
       },
       {
        "yr": 8,
-       "bal": 38780
+       "bal": 33318
       },
       {
        "yr": 9,
-       "bal": 39604
+       "bal": 33219
       },
       {
        "yr": 10,
-       "bal": 40387
+       "bal": 33042
       },
       {
        "yr": 11,
-       "bal": 41124
+       "bal": 32784
       },
       {
        "yr": 12,
-       "bal": 41812
+       "bal": 32442
       },
       {
        "yr": 13,
-       "bal": 42447
+       "bal": 32012
       },
       {
        "yr": 14,
-       "bal": 43026
+       "bal": 31491
       },
       {
        "yr": 15,
-       "bal": 43545
+       "bal": 30875
       },
       {
        "yr": 16,
-       "bal": 43999
+       "bal": 30161
       },
       {
        "yr": 17,
-       "bal": 44384
+       "bal": 29346
       },
       {
        "yr": 18,
-       "bal": 44696
+       "bal": 28425
       },
       {
        "yr": 19,
-       "bal": 44930
+       "bal": 27395
       },
       {
        "yr": 20,
-       "bal": 45080
+       "bal": 26251
       },
       {
        "yr": 21,
-       "bal": 45142
+       "bal": 24990
       },
       {
        "yr": 22,
-       "bal": 45110
+       "bal": 23606
       },
       {
        "yr": 23,
-       "bal": 44978
+       "bal": 22097
       },
       {
        "yr": 24,
-       "bal": 44741
+       "bal": 20457
       },
       {
        "yr": 25,
-       "bal": 44391
+       "bal": 18682
       }
      ],
-     "turningYr": 22,
-     "turningTaxYear": 2047,
+     "turningYr": 8,
+     "turningTaxYear": 2033,
      "balanceFallingNow": false,
-     "peakBal": 45142,
+     "peakBal": 33342,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 207
+      },
+      {
+       "rate": 0.02,
+       "repayment": 272
+      },
+      {
+       "rate": 0.02,
+       "repayment": 339
+      },
+      {
+       "rate": 0.02,
+       "repayment": 406
+      },
+      {
+       "rate": 0.02,
+       "repayment": 475
+      },
+      {
+       "rate": 0.02,
+       "repayment": 546
+      },
+      {
+       "rate": 0.02,
+       "repayment": 617
+      },
+      {
+       "rate": 0.02,
+       "repayment": 691
+      },
+      {
+       "rate": 0.02,
+       "repayment": 765
+      },
+      {
+       "rate": 0.02,
+       "repayment": 841
+      },
+      {
+       "rate": 0.02,
+       "repayment": 919
+      },
+      {
+       "rate": 0.02,
+       "repayment": 998
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1079
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1161
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1245
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1331
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1419
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1508
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1599
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1692
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1786
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1883
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1981
+      },
+      {
+       "rate": 0.02,
+       "repayment": 2082
+      },
+      {
+       "rate": 0.02,
+       "repayment": 2184
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -34770,32 +34986,32 @@
       {
        "amt": 5000,
        "clearYr": null,
-       "writeOffBal": 62241,
-       "totalPaid": 10186,
+       "writeOffBal": 10313,
+       "totalPaid": 33026,
        "newNetChange": 858.55,
        "crossesInflection": false
       },
       {
        "amt": 10000,
        "clearYr": null,
-       "writeOffBal": 48587,
-       "totalPaid": 15186,
+       "writeOffBal": 1941,
+       "totalPaid": 38026,
        "newNetChange": 653.55,
        "crossesInflection": false
       },
       {
        "amt": 20000,
-       "clearYr": null,
-       "writeOffBal": 21281,
-       "totalPaid": 25186,
+       "clearYr": 18,
+       "writeOffBal": 0,
+       "totalPaid": 34093,
        "newNetChange": 243.55,
        "crossesInflection": false
       }
      ],
      "baseProjection": {
       "clearYr": null,
-      "writeOffBal": 75894,
-      "totalPaid": 5186,
+      "writeOffBal": 18685,
+      "totalPaid": 28026,
       "newNetChange": 1063.55,
       "crossesInflection": false
      }
@@ -35458,7 +35674,7 @@
      {
       "label": "Your position",
       "title": "You're not expected to clear this loan before it's written off.",
-      "body": "Your balance is still growing. It starts falling from April 2047, when repayments overtake the interest."
+      "body": "Your balance is still growing. It starts falling from April 2033, when repayments overtake the interest."
      },
      {
       "label": "Why",
@@ -35482,9 +35698,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 10096,
-      "central": 11878,
-      "high": 12472,
+      "low": 4487,
+      "central": 5279,
+      "high": 5543,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -35549,30 +35765,30 @@
       "values": [
        0,
        143,
-       608,
-       1409,
-       2557,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999,
-       3999
+       368,
+       750,
+       1293,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950,
+       1950
       ]
      },
      {
@@ -35762,7 +35978,7 @@
      "propertyEquity": 0,
      "mortgageBalance": 0,
      "debts": 32064,
-     "netWorth": 35330
+     "netWorth": 35329
     },
     {
      "year": 2,
@@ -35771,8 +35987,8 @@
      "pension": 41536,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 33171,
-     "netWorth": 49482
+     "debts": 32432,
+     "netWorth": 50220
     },
     {
      "year": 3,
@@ -35781,8 +35997,8 @@
      "pension": 47828,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 34323,
-     "netWorth": 64509
+     "debts": 32742,
+     "netWorth": 66090
     },
     {
      "year": 4,
@@ -35791,8 +36007,8 @@
      "pension": 54498,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 35523,
-     "netWorth": 80466
+     "debts": 32991,
+     "netWorth": 82998
     },
     {
      "year": 5,
@@ -35801,8 +36017,8 @@
      "pension": 61568,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 36772,
-     "netWorth": 97411
+     "debts": 33175,
+     "netWorth": 101008
     },
     {
      "year": 6,
@@ -35811,8 +36027,8 @@
      "pension": 69062,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 38072,
-     "netWorth": 115403
+     "debts": 33293,
+     "netWorth": 120182
     },
     {
      "year": 7,
@@ -35821,8 +36037,8 @@
      "pension": 77005,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 39426,
-     "netWorth": 134509
+     "debts": 33342,
+     "netWorth": 140592
     },
     {
      "year": 8,
@@ -35831,8 +36047,8 @@
      "pension": 85426,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 40835,
-     "netWorth": 154795
+     "debts": 33318,
+     "netWorth": 162312
     },
     {
      "year": 9,
@@ -35841,8 +36057,8 @@
      "pension": 94351,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 42302,
-     "netWorth": 176337
+     "debts": 33219,
+     "netWorth": 185419
     },
     {
      "year": 10,
@@ -35851,8 +36067,8 @@
      "pension": 103812,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 43828,
-     "netWorth": 199210
+     "debts": 33042,
+     "netWorth": 209996
     },
     {
      "year": 11,
@@ -35861,8 +36077,8 @@
      "pension": 113841,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 45418,
-     "netWorth": 223497
+     "debts": 32784,
+     "netWorth": 236131
     },
     {
      "year": 12,
@@ -35871,8 +36087,8 @@
      "pension": 124472,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 47073,
-     "netWorth": 249286
+     "debts": 32442,
+     "netWorth": 263917
     },
     {
      "year": 13,
@@ -35881,8 +36097,8 @@
      "pension": 135740,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 48795,
-     "netWorth": 276669
+     "debts": 32012,
+     "netWorth": 293452
     },
     {
      "year": 14,
@@ -35891,8 +36107,8 @@
      "pension": 147684,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 50588,
-     "netWorth": 305743
+     "debts": 31491,
+     "netWorth": 324841
     },
     {
      "year": 15,
@@ -35901,8 +36117,8 @@
      "pension": 160345,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 52455,
-     "netWorth": 336615
+     "debts": 30875,
+     "netWorth": 358195
     },
     {
      "year": 16,
@@ -35911,8 +36127,8 @@
      "pension": 173766,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 54398,
-     "netWorth": 369394
+     "debts": 30161,
+     "netWorth": 393631
     },
     {
      "year": 17,
@@ -35921,8 +36137,8 @@
      "pension": 187992,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 56421,
-     "netWorth": 404197
+     "debts": 29346,
+     "netWorth": 431273
     },
     {
      "year": 18,
@@ -35931,8 +36147,8 @@
      "pension": 203072,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 58527,
-     "netWorth": 441151
+     "debts": 28425,
+     "netWorth": 471253
     },
     {
      "year": 19,
@@ -35941,8 +36157,8 @@
      "pension": 219056,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 60719,
-     "netWorth": 480387
+     "debts": 27395,
+     "netWorth": 513711
     },
     {
      "year": 20,
@@ -35951,8 +36167,8 @@
      "pension": 235999,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 63001,
-     "netWorth": 522046
+     "debts": 26251,
+     "netWorth": 558796
     },
     {
      "year": 21,
@@ -35961,8 +36177,8 @@
      "pension": 253959,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 65377,
-     "netWorth": 566277
+     "debts": 24990,
+     "netWorth": 606664
     },
     {
      "year": 22,
@@ -35971,8 +36187,8 @@
      "pension": 272997,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 67850,
-     "netWorth": 613240
+     "debts": 23606,
+     "netWorth": 657483
     },
     {
      "year": 23,
@@ -35981,8 +36197,8 @@
      "pension": 293177,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 70424,
-     "netWorth": 663101
+     "debts": 22097,
+     "netWorth": 711428
     },
     {
      "year": 24,
@@ -35991,8 +36207,8 @@
      "pension": 314567,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 73104,
-     "netWorth": 716039
+     "debts": 20457,
+     "netWorth": 768686
     },
     {
      "year": 25,
@@ -36001,8 +36217,8 @@
      "pension": 337241,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 75894,
-     "netWorth": 772245
+     "debts": 18682,
+     "netWorth": 829457
     },
     {
      "year": 26,
@@ -37195,7 +37411,7 @@
      "inflectionSalary": 47917,
      "salaryGapToInflection": 9917,
      "clearYr": null,
-     "writeOffBal": 44391,
+     "writeOffBal": 18682,
      "willClear": false,
      "totalRepaidProjected": 28028,
      "balancePath": [
@@ -37209,105 +37425,207 @@
       },
       {
        "yr": 2,
-       "bal": 33106
+       "bal": 32432
       },
       {
        "yr": 3,
-       "bal": 34124
+       "bal": 32742
       },
       {
        "yr": 4,
-       "bal": 35117
+       "bal": 32991
       },
       {
        "yr": 5,
-       "bal": 36082
+       "bal": 33175
       },
       {
        "yr": 6,
-       "bal": 37015
+       "bal": 33293
       },
       {
        "yr": 7,
-       "bal": 37916
+       "bal": 33342
       },
       {
        "yr": 8,
-       "bal": 38780
+       "bal": 33318
       },
       {
        "yr": 9,
-       "bal": 39604
+       "bal": 33219
       },
       {
        "yr": 10,
-       "bal": 40387
+       "bal": 33042
       },
       {
        "yr": 11,
-       "bal": 41124
+       "bal": 32784
       },
       {
        "yr": 12,
-       "bal": 41812
+       "bal": 32442
       },
       {
        "yr": 13,
-       "bal": 42447
+       "bal": 32012
       },
       {
        "yr": 14,
-       "bal": 43026
+       "bal": 31491
       },
       {
        "yr": 15,
-       "bal": 43545
+       "bal": 30875
       },
       {
        "yr": 16,
-       "bal": 43999
+       "bal": 30161
       },
       {
        "yr": 17,
-       "bal": 44384
+       "bal": 29346
       },
       {
        "yr": 18,
-       "bal": 44696
+       "bal": 28425
       },
       {
        "yr": 19,
-       "bal": 44930
+       "bal": 27395
       },
       {
        "yr": 20,
-       "bal": 45080
+       "bal": 26251
       },
       {
        "yr": 21,
-       "bal": 45142
+       "bal": 24990
       },
       {
        "yr": 22,
-       "bal": 45110
+       "bal": 23606
       },
       {
        "yr": 23,
-       "bal": 44978
+       "bal": 22097
       },
       {
        "yr": 24,
-       "bal": 44741
+       "bal": 20457
       },
       {
        "yr": 25,
-       "bal": 44391
+       "bal": 18682
       }
      ],
-     "turningYr": 22,
-     "turningTaxYear": 2047,
+     "turningYr": 8,
+     "turningTaxYear": 2033,
      "balanceFallingNow": false,
-     "peakBal": 45142,
+     "peakBal": 33342,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 207
+      },
+      {
+       "rate": 0.02,
+       "repayment": 272
+      },
+      {
+       "rate": 0.02,
+       "repayment": 339
+      },
+      {
+       "rate": 0.02,
+       "repayment": 406
+      },
+      {
+       "rate": 0.02,
+       "repayment": 475
+      },
+      {
+       "rate": 0.02,
+       "repayment": 546
+      },
+      {
+       "rate": 0.02,
+       "repayment": 617
+      },
+      {
+       "rate": 0.02,
+       "repayment": 691
+      },
+      {
+       "rate": 0.02,
+       "repayment": 765
+      },
+      {
+       "rate": 0.02,
+       "repayment": 841
+      },
+      {
+       "rate": 0.02,
+       "repayment": 919
+      },
+      {
+       "rate": 0.02,
+       "repayment": 998
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1079
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1161
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1245
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1331
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1419
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1508
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1599
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1692
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1786
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1883
+      },
+      {
+       "rate": 0.02,
+       "repayment": 1981
+      },
+      {
+       "rate": 0.02,
+       "repayment": 2082
+      },
+      {
+       "rate": 0.02,
+       "repayment": 2184
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -37321,32 +37639,32 @@
       {
        "amt": 5000,
        "clearYr": null,
-       "writeOffBal": 62241,
-       "totalPaid": 10186,
+       "writeOffBal": 10313,
+       "totalPaid": 33026,
        "newNetChange": 858.55,
        "crossesInflection": false
       },
       {
        "amt": 10000,
        "clearYr": null,
-       "writeOffBal": 48587,
-       "totalPaid": 15186,
+       "writeOffBal": 1941,
+       "totalPaid": 38026,
        "newNetChange": 653.55,
        "crossesInflection": false
       },
       {
        "amt": 20000,
-       "clearYr": null,
-       "writeOffBal": 21281,
-       "totalPaid": 25186,
+       "clearYr": 18,
+       "writeOffBal": 0,
+       "totalPaid": 34093,
        "newNetChange": 243.55,
        "crossesInflection": false
       }
      ],
      "baseProjection": {
       "clearYr": null,
-      "writeOffBal": 75894,
-      "totalPaid": 5186,
+      "writeOffBal": 18685,
+      "totalPaid": 28026,
       "newNetChange": 1063.55,
       "crossesInflection": false
      }
@@ -37991,9 +38309,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 12197,
-      "central": 14349,
-      "high": 15066,
+      "low": 5490,
+      "central": 6459,
+      "high": 6782,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -38058,30 +38376,30 @@
       "values": [
        0,
        118,
-       500,
-       1159,
-       2103,
-       3347,
-       4902,
-       6781,
-       8999,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568
+       303,
+       617,
+       1063,
+       1643,
+       2360,
+       3217,
+       4217,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327
       ]
      },
      {
@@ -38271,7 +38589,7 @@
      "propertyEquity": 0,
      "mortgageBalance": 0,
      "debts": 49739,
-     "netWorth": -21498
+     "netWorth": -21499
     },
     {
      "year": 2,
@@ -38280,8 +38598,8 @@
      "pension": 8221,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 51548,
-     "netWorth": -12511
+     "debts": 50499,
+     "netWorth": -11462
     },
     {
      "year": 3,
@@ -38290,8 +38608,8 @@
      "pension": 11614,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 53432,
-     "netWorth": -2945
+     "debts": 51270,
+     "netWorth": -783
     },
     {
      "year": 4,
@@ -38300,8 +38618,8 @@
      "pension": 15211,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 55393,
-     "netWorth": 7236
+     "debts": 52052,
+     "netWorth": 10578
     },
     {
      "year": 5,
@@ -38310,8 +38628,8 @@
      "pension": 19024,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 57435,
-     "netWorth": 18071
+     "debts": 52845,
+     "netWorth": 22661
     },
     {
      "year": 6,
@@ -38320,8 +38638,8 @@
      "pension": 23065,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 59560,
-     "netWorth": 29602
+     "debts": 53648,
+     "netWorth": 35514
     },
     {
      "year": 7,
@@ -38330,8 +38648,8 @@
      "pension": 27349,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 61773,
-     "netWorth": 41872
+     "debts": 54463,
+     "netWorth": 49182
     },
     {
      "year": 8,
@@ -38340,8 +38658,8 @@
      "pension": 31890,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 64076,
-     "netWorth": 54928
+     "debts": 55289,
+     "netWorth": 63715
     },
     {
      "year": 9,
@@ -38350,8 +38668,8 @@
      "pension": 36704,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 66474,
-     "netWorth": 68819
+     "debts": 56125,
+     "netWorth": 79168
     },
     {
      "year": 10,
@@ -38360,8 +38678,8 @@
      "pension": 41806,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 68970,
-     "netWorth": 83599
+     "debts": 56974,
+     "netWorth": 95595
     },
     {
      "year": 11,
@@ -38370,8 +38688,8 @@
      "pension": 47214,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 71568,
-     "netWorth": 99323
+     "debts": 57833,
+     "netWorth": 113058
     },
     {
      "year": 12,
@@ -38380,8 +38698,8 @@
      "pension": 52947,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 74273,
-     "netWorth": 116051
+     "debts": 58705,
+     "netWorth": 131619
     },
     {
      "year": 13,
@@ -38390,8 +38708,8 @@
      "pension": 59024,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 77088,
-     "netWorth": 133846
+     "debts": 59588,
+     "netWorth": 151347
     },
     {
      "year": 14,
@@ -38400,8 +38718,8 @@
      "pension": 65465,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 80020,
-     "netWorth": 152775
+     "debts": 60483,
+     "netWorth": 172312
     },
     {
      "year": 15,
@@ -38410,8 +38728,8 @@
      "pension": 72293,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 83071,
-     "netWorth": 172910
+     "debts": 61389,
+     "netWorth": 194592
     },
     {
      "year": 16,
@@ -38420,8 +38738,8 @@
      "pension": 79531,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 86247,
-     "netWorth": 194325
+     "debts": 62308,
+     "netWorth": 218265
     },
     {
      "year": 17,
@@ -38430,8 +38748,8 @@
      "pension": 87203,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 89554,
-     "netWorth": 217103
+     "debts": 63239,
+     "netWorth": 243417
     },
     {
      "year": 18,
@@ -38440,8 +38758,8 @@
      "pension": 95335,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 92996,
-     "netWorth": 241327
+     "debts": 64183,
+     "netWorth": 270140
     },
     {
      "year": 19,
@@ -38450,8 +38768,8 @@
      "pension": 103955,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 96579,
-     "netWorth": 267089
+     "debts": 65139,
+     "netWorth": 298530
     },
     {
      "year": 20,
@@ -38460,8 +38778,8 @@
      "pension": 113092,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 100310,
-     "netWorth": 294486
+     "debts": 66107,
+     "netWorth": 328689
     },
     {
      "year": 21,
@@ -38470,8 +38788,8 @@
      "pension": 122778,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 104193,
-     "netWorth": 323620
+     "debts": 67088,
+     "netWorth": 360724
     },
     {
      "year": 22,
@@ -38480,8 +38798,8 @@
      "pension": 133045,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 108235,
-     "netWorth": 354599
+     "debts": 68082,
+     "netWorth": 394752
     },
     {
      "year": 23,
@@ -38490,8 +38808,8 @@
      "pension": 143927,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 112443,
-     "netWorth": 387540
+     "debts": 69089,
+     "netWorth": 430894
     },
     {
      "year": 24,
@@ -38500,8 +38818,8 @@
      "pension": 155463,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 116824,
-     "netWorth": 422565
+     "debts": 70109,
+     "netWorth": 469280
     },
     {
      "year": 25,
@@ -38510,8 +38828,8 @@
      "pension": 167691,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 121384,
-     "netWorth": 459804
+     "debts": 71142,
+     "netWorth": 510046
     },
     {
      "year": 26,
@@ -38520,8 +38838,8 @@
      "pension": 180652,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 126132,
-     "netWorth": 499397
+     "debts": 72188,
+     "netWorth": 553340
     },
     {
      "year": 27,
@@ -38530,8 +38848,8 @@
      "pension": 194391,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 131074,
-     "netWorth": 541490
+     "debts": 73248,
+     "netWorth": 599315
     },
     {
      "year": 28,
@@ -38540,8 +38858,8 @@
      "pension": 208955,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 136218,
-     "netWorth": 586239
+     "debts": 74321,
+     "netWorth": 648136
     },
     {
      "year": 29,
@@ -38550,8 +38868,8 @@
      "pension": 224392,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 141573,
-     "netWorth": 633811
+     "debts": 75408,
+     "netWorth": 699977
     },
     {
      "year": 30,
@@ -38560,8 +38878,8 @@
      "pension": 240756,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 147148,
-     "netWorth": 684382
+     "debts": 76509,
+     "netWorth": 755022
     }
    ],
    "borrowing": {
@@ -39824,7 +40142,7 @@
      "inflectionSalary": 46867,
      "salaryGapToInflection": 17867,
      "clearYr": null,
-     "writeOffBal": 209087,
+     "writeOffBal": 88296,
      "willClear": false,
      "totalRepaidProjected": 13862,
      "balancePath": [
@@ -39838,165 +40156,327 @@
       },
       {
        "yr": 2,
-       "bal": 51544
+       "bal": 50499
       },
       {
        "yr": 3,
-       "bal": 53418
+       "bal": 51270
       },
       {
        "yr": 4,
-       "bal": 55365
+       "bal": 52052
       },
       {
        "yr": 5,
-       "bal": 57386
+       "bal": 52845
       },
       {
        "yr": 6,
-       "bal": 59486
+       "bal": 53648
       },
       {
        "yr": 7,
-       "bal": 61666
+       "bal": 54463
       },
       {
        "yr": 8,
-       "bal": 63931
+       "bal": 55289
       },
       {
        "yr": 9,
-       "bal": 66283
+       "bal": 56125
       },
       {
        "yr": 10,
-       "bal": 68727
+       "bal": 56974
       },
       {
        "yr": 11,
-       "bal": 71265
+       "bal": 57833
       },
       {
        "yr": 12,
-       "bal": 73901
+       "bal": 58705
       },
       {
        "yr": 13,
-       "bal": 76640
+       "bal": 59588
       },
       {
        "yr": 14,
-       "bal": 79485
+       "bal": 60483
       },
       {
        "yr": 15,
-       "bal": 82441
+       "bal": 61389
       },
       {
        "yr": 16,
-       "bal": 85513
+       "bal": 62308
       },
       {
        "yr": 17,
-       "bal": 88704
+       "bal": 63239
       },
       {
        "yr": 18,
-       "bal": 92019
+       "bal": 64183
       },
       {
        "yr": 19,
-       "bal": 95464
+       "bal": 65139
       },
       {
        "yr": 20,
-       "bal": 99044
+       "bal": 66107
       },
       {
        "yr": 21,
-       "bal": 102764
+       "bal": 67088
       },
       {
        "yr": 22,
-       "bal": 106629
+       "bal": 68082
       },
       {
        "yr": 23,
-       "bal": 110646
+       "bal": 69089
       },
       {
        "yr": 24,
-       "bal": 114821
+       "bal": 70109
       },
       {
        "yr": 25,
-       "bal": 119159
+       "bal": 71142
       },
       {
        "yr": 26,
-       "bal": 123668
+       "bal": 72188
       },
       {
        "yr": 27,
-       "bal": 128354
+       "bal": 73248
       },
       {
        "yr": 28,
-       "bal": 133225
+       "bal": 74321
       },
       {
        "yr": 29,
-       "bal": 138288
+       "bal": 75408
       },
       {
        "yr": 30,
-       "bal": 143550
+       "bal": 76509
       },
       {
        "yr": 31,
-       "bal": 149020
+       "bal": 77623
       },
       {
        "yr": 32,
-       "bal": 154706
+       "bal": 78752
       },
       {
        "yr": 33,
-       "bal": 160616
+       "bal": 79894
       },
       {
        "yr": 34,
-       "bal": 166760
+       "bal": 81051
       },
       {
        "yr": 35,
-       "bal": 173148
+       "bal": 82222
       },
       {
        "yr": 36,
-       "bal": 179788
+       "bal": 83407
       },
       {
        "yr": 37,
-       "bal": 186691
+       "bal": 84607
       },
       {
        "yr": 38,
-       "bal": 193868
+       "bal": 85822
       },
       {
        "yr": 39,
-       "bal": 201329
+       "bal": 87051
       },
       {
        "yr": 40,
-       "bal": 209087
+       "bal": 88296
       }
      ],
      "turningYr": null,
      "turningTaxYear": null,
      "balanceFallingNow": false,
-     "peakBal": 209087,
+     "peakBal": 88296,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 230
+      },
+      {
+       "rate": 0.02,
+       "repayment": 234
+      },
+      {
+       "rate": 0.02,
+       "repayment": 239
+      },
+      {
+       "rate": 0.02,
+       "repayment": 244
+      },
+      {
+       "rate": 0.02,
+       "repayment": 248
+      },
+      {
+       "rate": 0.02,
+       "repayment": 253
+      },
+      {
+       "rate": 0.02,
+       "repayment": 258
+      },
+      {
+       "rate": 0.02,
+       "repayment": 264
+      },
+      {
+       "rate": 0.02,
+       "repayment": 269
+      },
+      {
+       "rate": 0.02,
+       "repayment": 274
+      },
+      {
+       "rate": 0.02,
+       "repayment": 280
+      },
+      {
+       "rate": 0.02,
+       "repayment": 285
+      },
+      {
+       "rate": 0.02,
+       "repayment": 291
+      },
+      {
+       "rate": 0.02,
+       "repayment": 297
+      },
+      {
+       "rate": 0.02,
+       "repayment": 303
+      },
+      {
+       "rate": 0.02,
+       "repayment": 309
+      },
+      {
+       "rate": 0.02,
+       "repayment": 315
+      },
+      {
+       "rate": 0.02,
+       "repayment": 321
+      },
+      {
+       "rate": 0.02,
+       "repayment": 328
+      },
+      {
+       "rate": 0.02,
+       "repayment": 334
+      },
+      {
+       "rate": 0.02,
+       "repayment": 341
+      },
+      {
+       "rate": 0.02,
+       "repayment": 348
+      },
+      {
+       "rate": 0.02,
+       "repayment": 355
+      },
+      {
+       "rate": 0.02,
+       "repayment": 362
+      },
+      {
+       "rate": 0.02,
+       "repayment": 369
+      },
+      {
+       "rate": 0.02,
+       "repayment": 377
+      },
+      {
+       "rate": 0.02,
+       "repayment": 384
+      },
+      {
+       "rate": 0.02,
+       "repayment": 392
+      },
+      {
+       "rate": 0.02,
+       "repayment": 400
+      },
+      {
+       "rate": 0.02,
+       "repayment": 408
+      },
+      {
+       "rate": 0.02,
+       "repayment": 416
+      },
+      {
+       "rate": 0.02,
+       "repayment": 424
+      },
+      {
+       "rate": 0.02,
+       "repayment": 433
+      },
+      {
+       "rate": 0.02,
+       "repayment": 441
+      },
+      {
+       "rate": 0.02,
+       "repayment": 450
+      },
+      {
+       "rate": 0.02,
+       "repayment": 459
+      },
+      {
+       "rate": 0.02,
+       "repayment": 468
+      },
+      {
+       "rate": 0.02,
+       "repayment": 478
+      },
+      {
+       "rate": 0.02,
+       "repayment": 487
+      },
+      {
+       "rate": 0.02,
+       "repayment": 497
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -40010,32 +40490,32 @@
       {
        "amt": 5000,
        "clearYr": null,
-       "writeOffBal": 192205,
-       "totalPaid": 14180,
+       "writeOffBal": 77025,
+       "totalPaid": 18865,
        "newNetChange": 1533.5,
        "crossesInflection": false
       },
       {
        "amt": 10000,
        "clearYr": null,
-       "writeOffBal": 167259,
-       "totalPaid": 19180,
+       "writeOffBal": 65757,
+       "totalPaid": 23865,
        "newNetChange": 1328.5,
        "crossesInflection": false
       },
       {
        "amt": 20000,
        "clearYr": null,
-       "writeOffBal": 117367,
-       "totalPaid": 29180,
+       "writeOffBal": 43222,
+       "totalPaid": 33865,
        "newNetChange": 918.5,
        "crossesInflection": false
       }
      ],
      "baseProjection": {
       "clearYr": null,
-      "writeOffBal": 217151,
-      "totalPaid": 9180,
+      "writeOffBal": 88292,
+      "totalPaid": 13865,
       "newNetChange": 1738.5,
       "crossesInflection": false
      }
@@ -40722,9 +41202,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 12197,
-      "central": 14349,
-      "high": 15066,
+      "low": 5490,
+      "central": 6459,
+      "high": 6782,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -40789,30 +41269,30 @@
       "values": [
        0,
        118,
-       500,
-       1159,
-       2103,
-       3347,
-       4902,
-       6781,
-       8999,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568,
-       11568
+       303,
+       617,
+       1063,
+       1643,
+       2360,
+       3217,
+       4217,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327,
+       5327
       ]
      },
      {
@@ -41002,7 +41482,7 @@
      "propertyEquity": 0,
      "mortgageBalance": 0,
      "debts": 49739,
-     "netWorth": -21498
+     "netWorth": -21499
     },
     {
      "year": 2,
@@ -41011,8 +41491,8 @@
      "pension": 8221,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 51548,
-     "netWorth": -12511
+     "debts": 50499,
+     "netWorth": -11462
     },
     {
      "year": 3,
@@ -41021,8 +41501,8 @@
      "pension": 11614,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 53432,
-     "netWorth": -2945
+     "debts": 51270,
+     "netWorth": -783
     },
     {
      "year": 4,
@@ -41031,8 +41511,8 @@
      "pension": 15211,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 55393,
-     "netWorth": 7236
+     "debts": 52052,
+     "netWorth": 10578
     },
     {
      "year": 5,
@@ -41041,8 +41521,8 @@
      "pension": 19024,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 57435,
-     "netWorth": 18071
+     "debts": 52845,
+     "netWorth": 22661
     },
     {
      "year": 6,
@@ -41051,8 +41531,8 @@
      "pension": 23065,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 59560,
-     "netWorth": 29602
+     "debts": 53648,
+     "netWorth": 35514
     },
     {
      "year": 7,
@@ -41061,8 +41541,8 @@
      "pension": 27349,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 61773,
-     "netWorth": 41872
+     "debts": 54463,
+     "netWorth": 49182
     },
     {
      "year": 8,
@@ -41071,8 +41551,8 @@
      "pension": 31890,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 64076,
-     "netWorth": 54928
+     "debts": 55289,
+     "netWorth": 63715
     },
     {
      "year": 9,
@@ -41081,8 +41561,8 @@
      "pension": 36704,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 66474,
-     "netWorth": 68819
+     "debts": 56125,
+     "netWorth": 79168
     },
     {
      "year": 10,
@@ -41091,8 +41571,8 @@
      "pension": 41806,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 68970,
-     "netWorth": 83599
+     "debts": 56974,
+     "netWorth": 95595
     },
     {
      "year": 11,
@@ -41101,8 +41581,8 @@
      "pension": 47214,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 71568,
-     "netWorth": 99323
+     "debts": 57833,
+     "netWorth": 113058
     },
     {
      "year": 12,
@@ -41111,8 +41591,8 @@
      "pension": 52947,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 74273,
-     "netWorth": 116051
+     "debts": 58705,
+     "netWorth": 131619
     },
     {
      "year": 13,
@@ -41121,8 +41601,8 @@
      "pension": 59024,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 77088,
-     "netWorth": 133846
+     "debts": 59588,
+     "netWorth": 151347
     },
     {
      "year": 14,
@@ -41131,8 +41611,8 @@
      "pension": 65465,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 80020,
-     "netWorth": 152775
+     "debts": 60483,
+     "netWorth": 172312
     },
     {
      "year": 15,
@@ -41141,8 +41621,8 @@
      "pension": 72293,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 83071,
-     "netWorth": 172910
+     "debts": 61389,
+     "netWorth": 194592
     },
     {
      "year": 16,
@@ -41151,8 +41631,8 @@
      "pension": 79531,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 86247,
-     "netWorth": 194325
+     "debts": 62308,
+     "netWorth": 218265
     },
     {
      "year": 17,
@@ -41161,8 +41641,8 @@
      "pension": 87203,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 89554,
-     "netWorth": 217103
+     "debts": 63239,
+     "netWorth": 243417
     },
     {
      "year": 18,
@@ -41171,8 +41651,8 @@
      "pension": 95335,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 92996,
-     "netWorth": 241327
+     "debts": 64183,
+     "netWorth": 270140
     },
     {
      "year": 19,
@@ -41181,8 +41661,8 @@
      "pension": 103955,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 96579,
-     "netWorth": 267089
+     "debts": 65139,
+     "netWorth": 298530
     },
     {
      "year": 20,
@@ -41191,8 +41671,8 @@
      "pension": 113092,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 100310,
-     "netWorth": 294486
+     "debts": 66107,
+     "netWorth": 328689
     },
     {
      "year": 21,
@@ -41201,8 +41681,8 @@
      "pension": 122778,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 104193,
-     "netWorth": 323620
+     "debts": 67088,
+     "netWorth": 360724
     },
     {
      "year": 22,
@@ -41211,8 +41691,8 @@
      "pension": 133045,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 108235,
-     "netWorth": 354599
+     "debts": 68082,
+     "netWorth": 394752
     },
     {
      "year": 23,
@@ -41221,8 +41701,8 @@
      "pension": 143927,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 112443,
-     "netWorth": 387540
+     "debts": 69089,
+     "netWorth": 430894
     },
     {
      "year": 24,
@@ -41231,8 +41711,8 @@
      "pension": 155463,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 116824,
-     "netWorth": 422565
+     "debts": 70109,
+     "netWorth": 469280
     },
     {
      "year": 25,
@@ -41241,8 +41721,8 @@
      "pension": 167691,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 121384,
-     "netWorth": 459804
+     "debts": 71142,
+     "netWorth": 510046
     },
     {
      "year": 26,
@@ -41251,8 +41731,8 @@
      "pension": 180652,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 126132,
-     "netWorth": 499397
+     "debts": 72188,
+     "netWorth": 553340
     },
     {
      "year": 27,
@@ -41261,8 +41741,8 @@
      "pension": 194391,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 131074,
-     "netWorth": 541490
+     "debts": 73248,
+     "netWorth": 599315
     },
     {
      "year": 28,
@@ -41271,8 +41751,8 @@
      "pension": 208955,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 136218,
-     "netWorth": 586239
+     "debts": 74321,
+     "netWorth": 648136
     },
     {
      "year": 29,
@@ -41281,8 +41761,8 @@
      "pension": 224392,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 141573,
-     "netWorth": 633811
+     "debts": 75408,
+     "netWorth": 699977
     },
     {
      "year": 30,
@@ -41291,8 +41771,8 @@
      "pension": 240756,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 147148,
-     "netWorth": 684382
+     "debts": 76509,
+     "netWorth": 755022
     }
    ],
    "borrowing": {
@@ -42436,7 +42916,7 @@
      "inflectionSalary": 46867,
      "salaryGapToInflection": 17867,
      "clearYr": null,
-     "writeOffBal": 209087,
+     "writeOffBal": 88296,
      "willClear": false,
      "totalRepaidProjected": 13862,
      "balancePath": [
@@ -42450,165 +42930,327 @@
       },
       {
        "yr": 2,
-       "bal": 51544
+       "bal": 50499
       },
       {
        "yr": 3,
-       "bal": 53418
+       "bal": 51270
       },
       {
        "yr": 4,
-       "bal": 55365
+       "bal": 52052
       },
       {
        "yr": 5,
-       "bal": 57386
+       "bal": 52845
       },
       {
        "yr": 6,
-       "bal": 59486
+       "bal": 53648
       },
       {
        "yr": 7,
-       "bal": 61666
+       "bal": 54463
       },
       {
        "yr": 8,
-       "bal": 63931
+       "bal": 55289
       },
       {
        "yr": 9,
-       "bal": 66283
+       "bal": 56125
       },
       {
        "yr": 10,
-       "bal": 68727
+       "bal": 56974
       },
       {
        "yr": 11,
-       "bal": 71265
+       "bal": 57833
       },
       {
        "yr": 12,
-       "bal": 73901
+       "bal": 58705
       },
       {
        "yr": 13,
-       "bal": 76640
+       "bal": 59588
       },
       {
        "yr": 14,
-       "bal": 79485
+       "bal": 60483
       },
       {
        "yr": 15,
-       "bal": 82441
+       "bal": 61389
       },
       {
        "yr": 16,
-       "bal": 85513
+       "bal": 62308
       },
       {
        "yr": 17,
-       "bal": 88704
+       "bal": 63239
       },
       {
        "yr": 18,
-       "bal": 92019
+       "bal": 64183
       },
       {
        "yr": 19,
-       "bal": 95464
+       "bal": 65139
       },
       {
        "yr": 20,
-       "bal": 99044
+       "bal": 66107
       },
       {
        "yr": 21,
-       "bal": 102764
+       "bal": 67088
       },
       {
        "yr": 22,
-       "bal": 106629
+       "bal": 68082
       },
       {
        "yr": 23,
-       "bal": 110646
+       "bal": 69089
       },
       {
        "yr": 24,
-       "bal": 114821
+       "bal": 70109
       },
       {
        "yr": 25,
-       "bal": 119159
+       "bal": 71142
       },
       {
        "yr": 26,
-       "bal": 123668
+       "bal": 72188
       },
       {
        "yr": 27,
-       "bal": 128354
+       "bal": 73248
       },
       {
        "yr": 28,
-       "bal": 133225
+       "bal": 74321
       },
       {
        "yr": 29,
-       "bal": 138288
+       "bal": 75408
       },
       {
        "yr": 30,
-       "bal": 143550
+       "bal": 76509
       },
       {
        "yr": 31,
-       "bal": 149020
+       "bal": 77623
       },
       {
        "yr": 32,
-       "bal": 154706
+       "bal": 78752
       },
       {
        "yr": 33,
-       "bal": 160616
+       "bal": 79894
       },
       {
        "yr": 34,
-       "bal": 166760
+       "bal": 81051
       },
       {
        "yr": 35,
-       "bal": 173148
+       "bal": 82222
       },
       {
        "yr": 36,
-       "bal": 179788
+       "bal": 83407
       },
       {
        "yr": 37,
-       "bal": 186691
+       "bal": 84607
       },
       {
        "yr": 38,
-       "bal": 193868
+       "bal": 85822
       },
       {
        "yr": 39,
-       "bal": 201329
+       "bal": 87051
       },
       {
        "yr": 40,
-       "bal": 209087
+       "bal": 88296
       }
      ],
      "turningYr": null,
      "turningTaxYear": null,
      "balanceFallingNow": false,
-     "peakBal": 209087,
+     "peakBal": 88296,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 230
+      },
+      {
+       "rate": 0.02,
+       "repayment": 234
+      },
+      {
+       "rate": 0.02,
+       "repayment": 239
+      },
+      {
+       "rate": 0.02,
+       "repayment": 244
+      },
+      {
+       "rate": 0.02,
+       "repayment": 248
+      },
+      {
+       "rate": 0.02,
+       "repayment": 253
+      },
+      {
+       "rate": 0.02,
+       "repayment": 258
+      },
+      {
+       "rate": 0.02,
+       "repayment": 264
+      },
+      {
+       "rate": 0.02,
+       "repayment": 269
+      },
+      {
+       "rate": 0.02,
+       "repayment": 274
+      },
+      {
+       "rate": 0.02,
+       "repayment": 280
+      },
+      {
+       "rate": 0.02,
+       "repayment": 285
+      },
+      {
+       "rate": 0.02,
+       "repayment": 291
+      },
+      {
+       "rate": 0.02,
+       "repayment": 297
+      },
+      {
+       "rate": 0.02,
+       "repayment": 303
+      },
+      {
+       "rate": 0.02,
+       "repayment": 309
+      },
+      {
+       "rate": 0.02,
+       "repayment": 315
+      },
+      {
+       "rate": 0.02,
+       "repayment": 321
+      },
+      {
+       "rate": 0.02,
+       "repayment": 328
+      },
+      {
+       "rate": 0.02,
+       "repayment": 334
+      },
+      {
+       "rate": 0.02,
+       "repayment": 341
+      },
+      {
+       "rate": 0.02,
+       "repayment": 348
+      },
+      {
+       "rate": 0.02,
+       "repayment": 355
+      },
+      {
+       "rate": 0.02,
+       "repayment": 362
+      },
+      {
+       "rate": 0.02,
+       "repayment": 369
+      },
+      {
+       "rate": 0.02,
+       "repayment": 377
+      },
+      {
+       "rate": 0.02,
+       "repayment": 384
+      },
+      {
+       "rate": 0.02,
+       "repayment": 392
+      },
+      {
+       "rate": 0.02,
+       "repayment": 400
+      },
+      {
+       "rate": 0.02,
+       "repayment": 408
+      },
+      {
+       "rate": 0.02,
+       "repayment": 416
+      },
+      {
+       "rate": 0.02,
+       "repayment": 424
+      },
+      {
+       "rate": 0.02,
+       "repayment": 433
+      },
+      {
+       "rate": 0.02,
+       "repayment": 441
+      },
+      {
+       "rate": 0.02,
+       "repayment": 450
+      },
+      {
+       "rate": 0.02,
+       "repayment": 459
+      },
+      {
+       "rate": 0.02,
+       "repayment": 468
+      },
+      {
+       "rate": 0.02,
+       "repayment": 478
+      },
+      {
+       "rate": 0.02,
+       "repayment": 487
+      },
+      {
+       "rate": 0.02,
+       "repayment": 497
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -42622,32 +43264,32 @@
       {
        "amt": 5000,
        "clearYr": null,
-       "writeOffBal": 192205,
-       "totalPaid": 14180,
+       "writeOffBal": 77025,
+       "totalPaid": 18865,
        "newNetChange": 1533.5,
        "crossesInflection": false
       },
       {
        "amt": 10000,
        "clearYr": null,
-       "writeOffBal": 167259,
-       "totalPaid": 19180,
+       "writeOffBal": 65757,
+       "totalPaid": 23865,
        "newNetChange": 1328.5,
        "crossesInflection": false
       },
       {
        "amt": 20000,
        "clearYr": null,
-       "writeOffBal": 117367,
-       "totalPaid": 29180,
+       "writeOffBal": 43222,
+       "totalPaid": 33865,
        "newNetChange": 918.5,
        "crossesInflection": false
       }
      ],
      "baseProjection": {
       "clearYr": null,
-      "writeOffBal": 217151,
-      "totalPaid": 9180,
+      "writeOffBal": 88292,
+      "totalPaid": 13865,
       "newNetChange": 1738.5,
       "crossesInflection": false
      }
@@ -43292,9 +43934,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 3630,
-      "central": 4271,
-      "high": 4485,
+      "low": 2919,
+      "central": 3434,
+      "high": 3606,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -43581,8 +44223,8 @@
      "pension": 44420,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 12220,
-     "netWorth": 90538
+     "debts": 12030,
+     "netWorth": 90729
     },
     {
      "year": 3,
@@ -43591,8 +44233,8 @@
      "pension": 52285,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 11249,
-     "netWorth": 118678
+     "debts": 10807,
+     "netWorth": 119121
     },
     {
      "year": 4,
@@ -43601,8 +44243,8 @@
      "pension": 60622,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 10220,
-     "netWorth": 148528
+     "debts": 9462,
+     "netWorth": 149287
     },
     {
      "year": 5,
@@ -43611,8 +44253,8 @@
      "pension": 69460,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 9130,
-     "netWorth": 180193
+     "debts": 7987,
+     "netWorth": 181336
     },
     {
      "year": 6,
@@ -43621,8 +44263,8 @@
      "pension": 78827,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 7973,
-     "netWorth": 213783
+     "debts": 6374,
+     "netWorth": 215383
     },
     {
      "year": 7,
@@ -43631,8 +44273,8 @@
      "pension": 88757,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 6748,
-     "netWorth": 249416
+     "debts": 4615,
+     "netWorth": 251549
     },
     {
      "year": 8,
@@ -43641,8 +44283,8 @@
      "pension": 99282,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 5449,
-     "netWorth": 287217
+     "debts": 2701,
+     "netWorth": 289965
     },
     {
      "year": 9,
@@ -43651,8 +44293,8 @@
      "pension": 110439,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 4072,
-     "netWorth": 327317
+     "debts": 623,
+     "netWorth": 330766
     },
     {
      "year": 10,
@@ -43661,8 +44303,8 @@
      "pension": 122266,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 2612,
-     "netWorth": 369858
+     "debts": 0,
+     "netWorth": 372470
     },
     {
      "year": 11,
@@ -43671,8 +44313,8 @@
      "pension": 134801,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 1065,
-     "netWorth": 414988
+     "debts": 0,
+     "netWorth": 416052
     },
     {
      "year": 12,
@@ -45140,7 +45782,7 @@
      "clearYr": 10,
      "writeOffBal": 0,
      "willClear": true,
-     "totalRepaidProjected": 19160,
+     "totalRepaidProjected": 18227,
      "balancePath": [
       {
        "yr": 0,
@@ -45152,35 +45794,35 @@
       },
       {
        "yr": 2,
-       "bal": 12161
+       "bal": 12030
       },
       {
        "yr": 3,
-       "bal": 11067
+       "bal": 10807
       },
       {
        "yr": 4,
-       "bal": 9845
+       "bal": 9462
       },
       {
        "yr": 5,
-       "bal": 8488
+       "bal": 7987
       },
       {
        "yr": 6,
-       "bal": 6985
+       "bal": 6374
       },
       {
        "yr": 7,
-       "bal": 5326
+       "bal": 4615
       },
       {
        "yr": 8,
-       "bal": 3501
+       "bal": 2701
       },
       {
        "yr": 9,
-       "bal": 1498
+       "bal": 623
       },
       {
        "yr": 10,
@@ -45191,6 +45833,48 @@
      "turningTaxYear": 2026,
      "balanceFallingNow": true,
      "peakBal": 14000,
+     "schedule": [
+      {
+       "rate": 0.06,
+       "repayment": 1704
+      },
+      {
+       "rate": 0.05,
+       "repayment": 1763
+      },
+      {
+       "rate": 0.05,
+       "repayment": 1824
+      },
+      {
+       "rate": 0.05,
+       "repayment": 1885
+      },
+      {
+       "rate": 0.05,
+       "repayment": 1948
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2012
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2078
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2145
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2213
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2282
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": 1.3,
      "pensionGrowthPct": 6,
@@ -45203,9 +45887,9 @@
      "scenarios": [
       {
        "amt": 5000,
-       "clearYr": 7,
+       "clearYr": 6,
        "writeOffBal": 0,
-       "totalPaid": 16158,
+       "totalPaid": 15747,
        "newNetChange": -1164,
        "crossesInflection": false
       },
@@ -45213,15 +45897,15 @@
        "amt": 10000,
        "clearYr": 3,
        "writeOffBal": 0,
-       "totalPaid": 14451,
+       "totalPaid": 14412,
        "newNetChange": -1464,
        "crossesInflection": false
       }
      ],
      "baseProjection": {
-      "clearYr": 12,
+      "clearYr": 10,
       "writeOffBal": 0,
-      "totalPaid": 19872,
+      "totalPaid": 18227,
       "newNetChange": -864,
       "crossesInflection": false
      }
@@ -45908,9 +46592,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 3630,
-      "central": 4271,
-      "high": 4485,
+      "low": 2919,
+      "central": 3434,
+      "high": 3606,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -46197,8 +46881,8 @@
      "pension": 44420,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 12220,
-     "netWorth": 90538
+     "debts": 12030,
+     "netWorth": 90729
     },
     {
      "year": 3,
@@ -46207,8 +46891,8 @@
      "pension": 52285,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 11249,
-     "netWorth": 118678
+     "debts": 10807,
+     "netWorth": 119121
     },
     {
      "year": 4,
@@ -46217,8 +46901,8 @@
      "pension": 60622,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 10220,
-     "netWorth": 148528
+     "debts": 9462,
+     "netWorth": 149287
     },
     {
      "year": 5,
@@ -46227,8 +46911,8 @@
      "pension": 69460,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 9130,
-     "netWorth": 180193
+     "debts": 7987,
+     "netWorth": 181336
     },
     {
      "year": 6,
@@ -46237,8 +46921,8 @@
      "pension": 78827,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 7973,
-     "netWorth": 213783
+     "debts": 6374,
+     "netWorth": 215383
     },
     {
      "year": 7,
@@ -46247,8 +46931,8 @@
      "pension": 88757,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 6748,
-     "netWorth": 249416
+     "debts": 4615,
+     "netWorth": 251549
     },
     {
      "year": 8,
@@ -46257,8 +46941,8 @@
      "pension": 99282,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 5449,
-     "netWorth": 287217
+     "debts": 2701,
+     "netWorth": 289965
     },
     {
      "year": 9,
@@ -46267,8 +46951,8 @@
      "pension": 110439,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 4072,
-     "netWorth": 327317
+     "debts": 623,
+     "netWorth": 330766
     },
     {
      "year": 10,
@@ -46277,8 +46961,8 @@
      "pension": 122266,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 2612,
-     "netWorth": 369858
+     "debts": 0,
+     "netWorth": 372470
     },
     {
      "year": 11,
@@ -46287,8 +46971,8 @@
      "pension": 134801,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 1065,
-     "netWorth": 414988
+     "debts": 0,
+     "netWorth": 416052
     },
     {
      "year": 12,
@@ -47629,7 +48313,7 @@
      "clearYr": 10,
      "writeOffBal": 0,
      "willClear": true,
-     "totalRepaidProjected": 19160,
+     "totalRepaidProjected": 18227,
      "balancePath": [
       {
        "yr": 0,
@@ -47641,35 +48325,35 @@
       },
       {
        "yr": 2,
-       "bal": 12161
+       "bal": 12030
       },
       {
        "yr": 3,
-       "bal": 11067
+       "bal": 10807
       },
       {
        "yr": 4,
-       "bal": 9845
+       "bal": 9462
       },
       {
        "yr": 5,
-       "bal": 8488
+       "bal": 7987
       },
       {
        "yr": 6,
-       "bal": 6985
+       "bal": 6374
       },
       {
        "yr": 7,
-       "bal": 5326
+       "bal": 4615
       },
       {
        "yr": 8,
-       "bal": 3501
+       "bal": 2701
       },
       {
        "yr": 9,
-       "bal": 1498
+       "bal": 623
       },
       {
        "yr": 10,
@@ -47680,6 +48364,48 @@
      "turningTaxYear": 2026,
      "balanceFallingNow": true,
      "peakBal": 14000,
+     "schedule": [
+      {
+       "rate": 0.06,
+       "repayment": 1704
+      },
+      {
+       "rate": 0.05,
+       "repayment": 1763
+      },
+      {
+       "rate": 0.05,
+       "repayment": 1824
+      },
+      {
+       "rate": 0.05,
+       "repayment": 1885
+      },
+      {
+       "rate": 0.05,
+       "repayment": 1948
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2012
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2078
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2145
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2213
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2282
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": 0.9,
      "pensionGrowthPct": 6,
@@ -47692,9 +48418,9 @@
      "scenarios": [
       {
        "amt": 5000,
-       "clearYr": 7,
+       "clearYr": 6,
        "writeOffBal": 0,
-       "totalPaid": 16158,
+       "totalPaid": 15747,
        "newNetChange": -1164,
        "crossesInflection": false
       },
@@ -47702,15 +48428,15 @@
        "amt": 10000,
        "clearYr": 3,
        "writeOffBal": 0,
-       "totalPaid": 14451,
+       "totalPaid": 14412,
        "newNetChange": -1464,
        "crossesInflection": false
       }
      ],
      "baseProjection": {
-      "clearYr": 12,
+      "clearYr": 10,
       "writeOffBal": 0,
-      "totalPaid": 19872,
+      "totalPaid": 18227,
       "newNetChange": -864,
       "crossesInflection": false
      }
@@ -50234,6 +50960,7 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -52669,6 +53396,7 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -55151,6 +55879,7 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -57501,6 +58230,7 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -59981,6 +60711,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4703
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -62329,6 +63065,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4703
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -63744,6 +64486,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4950
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -65074,6 +65822,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4950
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -67971,6 +68725,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4703
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -70767,6 +71527,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4703
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -71401,7 +72167,7 @@
      {
       "label": "Your position",
       "title": "You're not expected to clear this loan before it's written off.",
-      "body": "Your balance is still growing. It starts falling from April 2029, when repayments overtake the interest."
+      "body": "Your balance is still growing. It starts falling from April 2027, when repayments overtake the interest."
      },
      {
       "label": "Why",
@@ -71470,9 +72236,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 17230,
-      "central": 20270,
-      "high": 21284,
+      "low": 13671,
+      "central": 16083,
+      "high": 16887,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -71537,30 +72303,30 @@
       "values": [
        0,
        479,
-       2047,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338
+       1780,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662
       ]
      },
      {
@@ -71759,8 +72525,8 @@
      "pension": 45038,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 38458,
-     "netWorth": 132050
+     "debts": 37981,
+     "netWorth": 132527
     },
     {
      "year": 3,
@@ -71769,8 +72535,8 @@
      "pension": 53240,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 38707,
-     "netWorth": 163119
+     "debts": 37633,
+     "netWorth": 164194
     },
     {
      "year": 4,
@@ -71779,8 +72545,8 @@
      "pension": 61935,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 38972,
-     "netWorth": 196020
+     "debts": 37169,
+     "netWorth": 197823
     },
     {
      "year": 5,
@@ -71789,8 +72555,8 @@
      "pension": 71151,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 39252,
-     "netWorth": 230864
+     "debts": 36634,
+     "netWorth": 233482
     },
     {
      "year": 6,
@@ -71799,8 +72565,8 @@
      "pension": 80920,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 39550,
-     "netWorth": 267766
+     "debts": 36026,
+     "netWorth": 271289
     },
     {
      "year": 7,
@@ -71809,8 +72575,8 @@
      "pension": 91275,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 39865,
-     "netWorth": 306850
+     "debts": 35338,
+     "netWorth": 311377
     },
     {
      "year": 8,
@@ -71819,8 +72585,8 @@
      "pension": 102252,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 40199,
-     "netWorth": 348248
+     "debts": 34566,
+     "netWorth": 353881
     },
     {
      "year": 9,
@@ -71829,8 +72595,8 @@
      "pension": 113887,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 40553,
-     "netWorth": 392099
+     "debts": 33704,
+     "netWorth": 398948
     },
     {
      "year": 10,
@@ -71839,8 +72605,8 @@
      "pension": 126220,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 40928,
-     "netWorth": 438550
+     "debts": 32748,
+     "netWorth": 446730
     },
     {
      "year": 11,
@@ -71849,8 +72615,8 @@
      "pension": 139293,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 41326,
-     "netWorth": 487759
+     "debts": 31690,
+     "netWorth": 497395
     },
     {
      "year": 12,
@@ -71859,8 +72625,8 @@
      "pension": 153151,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 41748,
-     "netWorth": 539890
+     "debts": 30527,
+     "netWorth": 551111
     },
     {
      "year": 13,
@@ -71869,8 +72635,8 @@
      "pension": 167840,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 42195,
-     "netWorth": 595121
+     "debts": 29250,
+     "netWorth": 608065
     },
     {
      "year": 14,
@@ -71879,8 +72645,8 @@
      "pension": 183410,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 42668,
-     "netWorth": 653638
+     "debts": 27853,
+     "netWorth": 668453
     },
     {
      "year": 15,
@@ -71889,8 +72655,8 @@
      "pension": 199915,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 43171,
-     "netWorth": 715639
+     "debts": 26329,
+     "netWorth": 732480
     },
     {
      "year": 16,
@@ -71899,8 +72665,8 @@
      "pension": 217409,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 43703,
-     "netWorth": 781335
+     "debts": 24670,
+     "netWorth": 800368
     },
     {
      "year": 17,
@@ -71909,8 +72675,8 @@
      "pension": 235954,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 44267,
-     "netWorth": 850948
+     "debts": 22870,
+     "netWorth": 872345
     },
     {
      "year": 18,
@@ -71919,8 +72685,8 @@
      "pension": 255611,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 44866,
-     "netWorth": 924716
+     "debts": 20918,
+     "netWorth": 948663
     },
     {
      "year": 19,
@@ -71929,8 +72695,8 @@
      "pension": 276448,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 45500,
-     "netWorth": 1002888
+     "debts": 18807,
+     "netWorth": 1029581
     },
     {
      "year": 20,
@@ -71939,8 +72705,8 @@
      "pension": 298535,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 46172,
-     "netWorth": 1085733
+     "debts": 16527,
+     "netWorth": 1115378
     },
     {
      "year": 21,
@@ -73602,7 +74368,7 @@
      "inflectionSalary": 54718,
      "salaryGapToInflection": 0,
      "clearYr": null,
-     "writeOffBal": 27653,
+     "writeOffBal": 16527,
      "willClear": false,
      "totalRepaidProjected": 53400,
      "balancePath": [
@@ -73616,85 +74382,167 @@
       },
       {
        "yr": 2,
-       "bal": 38364
+       "bal": 37981
       },
       {
        "yr": 3,
-       "bal": 38418
+       "bal": 37633
       },
       {
        "yr": 4,
-       "bal": 38377
+       "bal": 37169
       },
       {
        "yr": 5,
-       "bal": 38287
+       "bal": 36634
       },
       {
        "yr": 6,
-       "bal": 38144
+       "bal": 36026
       },
       {
        "yr": 7,
-       "bal": 37943
+       "bal": 35338
       },
       {
        "yr": 8,
-       "bal": 37681
+       "bal": 34566
       },
       {
        "yr": 9,
-       "bal": 37352
+       "bal": 33704
       },
       {
        "yr": 10,
-       "bal": 36951
+       "bal": 32748
       },
       {
        "yr": 11,
-       "bal": 36474
+       "bal": 31690
       },
       {
        "yr": 12,
-       "bal": 35914
+       "bal": 30527
       },
       {
        "yr": 13,
-       "bal": 35265
+       "bal": 29250
       },
       {
        "yr": 14,
-       "bal": 34522
+       "bal": 27853
       },
       {
        "yr": 15,
-       "bal": 33677
+       "bal": 26329
       },
       {
        "yr": 16,
-       "bal": 32722
+       "bal": 24670
       },
       {
        "yr": 17,
-       "bal": 31651
+       "bal": 22870
       },
       {
        "yr": 18,
-       "bal": 30455
+       "bal": 20918
       },
       {
        "yr": 19,
-       "bal": 29126
+       "bal": 18807
       },
       {
        "yr": 20,
-       "bal": 27653
+       "bal": 16527
       }
      ],
-     "turningYr": 4,
-     "turningTaxYear": 2029,
+     "turningYr": 2,
+     "turningTaxYear": 2027,
      "balanceFallingNow": false,
-     "peakBal": 38418,
+     "peakBal": 38222,
+     "schedule": [
+      {
+       "rate": 0.06,
+       "repayment": 2058
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2152
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2248
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2346
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2393
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2440
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2489
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2539
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2590
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2642
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2694
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2748
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2803
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2859
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2917
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2975
+      },
+      {
+       "rate": 0.05,
+       "repayment": 3034
+      },
+      {
+       "rate": 0.05,
+       "repayment": 3095
+      },
+      {
+       "rate": 0.05,
+       "repayment": 3157
+      },
+      {
+       "rate": 0.05,
+       "repayment": 3220
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": 1.3,
      "pensionGrowthPct": 6,
@@ -73708,32 +74556,32 @@
       {
        "amt": 5000,
        "clearYr": null,
-       "writeOffBal": 30136,
-       "totalPaid": 46157,
+       "writeOffBal": 3134,
+       "totalPaid": 58399,
        "newNetChange": -77.84999999999991,
        "crossesInflection": true
       },
       {
        "amt": 10000,
-       "clearYr": null,
-       "writeOffBal": 14101,
-       "totalPaid": 51157,
+       "clearYr": 17,
+       "writeOffBal": 0,
+       "totalPaid": 53658,
        "newNetChange": -377.8499999999999,
-       "crossesInflection": true
+       "crossesInflection": false
       },
       {
        "amt": 20000,
-       "clearYr": 13,
+       "clearYr": 10,
        "writeOffBal": 0,
-       "totalPaid": 46288,
+       "totalPaid": 43755,
        "newNetChange": -977.8499999999999,
        "crossesInflection": false
       }
      ],
      "baseProjection": {
       "clearYr": null,
-      "writeOffBal": 46172,
-      "totalPaid": 41157,
+      "writeOffBal": 16527,
+      "totalPaid": 53399,
       "newNetChange": 222.1500000000001,
       "crossesInflection": false
      }
@@ -74410,7 +75258,7 @@
      {
       "label": "Your position",
       "title": "You're not expected to clear this loan before it's written off.",
-      "body": "Your balance is still growing. It starts falling from April 2029, when repayments overtake the interest."
+      "body": "Your balance is still growing. It starts falling from April 2027, when repayments overtake the interest."
      },
      {
       "label": "Why",
@@ -74479,9 +75327,9 @@
     "options": [
      {
       "label": "Student loan overpayment",
-      "low": 17230,
-      "central": 20270,
-      "high": 21284,
+      "low": 13671,
+      "central": 16083,
+      "high": 16887,
       "applicable": true,
       "writtenOffAnyway": false,
       "note": null
@@ -74546,30 +75394,30 @@
       "values": [
        0,
        479,
-       2047,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338,
-       4338
+       1780,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662,
+       3662
       ]
      },
      {
@@ -74768,8 +75616,8 @@
      "pension": 45038,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 38458,
-     "netWorth": 132050
+     "debts": 37981,
+     "netWorth": 132527
     },
     {
      "year": 3,
@@ -74778,8 +75626,8 @@
      "pension": 53240,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 38707,
-     "netWorth": 163119
+     "debts": 37633,
+     "netWorth": 164194
     },
     {
      "year": 4,
@@ -74788,8 +75636,8 @@
      "pension": 61935,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 38972,
-     "netWorth": 196020
+     "debts": 37169,
+     "netWorth": 197823
     },
     {
      "year": 5,
@@ -74798,8 +75646,8 @@
      "pension": 71151,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 39252,
-     "netWorth": 230864
+     "debts": 36634,
+     "netWorth": 233482
     },
     {
      "year": 6,
@@ -74808,8 +75656,8 @@
      "pension": 80920,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 39550,
-     "netWorth": 267766
+     "debts": 36026,
+     "netWorth": 271289
     },
     {
      "year": 7,
@@ -74818,8 +75666,8 @@
      "pension": 91275,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 39865,
-     "netWorth": 306850
+     "debts": 35338,
+     "netWorth": 311377
     },
     {
      "year": 8,
@@ -74828,8 +75676,8 @@
      "pension": 102252,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 40199,
-     "netWorth": 348248
+     "debts": 34566,
+     "netWorth": 353881
     },
     {
      "year": 9,
@@ -74838,8 +75686,8 @@
      "pension": 113887,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 40553,
-     "netWorth": 392099
+     "debts": 33704,
+     "netWorth": 398948
     },
     {
      "year": 10,
@@ -74848,8 +75696,8 @@
      "pension": 126220,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 40928,
-     "netWorth": 438550
+     "debts": 32748,
+     "netWorth": 446730
     },
     {
      "year": 11,
@@ -74858,8 +75706,8 @@
      "pension": 139293,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 41326,
-     "netWorth": 487759
+     "debts": 31690,
+     "netWorth": 497395
     },
     {
      "year": 12,
@@ -74868,8 +75716,8 @@
      "pension": 153151,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 41748,
-     "netWorth": 539890
+     "debts": 30527,
+     "netWorth": 551111
     },
     {
      "year": 13,
@@ -74878,8 +75726,8 @@
      "pension": 167840,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 42195,
-     "netWorth": 595121
+     "debts": 29250,
+     "netWorth": 608065
     },
     {
      "year": 14,
@@ -74888,8 +75736,8 @@
      "pension": 183410,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 42668,
-     "netWorth": 653638
+     "debts": 27853,
+     "netWorth": 668453
     },
     {
      "year": 15,
@@ -74898,8 +75746,8 @@
      "pension": 199915,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 43171,
-     "netWorth": 715639
+     "debts": 26329,
+     "netWorth": 732480
     },
     {
      "year": 16,
@@ -74908,8 +75756,8 @@
      "pension": 217409,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 43703,
-     "netWorth": 781335
+     "debts": 24670,
+     "netWorth": 800368
     },
     {
      "year": 17,
@@ -74918,8 +75766,8 @@
      "pension": 235954,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 44267,
-     "netWorth": 850948
+     "debts": 22870,
+     "netWorth": 872345
     },
     {
      "year": 18,
@@ -74928,8 +75776,8 @@
      "pension": 255611,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 44866,
-     "netWorth": 924716
+     "debts": 20918,
+     "netWorth": 948663
     },
     {
      "year": 19,
@@ -74938,8 +75786,8 @@
      "pension": 276448,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 45500,
-     "netWorth": 1002888
+     "debts": 18807,
+     "netWorth": 1029581
     },
     {
      "year": 20,
@@ -74948,8 +75796,8 @@
      "pension": 298535,
      "propertyEquity": 0,
      "mortgageBalance": 0,
-     "debts": 46172,
-     "netWorth": 1085733
+     "debts": 16527,
+     "netWorth": 1115378
     },
     {
      "year": 21,
@@ -76454,7 +77302,7 @@
      "inflectionSalary": 54718,
      "salaryGapToInflection": 0,
      "clearYr": null,
-     "writeOffBal": 27653,
+     "writeOffBal": 16527,
      "willClear": false,
      "totalRepaidProjected": 53400,
      "balancePath": [
@@ -76468,85 +77316,167 @@
       },
       {
        "yr": 2,
-       "bal": 38364
+       "bal": 37981
       },
       {
        "yr": 3,
-       "bal": 38418
+       "bal": 37633
       },
       {
        "yr": 4,
-       "bal": 38377
+       "bal": 37169
       },
       {
        "yr": 5,
-       "bal": 38287
+       "bal": 36634
       },
       {
        "yr": 6,
-       "bal": 38144
+       "bal": 36026
       },
       {
        "yr": 7,
-       "bal": 37943
+       "bal": 35338
       },
       {
        "yr": 8,
-       "bal": 37681
+       "bal": 34566
       },
       {
        "yr": 9,
-       "bal": 37352
+       "bal": 33704
       },
       {
        "yr": 10,
-       "bal": 36951
+       "bal": 32748
       },
       {
        "yr": 11,
-       "bal": 36474
+       "bal": 31690
       },
       {
        "yr": 12,
-       "bal": 35914
+       "bal": 30527
       },
       {
        "yr": 13,
-       "bal": 35265
+       "bal": 29250
       },
       {
        "yr": 14,
-       "bal": 34522
+       "bal": 27853
       },
       {
        "yr": 15,
-       "bal": 33677
+       "bal": 26329
       },
       {
        "yr": 16,
-       "bal": 32722
+       "bal": 24670
       },
       {
        "yr": 17,
-       "bal": 31651
+       "bal": 22870
       },
       {
        "yr": 18,
-       "bal": 30455
+       "bal": 20918
       },
       {
        "yr": 19,
-       "bal": 29126
+       "bal": 18807
       },
       {
        "yr": 20,
-       "bal": 27653
+       "bal": 16527
       }
      ],
-     "turningYr": 4,
-     "turningTaxYear": 2029,
+     "turningYr": 2,
+     "turningTaxYear": 2027,
      "balanceFallingNow": false,
-     "peakBal": 38418,
+     "peakBal": 38222,
+     "schedule": [
+      {
+       "rate": 0.06,
+       "repayment": 2058
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2152
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2248
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2346
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2393
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2440
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2489
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2539
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2590
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2642
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2694
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2748
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2803
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2859
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2917
+      },
+      {
+       "rate": 0.05,
+       "repayment": 2975
+      },
+      {
+       "rate": 0.05,
+       "repayment": 3034
+      },
+      {
+       "rate": 0.05,
+       "repayment": 3095
+      },
+      {
+       "rate": 0.05,
+       "repayment": 3157
+      },
+      {
+       "rate": 0.05,
+       "repayment": 3220
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": 0.9,
      "pensionGrowthPct": 6,
@@ -76560,32 +77490,32 @@
       {
        "amt": 5000,
        "clearYr": null,
-       "writeOffBal": 30136,
-       "totalPaid": 46157,
+       "writeOffBal": 3134,
+       "totalPaid": 58399,
        "newNetChange": -77.84999999999991,
        "crossesInflection": true
       },
       {
        "amt": 10000,
-       "clearYr": null,
-       "writeOffBal": 14101,
-       "totalPaid": 51157,
+       "clearYr": 17,
+       "writeOffBal": 0,
+       "totalPaid": 53658,
        "newNetChange": -377.8499999999999,
-       "crossesInflection": true
+       "crossesInflection": false
       },
       {
        "amt": 20000,
-       "clearYr": 13,
+       "clearYr": 10,
        "writeOffBal": 0,
-       "totalPaid": 46288,
+       "totalPaid": 43755,
        "newNetChange": -977.8499999999999,
        "crossesInflection": false
       }
      ],
      "baseProjection": {
       "clearYr": null,
-      "writeOffBal": 46172,
-      "totalPaid": 41157,
+      "writeOffBal": 16527,
+      "totalPaid": 53399,
       "newNetChange": 222.1500000000001,
       "crossesInflection": false
      }
@@ -78970,6 +79900,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4703
+      }
+     ],
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -81283,6 +82219,12 @@
      "turningTaxYear": null,
      "balanceFallingNow": false,
      "peakBal": 0,
+     "schedule": [
+      {
+       "rate": 0.041,
+       "repayment": 4703
+      }
+     ],
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,

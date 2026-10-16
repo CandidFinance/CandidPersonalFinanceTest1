@@ -1,5 +1,5 @@
 import { isaUsedThisYear as isaUsedAcrossAll } from "./isa.js";
-import { resolveSlRate, slYearsLeft, slThresholdIn, SL_REPAYMENT_RATES } from "./studentLoan.js";
+import { resolveSlRate, slRateIn, slYearsLeft, slThresholdIn, SL_REPAYMENT_RATES, calcStudentLoanScenario } from "./studentLoan.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
 import { retirementAgeFor } from "./metrics.js";
@@ -22,24 +22,25 @@ export function studentLoanTerms(d, m) {
     threshold: year => slThresholdIn(d.studentLoan, taxYear + year),
     repayRate: SL_REPAYMENT_RATES[d.studentLoan] ?? SL_REPAYMENT_RATES.plan1,
     earnings: m.slEarnings ?? m.salary,
+    // The interest rate in each year (0 = this one), on that year's pay.
+    rate: year => slRateIn(d, m.salary * Math.pow(1 + (m.salaryGrowthRate || 0), year), year, taxYear),
   };
 }
 
 // ── Month-by-month student loan simulator ────────────────────────────────────────────
-// `repaymentThreshold` is a figure, or a function of the year (0 = this tax
-// year) for thresholds that rise (studentLoanTerms).
+// `repaymentThreshold` and `interestRate` are figures, or functions of the
+// year (0 = this tax year) for ones that change (studentLoanTerms).
 export function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, interestRate, repaymentThreshold, repaymentRate, maxYears = 30, extraMonthly = 0, trackYearly = false) {
   let balance = openingBalance;
   let salary = annualSalary;
   let totalInterest = 0;
   let totalPaid = 0;
   let monthsToClear = null;
-  const monthlyRate = interestRate / 12;
   // yearlyInterest[y] = cumulative interest accrued through end of year y (index 0 = £0 at start)
   const yearlyInterest = trackYearly ? [0] : null;
   for (let month = 0; month < maxYears * 12; month++) {
     if (balance <= 0) break;
-    const interest = balance * monthlyRate;
+    const interest = balance * (typeof interestRate === "function" ? interestRate(Math.floor(month / 12)) : interestRate) / 12;
     balance += interest;
     totalInterest += interest;
     const threshold = typeof repaymentThreshold === "function" ? repaymentThreshold(Math.floor(month / 12)) : repaymentThreshold;
@@ -196,8 +197,7 @@ export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverrid
 
   // ── 2. Student loan overpayment ────────────────────────────────────────
   if (m.loanBal > 0) {
-    const { writeOffYr, threshold, repayRate, earnings } = studentLoanTerms(d, m);
-    const baseSlRate = resolveSlRate(d, m.salary);
+    const { writeOffYr, threshold, repayRate, earnings, rate: baseSlRate } = studentLoanTerms(d, m);
     // Cap simulation at write-off year — no point modelling interest past when the loan is forgiven
     const simYears = Math.min(horizonYears, writeOffYr);
     // Lump sum reduces opening balance for the overpayment scenario; baseline is unchanged
@@ -305,8 +305,7 @@ export function calcForecastSeries(d, m, surplusOverride, horizonYears, lumpSumO
       // All-zero if written off in both scenarios
       if (opt.writtenOffAnyway) return { label: opt.label, values: years.map(() => 0) };
 
-      const { writeOffYr, threshold, repayRate, earnings } = studentLoanTerms(d, m);
-      const baseSlRate = resolveSlRate(d, m.salary);
+      const { writeOffYr, threshold, repayRate, earnings, rate: baseSlRate } = studentLoanTerms(d, m);
       const overBal = Math.max(0, m.loanBal - lump);
       // Simulate both scenarios once, capturing yearly cumulative interest snapshots
       const simYears = Math.min(horizonYears, writeOffYr);
@@ -456,9 +455,9 @@ export function calcNetWorthTrajectory(d, m, horizonYears) {
   let cashBal = m.totalLiquid || 0;
 
   // Written off when calcStudentLoanScenario says (from when repayments started).
-  const slWriteOffYr = d.studentLoan && d.studentLoan !== "none" ? studentLoanTerms(d, m).writeOffYr : 0;
-  const slRate = d.studentLoan !== "none" ? resolveSlRate(d, m.salary) : 0;
-  const slAnnualRep = m.annualRepayment || 0;
+  // The balance each year as the student loan module projects it
+  // (calcStudentLoanScenario's balancePath): £0 once it clears or is written off.
+  const slPath = d.studentLoan && d.studentLoan !== "none" && m.loanBal > 0 ? calcStudentLoanScenario(d, m).balancePath : [];
 
   const plRate = (+d.personalLoanRate||0) / 100;
   const plAnnualPmt = m.personalLoanAnnualRepayment || 0;
@@ -489,11 +488,7 @@ export function calcNetWorthTrajectory(d, m, horizonYears) {
         const draw = yearsLeft <= 1 ? pensionBal * (1 + PENSION_RATE) : pensionBal * PENSION_RATE / (1 - Math.pow(1 + PENSION_RATE, -yearsLeft));
         pensionBal = Math.max(0, pensionBal * (1 + PENSION_RATE) - draw);
       }
-      if (yr > slWriteOffYr) loanBal = 0;
-      else if (loanBal > 0) {
-        loanBal = loanBal * (1 + slRate);
-        loanBal = Math.max(0, loanBal - Math.min(slAnnualRep, loanBal));
-      }
+      loanBal = slPath[yr]?.bal ?? 0;
       if (plBal > 0) plBal = Math.max(0, plBal * (1 + plRate) - plAnnualPmt);
       const mortMonthlyRate = mortRate / 12;
       for (let mth = 0; mth < 12; mth++) {
