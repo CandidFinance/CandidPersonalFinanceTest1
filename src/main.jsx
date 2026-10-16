@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useLoca
 import posthog from "posthog-js"
 import { MotionConfig } from "framer-motion"
 import { NavBar } from "./NavBar.jsx"
-import { G, GOLD, SERIF, SANS } from "./design-tokens.js"
+import { G, GOLD, CREAM, MUT, SERIF, SANS } from "./design-tokens.js"
 import ErrorBoundary from "./ErrorBoundary.jsx"
 import FeedbackAdmin from "./admin/FeedbackAdmin.jsx"
 import CookieNotice from "./CookieNotice.jsx"
@@ -132,8 +132,8 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
     ? new Date(insightsDate).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })
     : null;
   return (
-    <div style={{ minHeight:"100vh", background:G, display:"flex", flexDirection:"column" }}>
-      <NavBar center="Welcome back"/>
+    <div style={{ minHeight:"100vh", background:CREAM, display:"flex", flexDirection:"column" }}>
+      <NavBar light center="Welcome back"/>
       <div style={{
         flex:1,
         display:"flex", flexDirection:"column",
@@ -142,12 +142,12 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
       }}>
         <div style={{
           fontFamily:SERIF, fontSize:"clamp(52px,10vw,72px)", fontWeight:700,
-          color:GOLD, lineHeight:1, marginBottom:"12px", letterSpacing:"-1px",
+          color:G, lineHeight:1, marginBottom:"12px", letterSpacing:"-1px",
         }}>
           {name || "Welcome"}
         </div>
         <div style={{
-          fontSize:"20px", color:"rgba(250,247,240,0.7)",
+          fontSize:"20px", color:MUT,
           marginBottom:"48px", fontFamily:SERIF, fontStyle:"italic",
         }}>
           Welcome back.
@@ -161,13 +161,13 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
             My Candid report →
           </button>
           {date && (
-            <div style={{fontSize:"11px", color:"rgba(250,247,240,0.35)", marginTop:"-8px"}}>
+            <div style={{fontSize:"11px", color:MUT, marginTop:"-8px"}}>
               Last generated {date}
             </div>
           )}
           <button onClick={onUpdateInputs} style={{
-            background:"transparent", color:GOLD,
-            border:"1.5px solid rgba(196,150,58,0.4)",
+            background:"transparent", color:G,
+            border:"1.5px solid rgba(22,47,36,0.25)",
             borderRadius:"10px", padding:"16px 32px",
             fontSize:"17px", fontWeight:600, cursor:"pointer", fontFamily:SANS,
           }}>
@@ -175,7 +175,7 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
           </button>
           <button onClick={onStartFresh} style={{
             background:"none", border:"none",
-            color:"rgba(250,247,240,0.3)", fontSize:"13px",
+            color:MUT, fontSize:"13px",
             cursor:"pointer", marginTop:"8px", fontFamily:SANS,
           }}>
             Start fresh
