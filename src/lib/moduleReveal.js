@@ -184,6 +184,13 @@ export function studentLoanReveal(d, m) {
   if (d.studentLoan === "none" || !(m.loanBal > 0)) return null;
   const sl = calcStudentLoanScenario(d, m);
   const nothing = { label: ACTION, title: "Nothing to change right now.", body: "Repayments come out of your pay automatically." };
+  // While the balance is still growing, when it starts to fall (the year
+  // repayments overtake the interest), under the answer.
+  const turning = sl.balanceGrowing && !sl.balanceFallingNow
+    ? { body: sl.turningTaxYear
+        ? `Your balance is still growing. It starts falling from April ${sl.turningTaxYear}, when repayments overtake the interest.`
+        : "Your balance is still growing, and on these figures repayments never overtake the interest." }
+    : {};
   if (sl.belowThreshold) {
     return [
       { label: ANSWER, title: "Nothing comes off your pay yet." },
@@ -193,7 +200,7 @@ export function studentLoanReveal(d, m) {
   }
   if (sl.worthOverpaying) {
     return [
-      { label: ANSWER, figure: `${fmt(sl.overpayAnnualBenefit)} a year`, title: "better off overpaying than saving the money." },
+      { label: ANSWER, figure: `${fmt(sl.overpayAnnualBenefit)} a year`, title: "better off overpaying than saving the money.", ...turning },
       { label: WHY, title: `Your loan charges ${sl.slRatePct}%, more than the best savings rate (${sl.cashRate}%) and your pension's assumed ${sl.pensionGrowthPct}% growth.` },
       { label: ACTION, title: m.surplusCash > 0
           ? `Overpaying with some of your ${fmt(m.surplusCash)} of spare cash would earn that.`
@@ -203,13 +210,13 @@ export function studentLoanReveal(d, m) {
   }
   if (!sl.willClear) {
     return [
-      { label: ANSWER, title: "You're not expected to clear this loan before it's written off." },
+      { label: ANSWER, title: "You're not expected to clear this loan before it's written off.", ...turning },
       { label: WHY, title: `Your repayments of about ${fmt(sl.annualRep)} a year don't clear the ${fmt(m.loanBal)} balance in time.` },
       { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "On these assumptions, savings or a pension may earn more than overpaying." },
     ];
   }
   return [
-    { label: ANSWER, figure: `${sl.clearYr} years`, title: "until your loan is paid off." },
+    { label: ANSWER, figure: `${sl.clearYr} years`, title: "until your loan is paid off.", ...turning },
     { label: WHY, title: sl.effectiveBenefit <= 0
         ? `Savings pay ${sl.cashRate}%, more than your loan's ${sl.slRatePct}%, so overpaying doesn't come out ahead.`
         : `Your pension's assumed ${sl.pensionGrowthPct}% growth beats your loan's ${sl.slRatePct}%, so overpaying doesn't come out ahead.` },

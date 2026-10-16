@@ -179,19 +179,33 @@ export function calcStudentLoanScenario(d, m) {
   const earnings = m.slEarnings ?? m.salary;
   const repaymentIn = yr => Math.max(0, earnings * Math.pow(1 + growth, yr - 1) - slThresholdIn(d.studentLoan, taxYear + yr - 1)) * repayRateOf(d.studentLoan);
   let projBal = m.loanBal, writeOffBal = writeOffYr === 0 ? m.loanBal : 0, clearYr = null, totalRepaidProjected = 0;
+  // The balance at the end of each year (year 0 = today), for the trajectory
+  // chart, and the turning point: the first year repayments overtake the
+  // interest, so the balance falls rather than just growing more slowly.
+  const balancePath = [{ yr: 0, bal: Math.round(m.loanBal) }];
+  let turningYr = null;
   for (let yr = 1; yr <= writeOffYr; yr++) {
-    projBal = projBal * (1 + slInterestRate);
+    const interest = projBal * slInterestRate;
+    projBal = projBal + interest;
     // Cap the final year's repayment at what's actually left to clear — otherwise
     // a loan that pays off partway through its final year books a full year's
     // repayment against a balance that no longer exists, overstating total repaid.
     const payment = Math.min(repaymentIn(yr), projBal);
     projBal -= payment;
     totalRepaidProjected += payment;
+    if (turningYr === null && payment > interest) turningYr = yr;
+    balancePath.push({ yr, bal: Math.round(Math.max(0, projBal)) });
     if (projBal <= 0 && !clearYr) { clearYr = yr; break; }
     if (yr === writeOffYr) writeOffBal = Math.max(0, projBal);
   }
   const willClear = clearYr !== null;
   totalRepaidProjected = Math.round(totalRepaidProjected);
+  // Year 1 is this tax year, so the turning point starts in April of
+  // taxYear + turningYr - 1. Null if repayments never overtake the interest
+  // before write-off; already falling if they overtake it this year.
+  const turningTaxYear = turningYr === null ? null : taxYear + turningYr - 1;
+  const balanceFallingNow = turningYr === 1;
+  const peakBal = Math.max(...balancePath.map(p => p.bal));
 
   // Overpaying a loan that will clear anyway earns its interest rate,
   // guaranteed, until the date it would have cleared. It's weighed against:
@@ -221,6 +235,7 @@ export function calcStudentLoanScenario(d, m) {
     threshold, slInterestRate, slRatePct, annualInterest, annualRep,
     belowThreshold, netAnnualChange, balanceGrowing, inflectionSalary, salaryGapToInflection,
     clearYr, writeOffBal: Math.round(writeOffBal), willClear, totalRepaidProjected,
+    balancePath, turningYr, turningTaxYear, balanceFallingNow, peakBal,
     cashRate, effectiveBenefit, pensionGrowthPct: PENSION_GROWTH_PCT, pensionGap, beatsPension,
     worthOverpaying, overpayAnnualBenefit,
   };

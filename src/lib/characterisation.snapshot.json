@@ -2307,6 +2307,40 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 26782,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 22000
+      },
+      {
+       "yr": 1,
+       "bal": 19229
+      },
+      {
+       "yr": 2,
+       "bal": 15955
+      },
+      {
+       "yr": 3,
+       "bal": 12131
+      },
+      {
+       "yr": 4,
+       "bal": 7706
+      },
+      {
+       "yr": 5,
+       "bal": 2679
+      },
+      {
+       "yr": 6,
+       "bal": 0
+      }
+     ],
+     "turningYr": 1,
+     "turningTaxYear": 2026,
+     "balanceFallingNow": true,
+     "peakBal": 22000,
      "cashRate": 4.72,
      "effectiveBenefit": 1.3,
      "pensionGrowthPct": 6,
@@ -4793,6 +4827,40 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 26782,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 22000
+      },
+      {
+       "yr": 1,
+       "bal": 19229
+      },
+      {
+       "yr": 2,
+       "bal": 15955
+      },
+      {
+       "yr": 3,
+       "bal": 12131
+      },
+      {
+       "yr": 4,
+       "bal": 7706
+      },
+      {
+       "yr": 5,
+       "bal": 2679
+      },
+      {
+       "yr": 6,
+       "bal": 0
+      }
+     ],
+     "turningYr": 1,
+     "turningTaxYear": 2026,
+     "balanceFallingNow": true,
+     "peakBal": 22000,
      "cashRate": 5.1,
      "effectiveBenefit": 0.9,
      "pensionGrowthPct": 6,
@@ -7258,6 +7326,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -9603,6 +9685,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -12068,6 +12164,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -14432,6 +14542,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -15846,6 +15970,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -17183,6 +17321,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -19731,6 +19883,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 6246,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 6000
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": 1,
+     "turningTaxYear": 2026,
+     "balanceFallingNow": true,
+     "peakBal": 6000,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -22180,6 +22346,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 6246,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 6000
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": 1,
+     "turningTaxYear": 2026,
+     "balanceFallingNow": true,
+     "peakBal": 6000,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -24672,6 +24852,16 @@
      "writeOffBal": 0,
      "willClear": false,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -27082,6 +27272,16 @@
      "writeOffBal": 0,
      "willClear": false,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -29566,6 +29766,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -31918,6 +32132,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -32551,7 +32779,8 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off."
+      "title": "You're not expected to clear this loan before it's written off.",
+      "body": "Your balance is still growing. It starts falling from April 2047, when repayments overtake the interest."
      },
      {
       "label": "Why",
@@ -34418,6 +34647,116 @@
      "writeOffBal": 44391,
      "willClear": false,
      "totalRepaidProjected": 28028,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 31000
+      },
+      {
+       "yr": 1,
+       "bal": 32064
+      },
+      {
+       "yr": 2,
+       "bal": 33106
+      },
+      {
+       "yr": 3,
+       "bal": 34124
+      },
+      {
+       "yr": 4,
+       "bal": 35117
+      },
+      {
+       "yr": 5,
+       "bal": 36082
+      },
+      {
+       "yr": 6,
+       "bal": 37015
+      },
+      {
+       "yr": 7,
+       "bal": 37916
+      },
+      {
+       "yr": 8,
+       "bal": 38780
+      },
+      {
+       "yr": 9,
+       "bal": 39604
+      },
+      {
+       "yr": 10,
+       "bal": 40387
+      },
+      {
+       "yr": 11,
+       "bal": 41124
+      },
+      {
+       "yr": 12,
+       "bal": 41812
+      },
+      {
+       "yr": 13,
+       "bal": 42447
+      },
+      {
+       "yr": 14,
+       "bal": 43026
+      },
+      {
+       "yr": 15,
+       "bal": 43545
+      },
+      {
+       "yr": 16,
+       "bal": 43999
+      },
+      {
+       "yr": 17,
+       "bal": 44384
+      },
+      {
+       "yr": 18,
+       "bal": 44696
+      },
+      {
+       "yr": 19,
+       "bal": 44930
+      },
+      {
+       "yr": 20,
+       "bal": 45080
+      },
+      {
+       "yr": 21,
+       "bal": 45142
+      },
+      {
+       "yr": 22,
+       "bal": 45110
+      },
+      {
+       "yr": 23,
+       "bal": 44978
+      },
+      {
+       "yr": 24,
+       "bal": 44741
+      },
+      {
+       "yr": 25,
+       "bal": 44391
+      }
+     ],
+     "turningYr": 22,
+     "turningTaxYear": 2047,
+     "balanceFallingNow": false,
+     "peakBal": 45142,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -35118,7 +35457,8 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off."
+      "title": "You're not expected to clear this loan before it's written off.",
+      "body": "Your balance is still growing. It starts falling from April 2047, when repayments overtake the interest."
      },
      {
       "label": "Why",
@@ -36858,6 +37198,116 @@
      "writeOffBal": 44391,
      "willClear": false,
      "totalRepaidProjected": 28028,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 31000
+      },
+      {
+       "yr": 1,
+       "bal": 32064
+      },
+      {
+       "yr": 2,
+       "bal": 33106
+      },
+      {
+       "yr": 3,
+       "bal": 34124
+      },
+      {
+       "yr": 4,
+       "bal": 35117
+      },
+      {
+       "yr": 5,
+       "bal": 36082
+      },
+      {
+       "yr": 6,
+       "bal": 37015
+      },
+      {
+       "yr": 7,
+       "bal": 37916
+      },
+      {
+       "yr": 8,
+       "bal": 38780
+      },
+      {
+       "yr": 9,
+       "bal": 39604
+      },
+      {
+       "yr": 10,
+       "bal": 40387
+      },
+      {
+       "yr": 11,
+       "bal": 41124
+      },
+      {
+       "yr": 12,
+       "bal": 41812
+      },
+      {
+       "yr": 13,
+       "bal": 42447
+      },
+      {
+       "yr": 14,
+       "bal": 43026
+      },
+      {
+       "yr": 15,
+       "bal": 43545
+      },
+      {
+       "yr": 16,
+       "bal": 43999
+      },
+      {
+       "yr": 17,
+       "bal": 44384
+      },
+      {
+       "yr": 18,
+       "bal": 44696
+      },
+      {
+       "yr": 19,
+       "bal": 44930
+      },
+      {
+       "yr": 20,
+       "bal": 45080
+      },
+      {
+       "yr": 21,
+       "bal": 45142
+      },
+      {
+       "yr": 22,
+       "bal": 45110
+      },
+      {
+       "yr": 23,
+       "bal": 44978
+      },
+      {
+       "yr": 24,
+       "bal": 44741
+      },
+      {
+       "yr": 25,
+       "bal": 44391
+      }
+     ],
+     "turningYr": 22,
+     "turningTaxYear": 2047,
+     "balanceFallingNow": false,
+     "peakBal": 45142,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -37516,7 +37966,8 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off."
+      "title": "You're not expected to clear this loan before it's written off.",
+      "body": "Your balance is still growing, and on these figures repayments never overtake the interest."
      },
      {
       "label": "Why",
@@ -39376,6 +39827,176 @@
      "writeOffBal": 209087,
      "willClear": false,
      "totalRepaidProjected": 13862,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 48000
+      },
+      {
+       "yr": 1,
+       "bal": 49739
+      },
+      {
+       "yr": 2,
+       "bal": 51544
+      },
+      {
+       "yr": 3,
+       "bal": 53418
+      },
+      {
+       "yr": 4,
+       "bal": 55365
+      },
+      {
+       "yr": 5,
+       "bal": 57386
+      },
+      {
+       "yr": 6,
+       "bal": 59486
+      },
+      {
+       "yr": 7,
+       "bal": 61666
+      },
+      {
+       "yr": 8,
+       "bal": 63931
+      },
+      {
+       "yr": 9,
+       "bal": 66283
+      },
+      {
+       "yr": 10,
+       "bal": 68727
+      },
+      {
+       "yr": 11,
+       "bal": 71265
+      },
+      {
+       "yr": 12,
+       "bal": 73901
+      },
+      {
+       "yr": 13,
+       "bal": 76640
+      },
+      {
+       "yr": 14,
+       "bal": 79485
+      },
+      {
+       "yr": 15,
+       "bal": 82441
+      },
+      {
+       "yr": 16,
+       "bal": 85513
+      },
+      {
+       "yr": 17,
+       "bal": 88704
+      },
+      {
+       "yr": 18,
+       "bal": 92019
+      },
+      {
+       "yr": 19,
+       "bal": 95464
+      },
+      {
+       "yr": 20,
+       "bal": 99044
+      },
+      {
+       "yr": 21,
+       "bal": 102764
+      },
+      {
+       "yr": 22,
+       "bal": 106629
+      },
+      {
+       "yr": 23,
+       "bal": 110646
+      },
+      {
+       "yr": 24,
+       "bal": 114821
+      },
+      {
+       "yr": 25,
+       "bal": 119159
+      },
+      {
+       "yr": 26,
+       "bal": 123668
+      },
+      {
+       "yr": 27,
+       "bal": 128354
+      },
+      {
+       "yr": 28,
+       "bal": 133225
+      },
+      {
+       "yr": 29,
+       "bal": 138288
+      },
+      {
+       "yr": 30,
+       "bal": 143550
+      },
+      {
+       "yr": 31,
+       "bal": 149020
+      },
+      {
+       "yr": 32,
+       "bal": 154706
+      },
+      {
+       "yr": 33,
+       "bal": 160616
+      },
+      {
+       "yr": 34,
+       "bal": 166760
+      },
+      {
+       "yr": 35,
+       "bal": 173148
+      },
+      {
+       "yr": 36,
+       "bal": 179788
+      },
+      {
+       "yr": 37,
+       "bal": 186691
+      },
+      {
+       "yr": 38,
+       "bal": 193868
+      },
+      {
+       "yr": 39,
+       "bal": 201329
+      },
+      {
+       "yr": 40,
+       "bal": 209087
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 209087,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -40076,7 +40697,8 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off."
+      "title": "You're not expected to clear this loan before it's written off.",
+      "body": "Your balance is still growing, and on these figures repayments never overtake the interest."
      },
      {
       "label": "Why",
@@ -41817,6 +42439,176 @@
      "writeOffBal": 209087,
      "willClear": false,
      "totalRepaidProjected": 13862,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 48000
+      },
+      {
+       "yr": 1,
+       "bal": 49739
+      },
+      {
+       "yr": 2,
+       "bal": 51544
+      },
+      {
+       "yr": 3,
+       "bal": 53418
+      },
+      {
+       "yr": 4,
+       "bal": 55365
+      },
+      {
+       "yr": 5,
+       "bal": 57386
+      },
+      {
+       "yr": 6,
+       "bal": 59486
+      },
+      {
+       "yr": 7,
+       "bal": 61666
+      },
+      {
+       "yr": 8,
+       "bal": 63931
+      },
+      {
+       "yr": 9,
+       "bal": 66283
+      },
+      {
+       "yr": 10,
+       "bal": 68727
+      },
+      {
+       "yr": 11,
+       "bal": 71265
+      },
+      {
+       "yr": 12,
+       "bal": 73901
+      },
+      {
+       "yr": 13,
+       "bal": 76640
+      },
+      {
+       "yr": 14,
+       "bal": 79485
+      },
+      {
+       "yr": 15,
+       "bal": 82441
+      },
+      {
+       "yr": 16,
+       "bal": 85513
+      },
+      {
+       "yr": 17,
+       "bal": 88704
+      },
+      {
+       "yr": 18,
+       "bal": 92019
+      },
+      {
+       "yr": 19,
+       "bal": 95464
+      },
+      {
+       "yr": 20,
+       "bal": 99044
+      },
+      {
+       "yr": 21,
+       "bal": 102764
+      },
+      {
+       "yr": 22,
+       "bal": 106629
+      },
+      {
+       "yr": 23,
+       "bal": 110646
+      },
+      {
+       "yr": 24,
+       "bal": 114821
+      },
+      {
+       "yr": 25,
+       "bal": 119159
+      },
+      {
+       "yr": 26,
+       "bal": 123668
+      },
+      {
+       "yr": 27,
+       "bal": 128354
+      },
+      {
+       "yr": 28,
+       "bal": 133225
+      },
+      {
+       "yr": 29,
+       "bal": 138288
+      },
+      {
+       "yr": 30,
+       "bal": 143550
+      },
+      {
+       "yr": 31,
+       "bal": 149020
+      },
+      {
+       "yr": 32,
+       "bal": 154706
+      },
+      {
+       "yr": 33,
+       "bal": 160616
+      },
+      {
+       "yr": 34,
+       "bal": 166760
+      },
+      {
+       "yr": 35,
+       "bal": 173148
+      },
+      {
+       "yr": 36,
+       "bal": 179788
+      },
+      {
+       "yr": 37,
+       "bal": 186691
+      },
+      {
+       "yr": 38,
+       "bal": 193868
+      },
+      {
+       "yr": 39,
+       "bal": 201329
+      },
+      {
+       "yr": 40,
+       "bal": 209087
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 209087,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -44349,6 +45141,56 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 19160,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 14000
+      },
+      {
+       "yr": 1,
+       "bal": 13136
+      },
+      {
+       "yr": 2,
+       "bal": 12161
+      },
+      {
+       "yr": 3,
+       "bal": 11067
+      },
+      {
+       "yr": 4,
+       "bal": 9845
+      },
+      {
+       "yr": 5,
+       "bal": 8488
+      },
+      {
+       "yr": 6,
+       "bal": 6985
+      },
+      {
+       "yr": 7,
+       "bal": 5326
+      },
+      {
+       "yr": 8,
+       "bal": 3501
+      },
+      {
+       "yr": 9,
+       "bal": 1498
+      },
+      {
+       "yr": 10,
+       "bal": 0
+      }
+     ],
+     "turningYr": 1,
+     "turningTaxYear": 2026,
+     "balanceFallingNow": true,
+     "peakBal": 14000,
      "cashRate": 4.72,
      "effectiveBenefit": 1.3,
      "pensionGrowthPct": 6,
@@ -46788,6 +47630,56 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 19160,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 14000
+      },
+      {
+       "yr": 1,
+       "bal": 13136
+      },
+      {
+       "yr": 2,
+       "bal": 12161
+      },
+      {
+       "yr": 3,
+       "bal": 11067
+      },
+      {
+       "yr": 4,
+       "bal": 9845
+      },
+      {
+       "yr": 5,
+       "bal": 8488
+      },
+      {
+       "yr": 6,
+       "bal": 6985
+      },
+      {
+       "yr": 7,
+       "bal": 5326
+      },
+      {
+       "yr": 8,
+       "bal": 3501
+      },
+      {
+       "yr": 9,
+       "bal": 1498
+      },
+      {
+       "yr": 10,
+       "bal": 0
+      }
+     ],
+     "turningYr": 1,
+     "turningTaxYear": 2026,
+     "balanceFallingNow": true,
+     "peakBal": 14000,
      "cashRate": 5.1,
      "effectiveBenefit": 0.9,
      "pensionGrowthPct": 6,
@@ -49332,6 +50224,16 @@
      "writeOffBal": 0,
      "willClear": false,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -51757,6 +52659,16 @@
      "writeOffBal": 0,
      "willClear": false,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -54229,6 +55141,16 @@
      "writeOffBal": 0,
      "willClear": false,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -56569,6 +57491,16 @@
      "writeOffBal": 0,
      "willClear": false,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -59035,6 +59967,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -61369,6 +62315,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -62770,6 +63730,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -64086,6 +65060,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -66969,6 +67957,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -69751,6 +70753,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,
@@ -70384,7 +71400,8 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off."
+      "title": "You're not expected to clear this loan before it's written off.",
+      "body": "Your balance is still growing. It starts falling from April 2029, when repayments overtake the interest."
      },
      {
       "label": "Why",
@@ -72588,6 +73605,96 @@
      "writeOffBal": 27653,
      "willClear": false,
      "totalRepaidProjected": 53400,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 38000
+      },
+      {
+       "yr": 1,
+       "bal": 38222
+      },
+      {
+       "yr": 2,
+       "bal": 38364
+      },
+      {
+       "yr": 3,
+       "bal": 38418
+      },
+      {
+       "yr": 4,
+       "bal": 38377
+      },
+      {
+       "yr": 5,
+       "bal": 38287
+      },
+      {
+       "yr": 6,
+       "bal": 38144
+      },
+      {
+       "yr": 7,
+       "bal": 37943
+      },
+      {
+       "yr": 8,
+       "bal": 37681
+      },
+      {
+       "yr": 9,
+       "bal": 37352
+      },
+      {
+       "yr": 10,
+       "bal": 36951
+      },
+      {
+       "yr": 11,
+       "bal": 36474
+      },
+      {
+       "yr": 12,
+       "bal": 35914
+      },
+      {
+       "yr": 13,
+       "bal": 35265
+      },
+      {
+       "yr": 14,
+       "bal": 34522
+      },
+      {
+       "yr": 15,
+       "bal": 33677
+      },
+      {
+       "yr": 16,
+       "bal": 32722
+      },
+      {
+       "yr": 17,
+       "bal": 31651
+      },
+      {
+       "yr": 18,
+       "bal": 30455
+      },
+      {
+       "yr": 19,
+       "bal": 29126
+      },
+      {
+       "yr": 20,
+       "bal": 27653
+      }
+     ],
+     "turningYr": 4,
+     "turningTaxYear": 2029,
+     "balanceFallingNow": false,
+     "peakBal": 38418,
      "cashRate": 4.72,
      "effectiveBenefit": 1.3,
      "pensionGrowthPct": 6,
@@ -73302,7 +74409,8 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off."
+      "title": "You're not expected to clear this loan before it's written off.",
+      "body": "Your balance is still growing. It starts falling from April 2029, when repayments overtake the interest."
      },
      {
       "label": "Why",
@@ -75349,6 +76457,96 @@
      "writeOffBal": 27653,
      "willClear": false,
      "totalRepaidProjected": 53400,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 38000
+      },
+      {
+       "yr": 1,
+       "bal": 38222
+      },
+      {
+       "yr": 2,
+       "bal": 38364
+      },
+      {
+       "yr": 3,
+       "bal": 38418
+      },
+      {
+       "yr": 4,
+       "bal": 38377
+      },
+      {
+       "yr": 5,
+       "bal": 38287
+      },
+      {
+       "yr": 6,
+       "bal": 38144
+      },
+      {
+       "yr": 7,
+       "bal": 37943
+      },
+      {
+       "yr": 8,
+       "bal": 37681
+      },
+      {
+       "yr": 9,
+       "bal": 37352
+      },
+      {
+       "yr": 10,
+       "bal": 36951
+      },
+      {
+       "yr": 11,
+       "bal": 36474
+      },
+      {
+       "yr": 12,
+       "bal": 35914
+      },
+      {
+       "yr": 13,
+       "bal": 35265
+      },
+      {
+       "yr": 14,
+       "bal": 34522
+      },
+      {
+       "yr": 15,
+       "bal": 33677
+      },
+      {
+       "yr": 16,
+       "bal": 32722
+      },
+      {
+       "yr": 17,
+       "bal": 31651
+      },
+      {
+       "yr": 18,
+       "bal": 30455
+      },
+      {
+       "yr": 19,
+       "bal": 29126
+      },
+      {
+       "yr": 20,
+       "bal": 27653
+      }
+     ],
+     "turningYr": 4,
+     "turningTaxYear": 2029,
+     "balanceFallingNow": false,
+     "peakBal": 38418,
      "cashRate": 5.1,
      "effectiveBenefit": 0.9,
      "pensionGrowthPct": 6,
@@ -77758,6 +78956,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 4.72,
      "effectiveBenefit": -0.6,
      "pensionGrowthPct": 6,
@@ -80057,6 +81269,20 @@
      "writeOffBal": 0,
      "willClear": true,
      "totalRepaidProjected": 0,
+     "balancePath": [
+      {
+       "yr": 0,
+       "bal": 0
+      },
+      {
+       "yr": 1,
+       "bal": 0
+      }
+     ],
+     "turningYr": null,
+     "turningTaxYear": null,
+     "balanceFallingNow": false,
+     "peakBal": 0,
      "cashRate": 5.1,
      "effectiveBenefit": -1,
      "pensionGrowthPct": 6,

@@ -44,6 +44,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
   const [manualBalanceInput, setManualBalanceInput] = useState(null);
   // The chart sits under "Explore what-ifs": measured once that's open.
   const [chartWrapRef, chartWidth] = useElementWidth(300, [exploreOpen]);
+  const [balanceChartRef, balanceChartWidth] = useElementWidth(300);
   // Default overpayment slider position: the largest round amount the user's
   // spare cash could actually cover, falling back to the smallest option.
   // Computed from `m` alone (no `sl`/guard dependency) so this hook can stay
@@ -87,7 +88,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
         </div>
       )}
 
-      <LoanTrajectory m={m} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput}/>
+      <LoanTrajectory m={m} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
 
       {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
 
@@ -102,9 +103,9 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
   );
 }
 
-// Your loan trajectory: the balance year by year to when it clears or is
-// written off.
-function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput }) {
+// Your loan trajectory: when the balance starts falling, and the balance
+// year by year to when it clears or is written off.
+function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
   const stats = [
     { label:"Interest rate", value:`${sl.slRatePct}%` },
     { label:"Annual interest", value:`${fmt(sl.annualInterest)}/yr` },
@@ -138,6 +139,11 @@ function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualB
     <>
       <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
         <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your loan trajectory</div>
+
+        <TurningPoint sl={sl}/>
+        <div ref={balanceChartRef} style={{width:"100%",marginBottom:"14px"}}>
+          <BalanceChart sl={sl} width={balanceChartWidth}/>
+        </div>
 
         <div style={{marginBottom:"12px"}}>
           <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{m.loanBalEstimated ? "Current balance (estimated)" : "Current balance"}</div>
@@ -215,6 +221,76 @@ function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualB
   );
 }
 
+// The turning point: the year repayments overtake the interest, so the
+// balance starts falling rather than just growing more slowly.
+function TurningPoint({ sl }) {
+  const [figure, note] = sl.balanceFallingNow
+    ? ["Falling now", "Your repayments already outpace the interest."]
+    : sl.turningTaxYear
+      ? [`April ${sl.turningTaxYear}`, "Until then it keeps growing, even with repayments coming off your pay."]
+      : ["Not before write-off", "On these figures, repayments never overtake the interest."];
+  return (
+    <div style={{marginBottom:"10px"}}>
+      <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{sl.balanceFallingNow ? "Your balance" : "Your balance starts falling"}</div>
+      <div style={{fontFamily:SERIF,fontSize:"28px",color:G,fontWeight:700,lineHeight:1.15,marginTop:"2px"}}>{figure}</div>
+      <div style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>{note}</div>
+    </div>
+  );
+}
+
+// The balance year by year (sl.balancePath), its peak marked: the peak is
+// the turning point, where repayments overtake the interest.
+function BalanceChart({ sl, width }) {
+  const path = sl.balancePath || [];
+  if (path.length < 2) return null;
+  const VW = width, VH = 160, PL = 36, PR = 8, PT = 24, PB = 20;
+  const lastYr = path[path.length - 1].yr;
+  // The y-axis spans the balance's own range, not £0 up, so a hump of a few
+  // thousand on a £40k loan is visible; the labelled gridlines keep the scale
+  // honest. A loan that clears runs to £0, so its axis starts there anyway.
+  const lo = Math.min(...path.map(p => p.bal)), hi = sl.peakBal;
+  const pad = (hi - lo) * 0.25 || hi * 0.05 || 1;
+  const yMin = Math.max(0, lo - pad), yMax = hi + pad * 0.5;
+  const sx = yr => PL + (yr / lastYr) * (VW - PL - PR);
+  const sy = bal => PT + (1 - (bal - yMin) / (yMax - yMin)) * (VH - PT - PB);
+  const yTicks = [yMin, (yMin + yMax) / 2, yMax];
+  const line = path.map((p, i) => `${i ? "L" : "M"}${sx(p.yr).toFixed(1)},${sy(p.bal).toFixed(1)}`).join(" ");
+  const startYear = sl.writeOffTaxYear - sl.writeOffYr;
+  // The peak is marked only when the balance climbs to it first and falls
+  // after it: today's balance if it's already falling, the last year's if
+  // it never turns (then the write-off label covers it).
+  const peakIdx = path.findIndex(p => p.bal === sl.peakBal);
+  const showPeak = peakIdx > 0 && peakIdx < path.length - 1;
+  const peak = path[peakIdx];
+  const end = path[path.length - 1];
+  const anchorFor = x => (x < VW * 0.25 ? "start" : x > VW * 0.75 ? "end" : "middle");
+  return (
+    <svg width={VW} height={VH} viewBox={`0 0 ${VW} ${VH}`} style={{display:"block"}} role="img"
+      aria-label={`Loan balance from ${fmt(path[0].bal)} today${showPeak ? `, peaking at ${fmt(peak.bal)}` : ""}, to ${end.bal > 0 ? `${fmt(end.bal)} written off` : "cleared"} in ${startYear + lastYr}`}>
+      {yTicks.map((t, i) => (
+        <g key={i}>
+          <line x1={PL} x2={VW-PR} y1={sy(t)} y2={sy(t)} stroke={i ? "rgba(22,47,36,0.08)" : "rgba(22,47,36,0.25)"} strokeWidth={i ? 1 : 1.3}/>
+          <text x={PL-6} y={sy(t)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtK(Math.round(t / 1000) * 1000)}</text>
+        </g>
+      ))}
+      <path d={line} fill="none" stroke={G} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      {showPeak && (
+        <g>
+          <circle cx={sx(peak.yr)} cy={sy(peak.bal)} r="4.5" fill={GOLD} stroke={WHITE} strokeWidth="1.5"/>
+          <text x={sx(peak.yr)} y={sy(peak.bal) - 10} fontSize="10" fontWeight="700" fill={G} textAnchor={anchorFor(sx(peak.yr))}>Peak {fmt(peak.bal)}</text>
+        </g>
+      )}
+      {/* Under the line's end while it's falling, over it while it's rising,
+          so the label never sits on the line itself. */}
+      {end.bal > 0 && (
+        <text x={VW-PR} y={sy(end.bal) + (end.bal < path[path.length - 2].bal ? 16 : -10)} fontSize="10" fontWeight="700" fill={G} textAnchor="end">{fmt(end.bal)} written off</text>
+      )}
+      <text x={PL} y={VH-4} fontSize="9" fontWeight="700" fill={MUT} textAnchor="start">{startYear}</text>
+      <text x={VW-PR} y={VH-4} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{startYear + lastYr}</text>
+    </svg>
+  );
+}
+
 // The overpaying tile: whether overpaying beats saving or the pension, and
 // by how much a year.
 function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
@@ -236,7 +312,9 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
             <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
               <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Why your balance is growing</div>
               <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-                Repayments (9% of what you earn over the threshold) haven't caught up with the interest yet. At a {fmt(sl.inflectionSalary)} salary they'd match it, and above that your balance starts falling.
+                Repayments (9% of what you earn over the threshold) haven't caught up with the interest yet. {sl.turningTaxYear
+                  ? `With your pay rising as expected, they overtake it from April ${sl.turningTaxYear}, and your balance starts falling.`
+                  : "On these figures they don't overtake it before the loan is written off."}
               </p>
             </div>
           )}
