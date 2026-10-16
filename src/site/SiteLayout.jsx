@@ -7,13 +7,16 @@ import SiteFooter from "./SiteFooter.jsx";
 export default function SiteLayout({ children }) {
   return (
     <div style={{ background: `linear-gradient(180deg, ${CREAM} 0%, ${WHITE} 60%, ${WHITE} 100%)` }}>
-      <div style={{ fontFamily: SANS }}>
+      {/* At least a screen tall, with the page's content taking up the
+          slack, so on a short page (About, Sign in) the footer still sits
+          at the bottom of the screen rather than partway up it. */}
+      <div style={{ fontFamily: SANS, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <SiteHeader />
         {/* Reserves the header's own height — the header is `position: fixed`
             (so it can slide off-screen without leaving a permanent gap),
             which means it doesn't push this content down on its own. */}
-        <div style={{ height: HEADER_HEIGHT }} />
-        {children}
+        <div style={{ height: HEADER_HEIGHT, flexShrink: 0 }} />
+        <main style={{ flex: 1 }}>{children}</main>
         <SiteFooter />
       </div>
     </div>

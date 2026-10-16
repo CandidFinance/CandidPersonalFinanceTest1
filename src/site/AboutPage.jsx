@@ -9,11 +9,17 @@ import SiteLayout from "./SiteLayout.jsx";
 const TILES = [
   {
     title: "Why",
-    body: "Pension, ISA, savings, student loan, mortgage, a bonus, a pay rise that edges you past £100,000… each decision affects the others. Unpicking all of it to see what your money could really be doing is hard, and most people never get the time.",
+    body: [
+      "Managing your finances optimally is hard, time-consuming, and usually requires costly professional advice. Between pensions, ISAs, savings accounts, student loans, mortgages, and tax thresholds—like a pay rise pushing you past £100,000—the moving parts stack up quickly.",
+      "To make matters worse, the goalposts keep moving. With every government budget, autumn statement, and tax review, allowance rules and thresholds change.",
+      "The real challenge is that none of these pieces exist in isolation—every decision directly impacts the others. Unpicking how shifting rules interact across your whole balance sheet takes hours most people simply don't have. We built Candid to do the heavy lifting for you.",
+    ],
   },
   {
     title: "Who",
-    body: "Candid is built by a team of passionate, experienced people who started out trying to solve their own problem. Now we want to share the solution.",
+    body: [
+      "Candid is built by a team of passionate, experienced people who started out trying to solve their own problem. Now we want to share the solution.",
+    ],
   },
 ];
 
@@ -32,7 +38,7 @@ export default function AboutPage() {
       <section style={{ maxWidth: "960px", margin: "0 auto", padding: "64px 24px 96px", boxSizing: "border-box" }}>
         <div style={{ maxWidth: "760px", margin: "0 auto 48px", textAlign: "center" }}>
           <h1 style={{ fontFamily: SERIF, fontSize: "clamp(30px,4.6vw,46px)", fontWeight: 700, color: G, lineHeight: 1.15, letterSpacing: "-0.01em", margin: 0 }}>
-            Candid is being built to help stop you from losing thousands you didn't know you were wasting.
+            Built to stop you wasting thousands on financial blind spots
           </h1>
           <p style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, margin: "20px auto 0", maxWidth: "620px" }}>
             Our aim is simple: help people keep more of what they earn. We find the tax traps, idle cash and unused allowances costing you.
@@ -45,7 +51,9 @@ export default function AboutPage() {
               boxShadow: "0 4px 24px rgba(22,47,36,0.07)", borderTop: `4px solid ${GOLD}`,
             }}>
               <h2 style={{ fontFamily: SERIF, fontSize: "26px", fontWeight: 700, color: G, margin: 0 }}>{tile.title}</h2>
-              <p style={{ fontSize: "15px", color: MUT, lineHeight: 1.7, margin: "12px 0 0" }}>{tile.body}</p>
+              {tile.body.map(para => (
+                <p key={para} style={{ fontSize: "15px", color: MUT, lineHeight: 1.7, margin: "12px 0 0" }}>{para}</p>
+              ))}
             </div>
           ))}
         </div>

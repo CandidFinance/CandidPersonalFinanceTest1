@@ -17,6 +17,7 @@ const TABS = [
   { to: "/", label: "Home" },
   { to: "/the-problem", label: "The Problem" },
   { to: "/how-it-works", label: "How it works" },
+  { to: "/about", label: "About" },
 ];
 
 // Below this width the tabs + Start button (desktop's `display:flex`
@@ -27,7 +28,9 @@ const TABS = [
 // exported) since every bit of the swap below is expressed as CSS/media
 // queries, not JS branching — matching the same scoped-`<style>` +
 // `@media` pattern already used for the "How it works" 2x2 grid.
-const MOBILE_BREAKPOINT = 768;
+// 1000: with four tabs (About added Oct 2026) the row needs about 960px, more
+// with the dev-tools button reserving space (local builds).
+const MOBILE_BREAKPOINT = 1000;
 
 // Only ever true in dev/preview builds (see main.jsx's own SHOW_DEV_TOOLS) —
 // reserves room in the header so the Start button never sits under the

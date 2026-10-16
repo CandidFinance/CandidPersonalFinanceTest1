@@ -25,7 +25,7 @@ const PAGES = [
     path: "/about", file: "prerendered/about.html",
     meta: {
       title: "About | Candid",
-      description: "Candid is being built to help stop you losing thousands you didn't know you were wasting: the tax traps, idle cash and unused allowances costing you.",
+      description: "Built to stop you wasting thousands on financial blind spots: the tax traps, idle cash and unused allowances costing you.",
       url: `${SITE_URL}/about`,
     },
   },
