@@ -6,10 +6,9 @@ import MobileTabBar from "./MobileTabBar.jsx";
 // Shell for every /app/* mobile screen: a light NavBar (the "Candid."
 // wordmark on the left, above the bar's hairline, plus an optional page-
 // specific action on the right — see NavBar's `light` mode) and a scrollable
-// content area above the fixed mobile tab bar. `pageLabel` is
-// optional and currently unset everywhere: the tab bar shows which of the 4
-// tab-bar screens is active, and a module deep dive already carries its own
-// title heading in its content, so a nav-bar title would just repeat it.
+// content area above the fixed mobile tab bar. `pageLabel` is set on every
+// screen below the tabs (a module, Property, Your inputs) and left unset on
+// the 4 tab screens themselves, where the tab bar already says where you are.
 export default function MobileLayout({ pageLabel, activeTab, headerRight, assist = null, children }) {
   const navigate = useNavigate();
   return (

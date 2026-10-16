@@ -707,7 +707,7 @@ export default function AppShell() {
     // Steps 2 and 3 stay locked until step 1 is complete, including for a direct link.
     if (propertyStep !== "readiness" && readinessMissing(d, m).length > 0) return <Navigate to="/app/property" replace />;
     return (
-      <MobileLayout assist={assistNode} activeTab="modules"
+      <MobileLayout assist={assistNode} activeTab="modules" pageLabel="Property"
         headerRight={modulesBackButton}>
         <MobilePropertyScreen step={propertyStep} d={d} m={m} set={set} regionalRows={regionalRates} marketRates={marketRates} onAddInputs={openMobileStep}
           onOpenModule={key => navigate(`/app/module/${key}`)}
@@ -729,7 +729,7 @@ export default function AppShell() {
     const open = new URLSearchParams(window.location.search).get("open");
     const back = () => { const to = inputsReturnPath.current || "/app/home"; inputsReturnPath.current = null; navigate(to); scrollToTop(); };
     return (
-      <MobileLayout assist={assistNode} activeTab={null}
+      <MobileLayout assist={assistNode} activeTab={null} pageLabel="Your inputs"
         headerRight={<button onClick={back} style={{background:G,border:"none",borderRadius:"100px",padding:"7px 16px",cursor:"pointer",color:WHITE,fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>Done</button>}>
         <MobileInputsScreen key={open || "all"} d={d} m={m} set={set} open={open}
           onStartModule={key => navigate(`/app/module/${key}`)}
@@ -747,6 +747,7 @@ export default function AppShell() {
 
   if (pathname.startsWith("/app/module/")) {
     const mobileActiveModule = params.moduleKey || null;
+    const moduleLabel = ASSIST_MODULE_LABELS[mobileActiveModule];
     if (!mobileActiveModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(mobileActiveModule)) || !MODULE_META.some(mm => mm.key === mobileActiveModule)) {
       return <Navigate to="/app/modules" replace />;
     }
@@ -755,7 +756,7 @@ export default function AppShell() {
     // the answer, takes over, and its answers are saved to the user's row.
     if (moduleGuideStarts(mobileActiveModule, d)) {
       return (
-        <MobileLayout assist={assistNode} activeTab="modules"
+        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
           <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set}
             onDone={(how, at) => {
@@ -790,7 +791,7 @@ export default function AppShell() {
     // then goes straight on to the answer.
     if (isLocked(d, mobileActiveModule)) {
       return (
-        <MobileLayout assist={assistNode} activeTab="modules"
+        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
           <MobileUnlock moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses}
             onLeaveEmail={email => {
@@ -811,7 +812,7 @@ export default function AppShell() {
     }
     if (revealModule === mobileActiveModule && revealSteps) {
       return (
-        <MobileLayout assist={assistNode} activeTab="modules"
+        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
           <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps}
             onDone={(how, step) => {
@@ -823,7 +824,7 @@ export default function AppShell() {
       );
     }
     return (
-      <MobileLayout assist={assistNode} activeTab="modules" headerRight={editInputsFor(mobileActiveModule)}>
+      <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={editInputsFor(mobileActiveModule)}>
         {/* Keyed by module, so each module page opens fresh, every tile collapsed,
             however it's reached. */}
         <MobileModuleDeepDive key={mobileActiveModule} moduleKey={mobileActiveModule}
