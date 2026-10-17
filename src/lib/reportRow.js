@@ -22,9 +22,6 @@ export function rowInputFields(d, m) {
     // supabase/hand-run/supabase_financial_goals_migration.sql
     financial_goals: (d.financialGoals || []).join(", ") || null,
     age: +d.age||null,
-    // supabase/hand-run/supabase_employment_migration.sql
-    employment_status: d.employmentStatus || null,
-    not_working_reason: d.employmentStatus === "not_working" ? (d.notWorkingReason || null) : null,
     salary: +d.salary||null,
     other_income: +d.otherIncome||null,
     tax_band: m.taxBandLabel,
