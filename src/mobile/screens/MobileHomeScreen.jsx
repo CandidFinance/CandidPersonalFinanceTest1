@@ -15,7 +15,6 @@ import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/prioriti
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import GoalsCard from "./GoalsCard.jsx";
 import GainedFromChanges from "../GainedFromChanges.jsx";
-import { SignInSetupCard } from "../SignInSetup.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
@@ -221,9 +220,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
       {/* Asked once, after the score appears; never blocks anything. */}
       {!d.goalsAsked && <GoalsCard d={d} set={set} onDone={onGoalsDone}/>}
-
-      {/* A subscriber's Face ID or password, until one is set up (SignInSetup.jsx). */}
-      <SignInSetupCard/>
 
       {stillToDo.length > 0 && (
         <div style={{marginTop:"22px"}}>

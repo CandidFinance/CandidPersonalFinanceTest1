@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
+import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
-import { G, WHITE, MUT, TEXT, ERROR_TEXT, RADIUS_CARD } from "../design-tokens.js";
+import { NavBar } from "../NavBar.jsx";
+import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM } from "../design-tokens.js";
 import { accessInfo, accountSignIns, addPasskey, setPassword, passkeysSupported, hasAccess } from "../lib/entitlement.js";
-import { reportStorageFailure } from "../lib/storage.js";
 
 // A subscriber's ways to sign in on another device (src/site/SignInPage.jsx):
 // a passkey on this device (Face ID, Touch ID, a phone's screen lock) and a
-// password. Shown in Edit inputs' subscription section, and once on Home
-// (SignInSetupCard) until one is set up or it's dismissed.
+// password. Set up on a required screen once subscribed (SignInGate), and
+// added to or changed in Edit inputs' subscription section.
 
 // What's set up ({ passkeys, password }), from the server; null until known
 // or without a subscription.
@@ -94,30 +95,86 @@ export default function SignInSetup() {
   );
 }
 
-// Once on Home, for a subscriber with neither set up: "Not now" hides it
-// for good on this device; setting either up hides it too.
-const DISMISSED_KEY = "candid_sign_in_setup_dismissed";
-export function SignInSetupCard() {
-  const [signIns, reload] = useSignIns();
-  const [dismissed, setDismissed] = useState(() => {
-    try { return !!localStorage.getItem(DISMISSED_KEY); } catch (e) { reportStorageFailure("read_sign_in_setup_dismissed", e); return false; }
-  });
-  // Shown until the first one is set up, then kept for this visit so the
-  // "added" message is seen.
-  const [shown, setShown] = useState(false);
-  const none = signIns && !signIns.passkeys && !signIns.password;
-  useEffect(() => { if (none) setShown(true); }, [none]);
-  if (dismissed || !signIns || !shown) return null;
-  const dismiss = () => {
-    try { localStorage.setItem(DISMISSED_KEY, "1"); } catch (e) { reportStorageFailure("save_sign_in_setup_dismissed", e); }
-    setDismissed(true);
+// Required of every subscriber with neither a passkey nor a password: a
+// screen over the app, straight after paying (before the module's answer)
+// and, for anyone who subscribed before this, on their next visit. No way
+// past it but setting one up, so every subscriber can sign in elsewhere
+// without an email link. What's set up is remembered for the visit, so
+// moving between screens doesn't ask the server again.
+let known = null; // { email, signIns }
+export function SignInGate() {
+  const email = hasAccess() ? accessInfo()?.email : null;
+  const [signIns, setSignIns] = useState(() => (known && known.email === email ? known.signIns : null));
+  useEffect(() => {
+    const load = () => {
+      const who = hasAccess() ? accessInfo()?.email : null;
+      if (!who) { setSignIns(null); return; }
+      if (known?.email === who) { setSignIns(known.signIns); return; }
+      accountSignIns().then(s => { known = { email: who, signIns: s }; setSignIns(s); }).catch(() => {});
+    };
+    load();
+    window.addEventListener("candid-access", load);
+    return () => window.removeEventListener("candid-access", load);
+  }, []);
+  if (!email || !signIns || signIns.passkeys || signIns.password) return null;
+  const done = (how, s) => {
+    posthog.capture("sign_in_created", { how });
+    known = { email, signIns: s };
+    setSignIns(s);
   };
+  return <CreateSignIn email={email} onDone={done}/>;
+}
+
+function CreateSignIn({ email, onDone }) {
+  const [busy, setBusy] = useState(null);
+  const [error, setError] = useState(null);
+  const [pw, setPw] = useState("");
+  const canPasskey = passkeysSupported();
+  const run = async (how, fn) => {
+    setBusy(how); setError(null);
+    try { await fn(); onDone(how, await accountSignIns()); }
+    catch (e) { if (e.message !== "cancelled") setError(e.message); setBusy(null); }
+  };
+  const withPassword = e => {
+    e.preventDefault();
+    if (pw.length < 10) { setError("Use at least 10 characters."); return; }
+    run("password", () => setPassword(pw));
+  };
+  const button = primary => ({
+    width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
+    background: primary ? G : WHITE, color: primary ? WHITE : G, border: primary ? "none" : `1.5px solid ${G}`,
+    borderRadius:"100px", padding:"15px", fontSize:"15.5px", fontWeight:700, fontFamily:"inherit", cursor: busy ? "default" : "pointer",
+  });
   return (
-    <div style={{marginTop:"22px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.05)",padding:"18px"}}>
-      <div style={{fontSize:"16px",fontWeight:700,color:TEXT,lineHeight:1.35}}>Sign in faster on your other devices</div>
-      <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 6px"}}>Add Face ID or a password, so signing in elsewhere doesn't need an email link.</p>
-      <SignInMethods signIns={signIns} reload={reload}/>
-      {none && <button type="button" onClick={dismiss} style={{marginTop:"6px",background:"none",border:"none",padding:0,color:MUT,fontSize:"13px",fontWeight:600,fontFamily:"inherit",cursor:"pointer"}}>Not now</button>}
+    <div role="dialog" aria-modal="true" aria-labelledby="create-sign-in-title"
+      style={{position:"fixed",inset:0,zIndex:6000,background:CREAM,overflowY:"auto"}}>
+      <NavBar light/>
+      <div style={{maxWidth:"420px",margin:"0 auto",padding:"32px 20px 40px"}}>
+        <h1 id="create-sign-in-title" style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,margin:0,lineHeight:1.2}}>Create your sign-in</h1>
+        <p style={{fontSize:"15px",color:MUT,lineHeight:1.6,margin:"12px 0 0"}}>So you can open Candid on another device and pick up where you left off. Your account is {email}.</p>
+
+        {canPasskey && (
+          <>
+            <button type="button" disabled={!!busy} onClick={() => run("passkey", addPasskey)} style={{...button(true),marginTop:"28px"}}>
+              <ScanFace size={19}/>{busy === "passkey" ? "Waiting for your device…" : "Use Face ID or passkey"}
+            </button>
+            <div style={{display:"flex",alignItems:"center",gap:"12px",margin:"22px 0 14px"}}>
+              <hr style={{flex:1,border:"none",borderTop:"1px solid rgba(22,47,36,0.12)",margin:0}}/>
+              <span style={{fontSize:"12.5px",color:MUT}}>or create a password</span>
+              <hr style={{flex:1,border:"none",borderTop:"1px solid rgba(22,47,36,0.12)",margin:0}}/>
+            </div>
+          </>
+        )}
+
+        <form onSubmit={withPassword} style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:canPasskey ? 0 : "28px"}}>
+          {/* Lets a password manager (iCloud Keychain) save it against the right email. */}
+          <input type="email" name="username" autoComplete="username" value={email} readOnly style={{display:"none"}}/>
+          <input type="password" name="new-password" autoComplete="new-password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Password, at least 10 characters" aria-label="New password"
+            style={{boxSizing:"border-box",width:"100%",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+          <button type="submit" disabled={!!busy} style={button(!canPasskey)}>{busy === "password" ? "Saving…" : "Create password"}</button>
+          {error && <div role="alert" style={{fontSize:"13px",color:ERROR_TEXT}}>{error}</div>}
+        </form>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { NavBar } from "../NavBar.jsx";
 import { CREAM } from "../design-tokens.js";
 import MobileTabBar from "./MobileTabBar.jsx";
+import { SignInGate } from "./SignInSetup.jsx";
 
 // Shell for every /app/* mobile screen: a light NavBar (the "Candid."
 // wordmark on the left, above the bar's hairline, plus an optional page-
@@ -26,6 +27,8 @@ export default function MobileLayout({ pageLabel, activeTab, headerRight, assist
       </div>
       <MobileTabBar active={activeTab} onNavigate={navigate} />
       {assist}
+      {/* A subscriber without a passkey or password sets one up first. */}
+      <SignInGate/>
     </div>
   );
 }
