@@ -168,7 +168,7 @@ function checks(d, m, out) {
 }
 
 const arg = process.argv.slice(2);
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1:")}` || process.argv[1]?.endsWith("fringe-personas.js")) {
+if (process.argv[1]?.endsWith("fringe-personas.js")) {
   const pick = arg.filter(a => !a.startsWith("--"));
   const results = PERSONAS.filter(p => !pick.length || pick.includes(p.id)).map(runPersona);
   if (arg.includes("--json")) console.log(JSON.stringify(results, null, 2));

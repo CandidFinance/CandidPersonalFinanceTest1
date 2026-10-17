@@ -744,8 +744,10 @@ export default function AppShell() {
   }
 
   if (pathname === "/app/chat") return (
-    <MobileLayout assist={assistNode} activeTab="chat">
-      <MobileChatScreen/>
+    // No Candid Assist button here: the conversation is the help, and the
+    // button would sit over its running total.
+    <MobileLayout activeTab="chat">
+      <MobileChatScreen d={d} m={m} set={set} marketRates={marketRates}/>
     </MobileLayout>
   );
 
