@@ -1,5 +1,6 @@
 import crypto from "crypto";
-import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
+import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from "@simplewebauthn/server";
+import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, redis } from "../server/http.js";
 
 // Subscriptions: the first module's answer is free, every one after it needs
 // a subscription (src/lib/unlock.js). One function for all of it, routed by
@@ -11,6 +12,11 @@ import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter } fr
 //   portal    POST {token}                 -> { url } of Stripe's billing portal
 //   save      POST {token, state}          -> keeps a subscriber's answers, for
 //                                             signing in on another device
+//   account   POST {token}                 -> { passkeys, password }: what's set up
+//   passkey-enrol-options / passkey-enrol  -> adds a passkey (signed in)
+//   passkey-login-options / passkey-login  -> signs in with a passkey
+//   password-set   POST {token, password}  -> sets or changes the password
+//   password-login POST {email, password}  -> signs in with them
 //   webhook   Stripe's events, signature-checked, keep `subscriptions` current
 //
 // Stripe is called over its REST API (no SDK). Who has paid lives in the
@@ -256,6 +262,182 @@ async function restore(req, body, res, origin) {
   }
   return res.status(200).json({ ok: true });
 }
+// ── Signing in: a passkey (Face ID, Touch ID, Windows Hello, a phone's
+// screen lock) or an email and password, both for subscribers, set up once
+// signed in (account, passkey-enrol, password-set). The emailed link
+// (restore) stays, for a forgotten password or a device without a passkey.
+// Every sign-in answers like a sign-in link: an access token and the
+// subscriber's saved answers (signedIn).
+//
+// Passkeys live in the Supabase `passkeys` table (service_role only), one row
+// per credential; a password is a scrypt hash in subscriptions.password_hash.
+// A passkey challenge is sealed into a short-lived signed token, so no
+// server state is needed to check it, and marked used in Redis (when set up)
+// so a captured response can't be replayed.
+const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+const PASSWORD_MIN = 10, PASSWORD_MAX = 200;
+const passwordLimiter = rateLimiter(10, "1 h", "ratelimit:billing-password");
+const enc = encodeURIComponent;
+
+// The passkey's site: the parent domain on the live site, so one passkey
+// works on www and the bare domain; the host itself anywhere else.
+const rpIdFor = origin => {
+  const host = new URL(origin).hostname;
+  return host === "candid-finance.co.uk" || host.endsWith(".candid-finance.co.uk") ? "candid-finance.co.uk" : host;
+};
+
+function sealChallenge(kind, challenge, email = null) {
+  const body = b64(JSON.stringify({ k: kind, c: challenge, e: email, x: Date.now() + CHALLENGE_TTL_MS }));
+  return `${body}.${sign(body)}`;
+}
+function openChallenge(token, kind) {
+  if (typeof token !== "string" || !token.includes(".")) return null;
+  const [body, mac] = token.split(".");
+  if (!safeEqual(mac, sign(body))) return null;
+  try {
+    const t = JSON.parse(Buffer.from(body, "base64url").toString());
+    return t.k === kind && t.x > Date.now() && typeof t.c === "string" ? t : null;
+  } catch { return null; }
+}
+// True the first time a challenge is used, false after.
+async function firstUse(challenge) {
+  if (!redis) return true;
+  return (await redis.set(`passkey-challenge:${challenge}`, 1, { nx: true, ex: 600 })) === "OK";
+}
+
+async function passkeys(method, query, body) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/passkeys${query}`, {
+    method,
+    headers: {
+      apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json",
+      Prefer: method === "POST" ? "resolution=merge-duplicates,return=minimal" : "return=representation",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(`Supabase passkeys ${res.status}: ${await res.text()}`);
+  return method === "GET" ? res.json() : null;
+}
+
+// scrypt, from Node itself: "scrypt$N$r$p$salt$key", the cost stored with
+// the hash so it can be raised later without breaking older ones.
+const SCRYPT = { N: 16384, r: 8, p: 1 };
+const scrypt = (password, salt, { N, r, p }) => new Promise((ok, fail) =>
+  crypto.scrypt(password.normalize("NFKC"), salt, 64, { N, r, p, maxmem: 64 * 1024 * 1024 }, (e, key) => e ? fail(e) : ok(key)));
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(16);
+  const key = await scrypt(password, salt, SCRYPT);
+  return `scrypt$${SCRYPT.N}$${SCRYPT.r}$${SCRYPT.p}$${salt.toString("base64url")}$${key.toString("base64url")}`;
+}
+async function passwordMatches(password, stored) {
+  const [alg, N, r, p, salt, key] = String(stored || "").split("$");
+  if (alg !== "scrypt" || !salt || !key) return false;
+  const got = await scrypt(password, Buffer.from(salt, "base64url"), { N: +N, r: +r, p: +p });
+  const want = Buffer.from(key, "base64url");
+  return got.length === want.length && crypto.timingSafeEqual(got, want);
+}
+// Hashed against when there's no account, so a wrong email takes as long as
+// a wrong password and the form doesn't reveal who has one.
+const DUMMY_HASH = "scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+// Signed in: the same answer as a sign-in link (status with a restore token).
+async function signedIn(email, res) {
+  const row = await rowFor(email);
+  const access = accessFor(row);
+  return res.status(200).json({
+    ...access, token: access.active ? makeToken(email, "access", ACCESS_TTL_MS) : null,
+    ...(access.active ? { state: row.saved_state || null } : {}),
+  });
+}
+// The signed-in subscriber's email, or null.
+async function subscriberFrom(token) {
+  const email = readToken(token, "access");
+  return email && accessFor(await rowFor(email)).active ? email : null;
+}
+
+// What's set up for signing in, for the account section.
+async function account(body, res) {
+  const email = await subscriberFrom(body.token);
+  if (!email) return res.status(401).json({ error: "Not signed in" });
+  const [row, keys] = await Promise.all([rowFor(email), passkeys("GET", `?email=eq.${enc(email)}&select=id`)]);
+  return res.status(200).json({ passkeys: keys.length, password: !!row?.password_hash });
+}
+
+async function passkeyEnrolOptions(body, res, origin) {
+  const email = await subscriberFrom(body.token);
+  if (!email) return res.status(401).json({ error: "Not signed in" });
+  const existing = await passkeys("GET", `?email=eq.${enc(email)}&select=id,transports`);
+  const options = await generateRegistrationOptions({
+    rpName: "Candid", rpID: rpIdFor(origin), userName: email, userDisplayName: email,
+    attestationType: "none",
+    // One per device: a device that already has one isn't offered another.
+    excludeCredentials: existing.map(c => ({ id: c.id, transports: c.transports || undefined })),
+    authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
+  });
+  return res.status(200).json({ options, challengeToken: sealChallenge("enrol", options.challenge, email) });
+}
+async function passkeyEnrol(body, res, origin) {
+  const email = await subscriberFrom(body.token);
+  const ch = openChallenge(body.challengeToken, "enrol");
+  if (!email || !ch || ch.e !== email) return res.status(400).json({ error: "That took too long. Please try again." });
+  if (!await firstUse(ch.c)) return res.status(400).json({ error: "That took too long. Please try again." });
+  const result = await verifyRegistrationResponse({
+    response: body.response, expectedChallenge: ch.c, expectedOrigin: origin, expectedRPID: rpIdFor(origin), requireUserVerification: false,
+  }).catch(() => null);
+  if (!result?.verified || !result.registrationInfo) return res.status(400).json({ error: "That passkey couldn't be added. Please try again." });
+  const { credential, credentialDeviceType, credentialBackedUp } = result.registrationInfo;
+  const now = new Date().toISOString();
+  await passkeys("POST", "?on_conflict=id", {
+    id: credential.id, email, public_key: Buffer.from(credential.publicKey).toString("base64url"),
+    counter: credential.counter, transports: credential.transports || null,
+    device_type: credentialDeviceType, backed_up: credentialBackedUp, created_at: now, last_used_at: now,
+  });
+  return res.status(200).json({ ok: true });
+}
+
+async function passkeyLoginOptions(res, origin) {
+  // No list of credentials: the device offers whichever Candid passkeys it holds.
+  const options = await generateAuthenticationOptions({ rpID: rpIdFor(origin), userVerification: "preferred" });
+  return res.status(200).json({ options, challengeToken: sealChallenge("login", options.challenge) });
+}
+async function passkeyLogin(body, res, origin) {
+  const ch = openChallenge(body.challengeToken, "login");
+  const id = body.response?.id;
+  if (!ch || typeof id !== "string" || !/^[A-Za-z0-9_-]{8,1400}$/.test(id)) return res.status(400).json({ error: "That took too long. Please try again." });
+  if (!await firstUse(ch.c)) return res.status(400).json({ error: "That took too long. Please try again." });
+  const [cred] = await passkeys("GET", `?id=eq.${enc(id)}&select=*`);
+  if (!cred) return res.status(401).json({ error: "That passkey isn't linked to a Candid subscription. Sign in with your email and password, or a link." });
+  const result = await verifyAuthenticationResponse({
+    response: body.response, expectedChallenge: ch.c, expectedOrigin: origin, expectedRPID: rpIdFor(origin), requireUserVerification: false,
+    credential: { id: cred.id, publicKey: Buffer.from(cred.public_key, "base64url"), counter: Number(cred.counter) || 0, transports: cred.transports || undefined },
+  }).catch(() => null);
+  if (!result?.verified) return res.status(401).json({ error: "That passkey didn't work. Please try again." });
+  await passkeys("PATCH", `?id=eq.${enc(cred.id)}`, { counter: result.authenticationInfo.newCounter, last_used_at: new Date().toISOString() });
+  return signedIn(cred.email, res);
+}
+
+async function passwordSet(body, res) {
+  const email = await subscriberFrom(body.token);
+  if (!email) return res.status(401).json({ error: "Not signed in" });
+  const { password } = body;
+  if (typeof password !== "string" || password.length < PASSWORD_MIN) return res.status(400).json({ error: `Use at least ${PASSWORD_MIN} characters.` });
+  if (password.length > PASSWORD_MAX) return res.status(400).json({ error: `Use at most ${PASSWORD_MAX} characters.` });
+  await supa("PATCH", `?email=eq.${enc(email)}`, { password_hash: await hashPassword(password), password_set_at: new Date().toISOString() });
+  return res.status(200).json({ ok: true });
+}
+async function passwordLogin(req, body, res) {
+  const email = cleanEmail(body.email);
+  const { password } = body;
+  if (!email || typeof password !== "string" || !password || password.length > PASSWORD_MAX) return res.status(400).json({ error: "Enter your email and password." });
+  if (passwordLimiter) {
+    const { success } = await passwordLimiter.limit(email);
+    if (!success) return res.status(429).json({ error: "Too many attempts. Try again in an hour, or email yourself a sign-in link." });
+  }
+  const row = await rowFor(email);
+  const ok = await passwordMatches(password, row?.password_hash || DUMMY_HASH);
+  if (!ok || !row?.password_hash) return res.status(401).json({ error: "That email and password don't match." });
+  return signedIn(email, res);
+}
+
 async function portal(body, res, origin) {
   const email = readToken(body.token, "access");
   const row = email && await rowFor(email);
@@ -293,6 +475,13 @@ export default async function handler(req, res) {
     if (action === "restore") return await restore(req, body, res, returnTo);
     if (action === "portal") return await portal(body, res, returnTo);
     if (action === "save") return await saveState(body, res);
+    if (action === "account") return await account(body, res);
+    if (action === "passkey-enrol-options") return await passkeyEnrolOptions(body, res, returnTo);
+    if (action === "passkey-enrol") return await passkeyEnrol(body, res, returnTo);
+    if (action === "passkey-login-options") return await passkeyLoginOptions(res, returnTo);
+    if (action === "passkey-login") return await passkeyLogin(body, res, returnTo);
+    if (action === "password-set") return await passwordSet(body, res);
+    if (action === "password-login") return await passwordLogin(req, body, res);
     return res.status(404).json({ error: "Unknown action" });
   } catch (e) {
     console.error("billing", action, e);

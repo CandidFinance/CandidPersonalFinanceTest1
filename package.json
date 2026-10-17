@@ -12,6 +12,8 @@
     "personas": "node scripts/personas/run.js && node scripts/personas/build-page.js"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.3",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.2",
     "framer-motion": "^13.1.0",

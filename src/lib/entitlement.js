@@ -1,3 +1,4 @@
+import { startAuthentication, startRegistration, browserSupportsWebAuthn } from "@simplewebauthn/browser";
 import { reportStorageFailure } from "./storage.js";
 
 // Whether this browser has a Candid subscription (api/billing.js). Kept in
@@ -89,7 +90,42 @@ export function saveStateSoon(state) {
 // Returns "signed-in", "ended" (the link is good but the subscription isn't)
 // or "invalid".
 export async function signInWithLink(restoreToken) {
-  const r = await call("status", { token: restoreToken });
+  return holdSignIn(await call("status", { token: restoreToken }));
+}
+
+// Signing in with a passkey (Face ID, Touch ID, Windows Hello...) or an
+// email and password: the same outcomes as a link. Throws with a message to
+// show when it doesn't work; a passkey prompt the user closes throws
+// "cancelled", which needs no message.
+export const passkeysSupported = () => browserSupportsWebAuthn();
+export async function signInWithPasskey() {
+  const { options, challengeToken } = await call("passkey-login-options", {});
+  let response;
+  try { response = await startAuthentication({ optionsJSON: options }); }
+  catch (e) { throw new Error(e?.name === "NotAllowedError" || e?.name === "AbortError" ? "cancelled" : "Your device couldn't use a passkey here."); }
+  return holdSignIn(await call("passkey-login", { challengeToken, response }));
+}
+export async function signInWithPassword(email, password) {
+  return holdSignIn(await call("password-login", { email, password }));
+}
+
+// Signed in already: what's set up ({ passkeys, password }), adding a
+// passkey on this device, and setting a password.
+export async function accountSignIns() { return call("account", { token: read()?.token }); }
+export async function addPasskey() {
+  const token = read()?.token;
+  const { options, challengeToken } = await call("passkey-enrol-options", { token });
+  let response;
+  try { response = await startRegistration({ optionsJSON: options }); }
+  catch (e) {
+    if (e?.name === "InvalidStateError") throw new Error("This device already has a Candid passkey.");
+    throw new Error(e?.name === "NotAllowedError" || e?.name === "AbortError" ? "cancelled" : "Your device couldn't make a passkey here.");
+  }
+  await call("passkey-enrol", { token, challengeToken, response });
+}
+export async function setPassword(password) { await call("password-set", { token: read()?.token, password }); }
+
+async function holdSignIn(r) {
   if (!r.email) return "invalid";
   save(r);
   if (!r.active) return "ended";

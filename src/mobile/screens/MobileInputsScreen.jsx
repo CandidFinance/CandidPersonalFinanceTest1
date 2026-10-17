@@ -1,4 +1,5 @@
 import { hasAccess, accessInfo, openBillingPortal, PLANS } from "../../lib/entitlement.js";
+import SignInSetup from "../SignInSetup.jsx";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, User } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
@@ -124,7 +125,8 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
   );
 }
 
-// For a subscriber: their plan, and Stripe's page to change or cancel it.
+// For a subscriber: their plan, Stripe's page to change or cancel it, and
+// their ways to sign in on another device (SignInSetup).
 // A "comp" plan (a free row added by hand in `subscriptions`, for testing)
 // has no Stripe customer, so no portal.
 function Subscription() {
@@ -143,6 +145,7 @@ function Subscription() {
         Manage subscription
       </button>}
       {error && <div style={{fontSize:"12px",color:ERROR_TEXT}}>{error}</div>}
+      <SignInSetup/>
     </div>
   );
 }
