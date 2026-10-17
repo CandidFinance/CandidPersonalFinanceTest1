@@ -3,7 +3,7 @@ import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
 import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM } from "../design-tokens.js";
-import { accessInfo, accountSignIns, addPasskey, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp } from "../lib/entitlement.js";
+import { accessInfo, accountSignIns, addPasskey, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
 
 // A subscriber's ways to sign in on another device (src/site/SignInPage.jsx):
 // a passkey on this device (Face ID, Touch ID, a phone's screen lock) and a
@@ -174,7 +174,20 @@ function CreateSignIn({ email, onDone }) {
           <button type="submit" disabled={!!busy} style={button(!canPasskey)}>{busy === "password" ? "Saving…" : "Create password"}</button>
           {error && <div role="alert" style={{fontSize:"13px",color:ERROR_TEXT}}>{error}</div>}
         </form>
+
+        <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6,margin:"28px 0 0"}}>
+          Not {email}?{" "}
+          <button type="button" disabled={!!busy} onClick={() => switchAccount("sign_in_gate")} style={{background:"none",border:"none",padding:0,color:G,fontWeight:700,fontSize:"13.5px",fontFamily:"inherit",cursor:"pointer"}}>Sign in with a different account</button>
+        </p>
       </div>
     </div>
   );
+}
+
+// Signs out and goes to the sign-in page, reloading so nothing of the last
+// account stays in memory to be saved again.
+export async function switchAccount(from) {
+  posthog.capture("signed_out", { from });
+  await signOut();
+  window.location.replace("/signin");
 }

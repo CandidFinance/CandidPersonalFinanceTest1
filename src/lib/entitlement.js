@@ -78,12 +78,28 @@ export async function requestRestore(email) { return call("restore", { email });
 
 // A subscriber's answers, saved to their subscription a moment after they
 // stop changing, so signing in on another device brings them back.
-let saveTimer = null;
+let saveTimer = null, pendingSave = null;
 export function saveStateSoon(state) {
   const token = read()?.token;
   if (!token || !hasAccess()) return;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { call("save", { token, state }).catch(() => {}); }, 3000);
+  pendingSave = { token, state };
+  saveTimer = setTimeout(() => { pendingSave = null; call("save", { token, state }).catch(() => {}); }, 3000);
+}
+
+// Signing out, to sign in as someone else: any change not yet saved goes to
+// the subscription first, then this browser forgets the subscription and
+// the answers that came with it (they come back on signing in again), so
+// they can't be saved into the next account. Device settings stay: the
+// cookie choice, where they came from, whether a passkey is here.
+const KEEP_ON_SIGN_OUT = ["candid_cookie_choice", "candid_acquisition", "candid_passkey_here", "candid_dev_custom_presets"];
+export async function signOut() {
+  clearTimeout(saveTimer);
+  if (pendingSave) { const p = pendingSave; pendingSave = null; await call("save", p).catch(() => {}); }
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith("candid_") && !KEEP_ON_SIGN_OUT.includes(k)) localStorage.removeItem(k);
+  } catch (e) { reportStorageFailure("sign_out", e); }
+  write(null);
 }
 
 // From a sign-in link (/signin?restore=): holds the subscription, and puts

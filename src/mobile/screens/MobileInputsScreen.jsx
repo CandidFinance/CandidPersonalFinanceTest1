@@ -1,5 +1,5 @@
 import { hasAccess, accessInfo, openBillingPortal, PLANS } from "../../lib/entitlement.js";
-import SignInSetup from "../SignInSetup.jsx";
+import SignInSetup, { switchAccount } from "../SignInSetup.jsx";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, User } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
@@ -140,10 +140,16 @@ function Subscription() {
     <div style={{marginTop:"28px",paddingTop:"16px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
       <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Candid subscription{planLabel ? `, ${planLabel}` : ""}</div>
       <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>{a.email}{until ? ` · ${a.cancelling ? "ends" : "renews"} ${until}` : ""}</div>
-      {!comp && <button type="button" onClick={() => openBillingPortal().catch(e => setError(e.message))}
-        style={{background:"none",border:"none",padding:"8px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
-        Manage subscription
-      </button>}
+      <div style={{display:"flex",gap:"20px"}}>
+        {!comp && <button type="button" onClick={() => openBillingPortal().catch(e => setError(e.message))}
+          style={{background:"none",border:"none",padding:"8px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+          Manage subscription
+        </button>}
+        <button type="button" onClick={() => switchAccount("edit_inputs")}
+          style={{background:"none",border:"none",padding:"8px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+          Sign out
+        </button>
+      </div>
       {error && <div style={{fontSize:"12px",color:ERROR_TEXT}}>{error}</div>}
       <SignInSetup/>
     </div>
