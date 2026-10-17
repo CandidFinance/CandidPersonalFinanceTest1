@@ -273,8 +273,10 @@ async function restore(req, body, res, origin) {
 // per credential; a password is a scrypt hash in subscriptions.password_hash.
 // A passkey challenge is sealed into a short-lived signed token, so no
 // server state is needed to check it, and marked used in Redis (when set up)
-// so a captured response can't be replayed.
-const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+// so a captured response can't be replayed. A sign-in challenge lasts
+// longer: the sign-in page asks for it on opening, for the keyboard's
+// passkey suggestion, which may not be tapped straight away.
+const CHALLENGE_TTL_MS = 5 * 60 * 1000, LOGIN_CHALLENGE_TTL_MS = 15 * 60 * 1000;
 const PASSWORD_MIN = 10, PASSWORD_MAX = 200;
 const passwordLimiter = rateLimiter(10, "1 h", "ratelimit:billing-password");
 const enc = encodeURIComponent;
@@ -286,8 +288,8 @@ const rpIdFor = origin => {
   return host === "candid-finance.co.uk" || host.endsWith(".candid-finance.co.uk") ? "candid-finance.co.uk" : host;
 };
 
-function sealChallenge(kind, challenge, email = null) {
-  const body = b64(JSON.stringify({ k: kind, c: challenge, e: email, x: Date.now() + CHALLENGE_TTL_MS }));
+function sealChallenge(kind, challenge, email = null, ttl = CHALLENGE_TTL_MS) {
+  const body = b64(JSON.stringify({ k: kind, c: challenge, e: email, x: Date.now() + ttl }));
   return `${body}.${sign(body)}`;
 }
 function openChallenge(token, kind) {
@@ -371,7 +373,11 @@ async function passkeyEnrolOptions(body, res, origin) {
     attestationType: "none",
     // One per device: a device that already has one isn't offered another.
     excludeCredentials: existing.map(c => ({ id: c.id, transports: c.transports || undefined })),
-    authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
+    // Saved on this phone or computer (iCloud Keychain, Google Password
+    // Manager), unlocked with Face ID, a fingerprint or the screen lock:
+    // without this, a phone may offer "another device" (a QR code) first.
+    preferredAuthenticatorType: "localDevice",
+    authenticatorSelection: { residentKey: "required", userVerification: "required" },
   });
   return res.status(200).json({ options, challengeToken: sealChallenge("enrol", options.challenge, email) });
 }
@@ -381,7 +387,7 @@ async function passkeyEnrol(body, res, origin) {
   if (!email || !ch || ch.e !== email) return res.status(400).json({ error: "That took too long. Please try again." });
   if (!await firstUse(ch.c)) return res.status(400).json({ error: "That took too long. Please try again." });
   const result = await verifyRegistrationResponse({
-    response: body.response, expectedChallenge: ch.c, expectedOrigin: origin, expectedRPID: rpIdFor(origin), requireUserVerification: false,
+    response: body.response, expectedChallenge: ch.c, expectedOrigin: origin, expectedRPID: rpIdFor(origin), requireUserVerification: true,
   }).catch(() => null);
   if (!result?.verified || !result.registrationInfo) return res.status(400).json({ error: "That passkey couldn't be added. Please try again." });
   const { credential, credentialDeviceType, credentialBackedUp } = result.registrationInfo;
@@ -396,8 +402,8 @@ async function passkeyEnrol(body, res, origin) {
 
 async function passkeyLoginOptions(res, origin) {
   // No list of credentials: the device offers whichever Candid passkeys it holds.
-  const options = await generateAuthenticationOptions({ rpID: rpIdFor(origin), userVerification: "preferred" });
-  return res.status(200).json({ options, challengeToken: sealChallenge("login", options.challenge) });
+  const options = await generateAuthenticationOptions({ rpID: rpIdFor(origin), userVerification: "required" });
+  return res.status(200).json({ options, challengeToken: sealChallenge("login", options.challenge, null, LOGIN_CHALLENGE_TTL_MS) });
 }
 async function passkeyLogin(body, res, origin) {
   const ch = openChallenge(body.challengeToken, "login");
@@ -407,7 +413,7 @@ async function passkeyLogin(body, res, origin) {
   const [cred] = await passkeys("GET", `?id=eq.${enc(id)}&select=*`);
   if (!cred) return res.status(401).json({ error: "That passkey isn't linked to a Candid subscription. Sign in with your email and password, or a link." });
   const result = await verifyAuthenticationResponse({
-    response: body.response, expectedChallenge: ch.c, expectedOrigin: origin, expectedRPID: rpIdFor(origin), requireUserVerification: false,
+    response: body.response, expectedChallenge: ch.c, expectedOrigin: origin, expectedRPID: rpIdFor(origin), requireUserVerification: true,
     credential: { id: cred.id, publicKey: Buffer.from(cred.public_key, "base64url"), counter: Number(cred.counter) || 0, transports: cred.transports || undefined },
   }).catch(() => null);
   if (!result?.verified) return res.status(401).json({ error: "That passkey didn't work. Please try again." });

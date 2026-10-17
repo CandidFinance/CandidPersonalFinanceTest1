@@ -3,7 +3,7 @@ import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
 import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM } from "../design-tokens.js";
-import { accessInfo, accountSignIns, addPasskey, setPassword, passkeysSupported, hasAccess } from "../lib/entitlement.js";
+import { accessInfo, accountSignIns, addPasskey, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp } from "../lib/entitlement.js";
 
 // A subscriber's ways to sign in on another device (src/site/SignInPage.jsx):
 // a passkey on this device (Face ID, Touch ID, a phone's screen lock) and a
@@ -31,7 +31,7 @@ export function SignInMethods({ signIns, reload }) {
   const run = async (what, fn, message) => {
     setBusy(what); setError(null); setDone(null);
     try { await fn(); setDone(message); await reload(); return true; }
-    catch (e) { if (e.message !== "cancelled") setError(e.message); return false; }
+    catch (e) { if (e.message !== "cancelled") setError(e.message === "not-saved" ? passkeyNotSavedHelp() : e.message); return false; }
     finally { setBusy(null); }
   };
   const savePassword = async e => {
@@ -49,7 +49,7 @@ export function SignInMethods({ signIns, reload }) {
       {passkeysSupported() && (
         <div style={row}>
           <div>
-            <div style={name}>Face ID or passkey</div>
+            <div style={name}>{passkeyName() === "passkey" ? "Passkey" : passkeyName()[0].toUpperCase() + passkeyName().slice(1)}</div>
             <div style={note}>{signIns.passkeys ? `Set up on ${signIns.passkeys === 1 ? "1 device" : `${signIns.passkeys} devices`}` : "Not set up"}</div>
           </div>
           <button type="button" disabled={!!busy} onClick={() => run("passkey", addPasskey, "Passkey added. Use it on the sign-in page.")}
@@ -133,7 +133,7 @@ function CreateSignIn({ email, onDone }) {
   const run = async (how, fn) => {
     setBusy(how); setError(null);
     try { await fn(); onDone(how, await accountSignIns()); }
-    catch (e) { if (e.message !== "cancelled") setError(e.message); setBusy(null); }
+    catch (e) { if (e.message !== "cancelled") setError(e.message === "not-saved" ? passkeyNotSavedHelp() : e.message); setBusy(null); }
   };
   const withPassword = e => {
     e.preventDefault();
@@ -156,7 +156,7 @@ function CreateSignIn({ email, onDone }) {
         {canPasskey && (
           <>
             <button type="button" disabled={!!busy} onClick={() => run("passkey", addPasskey)} style={{...button(true),marginTop:"28px"}}>
-              <ScanFace size={19}/>{busy === "passkey" ? "Waiting for your device…" : "Use Face ID or passkey"}
+              <ScanFace size={19}/>{busy === "passkey" ? "Waiting for your device…" : `Use ${passkeyName() === "passkey" ? "a passkey" : passkeyName()}`}
             </button>
             <div style={{display:"flex",alignItems:"center",gap:"12px",margin:"22px 0 14px"}}>
               <hr style={{flex:1,border:"none",borderTop:"1px solid rgba(22,47,36,0.12)",margin:0}}/>

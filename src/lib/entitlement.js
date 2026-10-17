@@ -1,4 +1,5 @@
-import { startAuthentication, startRegistration, browserSupportsWebAuthn } from "@simplewebauthn/browser";
+import posthog from "posthog-js";
+import { startAuthentication, startRegistration, browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, WebAuthnAbortService } from "@simplewebauthn/browser";
 import { reportStorageFailure } from "./storage.js";
 
 // Whether this browser has a Candid subscription (api/billing.js). Kept in
@@ -93,17 +94,62 @@ export async function signInWithLink(restoreToken) {
   return holdSignIn(await call("status", { token: restoreToken }));
 }
 
-// Signing in with a passkey (Face ID, Touch ID, Windows Hello...) or an
+// Signing in with a passkey (Face ID, a fingerprint, the screen lock) or an
 // email and password: the same outcomes as a link. Throws with a message to
 // show when it doesn't work; a passkey prompt the user closes throws
-// "cancelled", which needs no message.
+// "cancelled", which needs no message, and a passkey a device couldn't save
+// throws "not-saved" (passkeyNotSavedHelp says why). The same on iPhone and
+// Android: passkeys are saved on the device itself (iCloud Keychain, Google
+// Password Manager), and synced to the user's other devices by them.
 export const passkeysSupported = () => browserSupportsWebAuthn();
-export async function signInWithPasskey() {
+export const passkeyAutofillSupported = () => browserSupportsWebAuthnAutofill();
+// Stops a waiting passkey request, e.g. the keyboard suggestion's on leaving.
+export const stopPasskeyRequest = () => WebAuthnAbortService.cancelCeremony();
+
+// What the device calls unlocking a passkey, for buttons.
+export function passkeyName() {
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+  if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "Face ID";
+  if (/Android/.test(ua)) return "fingerprint or face unlock";
+  return "passkey";
+}
+export function passkeyNotSavedHelp() {
+  const name = passkeyName();
+  if (name === "Face ID") return "Your iPhone didn't save a passkey. Passkeys need iCloud Keychain on: Settings, your name, iCloud, Passwords and Keychain. Or create a password instead.";
+  if (name !== "passkey") return "Your phone didn't save a passkey. Passkeys need a screen lock and Google Password Manager. Or create a password instead.";
+  return "Your device didn't save a passkey. Try again, or create a password instead.";
+}
+
+// Whether this browser has made or used a Candid passkey: the sign-in page
+// offers its button only then, since without one the device offers a
+// passkey from another device, by QR code, instead.
+const PASSKEY_HERE_KEY = "candid_passkey_here";
+export function passkeyHere() {
+  try { return !!localStorage.getItem(PASSKEY_HERE_KEY); } catch (e) { reportStorageFailure("read_passkey_here", e); return false; }
+}
+function markPasskeyHere() {
+  try { localStorage.setItem(PASSKEY_HERE_KEY, "1"); } catch (e) { reportStorageFailure("save_passkey_here", e); }
+}
+// A failed passkey prompt, recorded, as the message to throw.
+function passkeyError(e, step) {
+  if (e?.name === "AbortError") return new Error("cancelled");
+  posthog.capture("passkey_failed", { step, name: e?.name || null, code: e?.code || null });
+  if (step === "enrol" && e?.name === "InvalidStateError") return new Error("This device already has a Candid passkey.");
+  if (step === "enrol") return new Error("not-saved");
+  return new Error(e?.name === "NotAllowedError" ? "cancelled" : "Your device couldn't use a passkey here.");
+}
+
+// `autofill`: wait for the passkey to be picked from the keyboard's
+// suggestions on the email field (offered only when the device has one),
+// rather than asking now.
+export async function signInWithPasskey({ autofill = false } = {}) {
   const { options, challengeToken } = await call("passkey-login-options", {});
   let response;
-  try { response = await startAuthentication({ optionsJSON: options }); }
-  catch (e) { throw new Error(e?.name === "NotAllowedError" || e?.name === "AbortError" ? "cancelled" : "Your device couldn't use a passkey here."); }
-  return holdSignIn(await call("passkey-login", { challengeToken, response }));
+  try { response = await startAuthentication({ optionsJSON: options, useBrowserAutofill: autofill }); }
+  catch (e) { throw autofill ? new Error("cancelled") : passkeyError(e, "login"); }
+  const outcome = await holdSignIn(await call("passkey-login", { challengeToken, response }));
+  markPasskeyHere();
+  return outcome;
 }
 export async function signInWithPassword(email, password) {
   return holdSignIn(await call("password-login", { email, password }));
@@ -117,11 +163,9 @@ export async function addPasskey() {
   const { options, challengeToken } = await call("passkey-enrol-options", { token });
   let response;
   try { response = await startRegistration({ optionsJSON: options }); }
-  catch (e) {
-    if (e?.name === "InvalidStateError") throw new Error("This device already has a Candid passkey.");
-    throw new Error(e?.name === "NotAllowedError" || e?.name === "AbortError" ? "cancelled" : "Your device couldn't make a passkey here.");
-  }
+  catch (e) { throw passkeyError(e, "enrol"); }
   await call("passkey-enrol", { token, challengeToken, response });
+  markPasskeyHere();
 }
 export async function setPassword(password) { await call("password-set", { token: read()?.token, password }); }
 
