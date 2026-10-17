@@ -15,9 +15,15 @@
 //   source:  "redundancy" | "bonus" | "inheritance" | "sale" | "gift" | "other"
 //   earmark: "home" | "children" | "purchase" | "none"
 //   when:    "soon" (under 2 years) | "mid" (2 to 5) | "later" (5+), for a home or purchase
+//   parts:   for redundancy, the settlement's parts, before tax (settlementTax)
+//   earnedBefore: for redundancy, pay this tax year before leaving, before tax
+//
+// The money placed is take-home: for a redundancy settlement, what's left
+// after tax and National Insurance.
 
 import { fmt } from "./format.js";
-import { ISA_ALLOWANCE, cashIsaLimit, taxFreeInterest } from "./tax.js";
+import { ISA_ALLOWANCE, cashIsaLimit, taxFreeInterest, calcIncomeTax, savingsTaxRates, HIGHER_RATE_THRESHOLD, NI_PRIMARY_THRESHOLD, NI_UPPER_EARNINGS_LIMIT, NI_MAIN_RATE, NI_RATE_ABOVE_UEL } from "./tax.js";
+import { daysToTaxYearEnd } from "./metrics.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
 import { calcAnnualAllowanceRoom, calcBonusSacrificePotential, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, PENSION_RELIEF_MAX_AGE } from "./pension.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
@@ -50,14 +56,75 @@ export const LISA_LIMIT = 4000, LISA_BONUS = 0.25;
 // A Junior ISA: up to £9,000 a year per child.
 export const JISA_LIMIT = 9000;
 
+// ── A redundancy settlement, part by part (GOV.UK, "Tax on redundancy";
+// HMRC's post-employment notice pay rules from April 2018):
+//   notice:       pay in lieu of notice (PILON): taxed in full, with NI
+//   bonus:        a bonus, pro-rated or not: taxed in full, with NI
+//   holiday:      holiday pay owed: taxed in full, with NI
+//   other:        anything else from the job: taxed in full, with NI
+//   compensation: statutory redundancy pay and non-contractual (ex-gratia)
+//                 payments, such as a thank-you: the first £30,000 together
+//                 is tax-free; above it, income tax but no NI for the employee
+// The taxed parts are paid in one pay period after leaving, so NI is on
+// that month's thresholds, not the year's.
+export const SETTLEMENT_PARTS = [
+  { key: "notice", label: "Notice pay (PILON)" },
+  { key: "bonus", label: "Bonus" },
+  { key: "holiday", label: "Holiday pay" },
+  { key: "compensation", label: "Redundancy pay and any thank-you" },
+  { key: "other", label: "Anything else" },
+];
+const monthlyNi = pay => NI_MAIN_RATE * Math.max(0, Math.min(pay, NI_UPPER_EARNINGS_LIMIT / 12) - NI_PRIMARY_THRESHOLD / 12)
+  + NI_RATE_ABOVE_UEL * Math.max(0, pay - NI_UPPER_EARNINGS_LIMIT / 12);
+
+// The settlement's tax, given what else is earned this tax year (pay before
+// leaving, other income). `intoPension` (£, before tax) is paid straight
+// into a pension by the employer instead, out of the taxed parts first:
+// it's neither taxed nor NI'd.
+export function settlementTax(parts = {}, baseIncome = 0, intoPension = 0) {
+  const n = k => Math.max(0, +parts[k] || 0);
+  const earnings = n("notice") + n("bonus") + n("holiday") + n("other");
+  const compensation = n("compensation");
+  const taxFree = Math.min(compensation, REDUNDANCY_TAX_FREE);
+  let excess = compensation - taxFree;
+  const fromEarnings = Math.min(earnings, intoPension);
+  const fromExcess = Math.min(excess, intoPension - fromEarnings);
+  const taxedEarnings = earnings - fromEarnings;
+  excess -= fromExcess;
+  const incomeThisYear = baseIncome + taxedEarnings + excess;
+  const incomeTax = calcIncomeTax(incomeThisYear) - calcIncomeTax(baseIncome);
+  const ni = Math.round(monthlyNi(taxedEarnings));
+  const gross = earnings + compensation;
+  return {
+    gross, earnings, compensation, taxFree, taxed: taxedEarnings + excess, incomeTax, ni,
+    intoPension: fromEarnings + fromExcess,
+    net: Math.round(gross - (fromEarnings + fromExcess) - incomeTax - ni),
+    incomeThisYear,
+    // Pay that counts for personal pension relief this tax year: earnings,
+    // not the compensation.
+    relevantEarnings: baseIncome + earnings,
+  };
+}
+export const settlementGross = parts => SETTLEMENT_PARTS.reduce((t, p) => t + Math.max(0, +parts?.[p.key] || 0), 0);
+
+// What the settlement comes to, in Candid's words.
+export function settlementLines(w) {
+  const t = settlementTax(w.parts, +w.earnedBefore || 0);
+  return [
+    t.taxFree > 0
+      ? `Of your ${fmt(t.gross)}, ${fmt(t.taxFree)} is tax-free: the first ${fmt(REDUNDANCY_TAX_FREE)} of redundancy and thank-you payments together.`
+      : `None of your ${fmt(t.gross)} is tax-free: only redundancy and thank-you payments are, up to ${fmt(REDUNDANCY_TAX_FREE)}.`,
+    t.taxed > 0
+      ? `The other ${fmt(t.taxed)} is taxed like pay: about ${fmt(t.incomeTax)} of income tax${t.ni > 0 ? ` and ${fmt(t.ni)} of National Insurance` : ""}. So about ${fmt(t.net)} lands in your account.`
+      : `So all ${fmt(t.gross)} lands in your account.`,
+    t.taxed > 0 ? "Payments after your P45 are often taxed at a flat emergency rate at first, so you may get some back: HMRC refunds it after the tax year, or sooner with form P50 if you're not working." : null,
+  ].filter(Boolean);
+}
+
 // What the tax rules say about money from this source, in a line or two.
+// (Redundancy has its own lines, once its parts are known: settlementLines.)
 export function sourceNote(w, d) {
-  const amount = +w.amount || 0;
-  if (w.source === "redundancy") {
-    return amount <= REDUNDANCY_TAX_FREE
-      ? `The first ${fmt(REDUNDANCY_TAX_FREE)} of redundancy pay is tax-free, so all of yours is.`
-      : `The first ${fmt(REDUNDANCY_TAX_FREE)} of redundancy pay is tax-free; the other ${fmt(amount - REDUNDANCY_TAX_FREE)} is taxed like pay. Notice pay and holiday pay are taxed in full.`;
-  }
+  if (w.source === "redundancy") return null;
   if (w.source === "bonus") {
     if (!w.arrived && d.employmentStatus === "employed") return "Good timing: a bonus that hasn't been paid yet can go straight into your pension, before tax and National Insurance, if your employer allows it.";
     return "A bonus is taxed as pay, so what's arrived is already after tax.";
@@ -67,6 +134,9 @@ export function sourceNote(w, d) {
   if (w.source === "gift") return "Gifts aren't taxed for you.";
   return null;
 }
+
+// The band an income falls in, for the Personal Savings Allowance.
+const bandOf = income => income > ADDITIONAL_RATE_THRESHOLD ? "additional" : income > HIGHER_RATE_THRESHOLD ? "higher" : "basic";
 
 const goalLabel = { home: "your home", purchase: "your purchase", children: "your children" };
 const needsSoon = w => (w.earmark === "home" || w.earmark === "purchase") && w.when !== "later";
@@ -79,6 +149,7 @@ function fitFor(key, w, d) {
   switch (key) {
     case "pension":
     case "bonusSacrifice":
+    case "employerPension":
       return soon || w.earmark === "children" ? `Not reachable for ${goal}.` : null;
     case "lisa":
       return w.earmark === "home" ? "Made for a first home, with 25% added." : null;
@@ -103,7 +174,9 @@ function fitFor(key, w, d) {
  * Returns { amount, safety, options (ranked), leftOut, groups }.
  */
 export function windfallOptions(d, m, w, marketRates = {}) {
-  const amount = Math.max(0, Math.round(+w.amount || 0));
+  const amount = w.source === "redundancy" && w.parts
+    ? settlementTax(w.parts, +w.earnedBefore || 0).net
+    : Math.max(0, Math.round(+w.amount || 0));
   const age = +d.age || 0;
   const options = [];
   const leftOut = [];
@@ -127,9 +200,47 @@ export function windfallOptions(d, m, w, marketRates = {}) {
     };
   }
 
+  // A redundancy settlement: its tax, and this tax year's income with it.
+  const redundancy = w.source === "redundancy" && w.parts ? settlementTax(w.parts, +w.earnedBefore || 0) : null;
+
+  // Pension, the year of a redundancy: anything up to this tax year's
+  // earnings (pay before leaving, notice, bonus, holiday) can go in with
+  // relief at their rate, not just £2,880. Paid in from take-home, with the
+  // provider adding 20% and any more claimed through Self Assessment.
+  if (redundancy && age > 0 && age < PENSION_RELIEF_MAX_AGE && !inRetirement(d)) {
+    const income = redundancy.incomeThisYear;
+    const reliefOn = gross => Math.max(0.2 * gross, calcIncomeTax(income) - calcIncomeTax(Math.max(0, income - gross)));
+    const grossCap = Math.min(redundancy.relevantEarnings, 60000);
+    const cashFor = gross => gross - reliefOn(gross);
+    const grossFor = c => { let lo = 0, hi = grossCap; for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (cashFor(mid) < c) lo = mid; else hi = mid; } return hi; };
+    const cap = Math.floor(cashFor(grossCap));
+    if (cap > 0) options.push({
+      key: "pension", title: "A personal pension", cap, guaranteed: true,
+      value: c => ({ figure: Math.round(grossFor(c) - c), per: "of tax relief added" }),
+      detail: `This tax year you can pay in up to your earnings, ${fmt(Math.round(redundancy.relevantEarnings))} (less anything already paid in). The provider adds 20%; any more comes through Self Assessment.`,
+      access: `Locked until ${pensionAccessAge(d)}.`,
+    });
+    // Paid in by the employer from the settlement before it's paid (so only
+    // while it's on its way): no tax or NI on that part. Counted in
+    // take-home given up.
+    if (redundancy.taxed > 0 && !w.arrived) {
+      const saved = g => { const t = settlementTax(w.parts, +w.earnedBefore || 0, g); return (redundancy.incomeTax + redundancy.ni) - (t.incomeTax + t.ni); };
+      const gCap = Math.min(redundancy.taxed, 60000);
+      const giveUp = g => g - saved(g);
+      const gFor = c => { let lo = 0, hi = gCap; for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (giveUp(mid) < c) lo = mid; else hi = mid; } return hi; };
+      const eCap = Math.floor(giveUp(gCap));
+      if (eCap > 0) options.push({
+        key: "employerPension", title: "Paid into your pension by your employer", cap: eCap, guaranteed: true,
+        value: c => ({ figure: Math.round(gFor(c) - c), per: "of tax and National Insurance not paid" }),
+        detail: `Out of the taxed parts (notice, bonus, holiday pay), before it's paid: ${fmt(Math.round(gCap))} could go in. It has to be in the settlement agreement, so it's for your employer to agree.`,
+        access: `Locked until ${pensionAccessAge(d)}.`,
+      });
+    }
+  }
+
   // Pension: tax relief at their rate (60% on income in the £100k trap),
   // or for no earnings, on up to £2,880. Locked until the access age.
-  if (age > 0 && age < PENSION_RELIEF_MAX_AGE && !inRetirement(d)) {
+  if (!redundancy && age > 0 && age < PENSION_RELIEF_MAX_AGE && !inRetirement(d)) {
     const tr = m.noEarnings ? 0.2 : (m.tr || 0.2);
     const earnings = (m.salary || 0) + (+d.bonusAmount || 0);
     const grossCap = m.noEarnings
@@ -216,16 +327,43 @@ export function windfallOptions(d, m, w, marketRates = {}) {
       : `Its ${sl.lifeRatePct}% a year is less than savings or your pension are expected to earn.` });
   }
 
-  // A savings account for any of it: after tax on interest beyond what's
-  // tax-free for them (the Personal Savings Allowance and starting rate).
-  const freeLeft = Math.max(0, taxFreeInterest(m.nonSavingsIncome || 0, m.taxBandLabel) - (m.totalLiquid || 0) * ((m.effectiveSavingsRate || 0) / 100));
+  // A savings account for any of it, over its first 12 months: the rest of
+  // this tax year on this year's income (for a redundancy, with the
+  // settlement's taxed parts), then from 6 April on next year's (for
+  // someone not working, no earnings). Each year, the interest they already
+  // earn (today's balances and rates, all year) uses up the tax-free amount
+  // first: the Personal Savings Allowance, and with low other income, the
+  // starting rate and any unused Personal Allowance.
+  const existing = (m.cash || 0) * ((m.effectiveSavingsRate || 0) / 100);
+  const thisIncome = redundancy ? redundancy.incomeThisYear : (m.nonSavingsIncome || 0);
+  const nextIncome = d.employmentStatus === "not_working" ? (+d.otherIncome || 0) : (m.nonSavingsIncome || 0);
+  const year = (income, taxYear) => {
+    const band = bandOf(income);
+    const free = taxFreeInterest(income, band);
+    return { band, free, freeLeft: Math.max(0, free - existing), over: Math.max(0, existing - free), rate: savingsTaxRates(taxYear)[band] };
+  };
+  const now = year(thisIncome, m.taxYear), next = year(nextIncome, (m.taxYear || 0) + 1);
+  const partThisYear = Math.min(1, daysToTaxYearEnd() / 365);
+  // Tax on new interest: whatever's above the tax-free amount left.
+  const taxIn = (y, interest) => Math.max(0, interest - y.freeLeft) * y.rate;
+  const pctOf = r => `${Math.round(r * 100)}%`;
   options.push({
     key: "savings", title: "A savings account", cap: amount, guaranteed: true,
     value: c => {
       const gross = c * savingsRate;
-      return { figure: Math.round(gross - Math.max(0, gross - freeLeft) * (m.savingsTr || 0)), per: "a year in interest, after tax" };
+      const tax = taxIn(now, gross * partThisYear) + taxIn(next, gross * (1 - partThisYear));
+      return { figure: Math.round(gross - tax), per: "in its first year, after tax" };
     },
-    detail: `At ${(savingsRate * 100).toFixed(2)}%, today's highest easy-access rate.${(m.savingsTr || 0) >= 0.4 ? " Premium Bonds' prizes are tax-free, which can suit higher-rate taxpayers." : ""}`,
+    detail: [
+      `At ${(savingsRate * 100).toFixed(2)}%, today's highest easy-access rate.`,
+      now.freeLeft > 0
+        ? `With what your savings already earn, ${fmt(Math.round(now.freeLeft))} more interest is tax-free this tax year, then it's taxed at ${pctOf(now.rate)}.`
+        : `What your savings already earn uses up this tax year's tax-free amount, so more is taxed at ${pctOf(now.rate)}.`,
+      d.employmentStatus === "not_working"
+        ? `From April, if you're still not working, about ${fmt(Math.round(next.freeLeft))} a year is tax-free.`
+        : null,
+      (m.savingsTr || 0) >= 0.4 ? "Premium Bonds' prizes are tax-free, which can suit higher-rate taxpayers." : null,
+    ].filter(Boolean).join(" "),
     access: "Take it out any time.",
   });
 

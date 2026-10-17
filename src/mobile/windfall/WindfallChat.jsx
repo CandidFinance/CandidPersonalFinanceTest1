@@ -4,13 +4,15 @@ import posthog from "posthog-js";
 import { G, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
 import { readingMs } from "../../lib/appEntry.js";
-import { windfallOptions, sourceNote, roomFor, describeSplit, WINDFALL_SOURCES, WINDFALL_EARMARKS, WINDFALL_WHEN } from "../../lib/windfall.js";
+import { windfallOptions, sourceNote, roomFor, describeSplit, settlementLines, settlementGross, SETTLEMENT_PARTS, WINDFALL_SOURCES, WINDFALL_EARMARKS, WINDFALL_WHEN } from "../../lib/windfall.js";
 import { Bubble, Dots, DotsKeyframes, Replies, ReplyButton } from "../chat/ChatParts.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 
 // "I've got a lump sum: what do I do with it?" as a conversation, in the
 // Chat tab. Candid asks a few things (how much, here yet or coming, where
-// it's from, what it's for), then sets out every place it could go with
+// it's from, what it's for; for redundancy, the settlement's parts and pay
+// this tax year before leaving, since they're taxed differently), then
+// sets out every place it could go with
 // what each is worth (src/lib/windfall.js), most added per £ first. The user
 // splits it themselves; Candid says what their split does. Guidance, not
 // advice: nothing is pre-filled or put first as what to do.
@@ -30,6 +32,8 @@ export default function WindfallChat({ d, m, set, marketRates }) {
   const [prompt, setPrompt] = useState(null);
   const next = useRef(null);
   const [amountInput, setAmountInput] = useState(null);
+  const [partsInput, setPartsInput] = useState({});
+  const [salaryInput, setSalaryInput] = useState(null);
   const name = (d.name || "").trim();
 
   const plan = useMemo(() => (w.amount > 0 && w.source && w.earmark ? windfallOptions(d, m, w, marketRates) : null), [d, m, w, marketRates]);
@@ -68,7 +72,7 @@ export default function WindfallChat({ d, m, set, marketRates }) {
     if (opened.current) return;
     opened.current = true;
     if (saved?.split && saved.amount > 0 && saved.earmark) {
-      say([`Welcome back${name ? `, ${name}` : ""}. Here's where you'd got to with your ${fmt(saved.amount)}.`], "results");
+      say([`Welcome back${name ? `, ${name}` : ""}. Here's where you'd got to with your ${fmt(saved.parts ? windfallOptions(d, m, saved, marketRates).amount : saved.amount)}.`], "results");
     } else {
       say([
         `Got some money coming in, or just landed some${name ? `, ${name}` : ""}?`,
@@ -94,10 +98,17 @@ export default function WindfallChat({ d, m, set, marketRates }) {
     setSplit({});
     posthog.capture("windfall_options_shown", { amount: answers.amount, source: answers.source, earmark: answers.earmark, when: answers.when || null });
     say(["Right, I've run that against your numbers.",
-      `Here's where your ${fmt(answers.amount)} could go, the most added for each pound first. Put as much or as little in each as you like.`], "results");
+      `Here's where your ${answers.parts ? `${fmt(windfallOptions(d, m, answers, marketRates).amount)} after tax` : fmt(answers.amount)} could go, the most added for each pound first. Put as much or as little in each as you like.`], "results");
+  };
+  // Pay before leaving known: what the settlement comes to after tax, then on.
+  const settled = (earnedBefore, said) => {
+    const answers = { ...w, earnedBefore };
+    setW(answers);
+    answer(said);
+    say([...settlementLines(answers), "Is any of it already meant for something?"], "earmark");
   };
   const startAgain = () => {
-    setW({}); setSplit({}); setAmountInput(null); set("windfall", null);
+    setW({}); setSplit({}); setAmountInput(null); setPartsInput({}); setSalaryInput(null); set("windfall", null);
     answer("Start again");
     say(["Sure. How much is it?"], "amount");
   };
@@ -137,7 +148,7 @@ export default function WindfallChat({ d, m, set, marketRates }) {
             <PillMoneyInput label="Amount" value={amountInput} onChange={setAmountInput}/>
             <ReplyButton disabled={!(amountInput > 0)} onClick={() => {
               const answers = { ...w, amount: Math.round(amountInput) };
-              setW(answers); answer(fmt(answers.amount));
+              setW(answers); answer(fmt(answers.amount)); setAmountInput(null);
               say(["Is it in your account already, or still on its way?"], "arrived");
             }}>Next</ReplyButton>
           </motion.div>
@@ -154,7 +165,50 @@ export default function WindfallChat({ d, m, set, marketRates }) {
         {prompt === "source" && (
           <motion.div {...rise}><Replies>
             {WINDFALL_SOURCES.map(o => (
-              <ReplyButton key={o.value} onClick={() => choose("source", o, answers => say([sourceNote(answers, d), "Is any of it already meant for something?"], "earmark"))}>{o.label}</ReplyButton>
+              <ReplyButton key={o.value} onClick={() => choose("source", o, answers => o.value === "redundancy"
+                ? say(["A settlement is usually made of parts, and they're taxed differently.", "Roughly how much is each? Your settlement agreement lists them. Leave out any that don't apply."], "parts")
+                : say([sourceNote(answers, d), "Is any of it already meant for something?"], "earmark"))}>{o.label}</ReplyButton>
+            ))}
+          </Replies></motion.div>
+        )}
+
+        {prompt === "parts" && (
+          <motion.div {...rise} style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+            {SETTLEMENT_PARTS.map(part => (
+              <PillMoneyInput key={part.key} label={part.label} value={partsInput[part.key] || null} onChange={v => setPartsInput(x => ({ ...x, [part.key]: v || 0 }))}/>
+            ))}
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"2px 4px 0"}}>Amounts before tax. A thank-you payment counts with redundancy pay unless your contract promised it.</p>
+            <Replies><ReplyButton disabled={!(settlementGross(partsInput) > 0)} onClick={() => {
+              const parts = Object.fromEntries(SETTLEMENT_PARTS.map(p => [p.key, Math.round(+partsInput[p.key] || 0)]).filter(([, v]) => v > 0));
+              const answers = { ...w, parts, amount: settlementGross(parts) };
+              setW(answers);
+              answer(SETTLEMENT_PARTS.filter(p => parts[p.key]).map(p => `${p.label.replace(/ \(PILON\)| and any thank-you/, "")} ${fmt(parts[p.key])}`).join(", "));
+              say(["And what had you earned this tax year before leaving, before tax? Your last payslip shows it as pay to date."], "earned");
+            }}>Next</ReplyButton></Replies>
+          </motion.div>
+        )}
+
+        {prompt === "earned" && (
+          <motion.div {...rise} style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+            <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+              <PillMoneyInput label="Earned this tax year" value={amountInput} onChange={setAmountInput}/>
+              <ReplyButton disabled={amountInput == null} onClick={() => settled(Math.round(+amountInput || 0), fmt(Math.round(+amountInput || 0)))}>Next</ReplyButton>
+            </div>
+            <Replies><ReplyButton onClick={() => { answer("Not sure"); say(["No problem. What was your salary, before tax?"], "salary"); }}>Not sure</ReplyButton></Replies>
+          </motion.div>
+        )}
+
+        {prompt === "salary" && (
+          <motion.div {...rise} style={{display:"flex",gap:"8px",alignItems:"center"}}>
+            <PillMoneyInput label="Salary a year" value={salaryInput} onChange={setSalaryInput}/>
+            <ReplyButton disabled={!(salaryInput > 0)} onClick={() => { answer(fmt(Math.round(salaryInput))); say(["And which was your last month of pay?"], "lastMonth"); }}>Next</ReplyButton>
+          </motion.div>
+        )}
+
+        {prompt === "lastMonth" && (
+          <motion.div {...rise}><Replies>
+            {monthsSoFar().map((label, i) => (
+              <ReplyButton key={label} onClick={() => settled(Math.round(salaryInput * (i + 1) / 12), label)}>{label}</ReplyButton>
             ))}
           </Replies></motion.div>
         )}
@@ -256,4 +310,13 @@ function Options({ plan, split, setPlaced }) {
       )}
     </div>
   );
+}
+
+// The months of this tax year so far, April first, for "which was your last
+// month of pay?".
+function monthsSoFar(now = new Date()) {
+  const start = new Date(now.getMonth() >= 3 && !(now.getMonth() === 3 && now.getDate() < 6) ? now.getFullYear() : now.getFullYear() - 1, 3, 1);
+  const out = [];
+  for (const d = new Date(start); d <= now; d.setMonth(d.getMonth() + 1)) out.push(d.toLocaleDateString("en-GB", { month: "long" }));
+  return out;
 }

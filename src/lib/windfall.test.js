@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
 import { sanitizeForMvp } from "./moduleStatus.js";
-import { windfallOptions, sourceNote, roomFor, describeSplit, REDUNDANCY_TAX_FREE } from "./windfall.js";
+import { windfallOptions, sourceNote, roomFor, describeSplit, settlementTax, REDUNDANCY_TAX_FREE } from "./windfall.js";
 
 const MARKET = { isaRate: 4.68, nonIsaRate: 4.5 };
 const base = {
@@ -18,10 +18,54 @@ const planFor = (over, w) => {
 };
 const keys = plan => plan.options.map(o => o.key);
 
-test("redundancy: tax-free up to £30,000, and the rest said to be taxed", () => {
-  assert.match(sourceNote({ amount: 20000, source: "redundancy" }, base), /all of yours is/);
-  assert.match(sourceNote({ amount: 45000, source: "redundancy" }, base), /other £15,000 is taxed like pay/);
+// A settlement: £15,000 notice, £6,000 bonus, £1,500 holiday pay, £12,000
+// of redundancy and thank-you, after £30,000 of pay this tax year.
+const settlement = { notice: 15000, bonus: 6000, holiday: 1500, compensation: 12000 };
+
+test("redundancy: only redundancy and thank-you payments are tax-free, up to £30,000", () => {
+  const t = settlementTax(settlement, 30000);
   assert.equal(REDUNDANCY_TAX_FREE, 30000);
+  assert.equal(t.taxFree, 12000);
+  assert.equal(t.taxed, 22500);
+  // Income tax on the £22,500 on top of £30,000: 20% to £50,270, 40% above.
+  assert.equal(t.incomeTax, 4946);
+  // NI on one month's pay: 8% to £4,189, 2% above.
+  assert.equal(t.ni, 618);
+  assert.equal(t.net, 34500 - 4946 - 618);
+  // Compensation over £30,000 is taxed, without NI.
+  const big = settlementTax({ compensation: 40000 }, 0);
+  assert.equal(big.taxed, 10000);
+  assert.equal(big.ni, 0);
+  assert.equal(sourceNote({ source: "redundancy" }, base), null);
+});
+
+test("redundancy year: the pension limit is this year's earnings, and the employer can pay in before tax", () => {
+  const { plan } = planFor({ employmentStatus: "not_working", notWorkingReason: "break" },
+    { source: "redundancy", parts: settlement, earnedBefore: 30000, arrived: false });
+  assert.equal(plan.amount, 28936);
+  const pension = plan.options.find(o => o.key === "pension");
+  assert.ok(pension.cap > 2880, `cap ${pension.cap}`);
+  assert.match(pension.detail, /£52,500/);
+  const employer = plan.options.find(o => o.key === "employerPension");
+  // All £22,500 of taxed parts into the pension: none of the £5,564 of tax and NI.
+  assert.equal(employer.value(employer.cap).figure, 5564);
+  // Once it's been paid, it's too late for the employer to pay it in.
+  const paid = planFor({ employmentStatus: "not_working", notWorkingReason: "break" },
+    { source: "redundancy", parts: settlement, earnedBefore: 30000, arrived: true }).plan;
+  assert.equal(paid.options.some(o => o.key === "employerPension"), false);
+});
+
+test("savings: interest already earned uses this year's tax-free amount first, at this year's band", () => {
+  // Higher rate this year (£52,500 with the settlement): £500 tax-free, of
+  // which £281 is used by £5,000 at 4% and £2,500 at 3.25%.
+  const { plan } = planFor({ employmentStatus: "not_working", notWorkingReason: "break",
+    cashTiers: [{ amount: "5000", rate: "4" }, { amount: "2500", rate: "3.25" }] },
+    { source: "redundancy", parts: settlement, earnedBefore: 30000 });
+  const savings = plan.options.find(o => o.key === "savings");
+  assert.match(savings.detail, /£219 more interest is tax-free this tax year, then it's taxed at 40%/);
+  assert.match(savings.detail, /From April, if you're still not working/);
+  const gross = Math.round(10000 * 0.045);
+  assert.ok(savings.value(10000).figure < gross, "some of it taxed this year");
 });
 
 test("between jobs: £2,880 into a pension gets £720, the money to live on comes first, and no drawdown", () => {
