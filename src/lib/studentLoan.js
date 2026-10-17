@@ -253,8 +253,16 @@ export function calcStudentLoanScenario(d, m) {
   //    assumed growth against the loan's rate. A tie goes to overpaying — its
   //    return is guaranteed, the pension's isn't.
   const cashRate = Math.round(Math.max(m.bestSavingsRate ?? 0, m.effectiveSavingsRate || 0) * 100) / 100;
-  const effectiveBenefit = Math.round((slInterestRate*100 - cashRate) * 10) / 10; // % — overpaying vs the best savings rate
-  const pensionGap = Math.round((slRatePct - PENSION_GROWTH_PCT) * 10) / 10; // % — overpaying vs the pension's growth
+  // Overpaying earns the loan's rate over every year it would have run, not
+  // just this year's: this year's published rate, then steady-state RPI
+  // (slRateIn). So it's weighed on the average rate over the loan's life,
+  // each year counted by the balance it's charged on.
+  const lived = balancePath.slice(0, -1).map((p, i) => ({ bal: p.bal, rate: schedule[i]?.rate ?? slInterestRate })).filter(p => p.bal > 0);
+  const weight = lived.reduce((t, p) => t + p.bal, 0);
+  const lifeRate = weight > 0 ? lived.reduce((t, p) => t + p.bal * p.rate, 0) / weight : slInterestRate;
+  const lifeRatePct = Math.round(lifeRate * 1000) / 10;
+  const effectiveBenefit = Math.round((lifeRatePct - cashRate) * 10) / 10; // % — overpaying vs the best savings rate
+  const pensionGap = Math.round((lifeRatePct - PENSION_GROWTH_PCT) * 10) / 10; // % — overpaying vs the pension's growth
   const beatsPension = pensionGap >= 0;
   const worthOverpaying = willClear && effectiveBenefit > 0 && beatsPension;
   // A genuine £/yr figure: the rate differential applied to the current balance
@@ -264,7 +272,7 @@ export function calcStudentLoanScenario(d, m) {
 
   return {
     writeOffYr, writeOffTaxYear, firstDueYear, firstDueEstimated: slFirstDueYearStated(d) == null,
-    threshold, slInterestRate, slRatePct, annualInterest, annualRep,
+    threshold, slInterestRate, slRatePct, lifeRatePct, annualInterest, annualRep,
     belowThreshold, netAnnualChange, balanceGrowing, inflectionSalary, salaryGapToInflection,
     clearYr, writeOffBal: Math.round(writeOffBal), willClear, totalRepaidProjected,
     balancePath, turningYr, turningTaxYear, balanceFallingNow, peakBal, schedule,
@@ -277,10 +285,10 @@ export function calcStudentLoanScenario(d, m) {
 // calcStudentLoanScenario for why tax relief cancels out) — shared by the
 // desktop and mobile deep dives' repay-vs-pension charts.
 export function describeLoanVsPension(sl) {
-  const { slRatePct: loan, pensionGrowthPct: pension, pensionGap } = sl;
-  if (pensionGap > 0) return `This loan's ${loan}% beats the ${pension}% a year your pension is assumed to grow — and overpaying's return is guaranteed.`;
-  if (pensionGap === 0) return `Level: this loan's ${loan}% matches the ${pension}% a year your pension is assumed to grow. Overpaying's return is guaranteed; the pension's isn't.`;
-  return `Your pension is assumed to grow ${pension}% a year — faster than this loan's ${loan}%, so it beats overpaying.`;
+  const { lifeRatePct: loan, pensionGrowthPct: pension, pensionGap } = sl;
+  if (pensionGap > 0) return `This loan's ${loan}% a year, on average over its life, beats the ${pension}% a year your pension is assumed to grow — and overpaying's return is guaranteed.`;
+  if (pensionGap === 0) return `Level: this loan's ${loan}% a year, on average over its life, matches the ${pension}% a year your pension is assumed to grow. Overpaying's return is guaranteed; the pension's isn't.`;
+  return `Your pension is assumed to grow ${pension}% a year — faster than this loan's ${loan}% a year on average over its life, so it beats overpaying.`;
 }
 
 // ── Overpayment scenario cards — "what would repaying £5k/£10k/£20k today

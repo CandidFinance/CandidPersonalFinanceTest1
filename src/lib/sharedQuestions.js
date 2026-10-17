@@ -24,6 +24,17 @@ export const EMPLOYMENT_QUESTION = {
   ifMissing: ({ d }) => !d.employmentAsked,
 };
 
+// Not working covers retired and between jobs, which want different answers
+// about a pension (pension.js inRetirement).
+export const NOT_WORKING_QUESTION = {
+  id:"notWorking", field:"notWorkingReason", kind:"choice", group:"you",
+  ask: () => "Are you retired, or between jobs?",
+  why: () => "Retired, your pension is for drawing on now. Otherwise, it's for later.",
+  options: () => [{ value:"retired", label:"Retired" }, { value:"break", label:"Between jobs or taking a break" }],
+  showIf: ({ d }) => d.employmentStatus === "not_working",
+  ifMissing: ({ d }) => d.employmentStatus === "not_working" && !d.notWorkingReason,
+};
+
 export const SALARY_QUESTION = {
   id:"salary", field:"salary", kind:"money", label:"Salary", cap:"salary", required:true, group:"you",
   ask: ({ d }) => d.employmentStatus === "self_employed" ? "What do you earn a year, before tax?" : "What's your salary before tax?",
@@ -82,4 +93,4 @@ export const SPENDING_QUESTION = {
 };
 
 // Employment first, so salary can be skipped for someone not working.
-export const ABOUT_YOU = [EMPLOYMENT_QUESTION, SALARY_QUESTION, ...EXTRA_INCOME_QUESTIONS];
+export const ABOUT_YOU = [EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, SALARY_QUESTION, ...EXTRA_INCOME_QUESTIONS];

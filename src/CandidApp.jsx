@@ -40,7 +40,7 @@ const BLANK_DATA = {
   // `interests`: the modules picked at the app's entry
   // (src/lib/appEntry.js), plus "property" or "exploring". `appEntered`:
   // they've been through that entry, which opens the app before any report.
-  name:"", email:"", interests:[], appEntered:false,
+  name:"", email:"", interests:[], appEntered:false, notWorkingReason:"",
   // `goalPicks`: the answer to the goals card on home (merged into
   // financialGoals); `goalsAsked`: that card has been answered or dismissed.
   // `scoreShown`: the Candid score has appeared (src/lib/appEntry.js

@@ -211,9 +211,9 @@ function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualB
             : !sl.willClear
               ? "Projected to be written off before you'd clear it — overpaying mostly reduces the write-off, not your repayments."
               : sl.effectiveBenefit <= 0
-                ? `On track to clear in ~${sl.clearYr} years. The best savings rate (${sl.cashRate}%) beats your loan rate (${sl.slRatePct}%) — saving beats overpaying here.`
+                ? `On track to clear in ~${sl.clearYr} years. The best savings rate (${sl.cashRate}%) beats your loan's average rate over its life (${sl.lifeRatePct}%) — saving beats overpaying here.`
                 : !sl.beatsPension
-                  ? `On track to clear in ~${sl.clearYr} years. Your pension is assumed to grow ${sl.pensionGrowthPct}% a year, faster than your loan's ${sl.slRatePct}% — so it beats overpaying here.`
+                  ? `On track to clear in ~${sl.clearYr} years. Your pension is assumed to grow ${sl.pensionGrowthPct}% a year, faster than your loan's ${sl.lifeRatePct}% a year on average over its life — so it beats overpaying here.`
                   : "See the win below for what overpaying could save you."}
         </p>
       </div>
@@ -305,8 +305,8 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
                 ? `Growing by ${fmt(sl.netAnnualChange)}/yr — overpaying could still save ${fmt(sl.overpayAnnualBenefit)}/yr`
                 : `${fmt(sl.overpayAnnualBenefit)}/yr better off than saving at the highest rate`)
             : sl.effectiveBenefit <= 0
-              ? `The highest savings rate (${sl.cashRate}%) beats your ${sl.slRatePct}% loan rate`
-              : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your ${sl.slRatePct}% loan rate`}
+              ? `The highest savings rate (${sl.cashRate}%) beats your loan's ${sl.lifeRatePct}% average rate`
+              : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your loan's ${sl.lifeRatePct}% average rate`}
           tagLabel={worthOverpaying ? "Today" : "Not optimal"} tagColor={worthOverpaying ? GOLD : CRITICAL}>
           {sl.balanceGrowing && (
             <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
@@ -325,11 +325,11 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
             <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0"}}>Step 2 — You don't currently hold cash above your emergency buffer; the comparison still applies to any spare cash you build up.</p>
           )}
           <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0?SUCCESS:CRITICAL}}>
-            <span>Step 3 — {sl.slRatePct}% loan vs {sl.cashRate}% highest savings</span>
+            <span>Step 3 — {sl.lifeRatePct}% loan (average over its life) vs {sl.cashRate}% highest savings</span>
             <span>{sl.effectiveBenefit > 0 ? `Repay wins by ${sl.effectiveBenefit}%` : `Savings win by ${Math.abs(sl.effectiveBenefit)}%`}</span>
           </div>
           <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?SUCCESS:CRITICAL}}>
-            <span>Step 4 — {sl.slRatePct}% loan vs {sl.pensionGrowthPct}% assumed pension growth</span>
+            <span>Step 4 — {sl.lifeRatePct}% loan (average over its life) vs {sl.pensionGrowthPct}% assumed pension growth</span>
             <span>{sl.pensionGap > 0 ? `Repay wins by ${sl.pensionGap}%` : sl.pensionGap === 0 ? "Level — repaying is guaranteed" : `Pension wins by ${Math.abs(sl.pensionGap)}%`}</span>
           </div>
           <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>

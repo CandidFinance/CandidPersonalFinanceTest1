@@ -93,8 +93,14 @@ export function calcMetrics(d, marketRates = {}) {
         emergencyFund = totalLiquid,
         emergencyBuffer = expenses * bufferMonths,
         emergencyShortfall = Math.max(0, emergencyBuffer - emergencyFund),
-        emergencyExcess = Math.max(0, emergencyFund - emergencyBuffer),
+        // With no spending entered there's no emergency fund to measure
+        // against, so no cash counts as spare (rather than all of it).
+        expensesUnknown = !(expenses > 0),
+        emergencyExcess = expensesUnknown ? 0 : Math.max(0, emergencyFund - emergencyBuffer),
         surplusCash = emergencyExcess,
+        // The most at any one bank, for the FSCS limit: the largest account
+        // listed, or all of it when it isn't split.
+        largestCashHolding = tiers.length > 1 ? Math.max(...tiers.map(t => +t.amount || 0)) : cash,
         // ISA: every kind of ISA shares the allowance (src/lib/isa.js)
         isaUsedThisYearCalc = isaUsedThisYear(d),
         isaHeadroom = Math.max(0, ISA_ALLOWANCE - isaUsedThisYearCalc),
@@ -252,7 +258,11 @@ export function calcMetrics(d, marketRates = {}) {
   const netAnnualIncome = regularIncome - incomeTaxAnnual - niAnnual;
   const existingMortgagePmt = hasMortgage ? (+d.monthlyMortgage||0) : 0;
   const existingPersonalLoanPmt = d.hasPersonalLoan === "yes" ? plMonthly : 0;
-  const monthlySurplus = Math.max(0, netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - slRepaymentRegular / 12);
+  const monthlyBalance = netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - slRepaymentRegular / 12;
+  const monthlySurplus = Math.max(0, monthlyBalance);
+  // More going out than coming in: the gap a month (0 when there's a surplus,
+  // or when it's under £25, which is rounding in the inputs, not a gap).
+  const monthlyShortfall = -monthlyBalance >= 25 ? -monthlyBalance : 0;
   // Take-home pay a month after tax, NI, student loan and personal loan
   // repayments, before living costs. Not less any current mortgage: the
   // Property module's budget check (monthlyBudget.js) is for a purchase that
@@ -276,9 +286,29 @@ export function calcMetrics(d, marketRates = {}) {
     // sacrifice) and on State Pension age.
     pensionType: d.pensionType || "", pastStatePensionAge: pastSpa,
     salarySacrifice: d.pensionType === "sacrifice" ? pensionSacrifice : 0,
-    monthlySurplus, monthlyTakeHome,
+    monthlySurplus, monthlyShortfall, monthlyTakeHome, expensesUnknown, largestCashHolding,
+    // No earnings: not working, with no salary (other income, dividends or a
+    // pension may still come in).
+    noEarnings: d.employmentStatus === "not_working" || !(salary > 0),
     // The best savings rate available (the live best Cash ISA rate) — what
     // overpaying a student loan is weighed against (calcStudentLoanScenario).
     bestSavingsRate: isaRate,
   };
+}
+
+// The days left in this tax year (to 5 April).
+export function daysToTaxYearEnd(now = new Date()) {
+  const taxEnd = new Date(now.getFullYear(), 3, 5);
+  if (taxEnd < now) taxEnd.setFullYear(taxEnd.getFullYear() + 1);
+  return Math.ceil((taxEnd - now) / (1000 * 60 * 60 * 24));
+}
+// How much of this year's ISA allowance there's money to fill before
+// 5 April: investments held outside an ISA, cash above the emergency fund,
+// and spare income until then, less any emergency shortfall (when Cash &
+// savings was picked; otherwise spare income is taken at face value).
+export function isaFillable(d, m, now = new Date()) {
+  const cashSelected = (d.selectedModules || []).includes("cash");
+  const spareIncome = Math.max(0, m.monthlySurplus * (daysToTaxYearEnd(now) / 30.44) - (cashSelected ? m.emergencyShortfall : 0));
+  const unwrapped = d.hasInvestments === "yes" ? (+d.unwrappedValue || 0) : 0;
+  return Math.min(m.isaHeadroom, unwrapped + m.emergencyExcess + spareIncome);
 }

@@ -5,7 +5,8 @@ import { fmt } from "./format.js";
 import { taxYearOf } from "./taxYear.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement } from "./pension.js";
+import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE } from "./pension.js";
+import { isaFillable as isaFillableBy } from "./metrics.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
 
@@ -59,9 +60,14 @@ export const MODULE_TAG = {
 export const HIDE_MVP_MODULES = true;
 export const HIDDEN_MVP_MODULE_KEYS = ["mortgage", "personalLoan", "kids"];
 
+// Also, for someone not working: no salary, bonus or workplace pension
+// payments, whatever was entered before they switched. Those questions hide,
+// but their answers stay saved (in rawD), so they come back on switching to
+// employed again.
 export function sanitizeForMvp(d) {
-  if (!HIDE_MVP_MODULES) return d;
-  return { ...d, hasMortgage: "no", ownsOutright: false, hasPersonalLoan: "no", hasKids: "no" };
+  const out = d.employmentStatus === "not_working" ? { ...d, salary: "0", bonusAmount: "0", myContribution: "0", employerMatch: "0" } : d;
+  if (!HIDE_MVP_MODULES) return out;
+  return { ...out, hasMortgage: "no", ownsOutright: false, hasPersonalLoan: "no", hasKids: "no" };
 }
 
 // ── Local module status computation ──────────────────────────────────────────
@@ -100,7 +106,13 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // the £/yr figures shown to the user (see pension's +99999 sentinel below for the
   // same pattern).
   const cashSortPriority = cashImpact + Math.round((m.cashIsaHeadroom ?? m.isaHeadroom) * (isaRate / 100) * (isaUrgencyBoost - 1));
-  const tooMuchCash = m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
+  // Not working, savings are what they live on: how long they'd last counts,
+  // not how much is "spare". Earning but spending more than they take home:
+  // the gap a month comes first.
+  const livingOffSavings = m.noEarnings && !inRetirement(d) && m.expenses > 0 && m.monthlyShortfall > 0;
+  const runway = livingOffSavings ? m.totalLiquid / m.monthlyShortfall : null;
+  const spendingGap = !m.noEarnings && m.monthlyShortfall > 0;
+  const tooMuchCash = !livingOffSavings && m.emergencyBuffer > 0 && m.emergencyFund > m.emergencyBuffer * 2;
   // Emergency fund: any shortfall against the chosen buffer needs attention;
   // less than one month of essential costs covered is critical.
   const emergencyShort = m.emergencyShortfall > 0;
@@ -116,7 +128,14 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   }
 
   let cashImpactLabel;
-  if (tooMuchCash) {
+  const runwayText = runway == null ? null : runway >= 120 ? "10 years or more" : `about ${runway < 10 ? runway.toFixed(1) : Math.round(runway)} months`;
+  if (spendingGap) {
+    cashImpactLabel = `${fmt(Math.round(m.monthlyShortfall))} a month more going out than coming in`;
+  } else if (livingOffSavings) {
+    cashImpactLabel = `${cashImpact > 0 ? `${fmt(cashImpact)}/yr more your savings could earn; they'd` : "Your savings would"} cover ${runwayText} of spending`;
+  } else if (m.expensesUnknown && !(cashImpact > 0)) {
+    cashImpactLabel = "Add your monthly spending to size your emergency fund";
+  } else if (tooMuchCash) {
     // emergencyExcess is a principal (the £ sitting above the buffer), not a £/yr
     // figure — never label it "/yr" or use it as the amount. The actual annual
     // benefit is the same optimisation-gain figure used below, just called out
@@ -142,8 +161,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // is a principal, not an annual figure, and must never be used as the £/yr amount.
   const cashAmount = cashImpact > 0 ? cashImpact : 0; // accessLabel-only attention has no £ figure
   s.cash = {
-    status: tooMuchCash || cashImpact > 800 || emergencyCritical ? "critical"
-          : cashImpact > 200 || emergencyShort ? "attention" : "ok",
+    status: spendingGap || (livingOffSavings && runway < 6) || tooMuchCash || cashImpact > 800 || (emergencyCritical && !livingOffSavings) ? "critical"
+          : (livingOffSavings && runway < 12) || cashImpact > 200 || (emergencyShort && !livingOffSavings) || m.expensesUnknown ? "attention" : "ok",
     impact: cashSortPriority,
     impactLabel: cashImpactLabel,
     amount: cashAmount,
@@ -161,10 +180,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // buffer, or spare monthly income once any buffer shortfall is topped up.
   // (The shortfall is only known when Cash & savings was picked — otherwise
   // spare income is taken at face value.)
-  const cashSelected = (d.selectedModules || []).includes("cash");
-  const spareIncomeToTaxEnd = Math.max(0, m.monthlySurplus * (daysToTaxEnd / 30.44) - (cashSelected ? m.emergencyShortfall : 0));
-  const unwrappedInvestments = d.hasInvestments === "yes" ? (+d.unwrappedValue||0) : 0;
-  const isaFillable = Math.min(m.isaHeadroom, unwrappedInvestments + m.emergencyExcess + spareIncomeToTaxEnd);
+  const isaFillable = isaFillableBy(d, m);
   const isaGap = isaFillable > 2000;
   const isaSortWeight = Math.round(isaFillable * GROWTH * m.tr * isaUrgencyBoost);
   s.investments = {
@@ -205,6 +221,9 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // retired member with a pot and no salary has no relief to miss.
   const missedRelief = missedPensionRelief(d, m);
   const notPayingIn = !contributing && missedRelief > 0;
+  // No earnings, not retired: £720 of relief is still there on £2,880 paid
+  // in. Shown, but not counted as a gap in the score: it needs spare money.
+  const nonEarnerRelief = !contributing && m.noEarnings && !inRetirement(d) && (+d.age || 0) < PENSION_RELIEF_MAX_AGE;
   const pensionPrimaryAmount = notPayingIn ? missedRelief : contributing ? m.missedMatch : 0;
   const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount); // definitive only
   const pensionPotentialAmount = Math.round(bonusSacrifice.beyondTaper); // potential — not in amount
@@ -215,6 +234,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // something to act on, so it's the module's line only when nothing else is.
   const taxFreeCash = calcTaxFreeCash(d);
   const pensionLabelParts = [
+    nonEarnerRelief ? `${fmt(NON_EARNER_PENSION_RELIEF)}/yr of tax relief open to you, with no earnings` : null,
     notPayingIn
       ? `${d.hasPension === "yes" ? "Nothing paid in" : "No pension"}: ${fmt(pensionPrimaryAmount)}/yr of tax relief missed`
       : contributing && m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of employer match unclaimed` : null,
@@ -240,7 +260,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     // "critical" when genuinely missing match or not contributing at all;
     // "attention" only when there's still something to act on; otherwise "ok".
     status: notPayingIn ? "critical" : contributing && m.missedMatch > 0 ? "critical"
-          : pensionTaperAmount > 0 || pensionPotentialAmount > 0 || aaRoom.excess > 0 ? "attention" : "ok",
+          : pensionTaperAmount > 0 || pensionPotentialAmount > 0 || aaRoom.excess > 0 || nonEarnerRelief ? "attention" : "ok",
     impact: pensionImpact,
     impactLabel: pensionLabelParts.join(" + ") || null,
     amount: pensionAmount,
@@ -263,7 +283,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
           : "ok",
     impact: slAmount,
     impactLabel: sl.belowThreshold
-      ? "You earn below the repayment threshold, so nothing comes off your pay"
+      ? (m.noEarnings ? "Nothing is repaid while you're not earning" : "You earn below the repayment threshold, so nothing comes off your pay")
       : sl.worthOverpaying
         ? `${fmt(sl.overpayAnnualBenefit)}/yr better off overpaying than saving the money`
         : sl.balanceGrowing && !sl.willClear

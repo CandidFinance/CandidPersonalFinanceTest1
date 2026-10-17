@@ -126,7 +126,7 @@ test("every question has a short reason, and ids are unique across every walk-th
 });
 
 // Not paying in isn't "no pension": a pot from retiring or an old job counts.
-const known = { ...fresh, employmentAsked: true, employmentStatus: "not_working", hasExtraIncome: "no" };
+const known = { ...fresh, employmentAsked: true, employmentStatus: "not_working", notWorkingReason: "retired", hasExtraIncome: "no" };
 test("pension: not paying in asks about a pot, then retirement for those 55 and over", () => {
   const noPot = { ...known, age: "69", pensionStatus: "no" };
   // From 66 the State Pension question is asked with or without a pot.

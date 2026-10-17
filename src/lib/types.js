@@ -46,6 +46,7 @@
  * @property {string} [hasBonus]
  * @property {string} salaryTrajectory "stable", "moderate"...
  * @property {string} employmentStatus "employed", "self_employed" or "not_working".
+ * @property {string} [notWorkingReason] When not working: "retired" or "break" (between jobs, a career break).
  * @property {boolean} [employmentAsked]
  * @property {string} [hasExtraIncome]
  * @property {string} monthlyExpenses
@@ -247,6 +248,10 @@
  * @property {number} salaryGrowthRate
  * @property {number} monthlyTakeHome
  * @property {number} monthlySurplus
+ * @property {number} monthlyShortfall More going out than coming in, a month (0 with a surplus).
+ * @property {boolean} expensesUnknown No monthly spending entered.
+ * @property {number} largestCashHolding The most cash at one bank, for the FSCS limit.
+ * @property {boolean} noEarnings Not working, or no salary.
  * @property {number} expenses
  */
 

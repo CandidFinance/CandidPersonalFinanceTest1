@@ -44,10 +44,25 @@ export function minimumPensionAge(taxYear) {
 // Retirement mode: at their retirement age (once old enough to take a
 // pension), or already drawing. The pension screen then shows tax-free cash
 // and drawing it down, not growth to an age they've reached.
+// Someone not working who's said whether they're retired is taken at their
+// word; otherwise, past the age they gave for retiring.
 export function inRetirement(d) {
   if (hasStartedDrawing(d)) return true;
-  return pastRetirementAge(d) && (+d.age || 0) >= minimumPensionAge(taxYearFor(d));
+  const oldEnough = (+d.age || 0) >= minimumPensionAge(taxYearFor(d));
+  if (d.employmentStatus === "not_working" && d.notWorkingReason) return d.notWorkingReason === "retired" && oldEnough;
+  return pastRetirementAge(d) && oldEnough;
 }
+
+// The age this person can first take their pension: 55, or 57 for anyone
+// who reaches 55 from 6 April 2028.
+export function pensionAccessAge(d) {
+  const age = +d.age || 0;
+  return minimumPensionAge(taxYearFor(d) + Math.max(0, 55 - age));
+}
+
+// With no earnings, anyone under 75 can still pay £2,880 a year into a
+// personal pension and have £720 of basic-rate relief added (£3,600 gross).
+export const NON_EARNER_PENSION_NET = 2880, NON_EARNER_PENSION_RELIEF = 720;
 
 // Having drawn an income (or lump sums beyond tax-free cash), only £10,000 a
 // year can go into a pension with tax relief: the Money Purchase Annual

@@ -31,6 +31,8 @@ const YES_NO_OPTIONS = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }
 const CASH_ACCESS_OPTIONS = [{ value:"yes", label:"Instant access" }, { value:"partial", label:"Partial" }, { value:"no", label:"No" }];
 const PENSION_STATUS_OPTIONS = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }, { value:"unsure", label:"Not sure" }];
 const PENSION_TYPE_OPTIONS = [{ value:"sacrifice", label:"Salary sacrifice" }, { value:"relief", label:"Relief at source" }, { value:"", label:"Not sure" }];
+// Not working: retired, or between jobs (pension.js inRetirement).
+const NOT_WORKING_OPTIONS = [{ value:"retired", label:"Retired" }, { value:"break", label:"Between jobs or a break" }];
 const EMPLOYMENT_STATUS_OPTIONS = [
   { value:"employed", label:"Employed" },
   { value:"self_employed", label:"Self-employed" },
@@ -213,6 +215,11 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
             <InfoButton onClick={() => setShowEmploymentInfo(v => !v)} open={showEmploymentInfo}/>
           </div>
           <PillSlider value={d.employmentStatus || "employed"} onChange={v => set("employmentStatus", v)} options={EMPLOYMENT_STATUS_OPTIONS}/>
+          {d.employmentStatus === "not_working" && (
+            <div style={{marginTop:"10px"}}>
+              <PillSlider value={d.notWorkingReason || ""} onChange={v => set("notWorkingReason", v)} options={NOT_WORKING_OPTIONS}/>
+            </div>
+          )}
           {showEmploymentInfo && (
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"8px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
               We factor this into your analysis — whether you're employed, self-employed or not working changes which levers are actually available to you, so we can work out what's genuinely optimal for your position rather than giving generic advice.

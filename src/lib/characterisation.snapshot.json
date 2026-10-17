@@ -70,7 +70,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2160,
     "monthlySurplus": 1890.0375,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 4090.0375,
+    "expensesUnknown": false,
+    "largestCashHolding": 18000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -94,11 +98,11 @@
      "potentialAmount": 2000
     },
     "studentLoan": {
-     "status": "attention",
-     "impact": 286,
-     "impactLabel": "£286/yr better off overpaying than saving the money",
+     "status": "ok",
+     "impact": 0,
+     "impactLabel": null,
      "belowThreshold": false,
-     "amount": 286
+     "amount": 0
     },
     "mortgage": {
      "status": "na",
@@ -120,7 +124,7 @@
      "amountIsLumpSum": true
     }
    },
-   "score": 58,
+   "score": 66,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -159,11 +163,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "attention",
-     "summary": "£286/yr better off overpaying than saving the money",
-     "impact": 286,
-     "impactLabel": "£286/yr better off overpaying than saving the money",
-     "amount": 286,
+     "status": "ok",
+     "summary": "On track: nothing to act on right now.",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
      "amountIsLumpSum": false
     },
     "mortgage": {
@@ -245,11 +249,11 @@
       "key": "studentLoan",
       "icon": "<element undefined>",
       "title": "Student loan",
-      "status": "attention",
-      "summary": "£286/yr better off overpaying than saving the money",
-      "impact": 286,
-      "impactLabel": "£286/yr better off overpaying than saving the money",
-      "amount": 286,
+      "status": "ok",
+      "summary": "On track: nothing to act on right now.",
+      "impact": 0,
+      "impactLabel": null,
+      "amount": 0,
       "amountIsLumpSum": false,
       "banked": 0,
       "pending": 0
@@ -258,14 +262,15 @@
     "modulesWithRec": [
      "<circular>",
      "<circular>",
-     "<circular>",
      "<circular>"
     ],
-    "modulesNoRec": [],
+    "modulesNoRec": [
+     "<circular>"
+    ],
     "kidsModule": null,
-    "needActionCount": 4,
-    "onTrackCount": 0,
-    "totalOpp": 2776,
+    "needActionCount": 3,
+    "onTrackCount": 1,
+    "totalOpp": 2490,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -285,7 +290,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 286,
+     "amount": 0,
      "answers": "[null,null,null,null,null,\"22000\",null,null,null,null,null,\"\"]",
      "banked": 0
     }
@@ -348,17 +353,17 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£286 a year",
-      "title": "better off overpaying than saving the money."
+      "figure": "6 years",
+      "title": "until your loan is paid off."
      },
      {
       "label": "Why",
-      "title": "Your loan charges 6%, more than the best savings rate (4.72%) and your pension's assumed 6% growth."
+      "title": "Your pension's assumed 6% growth beats your loan's 5.3% a year on average over its life, so overpaying doesn't come out ahead."
      },
      {
       "label": "What you could do",
-      "title": "Overpaying with some of your £9,800 of spare cash would earn that.",
-      "body": "You can overpay on the Student Loans Company website."
+      "title": "Nothing to change right now.",
+      "body": "Repayments come out of your pay automatically."
      }
     ]
    },
@@ -1323,16 +1328,11 @@
       "amount": 432,
       "amountIsLumpSum": false,
       "line": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused"
-     },
-     {
-      "key": "studentLoan",
-      "title": "Student loan",
-      "amount": 286,
-      "amountIsLumpSum": false,
-      "line": "£286/yr better off overpaying than saving the money"
      }
     ],
-    "onTrack": []
+    "onTrack": [
+     "Student loan"
+    ]
    },
    "drawdown": {
     "phased": {
@@ -2296,6 +2296,7 @@
      "threshold": 29385,
      "slInterestRate": 0.06,
      "slRatePct": 6,
+     "lifeRatePct": 5.3,
      "annualInterest": 1320,
      "annualRep": 4090.95,
      "belowThreshold": false,
@@ -2368,12 +2369,12 @@
       }
      ],
      "cashRate": 4.72,
-     "effectiveBenefit": 1.3,
+     "effectiveBenefit": 0.6,
      "pensionGrowthPct": 6,
-     "pensionGap": 0,
-     "beatsPension": true,
-     "worthOverpaying": true,
-     "overpayAnnualBenefit": 286
+     "pensionGap": -0.7,
+     "beatsPension": false,
+     "worthOverpaying": false,
+     "overpayAnnualBenefit": 0
     },
     "overpay": {
      "scenarios": [
@@ -2686,8 +2687,8 @@
      "num_kids": null
     },
     "report": {
-     "candid_score": 58,
-     "total_opportunity_gbp": 5100,
+     "candid_score": 66,
+     "total_opportunity_gbp": 4900,
      "critical_modules": "pension"
     },
     "property": {
@@ -2811,7 +2812,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2160,
     "monthlySurplus": 1890.0375,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 4090.0375,
+    "expensesUnknown": false,
+    "largestCashHolding": 18000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -2835,11 +2840,11 @@
      "potentialAmount": 2000
     },
     "studentLoan": {
-     "status": "attention",
-     "impact": 198,
-     "impactLabel": "£198/yr better off overpaying than saving the money",
+     "status": "ok",
+     "impact": 0,
+     "impactLabel": null,
      "belowThreshold": false,
-     "amount": 198
+     "amount": 0
     },
     "mortgage": {
      "status": "na",
@@ -2861,7 +2866,7 @@
      "amountIsLumpSum": true
     }
    },
-   "score": 58,
+   "score": 66,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -2900,11 +2905,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "attention",
-     "summary": "£198/yr better off overpaying than saving the money",
-     "impact": 198,
-     "impactLabel": "£198/yr better off overpaying than saving the money",
-     "amount": 198,
+     "status": "ok",
+     "summary": "On track: nothing to act on right now.",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
      "amountIsLumpSum": false
     },
     "mortgage": {
@@ -2986,11 +2991,11 @@
       "key": "studentLoan",
       "icon": "<element undefined>",
       "title": "Student loan",
-      "status": "attention",
-      "summary": "£198/yr better off overpaying than saving the money",
-      "impact": 198,
-      "impactLabel": "£198/yr better off overpaying than saving the money",
-      "amount": 198,
+      "status": "ok",
+      "summary": "On track: nothing to act on right now.",
+      "impact": 0,
+      "impactLabel": null,
+      "amount": 0,
       "amountIsLumpSum": false,
       "banked": 0,
       "pending": 0
@@ -2999,14 +3004,15 @@
     "modulesWithRec": [
      "<circular>",
      "<circular>",
-     "<circular>",
      "<circular>"
     ],
-    "modulesNoRec": [],
+    "modulesNoRec": [
+     "<circular>"
+    ],
     "kidsModule": null,
-    "needActionCount": 4,
-    "onTrackCount": 0,
-    "totalOpp": 2693,
+    "needActionCount": 3,
+    "onTrackCount": 1,
+    "totalOpp": 2495,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -3026,7 +3032,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 198,
+     "amount": 0,
      "answers": "[null,null,null,null,null,\"22000\",null,null,null,null,null,\"\"]",
      "banked": 0
     }
@@ -3089,17 +3095,17 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£198 a year",
-      "title": "better off overpaying than saving the money."
+      "figure": "6 years",
+      "title": "until your loan is paid off."
      },
      {
       "label": "Why",
-      "title": "Your loan charges 6%, more than the best savings rate (5.1%) and your pension's assumed 6% growth."
+      "title": "Your pension's assumed 6% growth beats your loan's 5.3% a year on average over its life, so overpaying doesn't come out ahead."
      },
      {
       "label": "What you could do",
-      "title": "Overpaying with some of your £9,800 of spare cash would earn that.",
-      "body": "You can overpay on the Student Loans Company website."
+      "title": "Nothing to change right now.",
+      "body": "Repayments come out of your pay automatically."
      }
     ]
    },
@@ -3869,16 +3875,11 @@
       "amount": 432,
       "amountIsLumpSum": false,
       "line": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused"
-     },
-     {
-      "key": "studentLoan",
-      "title": "Student loan",
-      "amount": 198,
-      "amountIsLumpSum": false,
-      "line": "£198/yr better off overpaying than saving the money"
      }
     ],
-    "onTrack": []
+    "onTrack": [
+     "Student loan"
+    ]
    },
    "drawdown": {
     "phased": {
@@ -4842,6 +4843,7 @@
      "threshold": 29385,
      "slInterestRate": 0.06,
      "slRatePct": 6,
+     "lifeRatePct": 5.3,
      "annualInterest": 1320,
      "annualRep": 4090.95,
      "belowThreshold": false,
@@ -4914,12 +4916,12 @@
       }
      ],
      "cashRate": 5.1,
-     "effectiveBenefit": 0.9,
+     "effectiveBenefit": 0.2,
      "pensionGrowthPct": 6,
-     "pensionGap": 0,
-     "beatsPension": true,
-     "worthOverpaying": true,
-     "overpayAnnualBenefit": 198
+     "pensionGap": -0.7,
+     "beatsPension": false,
+     "worthOverpaying": false,
+     "overpayAnnualBenefit": 0
     },
     "overpay": {
      "scenarios": [
@@ -5174,8 +5176,8 @@
      "num_kids": null
     },
     "report": {
-     "candid_score": 58,
-     "total_opportunity_gbp": 5100,
+     "candid_score": 66,
+     "total_opportunity_gbp": 4900,
      "critical_modules": "pension"
     },
     "property": {
@@ -5300,7 +5302,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2400,
     "monthlySurplus": 1213.2999999999997,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3013.2999999999997,
+    "expensesUnknown": false,
+    "largestCashHolding": 12000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -7367,6 +7373,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -7792,7 +7799,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2400,
     "monthlySurplus": 1213.2999999999997,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3013.2999999999997,
+    "expensesUnknown": false,
+    "largestCashHolding": 12000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -9732,6 +9743,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -10115,7 +10127,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 5700,
     "monthlySurplus": 3586.45,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 5186.45,
+    "expensesUnknown": false,
+    "largestCashHolding": 45000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -12217,6 +12233,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -12656,7 +12673,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 5700,
     "monthlySurplus": 3586.45,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 5186.45,
+    "expensesUnknown": false,
+    "largestCashHolding": 45000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -14601,6 +14622,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -14982,7 +15004,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 0,
     "monthlySurplus": 653.3,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 1853.3,
+    "expensesUnknown": false,
+    "largestCashHolding": 500,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -15188,7 +15214,7 @@
      {
       "label": "Your position",
       "figure": "£20,000",
-      "title": "of this year's ISA allowance unused."
+      "title": "of ISA allowance this tax year, for when there's money to put in."
      },
      {
       "label": "Why",
@@ -15196,8 +15222,8 @@
      },
      {
       "label": "What you could do",
-      "title": "A Stocks and Shares ISA, for money you won't need for five years or more, or a Cash ISA would use it.",
-      "body": "Over long periods shares have tended to grow faster than cash, which is why many people invest for the long term, but they can fall in value, sometimes for years. Money in a Cash ISA can't fall."
+      "title": "Nothing to change right now.",
+      "body": "A fresh allowance opens each 6 April."
      }
     ],
     "studentLoan": null
@@ -16035,6 +16061,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -16458,7 +16485,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 0,
     "monthlySurplus": 653.3,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 1853.3,
+    "expensesUnknown": false,
+    "largestCashHolding": 500,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -16664,7 +16695,7 @@
      {
       "label": "Your position",
       "figure": "£20,000",
-      "title": "of this year's ISA allowance unused."
+      "title": "of ISA allowance this tax year, for when there's money to put in."
      },
      {
       "label": "Why",
@@ -16672,8 +16703,8 @@
      },
      {
       "label": "What you could do",
-      "title": "A Stocks and Shares ISA, for money you won't need for five years or more, or a Cash ISA would use it.",
-      "body": "Over long periods shares have tended to grow faster than cash, which is why many people invest for the long term, but they can fall in value, sometimes for years. Money in a Cash ISA can't fall."
+      "title": "Nothing to change right now.",
+      "body": "A fresh allowance opens each 6 April."
      }
     ],
     "studentLoan": null
@@ -17392,6 +17423,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -17776,7 +17808,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 0,
     "monthlySurplus": 1805.5333333333328,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 5305.533333333333,
+    "expensesUnknown": false,
+    "largestCashHolding": 40000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -18055,12 +18091,12 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "1 years",
+      "figure": "1 year",
       "title": "until your loan is paid off."
      },
      {
       "label": "Why",
-      "title": "Savings pay 4.72%, more than your loan's 4.1%, so overpaying doesn't come out ahead."
+      "title": "Savings pay 4.72%, more than your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead."
      },
      {
       "label": "What you could do",
@@ -19960,6 +19996,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 246,
      "annualRep": 9009,
      "belowThreshold": false,
@@ -20414,7 +20451,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 0,
     "monthlySurplus": 1805.5333333333328,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 5305.533333333333,
+    "expensesUnknown": false,
+    "largestCashHolding": 40000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -20693,12 +20734,12 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "1 years",
+      "figure": "1 year",
       "title": "until your loan is paid off."
      },
      {
       "label": "Why",
-      "title": "Savings pay 5.1%, more than your loan's 4.1%, so overpaying doesn't come out ahead."
+      "title": "Savings pay 5.1%, more than your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead."
      },
      {
       "label": "What you could do",
@@ -22429,6 +22470,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 246,
      "annualRep": 9009,
      "belowThreshold": false,
@@ -22827,7 +22869,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 24000,
     "monthlySurplus": 5452.949999999999,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 11452.949999999999,
+    "expensesUnknown": false,
+    "largestCashHolding": 150000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -23039,18 +23085,18 @@
     "pension": [
      {
       "label": "Your position",
-      "figure": "£1,287,624",
-      "title": "projected in your pension by 60."
+      "figure": "£5,200 a year",
+      "title": "paid into your pension above your £38,000 annual allowance."
      },
      {
       "label": "Why",
-      "title": "You pay 10% and get your employer's full 8% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "title": "Above £260,000 of income, the £60,000 annual allowance shrinks, to £10,000 at the lowest. Payments over it are taxed at your top rate: about £2,340 a year here.",
+      "body": "You and your employer pay in about £43,200 a year."
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Allowance unused in the last three tax years can usually be carried forward to cover it.",
+      "body": "Your pension provider, or an adviser, can confirm your exact allowance."
      }
     ],
     "cash": [
@@ -23061,7 +23107,8 @@
      },
      {
       "label": "Why",
-      "title": "Your £150,000 in savings earns about £2,475 a year after tax. The highest-rate options today include Premium Bonds at 3.6%."
+      "title": "Your £150,000 in savings earns about £2,475 a year after tax. The highest-rate options today include Premium Bonds at 3.6%.",
+      "body": "The FSCS protects £120,000 per person at each banking licence; £30,000 of yours is above that at one bank."
      },
      {
       "label": "What you could do",
@@ -24941,6 +24988,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -25344,7 +25392,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 24000,
     "monthlySurplus": 5452.949999999999,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 11452.949999999999,
+    "expensesUnknown": false,
+    "largestCashHolding": 150000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -25556,18 +25608,18 @@
     "pension": [
      {
       "label": "Your position",
-      "figure": "£1,287,624",
-      "title": "projected in your pension by 60."
+      "figure": "£5,200 a year",
+      "title": "paid into your pension above your £38,000 annual allowance."
      },
      {
       "label": "Why",
-      "title": "You pay 10% and get your employer's full 8% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "title": "Above £260,000 of income, the £60,000 annual allowance shrinks, to £10,000 at the lowest. Payments over it are taxed at your top rate: about £2,340 a year here.",
+      "body": "You and your employer pay in about £43,200 a year."
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Allowance unused in the last three tax years can usually be carried forward to cover it.",
+      "body": "Your pension provider, or an adviser, can confirm your exact allowance."
      }
     ],
     "cash": [
@@ -25578,7 +25630,8 @@
      },
      {
       "label": "Why",
-      "title": "Your savings earn about 3% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account."
+      "title": "Your savings earn about 3% on average. The highest rates today are 4.9% in a Cash ISA and 4.5% in a savings account.",
+      "body": "The FSCS protects £120,000 per person at each banking licence; £30,000 of yours is above that at one bank."
      },
      {
       "label": "What you could do",
@@ -27362,6 +27415,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -27736,7 +27790,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 0,
     "monthlySurplus": 1802.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3602.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 25000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -29857,6 +29915,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -30296,7 +30355,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 0,
     "monthlySurplus": 1802.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3602.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 25000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -32229,6 +32292,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -32613,7 +32677,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 1900,
     "monthlySurplus": 629.3458333333332,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 2429.3458333333333,
+    "expensesUnknown": false,
+    "largestCashHolding": 10000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -34750,6 +34818,7 @@
      "threshold": 33795,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 2.1,
      "annualInterest": 1271,
      "annualRep": 207.45,
      "belowThreshold": false,
@@ -34974,9 +35043,9 @@
       }
      ],
      "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "effectiveBenefit": -2.6,
      "pensionGrowthPct": 6,
-     "pensionGap": -1.9,
+     "pensionGap": -3.9,
      "beatsPension": false,
      "worthOverpaying": false,
      "overpayAnnualBenefit": 0
@@ -35393,7 +35462,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 1900,
     "monthlySurplus": 629.3458333333332,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 2429.3458333333333,
+    "expensesUnknown": false,
+    "largestCashHolding": 10000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -37403,6 +37476,7 @@
      "threshold": 33795,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 2.1,
      "annualInterest": 1271,
      "annualRep": 207.45,
      "belowThreshold": false,
@@ -37627,9 +37701,9 @@
       }
      ],
      "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "effectiveBenefit": -3,
      "pensionGrowthPct": 6,
-     "pensionGap": -1.9,
+     "pensionGap": -3.9,
      "beatsPension": false,
      "worthOverpaying": false,
      "overpayAnnualBenefit": 0
@@ -38004,7 +38078,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 1450,
     "monthlySurplus": 517.5083333333332,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 1917.5083333333332,
+    "expensesUnknown": false,
+    "largestCashHolding": 3000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -38269,7 +38347,7 @@
      {
       "label": "Your position",
       "figure": "£15,000",
-      "title": "of this year's ISA allowance unused."
+      "title": "of ISA allowance this tax year, for when there's money to put in."
      },
      {
       "label": "Why",
@@ -38277,8 +38355,8 @@
      },
      {
       "label": "What you could do",
-      "title": "A Stocks and Shares ISA, for money you won't need for five years or more, or a Cash ISA would use it.",
-      "body": "Over long periods shares have tended to grow faster than cash, which is why many people invest for the long term, but they can fall in value, sometimes for years. Money in a Cash ISA can't fall."
+      "title": "Nothing to change right now.",
+      "body": "A fresh allowance opens each 6 April."
      }
     ],
     "studentLoan": [
@@ -40134,6 +40212,7 @@
      "threshold": 25000,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 2,
      "annualInterest": 1968,
      "annualRep": 229.5,
      "belowThreshold": false,
@@ -40478,9 +40557,9 @@
       }
      ],
      "cashRate": 4.72,
-     "effectiveBenefit": -0.6,
+     "effectiveBenefit": -2.7,
      "pensionGrowthPct": 6,
-     "pensionGap": -1.9,
+     "pensionGap": -4,
      "beatsPension": false,
      "worthOverpaying": false,
      "overpayAnnualBenefit": 0
@@ -40897,7 +40976,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 1450,
     "monthlySurplus": 517.5083333333332,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 1917.5083333333332,
+    "expensesUnknown": false,
+    "largestCashHolding": 3000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -41162,7 +41245,7 @@
      {
       "label": "Your position",
       "figure": "£15,000",
-      "title": "of this year's ISA allowance unused."
+      "title": "of ISA allowance this tax year, for when there's money to put in."
      },
      {
       "label": "Why",
@@ -41170,8 +41253,8 @@
      },
      {
       "label": "What you could do",
-      "title": "A Stocks and Shares ISA, for money you won't need for five years or more, or a Cash ISA would use it.",
-      "body": "Over long periods shares have tended to grow faster than cash, which is why many people invest for the long term, but they can fall in value, sometimes for years. Money in a Cash ISA can't fall."
+      "title": "Nothing to change right now.",
+      "body": "A fresh allowance opens each 6 April."
      }
     ],
     "studentLoan": [
@@ -42908,6 +42991,7 @@
      "threshold": 25000,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 2,
      "annualInterest": 1968,
      "annualRep": 229.5,
      "belowThreshold": false,
@@ -43252,9 +43336,9 @@
       }
      ],
      "cashRate": 5.1,
-     "effectiveBenefit": -1,
+     "effectiveBenefit": -3.1,
      "pensionGrowthPct": 6,
-     "pensionGap": -1.9,
+     "pensionGap": -4,
      "beatsPension": false,
      "worthOverpaying": false,
      "overpayAnnualBenefit": 0
@@ -43629,7 +43713,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2600,
     "monthlySurplus": 1306.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3106.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 10000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -43653,11 +43741,11 @@
      "potentialAmount": 0
     },
     "studentLoan": {
-     "status": "attention",
-     "impact": 182,
-     "impactLabel": "£182/yr better off overpaying than saving the money",
+     "status": "ok",
+     "impact": 0,
+     "impactLabel": null,
      "belowThreshold": false,
-     "amount": 182
+     "amount": 0
     },
     "mortgage": {
      "status": "na",
@@ -43679,7 +43767,7 @@
      "amountIsLumpSum": true
     }
    },
-   "score": 76,
+   "score": 84,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -43718,11 +43806,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "attention",
-     "summary": "£182/yr better off overpaying than saving the money",
-     "impact": 182,
-     "impactLabel": "£182/yr better off overpaying than saving the money",
-     "amount": 182,
+     "status": "ok",
+     "summary": "On track: nothing to act on right now.",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
      "amountIsLumpSum": false
     },
     "mortgage": {
@@ -43775,19 +43863,6 @@
       "pending": 0
      },
      {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "attention",
-      "summary": "£182/yr better off overpaying than saving the money",
-      "impact": 182,
-      "impactLabel": "£182/yr better off overpaying than saving the money",
-      "amount": 182,
-      "amountIsLumpSum": false,
-      "banked": 0,
-      "pending": 0
-     },
-     {
       "key": "investments",
       "icon": "<element undefined>",
       "title": "Investments",
@@ -43812,20 +43887,33 @@
       "amountIsLumpSum": false,
       "banked": 0,
       "pending": 0
+     },
+     {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "ok",
+      "summary": "On track: nothing to act on right now.",
+      "impact": 0,
+      "impactLabel": null,
+      "amount": 0,
+      "amountIsLumpSum": false,
+      "banked": 0,
+      "pending": 0
      }
     ],
     "modulesWithRec": [
-     "<circular>",
      "<circular>"
     ],
     "modulesNoRec": [
      "<circular>",
+     "<circular>",
      "<circular>"
     ],
     "kidsModule": null,
-    "needActionCount": 2,
-    "onTrackCount": 2,
-    "totalOpp": 404,
+    "needActionCount": 1,
+    "onTrackCount": 3,
+    "totalOpp": 222,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -43845,7 +43933,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 182,
+     "amount": 0,
      "answers": "[null,null,null,null,null,\"14000\",null,null,null,null,null,\"\"]",
      "banked": 0
     }
@@ -43909,17 +43997,17 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£182 a year",
-      "title": "better off overpaying than saving the money."
+      "figure": "10 years",
+      "title": "until your loan is paid off."
      },
      {
       "label": "Why",
-      "title": "Your loan charges 6%, more than the best savings rate (4.72%) and your pension's assumed 6% growth."
+      "title": "Your pension's assumed 6% growth beats your loan's 5.2% a year on average over its life, so overpaying doesn't come out ahead."
      },
      {
       "label": "What you could do",
-      "title": "Overpaying with any spare cash you build up would earn that.",
-      "body": "You can overpay on the Student Loans Company website."
+      "title": "Nothing to change right now.",
+      "body": "Repayments come out of your pay automatically."
      }
     ]
    },
@@ -44797,17 +44885,11 @@
       "amount": 222,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
-     },
-     {
-      "key": "studentLoan",
-      "title": "Student loan",
-      "amount": 182,
-      "amountIsLumpSum": false,
-      "line": "£182/yr better off overpaying than saving the money"
      }
     ],
     "onTrack": [
-     "Pension"
+     "Pension",
+     "Student loan"
     ]
    },
    "drawdown": {
@@ -45772,6 +45854,7 @@
      "threshold": 21000,
      "slInterestRate": 0.06,
      "slRatePct": 6,
+     "lifeRatePct": 5.2,
      "annualInterest": 840,
      "annualRep": 1704,
      "belowThreshold": false,
@@ -45876,12 +45959,12 @@
       }
      ],
      "cashRate": 4.72,
-     "effectiveBenefit": 1.3,
+     "effectiveBenefit": 0.5,
      "pensionGrowthPct": 6,
-     "pensionGap": 0,
-     "beatsPension": true,
-     "worthOverpaying": true,
-     "overpayAnnualBenefit": 182
+     "pensionGap": -0.8,
+     "beatsPension": false,
+     "worthOverpaying": false,
+     "overpayAnnualBenefit": 0
     },
     "overpay": {
      "scenarios": [
@@ -46162,8 +46245,8 @@
      "num_kids": null
     },
     "report": {
-     "candid_score": 76,
-     "total_opportunity_gbp": 500,
+     "candid_score": 84,
+     "total_opportunity_gbp": 300,
      "critical_modules": ""
     },
     "property": {
@@ -46287,7 +46370,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2600,
     "monthlySurplus": 1306.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3106.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 10000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -46311,11 +46398,11 @@
      "potentialAmount": 0
     },
     "studentLoan": {
-     "status": "attention",
-     "impact": 126,
-     "impactLabel": "£126/yr better off overpaying than saving the money",
+     "status": "ok",
+     "impact": 0,
+     "impactLabel": null,
      "belowThreshold": false,
-     "amount": 126
+     "amount": 0
     },
     "mortgage": {
      "status": "na",
@@ -46337,7 +46424,7 @@
      "amountIsLumpSum": true
     }
    },
-   "score": 76,
+   "score": 84,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -46376,11 +46463,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "attention",
-     "summary": "£126/yr better off overpaying than saving the money",
-     "impact": 126,
-     "impactLabel": "£126/yr better off overpaying than saving the money",
-     "amount": 126,
+     "status": "ok",
+     "summary": "On track: nothing to act on right now.",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
      "amountIsLumpSum": false
     },
     "mortgage": {
@@ -46433,19 +46520,6 @@
       "pending": 0
      },
      {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "attention",
-      "summary": "£126/yr better off overpaying than saving the money",
-      "impact": 126,
-      "impactLabel": "£126/yr better off overpaying than saving the money",
-      "amount": 126,
-      "amountIsLumpSum": false,
-      "banked": 0,
-      "pending": 0
-     },
-     {
       "key": "investments",
       "icon": "<element undefined>",
       "title": "Investments",
@@ -46470,20 +46544,33 @@
       "amountIsLumpSum": false,
       "banked": 0,
       "pending": 0
+     },
+     {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "ok",
+      "summary": "On track: nothing to act on right now.",
+      "impact": 0,
+      "impactLabel": null,
+      "amount": 0,
+      "amountIsLumpSum": false,
+      "banked": 0,
+      "pending": 0
      }
     ],
     "modulesWithRec": [
-     "<circular>",
      "<circular>"
     ],
     "modulesNoRec": [
      "<circular>",
+     "<circular>",
      "<circular>"
     ],
     "kidsModule": null,
-    "needActionCount": 2,
-    "onTrackCount": 2,
-    "totalOpp": 376,
+    "needActionCount": 1,
+    "onTrackCount": 3,
+    "totalOpp": 250,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -46503,7 +46590,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 126,
+     "amount": 0,
      "answers": "[null,null,null,null,null,\"14000\",null,null,null,null,null,\"\"]",
      "banked": 0
     }
@@ -46567,17 +46654,17 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£126 a year",
-      "title": "better off overpaying than saving the money."
+      "figure": "10 years",
+      "title": "until your loan is paid off."
      },
      {
       "label": "Why",
-      "title": "Your loan charges 6%, more than the best savings rate (5.1%) and your pension's assumed 6% growth."
+      "title": "Your pension's assumed 6% growth beats your loan's 5.2% a year on average over its life, so overpaying doesn't come out ahead."
      },
      {
       "label": "What you could do",
-      "title": "Overpaying with any spare cash you build up would earn that.",
-      "body": "You can overpay on the Student Loans Company website."
+      "title": "Nothing to change right now.",
+      "body": "Repayments come out of your pay automatically."
      }
     ]
    },
@@ -47328,17 +47415,11 @@
       "amount": 250,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
-     },
-     {
-      "key": "studentLoan",
-      "title": "Student loan",
-      "amount": 126,
-      "amountIsLumpSum": false,
-      "line": "£126/yr better off overpaying than saving the money"
      }
     ],
     "onTrack": [
-     "Pension"
+     "Pension",
+     "Student loan"
     ]
    },
    "drawdown": {
@@ -48303,6 +48384,7 @@
      "threshold": 21000,
      "slInterestRate": 0.06,
      "slRatePct": 6,
+     "lifeRatePct": 5.2,
      "annualInterest": 840,
      "annualRep": 1704,
      "belowThreshold": false,
@@ -48407,12 +48489,12 @@
       }
      ],
      "cashRate": 5.1,
-     "effectiveBenefit": 0.9,
+     "effectiveBenefit": 0.1,
      "pensionGrowthPct": 6,
-     "pensionGap": 0,
-     "beatsPension": true,
-     "worthOverpaying": true,
-     "overpayAnnualBenefit": 126
+     "pensionGap": -0.8,
+     "beatsPension": false,
+     "worthOverpaying": false,
+     "overpayAnnualBenefit": 0
     },
     "overpay": {
      "scenarios": [
@@ -48649,8 +48731,8 @@
      "num_kids": null
     },
     "report": {
-     "candid_score": 76,
-     "total_opportunity_gbp": 500,
+     "candid_score": 84,
+     "total_opportunity_gbp": 300,
      "critical_modules": ""
     },
     "property": {
@@ -48776,7 +48858,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 3400,
     "monthlySurplus": 2196.4500000000003,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3996.4500000000003,
+    "expensesUnknown": false,
+    "largestCashHolding": 80000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -50939,6 +51025,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -51370,7 +51457,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 3400,
     "monthlySurplus": 2196.4500000000003,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3996.4500000000003,
+    "expensesUnknown": false,
+    "largestCashHolding": 80000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -53375,6 +53466,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -53749,7 +53841,11 @@
     "pastStatePensionAge": true,
     "salarySacrifice": 0,
     "monthlySurplus": 0,
+    "monthlyShortfall": 154,
     "monthlyTakeHome": 1646,
+    "expensesUnknown": false,
+    "largestCashHolding": 40000,
+    "noEarnings": true,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -55858,6 +55954,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -56288,7 +56385,11 @@
     "pastStatePensionAge": true,
     "salarySacrifice": 0,
     "monthlySurplus": 0,
+    "monthlyShortfall": 154,
     "monthlyTakeHome": 1646,
+    "expensesUnknown": false,
+    "largestCashHolding": 40000,
+    "noEarnings": true,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -58209,6 +58310,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -58582,7 +58684,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2750,
     "monthlySurplus": 1600.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3400.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 22000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -60686,6 +60792,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -61124,7 +61231,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2750,
     "monthlySurplus": 1600.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3400.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 22000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -63040,6 +63151,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -63421,7 +63533,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 0,
     "monthlySurplus": 1738.1166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3538.116666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 10000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -64461,6 +64577,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -64884,7 +65001,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 0,
     "monthlySurplus": 1738.1166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3538.116666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 10000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -65797,6 +65918,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -66179,7 +66301,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2750,
     "monthlySurplus": 1600.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3400.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 45000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -68700,6 +68826,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -69138,7 +69265,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2750,
     "monthlySurplus": 1600.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3400.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 45000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -71502,6 +71633,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -71886,7 +72018,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2750,
     "monthlySurplus": 1429.1291666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3229.1291666666666,
+    "expensesUnknown": false,
+    "largestCashHolding": 70000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -74360,6 +74496,7 @@
      "threshold": 29385,
      "slInterestRate": 0.06,
      "slRatePct": 6,
+     "lifeRatePct": 5.1,
      "annualInterest": 2280,
      "annualRep": 2057.85,
      "belowThreshold": false,
@@ -74544,10 +74681,10 @@
       }
      ],
      "cashRate": 4.72,
-     "effectiveBenefit": 1.3,
+     "effectiveBenefit": 0.4,
      "pensionGrowthPct": 6,
-     "pensionGap": 0,
-     "beatsPension": true,
+     "pensionGap": -0.9,
+     "beatsPension": false,
      "worthOverpaying": false,
      "overpayAnnualBenefit": 0
     },
@@ -74977,7 +75114,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2750,
     "monthlySurplus": 1429.1291666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3229.1291666666666,
+    "expensesUnknown": false,
+    "largestCashHolding": 70000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -77294,6 +77435,7 @@
      "threshold": 29385,
      "slInterestRate": 0.06,
      "slRatePct": 6,
+     "lifeRatePct": 5.1,
      "annualInterest": 2280,
      "annualRep": 2057.85,
      "belowThreshold": false,
@@ -77478,10 +77620,10 @@
       }
      ],
      "cashRate": 5.1,
-     "effectiveBenefit": 0.9,
+     "effectiveBenefit": 0,
      "pensionGrowthPct": 6,
-     "pensionGap": 0,
-     "beatsPension": true,
+     "pensionGap": -0.9,
+     "beatsPension": false,
      "worthOverpaying": false,
      "overpayAnnualBenefit": 0
     },
@@ -77852,7 +77994,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2750,
     "monthlySurplus": 1600.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3400.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 10000,
+    "noEarnings": false,
     "bestSavingsRate": 4.72
    },
    "statuses": {
@@ -79875,6 +80021,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,
@@ -80298,7 +80445,11 @@
     "pastStatePensionAge": false,
     "salarySacrifice": 2750,
     "monthlySurplus": 1600.6166666666668,
+    "monthlyShortfall": 0,
     "monthlyTakeHome": 3400.616666666667,
+    "expensesUnknown": false,
+    "largestCashHolding": 10000,
+    "noEarnings": false,
     "bestSavingsRate": 5.1
    },
    "statuses": {
@@ -82194,6 +82345,7 @@
      "threshold": 26900,
      "slInterestRate": 0.041,
      "slRatePct": 4.1,
+     "lifeRatePct": 4.1,
      "annualInterest": 0,
      "annualRep": 0,
      "belowThreshold": false,

@@ -37,11 +37,20 @@ test("interest uses the 2026/27 rates: RPI 4.1%, Plan 2 ramp capped at 6%", () =
   assert.equal(resolveSlRate({ studentLoan: "plan2", studentLoanRate: "5" }, 45000), 0.05);
 });
 
+// A rate the user typed in holds for every year, so these weigh a flat 6%.
 test("overpaying is weighed against the best savings rate, not a poorer current one", () => {
-  const { sl } = borrower({});
+  const { sl } = borrower({ studentLoanRate: "6" });
   assert.equal(sl.cashRate, 4.5);
   assert.equal(sl.effectiveBenefit, 1.5);
   assert.equal(sl.overpayAnnualBenefit, 675);
+});
+
+test("Plan 2 is weighed on its average rate over the loan's life: 6% now, RPI at 2% after", () => {
+  const { sl } = borrower({});
+  assert.equal(sl.slRatePct, 6);
+  assert.ok(sl.lifeRatePct < 6 && sl.lifeRatePct >= 5, `life rate ${sl.lifeRatePct}`);
+  assert.equal(sl.pensionGap < 0, true);
+  assert.equal(sl.worthOverpaying, false);
 });
 
 test("the user's own rate counts when it beats the best rate on offer", () => {
@@ -57,7 +66,7 @@ test("a loan rate below the best savings rate isn't worth overpaying, even again
 });
 
 test("a 6% loan against the pension's 6% growth is a tie, and a tie goes to overpaying", () => {
-  const { sl } = borrower({});
+  const { sl } = borrower({ studentLoanRate: "6" });
   assert.equal(sl.pensionGap, 0);
   assert.equal(sl.beatsPension, true);
   assert.equal(sl.worthOverpaying, true);
