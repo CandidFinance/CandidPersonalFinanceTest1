@@ -65,8 +65,18 @@ test("pension: the match question is skipped for the self-employed, or if Proper
 
 test("pension 'not sure' keeps the unknown flag the module reads; yes and no set hasPension", () => {
   const status = MODULE_GUIDES.pension.questions.find(q => q.id === "pensionStatus");
-  assert.deepEqual(status.also("unsure"), { pensionUnknown: true });
-  assert.deepEqual(status.also("yes"), { pensionUnknown: false, hasPension: "yes" });
+  assert.deepEqual(status.also("unsure"), { pensionUnknown: true, pensionKind: "" });
+  assert.deepEqual(status.also("yes"), { pensionUnknown: false, hasPension: "yes", pensionKind: "dc" });
+  assert.deepEqual(status.also("db"), { pensionUnknown: false, hasPension: "yes", pensionKind: "db" });
+});
+
+// A final salary or career average member is never asked for a pot or an
+// employer match; they're asked what they pay in and what it'll pay.
+test("pension, final salary: no pot or match questions, but what it'll pay", () => {
+  const d = { ...fresh, employmentAsked: true, salary: "58000", hasExtraIncome: "no", age: "33", pensionStatus: "db", pensionKind: "db", hasPension: "yes" };
+  const asked = ids("pension", d);
+  for (const id of ["pensionPot", "employerType", "pensionMatch", "pensionType"]) assert.equal(asked.includes(id), false, id);
+  for (const id of ["pensionContribution", "dbIncome", "retirementAge"]) assert.ok(asked.includes(id), id);
 });
 
 test("not sure of the plan: the helper asks only what it needs, then the loan questions follow", () => {

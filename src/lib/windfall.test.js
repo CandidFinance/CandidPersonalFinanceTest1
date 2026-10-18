@@ -165,3 +165,20 @@ test("employer pays a fixed %: no missed match, and it still counts towards the 
   assert.equal(fixed.missedMatch, 0);
   assert.ok(fixed.projectedPot > match.projectedPot, "the fixed 15% is all paid in");
 });
+
+// Final salary members get an answer about their scheme, not a pot; "not
+// sure" gets one worked out on the legal minimum.
+test("pension answers: final salary scheme, and not sure on the legal minimum", async () => {
+  const { pensionReveal } = await import("./moduleReveal.js");
+  const db = { ...base, salary: "58000", age: "33", pensionKind: "db", hasPension: "yes", myContribution: "6", potValue: "", dbPensionIncome: "21000" };
+  const steps = pensionReveal(db, calcMetrics(db, MARKET));
+  assert.equal(steps[0].figure, "£21,000 a year");
+  assert.match(steps[1].title, /no pot/);
+  // In the £100k trap, that comes first, and extra paid into the scheme counts.
+  const high = { ...db, salary: "110000" };
+  assert.match(pensionReveal(high, calcMetrics(high, MARKET))[0].title, /of tax you could save/);
+  const unsure = { ...base, salary: "45000", age: "35", pensionUnknown: true, myContribution: "", employerMatch: "", potValue: "" };
+  const u = pensionReveal(unsure, calcMetrics(unsure, MARKET));
+  assert.match(u[0].title, /if you pay the legal minimum/);
+  assert.match(u[1].body, /our estimate/);
+});

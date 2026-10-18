@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { pensionReveal } from "../../lib/moduleReveal.js";
 import { pensionOutlook, cliffEdge } from "../../lib/crossModule.js";
 import { AlertTriangle, PartyPopper, Banknote, Check } from "lucide-react";
 import {
@@ -101,8 +102,22 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   // the £80k-£100k sacrifice explorer) sit under "Explore", closed at first,
   // so the screen leads with the answer and its one action.
 
-  if (m.pensionStatus === "unknown") {
-    return <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>You told us you're not sure about your pension situation — find out your contribution rate and employer match, then come back to see your options here.</p>;
+  // Not sure, or a final salary scheme: the answer's own steps, since
+  // there's no pot to chart (moduleReveal.js pensionReveal).
+  if (m.pensionStatus === "unknown" || (d.pensionKind === "db" && !inRetirement(d))) {
+    const steps = pensionReveal(d, m) || [];
+    return (
+      <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px"}}>
+        {steps.map((s, i) => (
+          <div key={i} style={{marginTop:i ? "14px" : 0}}>
+            <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>{s.label}</div>
+            {s.figure && <div style={{fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:G,marginTop:"4px"}}>{s.figure}</div>}
+            <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:"4px 0 0",fontWeight:s.figure ? 600 : 500}}>{s.title}</p>
+            {s.body && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>{s.body}</p>}
+          </div>
+        ))}
+      </div>
+    );
   }
 
   const contributing = isPensionContributing(d);

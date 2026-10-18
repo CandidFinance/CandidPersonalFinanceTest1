@@ -75,7 +75,7 @@ function topRate(income) {
 
 export function pensionOutlook(d, m) {
   const age = +d.age || 0;
-  if (d.hasPension !== "yes" || inRetirement(d) || !age || !(m.salary > 0)) return null;
+  if (d.hasPension !== "yes" || d.pensionKind === "db" || inRetirement(d) || !age || !(m.salary > 0)) return null;
   const retireAge = retirementAgeFor(d);
   const years = retireAge - age;
   if (years < 1) return null;

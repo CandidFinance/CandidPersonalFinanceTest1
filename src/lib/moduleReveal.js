@@ -10,9 +10,10 @@
 // student loan, say), in which case no reveal or "Explain this" is offered.
 
 import { fmt } from "./format.js";
-import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE } from "./pension.js";
+import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, finalSalaryScheme } from "./pension.js";
 import { bestDrawdown, defaultDrawdownYears } from "./drawdown.js";
-import { retirementAgeFor, isaFillable } from "./metrics.js";
+import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
+import { estimatePensionPot } from "./pension.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
@@ -47,6 +48,23 @@ export function pensionReveal(d, m) {
   return withNi(pensionSteps(d, m), d, m);
 }
 function pensionSteps(d, m) {
+  // Not sure, employed with a salary: worked out on the legal minimum
+  // (5% from them, 3% from the employer) and an estimated pot, rather than
+  // nothing.
+  if (m.pensionStatus === "unknown" && d.employmentStatus === "employed" && m.salary > 0 && +d.age > 0) {
+    const pot = +d.potValue > 0 ? +d.potValue : estimatePensionPot(d);
+    // The minimum is on qualifying earnings, £6,240 to £50,270, not the
+    // whole salary: as a share of salary, so the usual sums apply.
+    const qualifying = Math.max(0, Math.min(m.salary, 50270) - 6240);
+    const share = pctOfQualifying => String(Math.round(pctOfQualifying * qualifying / m.salary * 100) / 100);
+    const assumed = calcMetrics({ ...d, pensionUnknown: false, hasPension: "yes", pensionKind: "dc", myContribution: share(5), employerMatch: share(3), employerContributionType: "fixed", potValue: String(pot) });
+    return [
+      { label: ANSWER, figure: fmt(Math.round(assumed.projectedPot)), title: `projected in your pension by ${retirementAgeFor(d)}, if you pay the legal minimum.` },
+      { label: WHY, title: "The legal minimum is 5% from you and 3% from your employer, on pay between £6,240 and £50,270. Many employers add more.",
+        body: +d.potValue > 0 ? "In today's money: growth of 6% a year, less 2% inflation." : `Your pot today is our estimate from your age and salary, about ${fmt(pot)}.` },
+      { label: ACTION, title: "Your payslip shows what you pay in; HR or payroll can say what your employer adds.", body: "With the real figures, Candid can check you're getting all of your employer's money." },
+    ];
+  }
   if (m.pensionStatus === "unknown") {
     return [
       { label: ANSWER, title: "We need two numbers to check your pension." },
@@ -63,6 +81,19 @@ function pensionSteps(d, m) {
   // status and the score use (computeModuleStatuses).
   // Not paying in, with no earnings to pay in from (retired, say): what
   // matters is what can come out tax-free, not relief there's none of.
+  // A final salary or career average scheme: no pot to project. The £100k
+  // trap still applies (paying more in, or extra into the scheme, lowers
+  // taxable income), so that comes first.
+  if (finalSalaryScheme(d) && !inRetirement(d)) {
+    const ft = calcPensionTaperSaving(m, calcAnnualAllowanceRoom(d, m).room);
+    if (ft.recoverable && ft.taperTotalSaving > 0) return [
+      { label: ANSWER, figure: `${fmt(ft.taperTotalSaving)} a year`, title: "of tax you could save." },
+      { label: WHY, title: "Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at 60%." },
+      { label: ACTION, title: `Paying ${fmt(ft.taperSacrificeNeeded)} more into a pension would bring your income back to £100,000.`, body: "Your scheme may take extra (Additional Voluntary Contributions, or buying added pension); its website says how." },
+    ];
+    return finalSalarySteps(d, m);
+  }
+
   // No earnings and not retired (between jobs, a career break, studying, or
   // retired before the pension can be taken): the pension is for later.
   if (!isPensionContributing(d) && m.noEarnings && !inRetirement(d)) return pensionForLater(d, m);
@@ -173,6 +204,20 @@ function pensionForLater(d, m) {
     { label: WHY, title: `Anyone under 75 can pay up to ${fmt(NON_EARNER_PENSION_NET)} a year into a personal pension and have ${fmt(NON_EARNER_PENSION_RELIEF)} added, earnings or not.`, body: potLine },
     { label: ACTION, title: `Paying ${fmt(NON_EARNER_PENSION_NET)} into a personal pension or SIPP would get the ${fmt(NON_EARNER_PENSION_RELIEF)}.`,
       body: `A workplace pension usually stops taking payments when the job ends. Money paid in can't be taken out until ${from}.` },
+  ];
+}
+
+// A final salary or career average member: what Candid can and can't say.
+function finalSalarySteps(d, m) {
+  const income = +d.dbPensionIncome || 0;
+  const trPct = Math.round((m.tr || 0) * 100);
+  return [
+    income > 0
+      ? { label: ANSWER, figure: `${fmt(income)} a year`, title: `from your scheme when you retire, as your statement shows it.` }
+      : { label: ANSWER, title: "Your scheme pays a set income, worked out from your pay and years in it." },
+    { label: WHY, title: "There's no pot to grow or invest, so Candid doesn't project it like one.",
+      body: income > 0 ? "Statements usually show it in today's money, before tax." : "Your scheme's latest annual statement shows what you've built up so far." },
+    { label: ACTION, title: `Additional Voluntary Contributions, or buying added pension, add to it with tax relief at ${trPct}%.`, body: "Your scheme's website says what it offers." },
   ];
 }
 

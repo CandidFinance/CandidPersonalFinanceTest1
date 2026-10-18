@@ -110,8 +110,10 @@ export function calcMetrics(d, marketRates = {}) {
         potVal = (+d.potValue||0) + (+d.potValue2||0),
         retireAge = retirementAgeFor(d),
         age = +d.age||30, years = Math.max(1, retireAge - age),
-        // The employer's share as missedMatch reads it (employer.js).
-        annualContrib = (myPct + employerPct(d, myPct)) / 100 * salary,
+        // The employer's share as missedMatch reads it (employer.js). A final
+        // salary scheme's payments build an income, not this pot: only old
+        // pots (potValue2) grow here for them.
+        annualContrib = d.pensionKind === "db" ? 0 : (myPct + employerPct(d, myPct)) / 100 * salary,
         // In today's money: contributions at today's salary, growing at the
         // real rate, after inflation (growth.js).
         pensionGrowth = GROWTH_REAL_PCT / 100,

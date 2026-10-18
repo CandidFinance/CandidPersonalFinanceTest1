@@ -169,6 +169,9 @@ const INVESTMENTS_QUESTIONS = [
 ];
 
 const paying = is("pensionStatus", "yes");
+// A final salary or career average scheme (NHS, teachers, civil service,
+// police, university): it pays a set income, so there's no pot to ask about.
+const finalSalary = is("pensionStatus", "db");
 // A pot they no longer pay into (retired, or from an old job) still counts:
 // "No" to paying in isn't "no pension".
 const hasPot = ctx => paying(ctx) || (ctx.d.pensionStatus === "no" && ctx.d.hasPensionPot === "yes");
@@ -183,8 +186,14 @@ const PENSION_QUESTIONS = [
     id:"pensionStatus", field:"pensionStatus", kind:"choice",
     ask: () => "Do you pay into a workplace or personal pension?",
     why: () => "Pensions get tax relief, and often money from your employer too.",
-    options: () => [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }, { value:"unsure", label:"Not sure" }],
-    also: value => value === "unsure" ? { pensionUnknown: true } : { pensionUnknown: false, hasPension: value },
+    options: () => [
+      { value:"yes", label:"Yes" },
+      { value:"db", label:"Yes, a final salary or career average scheme (such as NHS, teachers or civil service)" },
+      { value:"no", label:"No" }, { value:"unsure", label:"Not sure" },
+    ],
+    also: value => value === "unsure" ? { pensionUnknown: true, pensionKind: "" }
+      : value === "db" ? { pensionUnknown: false, hasPension: "yes", pensionKind: "db" }
+      : { pensionUnknown: false, hasPension: value, pensionKind: value === "yes" ? "dc" : "" },
   },
   {
     id:"pensionPotNotPaying", field:"hasPensionPot", kind:"choice",
@@ -198,8 +207,9 @@ const PENSION_QUESTIONS = [
     // Skipped if Property's checks already asked it (same field).
     id:"pensionContribution", field:"myContribution", kind:"percent", label:"Your contribution", cap:"myContribution", required:true,
     ask: ({ d }) => d.employmentStatus === "self_employed" ? "What percentage of your earnings do you pay in?" : "What percentage of your salary do you pay in?",
-    why: ({ d }) => d.employmentStatus === "self_employed" ? "Tax relief is added to whatever you pay in." : "Your employer may add more if you pay in more.",
-    notSure: () => LEAVE_BLANK, showIf: paying,
+    why: ({ d }) => d.employmentStatus === "self_employed" ? "Tax relief is added to whatever you pay in." : d.pensionStatus === "db" ? "It lowers your taxable income, which matters near £100,000." : "Your employer may add more if you pay in more.",
+    note: ({ d }) => d.pensionStatus === "db" ? "It's on your payslip." : null,
+    notSure: () => LEAVE_BLANK, showIf: ctx => paying(ctx) || finalSalary(ctx),
     ifMissing: ({ d }) => !filled(d.myContribution),
   },
   {
@@ -232,16 +242,22 @@ const PENSION_QUESTIONS = [
     showIf: hasPot,
   },
   {
+    id:"dbIncome", field:"dbPensionIncome", kind:"money", label:"Pension a year", cap:"salary",
+    ask: () => "Roughly how much will it pay you a year when you retire?",
+    why: () => "Your scheme's latest annual statement shows it.",
+    notSure: () => LEAVE_BLANK, showIf: finalSalary,
+  },
+  {
     id:"hasOldPensions", field:"hasOldPensions", kind:"choice",
     ask: () => "Any pensions from old jobs?",
     why: () => "Old pots still count, and are easy to lose track of.",
-    options: () => YES_NO, showIf: paying,
+    options: () => YES_NO, showIf: ctx => paying(ctx) || finalSalary(ctx),
   },
   {
     id:"oldPensions", field:"potValue2", kind:"money", label:"Old pensions", cap:"potValue2", required:true,
     ask: () => "Roughly how much is in them altogether?",
     why: () => "Added to your main pot for your retirement picture.",
-    notSure: () => LEAVE_BLANK, showIf: ctx => paying(ctx) && ctx.d.hasOldPensions === "yes",
+    notSure: () => LEAVE_BLANK, showIf: ctx => (paying(ctx) || finalSalary(ctx)) && ctx.d.hasOldPensions === "yes",
   },
   {
     // From 55, the earliest a pension can be taken (57 from April 2028).
@@ -298,10 +314,10 @@ const PENSION_QUESTIONS = [
     // (metrics retirementAgeFor assumes 75 until they say).
     id:"retirementAge", field:"retirementAge", kind:"years", label:"Retire at", required:true,
     ask: ({ d }) => workingPastRetirementAge(d) ? "When do you plan to stop working?" : "When would you like to retire?",
-    why: ({ d }) => workingPastRetirementAge(d) ? "Your pension grows until then, and you draw on it after." : "Sets how many years your pension has to grow.",
+    why: ({ d }) => workingPastRetirementAge(d) ? "Your pension grows until then, and you draw on it after." : d.pensionKind === "db" ? "Your scheme's own pension age is on your statement." : "Sets how many years your pension has to grow.",
     min: ({ d }) => workingPastRetirementAge(d) ? (+d.age || 0) + 1 : null,
     minNote: () => "Pick an age after the one you are now.",
-    showIf: ctx => (hasPot(ctx) || workingPastRetirementAge(ctx.d)) && !hasStartedDrawing(ctx.d),
+    showIf: ctx => (hasPot(ctx) || finalSalary(ctx) || workingPastRetirementAge(ctx.d)) && !hasStartedDrawing(ctx.d),
   },
   {
     id:"pensionType", field:"pensionType", kind:"choice",

@@ -9,6 +9,8 @@ import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT } from "./growth.js";
 export function isPensionContributing(d) {
   // pensionType has zero effect here — only affects return ratio
   if (d.hasPension !== "yes") return false;
+  // A final salary or career average member is in their scheme, whatever %.
+  if (d.pensionKind === "db") return true;
   const pct = Number(d.myContribution);
   return isNaN(pct) || d.myContribution === "" ? false : pct > 0;
 }
@@ -60,6 +62,10 @@ export function pensionAccessAge(d) {
   const age = +d.age || 0;
   return minimumPensionAge(taxYearFor(d) + Math.max(0, 55 - age));
 }
+
+// A final salary or career average scheme (pensionKind "db"): it pays a set
+// income, not a pot, so it isn't projected like one.
+export const finalSalaryScheme = d => d.pensionKind === "db";
 
 // With no earnings, anyone under 75 can still pay £2,880 a year into a
 // personal pension and have £720 of basic-rate relief added (£3,600 gross).
