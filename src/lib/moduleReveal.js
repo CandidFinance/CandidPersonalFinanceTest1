@@ -13,7 +13,8 @@ import { fmt } from "./format.js";
 import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, finalSalaryScheme } from "./pension.js";
 import { bestDrawdown, defaultDrawdownYears } from "./drawdown.js";
 import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
-import { estimatePensionPot } from "./pension.js";
+import { estimatePensionPot, childBenefitCharge, HICBC_START } from "./pension.js";
+import { retirementAdequacy } from "./crossModule.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
@@ -164,13 +165,38 @@ function pensionSteps(d, m) {
 
   // Getting the full match: the £100k tax trap is the next thing to check.
   const taper = calcPensionTaperSaving(m, aa.room);
+  const cb = childBenefitCharge(d, m);
   if (taper.recoverable && taper.taperTotalSaving > 0) {
     return [
       { label: ANSWER, figure: `${fmt(taper.taperTotalSaving)} a year`, title: "of tax you could save." },
-      { label: WHY, title: `Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at ${m.scottish ? "67.5" : "60"}%.` },
+      withBody({ label: WHY, title: `Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at ${m.scottish ? "67.5" : "60"}%.` },
+        cb ? `You also pay back ${fmt(cb.charge)} of Child Benefit a year, and over £100,000, Tax-Free Childcare and the free childcare hours stop.` : null),
       selfEmployed(d)
         ? { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into a pension (including the tax relief added) would bring your income back to £100,000.`, body: `The money usually can't be taken out until you're 55 (57 from 2028). ${SELF_EMPLOYED_PENSION}` }
         : { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into your pension through salary sacrifice would bring your income back to £100,000.`, body: `It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028). ${HR}` },
+    ];
+  }
+
+  // Paying back Child Benefit (income over £60,000): what it costs, and the
+  // pension payment that brings income to £60,000.
+  if (cb && cb.charge > 0 && cb.payInNeeded <= aa.room) {
+    return [
+      { label: ANSWER, figure: `${fmt(cb.charge)} a year`, title: "of Child Benefit you're paying back in tax." },
+      { label: WHY, title: `Above ${fmt(HICBC_START)} of income, 1% of your Child Benefit is clawed back for every £200, all of it by £80,000.` },
+      selfEmployed(d)
+        ? { label: ACTION, title: `Paying ${fmt(cb.payInNeeded)} more into a pension (including the tax relief added) would bring your income to £60,000 and keep it all.`, body: SELF_EMPLOYED_PENSION }
+        : { label: ACTION, title: `Paying ${fmt(cb.payInNeeded)} more into your pension would bring your income to £60,000 and keep it all.`, body: `On top of the usual tax relief. ${HR}` },
+    ];
+  }
+
+  // Short of what they'd like to live on in retirement.
+  const adequacy = retirementAdequacy(d, m);
+  if (adequacy && adequacy.gap > adequacy.target * 0.05) {
+    return [
+      { label: ANSWER, figure: `${fmt(adequacy.gap)} a year`, title: `short of the ${fmt(adequacy.target)} a year you'd like in retirement.` },
+      { label: WHY, title: `On your figures you'd have about ${fmt(adequacy.net)} a year after tax, from your pension and a full State Pension, in today's money.` },
+      { label: ACTION, title: adequacy.extraPct ? `Paying in about ${adequacy.extraPct}% more of your salary would close it.` : "Paying in more, or retiring later, would close some of it.",
+        body: "Each extra payment gets tax relief too. The Retirement age and contribution steppers on this screen show the effect." },
     ];
   }
 
@@ -182,8 +208,21 @@ function pensionSteps(d, m) {
       body: "In today's money: growth of 6% a year, less 2% inflation." },
     bonus.standalone > 0
       ? { label: ACTION, title: `Paying your ${fmt(+d.bonusAmount)} bonus into your pension could save up to ${fmt(bonus.standalone)} in tax.`, body: "It has to be arranged with HR or payroll before the bonus is paid." }
-      : { label: ACTION, title: "Nothing stands out right now.", body: "Worth checking again when your pay or job changes." },
+      : { label: ACTION, title: "Nothing to change right now.", body: checkedLine(d, m, adequacy) },
   ];
+}
+
+// What was checked and found fine, so "nothing to change" reassures rather
+// than dismisses.
+function checkedLine(d, m, adequacy) {
+  const ok = [];
+  const empPct = +d.employerMatch || 0;
+  if (empPct > 0 && !selfEmployed(d)) ok.push(d.employerContributionType === "fixed" ? `your employer's ${empPct}% goes in` : "you get your employer's full match");
+  if ((m.adjustedNetIncome || 0) < 100000) ok.push("you're under the £100,000 tax trap");
+  if (adequacy && adequacy.gap === 0) ok.push(`you're on course for about ${fmt(adequacy.net)} a year, above your ${fmt(adequacy.target)}`);
+  const outlook = calcTaxFreeCash(d);
+  if (!outlook.capped) ok.push("your pot isn't near the limit on tax-free cash");
+  return ok.length ? `Checked: ${ok.length > 1 ? ok.slice(0, -1).join(", ") + " and " + ok[ok.length - 1] : ok[0]}. Worth checking again when your pay or job changes.` : "Worth checking again when your pay or job changes.";
 }
 
 // No earnings, and not retired: the pot keeps its investments, and up to
@@ -217,7 +256,8 @@ function finalSalarySteps(d, m) {
       : { label: ANSWER, title: "Your scheme pays a set income, worked out from your pay and years in it." },
     { label: WHY, title: "There's no pot to grow or invest, so Candid doesn't project it like one.",
       body: income > 0 ? "Statements usually show it in today's money, before tax." : "Your scheme's latest annual statement shows what you've built up so far." },
-    { label: ACTION, title: `Additional Voluntary Contributions, or buying added pension, add to it with tax relief at ${trPct}%.`, body: "Your scheme's website says what it offers." },
+    withBody({ label: ACTION, title: `Additional Voluntary Contributions, or buying added pension, add to it with tax relief at ${trPct}%.`, body: "Your scheme's website says what it offers." },
+      (() => { const a = retirementAdequacy(d, m); return a ? (a.gap > 0 ? `With a full State Pension that's about ${fmt(a.net)} a year after tax, ${fmt(a.gap)} short of the ${fmt(a.target)} you'd like.` : `With a full State Pension that's about ${fmt(a.net)} a year after tax, above the ${fmt(a.target)} you'd like.`) : null; })()),
   ];
 }
 

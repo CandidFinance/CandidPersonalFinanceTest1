@@ -5,7 +5,8 @@ import { fmt } from "./format.js";
 import { taxYearOf } from "./taxYear.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE } from "./pension.js";
+import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, childBenefitCharge } from "./pension.js";
+import { retirementAdequacy } from "./crossModule.js";
 import { isaFillable as isaFillableBy } from "./metrics.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
@@ -228,7 +229,12 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // in. Shown, but not counted as a gap in the score: it needs spare money.
   const nonEarnerRelief = !contributing && m.noEarnings && !inRetirement(d) && (+d.age || 0) < PENSION_RELIEF_MAX_AGE;
   const pensionPrimaryAmount = notPayingIn ? missedRelief : contributing ? m.missedMatch : 0;
-  const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount); // definitive only
+  // Child Benefit paid back (income over £60,000), when paying in could stop it.
+  const cbCharge = childBenefitCharge(d, m);
+  const cbAmount = cbCharge && cbCharge.charge > 0 && cbCharge.payInNeeded <= aaRoom.room ? cbCharge.charge : 0;
+  const adequacy = retirementAdequacy(d, m);
+  const retirementGap = adequacy && adequacy.gap > adequacy.target * 0.05 ? adequacy.gap : 0;
+  const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount + cbAmount); // definitive only
   const pensionPotentialAmount = Math.round(bonusSacrifice.beyondTaper); // potential — not in amount
   // Sort priority still weighs the potential upside too, so a large bonus-sacrifice
   // opportunity isn't buried in the module ordering just because it's not "definitive".
@@ -242,6 +248,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
       ? `${d.hasPension === "yes" ? "Nothing paid in" : "No pension"}: ${fmt(pensionPrimaryAmount)}/yr of tax relief missed`
       : contributing && m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of employer match unclaimed` : null,
     pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr of tax-free allowance you could win back` : null,
+    cbAmount > 0 ? `${fmt(cbAmount)}/yr of Child Benefit paid back` : null,
+    retirementGap > 0 ? `${fmt(retirementGap)}/yr short of the retirement income you'd like` : null,
     pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} saved by paying your bonus into your pension` : null,
     aaRoom.excess > 0 ? `Payments in may go over your reduced ${fmt(aaRoom.approxAA)} pension annual allowance` : null,
   ].filter(Boolean);
@@ -263,7 +271,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     // "critical" when genuinely missing match or not contributing at all;
     // "attention" only when there's still something to act on; otherwise "ok".
     status: notPayingIn ? "critical" : contributing && m.missedMatch > 0 ? "critical"
-          : pensionTaperAmount > 0 || pensionPotentialAmount > 0 || aaRoom.excess > 0 || nonEarnerRelief ? "attention" : "ok",
+          : pensionTaperAmount > 0 || cbAmount > 0 || retirementGap > 0 || pensionPotentialAmount > 0 || aaRoom.excess > 0 || nonEarnerRelief ? "attention" : "ok",
     impact: pensionImpact,
     impactLabel: pensionLabelParts.join(" + ") || null,
     amount: pensionAmount,

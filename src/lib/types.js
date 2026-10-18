@@ -49,6 +49,9 @@
  * @property {string} [notWorkingReason] When not working: "retired" or "break" (between jobs, a career break).
  * @property {string} [earnedThisTaxYear] When between jobs: pay this tax year before stopping, before tax.
  * @property {string} [scottishTaxpayer] "yes" for a Scottish taxpayer (main home in Scotland): Scottish rates on earnings.
+ * @property {string} [childBenefitChildren] Children they get Child Benefit for (asked over £60,000).
+ * @property {string} [cbHigherEarner] "no" when a partner earns more, so the charge isn't theirs.
+ * @property {string} [retirementTarget] What they'd like to live on a year in retirement, after tax, today's money.
  * @property {string[]} [askedFields] Fields of ask-once questions already asked in a walk-through, answered or not (propertyGuide.js neededAtStart).
  * @property {boolean} [employmentAsked]
  * @property {string} [hasExtraIncome]

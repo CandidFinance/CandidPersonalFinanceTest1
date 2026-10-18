@@ -4,6 +4,7 @@
 // where money not put towards a student loan could go. Pure, unit tested in
 // crossModule.test.js.
 
+import { calcIncomeTax } from "./tax.js";
 import { employerPct } from "./employer.js";
 import { SALARY_GROWTH_RATES, retirementAgeFor } from "./metrics.js";
 import { inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.js";
@@ -157,4 +158,36 @@ export function loanAlternatives(m, years = LOAN_ALTERNATIVE_YEARS) {
     { key: "cash", monthlyIn: monthly, total: round10(saved(monthly, m.bestSavingsRate || 0, years)) },
   ];
   return { monthly, years, paidIn: monthly * 12 * years, options: options.sort((a, b) => b.total - a.total) };
+}
+
+
+// ── Retirement: after-tax income in today's money, against what they'd
+// like to live on (retirementTarget). From the pension (drawn over the
+// default years, a quarter tax-free taken first) and a full State Pension;
+// for a final salary scheme, what its statement says it'll pay, plus any
+// old pots. Null without a target or a projection.
+export function retirementAdequacy(d, m) {
+  const target = +d.retirementTarget || 0;
+  if (!target) return null;
+  let gross;
+  if (d.pensionKind === "db") {
+    if (!(+d.dbPensionIncome > 0)) return null;
+    gross = +d.dbPensionIncome + STATE_PENSION_FULL;
+  } else {
+    const o = pensionOutlook(d, m);
+    if (!o) return null;
+    gross = o.retirementIncome;
+  }
+  const net = Math.round(gross - calcIncomeTax(gross, d.scottishTaxpayer === "yes"));
+  // How much more of their salary paid in would close a gap (whole points,
+  // up to 30): their own payments, with the employer's share unchanged.
+  let extraPct = null;
+  if (net < target && d.pensionKind !== "db") {
+    const my = +d.myContribution || 0;
+    for (let x = 1; x <= 30; x++) {
+      const o = pensionOutlook({ ...d, myContribution: String(my + x), employerContributionType: "fixed", employerMatch: String(employerPct(d, my)) }, m);
+      if (o && Math.round(o.retirementIncome - calcIncomeTax(o.retirementIncome, d.scottishTaxpayer === "yes")) >= target) { extraPct = x; break; }
+    }
+  }
+  return { target, net, gap: Math.max(0, target - net), extraPct };
 }

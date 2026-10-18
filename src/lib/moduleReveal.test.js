@@ -31,7 +31,25 @@ test("not paying in: the tax relief figure matches the module's status", () => {
 test("on track: the projected pot, and nothing to change without a bonus", () => {
   const { steps } = reveal({ ...base, myContribution: "5", employerMatch: "5" });
   assert.match(steps[0].title, /^projected in your pension by 65\.$/);
-  assert.equal(steps[2].title, "Nothing stands out right now.");
+  assert.equal(steps[2].title, "Nothing to change right now.");
+  assert.match(steps[2].body, /^Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash\./);
+});
+
+// Child Benefit paid back over £60,000, and a retirement income short of the
+// target, each get the answer when they're the thing to look at.
+test("Child Benefit charge: what's paid back, and the pension payment that keeps it", () => {
+  const { steps } = reveal({ ...base, salary: "70000", myContribution: "5", employerMatch: "5", childBenefitChildren: "2", cbHigherEarner: "yes" });
+  // £70,000 less £3,500 sacrificed: £66,500, 32% of £2,337 (two children).
+  assert.equal(steps[0].figure, "£748 a year");
+  assert.match(steps[2].title, /Paying £6,500 more into your pension would bring your income to £60,000/);
+  // A partner who earns more pays it instead.
+  assert.notEqual(reveal({ ...base, salary: "70000", myContribution: "5", employerMatch: "5", childBenefitChildren: "2", cbHigherEarner: "no" }).steps[0].title, "of Child Benefit you're paying back in tax.");
+});
+
+test("retirement: short of the target says by how much, and roughly what would close it", () => {
+  const { steps } = reveal({ ...base, age: "37", salary: "85000", myContribution: "3", employerMatch: "3", potValue: "8000", retirementTarget: "45400" });
+  assert.match(steps[0].title, /^short of the £45,400 a year you'd like in retirement\.$/);
+  assert.match(steps[2].title, /^Paying in about \d+% more of your salary would close it\.$/);
 });
 
 test("£100k tax trap: the saving and the sacrifice needed come from the module's own calculation", () => {

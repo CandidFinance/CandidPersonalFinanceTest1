@@ -512,3 +512,29 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
     alreadyPastLsa, lsaCrossAge, showLsaFlag, LSA_INFLECTION_POT,
   };
 }
+
+// ── The High Income Child Benefit Charge (GOV.UK, checked 18 Oct 2026): on
+// adjusted net income over £60,000, 1% of the year's Child Benefit for each
+// full £200, all of it by £80,000. It falls on whichever partner earns more.
+// Child Benefit: £27.05 a week for the eldest or only child, £17.90 for each
+// other.
+export const CHILD_BENEFIT_WEEKLY_FIRST = 27.05, CHILD_BENEFIT_WEEKLY_OTHER = 17.90;
+export const HICBC_START = 60000, HICBC_END = 80000;
+export function childBenefitAnnual(children) {
+  const n = Math.max(0, Math.round(+children || 0));
+  return n > 0 ? Math.round((CHILD_BENEFIT_WEEKLY_FIRST + CHILD_BENEFIT_WEEKLY_OTHER * (n - 1)) * 52) : 0;
+}
+// The charge at an income, for the children they get Child Benefit for.
+export function childBenefitChargeAt(income, children) {
+  const pct = Math.min(100, Math.max(0, Math.floor((income - HICBC_START) / 200)));
+  return Math.round(childBenefitAnnual(children) * pct / 100);
+}
+// For this user: null with no Child Benefit, or when a partner earns more.
+// `payInNeeded`: paid into a pension (gross), what brings income to £60,000.
+export function childBenefitCharge(d, m) {
+  const children = +d.childBenefitChildren || 0;
+  if (!children || d.cbHigherEarner === "no") return null;
+  const income = m.adjustedNetIncome || 0;
+  const charge = childBenefitChargeAt(income, children);
+  return { children, annual: childBenefitAnnual(children), charge, payInNeeded: Math.max(0, Math.ceil(income - HICBC_START)) };
+}

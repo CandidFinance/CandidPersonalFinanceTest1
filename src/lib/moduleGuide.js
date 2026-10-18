@@ -320,6 +320,35 @@ const PENSION_QUESTIONS = [
     showIf: ctx => (hasPot(ctx) || finalSalary(ctx) || workingPastRetirementAge(ctx.d)) && !hasStartedDrawing(ctx.d),
   },
   {
+    // Only where the charge can apply: income over £60,000.
+    id:"childBenefit", field:"childBenefitChildren", kind:"choice",
+    ask: () => "How many children do you get Child Benefit for?",
+    why: () => "Above £60,000, Child Benefit is clawed back through tax.",
+    options: () => [{ value:"0", label:"None" }, { value:"1", label:"1" }, { value:"2", label:"2" }, { value:"3", label:"3" }, { value:"4", label:"4 or more" }],
+    showIf: ({ m }) => (m?.adjustedNetIncome || 0) > 60000,
+    ifMissing: ({ d }) => d.childBenefitChildren == null || d.childBenefitChildren === "",
+  },
+  {
+    id:"cbHigherEarner", field:"cbHigherEarner", kind:"choice",
+    ask: () => "Do you earn more than your partner?",
+    why: () => "The charge falls on whichever of you earns more.",
+    options: () => [{ value:"yes", label:"Yes, or I don't have a partner" }, { value:"no", label:"No, my partner earns more" }],
+    showIf: ({ d, m }) => (m?.adjustedNetIncome || 0) > 60000 && +d.childBenefitChildren > 0,
+  },
+  {
+    // The Retirement Living Standards (Pensions UK, 2025): what a year costs
+    // one person, after tax, owning their home outright.
+    id:"retirementTarget", field:"retirementTarget", kind:"choice",
+    ask: () => "What would you like to live on in retirement, a year?",
+    why: () => "So Candid can say whether you're on course for it.",
+    note: () => "In today's money, after tax, for one person who owns their home. Pensions UK's standards.",
+    options: () => [
+      { value:"13900", label:"Minimum: £13,900" }, { value:"32700", label:"Moderate: £32,700" },
+      { value:"45400", label:"Comfortable: £45,400" }, { value:"", label:"Not sure" },
+    ],
+    showIf: ctx => (paying(ctx) || finalSalary(ctx)) && !hasStartedDrawing(ctx.d),
+  },
+  {
     id:"pensionType", field:"pensionType", kind:"choice",
     ask: () => "How do you pay in?",
     why: () => "Changes how you get tax relief, and whether you must claim some yourself.",

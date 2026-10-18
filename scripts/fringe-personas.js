@@ -157,7 +157,7 @@ function checks(d, m, out) {
   if (/"error":/.test(all)) flags.push("A calculation threw: " + (all.match(/"error":"([^"]+)"/) || [])[1]);
   const age = +d.age || 0, earning = m.salary > 0;
   const pensionText = textOf(out.modules.pension?.reveal);
-  if (age < 55 && /drawn over|drawdown|tax-free cash|Pension Wise/i.test(pensionText)) flags.push(`Pension answer talks about drawing the pension at ${age}, years before it can be touched (57 from 2028).`);
+  if (age < 55 && /drawn over|drawdown|can be taken tax-free|Pension Wise/i.test(pensionText)) flags.push(`Pension answer talks about drawing the pension at ${age}, years before it can be touched (57 from 2028).`);
   if (d.employmentStatus === "not_working" && m.salary > 0) flags.push(`'Not working' but a £${m.salary} salary is still used in the sums.`);
   if (out.studentLoan?.worthOverpaying && out.studentLoan.clearYr == null) flags.push("Overpaying the student loan shown as worth it, but the loan is written off anyway.");
   if (!earning && /tax relief you're not getting|employer/i.test(pensionText)) flags.push("No earnings, but the pension answer talks about relief or an employer match.");

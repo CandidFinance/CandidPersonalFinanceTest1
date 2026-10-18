@@ -290,7 +290,7 @@
     },
     "pension": {
      "amount": 1440,
-     "answers": "[null,null,\"3\",null,\"5\",\"55000\",null,null,\"8000\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"3\",null,\"5\",\"55000\",null,null,\"8000\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -3038,7 +3038,7 @@
     },
     "pension": {
      "amount": 1440,
-     "answers": "[null,null,\"3\",null,\"5\",\"55000\",null,null,\"8000\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"3\",null,\"5\",\"55000\",null,null,\"8000\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -5520,7 +5520,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"20000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"20000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -5544,8 +5544,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -8023,7 +8023,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"20000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"20000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -8047,8 +8047,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -10357,7 +10357,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"6\",null,\"6\",\"70000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"6\",null,\"6\",\"70000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -10381,8 +10381,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -12909,7 +12909,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"6\",null,\"6\",\"70000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"6\",null,\"6\",\"70000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -12933,8 +12933,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -18076,7 +18076,7 @@
     },
     "pension": {
      "amount": 13512,
-     "answers": "[null,null,\"4\",null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",\"relief\"]",
+     "answers": "[null,null,\"4\",null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"relief\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -20725,7 +20725,7 @@
     },
     "pension": {
      "amount": 13512,
-     "answers": "[null,null,\"4\",null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",\"relief\"]",
+     "answers": "[null,null,\"4\",null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"relief\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -23135,7 +23135,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"10\",null,\"8\",\"650000\",null,null,\"0\",null,null,null,null,null,\"60\",\"sacrifice\"]",
+     "answers": "[null,null,\"10\",null,\"8\",\"650000\",null,null,\"0\",null,null,null,null,null,\"60\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -25664,7 +25664,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"10\",null,\"8\",\"650000\",null,null,\"0\",null,null,null,null,null,\"60\",\"sacrifice\"]",
+     "answers": "[null,null,\"10\",null,\"8\",\"650000\",null,null,\"0\",null,null,null,null,null,\"60\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -28068,7 +28068,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"8\",null,\"0\",\"45000\",null,null,\"0\",null,null,null,null,null,\"65\",\"relief\"]",
+     "answers": "[null,null,\"8\",null,\"0\",\"45000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"relief\"]",
      "banked": 0
     }
    },
@@ -28092,8 +28092,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -30639,7 +30639,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"8\",null,\"0\",\"45000\",null,null,\"0\",null,null,null,null,null,\"65\",\"relief\"]",
+     "answers": "[null,null,\"8\",null,\"0\",\"45000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"relief\"]",
      "banked": 0
     }
    },
@@ -30663,8 +30663,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -32981,7 +32981,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -33010,8 +33010,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -35772,7 +35772,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -35801,8 +35801,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -38394,7 +38394,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"2000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"2000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -38423,8 +38423,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -41298,7 +41298,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"2000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"2000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -41327,8 +41327,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -44041,7 +44041,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -44070,8 +44070,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -46704,7 +46704,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -46733,8 +46733,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -49184,7 +49184,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"420000\",null,null,\"60000\",null,null,null,null,null,\"62\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"420000\",null,null,\"60000\",null,null,null,null,null,\"62\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -49208,8 +49208,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -51789,7 +51789,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"420000\",null,null,\"60000\",null,null,null,null,null,\"62\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"420000\",null,null,\"60000\",null,null,null,null,null,\"62\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -51813,8 +51813,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -54179,7 +54179,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"300000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"300000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -54203,8 +54203,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -56729,7 +56729,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"300000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"300000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -56753,8 +56753,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -59038,8 +59038,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -61591,8 +61591,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -63856,7 +63856,7 @@
    "baselinePatch": {
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"\",null,\"\",\"\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"\",null,\"\",\"\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -65332,7 +65332,7 @@
    "baselinePatch": {
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"\",null,\"\",\"\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"\",null,\"\",\"\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -66660,7 +66660,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -66684,8 +66684,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -69630,7 +69630,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     }
    },
@@ -69654,8 +69654,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -72422,7 +72422,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -72451,8 +72451,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -75524,7 +75524,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",\"sacrifice\"]",
+     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,null,null,\"sacrifice\"]",
      "banked": 0
     },
     "studentLoan": {
@@ -75553,8 +75553,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -78380,8 +78380,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -80837,8 +80837,8 @@
      },
      {
       "label": "What you could do",
-      "title": "Nothing stands out right now.",
-      "body": "Worth checking again when your pay or job changes."
+      "title": "Nothing to change right now.",
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
