@@ -73,6 +73,8 @@ export function calcDrawdown(d, m, { years = DEFAULT_DRAWDOWN_YEARS, taxFree = "
   const stopAge = retirementAgeFor(d);
   const otherAt = atAge => (atAge < stopAge ? pay : 0) + Math.round(+d.otherIncome || 0);
   const other = otherAt(age);
+  // Scottish taxpayers pay Scottish rates on pension income too.
+  const scottish = d.scottishTaxpayer === "yes";
 
   let taxFreeLeft = taxFree === "phased" ? (cash.taken > 0 ? cash.taxFree : cash.left) : 0, pot = start;
   const rows = [];
@@ -83,11 +85,11 @@ export function calcDrawdown(d, m, { years = DEFAULT_DRAWDOWN_YEARS, taxFree = "
     taxFreeLeft -= taxFreePart;
     const base = otherAt(atAge) + statePension;
     const taxable = base + yearly - taxFreePart;
-    const tax = calcIncomeTax(taxable);
+    const tax = calcIncomeTax(taxable, scottish);
     pot = Math.max(0, pot * (1 + r) - yearly);
     rows.push({
       age: atAge, pension: yearly, taxFree: taxFreePart, statePension, other: otherAt(atAge),
-      income: base + yearly, tax, taxOnPension: tax - calcIncomeTax(base),
+      income: base + yearly, tax, taxOnPension: tax - calcIncomeTax(base, scottish),
       afterTax: base + yearly - tax, topRate: topRate(taxable), potAfter: Math.round(pot),
     });
   }

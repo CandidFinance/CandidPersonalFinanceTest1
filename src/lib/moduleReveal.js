@@ -88,7 +88,7 @@ function pensionSteps(d, m) {
     const ft = calcPensionTaperSaving(m, calcAnnualAllowanceRoom(d, m).room);
     if (ft.recoverable && ft.taperTotalSaving > 0) return [
       { label: ANSWER, figure: `${fmt(ft.taperTotalSaving)} a year`, title: "of tax you could save." },
-      { label: WHY, title: "Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at 60%." },
+      { label: WHY, title: `Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at ${m.scottish ? "67.5" : "60"}%.` },
       { label: ACTION, title: `Paying ${fmt(ft.taperSacrificeNeeded)} more into a pension would bring your income back to £100,000.`, body: "Your scheme may take extra (Additional Voluntary Contributions, or buying added pension); its website says how." },
     ];
     return finalSalarySteps(d, m);
@@ -167,7 +167,7 @@ function pensionSteps(d, m) {
   if (taper.recoverable && taper.taperTotalSaving > 0) {
     return [
       { label: ANSWER, figure: `${fmt(taper.taperTotalSaving)} a year`, title: "of tax you could save." },
-      { label: WHY, title: "Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at 60%." },
+      { label: WHY, title: `Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at ${m.scottish ? "67.5" : "60"}%.` },
       selfEmployed(d)
         ? { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into a pension (including the tax relief added) would bring your income back to £100,000.`, body: `The money usually can't be taken out until you're 55 (57 from 2028). ${SELF_EMPLOYED_PENSION}` }
         : { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into your pension through salary sacrifice would bring your income back to £100,000.`, body: `It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028). ${HR}` },

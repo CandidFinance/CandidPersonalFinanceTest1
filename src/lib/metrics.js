@@ -1,4 +1,4 @@
-import { REDUNDANCY_TAX_FREE, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
+import { REDUNDANCY_TAX_FREE, scottishRate, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { employerPct, unclaimedMatchPct } from "./employer.js";
 import { GROWTH_REAL_PCT } from "./growth.js";
@@ -158,7 +158,12 @@ export function calcMetrics(d, marketRates = {}) {
   // for savings is measured against (tax.js taxFreeInterest).
   const nonSavingsIncome = adjustedNetIncome - dividendIncome;
   const taxBandLabel = adjustedNetIncome > ADDITIONAL_RATE_THRESHOLD ? "additional" : adjustedNetIncome > HIGHER_RATE_THRESHOLD ? "higher" : "basic";
-  const tr = INCOME_TAX_RATES[taxBandLabel];
+  // Scottish taxpayers: their own rate on the top slice (tax.js scottishRate),
+  // never under the 20% relief at source adds. The UK band (taxBandLabel)
+  // still sets the Personal Savings Allowance, dividend and capital gains
+  // rates, which are UK-wide.
+  const scottish = d.scottishTaxpayer === "yes";
+  const tr = scottish ? Math.max(0.2, scottishRate(adjustedNetIncome)) : INCOME_TAX_RATES[taxBandLabel];
   // Rates and limits that change on 6 April follow the tax year the figures
   // are for: savings interest above the PSA has its own rates (2 points over
   // income tax from April 2027), and from April 2027 under-65s can put only
@@ -173,7 +178,7 @@ export function calcMetrics(d, marketRates = {}) {
         realisedCgtGains = d.hasSoldAssetsOutsideWrapper === "yes" ? Math.max(0, +d.realisedCgtGains||0) : 0,
         remainingCgtAllowance = Math.max(0, CGT_ANNUAL_ALLOWANCE - realisedCgtGains),
         crystallisable = Math.min(gains, remainingCgtAllowance),
-        cgtRate = tr !== 0.20 ? 0.24 : 0.18,
+        cgtRate = taxBandLabel !== "basic" ? 0.24 : 0.18,
         cgtSaving = crystallisable * cgtRate,
         savingsRate = effectiveSavingsRate,
         // Blended, not flat: only isaHeadroom worth of CASH could actually go into an
@@ -260,7 +265,7 @@ export function calcMetrics(d, marketRates = {}) {
   const niAnnual = calcNI(salary, { selfEmployed: d.employmentStatus === "self_employed", pastStatePensionAge: pastSpa });
   const regularIncome = adjustedNetIncome - bonusIncome - earlierIncome;
   // Dividends on their own rates, after the £500 allowance.
-  const incomeTaxAnnual = calcIncomeAndDividendTax(regularIncome - dividendIncome, dividendIncome, taxYear);
+  const incomeTaxAnnual = calcIncomeAndDividendTax(regularIncome - dividendIncome, dividendIncome, taxYear, scottish);
   const netAnnualIncome = regularIncome - incomeTaxAnnual - niAnnual;
   const existingMortgagePmt = hasMortgage ? (+d.monthlyMortgage||0) : 0;
   const existingPersonalLoanPmt = d.hasPersonalLoan === "yes" ? plMonthly : 0;
@@ -293,6 +298,8 @@ export function calcMetrics(d, marketRates = {}) {
     pensionType: d.pensionType || "", pastStatePensionAge: pastSpa,
     salarySacrifice: d.pensionType === "sacrifice" ? pensionSacrifice : 0,
     monthlySurplus, monthlyShortfall, monthlyTakeHome, expensesUnknown, largestCashHolding,
+    // A Scottish taxpayer: Scottish rates on earnings (tax.js).
+    scottish,
     // Not working now: pay earlier this tax year (stated, or estimated from
     // their last salary), and a settlement's taxed parts.
     earnedEarlierThisYear: earlier.pay, earnedEarlierEstimated: earlier.estimated, settlementTaxedThisYear: earlier.settlementTaxed,

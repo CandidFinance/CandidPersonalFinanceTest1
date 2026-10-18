@@ -50,6 +50,16 @@ export const EARNED_THIS_YEAR_QUESTION = {
   ifMissing: ({ d }) => d.employmentStatus === "not_working" && d.notWorkingReason === "break" && (d.earnedThisTaxYear === "" || d.earnedThisTaxYear == null),
 };
 
+// Scotland has its own income tax rates (tax.js). Asked once of everyone,
+// since it changes the tax on pay, pensions and the £100k trap.
+export const SCOTLAND_QUESTION = {
+  id:"scotland", field:"scottishTaxpayer", kind:"choice", group:"you",
+  ask: () => "Do you live in Scotland?",
+  why: () => "Scotland has its own income tax rates.",
+  options: () => [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }],
+  ifMissing: ({ d }) => d.scottishTaxpayer == null || d.scottishTaxpayer === "",
+};
+
 export const SALARY_QUESTION = {
   id:"salary", field:"salary", kind:"money", label:"Salary", cap:"salary", required:true, group:"you",
   ask: ({ d }) => d.employmentStatus === "self_employed" ? "What do you earn a year, before tax?" : "What's your salary before tax?",
@@ -110,4 +120,4 @@ export const SPENDING_QUESTION = {
 };
 
 // Employment first, so salary can be skipped for someone not working.
-export const ABOUT_YOU = [EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, EARNED_THIS_YEAR_QUESTION, SALARY_QUESTION, ...EXTRA_INCOME_QUESTIONS];
+export const ABOUT_YOU = [EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, EARNED_THIS_YEAR_QUESTION, SALARY_QUESTION, SCOTLAND_QUESTION, ...EXTRA_INCOME_QUESTIONS];

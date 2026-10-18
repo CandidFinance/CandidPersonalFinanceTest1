@@ -12,24 +12,24 @@ const ids = (key, d, needAt = d) => {
   const questions = MODULE_GUIDES[key].questions;
   return visibleQuestions(questions, ctxFor(d), neededAtStart(questions, ctxFor(needAt))).map(q => q.id);
 };
-const aboutYou = ["employment", "salary", "extraIncome"];
+const aboutYou = ["employment", "salary", "scotland", "extraIncome"];
 
 test("the first module asks about you first, led by one line", () => {
   const ctx = ctxFor(fresh);
   const qs = visibleQuestions(MODULE_GUIDES.pension.questions, ctx, neededAtStart(MODULE_GUIDES.pension.questions, ctx));
-  assert.deepEqual(qs.slice(0, 4).map(q => q.id), [...aboutYou, "age"]);
+  assert.deepEqual(qs.slice(0, 5).map(q => q.id), [...aboutYou, "age"]);
   assert.deepEqual(qs.filter(q => q.lead).map(q => q.id), ["employment"]);
 });
 
 test("a later module doesn't ask about you again", () => {
-  const answered = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", age: "31" };
+  const answered = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", age: "31" };
   assert.deepEqual(ids("investments", answered), ["hasInvestments"]);
   assert.deepEqual(ids("pension", answered), ["pensionStatus"]);
 });
 
 test("other income opens its three questions only when there is some", () => {
   const yes = { ...fresh, hasExtraIncome: "yes" };
-  assert.deepEqual(ids("studentLoan", yes, fresh).slice(0, 6), [...aboutYou, "bonus", "dividends", "otherIncome"]);
+  assert.deepEqual(ids("studentLoan", yes, fresh).slice(0, 7), [...aboutYou, "bonus", "dividends", "otherIncome"]);
 });
 
 test("someone not working isn't asked for a salary", () => {
@@ -37,19 +37,19 @@ test("someone not working isn't asked for a salary", () => {
 });
 
 test("cash asks spending, accounts, then gated bonds and ISA amounts", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no" };
+  const known = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no" };
   assert.deepEqual(ids("cash", known), ["spending", "cashAccounts", "hasPremiumBonds", "hasCashIsa", "otherIsa", "cashIsaEarlier", "cashAccess"]);
   assert.deepEqual(ids("cash", { ...known, hasPremiumBonds: "yes", hasCashIsaThisYear: "yes", hasOtherIsaThisYear: "yes" }, known),
     ["spending", "cashAccounts", "hasPremiumBonds", "premiumBonds", "hasCashIsa", "cashIsaThisYear", "otherIsa", "otherIsaThisYear", "cashIsaEarlier", "cashAccess"]);
 });
 
 test("cash only asks about other ISAs when Investments hasn't itemised them", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", isaThisYearSS: "6000" };
+  const known = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", isaThisYearSS: "6000" };
   assert.ok(!ids("cash", known).includes("otherIsa"));
 });
 
 test("investments: no investments ends after one question; outside an ISA opens gains", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no" };
+  const known = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no" };
   assert.deepEqual(ids("investments", known), ["hasInvestments"]);
   assert.deepEqual(ids("investments", { ...known, hasInvestments: "yes", hasUnwrapped: "yes", hasSoldAssetsOutsideWrapper: "yes" }, known), [
     "hasInvestments", "ssIsaEarlier", "ssIsaThisYear", "hasLisa", "hasUnwrapped", "unwrappedValue", "unrealisedGains", "soldThisYear", "realisedGains",
@@ -57,7 +57,7 @@ test("investments: no investments ends after one question; outside an ISA opens 
 });
 
 test("pension: the match question is skipped for the self-employed, or if Property already asked it", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", age: "31", pensionStatus: "yes" };
+  const known = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", age: "31", pensionStatus: "yes" };
   assert.ok(ids("pension", known).includes("pensionMatch"));
   assert.ok(!ids("pension", { ...known, employmentStatus: "self_employed" }).includes("pensionMatch"));
   assert.ok(!ids("pension", { ...known, myContribution: "5", employerMatch: "5" }).includes("pensionMatch"));
@@ -73,14 +73,14 @@ test("pension 'not sure' keeps the unknown flag the module reads; yes and no set
 // A final salary or career average member is never asked for a pot or an
 // employer match; they're asked what they pay in and what it'll pay.
 test("pension, final salary: no pot or match questions, but what it'll pay", () => {
-  const d = { ...fresh, employmentAsked: true, salary: "58000", hasExtraIncome: "no", age: "33", pensionStatus: "db", pensionKind: "db", hasPension: "yes" };
+  const d = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "58000", hasExtraIncome: "no", age: "33", pensionStatus: "db", pensionKind: "db", hasPension: "yes" };
   const asked = ids("pension", d);
   for (const id of ["pensionPot", "employerType", "pensionMatch", "pensionType"]) assert.equal(asked.includes(id), false, id);
   for (const id of ["pensionContribution", "dbIncome", "retirementAge"]) assert.ok(asked.includes(id), id);
 });
 
 test("not sure of the plan: the helper asks only what it needs, then the loan questions follow", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", age: "30" };
+  const known = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", age: "30" };
   const unsure = { ...known, slPlanAnswer: "unsure" };
   assert.deepEqual(ids("studentLoan", unsure, known), ["studentLoanPlan", "slCountry"]);
   assert.deepEqual(ids("studentLoan", { ...unsure, slCountry: "scotland", studentLoan: "plan4" }, known),
@@ -101,7 +101,7 @@ test("each helper answer sets the plan once there's enough to tell, and the resu
 });
 
 test("the question count shows only once no answer still to come can change it", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no" };
+  const known = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no" };
   const settled = (key, d, id) => {
     const qs = MODULE_GUIDES[key].questions;
     return countSettled(qs, ctxFor(d), neededAtStart(qs, ctxFor(known)), id);
@@ -136,7 +136,7 @@ test("every question has a short reason, and ids are unique across every walk-th
 });
 
 // Not paying in isn't "no pension": a pot from retiring or an old job counts.
-const known = { ...fresh, employmentAsked: true, employmentStatus: "not_working", notWorkingReason: "retired", hasExtraIncome: "no" };
+const known = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", employmentStatus: "not_working", notWorkingReason: "retired", hasExtraIncome: "no" };
 test("pension: not paying in asks about a pot, then retirement for those 55 and over", () => {
   const noPot = { ...known, age: "69", pensionStatus: "no" };
   // From 66 the State Pension question is asked with or without a pot.
@@ -155,7 +155,7 @@ test("pension: not paying in asks about a pot, then retirement for those 55 and 
 });
 
 test("not sure of the balance: the borrowing questions come, then the estimate", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "60000", hasExtraIncome: "no", age: "30", slPlanAnswer: "plan2", studentLoan: "plan2" };
+  const known = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "60000", hasExtraIncome: "no", age: "30", slPlanAnswer: "plan2", studentLoan: "plan2" };
   const qs = MODULE_GUIDES.studentLoan.questions;
   const q = id => qs.find(x => x.id === id);
   assert.deepEqual(q("loanBalance").also(""), { slBalanceEstimate: "yes" });
@@ -173,7 +173,7 @@ test("not sure of the balance: the borrowing questions come, then the estimate",
 // A question shared between modules is asked once: answered, or left as
 // "not sure", it isn't asked again in another module.
 test("a shared question asked in one module isn't asked again in another, even left unanswered", () => {
-  const d = { ...fresh, employmentAsked: true, employmentStatus: "not_working", notWorkingReason: "break", hasExtraIncome: "no", earnedThisTaxYear: "" };
+  const d = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", employmentStatus: "not_working", notWorkingReason: "break", hasExtraIncome: "no", earnedThisTaxYear: "" };
   // Not given yet: the cash walk-through asks it.
   assert.ok(ids("cash", d).includes("earnedThisYear"));
   // Asked in Pension and left blank: Cash doesn't ask it again.
@@ -183,14 +183,14 @@ test("a shared question asked in one module isn't asked again in another, even l
 // The student loan walk-through asks age, which sets when repayments started
 // and so the write-off date (without it, this April).
 test("student loan: age is asked, once", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", slPlanAnswer: "plan2", studentLoan: "plan2" };
+  const known = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", slPlanAnswer: "plan2", studentLoan: "plan2" };
   assert.ok(ids("studentLoan", known).includes("age"));
   assert.equal(ids("studentLoan", { ...known, age: "34" }).includes("age"), false);
 });
 
 // Other income on one screen: only the kinds picked are asked about.
 test("other income: one screen, then only the kinds picked", () => {
-  const d = { ...fresh, employmentAsked: true, salary: "60000", age: "30" };
+  const d = { ...fresh, employmentAsked: true, scottishTaxpayer: "no", salary: "60000", age: "30" };
   const after = kinds => ids("pension", { ...d, extraIncomeKinds: kinds, hasExtraIncome: kinds.includes("none") ? "no" : "yes" }, d);
   assert.deepEqual(after(["bonus"]).filter(id => ["bonus", "dividends", "otherIncome"].includes(id)), ["bonus"]);
   assert.deepEqual(after(["none"]).filter(id => ["bonus", "dividends", "otherIncome"].includes(id)), []);

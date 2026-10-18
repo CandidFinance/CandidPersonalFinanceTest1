@@ -206,7 +206,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
           ? `Your income sits in the £80k–£100k zone. Salary sacrifice saves tax and NI on what goes in, and leaves room if a bonus or rise would take you over £100k later. It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028).`
           : taper.aboveTaper
             ? `Above £125,140 your Personal Allowance is gone entirely. Sacrificing back down to £100k saves 45% on everything above £125,140 and an effective 60% on the £100k–£125,140 slice — roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`
-            : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective 60% tax rate. Salary sacrifice back to £100k would restore it, saving roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`}
+            : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective ${m.scottish ? "67.5" : "60"}% tax rate. Salary sacrifice back to £100k would restore it, saving roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`}
       </p>
       {taper.recoverable && taper.taperTotalSaving > 0 && (
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"10px",textAlign:"center"}}>

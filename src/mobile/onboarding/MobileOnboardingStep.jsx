@@ -220,6 +220,11 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
               <PillSlider value={d.notWorkingReason || ""} onChange={v => set("notWorkingReason", v)} options={NOT_WORKING_OPTIONS}/>
             </div>
           )}
+          {/* Scotland's own income tax rates (tax.js). */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginTop:"12px"}}>
+            <span style={{fontSize:"13px",color:TEXT,fontWeight:600}}>Live in Scotland?</span>
+            <div style={{width:"160px"}}><PillSlider value={d.scottishTaxpayer || "no"} onChange={v => set("scottishTaxpayer", v)} options={[{ value:"yes", label:"Yes" }, { value:"no", label:"No" }]}/></div>
+          </div>
           {/* Between jobs: pay this tax year before stopping (sets this year's tax band). */}
           {d.employmentStatus === "not_working" && d.notWorkingReason === "break" && (
             <div style={{display:"flex",marginTop:"10px"}}>

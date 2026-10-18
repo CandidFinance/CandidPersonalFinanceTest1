@@ -199,7 +199,7 @@ export function calcPensionTaperSaving(m, aaRoom = Infinity) {
   const niFree = m.pensionType === "sacrifice" && !m.pastStatePensionAge
     ? Math.min(taperSacrificeNeeded, Math.max(0, salarySacrificeNiCap(m.taxYear) - (m.salarySacrifice || 0))) : 0;
   const taperNiSaving = Math.round(niFree * NI_RATE_ABOVE_UEL);
-  const taperTaxSaving = (inTaper || aboveTaper) ? calcIncomeTax(ani) - calcIncomeTax(taperStart) : 0;
+  const taperTaxSaving = (inTaper || aboveTaper) ? calcIncomeTax(ani, m.scottish) - calcIncomeTax(taperStart, m.scottish) : 0;
   const taperTotalSaving = taperNiSaving + taperTaxSaving;
   return { taperStart, taperEnd, ani, inTaper, aboveTaper, recoverable, taperSacrificeNeeded, taperNiSaving, taperTaxSaving, taperTotalSaving };
 }
@@ -274,7 +274,7 @@ export function calcBonusSacrificePotential(d, m) {
   const { room } = calcAnnualAllowanceRoom(d, m);
   const taper = calcPensionTaperSaving(m, room);
   const ani = m.adjustedNetIncome;
-  const taxSaved = (from, amount) => amount > 0 ? calcIncomeTax(from) - calcIncomeTax(from - amount) : 0;
+  const taxSaved = (from, amount) => amount > 0 ? calcIncomeTax(from, m.scottish) - calcIncomeTax(from - amount, m.scottish) : 0;
 
   const standaloneSacrifice = Math.min(bonus, room);
   const taperSacrifice = taper.recoverable ? taper.taperSacrificeNeeded : 0;
@@ -342,7 +342,7 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   const bonusSlRate = bonus > 0 ? slOn(bonus) / bonus : 0;
 
   // Full bonus, no sacrifice — effective income tax rate on the whole amount.
-  const fullBonusTax = calcBonusTaxBreakdown(taxableSalary, bonus);
+  const fullBonusTax = calcBonusTaxBreakdown(taxableSalary, bonus, m.scottish);
   const fullTaxPct = Math.round(fullBonusTax.effectiveRate * 100);
   const fullNIPct = Math.round(niRateOnBonus * 100);
   const fullSLPct = Math.round(bonusSlRate * 100);
@@ -351,7 +351,7 @@ export function calcBonusSacrifice(d, m, bonusInput, sacrificePct) {
   // At the chosen sacrifice percentage.
   const sacrificedAmt = Math.round(bonus * sacrificePct / 100);
   const cashPortionBonus = bonus - sacrificedAmt;
-  const bonusTaxDetail = calcBonusTaxBreakdown(taxableSalary, cashPortionBonus);
+  const bonusTaxDetail = calcBonusTaxBreakdown(taxableSalary, cashPortionBonus, m.scottish);
   const taxOnCash = bonusTaxDetail.tax;
   const niOnCash = Math.round(cashPortionBonus * niRateOnBonus);
   const slOnCash = Math.round(slOn(cashPortionBonus));

@@ -48,6 +48,7 @@
  * @property {string} employmentStatus "employed", "self_employed" or "not_working".
  * @property {string} [notWorkingReason] When not working: "retired" or "break" (between jobs, a career break).
  * @property {string} [earnedThisTaxYear] When between jobs: pay this tax year before stopping, before tax.
+ * @property {string} [scottishTaxpayer] "yes" for a Scottish taxpayer (main home in Scotland): Scottish rates on earnings.
  * @property {string[]} [askedFields] Fields of ask-once questions already asked in a walk-through, answered or not (propertyGuide.js neededAtStart).
  * @property {boolean} [employmentAsked]
  * @property {string} [hasExtraIncome]
@@ -254,6 +255,7 @@
  * @property {boolean} expensesUnknown No monthly spending entered.
  * @property {number} largestCashHolding The most cash at one bank, for the FSCS limit.
  * @property {boolean} noEarnings Not working, or no salary.
+ * @property {boolean} scottish A Scottish taxpayer.
  * @property {number} earnedEarlierThisYear Not working: pay earlier this tax year (stated or estimated).
  * @property {boolean} earnedEarlierEstimated Whether that's an estimate from their last salary.
  * @property {number} settlementTaxedThisYear A redundancy settlement's taxed parts, this tax year.

@@ -105,18 +105,45 @@ export function taxFreeInterest(nonSavingsIncome, band) {
   return unusedAllowance + startingRate + (PSA_BY_BAND[band] ?? 0);
 }
 
+// ── Scottish income tax, 2026/27 (GOV.UK "Scottish Income Tax", checked
+// 18 Oct 2026). Scottish taxpayers (main home in Scotland) pay these rates on
+// earnings, pensions and other non-savings income; savings and dividends
+// stay on UK rates and bands. Each band's width in taxable income (after the
+// Personal Allowance): starter to £16,537, basic to £29,526, intermediate to
+// £43,662, higher to £75,000; advanced to £125,140, where the allowance is
+// gone and the top rate starts.
+export const SCOTTISH_BANDS = [[3967, 0.19], [12989, 0.20], [14136, 0.21], [31338, 0.42]];
+export const SCOTTISH_ADVANCED = 0.45, SCOTTISH_TOP = 0.48;
+function taxOnTaxable(taxable, scottish) {
+  if (!scottish) {
+    return Math.min(taxable, BASIC_RATE_BAND) * INCOME_TAX_RATES.basic
+      + Math.max(0, Math.min(taxable, ADDITIONAL_RATE_THRESHOLD) - BASIC_RATE_BAND) * INCOME_TAX_RATES.higher
+      + Math.max(0, taxable - ADDITIONAL_RATE_THRESHOLD) * INCOME_TAX_RATES.additional;
+  }
+  let tax = 0, from = 0;
+  for (const [width, rate] of SCOTTISH_BANDS) { tax += Math.max(0, Math.min(taxable, from + width) - from) * rate; from += width; }
+  return tax + Math.max(0, Math.min(taxable, ADDITIONAL_RATE_THRESHOLD) - from) * SCOTTISH_ADVANCED
+    + Math.max(0, taxable - ADDITIONAL_RATE_THRESHOLD) * SCOTTISH_TOP;
+}
+// The band rate on income of `income` (adjusted net income): what tax relief
+// on pension payments comes at, and what the top slice of pay is taxed at.
+export function scottishRate(income) {
+  return income > ADDITIONAL_RATE_THRESHOLD ? SCOTTISH_TOP : income > 75000 ? SCOTTISH_ADVANCED : income > 43662 ? 0.42
+    : income > 29526 ? 0.21 : income > 16537 ? 0.20 : 0.19;
+}
+
 // Income tax on other income plus dividends. Dividends sit on top: unused
 // Personal Allowance covers them first, then the £500 allowance (which still
 // uses up band), then the dividend rates for the band they fall in. The
 // allowance taper counts the dividends too.
-export function calcIncomeAndDividendTax(nonDividendIncome, dividends, taxYear) {
+// Scottish taxpayers: Scottish rates on the other income; dividends on UK
+// rates, in UK bands.
+export function calcIncomeAndDividendTax(nonDividendIncome, dividends, taxYear, scottish = false) {
   const other = Math.max(0, nonDividendIncome || 0), div0 = Math.max(0, dividends || 0);
   const total = other + div0;
   const pa = Math.max(0, PERSONAL_ALLOWANCE - Math.max(0, Math.min(PERSONAL_ALLOWANCE, (total - PA_TAPER_START) / 2)));
   const taxableOther = Math.max(0, other - pa);
-  let tax = Math.min(taxableOther, BASIC_RATE_BAND) * INCOME_TAX_RATES.basic
-    + Math.max(0, Math.min(taxableOther, ADDITIONAL_RATE_THRESHOLD) - BASIC_RATE_BAND) * INCOME_TAX_RATES.higher
-    + Math.max(0, taxableOther - ADDITIONAL_RATE_THRESHOLD) * INCOME_TAX_RATES.additional;
+  let tax = taxOnTaxable(taxableOther, scottish);
   let div = Math.max(0, div0 - Math.max(0, pa - other));
   let position = taxableOther;
   const allowance = Math.min(div, DIVIDEND_ALLOWANCE);
@@ -131,26 +158,24 @@ export function calcIncomeAndDividendTax(nonDividendIncome, dividends, taxYear) 
 }
 
 // Full marginal income tax calculation
-// Handles personal allowance taper (£100k–£125,140 → effective 60% rate)
-export function calcIncomeTax(gross) {
+// Handles personal allowance taper (£100k–£125,140 → effective 60% rate;
+// 67.5% for a Scottish taxpayer, whose rate there is 45%).
+export function calcIncomeTax(gross, scottish = false) {
   const g = Math.max(0, gross);
   const taperReduction = Math.max(0, Math.min(PERSONAL_ALLOWANCE, (g - PA_TAPER_START) / 2));
   const pa = Math.max(0, PERSONAL_ALLOWANCE - taperReduction);
   const taxable = Math.max(0, g - pa);
-  let tax = 0;
-  // The 45% rate starts at £125,140 of taxable income — the Personal Allowance
-  // is fully withdrawn by then, so that's also £125,140 of gross income.
-  tax += Math.min(taxable, BASIC_RATE_BAND) * INCOME_TAX_RATES.basic;
-  if (taxable > BASIC_RATE_BAND) tax += (Math.min(taxable, ADDITIONAL_RATE_THRESHOLD) - BASIC_RATE_BAND) * INCOME_TAX_RATES.higher;
-  if (taxable > ADDITIONAL_RATE_THRESHOLD) tax += (taxable - ADDITIONAL_RATE_THRESHOLD) * INCOME_TAX_RATES.additional;
-  return Math.round(tax);
+  // The 45% (Scotland: 48%) rate starts at £125,140 of taxable income — the
+  // Personal Allowance is fully withdrawn by then, so that's also £125,140
+  // of gross income.
+  return Math.round(taxOnTaxable(taxable, scottish));
 }
 
 // Returns tax breakdown on a cash bonus given taxable salary (after sacrifice)
-export function calcBonusTaxBreakdown(taxableSalary, cashBonus) {
+export function calcBonusTaxBreakdown(taxableSalary, cashBonus, scottish = false) {
   if (cashBonus <= 0) return { tax:0, effectiveRate:0, crossesTaper:false, crossesAR:false };
-  const taxTotal = calcIncomeTax(taxableSalary + cashBonus);
-  const taxSalary = calcIncomeTax(taxableSalary);
+  const taxTotal = calcIncomeTax(taxableSalary + cashBonus, scottish);
+  const taxSalary = calcIncomeTax(taxableSalary, scottish);
   const tax = Math.max(0, taxTotal - taxSalary);
   const effectiveRate = cashBonus > 0 ? tax / cashBonus : 0;
   const crossesTaper = (taxableSalary < 125140) && (taxableSalary + cashBonus > 100000);

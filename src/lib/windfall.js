@@ -80,7 +80,7 @@ const monthlyNi = pay => NI_MAIN_RATE * Math.max(0, Math.min(pay, NI_UPPER_EARNI
 // leaving, other income). `intoPension` (£, before tax) is paid straight
 // into a pension by the employer instead, out of the taxed parts first:
 // it's neither taxed nor NI'd.
-export function settlementTax(parts = {}, baseIncome = 0, intoPension = 0) {
+export function settlementTax(parts = {}, baseIncome = 0, intoPension = 0, scottish = false) {
   const n = k => Math.max(0, +parts[k] || 0);
   const earnings = n("notice") + n("bonus") + n("holiday") + n("other");
   const compensation = n("compensation");
@@ -91,7 +91,7 @@ export function settlementTax(parts = {}, baseIncome = 0, intoPension = 0) {
   const taxedEarnings = earnings - fromEarnings;
   excess -= fromExcess;
   const incomeThisYear = baseIncome + taxedEarnings + excess;
-  const incomeTax = calcIncomeTax(incomeThisYear) - calcIncomeTax(baseIncome);
+  const incomeTax = calcIncomeTax(incomeThisYear, scottish) - calcIncomeTax(baseIncome, scottish);
   const ni = Math.round(monthlyNi(taxedEarnings));
   const gross = earnings + compensation;
   return {
@@ -108,7 +108,7 @@ export const settlementGross = parts => SETTLEMENT_PARTS.reduce((t, p) => t + Ma
 
 // What the settlement comes to, in Candid's words.
 export function settlementLines(w, m = {}) {
-  const t = settlementTax(w.parts, w.earnedBefore != null ? +w.earnedBefore || 0 : (m.earnedEarlierThisYear || 0));
+  const t = settlementTax(w.parts, w.earnedBefore != null ? +w.earnedBefore || 0 : (m.earnedEarlierThisYear || 0), 0, m.scottish);
   return [
     t.taxFree > 0
       ? `Of your ${fmt(t.gross)}, ${fmt(t.taxFree)} is tax-free: the first ${fmt(REDUNDANCY_TAX_FREE)} of redundancy and thank-you payments together.`
@@ -174,7 +174,7 @@ function fitFor(key, w, d) {
  */
 export function windfallOptions(d, m, w, marketRates = {}) {
   const amount = w.source === "redundancy" && w.parts
-    ? settlementTax(w.parts, w.earnedBefore != null ? +w.earnedBefore || 0 : (m.earnedEarlierThisYear || 0)).net
+    ? settlementTax(w.parts, w.earnedBefore != null ? +w.earnedBefore || 0 : (m.earnedEarlierThisYear || 0), 0, m.scottish).net
     : Math.max(0, Math.round(+w.amount || 0));
   const age = +d.age || 0;
   const options = [];
@@ -203,7 +203,7 @@ export function windfallOptions(d, m, w, marketRates = {}) {
   // Pay before leaving: what they said here, else what Candid has for this
   // tax year (metrics earnedEarlierThisYear).
   const earnedBefore = w.earnedBefore != null ? +w.earnedBefore || 0 : (m.earnedEarlierThisYear || 0);
-  const redundancy = w.source === "redundancy" && w.parts ? settlementTax(w.parts, earnedBefore) : null;
+  const redundancy = w.source === "redundancy" && w.parts ? settlementTax(w.parts, earnedBefore, 0, m.scottish) : null;
   // Already paid into a pension through work this tax year: their old rate
   // on that pay (employee, and the employer's match on it).
   const prevMy = +d.previousMyContribution || 0, prevEmp = Math.min(prevMy, +d.previousEmployerMatch || 0);
@@ -216,7 +216,7 @@ export function windfallOptions(d, m, w, marketRates = {}) {
   // provider adding 20% and any more claimed through Self Assessment.
   if (redundancy && age > 0 && age < PENSION_RELIEF_MAX_AGE && !inRetirement(d)) {
     const income = redundancy.incomeThisYear;
-    const reliefOn = gross => Math.max(0.2 * gross, calcIncomeTax(income) - calcIncomeTax(Math.max(0, income - gross)));
+    const reliefOn = gross => Math.max(0.2 * gross, calcIncomeTax(income, m.scottish) - calcIncomeTax(Math.max(0, income - gross), m.scottish));
     // Personal payments count against this year's earnings (a salary
     // sacrifice is the employer's, so it doesn't), and everything against
     // the £60,000 annual allowance.
@@ -235,7 +235,7 @@ export function windfallOptions(d, m, w, marketRates = {}) {
     // while it's on its way): no tax or NI on that part. Counted in
     // take-home given up.
     if (redundancy.taxed > 0 && !w.arrived) {
-      const saved = g => { const t = settlementTax(w.parts, earnedBefore, g); return (redundancy.incomeTax + redundancy.ni) - (t.incomeTax + t.ni); };
+      const saved = g => { const t = settlementTax(w.parts, earnedBefore, g, m.scottish); return (redundancy.incomeTax + redundancy.ni) - (t.incomeTax + t.ni); };
       const gCap = Math.max(0, Math.min(redundancy.taxed, 60000 - paidInByThem - paidInByEmployer));
       const giveUp = g => g - saved(g);
       const gFor = c => { let lo = 0, hi = gCap; for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (giveUp(mid) < c) lo = mid; else hi = mid; } return hi; };
