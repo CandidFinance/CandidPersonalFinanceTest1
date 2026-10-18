@@ -20,14 +20,6 @@ import { useEqualHeights } from "./useEqualHeights.js";
 // encodes the site's three themes — continual upward growth, slow and
 // steady, and simplicity emerging from complexity — see that file's comment.
 
-// Hero phone render edges: feathered sides intersected with feathered
-// top/bottom (see the hero's app render below). Stops are tuned to the crop
-// there, where the phone sits at roughly 28–72% across and 9–81% down.
-const PHONE_MASK = [
-  "linear-gradient(to right, transparent 0%, #000 12%, #000 90%, transparent 100%)",
-  "linear-gradient(to bottom, transparent 0%, #000 7%, #000 83%, transparent 100%)",
-].join(", ");
-
 const tileHover = {
   whileHover: { y: -4, boxShadow: "0 18px 40px rgba(22,47,36,0.14)", transition: { duration: 0.2, ease: EASE_STEADY } },
 };
@@ -57,10 +49,15 @@ function CountUpStat({ value }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const reduceMotion = useReducedMotion();
-  const [display, setDisplay] = useState(reduceMotion || isRaw ? parsed.target : 0);
+  // Starts at the real figure, so the page as served (pre-rendered for
+  // search engines, link previews and AI assistants) never reads £0. In a
+  // browser, a figure not yet on screen drops to 0 and counts up once it is.
+  const [display, setDisplay] = useState(parsed.target);
+  const counted = useRef(false);
   useEffect(() => {
-    if (isRaw || !isInView) return;
-    if (reduceMotion) { setDisplay(parsed.target); return; }
+    if (isRaw || reduceMotion || counted.current) return;
+    if (!isInView) { setDisplay(0); return; }
+    counted.current = true;
     const controls = animate(0, parsed.target, { duration: 0.9, ease: EASE_STEADY, onUpdate: setDisplay });
     return () => controls.stop();
   }, [isInView, parsed.target, reduceMotion, isRaw]);
@@ -265,6 +262,11 @@ export default function LandingPage() {
                 </span>
               ))}
             </div>
+            <div style={{ fontSize: "13.5px", color: MUT, marginTop: "14px", whiteSpace: "normal" }}>
+              Or answer one question in 30 seconds:{" "}
+              <a href="/student-loan-calculator.html" style={{ color: G, fontWeight: 700 }}>student loan</a>{" · "}
+              <a href="/100k-tax-trap-calculator.html" style={{ color: G, fontWeight: 700 }}>£100k tax trap</a>
+            </div>
           </motion.div>
         </motion.div>
 
@@ -282,19 +284,17 @@ export default function LandingPage() {
           transition={{ duration: 0.9, delay: 0.3, ease: EASE_STEADY }}
         >
           <motion.div style={reduceMotion ? undefined : { y: phoneY, opacity: phoneOpacity, filter: phoneFilter }}>
+            {/* A real answer screen from the app today (the Pension module
+                for someone in the £100k trap), in a plain phone
+                frame. */}
             <div style={{
-              aspectRatio: "0.8", overflow: "hidden",
-              WebkitMaskImage: PHONE_MASK, maskImage: PHONE_MASK,
-              WebkitMaskComposite: "source-in", maskComposite: "intersect",
+              maxWidth: "300px", margin: "0 auto", aspectRatio: "390 / 760", overflow: "hidden",
+              borderRadius: "44px", border: "10px solid #14231c", background: "#14231c",
+              boxShadow: "0 30px 60px rgba(22,47,36,0.22)",
             }}>
               <img
-                src="/hero-phone.png" alt="The Candid app on an iPhone, showing the 'Tell us about you' step"
-                style={{
-                  width: "100%", height: "100%", objectFit: "cover", display: "block",
-                  // Zooms in on the phone, cropping the render's empty backdrop:
-                  // shows roughly x 360–1000, y 200–1000 of the 1600x1200 PNG.
-                  transform: "scale(1.5)", transformOrigin: "12.5% 50%",
-                }}
+                src="/hero-answer.png" alt="The Candid app on an iPhone, showing £2.8k of tax that could be saved in the Pension module"
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block", borderRadius: "34px" }}
               />
             </div>
           </motion.div>
@@ -344,7 +344,7 @@ export default function LandingPage() {
           <div style={{ textAlign: "center", marginBottom: "44px" }}>
             <SectionLabel>How it works</SectionLabel>
             <motion.h2 {...riseIn(reduceMotion)} style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,30px)", color: G, fontWeight: 700, lineHeight: 1.2 }}>
-              Your finances, mapped. Every option worked out in pounds.<br />All, in 5 minutes.
+              Your finances, mapped. Every option worked out in pounds.<br />Your first answer in about 3 minutes.
             </motion.h2>
           </div>
           {/* Fixed 2x2 down to phone width, then a single column — a plain
@@ -362,9 +362,9 @@ export default function LandingPage() {
           <div className="how-it-works-grid">
             {[
               { icon: ClipboardList, title: "Where you stand and where you're headed", body: "Share your current setup and targets, from salary and savings to buying a home or growing your investments. Rough estimates are fine, we'll do the maths." },
-              { icon: Scale, title: "Your full financial picture, analysed", body: "We test your setup against UK tax traps, debt mechanics, and personal goals. Delivering an instant financial health score and every option worked out in pounds." },
+              { icon: Scale, title: "Your full financial picture, analysed", body: "We test your setup against UK tax traps, debt mechanics, and personal goals. Then your Candid score, and every option worked out in pounds." },
               { icon: Search, title: "See the £ value of every decision", body: "See what each option could add to your net worth, calculated from your own figures. Candid does the maths; the decisions are yours." },
-              { icon: Compass, title: "Guidance that grows with you", body: "Life isn't static. Whether you get a pay rise, buy a home, or start a family – Candid updates automatically, so your figures stay current." },
+              { icon: Compass, title: "Guidance that grows with you", body: "Life isn't static. Whether you get a pay rise, buy a home, or start a family – update a figure and every module's answer moves with it." },
             ].map((step, i) => (
               <Tile key={step.title} ref={teaserRef(i)} {...pullTogether(i, 4, reduceMotion)} {...tileHover} style={{ borderTop: `4px solid ${GOLD}` }}>
                 <div style={{ marginBottom: "16px" }}><step.icon size={26} color={G} /></div>
@@ -387,7 +387,7 @@ export default function LandingPage() {
             Every area of your finances, connected.
           </h2>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", justifyContent: "center", marginBottom: "14px" }}>
-            {["Pension & salary sacrifice", "ISA & investments", "Cash savings optimisation", "Student loan strategy", "Mortgage & debt"].map((area, i) => (
+            {["Pension & salary sacrifice", "ISA & investments", "Cash savings optimisation", "Student loan strategy", "Buying a home"].map((area, i) => (
               <motion.div key={area} {...pullTogether(i, 5, reduceMotion, { stagger: 0.07, duration: 0.6, spreadPx: 26, riseYPx: 30 })} style={{
                 background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
                 borderRadius: "100px", padding: "11px 22px", fontSize: "16px", color: WHITE, fontWeight: 600,

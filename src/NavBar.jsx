@@ -35,7 +35,7 @@ export function NavBar({ right, center, onLogoClick, light }) {
   const grid = {display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",columnGap:"12px"};
   if (light) return (
     <div style={{background:HEADER_BG_LIGHT,paddingTop:"env(safe-area-inset-top, 0px)",flexShrink:0}}>
-      <div style={{...grid,maxWidth:"580px",margin:"0 auto",padding:"10px 20px",width:"100%",boxSizing:"border-box"}}>{row}</div>
+      <div className="app-navbar-inner" style={{...grid,maxWidth:"580px",margin:"0 auto",padding:"10px 20px",width:"100%",boxSizing:"border-box"}}>{row}</div>
     </div>
   );
   return (
