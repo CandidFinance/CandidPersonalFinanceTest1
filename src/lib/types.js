@@ -47,6 +47,7 @@
  * @property {string} salaryTrajectory "stable", "moderate"...
  * @property {string} employmentStatus "employed", "self_employed" or "not_working".
  * @property {string} [notWorkingReason] When not working: "retired" or "break" (between jobs, a career break).
+ * @property {string} [earnedThisTaxYear] When between jobs: pay this tax year before stopping, before tax.
  * @property {boolean} [employmentAsked]
  * @property {string} [hasExtraIncome]
  * @property {string} monthlyExpenses
@@ -252,6 +253,9 @@
  * @property {boolean} expensesUnknown No monthly spending entered.
  * @property {number} largestCashHolding The most cash at one bank, for the FSCS limit.
  * @property {boolean} noEarnings Not working, or no salary.
+ * @property {number} earnedEarlierThisYear Not working: pay earlier this tax year (stated or estimated).
+ * @property {boolean} earnedEarlierEstimated Whether that's an estimate from their last salary.
+ * @property {number} settlementTaxedThisYear A redundancy settlement's taxed parts, this tax year.
  * @property {number} expenses
  */
 

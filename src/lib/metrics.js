@@ -1,4 +1,4 @@
-import { ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
+import { REDUNDANCY_TAX_FREE, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_REAL_PCT } from "./growth.js";
 import { slRateIn, slRepaymentThreshold, SL_REPAYMENT_RATES, slYearsLeft, slThresholdIn, slEarnings, estimateSlBalance } from "./studentLoan.js";
@@ -147,7 +147,11 @@ export function calcMetrics(d, marketRates = {}) {
   const bonusIncome = +d.bonusAmount||0;
   const pensionSacrifice = salary * myPct / 100;
   const statePensionPaid = statePensionIncome(d);
-  const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome + statePensionPaid - pensionSacrifice;
+  // Not working now: pay earlier this tax year still sets this year's band,
+  // and so the tax on savings interest, but isn't pay coming in each month.
+  const earlier = d.employmentStatus === "not_working" ? earnedEarlierThisYear(d, taxYearFor(d)) : { pay: 0, settlementTaxed: 0, estimated: false };
+  const earlierIncome = earlier.pay + earlier.settlementTaxed;
+  const adjustedNetIncome = salary + bonusIncome + otherIncome + dividendIncome + statePensionPaid - pensionSacrifice + earlierIncome;
   // Income other than savings interest and dividends: what the starting rate
   // for savings is measured against (tax.js taxFreeInterest).
   const nonSavingsIncome = adjustedNetIncome - dividendIncome;
@@ -252,7 +256,7 @@ export function calcMetrics(d, marketRates = {}) {
   // Employee NI, or Class 4 when self-employed; none past State Pension age.
   const pastSpa = pastStatePensionAge(d);
   const niAnnual = calcNI(salary, { selfEmployed: d.employmentStatus === "self_employed", pastStatePensionAge: pastSpa });
-  const regularIncome = adjustedNetIncome - bonusIncome;
+  const regularIncome = adjustedNetIncome - bonusIncome - earlierIncome;
   // Dividends on their own rates, after the £500 allowance.
   const incomeTaxAnnual = calcIncomeAndDividendTax(regularIncome - dividendIncome, dividendIncome, taxYear);
   const netAnnualIncome = regularIncome - incomeTaxAnnual - niAnnual;
@@ -287,6 +291,9 @@ export function calcMetrics(d, marketRates = {}) {
     pensionType: d.pensionType || "", pastStatePensionAge: pastSpa,
     salarySacrifice: d.pensionType === "sacrifice" ? pensionSacrifice : 0,
     monthlySurplus, monthlyShortfall, monthlyTakeHome, expensesUnknown, largestCashHolding,
+    // Not working now: pay earlier this tax year (stated, or estimated from
+    // their last salary), and a settlement's taxed parts.
+    earnedEarlierThisYear: earlier.pay, earnedEarlierEstimated: earlier.estimated, settlementTaxedThisYear: earlier.settlementTaxed,
     // No earnings: not working, with no salary (other income, dividends or a
     // pension may still come in).
     noEarnings: d.employmentStatus === "not_working" || !(salary > 0),
@@ -311,4 +318,33 @@ export function isaFillable(d, m, now = new Date()) {
   const spareIncome = Math.max(0, m.monthlySurplus * (daysToTaxYearEnd(now) / 30.44) - (cashSelected ? m.emergencyShortfall : 0));
   const unwrapped = d.hasInvestments === "yes" ? (+d.unwrappedValue || 0) : 0;
   return Math.min(m.isaHeadroom, unwrapped + m.emergencyExcess + spareIncome);
+}
+
+// The share of this tax year gone so far, from 6 April (0 to 1).
+export function taxYearElapsed(taxYear, now = new Date()) {
+  const start = new Date(taxYear, 3, 6);
+  return Math.min(1, Math.max(0, (now - start) / (365.25 * 24 * 3600 * 1000)));
+}
+// A redundancy settlement's taxed parts (src/lib/windfall.js): notice,
+// bonus, holiday pay and anything else in full, and redundancy and
+// thank-you payments above £30,000.
+export function settlementTaxedPay(parts = {}) {
+  const n = k => Math.max(0, +parts[k] || 0);
+  return n("notice") + n("bonus") + n("holiday") + n("other") + Math.max(0, n("compensation") - REDUNDANCY_TAX_FREE);
+}
+// Pay this tax year before they stopped working: what they said (in Edit
+// inputs, or to the Chat tab's lump-sum questions), else their last salary
+// for the share of the tax year gone so far, as if they'd only just
+// stopped. Plus a redundancy settlement's taxed parts, from the Chat tab,
+// when it's this tax year's.
+export function earnedEarlierThisYear(d, taxYear, now = new Date()) {
+  const w = d.windfall || {};
+  const thisYears = w.taxYear == null || w.taxYear === taxYear;
+  const stated = [d.earnedThisTaxYear, thisYears && w.source === "redundancy" ? w.earnedBefore : null]
+    .find(v => v !== "" && v != null && !isNaN(+v));
+  const pay = stated != null ? Math.max(0, +stated) : Math.round((+d.previousSalary || 0) * taxYearElapsed(taxYear, now));
+  return {
+    pay, estimated: stated == null && pay > 0,
+    settlementTaxed: thisYears && w.source === "redundancy" && w.parts ? settlementTaxedPay(w.parts) : 0,
+  };
 }

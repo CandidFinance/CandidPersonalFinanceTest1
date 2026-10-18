@@ -35,6 +35,18 @@ export const NOT_WORKING_QUESTION = {
   ifMissing: ({ d }) => d.employmentStatus === "not_working" && !d.notWorkingReason,
 };
 
+// Between jobs: what they'd earned this tax year before stopping, which
+// still sets this year's tax band (metrics earnedEarlierThisYear). Without
+// it, their last salary for the months so far.
+export const EARNED_THIS_YEAR_QUESTION = {
+  id:"earnedThisYear", field:"earnedThisTaxYear", kind:"money", label:"Earned this tax year", cap:"salary", group:"you",
+  ask: () => "What had you earned this tax year before you stopped, before tax?",
+  why: () => "It still sets this year's tax band, which decides the tax on your savings interest.",
+  note: () => "Your P45 or last payslip shows it as pay to date. A rough figure is fine.",
+  showIf: ({ d }) => d.employmentStatus === "not_working" && d.notWorkingReason === "break",
+  ifMissing: ({ d }) => d.employmentStatus === "not_working" && d.notWorkingReason === "break" && (d.earnedThisTaxYear === "" || d.earnedThisTaxYear == null),
+};
+
 export const SALARY_QUESTION = {
   id:"salary", field:"salary", kind:"money", label:"Salary", cap:"salary", required:true, group:"you",
   ask: ({ d }) => d.employmentStatus === "self_employed" ? "What do you earn a year, before tax?" : "What's your salary before tax?",
@@ -93,4 +105,4 @@ export const SPENDING_QUESTION = {
 };
 
 // Employment first, so salary can be skipped for someone not working.
-export const ABOUT_YOU = [EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, SALARY_QUESTION, ...EXTRA_INCOME_QUESTIONS];
+export const ABOUT_YOU = [EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, EARNED_THIS_YEAR_QUESTION, SALARY_QUESTION, ...EXTRA_INCOME_QUESTIONS];

@@ -65,7 +65,10 @@ export const HIDDEN_MVP_MODULE_KEYS = ["mortgage", "personalLoan", "kids"];
 // but their answers stay saved (in rawD), so they come back on switching to
 // employed again.
 export function sanitizeForMvp(d) {
-  const out = d.employmentStatus === "not_working" ? { ...d, salary: "0", bonusAmount: "0", myContribution: "0", employerMatch: "0" } : d;
+  // What they were paid and paying in before stopping is kept apart
+  // (previousSalary...), for this tax year's tax and pension limits.
+  const out = d.employmentStatus === "not_working" ? { ...d, salary: "0", bonusAmount: "0", myContribution: "0", employerMatch: "0",
+    previousSalary: d.salary, previousMyContribution: d.myContribution, previousEmployerMatch: d.employerMatch } : d;
   if (!HIDE_MVP_MODULES) return out;
   return { ...out, hasMortgage: "no", ownsOutright: false, hasPersonalLoan: "no", hasKids: "no" };
 }

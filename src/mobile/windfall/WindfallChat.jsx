@@ -39,7 +39,9 @@ export default function WindfallChat({ d, m, set, marketRates }) {
   const plan = useMemo(() => (w.amount > 0 && w.source && w.earmark ? windfallOptions(d, m, w, marketRates) : null), [d, m, w, marketRates]);
   const placed = Object.values(split).reduce((t, v) => t + (+v || 0), 0);
 
-  const keep = (answers, nextSplit = split) => set("windfall", { ...answers, split: nextSplit });
+  // Kept with the tax year it's for, so a settlement only counts towards
+  // that year's tax band (metrics earnedEarlierThisYear).
+  const keep = (answers, nextSplit = split) => set("windfall", { ...answers, taxYear: m.taxYear, split: nextSplit });
 
   // Candid's messages, one at a time, each after the last has had time to
   // be read; then whatever the user answers next.
@@ -104,8 +106,9 @@ export default function WindfallChat({ d, m, set, marketRates }) {
   const settled = (earnedBefore, said) => {
     const answers = { ...w, earnedBefore };
     setW(answers);
+    set("earnedThisTaxYear", String(earnedBefore));
     answer(said);
-    say([...settlementLines(answers), "Is any of it already meant for something?"], "earmark");
+    say([...settlementLines(answers, m), "Is any of it already meant for something?"], "earmark");
   };
   const startAgain = () => {
     setW({}); setSplit({}); setAmountInput(null); setPartsInput({}); setSalaryInput(null); set("windfall", null);
@@ -183,7 +186,17 @@ export default function WindfallChat({ d, m, set, marketRates }) {
               const answers = { ...w, parts, amount: settlementGross(parts) };
               setW(answers);
               answer(SETTLEMENT_PARTS.filter(p => parts[p.key]).map(p => `${p.label.replace(/ \(PILON\)| and any thank-you/, "")} ${fmt(parts[p.key])}`).join(", "));
-              say(["And what had you earned this tax year before leaving, before tax? Your last payslip shows it as pay to date."], "earned");
+              // Pay before leaving: already told Candid, or asked now
+              // (starting from the estimate from their last salary).
+              const told = d.earnedThisTaxYear !== "" && d.earnedThisTaxYear != null;
+              if (told) {
+                const withPay = { ...answers, earnedBefore: +d.earnedThisTaxYear };
+                setW(withPay);
+                say([`Going on the ${fmt(+d.earnedThisTaxYear)} you told me you'd earned this tax year before leaving.`, ...settlementLines(withPay, m), "Is any of it already meant for something?"], "earmark");
+              } else {
+                if (m.earnedEarlierThisYear > 0) setAmountInput(m.earnedEarlierThisYear);
+                say(["And what had you earned this tax year before leaving, before tax? Your last payslip shows it as pay to date."], "earned");
+              }
             }}>Next</ReplyButton></Replies>
           </motion.div>
         )}

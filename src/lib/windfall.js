@@ -22,7 +22,7 @@
 // after tax and National Insurance.
 
 import { fmt } from "./format.js";
-import { ISA_ALLOWANCE, cashIsaLimit, taxFreeInterest, calcIncomeTax, savingsTaxRates, HIGHER_RATE_THRESHOLD, NI_PRIMARY_THRESHOLD, NI_UPPER_EARNINGS_LIMIT, NI_MAIN_RATE, NI_RATE_ABOVE_UEL } from "./tax.js";
+import { ISA_ALLOWANCE, cashIsaLimit, taxFreeInterest, calcIncomeTax, savingsTaxRates, HIGHER_RATE_THRESHOLD, NI_PRIMARY_THRESHOLD, NI_UPPER_EARNINGS_LIMIT, NI_MAIN_RATE, NI_RATE_ABOVE_UEL, REDUNDANCY_TAX_FREE } from "./tax.js";
 import { daysToTaxYearEnd } from "./metrics.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
 import { calcAnnualAllowanceRoom, calcBonusSacrificePotential, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, PENSION_RELIEF_MAX_AGE } from "./pension.js";
@@ -49,8 +49,7 @@ export const WINDFALL_WHEN = [
   { value: "later", label: "5 years or more" },
 ];
 
-// GOV.UK: the first £30,000 of a redundancy payment is tax-free.
-export const REDUNDANCY_TAX_FREE = 30000;
+export { REDUNDANCY_TAX_FREE };
 // A Lifetime ISA: up to £4,000 a year, opened from 18 to 39, with 25% added.
 export const LISA_LIMIT = 4000, LISA_BONUS = 0.25;
 // A Junior ISA: up to £9,000 a year per child.
@@ -108,8 +107,8 @@ export function settlementTax(parts = {}, baseIncome = 0, intoPension = 0) {
 export const settlementGross = parts => SETTLEMENT_PARTS.reduce((t, p) => t + Math.max(0, +parts?.[p.key] || 0), 0);
 
 // What the settlement comes to, in Candid's words.
-export function settlementLines(w) {
-  const t = settlementTax(w.parts, +w.earnedBefore || 0);
+export function settlementLines(w, m = {}) {
+  const t = settlementTax(w.parts, w.earnedBefore != null ? +w.earnedBefore || 0 : (m.earnedEarlierThisYear || 0));
   return [
     t.taxFree > 0
       ? `Of your ${fmt(t.gross)}, ${fmt(t.taxFree)} is tax-free: the first ${fmt(REDUNDANCY_TAX_FREE)} of redundancy and thank-you payments together.`
@@ -175,7 +174,7 @@ function fitFor(key, w, d) {
  */
 export function windfallOptions(d, m, w, marketRates = {}) {
   const amount = w.source === "redundancy" && w.parts
-    ? settlementTax(w.parts, +w.earnedBefore || 0).net
+    ? settlementTax(w.parts, w.earnedBefore != null ? +w.earnedBefore || 0 : (m.earnedEarlierThisYear || 0)).net
     : Math.max(0, Math.round(+w.amount || 0));
   const age = +d.age || 0;
   const options = [];
@@ -201,7 +200,15 @@ export function windfallOptions(d, m, w, marketRates = {}) {
   }
 
   // A redundancy settlement: its tax, and this tax year's income with it.
-  const redundancy = w.source === "redundancy" && w.parts ? settlementTax(w.parts, +w.earnedBefore || 0) : null;
+  // Pay before leaving: what they said here, else what Candid has for this
+  // tax year (metrics earnedEarlierThisYear).
+  const earnedBefore = w.earnedBefore != null ? +w.earnedBefore || 0 : (m.earnedEarlierThisYear || 0);
+  const redundancy = w.source === "redundancy" && w.parts ? settlementTax(w.parts, earnedBefore) : null;
+  // Already paid into a pension through work this tax year: their old rate
+  // on that pay (employee, and the employer's match on it).
+  const prevMy = +d.previousMyContribution || 0, prevEmp = Math.min(prevMy, +d.previousEmployerMatch || 0);
+  const paidInByThem = d.hasPension === "yes" ? Math.round(earnedBefore * prevMy / 100) : 0;
+  const paidInByEmployer = d.hasPension === "yes" ? Math.round(earnedBefore * prevEmp / 100) : 0;
 
   // Pension, the year of a redundancy: anything up to this tax year's
   // earnings (pay before leaving, notice, bonus, holiday) can go in with
@@ -210,22 +217,26 @@ export function windfallOptions(d, m, w, marketRates = {}) {
   if (redundancy && age > 0 && age < PENSION_RELIEF_MAX_AGE && !inRetirement(d)) {
     const income = redundancy.incomeThisYear;
     const reliefOn = gross => Math.max(0.2 * gross, calcIncomeTax(income) - calcIncomeTax(Math.max(0, income - gross)));
-    const grossCap = Math.min(redundancy.relevantEarnings, 60000);
+    // Personal payments count against this year's earnings (a salary
+    // sacrifice is the employer's, so it doesn't), and everything against
+    // the £60,000 annual allowance.
+    const theirs = d.pensionType === "sacrifice" ? 0 : paidInByThem;
+    const grossCap = Math.max(0, Math.min(redundancy.relevantEarnings - theirs, 60000 - paidInByThem - paidInByEmployer));
     const cashFor = gross => gross - reliefOn(gross);
     const grossFor = c => { let lo = 0, hi = grossCap; for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (cashFor(mid) < c) lo = mid; else hi = mid; } return hi; };
     const cap = Math.floor(cashFor(grossCap));
     if (cap > 0) options.push({
       key: "pension", title: "A personal pension", cap, guaranteed: true,
       value: c => ({ figure: Math.round(grossFor(c) - c), per: "of tax relief added" }),
-      detail: `This tax year you can pay in up to your earnings, ${fmt(Math.round(redundancy.relevantEarnings))} (less anything already paid in). The provider adds 20%; any more comes through Self Assessment.`,
+      detail: `This tax year up to ${fmt(Math.round(grossCap))} can go in with relief: your earnings of ${fmt(Math.round(redundancy.relevantEarnings))}${paidInByThem + paidInByEmployer > 0 ? `, less about ${fmt(paidInByThem + paidInByEmployer)} already paid in through work (your ${prevMy}%${prevEmp > 0 ? ` and your employer's ${prevEmp}%` : ""} on ${fmt(Math.round(earnedBefore))})` : ""}. The provider adds 20%; any more comes through Self Assessment.`,
       access: `Locked until ${pensionAccessAge(d)}.`,
     });
     // Paid in by the employer from the settlement before it's paid (so only
     // while it's on its way): no tax or NI on that part. Counted in
     // take-home given up.
     if (redundancy.taxed > 0 && !w.arrived) {
-      const saved = g => { const t = settlementTax(w.parts, +w.earnedBefore || 0, g); return (redundancy.incomeTax + redundancy.ni) - (t.incomeTax + t.ni); };
-      const gCap = Math.min(redundancy.taxed, 60000);
+      const saved = g => { const t = settlementTax(w.parts, earnedBefore, g); return (redundancy.incomeTax + redundancy.ni) - (t.incomeTax + t.ni); };
+      const gCap = Math.max(0, Math.min(redundancy.taxed, 60000 - paidInByThem - paidInByEmployer));
       const giveUp = g => g - saved(g);
       const gFor = c => { let lo = 0, hi = gCap; for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (giveUp(mid) < c) lo = mid; else hi = mid; } return hi; };
       const eCap = Math.floor(giveUp(gCap));
@@ -335,7 +346,9 @@ export function windfallOptions(d, m, w, marketRates = {}) {
   // first: the Personal Savings Allowance, and with low other income, the
   // starting rate and any unused Personal Allowance.
   const existing = (m.cash || 0) * ((m.effectiveSavingsRate || 0) / 100);
-  const thisIncome = redundancy ? redundancy.incomeThisYear : (m.nonSavingsIncome || 0);
+  const thisIncome = redundancy && !(m.settlementTaxedThisYear > 0)
+    ? (m.nonSavingsIncome || 0) - (m.earnedEarlierThisYear || 0) + redundancy.incomeThisYear
+    : (m.nonSavingsIncome || 0);
   const nextIncome = d.employmentStatus === "not_working" ? (+d.otherIncome || 0) : (m.nonSavingsIncome || 0);
   const year = (income, taxYear) => {
     const band = bandOf(income);

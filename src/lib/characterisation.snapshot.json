@@ -74,6 +74,9 @@
     "monthlyTakeHome": 4090.0375,
     "expensesUnknown": false,
     "largestCashHolding": 18000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -2818,6 +2821,9 @@
     "monthlyTakeHome": 4090.0375,
     "expensesUnknown": false,
     "largestCashHolding": 18000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -5310,6 +5316,9 @@
     "monthlyTakeHome": 3013.2999999999997,
     "expensesUnknown": false,
     "largestCashHolding": 12000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -7809,6 +7818,9 @@
     "monthlyTakeHome": 3013.2999999999997,
     "expensesUnknown": false,
     "largestCashHolding": 12000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -10139,6 +10151,9 @@
     "monthlyTakeHome": 5186.45,
     "expensesUnknown": false,
     "largestCashHolding": 45000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -12687,6 +12702,9 @@
     "monthlyTakeHome": 5186.45,
     "expensesUnknown": false,
     "largestCashHolding": 45000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -15020,6 +15038,9 @@
     "monthlyTakeHome": 1853.3,
     "expensesUnknown": false,
     "largestCashHolding": 500,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -16503,6 +16524,9 @@
     "monthlyTakeHome": 1853.3,
     "expensesUnknown": false,
     "largestCashHolding": 500,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -17828,6 +17852,9 @@
     "monthlyTakeHome": 5305.533333333333,
     "expensesUnknown": false,
     "largestCashHolding": 40000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -20473,6 +20500,9 @@
     "monthlyTakeHome": 5305.533333333333,
     "expensesUnknown": false,
     "largestCashHolding": 40000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -22893,6 +22923,9 @@
     "monthlyTakeHome": 11452.949999999999,
     "expensesUnknown": false,
     "largestCashHolding": 150000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -25418,6 +25451,9 @@
     "monthlyTakeHome": 11452.949999999999,
     "expensesUnknown": false,
     "largestCashHolding": 150000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -27818,6 +27854,9 @@
     "monthlyTakeHome": 3602.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 25000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -30385,6 +30424,9 @@
     "monthlyTakeHome": 3602.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 25000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -32709,6 +32751,9 @@
     "monthlyTakeHome": 2429.3458333333333,
     "expensesUnknown": false,
     "largestCashHolding": 10000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -35496,6 +35541,9 @@
     "monthlyTakeHome": 2429.3458333333333,
     "expensesUnknown": false,
     "largestCashHolding": 10000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -38114,6 +38162,9 @@
     "monthlyTakeHome": 1917.5083333333332,
     "expensesUnknown": false,
     "largestCashHolding": 3000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -41014,6 +41065,9 @@
     "monthlyTakeHome": 1917.5083333333332,
     "expensesUnknown": false,
     "largestCashHolding": 3000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -43753,6 +43807,9 @@
     "monthlyTakeHome": 3106.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 10000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -46412,6 +46469,9 @@
     "monthlyTakeHome": 3106.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 10000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -48902,6 +48962,9 @@
     "monthlyTakeHome": 3996.4500000000003,
     "expensesUnknown": false,
     "largestCashHolding": 80000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -51503,6 +51566,9 @@
     "monthlyTakeHome": 3996.4500000000003,
     "expensesUnknown": false,
     "largestCashHolding": 80000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -53889,6 +53955,9 @@
     "monthlyTakeHome": 1646,
     "expensesUnknown": false,
     "largestCashHolding": 40000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": true,
     "bestSavingsRate": 4.72
    },
@@ -56435,6 +56504,9 @@
     "monthlyTakeHome": 1646,
     "expensesUnknown": false,
     "largestCashHolding": 40000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": true,
     "bestSavingsRate": 5.1
    },
@@ -58736,6 +58808,9 @@
     "monthlyTakeHome": 3400.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 22000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -61285,6 +61360,9 @@
     "monthlyTakeHome": 3400.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 22000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -63589,6 +63667,9 @@
     "monthlyTakeHome": 3538.116666666667,
     "expensesUnknown": false,
     "largestCashHolding": 10000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -65059,6 +65140,9 @@
     "monthlyTakeHome": 3538.116666666667,
     "expensesUnknown": false,
     "largestCashHolding": 10000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -66361,6 +66445,9 @@
     "monthlyTakeHome": 3400.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 45000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -69327,6 +69414,9 @@
     "monthlyTakeHome": 3400.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 45000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -72082,6 +72172,9 @@
     "monthlyTakeHome": 3229.1291666666666,
     "expensesUnknown": false,
     "largestCashHolding": 70000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -75180,6 +75273,9 @@
     "monthlyTakeHome": 3229.1291666666666,
     "expensesUnknown": false,
     "largestCashHolding": 70000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },
@@ -78062,6 +78158,9 @@
     "monthlyTakeHome": 3400.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 10000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 4.72
    },
@@ -80515,6 +80614,9 @@
     "monthlyTakeHome": 3400.616666666667,
     "expensesUnknown": false,
     "largestCashHolding": 10000,
+    "earnedEarlierThisYear": 0,
+    "earnedEarlierEstimated": false,
+    "settlementTaxedThisYear": 0,
     "noEarnings": false,
     "bestSavingsRate": 5.1
    },

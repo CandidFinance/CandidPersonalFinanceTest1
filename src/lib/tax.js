@@ -30,6 +30,9 @@ export const STARTING_RATE_FOR_SAVINGS = 5000;
 export const PSA_BY_BAND = { basic: 1000, higher: 500, additional: 0 };
 // Total ISA allowance per tax year.
 export const ISA_ALLOWANCE = 20000;
+// GOV.UK: the first £30,000 of redundancy and other non-contractual
+// termination payments is tax-free.
+export const REDUNDANCY_TAX_FREE = 30000;
 // The full new State Pension, 2026/27: £241.30 a week. State Pension age is
 // rising from 66 to 67 between April 2026 and March 2028; anyone under 66
 // now gets it from 67.

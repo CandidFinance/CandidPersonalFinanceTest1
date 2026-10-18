@@ -124,3 +124,35 @@ test("the split in words", () => {
   const text = describeSplit({ cashIsa: 15000 }, plan);
   assert.match(text, /^That puts £15,000 into a Cash ISA \(£702 a year in interest, tax-free\)\. £5,000 isn't placed yet\.$/);
 });
+
+// Between jobs, pay earlier this tax year still sets this year's band, for
+// the Cash module, Home and Candid Assist as much as for the Chat tab.
+test("not working: earlier pay this tax year sets the band; estimated from the last salary if not given", async () => {
+  const { earnedEarlierThisYear } = await import("./metrics.js");
+  const d = sanitizeForMvp({ ...base, employmentStatus: "not_working", notWorkingReason: "break", salary: "60000" });
+  // 6 April to 5 October, 182 days: about half the last salary.
+  const half = new Date(2026, 9, 5);
+  assert.equal(earnedEarlierThisYear(d, 2026, half).pay, 29897);
+  assert.equal(earnedEarlierThisYear(d, 2026, half).estimated, true);
+  // Said: that wins. A settlement's taxed parts count too.
+  const said = { ...d, earnedThisTaxYear: "30000", windfall: { source: "redundancy", taxYear: 2026, parts: { notice: 15000, compensation: 35000 } } };
+  assert.deepEqual(earnedEarlierThisYear(said, 2026, half), { pay: 30000, estimated: false, settlementTaxed: 20000 });
+  // Last year's settlement doesn't count this year.
+  assert.equal(earnedEarlierThisYear({ ...said, windfall: { ...said.windfall, taxYear: 2025 } }, 2026, half).settlementTaxed, 0);
+  // The band follows (£50,000 is still basic rate), but not the pay each month.
+  const m = calcMetrics({ ...said, cashTiers: [{ amount: "20000", rate: "4" }] }, MARKET);
+  assert.equal(m.taxBandLabel, "basic");
+  assert.equal(m.monthlyTakeHome, 0);
+  const higher = calcMetrics({ ...said, earnedThisTaxYear: "40000" }, MARKET);
+  assert.equal(higher.taxBandLabel, "higher");
+  assert.equal(higher.savingsTr, 0.4);
+});
+
+test("redundancy year pension limit: less what went in through work this year, at the old rate", () => {
+  const { plan } = planFor({ employmentStatus: "not_working", notWorkingReason: "break", myContribution: "5", employerMatch: "5", pensionType: "relief" },
+    { source: "redundancy", parts: settlement, earnedBefore: 30000, arrived: false });
+  const pension = plan.options.find(o => o.key === "pension");
+  // £52,500 of earnings, less £1,500 paid in personally (5% of £30,000).
+  assert.match(pension.detail, /up to £51,000 can go in with relief/);
+  assert.match(pension.detail, /£3,000 already paid in through work \(your 5% and your employer's 5% on £30,000\)/);
+});

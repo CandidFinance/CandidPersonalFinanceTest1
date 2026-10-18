@@ -220,6 +220,12 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
               <PillSlider value={d.notWorkingReason || ""} onChange={v => set("notWorkingReason", v)} options={NOT_WORKING_OPTIONS}/>
             </div>
           )}
+          {/* Between jobs: pay this tax year before stopping (sets this year's tax band). */}
+          {d.employmentStatus === "not_working" && d.notWorkingReason === "break" && (
+            <div style={{display:"flex",marginTop:"10px"}}>
+              <PillMoneyInput label="Earned this tax year, before stopping" value={d.earnedThisTaxYear === "" || d.earnedThisTaxYear == null ? null : +d.earnedThisTaxYear} onChange={v => set("earnedThisTaxYear", v == null ? "" : String(v))}/>
+            </div>
+          )}
           {showEmploymentInfo && (
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"8px",background:CDARK,borderRadius:"8px",padding:"8px 10px"}}>
               We factor this into your analysis — whether you're employed, self-employed or not working changes which levers are actually available to you, so we can work out what's genuinely optimal for your position rather than giving generic advice.
