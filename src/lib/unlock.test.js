@@ -9,12 +9,18 @@ test("only gated users, and only scored modules, are locked", () => {
   assert.equal(isLocked({ unlockGate: true, unlockedModules: ["cash"] }, "cash"), false);
 });
 
-test("the first module finished unlocks by itself, and only the first", () => {
+test("the first answer is theirs for their email; with it already known, it unlocks by itself", () => {
   const d = { unlockGate: true };
-  assert.deepEqual(firstUnlockPatch(d, "studentLoan"), { unlockedModules: ["studentLoan"] });
-  assert.equal(firstUnlockPatch({ ...d, unlockedModules: ["cash"] }, "pension"), null);
+  assert.equal(firstUnlockPatch(d, "studentLoan"), null);
+  assert.equal(unlockAsk(d).kind, "email");
+  const known = { ...d, email: "sam@example.com" };
+  assert.deepEqual(firstUnlockPatch(known, "studentLoan"), { unlockedModules: ["studentLoan"] });
+  assert.equal(unlockAsk(known).kind, "free");
+  assert.equal(firstUnlockPatch({ ...known, unlockedModules: ["cash"] }, "pension"), null);
   assert.equal(firstUnlockPatch({}, "cash"), null);
-  assert.equal(unlockAsk(d).kind, "free");
+  // Giving the email unlocks it and keeps the email.
+  assert.deepEqual(unlockPatch(d, "cash", { kind: "email" }, { email: " sam@example.com ", callOk: true }),
+    { unlockedModules: ["cash"], email: "sam@example.com", unlockEmailGiven: true, unlockCallOk: true });
 });
 
 test("after the first, a subscription, which unlocks every module", () => {

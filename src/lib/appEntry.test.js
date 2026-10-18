@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { entryGoals, toHandFor, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION, entryChat, readingMs,
-  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted } from "./appEntry.js";
+  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -9,10 +9,13 @@ test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["exploring"]), ["exploring"]);
 });
 
-test("the entry asks name, confidence, then interests, each with a short reason", () => {
-  assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["name", "confidence", "interests"]);
+test("the entry asks name, then interests, each with a short reason (confidence comes after the first answer)", () => {
+  assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["name", "interests"]);
   for (const q of ENTRY_QUESTIONS) assert.ok(q.why().split(/\s+/).length <= 15, q.id);
-  assert.deepEqual(ENTRY_QUESTIONS[2].also(["property"]), { financialGoals: ["buy_house"] });
+  assert.deepEqual(ENTRY_QUESTIONS[1].also(["property"]), { financialGoals: ["buy_house"] });
+  assert.equal(firstPick({ interests: ["cash", "retirement"] }), "pension");
+  assert.equal(firstPick({ interests: ["exploring"] }), null);
+  assert.equal(modulePath("property"), "/app/property");
   assert.equal(CONFIDENCE_QUESTION.ask({ d: { name: " Sam " } }), "How confident do you feel about your finances, Sam?");
 });
 

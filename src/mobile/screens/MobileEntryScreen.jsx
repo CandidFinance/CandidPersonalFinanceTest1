@@ -4,7 +4,7 @@ import { motion, MotionConfig } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
 import { NavBar } from "../../NavBar.jsx";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, CREAM } from "../../design-tokens.js";
-import { ENTRY_QUESTIONS, toHandFor, entryChat, readingMs, CHAT_VARIANTS } from "../../lib/appEntry.js";
+import { ENTRY_QUESTIONS, toHandFor, entryChat, readingMs, CHAT_VARIANTS, firstPick, MODULE_NAMES } from "../../lib/appEntry.js";
 import GuidedFlow from "../property/GuidedFlow.jsx";
 import { Bubble, Dots, DotsKeyframes, Replies, ReplyButton } from "../chat/ChatParts.jsx";
 
@@ -146,7 +146,7 @@ function HowCandidWorks({ d, onDone }) {
         {replies === "enter" && (
           <motion.div key="enter" {...rise}>
             <button type="button" onClick={onDone} style={{width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"14px",fontSize:"14.5px",fontWeight:700,fontFamily:SANS,cursor:"pointer"}}>
-              Explore my modules
+              {firstPick(d) ? `Start with ${MODULE_NAMES[firstPick(d)]}` : "Explore my modules"}
             </button>
           </motion.div>
         )}

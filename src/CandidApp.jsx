@@ -15,7 +15,7 @@ import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
-import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
+import { isLocked, unlockPatch, firstUnlockPatch, unlockAsk, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import { checkAccessOnLoad, accessInfo, saveStateSoon } from "./lib/entitlement.js";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
@@ -23,7 +23,7 @@ import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
-import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals } from "./lib/appEntry.js";
+import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath } from "./lib/appEntry.js";
 import { moduleGuideStarts } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { readinessMissing } from "./lib/propertyReadiness.js";
@@ -619,7 +619,9 @@ export default function AppShell() {
         // The user's row from the start (name and interests), not only once
         // a report exists. The report still adds its own row when it's made.
         insertReportRow(null);
-        navigate("/app/home");
+        // Straight into the first module they picked; Home for "Just exploring".
+        const pick = firstPick(d);
+        navigate(pick ? modulePath(pick) : "/app/home");
       }}/>
     );
   }
@@ -757,6 +759,17 @@ export default function AppShell() {
     if (!mobileActiveModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(mobileActiveModule)) || !MODULE_META.some(mm => mm.key === mobileActiveModule)) {
       return <Navigate to="/app/modules" replace />;
     }
+    // A locked module needing a subscription: its frosted answer and the
+    // paywall first, before any questions (unlock.js).
+    if (moduleGuideStarts(mobileActiveModule, d) && isLocked(d, mobileActiveModule) && unlockAsk(d).kind === "pay") {
+      return (
+        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
+          <MobileUnlock preview moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses}
+            onLeaveEmail={email => { set("email", email); set("alertsOptIn", true); posthog.capture("email_captured", { source: "paywall" }); setUnlockSaveTick(t => t + 1); }}
+            onUnlock={() => {}}/>
+        </MobileLayout>
+      );
+    }
     // Until a module's questions are answered (or skipped) it opens on its
     // walk-through. Then the module joins selectedModules, so its own screen,
     // the answer, takes over, and its answers are saved to the user's row.
@@ -809,7 +822,7 @@ export default function AppShell() {
               const patch = unlockPatch(d, mobileActiveModule, ask, answer);
               Object.entries(patch).forEach(([k, v]) => set(k, v));
               posthog.capture("module_unlocked", { module: mobileActiveModule, via: ask.kind, question: ask.question?.id ?? null, answer: ask.kind === "question" ? answer : null, call_ok: ask.kind === "email" ? !!answer.callOk : null });
-              if (ask.kind === "email") posthog.capture("email_captured", { source: "unlock", call_ok: !!answer.callOk });
+              if (ask.kind === "email") { posthog.capture("email_captured", { source: "unlock", call_ok: !!answer.callOk }); if (answer.callOk) set("alertsOptIn", true); }
               setUnlockSaveTick(t => t + 1);
               if (revealSteps) setRevealModule(mobileActiveModule);
             }}/>

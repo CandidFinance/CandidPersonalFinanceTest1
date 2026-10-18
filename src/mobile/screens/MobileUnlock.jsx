@@ -5,6 +5,7 @@ import posthog from "posthog-js";
 import { Lock, X } from "lucide-react";
 import { G, GOLD, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT } from "../../design-tokens.js";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
+import { moduleEstimate } from "../../lib/crossModule.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
 import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../lib/entitlement.js";
@@ -16,12 +17,16 @@ import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../l
 // be read from the page. `onUnlock(ask, answer)` unlocks a free one and goes
 // on to the answer; `onLeaveEmail(email)` records an email for rate alerts
 // from someone not subscribing yet.
-export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLeaveEmail }) {
+// `preview`: the module's questions aren't answered yet (a locked module
+// opened before its walk-through), so the figure is Candid's estimate from
+// what it already knows, if it has one.
+export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLeaveEmail, preview = false }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const mod = getModuleBreakdown(d, m, statuses, null, "amount").moduleList.find(mm => mm.key === moduleKey);
   const ask = unlockAsk(d);
-  const amount = mod?.amount > 0 ? mod.amount : 0;
+  const estimate = preview ? moduleEstimate(moduleKey, d, m) : null;
+  const amount = !preview && mod?.amount > 0 ? mod.amount : 0;
 
   // What's behind the frost, named, so it's clear what unlocking gets them.
   const hidden = amount > 0 ? ["Why it's happening", "Your options, and what each is worth"] : ["Where you stand", "What to keep an eye on"];
@@ -40,7 +45,19 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
       </div>
 
       {/* The figure is the first thing they see. */}
-      {amount > 0 ? (
+      {preview ? (
+        <div style={{margin:"22px 0 4px"}}>
+          {estimate ? (
+            <>
+              <div style={{fontFamily:SERIF,fontSize:"44px",fontWeight:700,color:G,lineHeight:1.05}}>{fmt(estimate.low)} to {fmt(estimate.high)}</div>
+              <div style={{fontSize:"15px",color:TEXT,fontWeight:600,marginTop:"10px"}}>a year: {estimate.line.charAt(0).toLowerCase() + estimate.line.slice(1)}, our rough estimate</div>
+            </>
+          ) : (
+            <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,lineHeight:1.2}}>Your {(meta?.title || moduleKey).toLowerCase()} answer</div>
+          )}
+          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>A few questions, then your figures and options, worked out in pounds.</p>
+        </div>
+      ) : amount > 0 ? (
         <div style={{margin:"22px 0 4px"}}>
           <div style={{fontFamily:SERIF,fontSize:"64px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em"}}>{fmt(amount)}</div>
           <div style={{fontSize:"16px",color:TEXT,fontWeight:600,marginTop:"10px"}}>{mod.amountIsLumpSum ? "by the time they're 18, our estimate" : "a year, our estimate on your figures"}</div>
@@ -71,7 +88,36 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
       {ask.kind === "free" && (
         <button type="button" style={primary(false)} onClick={() => onUnlock(ask, null)}>{cta}</button>
       )}
+
+      {ask.kind === "email" && <EmailUnlock d={d} cta={cta} primary={primary} onUnlock={answer => onUnlock(ask, answer)}/>}
     </div>
+  );
+}
+
+// The first answer, for their email: one field, and whether they'd like to
+// hear from Candid. The email also goes on their row (unlockPatch).
+function EmailUnlock({ d, cta, primary, onUnlock }) {
+  const [email, setEmail] = useState(d.email || "");
+  const [alerts, setAlerts] = useState(false);
+  const [error, setError] = useState(null);
+  const submit = e => {
+    e.preventDefault();
+    if (!validEmail(email)) { setError("Enter a valid email address"); return; }
+    onUnlock({ email: email.trim(), callOk: alerts });
+  };
+  return (
+    <form onSubmit={submit}>
+      <div style={{fontSize:"15px",color:TEXT,fontWeight:600,lineHeight:1.4,marginBottom:"10px"}}>Add your email to see your answer.</div>
+      <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
+        style={{width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+      <label style={{display:"flex",alignItems:"flex-start",gap:"10px",margin:"12px 2px 16px",fontSize:"13px",color:TEXT,lineHeight:1.45,cursor:"pointer"}}>
+        <input type="checkbox" checked={alerts} onChange={e => setAlerts(e.target.checked)} style={{marginTop:"2px",accentColor:G}}/>
+        Email me when I could be keeping more: a better rate, or an allowance about to go unused.
+      </label>
+      <button type="submit" style={primary(false)}>{cta}</button>
+      {error && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{error}</div>}
+      <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>No spam, and never shared. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>
+    </form>
   );
 }
 
@@ -134,7 +180,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail }) {
   return (
     <div>
       <Worth title={title} amount={amount} lumpSum={lumpSum}/>
-      <div style={{fontSize:"14px",color:TEXT,lineHeight:1.45,marginTop:"12px"}}>Your first module was free. {amount > 0 ? "Subscribe to see your options here, and in every other module." : "Subscribe to see this module, and every other one."}</div>
+      <div style={{fontSize:"14px",color:TEXT,lineHeight:1.45,marginTop:"12px"}}>Your first answer was free. {amount > 0 ? "Subscribe to see your options here, and in every other module." : "Subscribe to see this module, and every other one."}</div>
       <div style={{display:"flex",gap:"10px",margin:"14px 0 12px"}}>
         {Object.entries(PLANS).map(([key, p]) => (
           <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>

@@ -14,6 +14,7 @@ import { moduleEstimate } from "../../lib/crossModule.js";
 import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import GoalsCard from "./GoalsCard.jsx";
+import ConfidenceCard from "./ConfidenceCard.jsx";
 import GainedFromChanges from "../GainedFromChanges.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
@@ -100,7 +101,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
     return () => { cancelAnimationFrame(raf); clearTimeout(timer); };
   }, [score, showing]);
 
-  if (!showing) return <MobileStartHome d={d} m={m} onStartModule={onStartModule}/>;
+  if (!showing) return <MobileStartHome d={d} m={m} set={set} onStartModule={onStartModule}/>;
 
   // Modules picked at the entry but not answered yet (someone with an old
   // report who has since picked more): kept on home, each dropping off once
@@ -220,6 +221,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
       {/* Asked once, after the score appears; never blocks anything. */}
       {!d.goalsAsked && <GoalsCard d={d} set={set} onDone={onGoalsDone}/>}
+
+      {/* How confident they feel: asked once their first answer is in, never
+          for anyone who answered it at the entry before. */}
+      {(d.unlockedModules || []).length > 0 && !d.confidenceAsked && !d.confidence && <ConfidenceCard d={d} set={set}/>}
 
       {stillToDo.length > 0 && (
         <div style={{marginTop:"22px"}}>

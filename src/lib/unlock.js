@@ -1,10 +1,10 @@
-// Unlocking module answers. A new user answers every module's questions and
-// sees the £ each is worth, but each module's answer (its reveal, its page,
-// and what Assist says about it) stays hidden until they unlock it. The
-// first module they finish is free, so they see Candid work before giving
-// anything; every one after that needs a subscription (src/lib/entitlement.js,
-// api/billing.js), which unlocks them all. Modules unlocked before payments,
-// with an email or a feedback question, stay unlocked.
+// Unlocking module answers. Each module's answer (its reveal, its page, and
+// what Assist says about it) stays hidden until it's unlocked. The first
+// module's answer is theirs for their email; every one after that needs a
+// subscription (src/lib/entitlement.js, api/billing.js), which unlocks them
+// all, and its frosted answer and the paywall show before its questions, so
+// nothing is answered for an answer they can't see. Modules unlocked before
+// payments, with an email or a feedback question, stay unlocked.
 // They choose which to unlock, so the order never depends on which is
 // biggest. Pure, unit tested in unlock.test.js.
 //
@@ -57,19 +57,22 @@ export const UNLOCK_QUESTIONS = [
   ] },
 ];
 
-// The first module finished unlocks by itself: the patch to apply when a
-// gated user with nothing unlocked yet finishes `key`, or null.
+// The first module finished unlocks by itself only when Candid already has
+// their email (a subscriber signing in, say): the patch to apply when a
+// gated user with nothing unlocked yet finishes `key`, or null, in which
+// case its answer asks for their email (unlockAsk).
 export function firstUnlockPatch(d, key, paid = hasAccess()) {
-  if (!isLocked(d, key, paid) || (d.unlockedModules || []).length) return null;
+  if (!isLocked(d, key, paid) || (d.unlockedModules || []).length || !validEmail(d.email)) return null;
   return { unlockedModules: [key] };
 }
 
-// What unlocking the next module asks for: nothing for the first ({ kind:
-// "free" }, for anyone who finished one before it unlocked by itself), then
-// a subscription ("pay"). The feedback questions (UNLOCK_QUESTIONS) are no
+// What unlocking the next module asks for: the first answer, their email
+// ({ kind: "email" }; nothing if Candid has it already), then a
+// subscription ("pay"). The feedback questions (UNLOCK_QUESTIONS) are no
 // longer asked here; unlockPatch still records an answer to one.
 export function unlockAsk(d, paid = hasAccess()) {
-  if (!(d.unlockedModules || []).length || paid) return { kind: "free" };
+  if (paid) return { kind: "free" };
+  if (!(d.unlockedModules || []).length) return validEmail(d.email) ? { kind: "free" } : { kind: "email" };
   return { kind: "pay" };
 }
 

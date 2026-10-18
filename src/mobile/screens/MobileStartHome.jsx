@@ -2,6 +2,7 @@ import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../design-tok
 import { moduleOrder, moduleDone, scorePicks, pitchFor, SCORED_MODULES } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { mobileGreeting } from "../copy.js";
+import ConfidenceCard from "./ConfidenceCard.jsx";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
 import { moduleEstimate } from "../../lib/crossModule.js";
 
@@ -12,7 +13,7 @@ import { moduleEstimate } from "../../lib/crossModule.js";
 
 const listText = items => items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 
-export default function MobileStartHome({ d, m, onStartModule }) {
+export default function MobileStartHome({ d, m, set, onStartModule }) {
   const propertyDone = readinessMissing(d, m).length === 0;
   const order = moduleOrder(d);
   const done = order.filter(k => moduleDone(k, d, propertyDone));
@@ -80,6 +81,9 @@ export default function MobileStartHome({ d, m, onStartModule }) {
           {rest.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} done={done.includes(key)} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
         </div>
       </div>
+
+      {/* How confident they feel: asked once their first answer is in. */}
+      {set && (d.unlockedModules || []).length > 0 && !d.confidenceAsked && !d.confidence && <ConfidenceCard d={d} set={set}/>}
     </div>
   );
 }

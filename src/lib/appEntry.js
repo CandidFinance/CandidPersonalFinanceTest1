@@ -84,7 +84,8 @@ export const ENTRY_QUESTIONS = [
     ask: () => "What should we call you?",
     why: () => "Only used to talk to you in the app.",
   },
-  CONFIDENCE_QUESTION,
+  // How confident they feel is asked on Home once their first answer is in
+  // (ConfidenceCard), not before anything's been shown.
   {
     // The picks set which modules Home offers first, and which the score
     // waits for (scorePicks).
@@ -98,7 +99,11 @@ export const ENTRY_QUESTIONS = [
 ];
 
 // The modules' names as the entry's messages say them.
-const MODULE_NAMES = { pension:"Pension", cash:"Cash & savings", investments:"Investments", studentLoan:"Student loan", property:"Buying a home" };
+export const MODULE_NAMES = { pension:"Pension", cash:"Cash & savings", investments:"Investments", studentLoan:"Student loan", property:"Buying a home" };
+// The first module picked at the entry, which the app opens straight after
+// it, and where it lives; null for "Just exploring".
+export const firstPick = d => pickedModules(d.interests)[0] || null;
+export const modulePath = key => key === "property" ? "/app/property" : `/app/module/${key}`;
 const listOf = names => names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 
 // "How Candid works": the messages Candid sends at the end of the entry,
