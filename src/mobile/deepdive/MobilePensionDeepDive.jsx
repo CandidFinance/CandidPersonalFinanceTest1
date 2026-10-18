@@ -153,7 +153,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   const opportunityCols = [];
   if (notPayingIn) opportunityCols.push({ label:"Tax relief you're missing", value: fmtCompact(missedRelief) });
   else if (contributing && m.missedMatch > 0) opportunityCols.push({ label:"Employer match you're not getting", value: fmtCompact(m.missedMatch) });
-  if (taper.recoverable && taper.taperTotalSaving > 0) opportunityCols.push({ label:"Tax-free allowance you could win back", value: fmtCompact(taper.taperTotalSaving) });
+  if (taper.recoverable && taper.taperTotalSaving > 0) opportunityCols.push({ label:"Tax you could save by winning back your tax-free allowance", value: fmtCompact(taper.taperTotalSaving) });
 
   // Drawdown planning: from the minimum pension age (55, 57 from April
   // 2028), or once retired, for anyone with a pot.

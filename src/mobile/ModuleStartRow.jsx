@@ -2,7 +2,7 @@ import { Check, ChevronRight, Home } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
 import { MODULE_META } from "../lib/moduleStatus.js";
-import { MODULE_PITCH } from "../lib/appEntry.js";
+import { pitchFor } from "../lib/appEntry.js";
 
 // One module to start (or done): icon, title, what it gives you, then a
 // chevron, or "Done" once answered. Shared by home with and without a
@@ -16,7 +16,7 @@ export const estimateText = e => e.low === e.high ? `~${fmt(e.high)}/yr` : `${fm
 const PROPERTY_META = { key:"property", icon:Home, title:"Property" };
 export const moduleMeta = key => key === "property" ? PROPERTY_META : MODULE_META.find(mm => mm.key === key);
 
-export default function ModuleStartRow({ moduleKey, done = false, estimate = null, onOpen }) {
+export default function ModuleStartRow({ moduleKey, d = null, done = false, estimate = null, onOpen }) {
   const mm = moduleMeta(moduleKey);
   return (
     <button type="button" onClick={() => onOpen(moduleKey)} style={{
@@ -34,7 +34,7 @@ export default function ModuleStartRow({ moduleKey, done = false, estimate = nul
         {estimate && !done ? (
           <div style={{fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>Estimate: {estimate.line.charAt(0).toLowerCase() + estimate.line.slice(1)}</div>
         ) : (
-          <div style={{fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>{MODULE_PITCH[moduleKey]}</div>
+          <div style={{fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>{pitchFor(moduleKey, d)}</div>
         )}
       </div>
       {done

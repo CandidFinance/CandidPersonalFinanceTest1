@@ -197,15 +197,25 @@ const PENSION_QUESTIONS = [
   {
     // Skipped if Property's checks already asked it (same field).
     id:"pensionContribution", field:"myContribution", kind:"percent", label:"Your contribution", cap:"myContribution", required:true,
-    ask: () => "What percentage of your salary do you pay in?",
-    why: () => "Your employer may add more if you pay in more.",
+    ask: ({ d }) => d.employmentStatus === "self_employed" ? "What percentage of your earnings do you pay in?" : "What percentage of your salary do you pay in?",
+    why: ({ d }) => d.employmentStatus === "self_employed" ? "Tax relief is added to whatever you pay in." : "Your employer may add more if you pay in more.",
     notSure: () => LEAVE_BLANK, showIf: paying,
     ifMissing: ({ d }) => !filled(d.myContribution),
   },
   {
-    id:"pensionMatch", field:"employerMatch", kind:"percent", label:"Employer match", cap:"employerMatch", required:true,
-    ask: () => "Up to what percentage will your employer match it?",
-    why: () => "An unclaimed match is free money.",
+    // Most employers match what you pay up to a cap; some pay a set % (a
+    // match you can't miss: employer.js).
+    id:"employerType", field:"employerContributionType", kind:"choice",
+    ask: () => "Does your employer match what you pay in, or pay a set amount?",
+    why: () => "A match pays more when you pay more. A set amount doesn't.",
+    options: () => [{ value:"match", label:"Matches what I pay, up to a limit" }, { value:"fixed", label:"Pays a set percentage, whatever I pay" }, { value:"", label:"Not sure" }],
+    showIf: ctx => paying(ctx) && ctx.d.employmentStatus !== "self_employed",
+    ifMissing: ({ d }) => d.employerContributionType == null,
+  },
+  {
+    id:"pensionMatch", field:"employerMatch", kind:"percent", label:"Employer pays", cap:"employerMatch", required:true,
+    ask: ({ d }) => d.employerContributionType === "fixed" ? "What percentage of your salary does your employer pay in?" : "Up to what percentage will your employer match it?",
+    why: ({ d }) => d.employerContributionType === "fixed" ? "It's added to your pension on top of what you pay." : "An unclaimed match is free money.",
     note: () => "It's in your contract, or ask HR.",
     notSure: () => LEAVE_BLANK,
     showIf: ctx => paying(ctx) && ctx.d.employmentStatus !== "self_employed",
@@ -325,6 +335,9 @@ const englandOrWales = ({ d }) => d.slCountry === "england" || d.slCountry === "
 
 const STUDENT_LOAN_QUESTIONS = [
   ...ABOUT_YOU,
+  // When repayments started (and so the write-off) is worked out from age
+  // when they don't say: without it, it would be this April.
+  AGE_QUESTION,
   {
     // Its own field, so "Not sure" never reaches studentLoan, which the
     // calculations read as a plan.

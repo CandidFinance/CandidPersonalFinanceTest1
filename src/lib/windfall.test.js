@@ -156,3 +156,12 @@ test("redundancy year pension limit: less what went in through work this year, a
   assert.match(pension.detail, /up to £51,000 can go in with relief/);
   assert.match(pension.detail, /£3,000 already paid in through work \(your 5% and your employer's 5% on £30,000\)/);
 });
+
+// A fixed employer contribution isn't a match: nothing missed by paying less.
+test("employer pays a fixed %: no missed match, and it still counts towards the pension", async () => {
+  const match = calcMetrics({ ...base, salary: "120000", myContribution: "5", employerMatch: "15" }, MARKET);
+  const fixed = calcMetrics({ ...base, salary: "120000", myContribution: "5", employerMatch: "15", employerContributionType: "fixed" }, MARKET);
+  assert.equal(match.missedMatch, 12000);
+  assert.equal(fixed.missedMatch, 0);
+  assert.ok(fixed.projectedPot > match.projectedPot, "the fixed 15% is all paid in");
+});

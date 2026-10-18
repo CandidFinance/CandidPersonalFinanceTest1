@@ -13,6 +13,8 @@
 export const START_MODULES = ["pension", "cash", "investments", "studentLoan", "property"];
 
 // One line per module on the home screen, saying what the user gets.
+export const MODULE_PITCH_SELF_EMPLOYED = { pension: "See the tax relief on what you pay in, and where it's heading." };
+export const pitchFor = (key, d) => (d?.employmentStatus === "self_employed" && MODULE_PITCH_SELF_EMPLOYED[key]) || MODULE_PITCH[key];
 export const MODULE_PITCH = {
   pension:     "Check you're getting all the money your employer will add.",
   cash:        "See how long your savings would last, and what they could earn.",

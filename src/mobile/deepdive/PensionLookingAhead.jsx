@@ -73,7 +73,7 @@ export function CliffEdge({ cliff, onSeeMore }) {
         style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
         <AlertTriangle size={18} color={AMBER} style={{flexShrink:0}}/>
         <span style={{flex:1,fontSize:"14px",fontWeight:700,color:TEXT,lineHeight:1.35}}>
-          {cliff.already ? "Your pot is past a cliff edge" : `You're approaching a cliff edge, around age ${cliff.age}`}
+          {cliff.already ? "Your pot is past the tax-free cash limit" : `Your pot could reach the tax-free cash limit around age ${cliff.age}`}
         </span>
         <ChevronDown size={16} color={MUT} style={{flexShrink:0,transform:open ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
       </button>

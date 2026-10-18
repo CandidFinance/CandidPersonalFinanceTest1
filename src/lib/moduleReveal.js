@@ -99,7 +99,9 @@ function pensionSteps(d, m) {
         body: empPct > 0 ? `Your employer would also add up to ${empPct}% of your salary.` : undefined },
       selfEmployed(d)
         ? { label: ACTION, title: "Paying in 5% of your earnings would start it.", body: SELF_EMPLOYED_PENSION }
-        : { label: ACTION, title: `Paying in ${empPct > 0 ? empPct : 5}% of your salary would start it.`, body: HR },
+        : (+d.dividendIncome || 0) > (m.salary || 0)
+          ? { label: ACTION, title: `Paid in personally, relief is on up to your salary, ${fmt(m.salary)} a year.`, body: "If you run your own company, it can pay in for you instead, usually set against corporation tax rather than your income tax. An accountant can say what suits your company." }
+          : { label: ACTION, title: `Paying in ${empPct > 0 ? empPct : 5}% of your salary would start it.`, body: HR },
     ];
   }
 
@@ -145,7 +147,7 @@ function pensionSteps(d, m) {
   const bonus = calcBonusSacrificePotential(d, m);
   return [
     { label: ANSWER, figure: fmt(Math.round(m.projectedPot)), title: `projected in your pension by ${retirementAgeFor(d)}.` },
-    { label: WHY, title: `You pay ${myPct}%${empPct > 0 && !selfEmployed(d) ? ` and get your employer's full ${empPct}% match` : ""}, so you're not leaving money on the table.`,
+    { label: WHY, title: `You pay ${myPct}%${empPct > 0 && !selfEmployed(d) ? (d.employerContributionType === "fixed" ? ` and your employer pays ${empPct}%` : ` and get your employer's full ${empPct}% match`) : ""}, so you're not leaving money on the table.`,
       body: "In today's money: growth of 6% a year, less 2% inflation." },
     bonus.standalone > 0
       ? { label: ACTION, title: `Paying your ${fmt(+d.bonusAmount)} bonus into your pension could save up to ${fmt(bonus.standalone)} in tax.`, body: "It has to be arranged with HR or payroll before the bonus is paid." }
@@ -233,7 +235,7 @@ function cashSteps(d, m, { marketRates = {} } = {}) {
       { label: WHY, title: `You have ${fmt(m.totalLiquid)} in savings. ${m.bufferMonths} months of essential spending is ${fmt(m.emergencyBuffer)}.` },
       { label: ACTION, title: months
           ? `Putting aside your spare ${fmt(Math.round(m.monthlySurplus))} a month would close the gap in about ${months} month${months === 1 ? "" : "s"}.`
-          : "Building this up comes before chasing better rates.",
+          : "There's nothing spare each month after essentials, so the gap stays as it is for now.",
         body: "An easy-access account keeps it reachable when you need it." },
     ];
   }
@@ -347,7 +349,7 @@ export function studentLoanReveal(d, m) {
   return [
     { label: ANSWER, figure: years(sl.clearYr), title: "until your loan is paid off.", ...turning },
     { label: WHY, title: sl.effectiveBenefit <= 0
-        ? `Savings pay ${sl.cashRate}%, more than your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.`
+        ? `Savings pay ${sl.cashRate}%, ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.`
         : `Your pension's assumed ${sl.pensionGrowthPct}% growth beats your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.` },
     nothing,
   ];

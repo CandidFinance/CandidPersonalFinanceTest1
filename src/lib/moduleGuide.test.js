@@ -70,7 +70,7 @@ test("pension 'not sure' keeps the unknown flag the module reads; yes and no set
 });
 
 test("not sure of the plan: the helper asks only what it needs, then the loan questions follow", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no" };
+  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", age: "30" };
   const unsure = { ...known, slPlanAnswer: "unsure" };
   assert.deepEqual(ids("studentLoan", unsure, known), ["studentLoanPlan", "slCountry"]);
   assert.deepEqual(ids("studentLoan", { ...unsure, slCountry: "scotland", studentLoan: "plan4" }, known),
@@ -145,7 +145,7 @@ test("pension: not paying in asks about a pot, then retirement for those 55 and 
 });
 
 test("not sure of the balance: the borrowing questions come, then the estimate", () => {
-  const known = { ...fresh, employmentAsked: true, salary: "60000", hasExtraIncome: "no", slPlanAnswer: "plan2", studentLoan: "plan2" };
+  const known = { ...fresh, employmentAsked: true, salary: "60000", hasExtraIncome: "no", age: "30", slPlanAnswer: "plan2", studentLoan: "plan2" };
   const qs = MODULE_GUIDES.studentLoan.questions;
   const q = id => qs.find(x => x.id === id);
   assert.deepEqual(q("loanBalance").also(""), { slBalanceEstimate: "yes" });
@@ -168,4 +168,20 @@ test("a shared question asked in one module isn't asked again in another, even l
   assert.ok(ids("cash", d).includes("earnedThisYear"));
   // Asked in Pension and left blank: Cash doesn't ask it again.
   assert.equal(ids("cash", { ...d, askedFields: ["earnedThisTaxYear"] }).includes("earnedThisYear"), false);
+});
+
+// The student loan walk-through asks age, which sets when repayments started
+// and so the write-off date (without it, this April).
+test("student loan: age is asked, once", () => {
+  const known = { ...fresh, employmentAsked: true, salary: "45000", hasExtraIncome: "no", slPlanAnswer: "plan2", studentLoan: "plan2" };
+  assert.ok(ids("studentLoan", known).includes("age"));
+  assert.equal(ids("studentLoan", { ...known, age: "34" }).includes("age"), false);
+});
+
+// Other income on one screen: only the kinds picked are asked about.
+test("other income: one screen, then only the kinds picked", () => {
+  const d = { ...fresh, employmentAsked: true, salary: "60000", age: "30" };
+  const after = kinds => ids("pension", { ...d, extraIncomeKinds: kinds, hasExtraIncome: kinds.includes("none") ? "no" : "yes" }, d);
+  assert.deepEqual(after(["bonus"]).filter(id => ["bonus", "dividends", "otherIncome"].includes(id)), ["bonus"]);
+  assert.deepEqual(after(["none"]).filter(id => ["bonus", "dividends", "otherIncome"].includes(id)), []);
 });

@@ -1,5 +1,6 @@
 import { REDUNDANCY_TAX_FREE, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
+import { employerPct, unclaimedMatchPct } from "./employer.js";
 import { GROWTH_REAL_PCT } from "./growth.js";
 import { slRateIn, slRepaymentThreshold, SL_REPAYMENT_RATES, slYearsLeft, slThresholdIn, slEarnings, estimateSlBalance } from "./studentLoan.js";
 import { allocateCash } from "./cashAllocation.js";
@@ -104,14 +105,13 @@ export function calcMetrics(d, marketRates = {}) {
         // ISA: every kind of ISA shares the allowance (src/lib/isa.js)
         isaUsedThisYearCalc = isaUsedThisYear(d),
         isaHeadroom = Math.max(0, ISA_ALLOWANCE - isaUsedThisYearCalc),
-        myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0,
-        missedMatch = Math.max(0, empCapPct - myPct) * salary / 100,
+        myPct = +d.myContribution||0,
+        missedMatch = unclaimedMatchPct(d, myPct) * salary / 100,
         potVal = (+d.potValue||0) + (+d.potValue2||0),
         retireAge = retirementAgeFor(d),
         age = +d.age||30, years = Math.max(1, retireAge - age),
-        // The employer matches what the user pays, up to its cap (the same
-        // model as missedMatch).
-        annualContrib = (myPct + Math.min(myPct, empCapPct)) / 100 * salary,
+        // The employer's share as missedMatch reads it (employer.js).
+        annualContrib = (myPct + employerPct(d, myPct)) / 100 * salary,
         // In today's money: contributions at today's salary, growing at the
         // real rate, after inflation (growth.js).
         pensionGrowth = GROWTH_REAL_PCT / 100,

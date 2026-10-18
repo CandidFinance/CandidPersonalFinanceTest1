@@ -198,7 +198,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       {waiting.length > 0 && (<>
         <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:moduleList.length ? "22px" : "16px",marginBottom:"10px"}}>Not started</div>
         <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-          {waiting.map(key => <ModuleStartRow key={key} moduleKey={key} estimate={moduleEstimate(key, d, m)} onOpen={onOpenModule}/>)}
+          {waiting.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={moduleEstimate(key, d, m)} onOpen={onOpenModule}/>)}
         </div>
       </>)}
 

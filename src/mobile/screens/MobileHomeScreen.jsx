@@ -225,7 +225,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         <div style={{marginTop:"22px"}}>
           <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Still to do</div>
           <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
-            {stillToDo.map(key => <ModuleStartRow key={key} moduleKey={key} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
+            {stillToDo.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
           </div>
         </div>
       )}
@@ -234,7 +234,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         <div style={{marginTop:"22px"}}>
           <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Worth a look</div>
           <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
-            {worthALook.map(({ key, estimate }) => <ModuleStartRow key={key} moduleKey={key} estimate={estimate} onOpen={onStartModule}/>)}
+            {worthALook.map(({ key, estimate }) => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={estimate} onOpen={onStartModule}/>)}
           </div>
         </div>
       )}

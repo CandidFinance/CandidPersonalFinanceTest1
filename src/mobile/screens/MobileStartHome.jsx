@@ -1,5 +1,5 @@
 import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../design-tokens.js";
-import { moduleOrder, moduleDone, scorePicks, MODULE_PITCH, SCORED_MODULES } from "../../lib/appEntry.js";
+import { moduleOrder, moduleDone, scorePicks, pitchFor, SCORED_MODULES } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { mobileGreeting } from "../copy.js";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
@@ -66,7 +66,7 @@ export default function MobileStartHome({ d, m, onStartModule }) {
               {iconTile(startMeta.icon)}
               <div style={{fontSize:"16px",fontWeight:700,color:TEXT}}>{startMeta.title}</div>
             </div>
-            <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>{MODULE_PITCH[start]}</p>
+            <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>{pitchFor(start, d)}</p>
             <button type="button" onClick={() => onStartModule(start)} style={{marginTop:"14px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
               Start
             </button>
@@ -77,7 +77,7 @@ export default function MobileStartHome({ d, m, onStartModule }) {
       <div style={{marginTop:"24px"}}>
         <div style={label}>{startMeta ? "Then" : "Your modules"}</div>
         <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
-          {rest.map(key => <ModuleStartRow key={key} moduleKey={key} done={done.includes(key)} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
+          {rest.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} done={done.includes(key)} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
         </div>
       </div>
     </div>

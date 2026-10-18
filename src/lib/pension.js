@@ -2,6 +2,7 @@ import { calcBonusTaxBreakdown, calcIncomeTax, marginalNiRate, EMPLOYER_NI_RATE,
 import { SALARY_GROWTH_RATES, pastStatePensionAge, retirementAgeFor } from "./metrics.js";
 import { slRepaymentThreshold, resolveSlRate, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { taxYearFor, taxYearOf } from "./taxYear.js";
+import { employerPct } from "./employer.js";
 import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT } from "./growth.js";
 
 // ── User contributing to pension ────────────────────────────────────────────────────────
@@ -205,10 +206,10 @@ export function calcPensionTaperSaving(m, aaRoom = Infinity) {
 // adjusted income and why sacrifice/relief/unknown pension types differ.
 export function calcAnnualAllowanceTaper(d, m) {
   const salary = m.salary;
-  const myPct = +d.myContribution || 0, empCapPct = +d.employerMatch || 0;
+  const myPct = +d.myContribution || 0;
   const baseGrossIncome = salary + (+d.bonusAmount||0) + (+d.otherIncome||0) + (+d.dividendIncome||0);
   const personalContributionCash = salary * myPct / 100;
-  const employerContribCashAA = Math.min(myPct, empCapPct) / 100 * salary;
+  const employerContribCashAA = employerPct(d, myPct) / 100 * salary;
   let thresholdIncome;
   if (d.pensionType === "sacrifice") {
     thresholdIncome = baseGrossIncome;
@@ -242,8 +243,7 @@ export function calcAnnualAllowanceTaper(d, m) {
 export function calcAnnualAllowanceRoom(d, m) {
   const aa = calcAnnualAllowanceTaper(d, m);
   const myPct = isPensionContributing(d) ? (+d.myContribution || 0) : 0;
-  const employerPct = Math.min(myPct, +d.employerMatch || 0);
-  const currentInputs = Math.round(m.salary * (myPct + employerPct) / 100);
+  const currentInputs = Math.round(m.salary * (myPct + employerPct(d, myPct)) / 100);
   // Once an income has been drawn, the £10,000 limit applies instead.
   const mpaa = d.pensionAccess === "income";
   const approxAA = mpaa ? Math.min(aa.approxAA, MONEY_PURCHASE_ANNUAL_ALLOWANCE) : aa.approxAA;
@@ -406,13 +406,14 @@ export function calcPensionGrowthTrajectory(d, m, extraPct = 1) {
   const salary = m.salary, potVal = +d.potValue||0;
   const myPct = +d.myContribution||0, empCapPct = +d.employerMatch||0;
   const retireAge = retirementAgeFor(d), age = +d.age||30;
+  const empPct = employerPct(d, myPct);
   const years = Math.max(1, retireAge - age);
   // In today's money: the real growth rate, after inflation (growth.js), the
   // same as calcMetrics' projectedPot.
   const g = GROWTH_REAL_PCT / 100;
   const annuityFactor = (Math.pow(1 + g, years) - 1) / g;
-  // The employer matches what the user pays, up to its cap (as calcMetrics).
-  const annualContrib = (myPct + Math.min(myPct, empCapPct)) / 100 * salary;
+  // The employer's share as calcMetrics reads it (employer.js).
+  const annualContrib = (myPct + empPct) / 100 * salary;
   const currentPot = m.projectedPot;
   const hasMissedMatch = m.missedMatch > 0;
   const hasBonus = (+d.bonusAmount||0) > 0;

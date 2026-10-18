@@ -13,7 +13,10 @@ import { DIVIDEND_ALLOWANCE } from "./rentVsBuy.js";
 const filled = v => v !== "" && v !== null && v !== undefined && !isNaN(+v);
 const NONE = { label:"None", value:"" };
 const extraIncomeUnasked = ({ d }) => d.hasExtraIncome == null && ![d.bonusAmount, d.dividendIncome, d.otherIncome].some(v => +v > 0);
-const hasExtra = ({ d }) => d.hasExtraIncome === "yes";
+// Which kinds of other income: picked on one screen (extraIncomeKinds); for
+// anyone who said "yes" before that existed, all three are asked.
+const hasExtra = kind => ({ d }) => d.hasExtraIncome === "yes" && (!Array.isArray(d.extraIncomeKinds) || d.extraIncomeKinds.includes(kind));
+const EXTRA_KINDS = [{ value:"bonus", label:"A bonus" }, { value:"dividends", label:"Dividends" }, { value:"other", label:"Rent or other income" }, { value:"none", label:"None of these", exclusive:true }];
 
 export const EMPLOYMENT_QUESTION = {
   id:"employment", field:"employmentStatus", kind:"choice", group:"you",
@@ -57,10 +60,12 @@ export const SALARY_QUESTION = {
 
 export const EXTRA_INCOME_QUESTIONS = [
   {
-    id:"extraIncome", field:"hasExtraIncome", kind:"choice", group:"you",
+    id:"extraIncome", field:"extraIncomeKinds", kind:"multi", group:"you", required:true,
     ask: () => "Any income besides your salary?",
     why: () => "Bonuses, dividends and other income can push you into a higher tax band.",
-    options: () => [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }],
+    note: () => "Pick any that apply.",
+    options: () => EXTRA_KINDS,
+    also: value => ({ hasExtraIncome: (value || []).some(v => v !== "none") ? "yes" : "no" }),
     ifMissing: extraIncomeUnasked,
   },
   {
@@ -68,21 +73,21 @@ export const EXTRA_INCOME_QUESTIONS = [
     ask: () => "Roughly how much is your yearly bonus?",
     why: () => "A bonus is taxed like salary, at your top rate.",
     notSure: () => ({ label:"No bonus", value:"" }),
-    showIf: hasExtra, ifMissing: extraIncomeUnasked,
+    showIf: hasExtra("bonus"), ifMissing: extraIncomeUnasked,
   },
   {
     id:"dividends", field:"dividendIncome", kind:"money", label:"Dividends a year", cap:"dividendIncome", required:true, group:"you",
     ask: () => "How much do you get in dividends a year?",
     why: () => `Dividends above ${fmt(DIVIDEND_ALLOWANCE)} a year are taxed, unless they're in an ISA.`,
     notSure: () => NONE,
-    showIf: hasExtra, ifMissing: extraIncomeUnasked,
+    showIf: hasExtra("dividends"), ifMissing: extraIncomeUnasked,
   },
   {
     id:"otherIncome", field:"otherIncome", kind:"money", label:"Other income a year", cap:"otherIncome", required:true, group:"you",
     ask: () => "Any other income a year, such as rent?",
     why: () => "It's added to your salary when working out your tax band.",
     notSure: () => NONE,
-    showIf: hasExtra, ifMissing: extraIncomeUnasked,
+    showIf: hasExtra("other"), ifMissing: extraIncomeUnasked,
   },
 ];
 

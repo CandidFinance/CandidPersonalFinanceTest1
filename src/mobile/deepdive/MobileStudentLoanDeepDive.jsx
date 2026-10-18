@@ -184,7 +184,7 @@ function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualB
 
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:"0 0 12px"}}>
           Written off in April {sl.writeOffTaxYear}. {sl.firstDueEstimated
-            ? `We've assumed repayments started in April ${sl.firstDueYear}, the April after you turned 22.`
+            ? (+d.age > 0 ? `We've assumed repayments started in April ${sl.firstDueYear}, the April after you turned 22.` : `We've assumed repayments started in April ${sl.firstDueYear}. Tell us when they did:`)
             : `Repayments started in April ${sl.firstDueYear}, as you told us.`}{" "}
           {set && !editingStart && (
             <button type="button" onClick={() => setEditingStart(true)} style={{background:"none",border:"none",padding:0,color:G,fontWeight:600,fontSize:"12px",cursor:"pointer",textDecoration:"underline"}}>Change</button>
@@ -211,7 +211,7 @@ function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualB
             : !sl.willClear
               ? "Projected to be written off before you'd clear it — overpaying mostly reduces the write-off, not your repayments."
               : sl.effectiveBenefit <= 0
-                ? `On track to clear in ~${sl.clearYr} years. The best savings rate (${sl.cashRate}%) beats your loan's average rate over its life (${sl.lifeRatePct}%) — saving beats overpaying here.`
+                ? `On track to clear in ~${sl.clearYr} years. The best savings rate (${sl.cashRate}%) ${sl.effectiveBenefit < 0 ? "beats" : "matches"} your loan's average rate over its life (${sl.lifeRatePct}%) — saving beats overpaying here.`
                 : !sl.beatsPension
                   ? `On track to clear in ~${sl.clearYr} years. Your pension is assumed to grow ${sl.pensionGrowthPct}% a year, faster than your loan's ${sl.lifeRatePct}% a year on average over its life — so it beats overpaying here.`
                   : "See the win below for what overpaying could save you."}

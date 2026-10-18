@@ -4,6 +4,7 @@
 // where money not put towards a student loan could go. Pure, unit tested in
 // crossModule.test.js.
 
+import { employerPct } from "./employer.js";
 import { SALARY_GROWTH_RATES, retirementAgeFor } from "./metrics.js";
 import { inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.js";
 import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT, INFLATION_PCT } from "./growth.js";
@@ -80,7 +81,7 @@ export function pensionOutlook(d, m) {
   if (years < 1) return null;
 
   const myPct = +d.myContribution || 0;
-  const rate = (myPct + Math.min(myPct, +d.employerMatch || 0)) / 100;
+  const rate = (myPct + employerPct(d, myPct)) / 100;
   const fast = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? LATER_GROWTH;
   const g = GROWTH_NOMINAL_PCT / 100;
   const ani = m.adjustedNetIncome || m.salary;

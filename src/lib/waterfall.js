@@ -102,6 +102,8 @@ function yourPension(d, selected) {
     return { known: true, myPct: 0, employerPct: 0, noPension: true };
   }
   if (filled(d.employerMatch)) {
+    // A fixed employer contribution isn't a match: nothing to claim by paying more.
+    if (d.employerContributionType === "fixed") return { known: true, myPct: +d.employerMatch, employerPct: +d.employerMatch };
     return { known: true, myPct: +d.myContribution || 0, employerPct: +d.employerMatch };
   }
   return { known: false };

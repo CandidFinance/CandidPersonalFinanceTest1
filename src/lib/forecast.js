@@ -1,4 +1,5 @@
 import { isaUsedThisYear as isaUsedAcrossAll } from "./isa.js";
+import { employerPct } from "./employer.js";
 import { resolveSlRate, slRateIn, slYearsLeft, slThresholdIn, SL_REPAYMENT_RATES, calcStudentLoanScenario } from "./studentLoan.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
@@ -447,7 +448,7 @@ export function calcNetWorthTrajectory(d, m, horizonYears) {
 
   const potVal = (+d.potValue||0) + (+d.potValue2||0);
   // The employer matches what the user pays, up to its cap (as calcMetrics).
-  const pensionAnnualContrib = ((+d.myContribution||0) + Math.min(+d.myContribution||0, +d.employerMatch||0)) / 100 * m.salary;
+  const pensionAnnualContrib = ((+d.myContribution||0) + employerPct(d)) / 100 * m.salary;
 
   const isaUsedThisYear = isaUsedAcrossAll(d);
   const isaPrev = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
