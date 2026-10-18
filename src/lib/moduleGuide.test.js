@@ -159,3 +159,13 @@ test("not sure of the balance: the borrowing questions come, then the estimate",
   assert.ok(q("slTuition").options(ctxFor({ ...done, slStudyYears: "3" })).every(o => o.value !== "nhs5"));
   assert.match(q("slBalanceResult").ask(ctxFor(done)), /^That puts what you still owe at about £\d/);
 });
+
+// A question shared between modules is asked once: answered, or left as
+// "not sure", it isn't asked again in another module.
+test("a shared question asked in one module isn't asked again in another, even left unanswered", () => {
+  const d = { ...fresh, employmentAsked: true, employmentStatus: "not_working", notWorkingReason: "break", hasExtraIncome: "no", earnedThisTaxYear: "" };
+  // Not given yet: the cash walk-through asks it.
+  assert.ok(ids("cash", d).includes("earnedThisYear"));
+  // Asked in Pension and left blank: Cash doesn't ask it again.
+  assert.equal(ids("cash", { ...d, askedFields: ["earnedThisTaxYear"] }).includes("earnedThisYear"), false);
+});

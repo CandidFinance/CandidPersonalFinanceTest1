@@ -88,6 +88,13 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   const next = patch => {
     setAnswered(a => new Set(a).add(q.id));
     onAnswered?.(q.id);
+    // An ask-once question (one with `ifMissing`): its field is remembered
+    // as asked, answered or not, so no other module asks it again.
+    if (q.ifMissing && q.field && !(d.askedFields || []).includes(q.field)) {
+      const askedFields = [...(d.askedFields || []), q.field];
+      set("askedFields", askedFields);
+      patch = { ...patch, askedFields };
+    }
     const after = visibleQuestions(questions, { ...ctx, d: { ...d, ...patch } }, needed);
     const following = after[after.findIndex(x => x.id === q.id) + 1];
     if (!following) { onDone("finished"); return; }

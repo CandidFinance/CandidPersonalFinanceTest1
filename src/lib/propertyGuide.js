@@ -369,9 +369,13 @@ export function countSettled(questions, ctx, needed, id) {
 }
 
 // The ids of questions to ask this time through, decided once at the start:
-// a question with `ifMissing` is dropped when Candid already has its figure.
+// a question with `ifMissing` is dropped when Candid already has its figure,
+// or when its field has been asked before anywhere (`askedFields`, kept by
+// GuidedFlow), even if it was left as "not sure": a question shared between
+// modules is never asked twice.
 export function neededAtStart(questions, ctx) {
-  return new Set(questions.filter(q => !q.ifMissing || q.ifMissing(ctx)).map(q => q.id));
+  const asked = ctx.d?.askedFields || [];
+  return new Set(questions.filter(q => !q.ifMissing || (q.ifMissing(ctx) && !asked.includes(q.field))).map(q => q.id));
 }
 
 // The questions to show given the answers so far, the first of each group

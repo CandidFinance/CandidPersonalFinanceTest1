@@ -48,6 +48,7 @@
  * @property {string} employmentStatus "employed", "self_employed" or "not_working".
  * @property {string} [notWorkingReason] When not working: "retired" or "break" (between jobs, a career break).
  * @property {string} [earnedThisTaxYear] When between jobs: pay this tax year before stopping, before tax.
+ * @property {string[]} [askedFields] Fields of ask-once questions already asked in a walk-through, answered or not (propertyGuide.js neededAtStart).
  * @property {boolean} [employmentAsked]
  * @property {string} [hasExtraIncome]
  * @property {string} monthlyExpenses

@@ -214,7 +214,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
             <span style={{...fieldLabel,marginBottom:0}}>Employment status</span>
             <InfoButton onClick={() => setShowEmploymentInfo(v => !v)} open={showEmploymentInfo}/>
           </div>
-          <PillSlider value={d.employmentStatus || "employed"} onChange={v => set("employmentStatus", v)} options={EMPLOYMENT_STATUS_OPTIONS}/>
+          <PillSlider value={d.employmentStatus || "employed"} onChange={v => { set("employmentStatus", v); set("employmentAsked", true); }} options={EMPLOYMENT_STATUS_OPTIONS}/>
           {d.employmentStatus === "not_working" && (
             <div style={{marginTop:"10px"}}>
               <PillSlider value={d.notWorkingReason || ""} onChange={v => set("notWorkingReason", v)} options={NOT_WORKING_OPTIONS}/>
