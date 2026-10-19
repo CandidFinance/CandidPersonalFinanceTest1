@@ -6,7 +6,7 @@ import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
-import { SCORED_MODULES } from "../../lib/appEntry.js";
+import { SCORED_MODULES, loanSavingsIn, loanPensionChecked } from "../../lib/appEntry.js";
 
 // Edit inputs (/app/inputs): every answer on one page, so changing one
 // figure is one tap away rather than a walk back through onboarding. About
@@ -33,8 +33,12 @@ function onSomething(target, container) {
 export default function MobileInputsScreen({ d, m, set, open, onStartModule, onOpenModule }) {
   const pressedOn = useRef(false);
   const answered = SCORED_MODULES.filter(k => (d.selectedModules || []).includes(k));
-  const notYet = SCORED_MODULES.filter(k => !answered.includes(k));
-  const [openKey, setOpenKey] = useState(answered.includes(open) ? open : "about");
+  // Cash & savings and Pension answered only as far as Student loan needs
+  // (its short route): those answers, and only those, to change here.
+  const partly = SCORED_MODULES.filter(k => !answered.includes(k) && ((k === "cash" && loanSavingsIn(d)) || (k === "pension" && loanPensionChecked(d))));
+  const notYet = SCORED_MODULES.filter(k => !answered.includes(k) && !partly.includes(k));
+  const shown = [...answered, ...partly];
+  const [openKey, setOpenKey] = useState([...answered, "cash", "pension"].includes(open) ? open : "about");
   const refs = useRef({});
 
   useEffect(() => {
@@ -62,15 +66,19 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
       <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"0 0 20px"}}>Change anything here and your figures update straight away.</p>
 
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-        {["about", ...answered].map(key => {
+        {["about", ...shown].map(key => {
           const isOpen = openKey === key;
           const isModule = key !== "about";
+          const isPartly = partly.includes(key);
           return (
             <div key={key} ref={el => { refs.current[key] = el; }} style={{...tile,scrollMarginTop:"80px"}}>
               <button type="button" onClick={() => setOpenKey(k => k === key ? null : key)} aria-expanded={isOpen}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:"12px",background:"none",border:"none",padding:"16px 18px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
                 {iconBox(key)}
-                <span style={{flex:1,fontSize:"16px",fontWeight:700,color:TEXT}}>{title(key)}</span>
+                <span style={{flex:1,minWidth:0}}>
+                  <span style={{display:"block",fontSize:"16px",fontWeight:700,color:TEXT}}>{title(key)}</span>
+                  {isPartly && <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>What your student loan answer uses</span>}
+                </span>
                 <ChevronDown size={18} color={MUT} style={{transform:isOpen ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
               </button>
               {isOpen && (
@@ -84,16 +92,24 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
                   }}>
                   <div style={{paddingTop:"14px"}}>
                     {isModule
-                      ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set}/>
+                      ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set} brief={isPartly}/>
                       : <MobileOnboardingStep stepId="about" d={d} set={set} bare/>}
                   </div>
                   {isModule && (
                     <>
-                      {/* The way back to the module's page, with the new figures. */}
-                      <button type="button" onClick={() => onOpenModule(key)}
+                      {/* The way back to the module's page, with the new figures:
+                          for one answered only as far as Student loan needs, to
+                          Student loan, and the rest of its questions after. */}
+                      <button type="button" onClick={() => onOpenModule(isPartly ? "studentLoan" : key)}
                         style={{marginTop:"22px",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"13px",fontSize:"14.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
-                        Back to {title(key)}<ChevronRight size={16}/>
+                        Back to {title(isPartly ? "studentLoan" : key)}<ChevronRight size={16}/>
                       </button>
+                      {isPartly && (
+                        <button type="button" onClick={() => onStartModule(key)}
+                          style={{marginTop:"10px",width:"100%",background:"none",border:"none",padding:"8px",fontSize:"13.5px",fontWeight:700,color:G,fontFamily:"inherit",cursor:"pointer"}}>
+                          Answer the rest of {title(key)}
+                        </button>
+                      )}
                     </>
                   )}
                 </div>

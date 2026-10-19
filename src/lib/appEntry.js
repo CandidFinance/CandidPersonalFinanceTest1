@@ -205,6 +205,9 @@ export const loanSavingsIn = d => moduleAnswered("cash", d) || (d.askedFields ||
 export function loanPensionChecked(d) {
   return moduleAnswered("pension", d) || (d.askedFields || []).includes("pensionStatus");
 }
+// This year's ISA payments: from Cash & savings or Investments, or the
+// short route's ISA questions.
+export const loanIsaIn = d => moduleAnswered("cash", d) || moduleAnswered("investments", d) || (d.askedFields || []).includes("hasCashIsaThisYear");
 // Only the employed have an employer's pension match to check.
 export const hasEmployerMatch = d => d.employmentStatus !== "self_employed" && d.employmentStatus !== "not_working";
 export function loanVerdictReady(d) {

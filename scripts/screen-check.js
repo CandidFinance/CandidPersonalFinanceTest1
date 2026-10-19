@@ -6,6 +6,8 @@
 //
 //   npm run check:screens   on the last build (dist/)
 //   npm run verify          builds, then checks
+//   npm run check:key       the key ICPs only (KEY_PROFILES), on the last build:
+//                           the quick check for most changes
 //
 // Serves dist/ with `vite preview` on a free port (the way Vercel serves it,
 // vite.config.js). Nothing leaves the machine: Supabase, PostHog, Stripe,
@@ -60,7 +62,23 @@ export const PROFILES = {
   loanWithPostgrad: { ...rich, salary: "48000", hasPgLoan: "yes", pgLoanBalance: "14000" },
   loanFastPay: { ...rich, salary: "34000", age: "25", loanBalance: "55000", salaryTrajectory: "high" },
   loanBelowThreshold: { ...rich, salary: "26000", age: "23", loanBalance: "50000", hasPgLoan: "yes", pgLoanBalance: "12000" },
+  // Only Student loan answered, then savings and the pension match on its
+  // short route (moduleGuide.js briefQuestions): the rest of Cash & savings
+  // and Pension not answered, and behind the paywall.
+  loanOnly: { name: "Jo", appEntered: true, email: "check@example.com", unlockGate: true, unlockedModules: ["studentLoan"], selectedModules: ["studentLoan"], answeredModules: ["studentLoan"],
+    goalsAsked: true, confidenceAsked: true, employmentStatus: "employed", employmentAsked: true, salary: "70000", salaryTrajectory: "stable",
+    studentLoan: "plan2", slPlanAnswer: "plan2", loanBalance: "18500", studentLoanRate: "6.4", hasPgLoan: "no", monthlyExpenses: "2000",
+    cashTiers: [{ amount: "20000", rate: "4" }], hasPremiumBonds: "yes", premiumBonds: "5000", hasCashIsaThisYear: "no", hasOtherIsaThisYear: "no",
+    pensionStatus: "yes", hasPension: "yes", myContribution: "3", employerContributionType: "match", employerMatch: "5",
+    askedFields: ["employmentStatus", "salary", "salaryTrajectory", "monthlyExpenses", "cashTiers", "hasPremiumBonds", "premiumBonds", "hasCashIsaThisYear", "hasOtherIsaThisYear", "pensionStatus", "myContribution", "employerContributionType", "employerMatch"] },
+  // The ICP's cash-rich saver: over 50, a large balance on a poor rate.
+  cashRichSaver: { ...rich, age: "58", salary: "48000", studentLoan: "none", slPlanAnswer: "", loanBalance: "", cashTiers: [{ name: "High street", amount: "150000", rate: "1.2" }], potValue: "320000", childBenefitChildren: "", hasKids: "no", kidsStatus: "no" },
 };
+// The key ICPs (docs/investor-personas.md, ICP): the employed higher-rate
+// core with a workplace pension, the same with a student loan worth paying
+// off, Student loan alone on its short route, and the cash-rich saver.
+const KEY_PROFILES = ["rich", "loanWorthOverpaying", "loanOnly", "cashRichSaver"];
+const RUN = process.argv.includes("--key") ? Object.fromEntries(KEY_PROFILES.map(k => [k, PROFILES[k]])) : PROFILES;
 const ROUTES = ["/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/inputs", "/app/property", ...all.map(k => `/app/module/${k}`)];
 const BLOCK = /supabase\.co|posthog|stripe\.com|truelayer|resend\.com/;
 
@@ -69,7 +87,7 @@ const base = server.resolvedUrls.local[0].replace(/\/$/, "");
 const browser = await chromium.launch();
 const problems = [];
 try {
-  for (const [name, d] of Object.entries(PROFILES)) {
+  for (const [name, d] of Object.entries(RUN)) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await ctx.route("**/*", route => {
       const url = route.request().url();
@@ -122,7 +140,7 @@ try {
   await new Promise(resolve => server.httpServer.close(resolve));
 }
 
-const checked = `${Object.keys(PROFILES).length} profiles x ${ROUTES.length} screens, and each module's answer`;
+const checked = `${Object.keys(RUN).length} profiles x ${ROUTES.length} screens, and each module's answer`;
 if (problems.length) {
   console.error(`Screen check failed (${checked}):\n  ${problems.join("\n  ")}`);
   process.exit(1);

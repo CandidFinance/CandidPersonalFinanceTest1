@@ -5,7 +5,7 @@ import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock, Clock } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS, slFirstDueRange } from "../../lib/studentLoan.js";
 import YearPicker, { yearInRange } from "../YearPicker.jsx";
-import { moduleAnswered, loanVerdictReady, loanPensionChecked, loanSavingsIn, hasEmployerMatch } from "../../lib/appEntry.js";
+import { loanVerdictReady, loanPensionChecked, loanSavingsIn, loanIsaIn, hasEmployerMatch } from "../../lib/appEntry.js";
 import { hasAccess } from "../../lib/entitlement.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
@@ -461,7 +461,7 @@ function SpareCheck({ d, m, amount }) {
       ? { ok: true, text: "Cash runway is good", long: `Paying it off would still leave ${m.bufferMonths} months of spending in cash, so your cash runway isn't affected.` }
       : { ok: false, text: `Leaves under ${m.bufferMonths} months' cash`, long: `Paying it off would leave ${fmt(Math.max(0, Math.round(m.emergencyFund - amount)))} in cash, under ${m.bufferMonths} months of spending (${fmt(Math.round(m.emergencyBuffer))}), cutting your cash runway.` });
   } else items.push({ ok: null, text: "Cash runway not checked yet", long: "Your spending isn't in yet, so whether paying it off would cut your cash runway can't be checked (Cash & savings)." });
-  if (moduleAnswered("cash", d) || moduleAnswered("investments", d)) {
+  if (loanIsaIn(d)) {
     items.push(m.isaHeadroom > 0
       ? { ok: false, text: `${k(m.isaHeadroom)} of ISA allowance remaining`, long: `${k(m.isaHeadroom)} of this year's ISA allowance is unused. Growth in an ISA is tax-free, and the allowance is use it or lose it on 5 April; the loan isn't.` }
       : { ok: true, text: "ISA allowance used", long: "This year's ISA allowance is used, so there's no tax-free allowance this money would miss." });

@@ -3,7 +3,7 @@ import { G, WHITE, MUT, TEXT } from "../../design-tokens.js";
 import { fmt } from "../../lib/format.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PillSlider } from "../PillSlider.jsx";
-import { MODULE_GUIDES, flatQuestions } from "../../lib/moduleGuide.js";
+import { MODULE_GUIDES, flatQuestions, briefQuestions } from "../../lib/moduleGuide.js";
 import { capField } from "../../lib/onboarding.js";
 import { withAnswered } from "../../lib/appEntry.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -18,15 +18,18 @@ import MobileCashTiersList from "../onboarding/MobileCashTiersList.jsx";
 // the walk-through, so linked fields stay in step.
 const sliderFits = options => options.length <= 3 && options.every(o => o.label.length <= 14);
 
-export default function ModuleInputsForm({ moduleKey, d, m, set }) {
+// `brief`: only the questions asked on the short route from Student loan
+// (moduleGuide.js briefQuestions), for a module not answered in full, and
+// changing them doesn't count as answering it.
+export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }) {
   const [editingLoan, setEditingLoan] = useState(false);
   const ctx = { d, m, regionalRows: null };
-  const questions = flatQuestions(MODULE_GUIDES[moduleKey]?.questions || [])
+  const questions = flatQuestions((brief ? briefQuestions(moduleKey, "studentLoan") : MODULE_GUIDES[moduleKey]?.questions) || [])
     .filter(q => q.group !== "you" && (!q.showIf || q.showIf(ctx)));
   const write = (q, value) => {
     const v = q.cap && typeof value !== "object" ? capField(q.cap, value ?? "") : value;
     // Changing an answer here counts as answering the module.
-    const patch = { [q.field]: v, ...(q.also ? q.also(v, ctx) : {}), ...(Array.isArray(d.answeredModules) ? withAnswered(d, moduleKey) : {}) };
+    const patch = { [q.field]: v, ...(q.also ? q.also(v, ctx) : {}), ...(Array.isArray(d.answeredModules) && !brief ? withAnswered(d, moduleKey) : {}) };
     Object.entries(patch).forEach(([k, val]) => set(k, val));
   };
 

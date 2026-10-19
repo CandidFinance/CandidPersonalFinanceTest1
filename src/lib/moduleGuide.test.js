@@ -266,7 +266,7 @@ test("from Student loan: only what its answer uses, each asked once so the modul
   assert.equal(briefQuestions("investments", "studentLoan"), null);
   const slUser = { ...fresh, employmentAsked: true, salary: "70000", studentLoan: "plan2", loanBalance: "18500" };
   const brief = key => { const qs = briefQuestions(key, "studentLoan"); return visibleQuestions(qs, ctxFor(slUser), neededAtStart(qs, ctxFor(slUser))).map(q => q.id); };
-  assert.deepEqual(brief("cash"), ["spending", "cashAccounts"]);
+  assert.deepEqual(brief("cash"), ["spending", "cashAccounts", "hasPremiumBonds", "hasCashIsa", "otherIsa"]);
   assert.deepEqual(brief("pension"), ["pensionStatus"]);
   const paying = { ...slUser, pensionStatus: "yes", hasPension: "yes" };
   const qs = briefQuestions("pension", "studentLoan");

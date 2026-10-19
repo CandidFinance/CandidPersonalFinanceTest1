@@ -8,6 +8,7 @@
     "build": "vite build && node scripts/copy-static-pages.js && node scripts/prerender.js",
     "preview": "vite preview",
     "check:screens": "node scripts/screen-check.js",
+    "check:key": "node scripts/screen-check.js --key",
     "verify": "npm run build && npm run check:screens",
     "test": "node --import ./src/lib/testClock.js --test \"src/lib/*.test.js\" \"scripts/*.test.js\" \"scripts/personas/*.test.js\" \"scripts/assist-agent/*.test.js\"",
     "assist-agent": "node scripts/assist-agent/agent.js",

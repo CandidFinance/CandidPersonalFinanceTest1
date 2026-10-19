@@ -49,24 +49,28 @@ const CASH_QUESTIONS = [
     ask: () => "Do you have Premium Bonds?",
     why: () => "Their prize rate can beat or trail a savings account.",
     options: () => YES_NO,
+    ifMissing: () => true, // asked once: on the short route from Student loan, say
   },
   {
     id:"premiumBonds", field:"premiumBonds", kind:"money", label:"Premium Bonds", cap:"premiumBonds", required:true,
     ask: () => "How much is in Premium Bonds?",
     why: () => "Counted alongside your savings, and compared with savings rates.",
     showIf: is("hasPremiumBonds", "yes"),
+    ifMissing: () => true, // asked once: on the short route from Student loan, say
   },
   {
     id:"hasCashIsa", field:"hasCashIsaThisYear", kind:"choice",
     ask: () => "Have you paid into a Cash ISA since 6 April?",
     why: () => `Your ${fmt(ISA_ALLOWANCE)} allowance is lost if it's not used by 5 April.`,
     options: () => YES_NO,
+    ifMissing: () => true, // asked once: on the short route from Student loan, say
   },
   {
     id:"cashIsaThisYear", field:"isaThisYearCash", kind:"money", label:"Paid in since 6 April", cap:"isaThisYearCash", required:true,
     ask: () => "How much have you paid in since 6 April?",
     why: () => "Counts towards this year's allowance, shared across all your ISAs.",
     showIf: is("hasCashIsaThisYear", "yes"),
+    ifMissing: () => true, // asked once: on the short route from Student loan, say
   },
   {
     // Stocks and shares, Lifetime and other ISAs use the same allowance.
@@ -77,12 +81,14 @@ const CASH_QUESTIONS = [
     why: () => `Stocks and shares, Lifetime and other ISAs share the same ${fmt(ISA_ALLOWANCE)} allowance.`,
     options: () => YES_NO,
     showIf: ({ d }) => itemisedNonCashIsa(d) === 0,
+    ifMissing: () => true, // asked once: on the short route from Student loan, say
   },
   {
     id:"otherIsaThisYear", field:"isaThisYearOtherTypes", kind:"money", label:"Paid in since 6 April", cap:"isaThisYearOther", required:true,
     ask: () => "How much, across those ISAs?",
     why: () => "So Candid knows how much allowance is left for cash.",
     showIf: ({ d }) => itemisedNonCashIsa(d) === 0 && d.hasOtherIsaThisYear === "yes",
+    ifMissing: () => true, // asked once: on the short route from Student loan, say
   },
   {
     id:"cashIsaEarlier", field:"isaPrevCash", kind:"money", label:"From earlier years", cap:"isaPrevCash", required:true,
@@ -680,10 +686,12 @@ export const MODULE_GUIDES = {
 
 // The short route from Student loan (?from=studentLoan): only the questions
 // its answer uses, each asked once, so the module's own walk-through skips
-// them later. Cash & savings: spending (for the buffer) and savings with
-// their rate. Pension: whether they pay in, and their employer's match.
+// them later. Cash & savings: spending (for the buffer), savings with their
+// rate, Premium Bonds (money that could go on the loan too) and this year's
+// ISA payments (allowance that's use it or lose it, unlike the loan).
+// Pension: whether they pay in, and their employer's match.
 const LOAN_BRIEF = {
-  cash: ["spending", "cashAccounts"],
+  cash: ["spending", "cashAccounts", "hasPremiumBonds", "premiumBonds", "hasCashIsa", "cashIsaThisYear", "otherIsa", "otherIsaThisYear"],
   pension: ["pensionStatus", "pensionContribution", "employerType", "pensionMatch"],
 };
 const BRIEF_ABOUT = ["employment", "notWorking", "earnedThisYear", "salary"];
