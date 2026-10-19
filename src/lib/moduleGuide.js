@@ -17,7 +17,7 @@ import { estimatePensionPot, LUMP_SUM_ALLOWANCE, hasStartedDrawing } from "./pen
 import { STATE_PENSION_FULL } from "./tax.js";
 import { workingPastRetirementAge } from "./metrics.js";
 import { resolveSlRate, studentLoanPlanFrom, estimateSlBalance, slEstimateReady, PG_WITH_PLANS } from "./studentLoan.js";
-import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION, NATION_OPTIONS, nationAlso } from "./sharedQuestions.js";
+import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION, NATION_OPTIONS, nationAlso, EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, EARNED_THIS_YEAR_QUESTION, SALARY_QUESTION } from "./sharedQuestions.js";
 import { CHILDCARE_INCOME_LIMIT, kidsSituation } from "./childcare.js";
 
 const YES_NO = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }];
@@ -369,23 +369,69 @@ const setPlan = key => (value, { d }) => {
 };
 const englandOrWales = ({ d }) => d.slCountry === "england" || d.slCountry === "wales";
 
+// The plan, offered under the balance (a follow-up) and on its own if they
+// weren't sure of the balance. Its own field, so "Not sure" never reaches
+// studentLoan, which the calculations read as a plan.
+const PLAN_OPTIONS = [
+  { value:"plan1", label:"Plan 1" }, { value:"plan2", label:"Plan 2" }, { value:"plan4", label:"Plan 4 (Scotland)" },
+  { value:"plan5", label:"Plan 5" }, { value:"postgrad", label:"Postgraduate" }, { value:"unsure", label:"Not sure" },
+];
+const planAlso = value => value === "unsure" ? {} : { studentLoan: value };
+// Repayments were first due the April after the course finished, which sets
+// when the loan is written off (slFirstDueYear).
+const finishAlso = value => +value >= 1990 ? { slFirstDueYear: String(+value + 1) } : {};
+// Pay growth, under the salary (and on its own when the salary's already
+// known): what decides most whether a loan is cleared. Asked once.
+const PAY_GROWTH_FOLLOW = {
+  field:"salaryTrajectory", kind:"choice", label:"How will your pay grow over the next ten years?", once:true,
+  options: () => [
+    { value:"stable", label:"With prices", sub:"+2%/yr" },
+    { value:"moderate", label:"Steady rises", sub:"+5%/yr" },
+    { value:"high", label:"Fast", sub:"+10%/yr" },
+  ],
+};
+
+// For someone landing here from a link, only what the answer needs, in an
+// order that's easy to follow: work, then pay (with its growth below it),
+// then the loan (its plan and when the course finished below the balance),
+// its rate, and a Postgraduate loan alongside (its balance below a "Yes").
+// Questions below another on the same screen are its `follow`
+// (GuidedFlow.jsx).
 const STUDENT_LOAN_QUESTIONS = [
-  ...ABOUT_YOU,
-  // When repayments started (and so the write-off) is worked out from age
-  // when they don't say: without it, it would be this April.
-  AGE_QUESTION,
+  EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, EARNED_THIS_YEAR_QUESTION,
+  { ...SALARY_QUESTION, id:"slSalary", follow: [PAY_GROWTH_FOLLOW] },
   {
-    // Its own field, so "Not sure" never reaches studentLoan, which the
-    // calculations read as a plan.
+    // The salary was known already: pay growth on its own.
+    id:"payGrowth", field:"salaryTrajectory", kind:"choice",
+    ask: () => "How do you expect your pay to grow over the next ten years?",
+    why: () => "Repayments come from pay over the threshold, so this decides the most.",
+    options: () => PAY_GROWTH_OPTIONS,
+    note: () => "After ten years, Candid assumes your pay rises with prices.",
+    showIf: ({ d }) => !(d.askedFields || []).includes("salaryTrajectory") && d.employmentStatus !== "not_working",
+    ifMissing: ({ d }) => !(d.askedFields || []).includes("salaryTrajectory"),
+  },
+  {
+    id:"loanBalance", field:"loanBalance", kind:"money", label:"Still owed", cap:"loanBalance", required:true,
+    ask: () => "Roughly how much do you still owe?",
+    why: () => "Your online student loan account shows it.",
+    // Not sure: a few questions about what they borrowed, and Candid
+    // estimates it (estimateSlBalance). Typing a figure turns that off.
+    also: value => ({ slBalanceEstimate: value === "" ? "yes" : "" }),
+    notSure: () => ({ label:"I'm not sure, help me estimate it", value:"" }),
+    follow: [
+      { field:"slPlanAnswer", kind:"choice", label:"Which plan?", required:true, options: () => PLAN_OPTIONS, also: planAlso },
+      { field:"slFinishYear", kind:"years", label:"Year you finished your course", min:1990, also: finishAlso,
+        note: () => "Sets when it's written off. Leave it blank if you're not sure.", showIf: ({ d }) => !!d.slPlanAnswer },
+    ],
+  },
+  {
+    // Not sure of the balance, so the plan wasn't asked under it.
     id:"studentLoanPlan", field:"slPlanAnswer", kind:"choice",
     ask: () => "Which student loan plan are you on?",
     why: () => "Each plan has its own repayment threshold and interest rate.",
-    options: () => [
-      { value:"plan1", label:"Plan 1" }, { value:"plan2", label:"Plan 2" }, { value:"plan4", label:"Plan 4 (Scotland)" },
-      { value:"plan5", label:"Plan 5" }, { value:"postgrad", label:"Postgraduate loan" },
-      { value:"unsure", label:"Not sure which plan" }, { value:"none", label:"I don't have one" },
-    ],
-    also: value => value === "unsure" ? {} : { studentLoan: value },
+    options: () => PLAN_OPTIONS.map(o => o.value === "unsure" ? { ...o, label:"Not sure which plan" } : o),
+    also: planAlso,
+    showIf: ({ d }) => !d.slPlanAnswer,
   },
   {
     id:"slCountry", field:"slCountry", kind:"choice",
@@ -422,16 +468,6 @@ const STUDENT_LOAN_QUESTIONS = [
     showIf: ctx => unsurePlan(ctx) && !!helperPlan(ctx.d),
   },
   {
-    id:"loanBalance", field:"loanBalance", kind:"money", label:"Still owed", cap:"loanBalance", required:true,
-    ask: () => "Roughly how much do you still owe?",
-    why: () => "Shows whether you'll clear it before it's written off.",
-    // Not sure: a few questions about what they borrowed, and Candid
-    // estimates it (estimateSlBalance). Typing a figure turns that off.
-    also: value => ({ slBalanceEstimate: value === "" ? "yes" : "" }),
-    notSure: () => ({ label:"I'm not sure, help me estimate it", value:"" }),
-    showIf: hasLoan,
-  },
-  {
     id:"slStudyYears", field:"slStudyYears", kind:"years", label:"Years", required:true, min:1,
     ask: () => "How many years was your course?",
     why: () => "Each year of study added a year of loans.",
@@ -462,13 +498,12 @@ const STUDENT_LOAN_QUESTIONS = [
     showIf: ctx => estimating(ctx) && ctx.d.studentLoan !== "postgrad",
   },
   {
+    // Asked under the balance when it's known; here for the estimate.
     id:"slFinishYear", field:"slFinishYear", kind:"years", label:"Year", required:true, min:1990,
     ask: () => "What year did you finish the course?",
     why: () => "Interest has built up since, and repayments started the April after.",
-    // Repayments were first due the April after they finished, which also
-    // sets when the loan is written off (slFirstDueYear).
-    also: value => +value >= 1990 ? { slFirstDueYear: String(+value + 1) } : {},
-    showIf: estimating,
+    also: finishAlso,
+    showIf: ctx => estimating(ctx) && !filled(ctx.d.slFinishYear),
   },
   {
     id:"slBalanceResult", field:"slBalanceResult", kind:"info",
@@ -492,31 +527,15 @@ const STUDENT_LOAN_QUESTIONS = [
   },
   {
     // GOV.UK: repaid at the same time as the main plan (studentLoan.js
-    // pgScenario).
+    // pgScenario). Its balance below a "Yes".
     id:"hasPgLoan", field:"hasPgLoan", kind:"choice",
     ask: () => "Do you also have a Postgraduate loan, for a Master's or PhD?",
     why: () => "It's repaid at the same time: another 6% of pay over £21,000.",
     options: () => [{ value:"no", label:"No" }, { value:"yes", label:"Yes" }],
     showIf: ctx => hasLoan(ctx) && PG_WITH_PLANS.includes(ctx.d.studentLoan),
-  },
-  {
-    id:"pgLoanBalance", field:"pgLoanBalance", kind:"money", label:"Still owed", cap:"loanBalance", required:true,
-    ask: () => "Roughly how much do you still owe on it?",
-    why: () => "Its interest and write-off date are separate from your main loan's.",
-    note: () => "Your online student loan account shows each loan's balance.",
-    showIf: ctx => ctx.d.hasPgLoan === "yes" && PG_WITH_PLANS.includes(ctx.d.studentLoan),
-  },
-  {
-    // What decides most whether a loan is cleared. Asked once; it's also on
-    // the module's page, and in Edit inputs (About you). The rate is for ten
-    // years, then pay rises with prices (growth.js payFactor).
-    id:"payGrowth", field:"salaryTrajectory", kind:"choice",
-    ask: () => "How do you expect your pay to grow over the next ten years?",
-    why: () => "Repayments come from pay over the threshold, so this decides the most.",
-    options: () => PAY_GROWTH_OPTIONS,
-    note: () => "After ten years, Candid assumes your pay rises with prices.",
-    showIf: hasLoan,
-    ifMissing: ({ d }) => !(d.askedFields || []).includes("salaryTrajectory"),
+    follow: [
+      { field:"pgLoanBalance", kind:"money", label:"Still owed on it", cap:"loanBalance", required:true, showIf: ({ d }) => d.hasPgLoan === "yes" },
+    ],
   },
 ];
 
@@ -624,6 +643,17 @@ const KIDS_QUESTIONS = [
     showIf: ({ d, m }) => kidsSituation(d) === "yes" && (m?.adjustedNetIncome || 0) > 60000 && +d.childBenefitChildren > 0 && d.partnerOver100k !== "single",
   },
 ];
+
+// A walk-through's questions with each follow-up (a question asked below
+// another on the same screen) as one of its own: for Edit inputs, which
+// shows every answer as one form, and for anything listing a module's
+// fields.
+export function flatQuestions(questions) {
+  return questions.flatMap(q => [q, ...(q.follow || []).map(f => ({
+    id: `${q.id}.${f.field}`, ask: () => f.label, why: () => "", group: q.group, ...f,
+    showIf: ctx => (!q.showIf || q.showIf(ctx)) && (!f.showIf || f.showIf(ctx)),
+  }))]);
+}
 
 // `emptyText`: the blurred card's line while the questions are asked.
 export const MODULE_GUIDES = {

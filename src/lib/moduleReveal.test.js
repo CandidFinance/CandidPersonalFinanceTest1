@@ -150,8 +150,14 @@ test("student loan: none means nothing to explain; otherwise the screen's own sc
   assert.equal(loan("24000", "20000", "plan2").steps[0].title, "Nothing comes off your pay yet.");
   // £8,000 of Plan 1 on £60,000: clears in 3 years, the same figure as the scenario.
   const { steps, m } = loan("60000", "8000", "plan1");
-  assert.equal(calcStudentLoanScenario({ studentLoan: "plan1", loanBalance: "8000", salary: "60000" }, m).clearYr, 3);
-  assert.equal(steps[0].figure, "3 years");
+  const p1 = calcStudentLoanScenario({ studentLoan: "plan1", loanBalance: "8000", salary: "60000" }, m);
+  assert.equal(p1.clearYr, 3);
+  // It leads with what it'll cost in all, against what's owed today.
+  assert.equal(steps[0].figure, `£${p1.totalRepaidProjected.toLocaleString("en-GB")}`);
+  assert.equal(steps[0].title, "you're expected to repay in all, clearing it in 3 years.");
+  assert.match(steps[0].body, /^That's £[\d,]+ of interest on top of the £8,000 you owe today\./);
+  // Without savings and pension, no verdict: what would give one.
+  assert.match(steps[2].title, /depends on your savings and your pension/);
 });
 
 // Retired, with a pot and no salary: not a gap, and the answer is the
@@ -227,4 +233,15 @@ test("planning a child: what they could get once it arrives, not counted as mone
   const over = kids({ ...family, salary: "110000", kidsStatus: "planning", partnerOver100k: "no" });
   assert.equal(over.steps[0].title, "of childcare support you could get once your child arrives.");
   assert.match(over.steps[2].title, /^A pension payment of £4,500/);
+});
+
+test("student loan: a loan worth paying off gives its cost, then the verdict once Cash & savings and Pension are in", () => {
+  // A small Plan 2 loan on a high salary: it clears by itself and paying it
+  // off comes out ahead, but only once their savings and pension are known.
+  const d = { selectedModules: ["studentLoan"], answeredModules: ["studentLoan"], salary: "70000", studentLoan: "plan2", loanBalance: "18500", studentLoanRate: "6.4" };
+  const before = run(d, studentLoanReveal).steps;
+  assert.match(before[2].title, /depends on your savings and your pension/);
+  const all = ["studentLoan", "cash", "pension"];
+  const after = run({ ...d, selectedModules: all, answeredModules: all }, studentLoanReveal).steps;
+  assert.doesNotMatch(after[2].title, /depends on your savings/);
 });

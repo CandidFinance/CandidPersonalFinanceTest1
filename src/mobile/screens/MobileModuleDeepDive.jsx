@@ -28,7 +28,7 @@ const CONTENT_BY_KEY = {
 
 // `onShowReveal` replays its answer step by step (MobileModuleReveal), where
 // the module has one; its "Explain this" link sits beside the module's name.
-export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, savingsRates, set, isComplete, onMarkReviewed, onBack, onRecordLoanOverpayment, onRecordCrystallisedGain, onShowReveal }) {
+export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, savingsRates, set, isComplete, onMarkReviewed, onBack, backLabel = null, onRecordLoanOverpayment, onRecordCrystallisedGain, onShowReveal }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
   // Status has exactly one visual indicator here — the dot below. The
@@ -94,7 +94,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
           </button>
         </div>
         <button onClick={onBack} style={{width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:600,cursor:"pointer"}}>
-          Back to Modules
+          {backLabel || "Back to Modules"}
         </button>
       </div>
       <GuidanceFooter moduleKey={moduleKey} limits={moduleLimits(moduleKey, d, m)}/>

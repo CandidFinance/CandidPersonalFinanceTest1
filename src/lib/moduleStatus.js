@@ -1,5 +1,5 @@
-import { moduleAnswered } from "./appEntry.js";
-import { MODULE_GUIDES } from "./moduleGuide.js";
+import { moduleAnswered , loanVerdictReady } from "./appEntry.js";
+import { MODULE_GUIDES, flatQuestions } from "./moduleGuide.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby } from "lucide-react";
 import { fmt } from "./format.js";
@@ -291,20 +291,22 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const pg = pgScenario(d, m);
   // Heading for write-off, a lump sum from spare cash that clears it and
   // comes out ahead counting savings interest: a year on average to clearing.
-  const lump = !sl.willClear ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
+  // The verdict only once Cash & savings and Pension are answered.
+  const verdict = loanVerdictReady(d);
+  const lump = verdict && !sl.willClear ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
   const lumpAmount = lump ? Math.round(lump.saving / Math.max(1, lump.clearYr)) : 0;
-  const slAmount = (sl.worthOverpaying ? sl.overpayAnnualBenefit : 0) + (pg?.worthOverpaying ? pg.overpayAnnualBenefit : 0) + lumpAmount;
+  const slAmount = verdict ? (sl.worthOverpaying ? sl.overpayAnnualBenefit : 0) + (pg?.worthOverpaying ? pg.overpayAnnualBenefit : 0) + lumpAmount : 0;
   s.studentLoan = {
     // Below the threshold there's nothing to act on, so "ok", with the line
     // below saying why.
     status: d.studentLoan === "none" ? "na"
-          : sl.worthOverpaying || pg?.worthOverpaying ? (sl.balanceGrowing ? "critical" : "attention")
+          : verdict && (sl.worthOverpaying || pg?.worthOverpaying) ? (sl.balanceGrowing ? "critical" : "attention")
           : lump ? "attention"
           : "ok",
     impact: slAmount,
     impactLabel: sl.belowThreshold
       ? (m.noEarnings ? "Nothing is repaid while you're not earning" : "You earn below the repayment threshold, so nothing comes off your pay")
-      : sl.worthOverpaying
+      : verdict && sl.worthOverpaying
         ? `${fmt(sl.overpayAnnualBenefit)}/yr ahead by paying your loan off now`
         : sl.balanceGrowing && !sl.willClear
           ? `Balance growing by ${fmt(Math.round(sl.netAnnualChange))}/yr, but it'll be written off before you clear it`
@@ -455,7 +457,7 @@ const OWN_FIELDS = {
 // an overpayment is banked when it's recorded (bankChange), so neither
 // counts as an answer changing.
 const NOT_ANSWERS = ["loanBalance", "pgLoanBalance"];
-const ownAnswers = (d, key) => JSON.stringify((OWN_FIELDS[key] || (MODULE_GUIDES[key]?.questions || [])
+const ownAnswers = (d, key) => JSON.stringify((OWN_FIELDS[key] || flatQuestions(MODULE_GUIDES[key]?.questions || [])
   .filter(q => q.group !== "you" && !NOT_ANSWERS.includes(q.field)).map(q => q.field)).map(f => d[f] ?? null));
 // A change made, banked straight away: its £ a year, dated today, on the
 // module's baseline (made if there isn't one yet).

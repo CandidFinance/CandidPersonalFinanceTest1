@@ -25,7 +25,8 @@ export const EMPLOYMENT_QUESTION = {
   why: () => "Changes which tax breaks and employer benefits you can use.",
   options: () => [{ value:"employed", label:"Employed" }, { value:"self_employed", label:"Self-employed" }, { value:"not_working", label:"Not working" }],
   also: () => ({ employmentAsked: true }),
-  ifMissing: ({ d }) => !d.employmentAsked,
+  // A salary given elsewhere says they're working.
+  ifMissing: ({ d }) => !d.employmentAsked && !(+d.salary > 0),
 };
 
 // Not working covers retired and between jobs, which want different answers

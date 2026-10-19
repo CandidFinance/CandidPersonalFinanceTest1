@@ -21,7 +21,10 @@ import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../l
 // `preview`: the module's questions aren't answered yet (a locked module
 // opened before its walk-through), so the figure is Candid's estimate from
 // what it already knows, if it has one.
-export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLeaveEmail, preview = false }) {
+// `returnTo`: opened from that module's "add this to see the full answer":
+// a way back to it, where the answer now uses these figures, and closing
+// goes there too.
+export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLeaveEmail, preview = false, returnTo = null }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const mod = getModuleBreakdown(d, m, statuses, null, "amount").moduleList.find(mm => mm.key === moduleKey);
@@ -90,8 +93,8 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
       </div>
 
       {ask.kind === "pay" && (
-        <PaywallSheet>
-          <Subscribe moduleKey={moduleKey} title={meta?.title || moduleKey} d={d} amount={worth} label={worthLabel} compare={!estimate?.stake} lumpSum={!!mod?.amountIsLumpSum} onLeaveEmail={onLeaveEmail}/>
+        <PaywallSheet returnTo={returnTo}>
+          <Subscribe moduleKey={moduleKey} returnTo={returnTo} title={meta?.title || moduleKey} d={d} amount={worth} label={worthLabel} compare={!estimate?.stake} lumpSum={!!mod?.amountIsLumpSum} onLeaveEmail={onLeaveEmail}/>
         </PaywallSheet>
       )}
 
@@ -143,7 +146,7 @@ function EmailUnlock({ d, cta, primary, onUnlock }) {
 // module's £ figure, since it covers the one on the page. Over the tab bar
 // and the Assist button (4500), under Assist's own panel. Closing goes back
 // to the modules.
-function PaywallSheet({ children }) {
+function PaywallSheet({ children, returnTo = null }) {
   const navigate = useNavigate();
   return (
     <div style={{position:"fixed",inset:0,zIndex:4600,display:"flex",flexDirection:"column",justifyContent:"center",padding:"16px",boxSizing:"border-box"}}>
@@ -153,7 +156,7 @@ function PaywallSheet({ children }) {
         initial={{ opacity: 0, scale: 0.94, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 340, damping: 30 }}
         style={{position:"relative",background:CREAM,borderRadius:"22px",boxShadow:"0 18px 50px rgba(22,47,36,0.28)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",
           padding:"20px",maxWidth:"440px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
-        <button type="button" onClick={() => navigate("/app/modules")} aria-label="Close"
+        <button type="button" onClick={() => navigate(returnTo ? `/app/module/${returnTo}` : "/app/modules")} aria-label="Close"
           style={{position:"absolute",top:"12px",right:"14px",width:"32px",height:"32px",borderRadius:"50%",border:"none",background:"rgba(22,47,36,0.07)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
           <X size={16} color={TEXT}/>
         </button>
@@ -166,7 +169,9 @@ function PaywallSheet({ children }) {
 // Subscribing: the two plans, then Stripe's own checkout page. Below, a way
 // back in for someone already subscribed (an emailed link), and a way to
 // hear about rate changes without subscribing.
-function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLeaveEmail }) {
+function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLeaveEmail, returnTo = null }) {
+  const navigate = useNavigate();
+  const backTitle = returnTo ? MODULE_META.find(mm => mm.key === returnTo)?.title : null;
   const [plan, setPlan] = useState("yearly");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -199,6 +204,12 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
   return (
     <div>
       <Worth title={title} amount={amount} label={label} compare={compare} lumpSum={lumpSum}/>
+      {returnTo && (
+        <button type="button" onClick={() => navigate(`/app/module/${returnTo}`)} style={{width:"100%",marginTop:"14px",background:WHITE,color:G,border:`1.5px solid ${G}`,borderRadius:"14px",padding:"11px 14px",fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
+          <span style={{display:"block",fontSize:"14px",fontWeight:700}}>Back to {backTitle}</span>
+          <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>Your {backTitle?.toLowerCase()} answer now uses these figures. This {title.toLowerCase()} answer is part of a subscription.</span>
+        </button>
+      )}
       <div style={{display:"flex",gap:"10px",margin:"18px 0 12px"}}>
         {Object.entries(PLANS).map(([key, p]) => (
           <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>

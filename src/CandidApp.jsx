@@ -751,12 +751,17 @@ export default function AppShell() {
   if (pathname.startsWith("/app/module/")) {
     const mobileActiveModule = params.moduleKey || null;
     const moduleLabel = ASSIST_MODULE_LABELS[mobileActiveModule];
+    // Opened from another module's "add this to see the full answer"
+    // (?from=studentLoan): the way back there, and its questions come
+    // before any paywall, since that module's answer needs them.
+    const fromKey = new URLSearchParams(location.search).get("from");
+    const returnTo = fromKey && fromKey !== mobileActiveModule && MODULE_META.some(mm => mm.key === fromKey) ? fromKey : null;
     if (!mobileActiveModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(mobileActiveModule)) || !MODULE_META.some(mm => mm.key === mobileActiveModule)) {
       return <Navigate to="/app/modules" replace />;
     }
     // A locked module needing a subscription: its frosted answer and the
     // paywall first, before any questions (unlock.js).
-    if (moduleGuideStarts(mobileActiveModule, d) && isLocked(d, mobileActiveModule) && unlockAsk(d).kind === "pay") {
+    if (moduleGuideStarts(mobileActiveModule, d) && isLocked(d, mobileActiveModule) && unlockAsk(d).kind === "pay" && !returnTo) {
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
           <MobileUnlock preview moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses}
@@ -807,7 +812,7 @@ export default function AppShell() {
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
-          <MobileUnlock moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses}
+          <MobileUnlock moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} returnTo={returnTo}
             onLeaveEmail={email => {
               set("email", email); set("alertsOptIn", true);
               posthog.capture("email_captured", { source: "paywall" });
@@ -845,7 +850,8 @@ export default function AppShell() {
           onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
-          onBack={() => navigate("/app/modules")}
+          onBack={() => navigate(returnTo ? `/app/module/${returnTo}` : "/app/modules")}
+          backLabel={returnTo ? `Back to ${MODULE_META.find(mm => mm.key === returnTo)?.title}` : null}
           onRecordLoanOverpayment={recordLoanOverpayment}
           onRecordCrystallisedGain={recordCrystallisedGain}/>
       </MobileLayout>

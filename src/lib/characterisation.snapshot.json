@@ -296,7 +296,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"moderate\"]",
+     "answers": "[\"moderate\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -358,9 +358,9 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "6 years",
-      "title": "until your loan is paid off.",
-      "body": "You'd repay about £26,122 in all."
+      "figure": "£26,122",
+      "title": "you're expected to repay in all, clearing it in 6 years.",
+      "body": "That's £4,122 of interest on top of the £22,000 you owe today."
      },
      {
       "label": "Why",
@@ -3161,7 +3161,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"moderate\"]",
+     "answers": "[\"moderate\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -3223,9 +3223,9 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "6 years",
-      "title": "until your loan is paid off.",
-      "body": "You'd repay about £26,122 in all."
+      "figure": "£26,122",
+      "title": "you're expected to repay in all, clearing it in 6 years.",
+      "body": "That's £4,122 of interest on top of the £22,000 you owe today."
      },
      {
       "label": "Why",
@@ -18502,7 +18502,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -18564,9 +18564,9 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "1 year",
-      "title": "until your loan is paid off.",
-      "body": "You'd repay about £6,246 in all."
+      "figure": "£6,246",
+      "title": "you're expected to repay in all, clearing it in 1 year.",
+      "body": "That's £246 of interest on top of the £6,000 you owe today."
      },
      {
       "label": "Why",
@@ -21198,7 +21198,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -21260,9 +21260,9 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "1 year",
-      "title": "until your loan is paid off.",
-      "body": "You'd repay about £6,246 in all."
+      "figure": "£6,246",
+      "title": "you're expected to repay in all, clearing it in 1 year.",
+      "body": "That's £246 of interest on top of the £6,000 you owe today."
      },
      {
       "label": "Why",
@@ -33625,7 +33625,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -36841,7 +36841,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -39888,7 +39888,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -43485,7 +43485,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -46921,7 +46921,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -46984,9 +46984,9 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "10 years",
-      "title": "until your loan is paid off.",
-      "body": "You'd repay about £18,227 in all."
+      "figure": "£18,227",
+      "title": "you're expected to repay in all, clearing it in 10 years.",
+      "body": "That's £4,227 of interest on top of the £14,000 you owe today."
      },
      {
       "label": "Why",
@@ -49706,7 +49706,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -49769,9 +49769,9 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "10 years",
-      "title": "until your loan is paid off.",
-      "body": "You'd repay about £18,227 in all."
+      "figure": "£18,227",
+      "title": "you're expected to repay in all, clearing it in 10 years.",
+      "body": "That's £4,227 of interest on top of the £14,000 you owe today."
      },
      {
       "label": "Why",
@@ -75856,7 +75856,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },
@@ -79279,7 +79279,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
+     "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
    },

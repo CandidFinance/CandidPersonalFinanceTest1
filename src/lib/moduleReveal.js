@@ -16,6 +16,7 @@ import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
 import { estimatePensionPot, childBenefitCharge, HICBC_START } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
+import { loanVerdictReady } from "./appEntry.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario, pgScenario, bestLumpSum, SL_REPAYMENT_RATES } from "./studentLoan.js";
@@ -393,6 +394,8 @@ export function studentLoanReveal(d, m) {
 }
 function studentLoanSteps(d, m) {
   const sl = calcStudentLoanScenario(d, m);
+  // The overpaying verdict needs Cash & savings and Pension (appEntry.js).
+  const verdict = loanVerdictReady(d);
   const repayPct = `${Math.round((SL_REPAYMENT_RATES[d.studentLoan] ?? 0.09) * 100)}%`;
   const nothing = { label: ACTION, title: "Nothing to change right now.", body: "Repayments come out of your pay automatically." };
   // While the balance is still growing, when it starts to fall (the year
@@ -413,7 +416,7 @@ function studentLoanSteps(d, m) {
       { ...nothing, body: "Repayments start automatically once you earn over the threshold." },
     ];
   }
-  if (sl.worthOverpaying) {
+  if (sl.worthOverpaying && verdict) {
     return [
       { label: ANSWER, figure: fmt(sl.overpayTotalBenefit), title: `ahead by paying your loan off now, rather than letting it clear in ${years(sl.clearYr)}.`, ...turning },
       withBody({ label: WHY, title: `Paying it off avoids about ${fmt(sl.interestAvoided)} of interest. In savings at ${sl.cashRate}%, the same money would earn about ${fmt(sl.savingsForgone)} meanwhile.` },
@@ -425,7 +428,10 @@ function studentLoanSteps(d, m) {
   // Written off: what they'd repay in all, and what's left to write off;
   // and a lump sum from their spare cash, if one clears it and comes out
   // ahead counting savings interest (studentLoan.js bestLumpSum).
-  const lump = !sl.willClear ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
+  const lump = verdict && !sl.willClear ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
+  // Until savings and pension are in: what would tell them whether paying
+  // it off early is worth it.
+  const needVerdict = { label: ACTION, title: "Whether paying it off early comes out ahead depends on your savings and your pension.", body: "Adding Cash & savings and Pension shows it." };
   if (!sl.willClear) {
     return [
       { label: ANSWER, figure: fmt(sl.totalRepaidProjected), title: `you're expected to repay in all, before about ${fmt(sl.writeOffBal)} is written off in April ${sl.writeOffTaxYear}.`, ...turning },
@@ -433,15 +439,21 @@ function studentLoanSteps(d, m) {
       lump
         ? { label: ACTION, title: `Paying ${fmt(lump.amount)} now would clear it in ${years(lump.clearYr)}, and cost about ${fmt(lump.saving)} less in all, counting what the money would earn in savings.`,
             body: "Smaller sums would mostly shrink what's written off. The page shows how your cash buffer, ISA allowance and pension match stand." }
-        : { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "On these assumptions, savings or a pension may earn more than overpaying." },
+        : verdict ? { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "On these assumptions, savings or a pension may earn more than overpaying." }
+        : { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "Adding Cash & savings and Pension shows what the money could do instead." },
     ];
   }
+  // Clears by itself: what it'll cost in all, against what's owed today.
+  const interest = Math.max(0, sl.totalRepaidProjected - Math.round(m.loanBal));
   return [
-    { label: ANSWER, figure: years(sl.clearYr), title: "until your loan is paid off.", body: join(turning.body, `You'd repay about ${fmt(sl.totalRepaidProjected)} in all.`) },
-    { label: WHY, title: sl.effectiveBenefit <= 0
-        ? `Savings pay ${sl.cashRate}%, ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.`
-        : `Your pension's assumed ${sl.pensionGrowthPct}% growth beats your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.` },
-    nothing,
+    { label: ANSWER, figure: fmt(sl.totalRepaidProjected), title: `you're expected to repay in all, clearing it in ${years(sl.clearYr)}.`,
+      body: join(`That's ${fmt(interest)} of interest on top of the ${fmt(Math.round(m.loanBal))} you owe today.`, turning.body) },
+    verdict
+      ? { label: WHY, title: sl.effectiveBenefit <= 0
+          ? `Savings pay ${sl.cashRate}%, ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.`
+          : `Your pension's assumed ${sl.pensionGrowthPct}% growth beats your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.` }
+      : { label: WHY, title: `Repayments are ${repayPct} of your pay over ${fmt(sl.threshold)}, about ${fmt(sl.annualRep)} a year now, while interest adds about ${fmt(sl.annualInterest)}.` },
+    verdict ? nothing : needVerdict,
   ];
 }
 

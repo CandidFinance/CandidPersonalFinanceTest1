@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
-import { moduleAnswered } from "../../lib/appEntry.js";
+import { moduleAnswered, loanVerdictReady } from "../../lib/appEntry.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
@@ -69,7 +69,10 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
   const sl = calcStudentLoanScenario(d, m);
   const pg = pgScenario(d, m);
-  const worthOverpaying = sl.worthOverpaying;
+  // Whether paying it off comes out ahead: only once Cash & savings and
+  // Pension are answered (appEntry.js loanVerdictReady).
+  const verdict = loanVerdictReady(d);
+  const worthOverpaying = verdict && sl.worthOverpaying;
   const surplusCash = m.surplusCash || 0;
   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
 
@@ -80,7 +83,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   // Heading for write-off: the smallest lump sum that clears it, and the
   // best one from spare cash if it comes out ahead counting savings interest.
   const tip = lumpToClear(m, sl);
-  const lump = bestLumpSum(m, sl, m.surplusCash || 0);
+  const lump = verdict ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
   // The tipping point is one of the lump sums offered.
   const overpayOptions = tip ? [...new Set([...overpayOptionsBase, tip])].sort((x, y) => x - y) : overpayOptionsBase;
 
@@ -120,11 +123,13 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
       {!sl.belowThreshold && <CostComparison sl={sl} cost={cost}/>}
 
+      <FullPicture d={d}/>
+
       {pg && <PostgradLoan pg={pg} sl={sl}/>}
 
       {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
 
-      <OverpayingTile sl={sl} worthOverpaying={worthOverpaying} m={m} surplusCash={surplusCash}/>
+      {verdict && <OverpayingTile sl={sl} worthOverpaying={worthOverpaying} m={m} surplusCash={surplusCash}/>}
 
       {curve && (
         <ExploreToggle open={exploreOpen} onToggle={() => setExploreOpen(o => !o)} hint="overpaying, and loan vs pension"/>
@@ -334,6 +339,34 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
           )}
         </>
       )}
+    </div>
+  );
+}
+
+// Until Cash & savings and Pension are answered, the answer here is only
+// part of it: whether the money's spare, and whether paying the loan off
+// beats saving or the pension, depend on them. The way in to each (behind
+// the paywall for anyone whose free answer was this one).
+const FULL_PICTURE = [
+  { key: "cash", title: "Cash & savings", gives: "your cash buffer and ISA allowance" },
+  { key: "pension", title: "Pension", gives: "your pension and employer match" },
+];
+function FullPicture({ d }) {
+  const navigate = useNavigate();
+  const missing = FULL_PICTURE.filter(p => !moduleAnswered(p.key, d));
+  if (!missing.length) return null;
+  return (
+    <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+      <div style={{fontSize:"13px",fontWeight:700,color:G}}>Is paying it off early worth it?</div>
+      <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 10px"}}>
+        That depends on {missing.map(p => p.gives).join(" and ")}. Add {missing.length > 1 ? "them" : "it"} to see.
+      </p>
+      {missing.map(p => (
+        <button key={p.key} type="button" onClick={() => navigate(`/app/module/${p.key}?from=studentLoan`)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0",cursor:"pointer",fontFamily:"inherit"}}>
+          <span style={{fontSize:"14px",fontWeight:700,color:G}}>Add {p.title}</span>
+          <ChevronRight size={17} color={G}/>
+        </button>
+      ))}
     </div>
   );
 }

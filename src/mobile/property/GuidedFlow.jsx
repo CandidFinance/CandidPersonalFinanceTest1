@@ -87,11 +87,19 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   // next question is chosen as if it already had.
   const next = patch => {
     setAnswered(a => new Set(a).add(q.id));
+    // Follow-ups asked once: remembered with the question's own field.
+    const onceFields = (q.follow || []).filter(f => f.once && (!f.showIf || f.showIf(ctx))).map(f => f.field)
+      .filter(f => !(d.askedFields || []).includes(f));
+    if (onceFields.length) {
+      const askedFields = [...new Set([...(patch?.askedFields || d.askedFields || []), ...onceFields])];
+      set("askedFields", askedFields);
+      patch = { ...patch, askedFields };
+    }
     onAnswered?.(q.id);
     // An ask-once question (one with `ifMissing`): its field is remembered
     // as asked, answered or not, so no other module asks it again.
     if (q.ifMissing && q.field && !(d.askedFields || []).includes(q.field)) {
-      const askedFields = [...(d.askedFields || []), q.field];
+      const askedFields = [...(patch?.askedFields || d.askedFields || []), q.field];
       set("askedFields", askedFields);
       patch = { ...patch, askedFields };
     }
@@ -118,6 +126,18 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   };
 
   const choose = value => next(write(q.field, value));
+  // Follow-ups (`q.follow`): questions shown below this one, on the same
+  // screen, once it's answered and each one's showIf holds. Answering one
+  // doesn't move on; Continue does, once every required one is answered. A
+  // follow-up marked `once` is remembered as asked, like an ask-once
+  // question.
+  const follows = (q.follow || []).filter(f => !f.showIf || f.showIf(ctx));
+  const writeFollow = (f, value) => {
+    const v = f.cap ? capField(f.cap, value ?? "") : value;
+    const patch = { [f.field]: v, ...(f.also ? f.also(v, ctx) : {}) };
+    Object.entries(patch).forEach(([k, val]) => set(k, val));
+  };
+  const followAnswered = f => { const v = d[f.field]; return v !== "" && v != null && (f.kind === "choice" || !isNaN(+v)); };
   // One "not sure" answer or several (Property's price: the most they could
   // afford, or the local average).
   const notSure = [q.notSure ? q.notSure(ctx) : null].flat().filter(Boolean);
@@ -137,13 +157,49 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     : q.kind === "custom" ? (q.answered ? q.answered(ctx) : true)
     : q.kind === "info" ? true
     : raw !== "" && raw != null && !isNaN(+raw) && (minFor(q, ctx) == null || +raw >= minFor(q, ctx));
+  // With follow-ups showing, every required one has to be answered too.
+  const mainReady = q.follow && q.kind === "choice" ? raw !== "" && raw != null : (hasAnswer || !q.required);
+  const followsReady = (hasAnswer || (q.follow && q.kind === "choice" && mainReady)) ? follows.every(f => !f.required || followAnswered(f)) : true;
+  const canGo = mainReady && followsReady;
   const continueButton = (
-    <button type="submit" disabled={q.required && !hasAnswer} style={{
+    <button type="submit" disabled={!canGo} style={{
       ...primary, marginTop:"16px",
-      background:q.required && !hasAnswer ? "rgba(22,47,36,0.2)" : G, cursor:q.required && !hasAnswer ? "not-allowed" : "pointer",
+      background:!canGo ? "rgba(22,47,36,0.2)" : G, cursor:!canGo ? "not-allowed" : "pointer",
     }}>Continue</button>
   );
-  const submit = e => { e.preventDefault(); if (hasAnswer || !q.required) next({}); };
+  const submit = e => { e.preventDefault(); if (canGo) next({}); };
+  // Shown once the question above them has an answer.
+  const showFollows = q.follow && (q.kind === "choice" ? mainReady : hasAnswer);
+  const followBlock = showFollows && follows.length > 0 && (
+    <div style={{display:"flex",flexDirection:"column",gap:"16px",marginTop:"18px"}}>
+      {follows.map(f => (
+        <div key={f.field}>
+          <div style={{fontSize:"13.5px",fontWeight:700,color:TEXT,marginBottom:"8px"}}>{f.label}</div>
+          {f.kind === "choice" ? (
+            <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+              {f.options(ctx).map(o => {
+                const on = d[f.field] === o.value;
+                return (
+                  <button key={o.value} type="button" aria-pressed={on} onClick={() => writeFollow(f, o.value)} style={{
+                    flex:o.sub ? "1 1 0" : "0 0 auto", minWidth:o.sub ? 0 : undefined, background:on ? G : WHITE, color:on ? WHITE : TEXT,
+                    border:`1.5px solid ${on ? G : "rgba(22,47,36,0.15)"}`, borderRadius:o.sub ? "14px" : "100px", padding:o.sub ? "9px 6px" : "9px 15px",
+                    fontFamily:"inherit", cursor:"pointer", lineHeight:1.2, textAlign:"center",
+                  }}>
+                    <span style={{display:"block",fontSize:"13.5px",fontWeight:600}}>{o.label}</span>
+                    {o.sub && <span style={{display:"block",fontSize:"11px",fontWeight:500,opacity:0.75,marginTop:"2px"}}>{o.sub}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <PillMoneyInput label={f.inputLabel || ""} unit={{ percent:"%", years:"" }[f.kind] ?? "£"}
+              value={followAnswered(f) ? +d[f.field] : null} onChange={v => writeFollow(f, v ?? "")}/>
+          )}
+          {f.note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>{f.note(ctx)}</p>}
+        </div>
+      ))}
+    </div>
+  );
   // Below a question's minimum (age 18), its own line replaces the note.
   const belowMin = minFor(q, ctx) != null && raw !== "" && raw != null && !isNaN(+raw) && +raw < minFor(q, ctx);
   const note = belowMin && q.minNote ? q.minNote(ctx) : q.note ? q.note(ctx) : null;
@@ -179,7 +235,24 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
           <h2 style={{fontFamily:SERIF,fontSize:"21px",fontWeight:700,color:TEXT,lineHeight:1.3,margin:0}}>{q.ask(ctx)}</h2>
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"8px 0 18px"}}>{q.why(ctx)}</p>
 
-          {q.kind === "choice" ? (
+          {q.kind === "choice" && q.follow ? (
+            <form onSubmit={submit}>
+              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                {q.options(ctx).map(o => {
+                  const selected = raw === o.value;
+                  return (
+                    <button key={o.value} type="button" onClick={() => write(q.field, o.value)} style={answerButton(selected)}>
+                      {o.label}
+                      {selected && <Check size={16} color={G}/>}
+                    </button>
+                  );
+                })}
+                {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>{note}</p>}
+              </div>
+              {followBlock}
+              {continueButton}
+            </form>
+          ) : q.kind === "choice" ? (
             <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
               {q.options(ctx).map(o => {
                 const selected = answered.has(q.id) && d[q.field] === o.value;
@@ -246,6 +319,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
                 value={hasAnswer ? +raw : (q.prefill ? q.prefill(ctx) : null)}
                 onChange={v => write(q.field, q.cap ? capField(q.cap, v ?? "") : (v ?? ""))}/>
               {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>{note}</p>}
+              {followBlock}
               {continueButton}
             </form>
           )}

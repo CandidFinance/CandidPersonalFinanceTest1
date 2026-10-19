@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { MODULE_GUIDES, moduleGuideStarts } from "./moduleGuide.js";
+import { MODULE_GUIDES, moduleGuideStarts, flatQuestions } from "./moduleGuide.js";
 import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions, countSettled } from "./propertyGuide.js";
 import { calcMetrics } from "./metrics.js";
 
@@ -29,7 +29,7 @@ test("a later module doesn't ask about you again", () => {
 
 test("other income opens its three questions only when there is some", () => {
   const yes = { ...fresh, hasExtraIncome: "yes" };
-  assert.deepEqual(ids("studentLoan", yes, fresh).slice(0, 7), [...aboutYou, "bonus", "dividends", "otherIncome"]);
+  assert.deepEqual(ids("pension", yes, fresh).slice(0, 7), [...aboutYou, "bonus", "dividends", "otherIncome"]);
 });
 
 test("someone not working isn't asked for a salary", () => {
@@ -82,11 +82,13 @@ test("pension, final salary: no pot or match questions, but what it'll pay", () 
 test("not sure of the plan: the helper asks only what it needs, then the loan questions follow", () => {
   const known = { ...fresh, employmentAsked: true, ukNation: "england", scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", age: "30" };
   const unsure = { ...known, slPlanAnswer: "unsure" };
-  assert.deepEqual(ids("studentLoan", unsure, known), ["studentLoanPlan", "slCountry"]);
-  assert.deepEqual(ids("studentLoan", { ...unsure, slCountry: "scotland", studentLoan: "plan4" }, known),
-    ["studentLoanPlan", "slCountry", "slPlanResult", "loanBalance", "loanRate", "payGrowth"]);
-  assert.deepEqual(ids("studentLoan", { ...unsure, slCountry: "england", slCourse: "undergrad", slStart: "2023on", studentLoan: "plan5" }, known),
-    ["studentLoanPlan", "slCountry", "slCourse", "slStart", "slPlanResult", "loanBalance", "loanRate", "hasPgLoan", "payGrowth"]);
+  // "Not sure" picked under the balance, then the helper's questions.
+  const k = { ...known, askedFields: ["salaryTrajectory"] }, un = { ...unsure, askedFields: ["salaryTrajectory"], loanBalance: "30000" };
+  assert.deepEqual(ids("studentLoan", un, k), ["loanBalance", "slCountry"]);
+  assert.deepEqual(ids("studentLoan", { ...un, slCountry: "scotland", studentLoan: "plan4" }, k),
+    ["loanBalance", "slCountry", "slPlanResult", "loanRate"]);
+  assert.deepEqual(ids("studentLoan", { ...un, slCountry: "england", slCourse: "undergrad", slStart: "2023on", studentLoan: "plan5" }, k),
+    ["loanBalance", "slCountry", "slCourse", "slStart", "slPlanResult", "loanRate", "hasPgLoan"]);
 });
 
 test("each helper answer sets the plan once there's enough to tell, and the result says which", () => {
@@ -108,11 +110,13 @@ test("the question count shows only once no answer still to come can change it",
   };
   // The plan question decides whether the helper and loan questions come.
   assert.equal(settled("studentLoan", known, "studentLoanPlan"), false);
-  // On plan 2, a Postgraduate loan alongside adds a question, so the count
-  // settles once that's been asked.
+  // On plan 2 the rest is fixed (a Postgraduate loan's balance is below its
+  // question, not a question of its own), so the count shows from the balance.
   const plan2 = { ...known, slPlanAnswer: "plan2", studentLoan: "plan2" };
-  assert.equal(settled("studentLoan", plan2, "loanBalance"), false);
-  assert.equal(settled("studentLoan", { ...plan2, hasPgLoan: "no" }, "payGrowth"), true);
+  assert.equal(settled("studentLoan", plan2, "loanBalance"), true);
+  // The Postgraduate loan's balance is below its question, not a question
+  // of its own, so from the rate on the count is settled.
+  assert.equal(settled("studentLoan", { ...plan2, askedFields: ["salaryTrajectory"] }, "loanRate"), true);
   // Cash: the Premium Bonds and Cash ISA yes/nos are still to come.
   assert.equal(settled("cash", known, "spending"), false);
   assert.equal(settled("cash", { ...known, hasPremiumBonds: "no", hasCashIsaThisYear: "yes" }, "cashIsaEarlier"), true);
@@ -165,7 +169,10 @@ test("not sure of the balance: the borrowing questions come, then the estimate",
   assert.deepEqual(q("loanBalance").also("12000"), { slBalanceEstimate: "" });
   assert.deepEqual(q("slFinishYear").also("2018"), { slFirstDueYear: "2019" });
   const est = { ...known, loanBalance: "", slBalanceEstimate: "yes" };
-  assert.deepEqual(ids("studentLoan", est, known), ["studentLoanPlan", "loanBalance", "slStudyYears", "slTuition", "slMaintenance", "slFinishYear", "loanRate", "hasPgLoan", "payGrowth"]);
+  assert.deepEqual(ids("studentLoan", { ...est, askedFields: ["salaryTrajectory"] }, { ...known, askedFields: ["salaryTrajectory"] }),
+    ["loanBalance", "slStudyYears", "slTuition", "slMaintenance", "slFinishYear", "loanRate", "hasPgLoan"]);
+  // The finish year given under the balance isn't asked again for the estimate.
+  assert.ok(!ids("studentLoan", { ...est, slFinishYear: "2018" }, known).includes("slFinishYear"));
   const done = { ...est, slStudyYears: "6", slTuition: "nhs5", slMaintenance: "full", slFinishYear: "2018" };
   assert.ok(ids("studentLoan", done, known).includes("slBalanceResult"));
   // The NHS option only for courses of five years or more.
@@ -185,10 +192,10 @@ test("a shared question asked in one module isn't asked again in another, even l
 
 // The student loan walk-through asks age, which sets when repayments started
 // and so the write-off date (without it, this April).
-test("student loan: age is asked, once", () => {
+test("student loan: not age, where they live or other income", () => {
   const known = { ...fresh, employmentAsked: true, ukNation: "england", scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", slPlanAnswer: "plan2", studentLoan: "plan2" };
-  assert.ok(ids("studentLoan", known).includes("age"));
-  assert.equal(ids("studentLoan", { ...known, age: "34" }).includes("age"), false);
+  // Only what the answer needs: no age, where they live or other income.
+  for (const id of ["age", "nation", "extraIncome"]) assert.ok(!ids("studentLoan", known).includes(id), id);
 });
 
 // Other income on one screen: only the kinds picked are asked about.
@@ -201,15 +208,17 @@ test("other income: one screen, then only the kinds picked", () => {
 
 test("the bonus month is asked once there's a bonus, straight after it", () => {
   const bonus = { ...fresh, hasExtraIncome: "yes", extraIncomeKinds: ["bonus"], bonusAmount: "10000" };
-  const list = ids("studentLoan", bonus, fresh);
+  const list = ids("pension", bonus, fresh);
   assert.equal(list[list.indexOf("bonus") + 1], "bonusMonth");
-  assert.ok(!ids("studentLoan", { ...bonus, bonusAmount: "" }, fresh).includes("bonusMonth"));
-  assert.ok(!ids("studentLoan", { ...bonus, bonusMonth: "" }, { ...fresh, bonusMonth: "" }).includes("bonusMonth"));
+  assert.ok(!ids("pension", { ...bonus, bonusAmount: "" }, fresh).includes("bonusMonth"));
+  assert.ok(!ids("pension", { ...bonus, bonusMonth: "" }, { ...fresh, bonusMonth: "" }).includes("bonusMonth"));
 });
 
 test("student loan: a Postgraduate loan alongside Plans 1, 2 and 5, and pay growth asked once", () => {
   const known = { ...fresh, employmentAsked: true, ukNation: "england", scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", age: "30", slPlanAnswer: "plan2", studentLoan: "plan2", loanBalance: "40000" };
-  assert.deepEqual(ids("studentLoan", { ...known, hasPgLoan: "yes" }, known).slice(-3), ["hasPgLoan", "pgLoanBalance", "payGrowth"]);
+  // Its balance is asked below a "Yes", on the same screen.
+  assert.equal(ids("studentLoan", { ...known, hasPgLoan: "yes" }, known).slice(-1)[0], "hasPgLoan");
+  assert.ok(flatQuestions(MODULE_GUIDES.studentLoan.questions).some(q => q.field === "pgLoanBalance"));
   assert.ok(!ids("studentLoan", { ...known, studentLoan: "plan4", slPlanAnswer: "plan4" }, known).includes("hasPgLoan"));
   // Pay growth, once asked anywhere, isn't asked again.
   assert.ok(!ids("studentLoan", known, { ...known, askedFields: ["salaryTrajectory"] }).includes("payGrowth"));
@@ -237,4 +246,17 @@ test("Kids & family: 'No' ends it; the counts offered never add up to more child
   assert.equal(q("kidsCount").showIf(ctxFor(planning)), false);
   assert.equal(q("childcareBill").showIf(ctxFor(planning)), false);
   assert.equal(q("partnerOver100k").showIf(ctxFor(planning)), true);
+});
+
+test("student loan, from a link: work, then pay with its growth below, then the loan with its plan below", () => {
+  const visitor = { name: "", appEntered: true, selectedModules: [], studentLoan: "none" };
+  const list = ids("studentLoan", visitor, visitor);
+  assert.deepEqual(list.slice(0, 3), ["employment", "slSalary", "payGrowth"]);
+  // The plan and when the course finished are below the balance; pay growth below the salary.
+  const flat = flatQuestions(MODULE_GUIDES.studentLoan.questions);
+  for (const f of ["slSalary.salaryTrajectory", "loanBalance.slPlanAnswer", "loanBalance.slFinishYear", "hasPgLoan.pgLoanBalance"]) assert.ok(flat.some(q => q.id === f), f);
+  // A salary from another module: no employment question.
+  assert.ok(!ids("studentLoan", { ...visitor, salary: "40000" }, { ...visitor, salary: "40000" }).includes("employment"));
+  // The finish year sets when repayments started, and so the write-off.
+  assert.deepEqual(flat.find(q => q.id === "loanBalance.slFinishYear").also("2018"), { slFirstDueYear: "2019" });
 });
