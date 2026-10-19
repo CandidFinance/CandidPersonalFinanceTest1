@@ -55,6 +55,9 @@ export function rollTaxYear(d, now = new Date(), fallbackDate = null) {
     }
   }
   for (const t of ISA_TYPES) next[`isaThisYear${t}`] = "";
+  // Pay from last tax year: Home asks whether it's still the same
+  // (PayCheckCard), and the new-tax-year email links there.
+  if (+d.salary > 0) next.payCheckDue = true;
   next.realisedCgtGains = "";
   next.hasSoldAssetsOutsideWrapper = "no";
   return next;

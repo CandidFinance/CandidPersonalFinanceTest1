@@ -15,6 +15,7 @@ import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/prioriti
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import GoalsCard from "./GoalsCard.jsx";
 import ConfidenceCard from "./ConfidenceCard.jsx";
+import PayCheckCard from "./PayCheckCard.jsx";
 import GainedFromChanges from "../GainedFromChanges.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
@@ -218,6 +219,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       {/* What the changes the user says they've made are worth, and the pot
           they've added up to (GainedFromChanges.jsx). */}
       <GainedFromChanges d={d}/>
+
+      {/* A new tax year: is their pay still the same? */}
+      {d.payCheckDue && +d.salary > 0 && <PayCheckCard d={d} set={set}/>}
 
       {/* Asked once, after the score appears; never blocks anything. */}
       {!d.goalsAsked && <GoalsCard d={d} set={set} onDone={onGoalsDone}/>}

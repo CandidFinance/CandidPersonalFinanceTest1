@@ -33,6 +33,8 @@
  * @property {boolean} [unlockCallOk]
  * @property {string} [unlockFeedback]
  * @property {boolean} [alertsOptIn]
+ * @property {string} [bonusMonth] "1" to "12", or "" when not sure (sharedQuestions.js).
+ * @property {boolean} [payCheckDue] Figures rolled into a new tax year; Home asks if pay is the same (PayCheckCard).
  */
 
 /**

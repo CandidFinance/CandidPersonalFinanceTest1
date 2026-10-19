@@ -13,6 +13,7 @@ import { setSupabaseFailureReporter, updateRow } from "./lib/supabase.js"
 import { setStorageFailureReporter, reportStorageFailure } from "./lib/storage.js"
 import { appEntryPath } from "./site/StartCheckButton.jsx"
 const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
+const AlertsAdmin = lazy(() => import("./admin/AlertsAdmin.jsx"))
 // The app (/app/*) is its own chunk, so the marketing site doesn't download
 // it; it loads the first time an /app page opens.
 const CandidApp = lazy(() => import("./CandidApp.jsx"))
@@ -299,6 +300,7 @@ function AppRoutes() {
         <Route path="/welcome-back" element={<WelcomeBackRoute />} />
         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
         <Route path="/admin/rates" element={<Suspense fallback={null}><RatesAdmin /></Suspense>} />
+        <Route path="/admin/alerts" element={<Suspense fallback={null}><AlertsAdmin /></Suspense>} />
         <Route path="/assessment/:step" element={<LegacyRedirect to={p => `/app/assessment/${p.step}`} />} />
         <Route path="/dashboard" element={<LegacyRedirect to={() => "/app/home"} />} />
         <Route path="/modules" element={<LegacyRedirect to={() => "/app/modules"} />} />

@@ -519,6 +519,10 @@ export default function AppShell() {
     (async () => {
       await saveRow(rowInputFields());
       await saveRow({ unlock_call_ok: d.unlockCallOk ?? null, unlock_feedback: d.unlockFeedback || null, unlocked_modules: (d.unlockedModules || []).join(", ") || null });
+      // Asked for emails (api/alerts.js reads it). On its own, so a missing
+      // column grant can't stop the rest saving
+      // (supabase/hand-run/supabase_alerts_migration.sql).
+      if (d.alertsOptIn) await saveRow({ alerts_opt_in: true });
     })();
   }, [unlockSaveTick]);
   // Whether the Candid score is showing: once every module picked at the

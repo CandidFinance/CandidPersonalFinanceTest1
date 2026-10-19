@@ -95,3 +95,9 @@ test("a full NI record gives the 2026/27 full State Pension, £241.30 a week", (
   const m = calcMetrics({ niYears: "35" });
   assert.equal(Math.round(m.statePensionWeekly * 100) / 100, 241.30);
 });
+
+test("a new tax year asks whether pay is still the same, when there's pay to ask about", () => {
+  assert.equal(rollTaxYear({ salary: "50000", inputsTaxYear: 2025 }, new Date("2026-05-01")).payCheckDue, true);
+  assert.equal(rollTaxYear({ salary: "", inputsTaxYear: 2025 }, new Date("2026-05-01")).payCheckDue, undefined);
+  assert.equal(rollTaxYear({ salary: "50000", inputsTaxYear: 2026 }, new Date("2026-05-01")).payCheckDue, undefined);
+});

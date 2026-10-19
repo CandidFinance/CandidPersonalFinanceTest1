@@ -13,6 +13,7 @@
     { "source": "/welcome-back", "destination": "/app-shell.html" },
     { "source": "/admin/feedback", "destination": "/app-shell.html" },
     { "source": "/admin/rates", "destination": "/app-shell.html" },
+    { "source": "/admin/alerts", "destination": "/app-shell.html" },
     { "source": "/assessment/:step", "destination": "/app-shell.html" },
     { "source": "/dashboard", "destination": "/app-shell.html" },
     { "source": "/modules", "destination": "/app-shell.html" },
@@ -31,6 +32,6 @@
     { "source": "/app/assessment/:step", "destination": "/app-shell.html" },
     { "source": "/app/start", "destination": "/app-shell.html" }
   ],
-  "crons": [{ "path": "/api/rates", "schedule": "0 6 * * *" }],
-  "functions": { "api/rates.js": { "maxDuration": 60 } }
+  "crons": [{ "path": "/api/rates", "schedule": "0 6 * * *" }, { "path": "/api/alerts", "schedule": "0 8 * * *" }],
+  "functions": { "api/rates.js": { "maxDuration": 60 }, "api/alerts.js": { "maxDuration": 60 } }
 }

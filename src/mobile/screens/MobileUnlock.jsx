@@ -258,12 +258,16 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
 // today: the gated modules (unlock.js SCORED_MODULES) and Assist on them,
 // the daily rates feed (api/rates.js), and sign-in on other devices
 // (SignInSetup.jsx), which is for subscribers.
+// The emails (api/alerts.js) join it once they're being sent, the same
+// setting that turns sending on.
+const ALERTS_LIVE = import.meta.env.VITE_ALERTS_LIVE === "1";
 const SUBSCRIPTION_ADDS = [
   "Every module's answer: pension, cash, investments and student loan",
   "Candid Assist's answers on all of them",
+  ALERTS_LIVE ? "Emails before 5 April, before your bonus and when a better savings rate appears, on your figures" : null,
   "Figures that move with savings rates, checked every day",
   "Sign in on your other devices, with Face ID or a password",
-];
+].filter(Boolean);
 
 // What this module is worth against what Candid costs a year: "3x" rounded
 // down, so it never overstates; "more than" under 2x. Lump sums (by 18) and

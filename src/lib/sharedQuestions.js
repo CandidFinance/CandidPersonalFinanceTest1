@@ -12,6 +12,7 @@ import { DIVIDEND_ALLOWANCE } from "./rentVsBuy.js";
 
 const filled = v => v !== "" && v !== null && v !== undefined && !isNaN(+v);
 const NONE = { label:"None", value:"" };
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const extraIncomeUnasked = ({ d }) => d.hasExtraIncome == null && ![d.bonusAmount, d.dividendIncome, d.otherIncome].some(v => +v > 0);
 // Which kinds of other income: picked on one screen (extraIncomeKinds); for
 // anyone who said "yes" before that existed, all three are asked.
@@ -84,6 +85,16 @@ export const EXTRA_INCOME_QUESTIONS = [
     why: () => "A bonus is taxed like salary, at your top rate.",
     notSure: () => ({ label:"No bonus", value:"" }),
     showIf: hasExtra("bonus"), ifMissing: extraIncomeUnasked,
+  },
+  {
+    // Optional: a subscriber's bonus reminder comes the month before
+    // (src/lib/alerts.js), or in February when it isn't known.
+    id:"bonusMonth", field:"bonusMonth", kind:"choice", group:"you",
+    ask: () => "Which month is your bonus usually paid?",
+    why: () => "Paying it into a pension has to be arranged before then.",
+    options: () => [...MONTHS.map((label, i) => ({ value:String(i + 1), label })), { value:"", label:"Not sure" }],
+    showIf: ctx => hasExtra("bonus")(ctx) && +ctx.d.bonusAmount > 0,
+    ifMissing: ({ d }) => d.bonusMonth == null,
   },
   {
     id:"dividends", field:"dividendIncome", kind:"money", label:"Dividends a year", cap:"dividendIncome", required:true, group:"you",

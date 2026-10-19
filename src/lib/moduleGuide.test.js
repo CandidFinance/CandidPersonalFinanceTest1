@@ -195,3 +195,11 @@ test("other income: one screen, then only the kinds picked", () => {
   assert.deepEqual(after(["bonus"]).filter(id => ["bonus", "dividends", "otherIncome"].includes(id)), ["bonus"]);
   assert.deepEqual(after(["none"]).filter(id => ["bonus", "dividends", "otherIncome"].includes(id)), []);
 });
+
+test("the bonus month is asked once there's a bonus, straight after it", () => {
+  const bonus = { ...fresh, hasExtraIncome: "yes", extraIncomeKinds: ["bonus"], bonusAmount: "10000" };
+  const list = ids("studentLoan", bonus, fresh);
+  assert.equal(list[list.indexOf("bonus") + 1], "bonusMonth");
+  assert.ok(!ids("studentLoan", { ...bonus, bonusAmount: "" }, fresh).includes("bonusMonth"));
+  assert.ok(!ids("studentLoan", { ...bonus, bonusMonth: "" }, { ...fresh, bonusMonth: "" }).includes("bonusMonth"));
+});
