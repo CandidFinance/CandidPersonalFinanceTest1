@@ -1,5 +1,6 @@
 import { moduleAnswered } from "./appEntry.js";
 import { MODULE_GUIDES } from "./moduleGuide.js";
+import { childcareSupport } from "./childcare.js";
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby } from "lucide-react";
 import { fmt } from "./format.js";
 import { taxYearOf } from "./taxYear.js";
@@ -45,7 +46,7 @@ export const MODULE_TAG = {
   studentLoan:  { label:"Today",             color:"#c4963a" },
   mortgage:     { label:"Today",             color:"#c4963a" },
   personalLoan: { label:"Today",             color:"#c4963a" },
-  kids:         { label:"Future opportunity", color:"#2d6b4a" },
+  kids:         { label:"Today",             color:"#c4963a" },
 };
 
 // ── MVP scope ──────────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ export const MODULE_TAG = {
 // To re-enable a module: flip this back to false — onboarding fields, dashboard
 // tiles and routing all reappear at once, no other code changes needed.
 export const HIDE_MVP_MODULES = true;
-export const HIDDEN_MVP_MODULE_KEYS = ["mortgage", "personalLoan", "kids"];
+export const HIDDEN_MVP_MODULE_KEYS = ["mortgage", "personalLoan"];
 
 // Also, for someone not working: no salary, bonus or workplace pension
 // payments, whatever was entered before they switched. Those questions hide,
@@ -71,7 +72,7 @@ export function sanitizeForMvp(d) {
   const out = d.employmentStatus === "not_working" ? { ...d, salary: "0", bonusAmount: "0", myContribution: "0", employerMatch: "0",
     previousSalary: d.salary, previousMyContribution: d.myContribution, previousEmployerMatch: d.employerMatch } : d;
   if (!HIDE_MVP_MODULES) return out;
-  return { ...out, hasMortgage: "no", ownsOutright: false, hasPersonalLoan: "no", hasKids: "no" };
+  return { ...out, hasMortgage: "no", ownsOutright: false, hasPersonalLoan: "no" };
 }
 
 // ── Local module status computation ──────────────────────────────────────────
@@ -231,10 +232,11 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const pensionPrimaryAmount = notPayingIn ? missedRelief : contributing ? m.missedMatch : 0;
   // Child Benefit paid back (income over £60,000), when paying in could stop it.
   const cbCharge = childBenefitCharge(d, m);
+  // Child Benefit is Kids & family's figure now (below), not Pension's.
   const cbAmount = cbCharge && cbCharge.charge > 0 && cbCharge.payInNeeded <= aaRoom.room ? cbCharge.charge : 0;
   const adequacy = retirementAdequacy(d, m);
   const retirementGap = adequacy && adequacy.gap > adequacy.target * 0.05 ? adequacy.gap : 0;
-  const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount + cbAmount); // definitive only
+  const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount); // definitive only
   const pensionPotentialAmount = Math.round(bonusSacrifice.beyondTaper); // potential — not in amount
   // Sort priority still weighs the potential upside too, so a large bonus-sacrifice
   // opportunity isn't buried in the module ordering just because it's not "definitive".
@@ -248,7 +250,6 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
       ? `${d.hasPension === "yes" ? "Nothing paid in" : "No pension"}: ${fmt(pensionPrimaryAmount)}/yr of tax relief missed`
       : contributing && m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of employer match unclaimed` : null,
     pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr of tax-free allowance you could win back` : null,
-    cbAmount > 0 ? `${fmt(cbAmount)}/yr of Child Benefit paid back` : null,
     retirementGap > 0 ? `${fmt(retirementGap)}/yr short of the retirement income you'd like` : null,
     pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} saved by paying your bonus into your pension` : null,
     aaRoom.excess > 0 ? `Payments in may go over your reduced ${fmt(aaRoom.approxAA)} pension annual allowance` : null,
@@ -271,7 +272,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     // "critical" when genuinely missing match or not contributing at all;
     // "attention" only when there's still something to act on; otherwise "ok".
     status: notPayingIn ? "critical" : contributing && m.missedMatch > 0 ? "critical"
-          : pensionTaperAmount > 0 || cbAmount > 0 || retirementGap > 0 || pensionPotentialAmount > 0 || aaRoom.excess > 0 || nonEarnerRelief ? "attention" : "ok",
+          : pensionTaperAmount > 0 || retirementGap > 0 || pensionPotentialAmount > 0 || aaRoom.excess > 0 || nonEarnerRelief ? "attention" : "ok",
     impact: pensionImpact,
     impactLabel: pensionLabelParts.join(" + ") || null,
     amount: pensionAmount,
@@ -330,17 +331,26 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     amount: plInterestRemaining,
   };
 
-  // Kids
-  const kidsAge = d.hasKids === "yes" && d.kidsAges ? parseInt(d.kidsAges.split(",")[0]) : null;
-  const kidsRunway = kidsAge !== null ? Math.max(0, 18 - kidsAge) : 10;
-  const kidsImpact = d.hasKids === "yes" && d.hasJISA !== "yes"
-    ? Math.round(100 * 12 * ((Math.pow(1 + GROWTH, kidsRunway)-1)/GROWTH)) : 0;
+  // Kids & family (childcare.js): childcare support a pension payment would
+  // restore, Tax-Free Childcare not claimed, and Child Benefit paid back.
+  // Near the £100,000 line, or out of reach (a partner over it, or too far
+  // over for a pension payment), there's nothing to act on, so it's "ok"
+  // with a line that says so.
+  const cc = childcareSupport(d, m);
+  const ccKeep = cc?.recoverable ? cc.atStake : 0;
+  const ccUnclaimed = cc?.unclaimed || 0;
+  const kidsAmount = Math.round(ccKeep + ccUnclaimed + cbAmount);
   s.kids = {
-    status: d.hasKids !== "yes" ? "na" : d.hasJISA !== "yes" ? "attention" : "ok",
-    impact: kidsImpact,
-    impactLabel: kidsImpact > 0 ? `~${fmt(kidsImpact)} JISA growth potential (£100/mo at 7%)` : null,
-    amount: kidsImpact,
-    amountIsLumpSum: true, // projected total by age 18, not a £/yr figure — exclude from /yr sums
+    status: ccKeep > 0 ? "critical" : ccUnclaimed > 0 || cbAmount > 0 ? "attention" : "ok",
+    impact: kidsAmount,
+    impactLabel: [
+      ccKeep > 0 ? `${fmt(ccKeep)}/yr of childcare support you could keep` : null,
+      ccUnclaimed > 0 ? `${fmt(ccUnclaimed)}/yr of Tax-Free Childcare unclaimed` : null,
+      cbAmount > 0 ? `${fmt(cbAmount)}/yr of Child Benefit paid back` : null,
+      cc?.state === "near" ? `${fmt(cc.headroom)} under the £100,000 childcare limit` : null,
+      cc?.state === "partner" ? "Childcare support out of reach while your partner's income is over £100,000" : null,
+    ].filter(Boolean).join(" + ") || null,
+    amount: kidsAmount,
   };
 
   // Modules the user didn't pick on the "Focus" onboarding step read as not
@@ -352,8 +362,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Opened but skipped counts as not answered too (moduleAnswered): its
   // figures would be guesses from blank answers, and the totals show actual
   // figures only.
-  const selectedModules = new Set(["cash", "investments", "pension", "studentLoan"].filter(k => moduleAnswered(k, d)));
-  for (const key of ["cash", "investments", "pension"]) {
+  const selectedModules = new Set(["cash", "investments", "pension", "studentLoan", "kids"].filter(k => moduleAnswered(k, d)));
+  for (const key of ["cash", "investments", "pension", "kids"]) {
     if (!selectedModules.has(key)) {
       s[key] = { status: "na", impact: 0, impactLabel: null, amount: 0 };
     }
@@ -487,10 +497,10 @@ export function gainedSoFar(d, now = new Date(), from = null) {
     byModule: Object.entries(byModule).map(([key, mod]) => ({ key, gained: Math.round(mod.gained), perYear: Math.round(mod.perYear) })).sort((a, b) => b.perYear - a.perYear) };
 }
 // The baselines with any newly answered module added, or null if none is
-// new. Lump sums (Kids, £ by 18) aren't comparable, so aren't tracked.
+// new.
 export function baselinePatch(d, statuses) {
   const base = d.moduleBaselines || {};
-  const added = MODULE_META.filter(mm => mm.key !== "kids" && !(mm.key in base) && statuses[mm.key] && statuses[mm.key].status !== "na");
+  const added = MODULE_META.filter(mm => !(mm.key in base) && statuses[mm.key] && statuses[mm.key].status !== "na");
   if (!added.length) return null;
   return { ...base, ...Object.fromEntries(added.map(mm => [mm.key, { amount: Math.round(statuses[mm.key].amount || 0), answers: ownAnswers(d, mm.key), banked: 0 }])) };
 }
@@ -509,11 +519,9 @@ export function getModuleBreakdown(d, m, statuses, insights, sortMode = "amount"
   // copy on the Modules screen, which exists specifically so the default £-gap
   // order isn't read as a priority call the app is making on the user's behalf.
   // Modules with nothing actionable (amount === 0) sink to the bottom regardless
-  // of sort mode. Kids & Family is excluded from the ranking and always placed
-  // last — its `amount` is a lump sum by age 18, not a £/yr figure, so it isn't
-  // comparable to the others under either sort mode.
-  const rankedModules = activeModules.filter(mm => mm.key !== "kids");
-  const kidsModule     = activeModules.find(mm => mm.key === "kids") || null;
+  // of sort mode.
+  const rankedModules = activeModules;
+  const kidsModule     = null;
   const modulesActionable = rankedModules.filter(mm => mm.amount > 0);
   // "Category" groups Today-actionable items ahead of Future-opportunity items
   // (the same Today/Future split already shown via each tile's TagPill), with

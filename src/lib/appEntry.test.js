@@ -55,7 +55,7 @@ test("picks not answered yet stay on home until they are", () => {
 });
 
 test("the Modules tab lists every module not answered, picks first", () => {
-  assert.deepEqual(notStarted({ interests: ["studentLoan"], selectedModules: ["pension"] }), ["studentLoan", "cash", "investments", "property"]);
+  assert.deepEqual(notStarted({ interests: ["studentLoan"], selectedModules: ["pension"] }), ["studentLoan", "cash", "investments", "kids", "property"]);
 });
 
 test("goals add to the entry's goals; none of these adds nothing", () => {
@@ -85,7 +85,7 @@ test("a module is done once it's selected; Property once its first step is compl
 
 test("picks come first in the order offered, then the rest", () => {
   assert.deepEqual(moduleOrder({ interests: ["studentLoan", "cash"] }),
-    ["cash", "studentLoan", "pension", "investments", "property"]);
+    ["cash", "studentLoan", "pension", "investments", "kids", "property"]);
 });
 
 test("just exploring leads with the module most people start with", () => {

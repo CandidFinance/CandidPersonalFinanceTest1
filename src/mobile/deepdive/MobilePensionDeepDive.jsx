@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { pensionReveal } from "../../lib/moduleReveal.js";
+import { childcareSupport } from "../../lib/childcare.js";
 import { pensionOutlook, cliffEdge } from "../../lib/crossModule.js";
 import { AlertTriangle, PartyPopper, Banknote, Check } from "lucide-react";
 import {
@@ -135,6 +136,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   // both limited to the Annual Allowance room left this year.
   const aaRoom = calcAnnualAllowanceRoom(d, m);
   const taper = calcPensionTaperSaving(m, aaRoom.room);
+  const childcare = childcareSupport(d, m);
   const showSacrificeCalc = taper.recoverable || (m.adjustedNetIncome >= 80000 && m.adjustedNetIncome <= 100000);
 
   const aa = calcAnnualAllowanceTaper(d, m);
@@ -224,11 +226,11 @@ export default function MobilePensionDeepDive({ d, m, set }) {
           </div>
         </div>
       )}
-      {d.hasKids === "yes" && (
+      {childcare?.recoverable && childcare.atStake > 0 && (
         <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"10px",padding:"12px 14px",marginBottom:"8px"}}>
           <div style={{fontSize:"10.5px",fontWeight:700,color:CRITICAL,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"6px"}}>Also at stake: your childcare support</div>
           <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-            Tax-Free Childcare and free childcare hours are lost entirely — not tapered — the moment either parent crosses £100,000. Staying under it can be worth £5,000–£7,500 per child a year.
+            Over £100,000, Tax-Free Childcare{childcare.hours > 0 ? " and the funded hours" : ""} stop for the whole year. Bringing your income back to £100,000 would also restore {fmt(childcare.atStake)} a year of childcare support (Kids &amp; family).
           </p>
         </div>
       )}

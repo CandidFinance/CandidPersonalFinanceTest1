@@ -282,7 +282,7 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
 // (SignInSetup.jsx), which is for subscribers.
 const ALERTS_LIVE = import.meta.env.VITE_ALERTS_LIVE === "1";
 const INCLUDED = [
-  ["Unrestricted module access", "Deep-dive breakdowns across your Pension, Cash, Investments and Student Loan."],
+  ["Unrestricted module access", "Deep-dive breakdowns across your Pension, Cash, Investments, Student Loan and Kids & family."],
   ["Candid Assist", "On-demand AI guidance inside every module to explain your specific numbers."],
   ALERTS_LIVE ? ["Proactive financial alerts", "Timely updates when a better savings rate appears, before your bonus lands, or as tax-year deadlines approach."] : null,
   ["Cross-device sync", "Secure access across all your devices via Face ID, Touch ID or password."],

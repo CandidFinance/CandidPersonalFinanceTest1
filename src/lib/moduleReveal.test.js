@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pensionReveal } from "./moduleReveal.js";
+import { pensionReveal, kidsReveal } from "./moduleReveal.js";
 import { calcMetrics } from "./metrics.js";
 import { computeModuleStatuses } from "./moduleStatus.js";
 
@@ -35,15 +35,53 @@ test("on track: the projected pot, and nothing to change without a bonus", () =>
   assert.match(steps[2].body, /^Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash\./);
 });
 
-// Child Benefit paid back over £60,000, and a retirement income short of the
-// target, each get the answer when they're the thing to look at.
-test("Child Benefit charge: what's paid back, and the pension payment that keeps it", () => {
-  const { steps } = reveal({ ...base, salary: "70000", myContribution: "5", employerMatch: "5", childBenefitChildren: "2", cbHigherEarner: "yes" });
+// Child Benefit and childcare are Kids & family's: the answer there, never
+// counted in Pension's figure as well.
+const family = { ...base, selectedModules: ["pension", "kids"], answeredModules: ["pension", "kids"], myContribution: "5", employerMatch: "5", pensionType: "sacrifice", ukNation: "england" };
+const kids = d => { const m = calcMetrics(d); return { steps: kidsReveal(d, m), statuses: computeModuleStatuses(d, m) }; };
+
+test("Child Benefit charge: Kids & family's answer, and the pension payment that keeps it", () => {
+  const d = { ...family, salary: "70000", childBenefitChildren: "2", cbHigherEarner: "yes" };
+  const { steps, statuses } = kids(d);
   // £70,000 less £3,500 sacrificed: £66,500, 32% of £2,337 (two children).
   assert.equal(steps[0].figure, "£748 a year");
   assert.match(steps[2].title, /Paying £6,500 more into your pension would bring your income to £60,000/);
-  // A partner who earns more pays it instead.
-  assert.notEqual(reveal({ ...base, salary: "70000", myContribution: "5", employerMatch: "5", childBenefitChildren: "2", cbHigherEarner: "no" }).steps[0].title, "of Child Benefit you're paying back in tax.");
+  assert.equal(statuses.kids.amount, 748);
+  assert.equal(statuses.pension.amount, reveal({ ...d, childBenefitChildren: "0" }).statuses.pension.amount);
+  // A partner who earns more pays it instead: nothing here to explain.
+  assert.equal(kids({ ...d, cbHigherEarner: "no" }).steps, null);
+});
+
+test("over £100,000 with a toddler in England: the childcare a pension payment would restore", () => {
+  const d = { ...family, salary: "110000", kidsPreschool: "1", kidsSchool: "0", childcareMonthly: "1500", partnerOver100k: "no" };
+  const { steps, statuses } = kids(d);
+  // £110,000 less £5,500 sacrificed: £104,500. £2,000 + £8,290.
+  assert.equal(steps[0].figure, "£10,290 a year");
+  assert.match(steps[1].title, /^Tax-Free Childcare and the 30 funded hours stop for the whole year once either parent's income is over £100,000\. Yours is £104,500\.$/);
+  assert.match(steps[2].title, /^A pension payment of £4,500 \(including the tax relief added\)/);
+  assert.equal(statuses.kids.status, "critical");
+  assert.equal(statuses.kids.amount, 10290);
+  // Pension says so in a line, without adding it to its own figure.
+  const p = reveal(d);
+  assert.match(p.steps[1].body, /It would also restore £10,290 a year of childcare support: see Kids & family\./);
+});
+
+test("Tax-Free Childcare not claimed, a partner over £100,000, and close to the line", () => {
+  const unclaimed = kids({ ...family, salary: "60000", kidsPreschool: "0", kidsSchool: "1", childcareMonthly: "400", partnerOver100k: "no", tfcClaiming: "no" });
+  assert.equal(unclaimed.steps[0].figure, "£960 a year");
+  assert.match(unclaimed.steps[0].title, /Tax-Free Childcare you could claim/);
+  const partner = kids({ ...family, salary: "60000", kidsPreschool: "1", partnerOver100k: "yes" });
+  assert.match(partner.steps[0].title, /out of reach while your partner's income is over £100,000/);
+  assert.equal(partner.statuses.kids.amount, 0);
+  const near = kids({ ...family, salary: "100000", kidsPreschool: "1", partnerOver100k: "no", tfcClaiming: "yes", childcareMonthly: "1500" });
+  assert.match(near.steps[1].title, /^You're £5,000 under it\./);
+  assert.equal(near.steps[2].title, "Nothing to change right now.");
+});
+
+test("Wales: the Childcare Offer isn't counted, and the answer says why", () => {
+  const { steps } = kids({ ...family, salary: "110000", ukNation: "wales", kidsPreschool: "1", childcareMonthly: "1500", partnerOver100k: "no" });
+  assert.equal(steps[0].figure, "£2,000 a year");
+  assert.match(steps[1].body, /tested on gross income/);
 });
 
 test("retirement: short of the target says by how much, and roughly what would close it", () => {
@@ -67,7 +105,7 @@ const run = (d, fn) => { const m = calcMetrics(d, rates); return { steps: fn(d, 
 const cashBase = { selectedModules: ["cash"], salary: "45000", monthlyExpenses: "2000" };
 
 test("every module has a reveal of three steps", () => {
-  assert.deepEqual(Object.keys(MODULE_REVEALS).sort(), ["cash", "investments", "pension", "studentLoan"]);
+  assert.deepEqual(Object.keys(MODULE_REVEALS).sort(), ["cash", "investments", "kids", "pension", "studentLoan"]);
 });
 
 test("cash: an emergency fund short of target comes first, with the shortfall the screen shows", () => {

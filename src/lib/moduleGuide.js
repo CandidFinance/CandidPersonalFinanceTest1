@@ -17,7 +17,8 @@ import { estimatePensionPot, LUMP_SUM_ALLOWANCE, hasStartedDrawing } from "./pen
 import { STATE_PENSION_FULL } from "./tax.js";
 import { workingPastRetirementAge } from "./metrics.js";
 import { resolveSlRate, studentLoanPlanFrom, estimateSlBalance, slEstimateReady } from "./studentLoan.js";
-import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION } from "./sharedQuestions.js";
+import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION, NATION_OPTIONS, nationAlso } from "./sharedQuestions.js";
+import { CHILDCARE_INCOME_LIMIT } from "./childcare.js";
 
 const YES_NO = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }];
 const LEAVE_BLANK = { label:"I'm not sure" };
@@ -320,22 +321,6 @@ const PENSION_QUESTIONS = [
     showIf: ctx => (hasPot(ctx) || finalSalary(ctx) || workingPastRetirementAge(ctx.d)) && !hasStartedDrawing(ctx.d),
   },
   {
-    // Only where the charge can apply: income over £60,000.
-    id:"childBenefit", field:"childBenefitChildren", kind:"choice",
-    ask: () => "How many children do you get Child Benefit for?",
-    why: () => "Above £60,000, Child Benefit is clawed back through tax.",
-    options: () => [{ value:"0", label:"None" }, { value:"1", label:"1" }, { value:"2", label:"2" }, { value:"3", label:"3" }, { value:"4", label:"4 or more" }],
-    showIf: ({ m }) => (m?.adjustedNetIncome || 0) > 60000,
-    ifMissing: ({ d }) => d.childBenefitChildren == null || d.childBenefitChildren === "",
-  },
-  {
-    id:"cbHigherEarner", field:"cbHigherEarner", kind:"choice",
-    ask: () => "Do you earn more than your partner?",
-    why: () => "The charge falls on whichever of you earns more.",
-    options: () => [{ value:"yes", label:"Yes, or I don't have a partner" }, { value:"no", label:"No, my partner earns more" }],
-    showIf: ({ d, m }) => (m?.adjustedNetIncome || 0) > 60000 && +d.childBenefitChildren > 0,
-  },
-  {
     // The Retirement Living Standards (Pensions UK, 2025): what a year costs
     // one person, after tax, owning their home outright.
     id:"retirementTarget", field:"retirementTarget", kind:"choice",
@@ -501,12 +486,87 @@ const STUDENT_LOAN_QUESTIONS = [
   },
 ];
 
+// Kids & family (childcare.js): childcare support, what crossing £100,000
+// costs, and the Child Benefit charge (moved here from Pension).
+const COUNT_OPTIONS = [{ value:"0", label:"None" }, { value:"1", label:"1" }, { value:"2", label:"2" }, { value:"3", label:"3 or more" }];
+const under12 = ({ d }) => (+d.kidsPreschool || 0) + (+d.kidsSchool || 0) > 0;
+const KIDS_QUESTIONS = [
+  ...ABOUT_YOU,
+  {
+    // Anyone who answered "No" to the older "Do you live in Scotland?":
+    // which of the other three, since childcare help differs. Hidden once
+    // answered, so it's never asked twice in one walk-through.
+    id:"kidsNation", field:"ukNation", kind:"choice", group:"you",
+    ask: () => "Where in the UK do you live?",
+    why: () => "Childcare help is different in each nation.",
+    options: () => NATION_OPTIONS,
+    also: nationAlso,
+    showIf: ({ d }) => !d.ukNation && d.scottishTaxpayer !== "yes",
+  },
+  {
+    id:"kidsPreschool", field:"kidsPreschool", kind:"choice",
+    ask: () => "How many of your children haven't started school yet?",
+    why: () => "Under-fives get the most help with childcare costs.",
+    options: () => COUNT_OPTIONS,
+  },
+  {
+    id:"kidsSchool", field:"kidsSchool", kind:"choice",
+    ask: () => "And how many are at school, aged 11 or under?",
+    why: () => "Tax-Free Childcare also covers clubs and holiday care up to 11.",
+    options: () => COUNT_OPTIONS,
+  },
+  {
+    id:"childcareBill", field:"childcareMonthly", kind:"money", label:"Childcare a month", cap:"childcareMonthly",
+    ask: () => "Roughly what do you pay for childcare a month?",
+    why: () => "Tax-Free Childcare adds 20% of it, up to £2,000 a child.",
+    note: () => "Nursery, childminder, clubs and holiday care, before any help.",
+    notSure: () => ({ label:"Not sure", value:"" }),
+    showIf: under12,
+  },
+  {
+    id:"partnerOver100k", field:"partnerOver100k", kind:"choice",
+    ask: () => "Is your partner's income over £100,000?",
+    why: () => "Either parent earning over £100,000 ends this help for both.",
+    options: () => [{ value:"no", label:"No" }, { value:"yes", label:"Yes" }, { value:"single", label:"I don't have a partner" }],
+    // No partner: they're the higher earner, for the Child Benefit charge.
+    also: value => value === "single" ? { cbHigherEarner: "yes" } : {},
+    showIf: under12,
+  },
+  {
+    // Eligible and paying for childcare: whether they're getting it.
+    id:"tfcClaiming", field:"tfcClaiming", kind:"choice",
+    ask: () => "Do you use Tax-Free Childcare now?",
+    why: () => "It adds £2 for every £8 you pay your provider.",
+    options: () => [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }, { value:"", label:"Not sure" }],
+    showIf: ctx => under12(ctx) && +ctx.d.childcareMonthly > 0 && ctx.d.partnerOver100k !== "yes"
+      && (ctx.m?.adjustedNetIncome || 0) <= CHILDCARE_INCOME_LIMIT && !ctx.m?.noEarnings,
+  },
+  {
+    // Only where the charge can apply: income over £60,000.
+    id:"childBenefit", field:"childBenefitChildren", kind:"choice",
+    ask: () => "How many children do you get Child Benefit for?",
+    why: () => "Above £60,000, Child Benefit is clawed back through tax.",
+    options: () => [{ value:"0", label:"None" }, { value:"1", label:"1" }, { value:"2", label:"2" }, { value:"3", label:"3" }, { value:"4", label:"4 or more" }],
+    showIf: ({ m }) => (m?.adjustedNetIncome || 0) > 60000,
+    ifMissing: ({ d }) => d.childBenefitChildren == null || d.childBenefitChildren === "",
+  },
+  {
+    id:"cbHigherEarner", field:"cbHigherEarner", kind:"choice",
+    ask: () => "Do you earn more than your partner?",
+    why: () => "The charge falls on whichever of you earns more.",
+    options: () => [{ value:"yes", label:"Yes, or I don't have a partner" }, { value:"no", label:"No, my partner earns more" }],
+    // No partner: they're the one who'd pay it.
+    showIf: ({ d, m }) => (m?.adjustedNetIncome || 0) > 60000 && +d.childBenefitChildren > 0 && d.partnerOver100k !== "single",
+  },
+];
+
 // `emptyText`: the blurred card's line while the questions are asked.
 export const MODULE_GUIDES = {
   cash:        { questions: CASH_QUESTIONS,         emptyText: "Answer a few questions below to see how your savings stack up." },
   investments: { questions: INVESTMENTS_QUESTIONS,  emptyText: "Answer a few questions below to see how your investments are set up." },
   pension:     { questions: PENSION_QUESTIONS,      emptyText: "Answer a few questions below to see where your pension stands." },
   studentLoan: { questions: STUDENT_LOAN_QUESTIONS, emptyText: "Answer a few questions below to see whether overpaying is worth it." },
+  kids:        { questions: KIDS_QUESTIONS,         emptyText: "Answer a few questions below to see the childcare help you could get." },
 };
 
 // A module's walk-through starts by itself until its questions have been

@@ -41,13 +41,13 @@ const BLANK_DATA = {
   // `interests`: the modules picked at the app's entry
   // (src/lib/appEntry.js), plus "property" or "exploring". `appEntered`:
   // they've been through that entry, which opens the app before any report.
-  name:"", email:"", interests:[], appEntered:false, notWorkingReason:"", earnedThisTaxYear:"", askedFields:[], scottishTaxpayer:"",
+  name:"", email:"", interests:[], appEntered:false, notWorkingReason:"", earnedThisTaxYear:"", askedFields:[], scottishTaxpayer:"", ukNation:"", kidsPreschool:"", kidsSchool:"", childcareMonthly:"", partnerOver100k:"", tfcClaiming:"",
   // `goalPicks`: the answer to the goals card on home (merged into
   // financialGoals); `goalsAsked`: that card has been answered or dismissed.
   // `scoreShown`: the Candid score has appeared (src/lib/appEntry.js
   // scoreUnlocked), so its first appearance is recorded once.
   goalPicks:[], goalsAsked:false, scoreShown:false,
-  // Which of the 4 active MVP modules (cash, investments, pension, studentLoan —
+  // Which of the active modules (cash, investments, pension, studentLoan, kids —
   // matching MODULE_META keys) the user picked on the "Focus" onboarding step.
   // Drives which subsequent steps are shown (getActiveSteps) and which modules
   // computeModuleStatuses treats as applicable.

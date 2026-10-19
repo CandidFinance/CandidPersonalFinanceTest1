@@ -10,7 +10,7 @@
 // The modules a user can start from, in the order offered when nothing
 // else decides it. "property" isn't in MODULE_META yet (see
 // MobilePropertyScreen) but is offered the same way.
-export const START_MODULES = ["pension", "cash", "investments", "studentLoan", "property"];
+export const START_MODULES = ["pension", "cash", "investments", "studentLoan", "kids", "property"];
 
 // One line per module on the home screen, saying what the user gets.
 export const MODULE_PITCH_SELF_EMPLOYED = { pension: "See the tax relief on what you pay in, and where it's heading." };
@@ -20,6 +20,7 @@ export const MODULE_PITCH = {
   cash:        "See how long your savings would last, and what they could earn.",
   investments: "Make the most of your tax-free allowances.",
   studentLoan: "Find out whether paying it off early is worth it.",
+  kids:        "See the childcare help you could get, and what £100,000 costs a parent.",
   property:    "See what you could borrow, and whether buying beats renting.",
 };
 
@@ -36,6 +37,7 @@ export const ENTRY_CHOICES = [
   { value:"pension",     label:"Pension" },
   { value:"retirement",  label:"Retirement planning", goal:"retirement" },
   { value:"studentLoan", label:"Student loan" },
+  { value:"kids",        label:"Childcare and family" },
   { value:"property",    label:"Buying a home", goal:"buy_house" },
   { value:"exploring",   label:"Just exploring", exclusive:true },
 ];
@@ -99,7 +101,7 @@ export const ENTRY_QUESTIONS = [
 ];
 
 // The modules' names as the entry's messages say them.
-export const MODULE_NAMES = { pension:"Pension", cash:"Cash & savings", investments:"Investments", studentLoan:"Student loan", property:"Buying a home" };
+export const MODULE_NAMES = { pension:"Pension", cash:"Cash & savings", investments:"Investments", studentLoan:"Student loan", kids:"Kids & family", property:"Buying a home" };
 // The first module picked at the entry, which the app opens straight after
 // it, and where it lives; null for "Just exploring".
 export const firstPick = d => pickedModules(d.interests)[0] || null;
@@ -167,10 +169,11 @@ const TO_HAND = {
   pension:     [{ what:"An idea of your pension", where:"What you pay in, what your employer pays in, and what the pot's worth." }],
   money:       [{ what:"An idea of where your money sits", where:"Savings accounts, ISAs, investments, Premium Bonds, or cash under the mattress." }],
   studentLoan: [{ what:"Your student loan plan and balance", where:"Not sure? We can work it out with you." }],
+  kids:        [{ what:"What you pay for childcare a month", where:"Nursery, childminder, clubs and holiday care." }],
   property:    [{ what:"What you've saved towards a deposit" },
                 { what:"Roughly what you'd like to spend on a home" }],
 };
-const TO_HAND_TOPIC = { pension:"pension", cash:"money", investments:"money", studentLoan:"studentLoan", property:"property" };
+const TO_HAND_TOPIC = { pension:"pension", cash:"money", investments:"money", studentLoan:"studentLoan", kids:"kids", property:"property" };
 export function toHandFor(interests) {
   const exploring = (interests || []).includes("exploring") || !(interests || []).length;
   const topics = exploring ? ["pension", "money"] : [...new Set(pickedModules(interests).map(k => TO_HAND_TOPIC[k]))];

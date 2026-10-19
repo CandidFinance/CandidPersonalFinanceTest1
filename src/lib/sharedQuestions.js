@@ -51,14 +51,23 @@ export const EARNED_THIS_YEAR_QUESTION = {
   ifMissing: ({ d }) => d.employmentStatus === "not_working" && d.notWorkingReason === "break" && (d.earnedThisTaxYear === "" || d.earnedThisTaxYear == null),
 };
 
-// Scotland has its own income tax rates (tax.js). Asked once of everyone,
-// since it changes the tax on pay, pensions and the £100k trap.
-export const SCOTLAND_QUESTION = {
-  id:"scotland", field:"scottishTaxpayer", kind:"choice", group:"you",
-  ask: () => "Do you live in Scotland?",
-  why: () => "Scotland has its own income tax rates.",
-  options: () => [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }],
-  ifMissing: ({ d }) => d.scottishTaxpayer == null || d.scottishTaxpayer === "",
+// Where they live. Scotland has its own income tax rates (tax.js), and
+// childcare help differs in each nation (childcare.js). Asked once of
+// everyone; the answer also sets scottishTaxpayer, which the tax sums read.
+// Anyone who answered the older "Do you live in Scotland?" isn't asked again
+// here; Kids & family asks where, if it needs to know (moduleGuide.js).
+export const NATION_OPTIONS = [
+  { value:"england", label:"England" }, { value:"scotland", label:"Scotland" },
+  { value:"wales", label:"Wales" }, { value:"ni", label:"Northern Ireland" },
+];
+export const nationAlso = value => ({ scottishTaxpayer: value === "scotland" ? "yes" : "no" });
+export const NATION_QUESTION = {
+  id:"nation", field:"ukNation", kind:"choice", group:"you",
+  ask: () => "Where in the UK do you live?",
+  why: () => "Scotland has its own tax rates, and childcare help differs by nation.",
+  options: () => NATION_OPTIONS,
+  also: nationAlso,
+  ifMissing: ({ d }) => !d.ukNation && !d.scottishTaxpayer,
 };
 
 export const SALARY_QUESTION = {
@@ -131,4 +140,4 @@ export const SPENDING_QUESTION = {
 };
 
 // Employment first, so salary can be skipped for someone not working.
-export const ABOUT_YOU = [EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, EARNED_THIS_YEAR_QUESTION, SALARY_QUESTION, SCOTLAND_QUESTION, ...EXTRA_INCOME_QUESTIONS];
+export const ABOUT_YOU = [EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, EARNED_THIS_YEAR_QUESTION, SALARY_QUESTION, NATION_QUESTION, ...EXTRA_INCOME_QUESTIONS];

@@ -1,0 +1,120 @@
+import { useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
+import { fmt } from "../../lib/format.js";
+import { childcareSupport, CHILDCARE_INCOME_LIMIT, CHILDCARE_HOURLY_PRICE, TFC_CAP_PER_CHILD } from "../../lib/childcare.js";
+import { childBenefitCharge, calcAnnualAllowanceRoom } from "../../lib/pension.js";
+import { G, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
+
+// Kids & family: childcare support (Tax-Free Childcare and, in England, the
+// funded hours) and what crossing £100,000 costs, plus the Child Benefit
+// charge. The same figures as the module's status and its answer step by
+// step (childcare.js, pension.js childBenefitCharge). Where a pension
+// payment would restore it, the link goes to Pension, which has the tax side.
+const NATION_NAME = { england: "England", wales: "Wales", scotland: "Scotland", ni: "Northern Ireland" };
+
+export default function MobileKidsDeepDive({ d, m }) {
+  const navigate = useNavigate();
+  const cc = childcareSupport(d, m);
+  const cb = childBenefitCharge(d, m);
+  const cbKeep = cb && cb.charge > 0 && cb.payInNeeded <= calcAnnualAllowanceRoom(d, m).room ? cb.charge : 0;
+  // The same lead figure as the answer step by step (moduleReveal.js
+  // kidsReveal): childcare a pension payment would restore, else Tax-Free
+  // Childcare not claimed, else Child Benefit. Child Benefit alongside the
+  // first two is a line under it; Home and Modules show the total.
+  const ccLead = cc?.recoverable ? cc.atStake : cc?.unclaimed || 0;
+  const lead = ccLead > 0 ? ccLead : cbKeep;
+  const label = cc?.recoverable ? "Childcare support you could keep"
+    : cc?.unclaimed > 0 ? "Tax-Free Childcare you could claim"
+    : "Child Benefit you could keep";
+  const row = { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px", padding:"12px 0", borderBottom:"1px solid rgba(22,47,36,0.08)" };
+  const rowLabel = { fontSize:"13.5px", color:TEXT, fontWeight:600 };
+  const rowNote = { fontSize:"12px", color:MUT, marginTop:"2px", lineHeight:1.45 };
+  const rowFigure = { fontFamily:SERIF, fontSize:"17px", color:G, fontWeight:700, whiteSpace:"nowrap" };
+  const stateLine = !cc ? null
+    : cc.state === "lost" ? `Your income is ${fmt(Math.round(cc.ani))}, over the ${fmt(CHILDCARE_INCOME_LIMIT)} limit, so this support stops for the whole year.`
+    : cc.state === "partner" ? `Your partner's income is over ${fmt(CHILDCARE_INCOME_LIMIT)}, so this support isn't available to either of you.`
+    : cc.state === "near" ? `You're ${fmt(cc.headroom)} under the ${fmt(CHILDCARE_INCOME_LIMIT)} limit. A pay rise or bonus that takes you over would stop it for the whole year.`
+    : cc.state === "notWorking" ? "Tax-Free Childcare needs each parent to be working."
+    : `You're under the ${fmt(CHILDCARE_INCOME_LIMIT)} limit, so this support is yours.`;
+
+  return (
+    <div>
+      {lead > 0 && (
+        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"18px"}}>
+          <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+          <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(lead)}</div>
+          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>{label} a year</div>
+          {cc?.recoverable && (
+            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
+              A pension payment of {fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to {fmt(CHILDCARE_INCOME_LIMIT)} and restore it.
+            </div>
+          )}
+          {ccLead > 0 && cbKeep > 0 && (
+            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"8px"}}>
+              Plus {fmt(cbKeep)} a year of Child Benefit paid back in tax (below).
+            </div>
+          )}
+        </div>
+      )}
+
+      {cc && (
+        <section style={{marginBottom:"18px"}}>
+          <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Your childcare support, {NATION_NAME[cc.nation]}</div>
+          <div style={row}>
+            <div>
+              <div style={rowLabel}>Tax-Free Childcare</div>
+              <div style={rowNote}>
+                {cc.billKnown ? `20% of your ${fmt(Math.round(+d.childcareMonthly * 12))} a year of childcare, up to ${fmt(TFC_CAP_PER_CHILD)} a child.`
+                  : `${fmt(TFC_CAP_PER_CHILD)} for each child not yet at school, typical for full-time nursery.`}
+              </div>
+            </div>
+            <div style={rowFigure}>{fmt(cc.tfc)}</div>
+          </div>
+          {cc.nation === "england" && cc.preschool > 0 && (
+            <div style={row}>
+              <div>
+                <div style={rowLabel}>30 funded hours</div>
+                <div style={rowNote}>30 hours a week for 38 weeks, at about £{CHILDCARE_HOURLY_PRICE.toFixed(2)} an hour, for {cc.preschool === 1 ? "your child" : `your ${cc.preschool} children`} not yet at school.</div>
+              </div>
+              <div style={rowFigure}>{fmt(cc.hours)}</div>
+            </div>
+          )}
+          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:"12px 0 0"}}>{stateLine}</p>
+          {cc.nation === "wales" && cc.preschool > 0 && (
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>Wales's Childcare Offer for 3 and 4 year olds is tested on gross income, which a pension payment doesn't change, so it isn't counted here.</p>
+          )}
+          {cc.nation === "scotland" && cc.preschool > 0 && (
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>Scotland's 1,140 funded hours have no income limit, so they aren't affected.</p>
+          )}
+        </section>
+      )}
+
+      {cb && cb.charge > 0 && (
+        <section style={{marginBottom:"18px"}}>
+          <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Child Benefit</div>
+          <div style={row}>
+            <div>
+              <div style={rowLabel}>Paid back in tax</div>
+              <div style={rowNote}>1% of your Child Benefit for every £200 of income over £60,000.{cbKeep > 0 ? ` A pension payment of ${fmt(cb.payInNeeded)} would bring your income to £60,000 and keep it all.` : ""}</div>
+            </div>
+            <div style={rowFigure}>{fmt(cb.charge)}</div>
+          </div>
+        </section>
+      )}
+
+      {cc?.recoverable && (
+        <button type="button" onClick={() => navigate("/app/module/pension")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",padding:"14px 0",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
+          <span>
+            <span style={{display:"block",fontSize:"14px",fontWeight:700,color:G}}>The tax a pension payment saves</span>
+            <span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"2px"}}>Worked out in Pension, on the same figures</span>
+          </span>
+          <ChevronRight size={18} color={G}/>
+        </button>
+      )}
+
+      {!cc && !(cb && cb.charge > 0) && (
+        <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6}}>No childcare support or Child Benefit to check on what you've told us. Changing your answers in Edit inputs brings it in.</p>
+      )}
+    </div>
+  );
+}

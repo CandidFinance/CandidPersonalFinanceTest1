@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { childcareSupport } from "../../lib/childcare.js";
 import { Check, Users, Coins, ChevronRight, Home } from "lucide-react";
 import { SUCCESS, G, GOLD, WHITE, MUT, TEXT, SERIF, SC, CDARK } from "../../design-tokens.js";
 import { getModuleBreakdown, MODULE_META } from "../../lib/moduleStatus.js";
@@ -46,6 +47,14 @@ function moduleInsights(mm, d, m) {
         { label: "Projected clear year", value: sl.willClear ? String(new Date().getFullYear() + sl.clearYr) : "Written off" },
       ];
     }
+    case "kids": {
+      const cc = childcareSupport(d, m);
+      if (!cc) return [];
+      return [
+        { label: "Childcare support", value: `${fmtCompact(cc.atStake)}/yr` },
+        { label: "£100,000 limit", value: cc.state === "near" || cc.state === "fine" ? `${fmtCompact(cc.headroom)} under` : cc.state === "lost" ? "Over" : cc.state === "partner" ? "Partner over" : "Not working" },
+      ];
+    }
     default:
       return [];
   }
@@ -61,7 +70,6 @@ function moduleInsights(mm, d, m) {
 // The old "Mortgages" teaser is now the open Property entry above these
 // (Property absorbs mortgages).
 const LOCKED_MODULES = [
-  { key:"kids", title:"Family tax planning", description:"Junior ISAs, Child Benefit tapering, and tax-efficient gifting for your children." },
   { key:"household", title:"Household finances", icon:Users, description:"Two people, one plan. Marriage or a civil partnership changes the picture, from shared allowances to how you hold savings and investments." },
 ];
 

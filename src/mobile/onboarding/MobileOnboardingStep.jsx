@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { NATION_OPTIONS, nationAlso } from "../../lib/sharedQuestions.js";
+import { nationOf } from "../../lib/childcare.js";
 import { AlertTriangle, Home, Star, Baby, RefreshCw, Shield, Lightbulb, Check } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, CDARK, CRITICAL } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
@@ -220,10 +222,12 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
               <PillSlider value={d.notWorkingReason || ""} onChange={v => set("notWorkingReason", v)} options={NOT_WORKING_OPTIONS}/>
             </div>
           )}
-          {/* Scotland's own income tax rates (tax.js). */}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginTop:"12px"}}>
-            <span style={{fontSize:"13px",color:TEXT,fontWeight:600}}>Live in Scotland?</span>
-            <div style={{width:"160px"}}><PillSlider value={d.scottishTaxpayer || "no"} onChange={v => set("scottishTaxpayer", v)} options={[{ value:"yes", label:"Yes" }, { value:"no", label:"No" }]}/></div>
+          {/* Where they live: Scotland's own income tax rates (tax.js), and
+              childcare help by nation (childcare.js). */}
+          <div style={{marginTop:"12px"}}>
+            <span style={{fontSize:"13px",color:TEXT,fontWeight:600,display:"block",marginBottom:"6px"}}>Where in the UK do you live?</span>
+            <PillSlider value={nationOf(d) || ""} onChange={v => { set("ukNation", v); set("scottishTaxpayer", nationAlso(v).scottishTaxpayer); }}
+              options={NATION_OPTIONS.map(o => o.value === "ni" ? { ...o, label:"N. Ireland" } : o)}/>
           </div>
           {/* Between jobs: pay this tax year before stopping (sets this year's tax band). */}
           {d.employmentStatus === "not_working" && d.notWorkingReason === "break" && (

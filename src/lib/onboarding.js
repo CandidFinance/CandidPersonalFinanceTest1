@@ -24,7 +24,7 @@ export function getActiveSteps(d) {
 // Hard caps — silently clamp value, no message shown
 export const FIELD_CAPS = {
   salary:1000000, bonusAmount:5000000, otherIncome:1000000, dividendIncome:5000000,
-  monthlyExpenses:50000,
+  monthlyExpenses:50000, childcareMonthly:10000,
   savingsRate:10, premiumBonds:50000,
   isaThisYearCash:20000, isaThisYearSS:20000, isaThisYearLISA:4000, isaThisYearOther:20000,
   isaPrevCash:500000, isaPrevSS:500000, isaPrevLISA:500000, isaPrevOther:500000,

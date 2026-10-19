@@ -15,6 +15,7 @@ import { bestDrawdown, defaultDrawdownYears } from "./drawdown.js";
 import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
 import { estimatePensionPot, childBenefitCharge, HICBC_START } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
+import { childcareSupport } from "./childcare.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
@@ -165,27 +166,17 @@ function pensionSteps(d, m) {
 
   // Getting the full match: the £100k tax trap is the next thing to check.
   const taper = calcPensionTaperSaving(m, aa.room);
-  const cb = childBenefitCharge(d, m);
   if (taper.recoverable && taper.taperTotalSaving > 0) {
+    // Childcare is Kids & family's figure: a line here, not added in.
+    const cc = childcareSupport(d, m);
+    const childcareLine = cc?.recoverable && cc.atStake > 0 ? `It would also restore ${fmt(cc.atStake)} a year of childcare support: see Kids & family.`
+      : !cc && +d.childBenefitChildren > 0 ? "Over £100,000, Tax-Free Childcare and the free childcare hours stop too: Kids & family works out what that costs." : null;
     return [
       { label: ANSWER, figure: `${fmt(taper.taperTotalSaving)} a year`, title: "of tax you could save." },
-      withBody({ label: WHY, title: `Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at ${m.scottish ? "67.5" : "60"}%.` },
-        cb ? `You also pay back ${fmt(cb.charge)} of Child Benefit a year, and over £100,000, Tax-Free Childcare and the free childcare hours stop.` : null),
+      withBody({ label: WHY, title: `Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at ${m.scottish ? "67.5" : "60"}%.` }, childcareLine),
       selfEmployed(d)
         ? { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into a pension (including the tax relief added) would bring your income back to £100,000.`, body: `The money usually can't be taken out until you're 55 (57 from 2028). ${SELF_EMPLOYED_PENSION}` }
         : { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into your pension through salary sacrifice would bring your income back to £100,000.`, body: `It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028). ${HR}` },
-    ];
-  }
-
-  // Paying back Child Benefit (income over £60,000): what it costs, and the
-  // pension payment that brings income to £60,000.
-  if (cb && cb.charge > 0 && cb.payInNeeded <= aa.room) {
-    return [
-      { label: ANSWER, figure: `${fmt(cb.charge)} a year`, title: "of Child Benefit you're paying back in tax." },
-      { label: WHY, title: `Above ${fmt(HICBC_START)} of income, 1% of your Child Benefit is clawed back for every £200, all of it by £80,000.` },
-      selfEmployed(d)
-        ? { label: ACTION, title: `Paying ${fmt(cb.payInNeeded)} more into a pension (including the tax relief added) would bring your income to £60,000 and keep it all.`, body: SELF_EMPLOYED_PENSION }
-        : { label: ACTION, title: `Paying ${fmt(cb.payInNeeded)} more into your pension would bring your income to £60,000 and keep it all.`, body: `On top of the usual tax relief. ${HR}` },
     ];
   }
 
@@ -440,5 +431,84 @@ export function studentLoanReveal(d, m) {
   ];
 }
 
+// Kids & family: childcare support first (the largest figure, and lost all at
+// once over £100,000), then Tax-Free Childcare not claimed, then Child
+// Benefit paid back. The same figures as the module's status and page.
+const NATION_HOURS_NOTE = {
+  wales: "Wales's Childcare Offer for 3 and 4 year olds is tested on gross income, which a pension payment doesn't change, so it isn't counted here.",
+  scotland: "Scotland's 1,140 funded hours have no income limit, so they aren't affected.",
+};
+export function kidsReveal(d, m) {
+  const cc = childcareSupport(d, m);
+  const cb = childBenefitCharge(d, m);
+  const aa = calcAnnualAllowanceRoom(d, m);
+  if (!cc && !cb) return null;
+  const support = cc?.hours > 0 ? "Tax-Free Childcare and the 30 funded hours" : "Tax-Free Childcare";
+  const nationNote = cc?.preschool > 0 ? NATION_HOURS_NOTE[cc.nation] || null : null;
+  const cbLine = cb && cb.charge > 0 ? `You also pay back ${fmt(cb.charge)} of Child Benefit a year.` : null;
+  if (cc?.recoverable && cc.atStake > 0) {
+    return [
+      { label: ANSWER, figure: `${fmt(cc.atStake)} a year`, title: "of childcare support you could keep." },
+      withBody({ label: WHY, title: `${support} stop for the whole year once either parent's income is over £100,000. Yours is ${fmt(Math.round(cc.ani))}.` }, join(nationNote, cbLine)),
+      { label: ACTION, title: `A pension payment of ${fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to £100,000 and restore it.`,
+        body: "It saves tax as well: Pension shows how much." },
+    ];
+  }
+  if (cc?.unclaimed > 0) {
+    return [
+      { label: ANSWER, figure: `${fmt(cc.unclaimed)} a year`, title: "of Tax-Free Childcare you could claim." },
+      { label: WHY, title: "The government adds £2 for every £8 you pay for childcare, up to £2,000 a child a year." },
+      { label: ACTION, title: "Applying on GOV.UK opens an account you pay your provider through.", body: "Eligibility is reconfirmed every three months." },
+    ];
+  }
+  // Child Benefit paid back (income over £60,000), and the pension payment
+  // that brings income to £60,000.
+  if (cb && cb.charge > 0 && cb.payInNeeded <= aa.room) {
+    return [
+      { label: ANSWER, figure: `${fmt(cb.charge)} a year`, title: "of Child Benefit you're paying back in tax." },
+      { label: WHY, title: `Above ${fmt(HICBC_START)} of income, 1% of your Child Benefit is clawed back for every £200, all of it by £80,000.` },
+      selfEmployed(d)
+        ? { label: ACTION, title: `Paying ${fmt(cb.payInNeeded)} more into a pension (including the tax relief added) would bring your income to £60,000 and keep it all.`, body: SELF_EMPLOYED_PENSION }
+        : { label: ACTION, title: `Paying ${fmt(cb.payInNeeded)} more into your pension would bring your income to £60,000 and keep it all.`, body: `On top of the usual tax relief. ${HR}` },
+    ];
+  }
+
+  if (cc?.state === "partner") {
+    return [
+      { label: ANSWER, figure: cc.atStake > 0 ? `${fmt(cc.atStake)} a year` : undefined, title: "of childcare support out of reach while your partner's income is over £100,000." },
+      withBody({ label: WHY, title: `${support} stop once either parent's income is over £100,000.` }, nationNote),
+      { label: ACTION, title: "If your partner's income came down to £100,000, for example with a pension payment, it would be restored." },
+    ];
+  }
+  if (cc?.state === "lost") {
+    return [
+      { label: ANSWER, figure: `${fmt(cc.atStake)} a year`, title: "of childcare support you're not getting." },
+      withBody({ label: WHY, title: `${support} stop once either parent's income is over £100,000. Yours is ${fmt(Math.round(cc.ani))}.` }, nationNote),
+      { label: ACTION, title: `Getting back to £100,000 would take a pension payment of ${fmt(cc.payInNeeded)}, more than this year's pension allowance.` },
+    ];
+  }
+  if (cc?.state === "near" && cc.atStake > 0) {
+    return [
+      { label: ANSWER, figure: `${fmt(cc.atStake)} a year`, title: "of childcare support you'd lose over £100,000." },
+      withBody({ label: WHY, title: `You're ${fmt(cc.headroom)} under it. A pay rise or bonus that takes you over stops it for the whole year.` }, nationNote),
+      { label: ACTION, title: "Nothing to change right now.", body: "If a rise takes you over, a pension payment would bring your income back under it." },
+    ];
+  }
+  if (cc?.state === "notWorking") {
+    return [
+      { label: ANSWER, title: "Tax-Free Childcare needs you to be working." },
+      { label: WHY, title: "Each parent needs to expect to earn at least 16 hours a week at the minimum wage." },
+      { label: ACTION, title: "Nothing to change right now.", body: "It opens up again once you're back in work." },
+    ];
+  }
+  const checked = [cc && "you're under the £100,000 childcare limit", cc?.billKnown && d.tfcClaiming === "yes" && "you use Tax-Free Childcare",
+    cb && !(cb.charge > 0) && "no Child Benefit is being paid back"].filter(Boolean);
+  return [
+    { label: ANSWER, title: cc ? "Your childcare support is safe." : "No Child Benefit is being paid back." },
+    { label: WHY, title: checked.length ? `Checked: ${checked.length > 1 ? `${checked.slice(0, -1).join(", ")} and ${checked[checked.length - 1]}` : checked[0]}.` : "Nothing here is costing you anything." },
+    { label: ACTION, title: "Nothing to change right now.", body: "Worth checking again if your pay, or your partner's, changes." },
+  ];
+}
+
 // The modules with a reveal, by key.
-export const MODULE_REVEALS = { pension: pensionReveal, cash: cashReveal, investments: investmentsReveal, studentLoan: studentLoanReveal };
+export const MODULE_REVEALS = { pension: pensionReveal, cash: cashReveal, investments: investmentsReveal, studentLoan: studentLoanReveal, kids: kidsReveal };

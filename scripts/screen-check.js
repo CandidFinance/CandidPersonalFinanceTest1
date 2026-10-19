@@ -20,14 +20,15 @@ if (!existsSync("dist/app-shell.html")) {
   process.exit(1);
 }
 
-const all = ["pension", "cash", "investments", "studentLoan"];
+const all = ["pension", "cash", "investments", "studentLoan", "kids"];
 const done = { selectedModules: all, answeredModules: all, unlockedModules: all, goalsAsked: true, confidenceAsked: true, email: "check@example.com",
   employmentAsked: true, hasExtraIncome: "no", extraIncomeKinds: ["none"] };
 const rich = { ...done, name: "Sam", age: "38", employmentStatus: "employed", scottishTaxpayer: "no", salary: "110000", hasPension: "yes", pensionStatus: "yes",
   pensionKind: "dc", pensionType: "sacrifice", myContribution: "5", employerMatch: "5", employerContributionType: "match", potValue: "85000", retirementAge: "67",
   retirementTarget: "32700", childBenefitChildren: "2", cbHigherEarner: "yes", hasKids: "yes", numKids: "2", monthlyExpenses: "3000",
   cashTiers: [{ name: "Old", amount: "25000", rate: "1" }], hasInvestments: "yes", unwrappedValue: "30000", unrealisedGains: "8000",
-  studentLoan: "plan2", slPlanAnswer: "plan2", loanBalance: "45000", bonusAmount: "15000", hasBonus: "yes", bonusMonth: "3", inputsTaxYear: 2025 };
+  studentLoan: "plan2", slPlanAnswer: "plan2", loanBalance: "45000", bonusAmount: "15000", hasBonus: "yes", bonusMonth: "3", inputsTaxYear: 2025,
+  ukNation: "england", kidsPreschool: "1", kidsSchool: "1", childcareMonthly: "1500", partnerOver100k: "no" };
 export const PROFILES = {
   rich,
   scottish: { ...rich, scottishTaxpayer: "yes", salary: "95000" },
@@ -44,6 +45,11 @@ export const PROFILES = {
   loanUnsure: { ...rich, studentLoan: "none", slPlanAnswer: "unsure", slCountry: "england", loanBalance: "40000", salary: "45000" },
   loanLowPay: { ...rich, salary: "24000" },
   sparse: { ...done, name: "Al", age: "25", employmentStatus: "employed", salary: "30000" },
+  familyWales: { ...rich, ukNation: "wales", salary: "105000" },
+  familyPartnerOver: { ...rich, salary: "60000", partnerOver100k: "yes" },
+  familyNear: { ...rich, salary: "98000", tfcClaiming: "yes" },
+  familyUnclaimed: { ...rich, salary: "55000", tfcClaiming: "no", childBenefitChildren: "2", cbHigherEarner: "yes" },
+  familyNoKids: { ...rich, kidsPreschool: "0", kidsSchool: "0", childcareMonthly: "" },
 };
 const ROUTES = ["/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/inputs", "/app/property", ...all.map(k => `/app/module/${k}`)];
 const BLOCK = /supabase\.co|posthog|stripe\.com|truelayer|resend\.com/;
