@@ -2690,7 +2690,15 @@
      "has_bonus": false,
      "bonus_amount": 5000,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 66,
@@ -5185,7 +5193,15 @@
      "has_bonus": false,
      "bonus_amount": 5000,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 66,
@@ -7690,7 +7706,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 84,
@@ -10022,7 +10046,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 84,
@@ -12576,7 +12608,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -14913,7 +14953,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -16402,7 +16450,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 82,
@@ -17726,7 +17782,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 82,
@@ -20377,7 +20441,15 @@
      "has_bonus": false,
      "bonus_amount": 15000,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 66,
@@ -22799,7 +22871,15 @@
      "has_bonus": false,
      "bonus_amount": 15000,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 66,
@@ -25330,7 +25410,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 66,
@@ -27733,7 +27821,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 66,
@@ -30306,7 +30402,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -32631,7 +32735,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -35424,7 +35536,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 84,
@@ -38044,7 +38164,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 84,
@@ -40950,7 +41078,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 92,
@@ -43691,7 +43827,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 92,
@@ -46356,7 +46500,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 84,
@@ -48848,7 +49000,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 84,
@@ -51455,7 +51615,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -53844,7 +54012,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -56396,7 +56572,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -58700,7 +58884,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -61255,7 +61447,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 84,
@@ -63562,7 +63762,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -65040,7 +65248,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 92,
@@ -66345,7 +66561,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 92,
@@ -69317,7 +69541,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 82,
@@ -72072,7 +72304,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 82,
@@ -75176,7 +75416,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -78063,7 +78311,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": null
+     "num_kids": null,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 74,
@@ -80522,7 +80778,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": 2
+     "num_kids": 2,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 92,
@@ -82808,7 +83072,15 @@
      "has_bonus": false,
      "bonus_amount": null,
      "has_kids": false,
-     "num_kids": 2
+     "num_kids": 2,
+     "scottish_taxpayer": null,
+     "pension_kind": null,
+     "employer_contribution_type": null,
+     "db_pension_income": null,
+     "child_benefit_children": null,
+     "cb_higher_earner": null,
+     "retirement_target": null,
+     "extra_income_kinds": null
     },
     "report": {
      "candid_score": 92,

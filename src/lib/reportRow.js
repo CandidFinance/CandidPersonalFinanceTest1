@@ -58,6 +58,25 @@ export function rowInputFields(d, m) {
     bonus_amount: +d.bonusAmount||null,
     has_kids: d.hasKids === "yes",
     num_kids: +d.numKids||null,
+    // supabase/hand-run/supabase_persona_review_migration.sql
+    ...personaReviewFields(d),
+  };
+}
+
+// The answers the persona review build added (Oct 2026). Unanswered is
+// null, never false or 0: "no Child Benefit" (0) is an answer.
+const yesNo = v => v === "yes" ? true : v === "no" ? false : null;
+const whole = v => (v === "" || v == null || isNaN(+v)) ? null : Math.round(+v);
+function personaReviewFields(d) {
+  return {
+    scottish_taxpayer: yesNo(d.scottishTaxpayer),
+    pension_kind: d.pensionKind || null,
+    employer_contribution_type: d.employerContributionType || null,
+    db_pension_income: whole(d.dbPensionIncome) || null,
+    child_benefit_children: whole(d.childBenefitChildren),
+    cb_higher_earner: yesNo(d.cbHigherEarner),
+    retirement_target: whole(d.retirementTarget) || null,
+    extra_income_kinds: Array.isArray(d.extraIncomeKinds) && d.extraIncomeKinds.length ? d.extraIncomeKinds.join(", ") : null,
   };
 }
 
@@ -95,7 +114,6 @@ export function propertyRowFields(d, m, regionalRates, marketRates) {
   const mi = mortgageInputs(d, r.loanNeeded);
   const num = v => (v === "" || v == null || isNaN(+v)) ? null : Math.round(+v);
   const pct = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
-  const yesNo = v => v === "yes" ? true : v === "no" ? false : null;
   const rvbInput = rentVsBuyInputs(d, m, regionalRates, "moderate", marketRates);
   // £0 rent is an answer (living with family, say), as on the screen.
   const rvb = num(d.propertyMonthlyRent) != null && b.price > 0 ? calcRentVsBuy(rvbInput) : null;
