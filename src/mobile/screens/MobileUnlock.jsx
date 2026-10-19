@@ -9,6 +9,7 @@ import { pitchFor } from "../../lib/appEntry.js";
 import { moduleEstimate, studentLoanRepaid } from "../../lib/crossModule.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
+import { checkEmail, requestEmailCheck, EMAIL_PROBLEMS } from "../../lib/emailCheck.js";
 import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../lib/entitlement.js";
 
 // A locked module (src/lib/unlock.js): what it's worth, in £, with the answer
@@ -102,7 +103,8 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
         <button type="button" style={primary(false)} onClick={() => onUnlock(ask, null)}>{cta}</button>
       )}
 
-      {ask.kind === "email" && <EmailUnlock d={d} cta={cta} primary={primary} onUnlock={answer => onUnlock(ask, answer)}/>}
+      {ask.kind === "email" && <EmailUnlock d={d} cta={cta} primary={primary} onUnlock={answer => onUnlock(ask, answer)}
+        confirm={{ module: moduleKey, amount: amount > 0 && !mod?.amountIsLumpSum ? amount : null }}/>}
     </div>
   );
 }
@@ -114,16 +116,51 @@ const PREVIEW_LINES = {
   kids: ["The childcare help you could get", "What crossing £100,000 would cost"],
 };
 
+// The checks an email gets before it's taken (src/lib/emailCheck.js): its
+// shape and domain here, a likely typo offered once (submitting again as
+// typed goes ahead), then the server's, which also emails the link that
+// confirms it's theirs (`confirm`, api/email.js). `run` resolves to the
+// tidied address, or null with `error` or `suggestion` set.
+function useEmailCheck(source) {
+  const [error, setError] = useState(null);
+  const [suggestion, setSuggestion] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const reject = problem => { posthog.capture("email_rejected", { source, problem }); setError(EMAIL_PROBLEMS[problem]); return null; };
+  const run = async (raw, confirm) => {
+    setError(null);
+    const checked = checkEmail(raw);
+    if (checked.problem) { setSuggestion(null); return reject(checked.problem); }
+    if (checked.suggestion && suggestion?.for !== checked.email) { setSuggestion({ for: checked.email, to: checked.suggestion }); return null; }
+    setSuggestion(null); setBusy(true);
+    const problem = await requestEmailCheck(checked.email, { confirm });
+    setBusy(false);
+    return problem ? reject(problem) : checked.email;
+  };
+  const use = (to, setEmail) => { posthog.capture("email_suggestion_used", { source }); setEmail(to); setSuggestion(null); };
+  return { run, busy, error, suggestion, use, clear: () => { setError(null); setSuggestion(null); } };
+}
+
+function DidYouMean({ suggestion, onUse }) {
+  if (!suggestion) return null;
+  return (
+    <div role="alert" style={{fontSize:"13px",color:TEXT,margin:"8px 0 0",textAlign:"center"}}>
+      Did you mean <button type="button" onClick={() => onUse(suggestion.to)}
+        style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",textDecoration:"underline",cursor:"pointer",overflowWrap:"anywhere"}}>{suggestion.to}</button>?
+    </div>
+  );
+}
+
 // The first answer, for their email: one field, and whether they'd like to
 // hear from Candid. The email also goes on their row (unlockPatch).
-function EmailUnlock({ d, cta, primary, onUnlock }) {
+function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
   const [email, setEmail] = useState(d.email || "");
   const [alerts, setAlerts] = useState(false);
-  const [error, setError] = useState(null);
-  const submit = e => {
+  const check = useEmailCheck("unlock");
+  const submit = async e => {
     e.preventDefault();
-    if (!validEmail(email)) { setError("Enter a valid email address"); return; }
-    onUnlock({ email: email.trim(), callOk: alerts });
+    if (check.busy) return;
+    const tidy = await check.run(email, confirm);
+    if (tidy) onUnlock({ email: tidy, callOk: alerts });
   };
   return (
     <form onSubmit={submit}>
@@ -134,9 +171,10 @@ function EmailUnlock({ d, cta, primary, onUnlock }) {
         <input type="checkbox" checked={alerts} onChange={e => setAlerts(e.target.checked)} style={{marginTop:"2px",accentColor:G}}/>
         Email me when I could be keeping more: a better rate, or an allowance about to go unused.
       </label>
-      <button type="submit" style={primary(false)}>{cta}</button>
-      {error && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{error}</div>}
-      <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>No spam, and never shared. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>
+      <button type="submit" disabled={check.busy} style={primary(check.busy)}>{check.busy ? "Checking…" : cta}</button>
+      {check.error && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}
+      <DidYouMean suggestion={check.suggestion} onUse={to => check.use(to, setEmail)}/>
+      <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>We'll email a link to confirm it's yours. No spam, and never shared. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>
     </form>
   );
 }
@@ -179,6 +217,7 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
   const [email, setEmail] = useState(d.email || "");
   const [done, setDone] = useState(null);
   const [soonOpen, setSoonOpen] = useState(false);
+  const check = useEmailCheck("paywall");
   useEffect(() => { posthog.capture("paywall_shown", { module: moduleKey }); }, [moduleKey]);
 
   const go = async () => {
@@ -189,9 +228,14 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
   };
   const submitEmail = async e => {
     e.preventDefault();
+    if (panel === "alerts") {
+      if (check.busy) return;
+      const tidy = await check.run(email, { module: moduleKey });
+      if (tidy) { onLeaveEmail?.(tidy); setDone("alerts"); }
+      return;
+    }
     if (!validEmail(email)) { setError("Enter a valid email address"); return; }
     setError(null);
-    if (panel === "alerts") { onLeaveEmail?.(email.trim()); setDone("alerts"); return; }
     setBusy(true);
     try { await requestRestore(email.trim()); posthog.capture("restore_requested"); setDone("restore"); }
     catch (err) { setError(err.message); }
@@ -264,13 +308,13 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
       </div>
 
       <div style={{display:"flex",justifyContent:"center",gap:"18px",marginTop:"16px"}}>
-        <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); }}>Already subscribed?</button>
-        <button type="button" style={link} onClick={() => { setPanel(p => p === "alerts" ? null : "alerts"); setDone(null); setError(null); }}>Get rate alerts</button>
+        <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); check.clear(); }}>Already subscribed?</button>
+        <button type="button" style={link} onClick={() => { setPanel(p => p === "alerts" ? null : "alerts"); setDone(null); setError(null); check.clear(); }}>Get rate alerts</button>
       </div>
       {panel && (
         done ? (
           <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"14px 0 0",textAlign:"center"}}>
-            {done === "restore" ? "If that email has a subscription, a sign-in link is on its way. Open it on this device." : "Thanks. We'll email you when you could be keeping more."}
+            {done === "restore" ? "If that email has a subscription, a sign-in link is on its way. Open it on this device." : "Thanks. Use the link we've just emailed to confirm it's you, and we'll email you when you could be keeping more."}
           </p>
         ) : (
           <form onSubmit={submitEmail} style={{marginTop:"14px"}}>
@@ -280,11 +324,12 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
             <div style={{display:"flex",gap:"8px"}}>
               <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
                 style={{flex:1,minWidth:0,boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"12px 16px",fontSize:"14px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
-              <button type="submit" disabled={busy} style={{background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"0 16px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
+              <button type="submit" disabled={busy || check.busy} style={{background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"0 16px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
                 {panel === "restore" ? "Send link" : "Sign up"}
               </button>
             </div>
-            {error && <div style={{fontSize:"12px",color:ERROR_TEXT,margin:"6px 0 0 6px"}}>{error}</div>}
+            {(error || check.error) && <div role="alert" style={{fontSize:"12px",color:ERROR_TEXT,margin:"6px 0 0 6px"}}>{error || check.error}</div>}
+            {panel === "alerts" && <DidYouMean suggestion={check.suggestion} onUse={to => check.use(to, setEmail)}/>}
             {panel === "alerts" && <p style={{fontSize:"11.5px",color:MUT,margin:"8px 0 0"}}>Unsubscribe any time. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>}
           </form>
         )

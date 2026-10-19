@@ -15,6 +15,11 @@ import { alertsDue, alertEmail, inputsFromRow } from "../src/lib/alerts.js";
 //  - ?action=unsubscribe&t=…, the link in every email (and its one-click
 //    List-Unsubscribe header): adds the email to `alert_optouts`.
 //
+// A free user gets emails only once they've confirmed their address (its
+// link, api/email.js, sets `email_verifications.verified_at`). Subscribers
+// gave theirs to Stripe and sign in with it, so theirs needs no link.
+// Before that table is there, no free user is emailed; subscribers still are.
+//
 // Sending is off until VITE_ALERTS_LIVE=1 (the same setting shows the emails
 // on the paywall's list of what a subscription adds). Until then the cron
 // is a dry run: nothing is sent or recorded.
@@ -109,13 +114,15 @@ async function optional(path, notes, label) {
 export async function plan(today = new Date()) {
   const notes = [];
   const since = new Date(today - SENT_LOOKBACK_DAYS * 86400000).toISOString();
-  const [people, optouts, sent, rates] = await Promise.all([
+  const [people, optouts, verified, sent, rates] = await Promise.all([
     recipients(notes),
     optional("alert_optouts?select=email", notes, "alert_optouts"),
+    optional("email_verifications?select=email&verified_at=not.is.null", notes, "email_verifications"),
     optional(`alert_sends?select=email,alert_key,kind,sent_at,detail&sent_at=gte.${since}`, notes, "alert_sends"),
     db(`savings_rates?select=${RATE_COLUMNS}&order=rate_aer.desc`),
   ]);
   const out = new Set((optouts || []).map(o => cleanEmail(o.email)));
+  const confirmed = new Set((verified || []).map(v => cleanEmail(v.email)));
   const sentBy = new Map();
   for (const s of sent || []) {
     const e = cleanEmail(s.email);
@@ -124,7 +131,7 @@ export async function plan(today = new Date()) {
   }
   const emails = [];
   for (const p of people) {
-    if (out.has(p.email)) continue;
+    if (out.has(p.email) || (p.who === "free" && !confirmed.has(p.email))) continue;
     let due;
     try { due = alertsDue(p.d, { who: p.who, today, sent: sentBy.get(p.email) || [], rows: rates || [] }); }
     catch (e) { notes.push(`couldn't work out alerts for one ${p.who}: ${e.message}`); continue; }

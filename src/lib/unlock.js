@@ -15,6 +15,7 @@
 
 import { SCORED_MODULES } from "./appEntry.js";
 import { hasAccess } from "./entitlement.js";
+import { validEmailShape } from "./emailCheck.js";
 
 export const UNLOCK_GATE_ON = true;
 
@@ -24,8 +25,8 @@ export const UNLOCK_GATE_ON = true;
 // gate back locally, to work on the paywall itself.
 const DEV_UNGATED = !!import.meta.env?.DEV && import.meta.env.VITE_DEV_PAYWALL !== "1";
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-export const validEmail = email => typeof email === "string" && EMAIL_RE.test(email.trim());
+// Its shape only; the unlock form checks more (emailCheck.js).
+export const validEmail = validEmailShape;
 
 export function isLocked(d, key, paid = hasAccess()) {
   if (!UNLOCK_GATE_ON || DEV_UNGATED || d.unlockGate !== true || !SCORED_MODULES.includes(key) || paid) return false;
