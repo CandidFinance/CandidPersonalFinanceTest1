@@ -1,4 +1,5 @@
 import posthog from "posthog-js";
+import { mergeAnswers, mergeCompleted } from "./mergeAnswers.js";
 import { startAuthentication, startRegistration, browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, WebAuthnAbortService } from "@simplewebauthn/browser";
 import { reportStorageFailure } from "./storage.js";
 
@@ -190,9 +191,13 @@ async function holdSignIn(r) {
   save(r);
   if (!r.active) return "ended";
   if (r.state?.inputs) {
+    // Put together with anything answered on this device first, so signing
+    // in never loses an answer (mergeAnswers.js).
     try {
-      localStorage.setItem("candid_inputs", JSON.stringify(r.state.inputs));
-      if (Array.isArray(r.state.completedModules)) localStorage.setItem("candid_completed_modules", JSON.stringify(r.state.completedModules));
+      const here = JSON.parse(localStorage.getItem("candid_inputs") || "null");
+      const doneHere = JSON.parse(localStorage.getItem("candid_completed_modules") || "null");
+      localStorage.setItem("candid_inputs", JSON.stringify(mergeAnswers(r.state.inputs, here)));
+      localStorage.setItem("candid_completed_modules", JSON.stringify(mergeCompleted(r.state.completedModules, doneHere)));
     } catch (e) { reportStorageFailure("save_signed_in_answers", e); }
   }
   return "signed-in";
