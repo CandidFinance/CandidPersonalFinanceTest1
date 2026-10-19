@@ -82,12 +82,21 @@ function emailFromToken(t) {
   return email ? key(email) : null;
 }
 
-function confirmText(email, { module, amount } = {}) {
+// Their first name as they typed it into Candid, for "Hi Jo,", as the
+// alert emails greet them (src/lib/alerts.js). It's theirs to type, so only
+// a plain name is used: letters, an apostrophe or hyphen, nothing that could
+// read as a link or a message.
+function greeting(name) {
+  const first = typeof name === "string" ? name.trim().split(/\s+/)[0] : "";
+  return /^\p{L}[\p{L}'’-]{0,29}$/u.test(first) ? `Hi ${first},` : "Hi,";
+}
+
+function confirmText(email, { module, amount, name } = {}) {
   const title = MODULE_TITLES[module];
   const figure = Number.isFinite(amount) && amount > 0 && amount < 10_000_000 ? `£${Math.round(amount).toLocaleString("en-GB")}` : null;
   const answer = title && figure ? `Your ${title.toLowerCase()} answer: ${figure} a year, our estimate on your figures. It's saved in Candid on the device you used.\n\n`
     : title ? `Your ${title.toLowerCase()} answer is saved in Candid on the device you used.\n\n` : "";
-  return `Hello,\n\n${answer}Confirm this is your email address:\n${confirmUrl(email)}\n\nThe link works for ${LINK_DAYS} days. If you didn't enter this address on Candid, ignore this email and nothing more will be sent.\n\nCandid\n${SITE}`;
+  return `${greeting(name)}\n\n${answer}Confirm this is your email address:\n${confirmUrl(email)}\n\nThe link works for ${LINK_DAYS} days. If you didn't enter this address on Candid, ignore this email and nothing more will be sent.\n\nCandid\n${SITE}`;
 }
 
 // Sends the link unless the address is confirmed, one went out a few
@@ -126,7 +135,7 @@ async function check(req, res) {
   if (await takesMail(domain) === "no") return res.status(422).json({ problem: "domain" });
   let sent = null;
   if (confirm && typeof confirm === "object") {
-    try { sent = await sendConfirmation(checked.email, { module: confirm.module, amount: Number(confirm.amount) }); }
+    try { sent = await sendConfirmation(checked.email, { module: confirm.module, amount: Number(confirm.amount), name: confirm.name }); }
     catch (e) { console.error("[api/email] confirmation not sent:", e.message); sent = "failed"; }
   }
   return res.status(200).json({ ok: true, sent });

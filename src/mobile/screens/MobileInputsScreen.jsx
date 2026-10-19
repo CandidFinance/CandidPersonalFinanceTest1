@@ -6,6 +6,7 @@ import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
+import { useEmailCheck, DidYouMean } from "../emailCheckForm.jsx";
 import { SCORED_MODULES, loanSavingsIn, loanPensionChecked } from "../../lib/appEntry.js";
 
 // Edit inputs (/app/inputs): every answer on one page, so changing one
@@ -15,7 +16,8 @@ import { SCORED_MODULES, loanSavingsIn, loanPensionChecked } from "../../lib/app
 // again. `open` opens that module's tile and scrolls to it (from a module
 // page's Edit inputs); otherwise About you starts open. A module not
 // answered yet starts its questions instead (`onStartModule`).
-// `onOpenModule(key)` goes back to a module's page.
+// `onOpenModule(key)` goes back to a module's page. `onEmailChange(email)`
+// saves a new email, once it's passed its checks (EmailField).
 // Tapping empty space in an open tile closes it, as on a phone, so its
 // header doesn't need scrolling back to. Not a tap on anything that responds
 // to one (a field, a pill, a slider, a link), nor one that started on such a
@@ -30,7 +32,7 @@ function onSomething(target, container) {
   return false;
 }
 
-export default function MobileInputsScreen({ d, m, set, open, onStartModule, onOpenModule }) {
+export default function MobileInputsScreen({ d, m, set, open, onStartModule, onOpenModule, onEmailChange }) {
   const pressedOn = useRef(false);
   const answered = SCORED_MODULES.filter(k => (d.selectedModules || []).includes(k));
   // Cash & savings and Pension answered only as far as Student loan needs
@@ -93,7 +95,7 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
                   <div style={{paddingTop:"14px"}}>
                     {isModule
                       ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set} brief={isPartly}/>
-                      : <MobileOnboardingStep stepId="about" d={d} set={set} bare/>}
+                      : <><MobileOnboardingStep stepId="about" d={d} set={set} bare/><EmailField d={d} onEmailChange={onEmailChange}/></>}
                   </div>
                   {isModule && (
                     <>
@@ -137,6 +139,55 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
       )}
 
       <Subscription/>
+    </div>
+  );
+}
+
+// Their email, in About you. A new one is only saved once it passes the
+// same checks as the unlock form (emailCheckForm.jsx), from the button that
+// also emails the link confirming it's theirs (api/email.js). One line
+// says what happened to the link, in place of the button.
+function EmailField({ d, onEmailChange }) {
+  const [draft, setDraft] = useState(d.email || "");
+  const [link, setLink] = useState(null); // { email, sent }
+  const check = useEmailCheck("inputs");
+  const same = (a, b) => (a || "").trim().toLowerCase() === (b || "").trim().toLowerCase();
+  const changed = draft.trim() !== "" && !same(draft, d.email);
+  // The link didn't go (a send that failed, or the server out of reach):
+  // the email is saved, and the button stays, to try again.
+  const unsent = link && !["sent", "sent recently", "confirmed already", "sent enough"].includes(link.sent);
+  const outcome = !link ? null
+    : link.sent === "confirmed already" ? `${link.email} is confirmed already.`
+    : link.sent === "sent enough" ? `We've sent several links to ${link.email} already. Check your inbox and spam folder.`
+    : unsent ? `${link.email} is saved, but the link didn't send. Try again shortly.`
+    : `Link sent to ${link.email}. Open it to confirm it's yours. If it isn't there in a few minutes, check your spam folder.`;
+  const confirm = async () => {
+    if (check.busy) return;
+    const ok = await check.run(draft, { name: d.name || null });
+    if (!ok) return;
+    onEmailChange?.(ok.email);
+    setDraft(ok.email);
+    setLink(ok);
+  };
+  const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
+  return (
+    <div style={{marginTop:"18px"}}>
+      <label htmlFor="inputs-email" style={fieldLabel}>Email</label>
+      <input id="inputs-email" type="email" autoComplete="email" value={draft} placeholder="your@email.com"
+        onChange={e => { setDraft(e.target.value); setLink(null); check.clear(); }}
+        style={{width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"100px",padding:"13px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+      {link && !changed && <p role="status" style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>{outcome}</p>}
+      {(changed || unsent) && (
+        <>
+          <button type="button" onClick={confirm} disabled={check.busy}
+            style={{marginTop:"10px",width:"100%",background:check.busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:check.busy ? "default" : "pointer"}}>
+            {check.busy ? "Checking…" : changed ? "Confirm this email" : "Send the link again"}
+          </button>
+          {changed && !check.error && !check.suggestion && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0",textAlign:"center"}}>We'll send a link to confirm it's yours.</p>}
+        </>
+      )}
+      {check.error && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}
+      <DidYouMean suggestion={check.suggestion} onUse={to => check.use(to, setDraft)}/>
     </div>
   );
 }

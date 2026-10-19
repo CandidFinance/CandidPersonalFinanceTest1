@@ -98,9 +98,11 @@ export function checkEmail(raw) {
 export const validEmailShape = raw => checkEmail(raw).problem !== "format";
 
 // The server's check (api/email.js): the domain takes email, and, with
-// `confirm`, a link to confirm it is sent to it. Resolves to the problem
-// ("domain", "disposable", ...) or null. Anything that stops the check
-// itself (offline, a timeout, a server error) resolves to null, so the
+// `confirm`, a link to confirm it is sent to it. Resolves to { problem }
+// ("domain", "disposable", ...; null when it's fine) and { sent }, what
+// happened to the link ("sent", "confirmed already", ...; null when none
+// was asked for, or the check didn't finish). Anything that stops the
+// check itself (offline, a timeout, a server error) is no problem, so the
 // answer is never held up by it.
 export async function requestEmailCheck(email, { confirm = null } = {}) {
   const ctrl = new AbortController();
@@ -110,11 +112,11 @@ export async function requestEmailCheck(email, { confirm = null } = {}) {
       method: "POST", headers: { "Content-Type": "application/json" }, signal: ctrl.signal,
       body: JSON.stringify({ action: "check", email, confirm }),
     });
-    if (res.status !== 422) return null;
     const body = await res.json().catch(() => ({}));
-    return EMAIL_PROBLEMS[body.problem] ? body.problem : null;
+    if (res.status === 422) return { problem: EMAIL_PROBLEMS[body.problem] ? body.problem : null, sent: null };
+    return { problem: null, sent: res.ok ? body.sent ?? null : null };
   } catch {
-    return null;
+    return { problem: null, sent: null };
   } finally {
     clearTimeout(timer);
   }

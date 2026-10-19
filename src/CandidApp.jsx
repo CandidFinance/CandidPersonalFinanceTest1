@@ -735,7 +735,7 @@ export default function AppShell() {
         <MobileInputsScreen key={open || "all"} d={d} m={m} set={set} open={open}
           onStartModule={key => navigate(`/app/module/${key}`)}
           onOpenModule={key => { inputsReturnPath.current = null; navigate(`/app/module/${key}`); scrollToTop(); }}
-/>
+          onEmailChange={email => { set("email", email); posthog.capture("email_captured", { source: "inputs" }); setUnlockSaveTick(t => t + 1); }}/>
       </MobileLayout>
     );
   }

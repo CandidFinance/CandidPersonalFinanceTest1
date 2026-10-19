@@ -9,7 +9,7 @@ import { pitchFor } from "../../lib/appEntry.js";
 import { moduleEstimate, studentLoanRepaid } from "../../lib/crossModule.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
-import { checkEmail, requestEmailCheck, EMAIL_PROBLEMS } from "../../lib/emailCheck.js";
+import { useEmailCheck, DidYouMean } from "../emailCheckForm.jsx";
 import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../lib/entitlement.js";
 
 // A locked module (src/lib/unlock.js): what it's worth, in £, with the answer
@@ -104,7 +104,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
       )}
 
       {ask.kind === "email" && <EmailUnlock d={d} cta={cta} primary={primary} onUnlock={answer => onUnlock(ask, answer)}
-        confirm={{ module: moduleKey, amount: amount > 0 && !mod?.amountIsLumpSum ? amount : null }}/>}
+        confirm={{ module: moduleKey, amount: amount > 0 && !mod?.amountIsLumpSum ? amount : null, name: d.name || null }}/>}
     </div>
   );
 }
@@ -116,40 +116,6 @@ const PREVIEW_LINES = {
   kids: ["The childcare help you could get", "What crossing £100,000 would cost"],
 };
 
-// The checks an email gets before it's taken (src/lib/emailCheck.js): its
-// shape and domain here, a likely typo offered once (submitting again as
-// typed goes ahead), then the server's, which also emails the link that
-// confirms it's theirs (`confirm`, api/email.js). `run` resolves to the
-// tidied address, or null with `error` or `suggestion` set.
-function useEmailCheck(source) {
-  const [error, setError] = useState(null);
-  const [suggestion, setSuggestion] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const reject = problem => { posthog.capture("email_rejected", { source, problem }); setError(EMAIL_PROBLEMS[problem]); return null; };
-  const run = async (raw, confirm) => {
-    setError(null);
-    const checked = checkEmail(raw);
-    if (checked.problem) { setSuggestion(null); return reject(checked.problem); }
-    if (checked.suggestion && suggestion?.for !== checked.email) { setSuggestion({ for: checked.email, to: checked.suggestion }); return null; }
-    setSuggestion(null); setBusy(true);
-    const problem = await requestEmailCheck(checked.email, { confirm });
-    setBusy(false);
-    return problem ? reject(problem) : checked.email;
-  };
-  const use = (to, setEmail) => { posthog.capture("email_suggestion_used", { source }); setEmail(to); setSuggestion(null); };
-  return { run, busy, error, suggestion, use, clear: () => { setError(null); setSuggestion(null); } };
-}
-
-function DidYouMean({ suggestion, onUse }) {
-  if (!suggestion) return null;
-  return (
-    <div role="alert" style={{fontSize:"13px",color:TEXT,margin:"8px 0 0",textAlign:"center"}}>
-      Did you mean <button type="button" onClick={() => onUse(suggestion.to)}
-        style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",textDecoration:"underline",cursor:"pointer",overflowWrap:"anywhere"}}>{suggestion.to}</button>?
-    </div>
-  );
-}
-
 // The first answer, for their email: one field, and whether they'd like to
 // hear from Candid. The email also goes on their row (unlockPatch).
 function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
@@ -159,8 +125,8 @@ function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
   const submit = async e => {
     e.preventDefault();
     if (check.busy) return;
-    const tidy = await check.run(email, confirm);
-    if (tidy) onUnlock({ email: tidy, callOk: alerts });
+    const ok = await check.run(email, confirm);
+    if (ok) onUnlock({ email: ok.email, callOk: alerts });
   };
   return (
     <form onSubmit={submit}>
@@ -230,8 +196,8 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
     e.preventDefault();
     if (panel === "alerts") {
       if (check.busy) return;
-      const tidy = await check.run(email, { module: moduleKey });
-      if (tidy) { onLeaveEmail?.(tidy); setDone("alerts"); }
+      const ok = await check.run(email, { module: moduleKey, name: d.name || null });
+      if (ok) { onLeaveEmail?.(ok.email); setDone("alerts"); }
       return;
     }
     if (!validEmail(email)) { setError("Enter a valid email address"); return; }
