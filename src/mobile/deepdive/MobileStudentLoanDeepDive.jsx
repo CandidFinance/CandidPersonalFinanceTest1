@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
-import { moduleAnswered, loanVerdictReady } from "../../lib/appEntry.js";
+import { moduleAnswered, loanVerdictReady, loanPensionChecked } from "../../lib/appEntry.js";
 import { hasAccess } from "../../lib/entitlement.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
@@ -74,9 +74,10 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   // Pension are answered (appEntry.js loanVerdictReady).
   const verdict = loanVerdictReady(d);
   const worthOverpaying = verdict && sl.worthOverpaying;
+  const pensionChecked = loanPensionChecked(d);
   // Where the money could go instead: for subscribers (and anyone from
-  // before the paywall), or once Cash & savings and Pension are in.
-  const alternativesOpen = verdict || hasAccess() || d.unlockGate !== true;
+  // before the paywall), or once their savings and pension match are in.
+  const alternativesOpen = (verdict && pensionChecked) || hasAccess() || d.unlockGate !== true;
   const surplusCash = m.surplusCash || 0;
   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
 
@@ -123,6 +124,8 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
           <SpareCheck d={d} m={m} amount={lump.amount}/>
         </>
       )}
+
+      <PensionFirst d={d} m={m} checked={pensionChecked}/>
 
       <LoanTrajectory d={d} m={m} tip={tip} savingsRates={savingsRates} ageKnown={+d.age > 0} setOverpayAmt={setOverpayAmt} overpayOptions={overpayOptions} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
 
@@ -350,38 +353,63 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
 // part of it: whether the money's spare, and whether paying the loan off
 // beats saving or the pension, depend on them. The way in to each (behind
 // the paywall for anyone whose free answer was this one).
-const FULL_PICTURE = [
-  { key: "cash", title: "Cash & savings", gives: "your cash buffer and ISA allowance" },
-  { key: "pension", title: "Pension", gives: "your pension and employer match" },
-];
-// Before Cash & savings and Pension are in: the Opportunity tile, its answer
-// blurred (a stand-in figure, not theirs) under the ask for what it needs.
+// Before their savings are in: the Opportunity tile, its answer blurred (a
+// stand-in figure, not theirs) under the ask for them, which goes to Cash &
+// savings' short route (moduleGuide.js briefQuestions) and back.
 function LockedOpportunity({ d }) {
   const navigate = useNavigate();
-  const missing = FULL_PICTURE.filter(p => !moduleAnswered(p.key, d));
-  if (!missing.length) return null;
+  const spendingKnown = +d.monthlyExpenses > 0;
   const line = w => <div style={{height:"9px",width:w,borderRadius:"5px",background:OPPORTUNITY_TILE_BODY,opacity:0.35,marginTop:"8px"}}/>;
   return (
     <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
       <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
       <div style={{position:"relative"}}>
-        <div aria-hidden="true" style={{position:"absolute",inset:0,overflow:"hidden",filter:"blur(6px)",userSelect:"none",pointerEvents:"none"}}>
+        <div aria-hidden="true" style={{position:"absolute",inset:0,overflow:"hidden",filter:"blur(4px)",userSelect:"none",pointerEvents:"none"}}>
           <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>£0,000</div>
           {line("70%")}{line("100%")}{line("90%")}{line("95%")}{line("60%")}
         </div>
-        <div style={{position:"relative",top:"22px",background:"rgba(255,255,255,0.9)",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginBottom:"22px"}}>
+        <div style={{position:"relative",marginTop:"4px",background:"rgba(255,255,255,0.45)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.7)",boxShadow:"0 1px 12px rgba(22,47,36,0.06)",borderRadius:"12px",padding:"14px 16px 4px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",fontWeight:700,color:G}}><Lock size={14} color={G}/>Is paying it off early worth it?</div>
           <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 10px"}}>
-            That depends on {missing.map(p => p.gives).join(" and ")}. Add {missing.length > 1 ? "them" : "it"} to see.
+            You're most of the way there. Adding your savings{spendingKnown ? "" : " and spending"} will help you understand the trade-off: what that money earns where it is, and how much is spare above a safety buffer.
           </p>
-          {missing.map(p => (
-            <button key={p.key} type="button" onClick={() => navigate(`/app/module/${p.key}?from=studentLoan`)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0",cursor:"pointer",fontFamily:"inherit"}}>
-              <span style={{fontSize:"14px",fontWeight:700,color:G}}>Add {p.title}</span>
-              <ChevronRight size={17} color={G}/>
-            </button>
-          ))}
+          <button type="button" onClick={() => navigate("/app/module/cash?from=studentLoan")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0",cursor:"pointer",fontFamily:"inherit"}}>
+            <span style={{fontSize:"14px",fontWeight:700,color:G}}>Add your savings</span>
+            <ChevronRight size={17} color={G}/>
+          </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// An employer's pension match beats any overpayment, so it comes first:
+// until it's checked, the questions for it (Pension's short route); once
+// it is, what they're missing, if anything, and the rest of Pension, which
+// may sit behind the paywall. Only for the employed: no match otherwise.
+function PensionFirst({ d, m, checked }) {
+  const navigate = useNavigate();
+  if (d.employmentStatus === "self_employed" || d.employmentStatus === "not_working") return null;
+  const missed = checked && m.missedMatch > 0;
+  const notPaying = checked && d.pensionStatus === "no";
+  if (checked && !missed && !notPaying) return null;
+  return (
+    <div style={{background:WHITE,border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+      <div style={{fontSize:"10px",fontWeight:800,color:CRITICAL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"8px"}}>Critical pension opportunity</div>
+      {missed ? (<>
+        <div style={{fontFamily:SERIF,fontSize:"26px",color:G,fontWeight:700,lineHeight:1.15}}>{fmt(m.missedMatch)} a year</div>
+        <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.55,margin:"4px 0 10px"}}>of your employer's money you're not getting. Paying in up to its match comes before overpaying your loan.</p>
+      </>) : (
+        <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.55,margin:"0 0 10px"}}>
+          {notPaying
+            ? "You don't pay into a pension. Most employers pay in when you do, which beats overpaying your loan. Check what yours offers first."
+            : "If your employer matches what you pay into your pension, paying in up to the match beats overpaying: it's free money. Check yours before deciding."}
+        </p>
+      )}
+      <button type="button" onClick={() => navigate(checked ? "/app/module/pension" : "/app/module/pension?from=studentLoan")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0 0",cursor:"pointer",fontFamily:"inherit"}}>
+        <span style={{fontSize:"14px",fontWeight:700,color:G}}>{checked ? "See your full pension answer" : "Check your pension match"}</span>
+        <ChevronRight size={17} color={G}/>
+      </button>
     </div>
   );
 }
@@ -436,10 +464,9 @@ function SpareCheck({ d, m, amount }) {
       ? { ok: false, text: `${k(m.isaHeadroom)} of ISA allowance remaining`, long: `${k(m.isaHeadroom)} of this year's ISA allowance is unused. Growth in an ISA is tax-free, and the allowance is use it or lose it on 5 April; the loan isn't.` }
       : { ok: true, text: "ISA allowance used", long: "This year's ISA allowance is used, so there's no tax-free allowance this money would miss." });
   }
-  if (d.hasPension === "yes" && d.employmentStatus === "employed") {
-    items.push(m.missedMatch > 0
-      ? { ok: false, text: `${k(m.missedMatch)}/yr of employer match unclaimed`, long: `${fmt(Math.round(m.missedMatch))} a year of your employer's pension match is unclaimed. Every £1 paid in up to the match gets another £1 from them, plus tax relief: more than overpaying returns.` }
-      : { ok: true, text: "Employer's full match", long: "You get your employer's full pension match, so overpaying doesn't miss any money they'd add." });
+  // A missed match is the Critical pension opportunity tile's (PensionFirst).
+  if (d.hasPension === "yes" && d.employmentStatus === "employed" && !(m.missedMatch > 0)) {
+    items.push({ ok: true, text: "Employer's full match", long: "You get your employer's full pension match, so overpaying doesn't miss any money they'd add." });
   }
   return (
     <div style={{padding:"4px 2px 0",marginBottom:"16px"}}>
@@ -502,6 +529,11 @@ function BalanceChart({ sl, width, alt = null, altLabel = null }) {
   const peak = path[peakIdx];
   const end = path[path.length - 1];
   const anchorFor = x => (x < VW * 0.25 ? "start" : x > VW * 0.75 ? "end" : "middle");
+  // The year the lump sum clears it, on the x-axis under where the dashed
+  // line ends: not when it's the start or end year already labelled.
+  const altClear = alt?.find(p => p.bal <= 0)?.yr;
+  const altX = altClear != null ? sx(altClear) : null;
+  const showAltYear = altX != null && altClear !== lastYr && altX - PL > 30 && VW - PR - altX > 30;
   return (
     <svg width={VW} height={VH} viewBox={`0 0 ${VW} ${VH}`} style={{display:"block"}} role="img"
       aria-label={`Loan balance from ${fmt(path[0].bal)} today${showPeak ? `, peaking at ${fmt(peak.bal)}` : ""}, to ${end.bal > 0 ? `${fmt(end.bal)} written off` : "cleared"} in ${startYear + lastYr}`}>
@@ -535,6 +567,12 @@ function BalanceChart({ sl, width, alt = null, altLabel = null }) {
       )}
       <text x={PL} y={VH-4} fontSize="9" fontWeight="700" fill={MUT} textAnchor="start">{startYear}</text>
       <text x={VW-PR} y={VH-4} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{startYear + lastYr}</text>
+      {showAltYear && (
+        <g>
+          <line x1={altX} x2={altX} y1={VH-PB} y2={VH-PB+4} stroke={GOLD} strokeWidth="1.5"/>
+          <text x={altX} y={VH-4} fontSize="9" fontWeight="700" fill={GOLD} textAnchor="middle">{startYear + altClear}</text>
+        </g>
+      )}
     </svg>
   );
 }
@@ -679,7 +717,7 @@ function WhereItCouldGo({ m, locked }) {
         {locked && (
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"8px",textAlign:"center",padding:"0 12px"}}>
             <span style={{width:"40px",height:"40px",borderRadius:"50%",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><Lock size={18} color={G}/></span>
-            <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"240px"}}>Opens with Cash & savings and Pension, or a subscription</span>
+            <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"240px"}}>Opens with your savings and pension match, or a subscription</span>
           </div>
         )}
       </div>

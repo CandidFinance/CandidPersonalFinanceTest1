@@ -27,7 +27,7 @@ import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.j
 import { bankChange } from "./lib/moduleStatus.js";
 import { moduleLimits } from "./lib/moduleLimits.js";
 import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath } from "./lib/appEntry.js";
-import { moduleGuideStarts } from "./lib/moduleGuide.js";
+import { moduleGuideStarts, briefQuestions } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { readinessMissing } from "./lib/propertyReadiness.js";
 import { selectRows, updateRow } from "./lib/supabase.js";
@@ -758,6 +758,27 @@ export default function AppShell() {
     const returnTo = fromKey && fromKey !== mobileActiveModule && MODULE_META.some(mm => mm.key === fromKey) ? fromKey : null;
     if (!mobileActiveModule || (HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes(mobileActiveModule)) || !MODULE_META.some(mm => mm.key === mobileActiveModule)) {
       return <Navigate to="/app/modules" replace />;
+    }
+    // From Student loan, Cash & savings and Pension ask only what its answer
+    // uses (moduleGuide.js briefQuestions), then go straight back to it. The
+    // module's own walk-through comes later, without those questions.
+    const brief = briefQuestions(mobileActiveModule, returnTo);
+    if (brief) {
+      const backTo = MODULE_META.find(mm => mm.key === returnTo)?.title;
+      return (
+        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
+          <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} questions={brief}
+            subtitle={`A few questions for your ${backTo.toLowerCase()} answer`}
+            emptyText={mobileActiveModule === "pension" ? "Answer these to see whether your employer's pension match comes before paying off your loan." : "Answer these to see whether paying off your loan early is worth it."}
+            skipLabel={`Back to ${backTo}`}
+            onDone={(how, at) => {
+              posthog.capture(how === "finished" ? "brief_finished" : "brief_skipped", { module: mobileActiveModule, from: returnTo, at });
+              setRowSaveTick(t => t + 1);
+              navigate(`/app/module/${returnTo}`, { replace: true });
+              scrollToTop();
+            }}/>
+        </MobileLayout>
+      );
     }
     // A locked module needing a subscription: its frosted answer and the
     // paywall first, before any questions (unlock.js).

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { MODULE_GUIDES, moduleGuideStarts, flatQuestions } from "./moduleGuide.js";
+import { MODULE_GUIDES, moduleGuideStarts, flatQuestions, briefQuestions } from "./moduleGuide.js";
 import { READINESS_QUESTIONS, MORTGAGE_QUESTIONS, RENT_VS_BUY_QUESTIONS, neededAtStart, visibleQuestions, countSettled } from "./propertyGuide.js";
 import { calcMetrics } from "./metrics.js";
 
@@ -259,4 +259,21 @@ test("student loan, from a link: work, then pay with its growth below, then the 
   assert.ok(!ids("studentLoan", { ...visitor, salary: "40000" }, { ...visitor, salary: "40000" }).includes("employment"));
   // The finish year sets when repayments started, and so the write-off.
   assert.deepEqual(flat.find(q => q.id === "loanBalance.slFinishYear").also("2018"), { slFirstDueYear: "2019" });
+});
+
+test("from Student loan: only what its answer uses, each asked once so the module's own walk-through skips it", () => {
+  assert.equal(briefQuestions("cash", null), null);
+  assert.equal(briefQuestions("investments", "studentLoan"), null);
+  const slUser = { ...fresh, employmentAsked: true, salary: "70000", studentLoan: "plan2", loanBalance: "18500" };
+  const brief = key => { const qs = briefQuestions(key, "studentLoan"); return visibleQuestions(qs, ctxFor(slUser), neededAtStart(qs, ctxFor(slUser))).map(q => q.id); };
+  assert.deepEqual(brief("cash"), ["spending", "cashAccounts"]);
+  assert.deepEqual(brief("pension"), ["pensionStatus"]);
+  const paying = { ...slUser, pensionStatus: "yes", hasPension: "yes" };
+  const qs = briefQuestions("pension", "studentLoan");
+  assert.deepEqual(visibleQuestions(qs, ctxFor(paying), neededAtStart(qs, ctxFor(slUser))).map(q => q.id), ["pensionStatus", "pensionContribution", "employerType", "pensionMatch"]);
+  // Asked there, the full walk-through starts past them.
+  const after = { ...slUser, monthlyExpenses: "1500", cashTiers: [{ amount: "8000", rate: "3" }], askedFields: ["monthlyExpenses", "cashTiers", "pensionStatus"] };
+  assert.ok(!ids("cash", after).includes("cashAccounts"));
+  assert.ok(!ids("cash", after).includes("spending"));
+  assert.ok(!ids("pension", after).includes("pensionStatus"));
 });

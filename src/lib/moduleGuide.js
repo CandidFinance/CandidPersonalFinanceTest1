@@ -39,6 +39,9 @@ const CASH_QUESTIONS = [
     why: () => "Shows what your cash earns against the best rates available.",
     note: () => "Add each account. Leave the rate blank if you're not sure.",
     answered: ({ d }) => (d.cashTiers || []).some(t => +t.amount > 0),
+    // Asked once: on the short route from Student loan, say, after which
+    // this walk-through skips it.
+    ifMissing: ({ d }) => !(d.cashTiers || []).some(t => +t.amount > 0),
     notSure: () => ({ label:"I don't have any savings", value:[{ amount:"", rate:"" }] }),
   },
   {
@@ -195,6 +198,8 @@ const PENSION_QUESTIONS = [
     also: value => value === "unsure" ? { pensionUnknown: true, pensionKind: "" }
       : value === "db" ? { pensionUnknown: false, hasPension: "yes", pensionKind: "db" }
       : { pensionUnknown: false, hasPension: value, pensionKind: value === "yes" ? "dc" : "" },
+    // Asked once: on the short route from Student loan, say.
+    ifMissing: () => true,
   },
   {
     id:"pensionPotNotPaying", field:"hasPensionPot", kind:"choice",
@@ -663,6 +668,21 @@ export const MODULE_GUIDES = {
   studentLoan: { questions: STUDENT_LOAN_QUESTIONS, emptyText: "Answer a few questions below to see whether overpaying is worth it." },
   kids:        { questions: KIDS_QUESTIONS,         emptyText: "Answer a few questions below to see the childcare help you could get." },
 };
+
+// The short route from Student loan (?from=studentLoan): only the questions
+// its answer uses, each asked once, so the module's own walk-through skips
+// them later. Cash & savings: spending (for the buffer) and savings with
+// their rate. Pension: whether they pay in, and their employer's match.
+const LOAN_BRIEF = {
+  cash: ["spending", "cashAccounts"],
+  pension: ["pensionStatus", "pensionContribution", "employerType", "pensionMatch"],
+};
+const BRIEF_ABOUT = ["employment", "notWorking", "earnedThisYear", "salary"];
+export function briefQuestions(key, from) {
+  const ids = from === "studentLoan" && LOAN_BRIEF[key];
+  if (!ids) return null;
+  return MODULE_GUIDES[key].questions.filter(q => BRIEF_ABOUT.includes(q.id) || ids.includes(q.id));
+}
 
 // A module's walk-through starts by itself until its questions have been
 // answered (or skipped), which is when it joins selectedModules.
