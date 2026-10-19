@@ -88,7 +88,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
         </div>
       )}
 
-      <LoanTrajectory m={m} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
+      <LoanTrajectory m={m} ageKnown={+d.age > 0} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
 
       {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
 
@@ -105,7 +105,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
 
 // Your loan trajectory: when the balance starts falling, and the balance
 // year by year to when it clears or is written off.
-function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
+function LoanTrajectory({ m, ageKnown, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
   const stats = [
     { label:"Interest rate", value:`${sl.slRatePct}%` },
     { label:"Annual interest", value:`${fmt(sl.annualInterest)}/yr` },
@@ -184,7 +184,7 @@ function LoanTrajectory({ m, onRecordLoanOverpayment, editingBalance, setManualB
 
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:"0 0 12px"}}>
           Written off in April {sl.writeOffTaxYear}. {sl.firstDueEstimated
-            ? (+d.age > 0 ? `We've assumed repayments started in April ${sl.firstDueYear}, the April after you turned 22.` : `We've assumed repayments started in April ${sl.firstDueYear}. Tell us when they did:`)
+            ? (ageKnown ? `We've assumed repayments started in April ${sl.firstDueYear}, the April after you turned 22.` : `We've assumed repayments started in April ${sl.firstDueYear}. Tell us when they did:`)
             : `Repayments started in April ${sl.firstDueYear}, as you told us.`}{" "}
           {set && !editingStart && (
             <button type="button" onClick={() => setEditingStart(true)} style={{background:"none",border:"none",padding:0,color:G,fontWeight:600,fontSize:"12px",cursor:"pointer",textDecoration:"underline"}}>Change</button>
