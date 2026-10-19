@@ -296,7 +296,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"22000\",null,null,null,null,null,\"\",null,null,\"moderate\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"moderate\"]",
      "banked": 0
     }
    },
@@ -3157,7 +3157,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"22000\",null,null,null,null,null,\"\",null,null,\"moderate\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"moderate\"]",
      "banked": 0
     }
    },
@@ -18488,7 +18488,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"6000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },
@@ -21182,7 +21182,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"6000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },
@@ -33603,7 +33603,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"31000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },
@@ -36815,7 +36815,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"31000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },
@@ -39858,7 +39858,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"48000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },
@@ -43451,7 +43451,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"48000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },
@@ -46883,7 +46883,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"14000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },
@@ -49665,7 +49665,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"14000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },
@@ -75802,7 +75802,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"38000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },
@@ -79221,7 +79221,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"38000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
+     "answers": "[null,null,null,null,null,null,null,null,null,null,\"\",null,\"stable\"]",
      "banked": 0
     }
    },

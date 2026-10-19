@@ -446,8 +446,19 @@ const OWN_FIELDS = {
   mortgage: ["hasMortgage", "mortgageBalance", "mortgageRate", "mortgageOfferRate"],
   personalLoan: ["hasPersonalLoan", "personalLoanBalance", "personalLoanMonthly", "personalLoanRate", "personalLoanTermRemaining"],
 };
+// A student loan's balance moves every month by itself (loanBalance.js) and
+// an overpayment is banked when it's recorded (bankChange), so neither
+// counts as an answer changing.
+const NOT_ANSWERS = ["loanBalance", "pgLoanBalance"];
 const ownAnswers = (d, key) => JSON.stringify((OWN_FIELDS[key] || (MODULE_GUIDES[key]?.questions || [])
-  .filter(q => q.group !== "you").map(q => q.field)).map(f => d[f] ?? null));
+  .filter(q => q.group !== "you" && !NOT_ANSWERS.includes(q.field)).map(q => q.field)).map(f => d[f] ?? null));
+// A change made, banked straight away: its £ a year, dated today, on the
+// module's baseline (made if there isn't one yet).
+export function bankChange(d, key, perYear, on = new Date().toISOString().slice(0, 10)) {
+  const base = (d.moduleBaselines || {})[key] || { amount: 0, answers: ownAnswers(d, key), banked: 0 };
+  const add = Math.round(perYear);
+  return { ...(d.moduleBaselines || {}), [key]: { ...base, banked: (base.banked || 0) + add, changes: [...(base.changes || []), { perYear: add, on }] } };
+}
 export function bankedFor(d, key) {
   return Math.round((d.moduleBaselines || {})[key]?.banked || 0);
 }

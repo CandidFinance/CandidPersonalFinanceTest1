@@ -23,6 +23,8 @@ import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
+import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
+import { bankChange } from "./lib/moduleStatus.js";
 import { moduleLimits } from "./lib/moduleLimits.js";
 import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath } from "./lib/appEntry.js";
 import { moduleGuideStarts } from "./lib/moduleGuide.js";
@@ -135,7 +137,10 @@ function loadInitialData() {
     if (saved) {
       // Inputs saved before inputsTaxYear existed are dated by their last report.
       const reportDate = localStorage.getItem('candid_insights_date');
-      return rollTaxYear({ ...BLANK_DATA, ...JSON.parse(saved) }, now, reportDate ? new Date(reportDate) : null);
+      const rolled = rollTaxYear({ ...BLANK_DATA, ...JSON.parse(saved) }, now, reportDate ? new Date(reportDate) : null);
+      // The student loan balance, rolled on payday by payday since it was
+      // last set (src/lib/loanBalance.js).
+      return { ...rolled, ...(rollLoanBalances(rolled, now) || {}) };
     }
   } catch(e) { reportStorageFailure("load_inputs", e); }
   return rollTaxYear(BLANK_DATA, now);
@@ -247,29 +252,14 @@ export default function AppShell() {
   // make net worth look like it increased for free. Reduces cash tiers
   // (largest first) when populated, else the flat cashSavings fallback —
   // mirrors calcMetrics' own tiers-vs-flat preference (src/lib/metrics.js).
-  const recordLoanOverpayment = (newBalance) => {
-    const capped = capField("loanBalance", newBalance);
+  const recordLoanOverpayment = (newBalance, { sources = [], pbRate = null, perYear = 0 } = {}) => {
+    const capped = String(capField("loanBalance", newBalance));
     setRawD(p => {
       const delta = Math.max(0, (+p.loanBalance||0) - (+capped||0));
-      const next = { ...p, loanBalance: String(capped) };
+      const next = { ...p, loanBalance: capped, loanBalanceSet: capped, loanBalanceAsOf: todayIso() };
       if (delta > 0) {
-        const tiers = Array.isArray(p.cashTiers) ? p.cashTiers : [];
-        const tiersTotal = tiers.reduce((s,t) => s + (+t.amount||0), 0);
-        if (tiersTotal > 0) {
-          let remaining = delta;
-          const newTiers = tiers.map(t => ({...t}));
-          const byLargest = newTiers.map((t,i) => i).sort((a,b) => (+newTiers[b].amount||0) - (+newTiers[a].amount||0));
-          for (const i of byLargest) {
-            if (remaining <= 0) break;
-            const amt = +newTiers[i].amount || 0;
-            const take = Math.min(amt, remaining);
-            newTiers[i] = { ...newTiers[i], amount: String(amt - take) };
-            remaining -= take;
-          }
-          next.cashTiers = newTiers;
-        } else {
-          next.cashSavings = String(Math.max(0, (+p.cashSavings||0) - delta));
-        }
+        Object.assign(next, takeFromSources(p, delta, sources, pbRate));
+        if (perYear > 0) next.moduleBaselines = bankChange(p, "studentLoan", perYear);
       }
       return next;
     });
