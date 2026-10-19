@@ -7,6 +7,7 @@ import { MODULE_GUIDES, flatQuestions } from "../../lib/moduleGuide.js";
 import { capField } from "../../lib/onboarding.js";
 import { withAnswered } from "../../lib/appEntry.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
+import YearPicker from "../YearPicker.jsx";
 import MobileCashTiersList from "../onboarding/MobileCashTiersList.jsx";
 
 // A module's answers as one form, for its tile on Edit inputs: the module's
@@ -70,6 +71,8 @@ export default function ModuleInputsForm({ moduleKey, d, m, set }) {
                 <button type="button" onClick={() => setEditingLoan(true)} style={{...link,padding:"6px 0"}}>Update</button>
               </div>
             );
+        } else if (q.yearRange) {
+          control = <YearPicker range={q.yearRange(ctx)} value={raw ?? ""} onChange={v => write(q, v)}/>;
         } else if (["money", "percent", "years"].includes(q.kind)) {
           const filled = raw !== "" && raw != null && !isNaN(+raw);
           control = <PillMoneyInput label={q.label || ""} unit={{ percent:"%", years:"" }[q.kind] ?? "£"}

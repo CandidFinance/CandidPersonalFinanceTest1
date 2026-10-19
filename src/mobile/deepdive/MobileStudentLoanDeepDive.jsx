@@ -3,7 +3,8 @@ import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock, Clock } from "lucide-react";
-import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
+import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS, slFirstDueRange } from "../../lib/studentLoan.js";
+import YearPicker, { yearInRange } from "../YearPicker.jsx";
 import { moduleAnswered, loanVerdictReady, loanPensionChecked, loanSavingsIn, hasEmployerMatch } from "../../lib/appEntry.js";
 import { hasAccess } from "../../lib/entitlement.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
@@ -168,9 +169,13 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
   const closeBalanceEditor = () => { setEditingBalance(false); setManualBalanceInput(null); };
   // When repayments started decides when the loan is written off. Estimated
   // from age unless the user says (studentLoan.js slFirstDueYear).
-  const startValue = startInput ?? sl.firstDueYear;
+  // Only a year the plan allows (studentLoan.js slFirstDueRange).
+  const startValue = startInput ?? String(sl.firstDueYear);
+  const startRange = slFirstDueRange(d.studentLoan);
+  const startOk = yearInRange(startValue, startRange);
   const saveStart = () => {
-    if (set && startValue >= 1990 && startValue <= new Date().getFullYear() + 10) set("slFirstDueYear", String(Math.round(startValue)));
+    if (!startOk) return;
+    if (set) set("slFirstDueYear", String(+startValue));
     setEditingStart(false); setStartInput(null);
   };
   const resetStart = () => { if (set) set("slFirstDueYear", ""); setEditingStart(false); setStartInput(null); };
@@ -248,7 +253,7 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
         {editingStart && (
           <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
             <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>When repayments started</div>
-            <PillMoneyInput label="April of" unit="" value={startValue} onChange={v => setStartInput(v ?? null)}/>
+            <YearPicker label="April of" range={startRange} value={startValue} onChange={v => setStartInput(v)}/>
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
               Usually the April after you left your course. Your payslips or your online student loan account will show it.
             </p>
@@ -256,7 +261,7 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
               {!sl.firstDueEstimated
                 ? <button onClick={resetStart} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Use the estimate</button>
                 : <button onClick={() => { setEditingStart(false); setStartInput(null); }} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Cancel</button>}
-              <button onClick={saveStart} style={{flex:1,background:G,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer"}}>Save</button>
+              <button onClick={saveStart} disabled={!startOk} style={{flex:1,background:startOk ? G : "rgba(22,47,36,0.2)",border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:startOk ? "pointer" : "not-allowed"}}>Save</button>
             </div>
           </div>
         )}

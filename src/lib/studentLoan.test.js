@@ -219,3 +219,15 @@ test("a loan heading for write-off: the lump sum that clears it and comes out ah
   const cm = calcMetrics(clears);
   assert.equal(bestLumpSum(cm, calcStudentLoanScenario(clears, cm), 50000), null);
 });
+
+test("finish years: only those each plan allows, and a year outside them is ignored", async () => {
+  const { slFinishYearRange, slFirstDueRange, slFirstDueYearStated } = await import("./studentLoan.js");
+  assert.deepEqual(slFinishYearRange("plan2", 2026), { min: 2015, max: 2029 });
+  assert.deepEqual(slFinishYearRange("plan5", 2026), { min: 2025, max: 2031 });
+  assert.deepEqual(slFinishYearRange("postgrad", 2026), { min: 2017, max: 2031 });
+  assert.deepEqual(slFinishYearRange("plan1", 2026), { min: 1999, max: 2031 });
+  assert.deepEqual(slFinishYearRange(null, 2026), { min: 1990, max: 2031 });
+  assert.deepEqual(slFirstDueRange("plan2", 2026), { min: 2016, max: 2030 });
+  assert.equal(slFirstDueYearStated({ studentLoan: "plan2", slFirstDueYear: "2020" }), 2020);
+  for (const y of ["1500", "3000", "2010"]) assert.equal(slFirstDueYearStated({ studentLoan: "plan2", slFirstDueYear: y }), null);
+});

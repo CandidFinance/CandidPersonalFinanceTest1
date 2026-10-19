@@ -86,9 +86,30 @@ export const SL_WRITE_OFF_YEARS = { plan1: 25, plan2: 30, plan4: 30, plan5: 40, 
 // Plan 5 April 2026, Postgraduate April 2018).
 export const SL_TYPICAL_FIRST_DUE_AGE = 22;
 export const SL_EARLIEST_FIRST_DUE = { plan2: 2016, plan5: 2026, postgrad: 2018 };
+// The years a course on each plan could have finished. Income-contingent
+// loans (Plans 1 and 4) began in 1998, so a first course ended in 1999 at
+// the earliest; Plan 2 courses started from September 2012 to July 2023, the
+// first repaying from April 2016, so finishing from 2015 to 2029 (a six-year
+// course at the latest); Plan 5 courses from August 2023, repaying from April
+// 2026; Postgraduate loans from August 2016, repaying from April 2018. At the
+// latest, a course still running, up to five years ahead (Plan 2's last
+// courses end sooner). Any plan unknown: from 1990.
+export function slFinishYearRange(plan, year = new Date().getFullYear()) {
+  const ahead = year + 5;
+  const [min, max] = { plan1: [1999, ahead], plan4: [1999, ahead], plan2: [2015, Math.min(2029, ahead)], plan5: [2025, ahead], postgrad: [2017, ahead] }[plan] || [1990, ahead];
+  return { min, max };
+}
+// Repayments are first due the April after the course finishes.
+export function slFirstDueRange(plan, year) {
+  const { min, max } = slFinishYearRange(plan, year);
+  return { min: min + 1, max: max + 1 };
+}
+// A year the user gave, if it's one their plan allows (one typed before the
+// guard rails, such as 3000, is ignored and the estimate used).
 export function slFirstDueYearStated(d) {
   const y = +d.slFirstDueYear;
-  return Number.isInteger(y) && y >= 1990 && y <= 2100 ? y : null;
+  const { min, max } = slFirstDueRange(d.studentLoan);
+  return Number.isInteger(y) && y >= min && y <= max ? y : null;
 }
 export function slFirstDueYear(d, taxYear = taxYearFor(d)) {
   const stated = slFirstDueYearStated(d);

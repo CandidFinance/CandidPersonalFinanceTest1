@@ -277,3 +277,17 @@ test("from Student loan: only what its answer uses, each asked once so the modul
   assert.ok(!ids("cash", after).includes("spending"));
   assert.ok(!ids("pension", after).includes("pensionStatus"));
 });
+
+test("student loan: the finish year is one the plan allows, and a plan that rules it out clears it", () => {
+  const balance = MODULE_GUIDES.studentLoan.questions.find(q => q.id === "loanBalance");
+  const plan = balance.follow.find(f => f.field === "slPlanAnswer");
+  const finish = balance.follow.find(f => f.field === "slFinishYear");
+  const ctx = d => ({ d, m: null });
+  const range = finish.yearRange(ctx({ slPlanAnswer: "plan2" }));
+  assert.equal(range.min, 2015);
+  assert.deepEqual(finish.also("2019", ctx({ slPlanAnswer: "plan2" })), { slFirstDueYear: "2020" });
+  for (const y of ["1500", "3000", "2012"]) assert.deepEqual(finish.also(y, ctx({ slPlanAnswer: "plan2" })), { slFirstDueYear: "" });
+  // 2019 fits Plan 2 but not Plan 5 (from 2025): switching clears it.
+  assert.deepEqual(plan.also("plan5", ctx({ slPlanAnswer: "plan2", slFinishYear: "2019" })), { studentLoan: "plan5", slFinishYear: "", slFirstDueYear: "" });
+  assert.deepEqual(plan.also("plan1", ctx({ slPlanAnswer: "plan2", slFinishYear: "2019" })), { studentLoan: "plan1" });
+});

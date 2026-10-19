@@ -5,6 +5,7 @@ import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../design-tok
 import { capField } from "../../lib/onboarding.js";
 import { neededAtStart, visibleQuestions, countSettled } from "../../lib/propertyGuide.js";
 import PillMoneyInput, { pillFieldStyle } from "../PillMoneyInput.jsx";
+import YearPicker, { yearInRange } from "../YearPicker.jsx";
 
 // A question's lowest allowed answer: a number, or worked out from the answers.
 const minFor = (q, ctx) => typeof q.min === "function" ? q.min(ctx) : q.min;
@@ -137,7 +138,9 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     const patch = { [f.field]: v, ...(f.also ? f.also(v, ctx) : {}) };
     Object.entries(patch).forEach(([k, val]) => set(k, val));
   };
-  const followAnswered = f => { const v = d[f.field]; return v !== "" && v != null && (f.kind === "choice" || !isNaN(+v)); };
+  const followAnswered = f => { const v = d[f.field]; return v !== "" && v != null && (f.kind === "choice" || !isNaN(+v)) && (!f.yearRange || yearInRange(v, f.yearRange(ctx))); };
+  // A year outside its range (`yearRange`) holds Continue back, even unasked-for.
+  const followWrong = f => { const v = d[f.field]; return !!f.yearRange && v !== "" && v != null && !yearInRange(v, f.yearRange(ctx)); };
   // One "not sure" answer or several (Property's price: the most they could
   // afford, or the local average).
   const notSure = [q.notSure ? q.notSure(ctx) : null].flat().filter(Boolean);
@@ -156,10 +159,11 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     : q.kind === "text" ? typeof raw === "string" && raw.trim() !== ""
     : q.kind === "custom" ? (q.answered ? q.answered(ctx) : true)
     : q.kind === "info" ? true
+    : q.yearRange ? yearInRange(raw, q.yearRange(ctx))
     : raw !== "" && raw != null && !isNaN(+raw) && (minFor(q, ctx) == null || +raw >= minFor(q, ctx));
   // With follow-ups showing, every required one has to be answered too.
   const mainReady = q.follow && q.kind === "choice" ? raw !== "" && raw != null : (hasAnswer || !q.required);
-  const followsReady = (hasAnswer || (q.follow && q.kind === "choice" && mainReady)) ? follows.every(f => !f.required || followAnswered(f)) : true;
+  const followsReady = (hasAnswer || (q.follow && q.kind === "choice" && mainReady)) ? follows.every(f => (!f.required || followAnswered(f)) && !followWrong(f)) : true;
   const canGo = mainReady && followsReady;
   const continueButton = (
     <button type="submit" disabled={!canGo} style={{
@@ -191,6 +195,8 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
                 );
               })}
             </div>
+          ) : f.yearRange ? (
+            <YearPicker range={f.yearRange(ctx)} value={d[f.field] ?? ""} onChange={v => writeFollow(f, v)}/>
           ) : (
             <PillMoneyInput label={f.inputLabel || ""} unit={{ percent:"%", years:"" }[f.kind] ?? "£"}
               value={followAnswered(f) ? +d[f.field] : null} onChange={v => writeFollow(f, v ?? "")}/>
@@ -315,9 +321,11 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
             </form>
           ) : (
             <form onSubmit={submit}>
-              <PillMoneyInput label={q.label} unit={{ percent:"%", years:"" }[q.kind] ?? "£"}
-                value={hasAnswer ? +raw : (q.prefill ? q.prefill(ctx) : null)}
-                onChange={v => write(q.field, q.cap ? capField(q.cap, v ?? "") : (v ?? ""))}/>
+              {q.yearRange ? <YearPicker label={q.label} range={q.yearRange(ctx)} value={raw ?? ""} onChange={v => write(q.field, v)}/> : (
+                <PillMoneyInput label={q.label} unit={{ percent:"%", years:"" }[q.kind] ?? "£"}
+                  value={hasAnswer ? +raw : (q.prefill ? q.prefill(ctx) : null)}
+                  onChange={v => write(q.field, q.cap ? capField(q.cap, v ?? "") : (v ?? ""))}/>
+              )}
               {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>{note}</p>}
               {followBlock}
               {continueButton}

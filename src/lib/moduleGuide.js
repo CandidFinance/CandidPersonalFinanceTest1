@@ -16,7 +16,7 @@ import { itemisedNonCashIsa } from "./isa.js";
 import { estimatePensionPot, LUMP_SUM_ALLOWANCE, hasStartedDrawing } from "./pension.js";
 import { STATE_PENSION_FULL } from "./tax.js";
 import { workingPastRetirementAge } from "./metrics.js";
-import { resolveSlRate, studentLoanPlanFrom, estimateSlBalance, slEstimateReady, PG_WITH_PLANS } from "./studentLoan.js";
+import { resolveSlRate, studentLoanPlanFrom, estimateSlBalance, slEstimateReady, PG_WITH_PLANS, slFinishYearRange } from "./studentLoan.js";
 import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION, NATION_OPTIONS, nationAlso, EMPLOYMENT_QUESTION, NOT_WORKING_QUESTION, EARNED_THIS_YEAR_QUESTION, SALARY_QUESTION } from "./sharedQuestions.js";
 import { CHILDCARE_INCOME_LIMIT, kidsSituation } from "./childcare.js";
 
@@ -381,10 +381,19 @@ const PLAN_OPTIONS = [
   { value:"plan1", label:"Plan 1" }, { value:"plan2", label:"Plan 2" }, { value:"plan4", label:"Plan 4 (Scotland)" },
   { value:"plan5", label:"Plan 5" }, { value:"postgrad", label:"Postgraduate" }, { value:"unsure", label:"Not sure" },
 ];
-const planAlso = value => value === "unsure" ? {} : { studentLoan: value };
+// The years their plan allows for finishing the course (studentLoan.js).
+const finishRange = ({ d }) => slFinishYearRange(d.slPlanAnswer === "unsure" ? null : d.slPlanAnswer || d.studentLoan);
+const inRange = (v, { min, max }) => v !== "" && v != null && Number.isInteger(+v) && +v >= min && +v <= max;
+// A plan that rules out the finish year already given clears it.
+const planAlso = (value, ctx) => {
+  const patch = value === "unsure" ? {} : { studentLoan: value };
+  const year = ctx?.d?.slFinishYear;
+  if (year && !inRange(year, slFinishYearRange(value === "unsure" ? null : value))) Object.assign(patch, { slFinishYear: "", slFirstDueYear: "" });
+  return patch;
+};
 // Repayments were first due the April after the course finished, which sets
-// when the loan is written off (slFirstDueYear).
-const finishAlso = value => +value >= 1990 ? { slFirstDueYear: String(+value + 1) } : {};
+// when the loan is written off (slFirstDueYear). Only a year the plan allows.
+const finishAlso = (value, ctx) => ({ slFirstDueYear: inRange(value, ctx ? finishRange(ctx) : slFinishYearRange(null)) ? String(+value + 1) : "" });
 // Pay growth, under the salary (and on its own when the salary's already
 // known): what decides most whether a loan is cleared. Asked once.
 const PAY_GROWTH_FOLLOW = {
@@ -425,7 +434,7 @@ const STUDENT_LOAN_QUESTIONS = [
     notSure: () => ({ label:"I'm not sure, help me estimate it", value:"" }),
     follow: [
       { field:"slPlanAnswer", kind:"choice", label:"Which plan?", required:true, options: () => PLAN_OPTIONS, also: planAlso },
-      { field:"slFinishYear", kind:"years", label:"Year you finished your course", min:1990, also: finishAlso,
+      { field:"slFinishYear", kind:"years", label:"Year you finished your course", yearRange: finishRange, also: finishAlso,
         note: () => "Sets when it's written off. Leave it blank if you're not sure.", showIf: ({ d }) => !!d.slPlanAnswer },
     ],
   },
@@ -504,7 +513,7 @@ const STUDENT_LOAN_QUESTIONS = [
   },
   {
     // Asked under the balance when it's known; here for the estimate.
-    id:"slFinishYear", field:"slFinishYear", kind:"years", label:"Year", required:true, min:1990,
+    id:"slFinishYear", field:"slFinishYear", kind:"years", label:"Year", required:true, yearRange: finishRange,
     ask: () => "What year did you finish the course?",
     why: () => "Interest has built up since, and repayments started the April after.",
     also: finishAlso,
