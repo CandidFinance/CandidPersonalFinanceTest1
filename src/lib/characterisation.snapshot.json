@@ -104,11 +104,11 @@
      "potentialAmount": 2000
     },
     "studentLoan": {
-     "status": "ok",
-     "impact": 0,
-     "impactLabel": null,
+     "status": "attention",
+     "impact": 73,
+     "impactLabel": "£73/yr ahead by paying your loan off now",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 73
     },
     "mortgage": {
      "status": "na",
@@ -129,7 +129,7 @@
      "amount": 0
     }
    },
-   "score": 66,
+   "score": 58,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -168,11 +168,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "ok",
-     "summary": "On track: nothing to act on right now.",
-     "impact": 0,
-     "impactLabel": null,
-     "amount": 0,
+     "status": "attention",
+     "summary": "£73/yr ahead by paying your loan off now",
+     "impact": 73,
+     "impactLabel": "£73/yr ahead by paying your loan off now",
+     "amount": 73,
      "amountIsLumpSum": false
     },
     "mortgage": {
@@ -254,11 +254,11 @@
       "key": "studentLoan",
       "icon": "<element undefined>",
       "title": "Student loan",
-      "status": "ok",
-      "summary": "On track: nothing to act on right now.",
-      "impact": 0,
-      "impactLabel": null,
-      "amount": 0,
+      "status": "attention",
+      "summary": "£73/yr ahead by paying your loan off now",
+      "impact": 73,
+      "impactLabel": "£73/yr ahead by paying your loan off now",
+      "amount": 73,
       "amountIsLumpSum": false,
       "banked": 0,
       "pending": 0
@@ -267,15 +267,14 @@
     "modulesWithRec": [
      "<circular>",
      "<circular>",
+     "<circular>",
      "<circular>"
     ],
-    "modulesNoRec": [
-     "<circular>"
-    ],
+    "modulesNoRec": [],
     "kidsModule": null,
-    "needActionCount": 3,
-    "onTrackCount": 1,
-    "totalOpp": 2490,
+    "needActionCount": 4,
+    "onTrackCount": 0,
+    "totalOpp": 2563,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -295,7 +294,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 0,
+     "amount": 73,
      "answers": "[\"moderate\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -358,18 +357,18 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£26,122",
-      "title": "you're expected to repay in all, clearing it in 6 years.",
-      "body": "That's £4,122 of interest on top of the £22,000 you owe today."
+      "figure": "£438",
+      "title": "ahead by paying your loan off now, rather than letting it clear in 6 years."
      },
      {
       "label": "Why",
-      "title": "Your pension's assumed 6% growth beats your loan's 5.3% a year on average over its life, so overpaying doesn't come out ahead."
+      "title": "Paying it off avoids about £4,122 of interest. In savings at 4.72%, the same money would earn about £3,684 meanwhile.",
+      "body": "Separately, your employer would add £1,440 a year to your pension if you paid in up to its match (see Pension). A pension could grow more: it's assumed to grow 6% a year, against the loan's 5.3%. That growth isn't guaranteed, and money in a pension is locked away until 57; paying off the loan saves its interest for certain."
      },
      {
       "label": "What you could do",
-      "title": "Nothing to change right now.",
-      "body": "Repayments come out of your pay automatically."
+      "title": "It would use £22,000 of cash. The page shows how your buffer, ISA allowance and pension match stand.",
+      "body": "You can overpay on the Student Loans Company website, all of it or part."
      }
     ],
     "kids": null
@@ -1335,11 +1334,16 @@
       "amount": 432,
       "amountIsLumpSum": false,
       "line": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused"
+     },
+     {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 73,
+      "amountIsLumpSum": false,
+      "line": "£73/yr ahead by paying your loan off now"
      }
     ],
-    "onTrack": [
-     "Student loan"
-    ]
+    "onTrack": []
    },
    "drawdown": {
     "phased": {
@@ -2380,9 +2384,9 @@
      "pensionGrowthPct": 6,
      "pensionGap": -0.7,
      "beatsPension": false,
-     "worthOverpaying": false,
-     "overpayAnnualBenefit": 0,
-     "overpayTotalBenefit": 0,
+     "worthOverpaying": true,
+     "overpayAnnualBenefit": 73,
+     "overpayTotalBenefit": 438,
      "interestAvoided": 4122,
      "savingsForgone": 3684
     },
@@ -2810,7 +2814,7 @@
      "pg_loan_balance": null
     },
     "report": {
-     "candid_score": 66,
+     "candid_score": 58,
      "total_opportunity_gbp": 4900,
      "critical_modules": "pension"
     },
@@ -2969,11 +2973,11 @@
      "potentialAmount": 2000
     },
     "studentLoan": {
-     "status": "ok",
-     "impact": 0,
-     "impactLabel": null,
+     "status": "attention",
+     "impact": 24,
+     "impactLabel": "£24/yr ahead by paying your loan off now",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 24
     },
     "mortgage": {
      "status": "na",
@@ -2994,7 +2998,7 @@
      "amount": 0
     }
    },
-   "score": 66,
+   "score": 58,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -3033,11 +3037,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "ok",
-     "summary": "On track: nothing to act on right now.",
-     "impact": 0,
-     "impactLabel": null,
-     "amount": 0,
+     "status": "attention",
+     "summary": "£24/yr ahead by paying your loan off now",
+     "impact": 24,
+     "impactLabel": "£24/yr ahead by paying your loan off now",
+     "amount": 24,
      "amountIsLumpSum": false
     },
     "mortgage": {
@@ -3119,11 +3123,11 @@
       "key": "studentLoan",
       "icon": "<element undefined>",
       "title": "Student loan",
-      "status": "ok",
-      "summary": "On track: nothing to act on right now.",
-      "impact": 0,
-      "impactLabel": null,
-      "amount": 0,
+      "status": "attention",
+      "summary": "£24/yr ahead by paying your loan off now",
+      "impact": 24,
+      "impactLabel": "£24/yr ahead by paying your loan off now",
+      "amount": 24,
       "amountIsLumpSum": false,
       "banked": 0,
       "pending": 0
@@ -3132,15 +3136,14 @@
     "modulesWithRec": [
      "<circular>",
      "<circular>",
+     "<circular>",
      "<circular>"
     ],
-    "modulesNoRec": [
-     "<circular>"
-    ],
+    "modulesNoRec": [],
     "kidsModule": null,
-    "needActionCount": 3,
-    "onTrackCount": 1,
-    "totalOpp": 2495,
+    "needActionCount": 4,
+    "onTrackCount": 0,
+    "totalOpp": 2519,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -3160,7 +3163,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 0,
+     "amount": 24,
      "answers": "[\"moderate\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -3223,18 +3226,18 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£26,122",
-      "title": "you're expected to repay in all, clearing it in 6 years.",
-      "body": "That's £4,122 of interest on top of the £22,000 you owe today."
+      "figure": "£142",
+      "title": "ahead by paying your loan off now, rather than letting it clear in 6 years."
      },
      {
       "label": "Why",
-      "title": "Your pension's assumed 6% growth beats your loan's 5.3% a year on average over its life, so overpaying doesn't come out ahead."
+      "title": "Paying it off avoids about £4,122 of interest. In savings at 5.1%, the same money would earn about £3,980 meanwhile.",
+      "body": "Separately, your employer would add £1,440 a year to your pension if you paid in up to its match (see Pension). A pension could grow more: it's assumed to grow 6% a year, against the loan's 5.3%. That growth isn't guaranteed, and money in a pension is locked away until 57; paying off the loan saves its interest for certain."
      },
      {
       "label": "What you could do",
-      "title": "Nothing to change right now.",
-      "body": "Repayments come out of your pay automatically."
+      "title": "It would use £22,000 of cash. The page shows how your buffer, ISA allowance and pension match stand.",
+      "body": "You can overpay on the Student Loans Company website, all of it or part."
      }
     ],
     "kids": null
@@ -4005,11 +4008,16 @@
       "amount": 432,
       "amountIsLumpSum": false,
       "line": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused"
+     },
+     {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 24,
+      "amountIsLumpSum": false,
+      "line": "£24/yr ahead by paying your loan off now"
      }
     ],
-    "onTrack": [
-     "Student loan"
-    ]
+    "onTrack": []
    },
    "drawdown": {
     "phased": {
@@ -5050,9 +5058,9 @@
      "pensionGrowthPct": 6,
      "pensionGap": -0.7,
      "beatsPension": false,
-     "worthOverpaying": false,
-     "overpayAnnualBenefit": 0,
-     "overpayTotalBenefit": 0,
+     "worthOverpaying": true,
+     "overpayAnnualBenefit": 24,
+     "overpayTotalBenefit": 142,
      "interestAvoided": 4122,
      "savingsForgone": 3980
     },
@@ -5422,7 +5430,7 @@
      "pg_loan_balance": null
     },
     "report": {
-     "candid_score": 66,
+     "candid_score": 58,
      "total_opportunity_gbp": 4900,
      "critical_modules": "pension"
     },
@@ -46729,11 +46737,11 @@
      "potentialAmount": 0
     },
     "studentLoan": {
-     "status": "ok",
-     "impact": 0,
-     "impactLabel": null,
+     "status": "attention",
+     "impact": 37,
+     "impactLabel": "£37/yr ahead by paying your loan off now",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 37
     },
     "mortgage": {
      "status": "na",
@@ -46754,7 +46762,7 @@
      "amount": 0
     }
    },
-   "score": 84,
+   "score": 76,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -46793,11 +46801,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "ok",
-     "summary": "On track: nothing to act on right now.",
-     "impact": 0,
-     "impactLabel": null,
-     "amount": 0,
+     "status": "attention",
+     "summary": "£37/yr ahead by paying your loan off now",
+     "impact": 37,
+     "impactLabel": "£37/yr ahead by paying your loan off now",
+     "amount": 37,
      "amountIsLumpSum": false
     },
     "mortgage": {
@@ -46850,6 +46858,19 @@
       "pending": 0
      },
      {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "attention",
+      "summary": "£37/yr ahead by paying your loan off now",
+      "impact": 37,
+      "impactLabel": "£37/yr ahead by paying your loan off now",
+      "amount": 37,
+      "amountIsLumpSum": false,
+      "banked": 0,
+      "pending": 0
+     },
+     {
       "key": "investments",
       "icon": "<element undefined>",
       "title": "Investments",
@@ -46874,33 +46895,20 @@
       "amountIsLumpSum": false,
       "banked": 0,
       "pending": 0
-     },
-     {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "ok",
-      "summary": "On track: nothing to act on right now.",
-      "impact": 0,
-      "impactLabel": null,
-      "amount": 0,
-      "amountIsLumpSum": false,
-      "banked": 0,
-      "pending": 0
      }
     ],
     "modulesWithRec": [
+     "<circular>",
      "<circular>"
     ],
     "modulesNoRec": [
      "<circular>",
-     "<circular>",
      "<circular>"
     ],
     "kidsModule": null,
-    "needActionCount": 1,
-    "onTrackCount": 3,
-    "totalOpp": 222,
+    "needActionCount": 2,
+    "onTrackCount": 2,
+    "totalOpp": 259,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -46920,7 +46928,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 0,
+     "amount": 37,
      "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -46984,18 +46992,18 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£18,227",
-      "title": "you're expected to repay in all, clearing it in 10 years.",
-      "body": "That's £4,227 of interest on top of the £14,000 you owe today."
+      "figure": "£369",
+      "title": "ahead by paying your loan off now, rather than letting it clear in 10 years."
      },
      {
       "label": "Why",
-      "title": "Your pension's assumed 6% growth beats your loan's 5.2% a year on average over its life, so overpaying doesn't come out ahead."
+      "title": "Paying it off avoids about £4,227 of interest. In savings at 4.72%, the same money would earn about £3,858 meanwhile.",
+      "body": "A pension could grow more: it's assumed to grow 6% a year, against the loan's 5.2%. That growth isn't guaranteed, and money in a pension is locked away until 57; paying off the loan saves its interest for certain."
      },
      {
       "label": "What you could do",
-      "title": "Nothing to change right now.",
-      "body": "Repayments come out of your pay automatically."
+      "title": "It would use £14,000 of cash. The page shows how your buffer, ISA allowance and pension match stand.",
+      "body": "You can overpay on the Student Loans Company website, all of it or part."
      }
     ],
     "kids": null
@@ -47874,11 +47882,17 @@
       "amount": 222,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
+     },
+     {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 37,
+      "amountIsLumpSum": false,
+      "line": "£37/yr ahead by paying your loan off now"
      }
     ],
     "onTrack": [
-     "Pension",
-     "Student loan"
+     "Pension"
     ]
    },
    "drawdown": {
@@ -48952,9 +48966,9 @@
      "pensionGrowthPct": 6,
      "pensionGap": -0.8,
      "beatsPension": false,
-     "worthOverpaying": false,
-     "overpayAnnualBenefit": 0,
-     "overpayTotalBenefit": 0,
+     "worthOverpaying": true,
+     "overpayAnnualBenefit": 37,
+     "overpayTotalBenefit": 369,
      "interestAvoided": 4227,
      "savingsForgone": 3858
     },
@@ -49355,7 +49369,7 @@
      "pg_loan_balance": null
     },
     "report": {
-     "candid_score": 84,
+     "candid_score": 76,
      "total_opportunity_gbp": 300,
      "critical_modules": ""
     },
@@ -49514,11 +49528,11 @@
      "potentialAmount": 0
     },
     "studentLoan": {
-     "status": "ok",
-     "impact": 0,
-     "impactLabel": null,
+     "status": "attention",
+     "impact": 6,
+     "impactLabel": "£6/yr ahead by paying your loan off now",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 6
     },
     "mortgage": {
      "status": "na",
@@ -49539,7 +49553,7 @@
      "amount": 0
     }
    },
-   "score": 84,
+   "score": 76,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -49578,11 +49592,11 @@
      "key": "studentLoan",
      "icon": "<element undefined>",
      "title": "Student loan",
-     "status": "ok",
-     "summary": "On track: nothing to act on right now.",
-     "impact": 0,
-     "impactLabel": null,
-     "amount": 0,
+     "status": "attention",
+     "summary": "£6/yr ahead by paying your loan off now",
+     "impact": 6,
+     "impactLabel": "£6/yr ahead by paying your loan off now",
+     "amount": 6,
      "amountIsLumpSum": false
     },
     "mortgage": {
@@ -49635,6 +49649,19 @@
       "pending": 0
      },
      {
+      "key": "studentLoan",
+      "icon": "<element undefined>",
+      "title": "Student loan",
+      "status": "attention",
+      "summary": "£6/yr ahead by paying your loan off now",
+      "impact": 6,
+      "impactLabel": "£6/yr ahead by paying your loan off now",
+      "amount": 6,
+      "amountIsLumpSum": false,
+      "banked": 0,
+      "pending": 0
+     },
+     {
       "key": "investments",
       "icon": "<element undefined>",
       "title": "Investments",
@@ -49659,33 +49686,20 @@
       "amountIsLumpSum": false,
       "banked": 0,
       "pending": 0
-     },
-     {
-      "key": "studentLoan",
-      "icon": "<element undefined>",
-      "title": "Student loan",
-      "status": "ok",
-      "summary": "On track: nothing to act on right now.",
-      "impact": 0,
-      "impactLabel": null,
-      "amount": 0,
-      "amountIsLumpSum": false,
-      "banked": 0,
-      "pending": 0
      }
     ],
     "modulesWithRec": [
+     "<circular>",
      "<circular>"
     ],
     "modulesNoRec": [
      "<circular>",
-     "<circular>",
      "<circular>"
     ],
     "kidsModule": null,
-    "needActionCount": 1,
-    "onTrackCount": 3,
-    "totalOpp": 250,
+    "needActionCount": 2,
+    "onTrackCount": 2,
+    "totalOpp": 256,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -49705,7 +49719,7 @@
      "banked": 0
     },
     "studentLoan": {
-     "amount": 0,
+     "amount": 6,
      "answers": "[\"stable\",null,null,null,null,null,null,null,null,null,null,null,null,\"\",null]",
      "banked": 0
     }
@@ -49769,18 +49783,18 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "figure": "£18,227",
-      "title": "you're expected to repay in all, clearing it in 10 years.",
-      "body": "That's £4,227 of interest on top of the £14,000 you owe today."
+      "figure": "£59",
+      "title": "ahead by paying your loan off now, rather than letting it clear in 10 years."
      },
      {
       "label": "Why",
-      "title": "Your pension's assumed 6% growth beats your loan's 5.2% a year on average over its life, so overpaying doesn't come out ahead."
+      "title": "Paying it off avoids about £4,227 of interest. In savings at 5.1%, the same money would earn about £4,168 meanwhile.",
+      "body": "A pension could grow more: it's assumed to grow 6% a year, against the loan's 5.2%. That growth isn't guaranteed, and money in a pension is locked away until 57; paying off the loan saves its interest for certain."
      },
      {
       "label": "What you could do",
-      "title": "Nothing to change right now.",
-      "body": "Repayments come out of your pay automatically."
+      "title": "It would use £14,000 of cash. The page shows how your buffer, ISA allowance and pension match stand.",
+      "body": "You can overpay on the Student Loans Company website, all of it or part."
      }
     ],
     "kids": null
@@ -50532,11 +50546,17 @@
       "amount": 250,
       "amountIsLumpSum": false,
       "line": "£800 short of your 6-month emergency fund"
+     },
+     {
+      "key": "studentLoan",
+      "title": "Student loan",
+      "amount": 6,
+      "amountIsLumpSum": false,
+      "line": "£6/yr ahead by paying your loan off now"
      }
     ],
     "onTrack": [
-     "Pension",
-     "Student loan"
+     "Pension"
     ]
    },
    "drawdown": {
@@ -51610,9 +51630,9 @@
      "pensionGrowthPct": 6,
      "pensionGap": -0.8,
      "beatsPension": false,
-     "worthOverpaying": false,
-     "overpayAnnualBenefit": 0,
-     "overpayTotalBenefit": 0,
+     "worthOverpaying": true,
+     "overpayAnnualBenefit": 6,
+     "overpayTotalBenefit": 59,
      "interestAvoided": 4227,
      "savingsForgone": 4168
     },
@@ -51969,7 +51989,7 @@
      "pg_loan_balance": null
     },
     "report": {
-     "candid_score": 84,
+     "candid_score": 76,
      "total_opportunity_gbp": 300,
      "critical_modules": ""
     },

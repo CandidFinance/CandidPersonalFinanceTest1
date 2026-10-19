@@ -19,7 +19,7 @@ import { childcareSupport, kidsSituation } from "./childcare.js";
 import { loanVerdictReady } from "./appEntry.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { calcStudentLoanScenario, pgScenario, bestLumpSum, SL_REPAYMENT_RATES } from "./studentLoan.js";
+import { calcStudentLoanScenario, pgScenario, bestLumpSum, SL_REPAYMENT_RATES, pensionCaveat } from "./studentLoan.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
 import { STATE_PENSION_AGE } from "./tax.js";
 
@@ -420,7 +420,7 @@ function studentLoanSteps(d, m) {
     return [
       { label: ANSWER, figure: fmt(sl.overpayTotalBenefit), title: `ahead by paying your loan off now, rather than letting it clear in ${years(sl.clearYr)}.`, ...turning },
       withBody({ label: WHY, title: `Paying it off avoids about ${fmt(sl.interestAvoided)} of interest. In savings at ${sl.cashRate}%, the same money would earn about ${fmt(sl.savingsForgone)} meanwhile.` },
-        m.missedMatch > 0 ? `Separately, your employer would add ${fmt(m.missedMatch)} a year to your pension if you paid in up to its match (see Pension).` : null),
+        join(m.missedMatch > 0 ? `Separately, your employer would add ${fmt(m.missedMatch)} a year to your pension if you paid in up to its match (see Pension).` : null, pensionCaveat(sl))),
       { label: ACTION, title: `It would use ${fmt(Math.round(m.loanBal))} of cash. The page shows how your buffer, ISA allowance and pension match stand.`,
         body: "You can overpay on the Student Loans Company website, all of it or part." },
     ];
@@ -449,9 +449,7 @@ function studentLoanSteps(d, m) {
     { label: ANSWER, figure: fmt(sl.totalRepaidProjected), title: `you're expected to repay in all, clearing it in ${years(sl.clearYr)}.`,
       body: join(`That's ${fmt(interest)} of interest on top of the ${fmt(Math.round(m.loanBal))} you owe today.`, turning.body) },
     verdict
-      ? { label: WHY, title: sl.effectiveBenefit <= 0
-          ? `Savings pay ${sl.cashRate}%, ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.`
-          : `Your pension's assumed ${sl.pensionGrowthPct}% growth beats your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.` }
+      ? { label: WHY, title: `Savings pay ${sl.cashRate}%, ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.` }
       : { label: WHY, title: `Repayments are ${repayPct} of your pay over ${fmt(sl.threshold)}, about ${fmt(sl.annualRep)} a year now, while interest adds about ${fmt(sl.annualInterest)}.` },
     verdict ? nothing : needVerdict,
   ];

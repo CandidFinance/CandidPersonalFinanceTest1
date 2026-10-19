@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
-import { calcStudentLoanScenario, describeLoanVsPension, resolveSlRate, slRepaymentThreshold, studentLoanPlanConstants, SL_REPAYMENT_THRESHOLDS, studentLoanPlanFrom } from "./studentLoan.js";
+import { calcStudentLoanScenario, describeLoanVsPension, resolveSlRate, slRepaymentThreshold, studentLoanPlanConstants, SL_REPAYMENT_THRESHOLDS, studentLoanPlanFrom, pensionCaveat } from "./studentLoan.js";
 import { calcLoanMarginalReturnCurve } from "./forecast.js";
 
 const RATES = { isaRate: 4.5, nonIsaRate: 4.6 };
@@ -55,7 +55,9 @@ test("Plan 2 is weighed on its average rate over the loan's life: 6% now, RPI at
   assert.equal(sl.slRatePct, 6);
   assert.ok(sl.lifeRatePct < 6 && sl.lifeRatePct >= 5, `life rate ${sl.lifeRatePct}`);
   assert.equal(sl.pensionGap < 0, true);
-  assert.equal(sl.worthOverpaying, false);
+  // Decided against savings: the pension is a caveat, not a veto.
+  assert.equal(sl.worthOverpaying, sl.effectiveBenefit > 0);
+  assert.match(pensionCaveat(sl), /isn't guaranteed, and money in a pension is locked away until 57/);
 });
 
 test("the user's own rate counts when it beats the best rate on offer", () => {
@@ -78,7 +80,7 @@ test("a 6% loan against the pension's 6% growth is a tie, and a tie goes to over
   assert.match(describeLoanVsPension(sl), /^Level/);
 });
 
-test("the pension beats a loan that clears and beats savings but grows slower than 6%", () => {
+test("a loan that beats savings is worth paying off from cash, the pension's faster growth a caveat", () => {
   const { sl } = borrower(
     { salary: "60000", studentLoan: "plan5", loanBalance: "5000", studentLoanRate: "4.1", cashTiers: [{ amount: "5000", rate: "3.0" }] },
     { isaRate: 3.5 },
@@ -86,8 +88,13 @@ test("the pension beats a loan that clears and beats savings but grows slower th
   assert.equal(sl.willClear, true);
   assert.equal(sl.effectiveBenefit, 0.6);
   assert.equal(sl.pensionGap, -1.9);
-  assert.equal(sl.worthOverpaying, false);
-  assert.equal(sl.overpayAnnualBenefit, 0);
+  assert.equal(sl.worthOverpaying, true);
+  assert.ok(sl.overpayAnnualBenefit > 0);
+  assert.match(pensionCaveat(sl), /^A pension could grow more: it's assumed to grow 6% a year, against the loan's 4\.1%/);
+});
+
+test("no pension caveat when the loan's rate beats or matches the pension's growth", () => {
+  assert.equal(pensionCaveat(borrower({ studentLoanRate: "6" }).sl), null);
 });
 
 test("chart: equal rates put the pension line on the loan line", () => {

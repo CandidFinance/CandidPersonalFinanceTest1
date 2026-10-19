@@ -262,7 +262,11 @@ export function calcStudentLoanScenario(d, m) {
   const peakBal = Math.max(...balancePath.map(p => p.bal));
 
   // Overpaying a loan that will clear anyway earns its interest rate,
-  // guaranteed, until the date it would have cleared. It's weighed against:
+  // guaranteed, until the date it would have cleared. Paying it off from
+  // cash is decided against savings alone: that's where the money is, and
+  // where it could be got at. The pension is a caveat, not a veto (its
+  // growth is assumed, not guaranteed, and the money is locked away until
+  // 57): pensionCaveat. Both are weighed:
   //  - Savings: the best rate available (m.bestSavingsRate — the live best
   //    Cash ISA rate, tax-free like the interest overpaying saves), or the
   //    user's own rate if that's higher. Not their own rate alone: Cash &
@@ -286,7 +290,7 @@ export function calcStudentLoanScenario(d, m) {
   const effectiveBenefit = Math.round((lifeRatePct - cashRate) * 10) / 10; // % — overpaying vs the best savings rate
   const pensionGap = Math.round((lifeRatePct - PENSION_GROWTH_PCT) * 10) / 10; // % — overpaying vs the pension's growth
   const beatsPension = pensionGap >= 0;
-  const worthOverpaying = willClear && effectiveBenefit > 0 && beatsPension;
+  const worthOverpaying = willClear && effectiveBenefit > 0;
   // A genuine £/yr figure: the rate differential applied to the current balance
   // — same shape as Cash's annualYieldGap (rate gap × principal) — rather than a
   // one-off lump sum, so it stays comparable to every other module's £/yr amount.
@@ -328,6 +332,13 @@ export function pgScenario(d, m) {
   return calcStudentLoanScenario(pd, { ...m, loanBal: +d.pgLoanBalance, annualRepayment: m.pgRepayment ?? 0 });
 }
 
+// When a pension's assumed growth beats the loan: worth knowing, with what
+// sets the two apart. Null when the loan's rate beats or matches it.
+export function pensionCaveat(sl) {
+  if (sl.beatsPension) return null;
+  return `A pension could grow more: it's assumed to grow ${sl.pensionGrowthPct}% a year, against the loan's ${sl.lifeRatePct}%. That growth isn't guaranteed, and money in a pension is locked away until 57; paying off the loan saves its interest for certain.`;
+}
+
 // One-line verdict on overpaying vs the pension, like for like (see
 // calcStudentLoanScenario for why tax relief cancels out) — shared by the
 // desktop and mobile deep dives' repay-vs-pension charts.
@@ -335,7 +346,7 @@ export function describeLoanVsPension(sl) {
   const { lifeRatePct: loan, pensionGrowthPct: pension, pensionGap } = sl;
   if (pensionGap > 0) return `This loan's ${loan}% a year, on average over its life, beats the ${pension}% a year your pension is assumed to grow — and overpaying's return is guaranteed.`;
   if (pensionGap === 0) return `Level: this loan's ${loan}% a year, on average over its life, matches the ${pension}% a year your pension is assumed to grow. Overpaying's return is guaranteed; the pension's isn't.`;
-  return `Your pension is assumed to grow ${pension}% a year — faster than this loan's ${loan}% a year on average over its life, so it beats overpaying.`;
+  return `Your pension is assumed to grow ${pension}% a year, faster than this loan's ${loan}% a year on average over its life. That growth isn't guaranteed, and the money is locked away until 57.`;
 }
 
 // ── Overpayment scenario cards — "what would repaying £5k/£10k/£20k today

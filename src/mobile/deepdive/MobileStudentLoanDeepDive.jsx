@@ -3,7 +3,7 @@ import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock, Clock } from "lucide-react";
-import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS, slFirstDueRange } from "../../lib/studentLoan.js";
+import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS, slFirstDueRange, pensionCaveat } from "../../lib/studentLoan.js";
 import YearPicker, { yearInRange } from "../YearPicker.jsx";
 import { loanVerdictReady, loanPensionChecked, loanSavingsIn, loanIsaIn, hasEmployerMatch } from "../../lib/appEntry.js";
 import { hasAccess } from "../../lib/entitlement.js";
@@ -109,7 +109,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
               Clears in {sl.clearYr}yrs, without action. Paying off the {k(cost.balance)} now saves ~{k(sl.interestAvoided)} of interest. Same money in savings? You earn ~{k(sl.savingsForgone)}.
             </div>
           </div>
-          <SpareCheck d={d} m={m} amount={cost.balance}/>
+          <SpareCheck d={d} m={m} sl={sl} amount={cost.balance}/>
         </>
       )}
       {verdict && !worthOverpaying && !lump && !sl.belowThreshold && <NoGain sl={sl}/>}
@@ -123,7 +123,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
               Written off without action. Paying {k(lump.amount)} now clears it in {lump.clearYr}yrs, counting what the money would earn in savings.
             </div>
           </div>
-          <SpareCheck d={d} m={m} amount={lump.amount}/>
+          <SpareCheck d={d} m={m} sl={sl} amount={lump.amount}/>
         </>
       )}
 
@@ -402,9 +402,7 @@ function LockedOpportunity({ d }) {
 function NoGain({ sl }) {
   const why = !sl.willClear
     ? `It's expected to be written off in April ${sl.writeOffTaxYear}, so overpaying would mostly shrink what's written off, not what you pay.`
-    : sl.effectiveBenefit <= 0
-      ? `Your savings at ${sl.cashRate}% earn ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} the loan's ${sl.lifeRatePct}% average rate.`
-      : `Your pension's assumed ${sl.pensionGrowthPct}% growth beats the loan's ${sl.lifeRatePct}% average rate.`;
+    : `Your savings at ${sl.cashRate}% earn ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} the loan's ${sl.lifeRatePct}% average rate.`;
   return (
     <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
       <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
@@ -453,7 +451,7 @@ function CostComparison({ sl, cost }) {
 // Whether the money to pay it off is spare: how the cash buffer, this year's
 // ISA allowance and the employer's pension match stand. As they are, not an
 // order to do things in.
-function SpareCheck({ d, m, amount }) {
+function SpareCheck({ d, m, sl, amount }) {
   const navigate = useNavigate();
   const items = [];
   if (m.expenses > 0) {
@@ -478,6 +476,9 @@ function SpareCheck({ d, m, amount }) {
           ? { ok: "critical", text: `${k(m.missedMatch)}/yr of employer match unclaimed`, long: `${fmt(Math.round(m.missedMatch))} a year of your employer's pension match is unclaimed. Every £1 paid in up to the match gets another £1 from them, plus tax relief: more than overpaying returns.`, add: "See your full pension answer" }
           : { ok: true, text: "Employer's full match", long: "You get your employer's full pension match, so overpaying doesn't miss any money they'd add." });
   }
+  // A pension's assumed growth beating the loan: flagged, with its caveats.
+  const caveat = pensionCaveat(sl);
+  if (caveat) items.push({ ok: false, text: `A pension could grow more (${sl.pensionGrowthPct}% assumed)`, long: caveat, note: "Not guaranteed, and locked away until 57." });
   return (
     <div style={{padding:"4px 2px 0",marginBottom:"16px"}}>
       {/* Short lines on a phone; the full point on a desktop, where there's room. */}
@@ -489,7 +490,7 @@ function SpareCheck({ d, m, amount }) {
           {it.ok === true ? <Check size={15} color={SUCCESS} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/> : <CircleAlert size={15} color={it.ok === "critical" ? CRITICAL : it.ok === false ? GOLD : MUT} style={{flexShrink:0,marginTop:"2px"}}/>}
           <span>
             {it.ok === "critical" && <span style={{fontWeight:700,color:CRITICAL}}>Critical: </span>}
-            <span className="spare-short">{it.text}</span><span className="spare-long">{it.long}</span>
+            <span className="spare-short">{it.text}{it.note && <span style={{display:"block",color:MUT,fontSize:"12px"}}>{it.note}</span>}</span><span className="spare-long">{it.long}</span>
             {it.add && (
               <button type="button" onClick={() => navigate(loanPensionChecked(d) ? "/app/module/pension" : "/app/module/pension?from=studentLoan")}
                 style={{display:"flex",alignItems:"center",gap:"2px",background:"none",border:"none",padding:"4px 0 0",cursor:"pointer",fontFamily:"inherit",fontSize:"13px",fontWeight:700,color:G}}>
@@ -606,12 +607,12 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
         <MobileWinTile
           title={worthOverpaying ? "Overpaying your student loan" : "Why overpaying doesn't come out ahead"}
           headline={worthOverpaying
-            ? `${fmt(sl.overpayTotalBenefit)} ahead in all: the loan's ${sl.lifeRatePct}% beats savings and your pension`
+            ? `${fmt(sl.overpayTotalBenefit)} ahead in all: the loan's ${sl.lifeRatePct}% beats ${sl.beatsPension ? "savings and your pension" : `the best savings rate (${sl.cashRate}%)`}`
             : sl.effectiveBenefit < 0
               ? `The highest savings rate (${sl.cashRate}%) beats your loan's ${sl.lifeRatePct}% average rate`
               : sl.effectiveBenefit === 0
                 ? `The highest savings rate (${sl.cashRate}%) matches your loan's ${sl.lifeRatePct}% average rate, so overpaying doesn't come out ahead`
-              : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your loan's ${sl.lifeRatePct}% average rate`}
+              : `The highest savings rate (${sl.cashRate}%) beats your loan's ${sl.lifeRatePct}% average rate`}
           tagLabel={worthOverpaying ? "Today" : null} tagColor={worthOverpaying ? GOLD : MUT}>
           {sl.balanceGrowing && (
             <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
@@ -633,9 +634,9 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
             <span>Step 3 — {sl.lifeRatePct}% loan (average over its life) vs {sl.cashRate}% highest savings</span>
             <span>{sl.effectiveBenefit > 0 ? `Repay wins by ${sl.effectiveBenefit}%` : sl.effectiveBenefit === 0 ? "Level" : `Savings win by ${Math.abs(sl.effectiveBenefit)}%`}</span>
           </div>
-          <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?SUCCESS:CRITICAL}}>
+          <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?SUCCESS:GOLD}}>
             <span>Step 4 — {sl.lifeRatePct}% loan (average over its life) vs {sl.pensionGrowthPct}% assumed pension growth</span>
-            <span>{sl.pensionGap > 0 ? `Repay wins by ${sl.pensionGap}%` : sl.pensionGap === 0 ? "Level — repaying is guaranteed" : `Pension wins by ${Math.abs(sl.pensionGap)}%`}</span>
+            <span>{sl.pensionGap > 0 ? `Repay wins by ${sl.pensionGap}%` : sl.pensionGap === 0 ? "Level — repaying is guaranteed" : `Pension ahead by ${Math.abs(sl.pensionGap)}%, if growth holds`}</span>
           </div>
           <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
             Tax relief isn't part of step 4: overpaying clears the loan sooner, and the money that frees up gets the same relief when it goes into your pension then.
