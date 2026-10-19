@@ -15,6 +15,9 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import { ExploreToggle } from "../ModuleScreenParts.jsx";
 import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CDARK, CRITICAL, SUCCESS } from "../../design-tokens.js";
 
+// £ in thousands, to one place under £100k: £18.5k, £3.9k, £15k, £120k.
+const k = n => { const v = Math.abs(Math.round(n || 0)); return v >= 100000 ? `£${Math.round(v / 1000)}k` : v >= 1000 ? `£${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : fmt(v); };
+
 // Overpayment slider stops — round amounts, dropping any that sit within 10%
 // of the full balance (e.g. a £20,500 loan shouldn't show both "£20k" and
 // "Full" — they're practically the same repayment) and always ending on the
@@ -87,7 +90,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
             <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayTotalBenefit)}</div>
             <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Ahead by paying it off now, about {fmt(sl.overpayAnnualBenefit)} a year</div>
             <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.55,marginTop:"10px"}}>
-              You'll clear it in about {sl.clearYr === 1 ? "a year" : `${sl.clearYr} years`} either way. Paying the {fmt(cost.balance)} off now avoids about {fmt(sl.interestAvoided)} of interest. Kept in savings at {sl.cashRate}% instead, the same money would earn about {fmt(sl.savingsForgone)} over that time.
+              Clears in {sl.clearYr}yrs, without action. Paying off the {k(cost.balance)} now saves ~{k(sl.interestAvoided)} of interest. Same money in savings? You earn ~{k(sl.savingsForgone)}.
             </div>
           </div>
           <SpareCheck d={d} m={m} amount={cost.balance}/>
@@ -117,7 +120,6 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 // year by year to when it clears or is written off.
 function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOptions, selectedScenario, baseProjection, worthOverpaying, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
   const stats = [
-    { label:"Interest rate", value:`${sl.slRatePct}%` },
     { label:"Annual interest", value:`${fmt(sl.annualInterest)}/yr` },
     { label:"Annual repayments", value:`${fmt(sl.annualRep)}/yr` },
     { label: sl.clearYr ? "Clears in" : "Written off after", value: sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs` },
@@ -146,7 +148,7 @@ function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOp
   return (
     <>
       <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-        <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your loan trajectory</div>
+        <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your balance</div>
 
         <TurningPoint sl={sl}/>
         <div ref={balanceChartRef} style={{width:"100%",marginBottom:"14px"}}>
@@ -156,15 +158,21 @@ function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOp
           <LumpSum m={m} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} options={overpayOptions} scenario={selectedScenario} base={baseProjection} worthOverpaying={worthOverpaying}/>
         )}
 
-        <div style={{marginBottom:"12px"}}>
-          <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{m.loanBalEstimated ? "Current balance (estimated)" : d.loanBalanceAsOf ? `Current balance (estimated, updated ${new Date(d.loanBalanceAsOf).toLocaleDateString("en-GB", { day: "numeric", month: "short" })})` : "Current balance"}</div>
-          <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"2px"}}>
-            <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(m.loanBal)}</div>
-            {set && (
-              <button onClick={openBalanceEditor} aria-label="Update your loan balance" style={{background:"rgba(22,47,36,0.06)",border:"none",borderRadius:"50%",width:"26px",height:"26px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
-                <Wrench size={12} color={MUT}/>
-              </button>
-            )}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"12px"}}>
+          <div>
+            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Estimated balance</div>
+            <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"2px"}}>
+              <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(m.loanBal)}</div>
+              {set && (
+                <button onClick={openBalanceEditor} aria-label="Update your loan balance" style={{background:"rgba(22,47,36,0.06)",border:"none",borderRadius:"50%",width:"26px",height:"26px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                  <Wrench size={12} color={MUT}/>
+                </button>
+              )}
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Interest rate</div>
+            <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.slRatePct}%</div>
           </div>
         </div>
 
@@ -185,21 +193,29 @@ function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOp
             and every figure above moves with it. */}
         {set && (
           <div style={{marginBottom:"14px"}}>
-            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Your pay over the next ten years</div>
-            <PillSlider value={d.salaryTrajectory || "stable"} onChange={v => set("salaryTrajectory", v)}
-              options={PAY_GROWTH_OPTIONS.map(o => ({ value: o.value, label: { stable:"With prices", moderate:"Steady rises", high:"Fast" }[o.value] }))}/>
-            <div style={{fontSize:"11.5px",color:MUT,marginTop:"6px",lineHeight:1.45}}>{PAY_GROWTH_OPTIONS.find(o => o.value === (d.salaryTrajectory || "stable"))?.label}, then with prices.</div>
+            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>10yr pay growth</div>
+            <div style={{display:"flex",background:CDARK,borderRadius:"100px",padding:"3px",gap:"2px"}}>
+              {[["stable", "With prices", "+2%/yr"], ["moderate", "Steady rises", "+5%/yr"], ["high", "Fast", "+10%/yr"]].map(([value, label, rate]) => {
+                const on = (d.salaryTrajectory || "stable") === value;
+                return (
+                  <button key={value} type="button" onClick={() => set("salaryTrajectory", value)} aria-pressed={on} style={{
+                    flex:1, border:"none", borderRadius:"100px", padding:"7px 4px", background:on ? G : "transparent", color:on ? WHITE : MUT,
+                    fontFamily:"inherit", cursor:"pointer", lineHeight:1.2,
+                  }}>
+                    <span style={{display:"block",fontSize:"13px",fontWeight:600}}>{label}</span>
+                    <span style={{display:"block",fontSize:"10.5px",fontWeight:500,opacity:0.8}}>{rate}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:"0 0 12px"}}>
-          Written off in April {sl.writeOffTaxYear}. {sl.firstDueEstimated
-            ? (ageKnown ? `We've assumed repayments started in April ${sl.firstDueYear}, the April after you turned 22.` : `We've assumed repayments started in April ${sl.firstDueYear}. Tell us when they did:`)
-            : `Repayments started in April ${sl.firstDueYear}, as you told us.`}{" "}
-          {set && !editingStart && (
-            <button type="button" onClick={() => setEditingStart(true)} style={{background:"none",border:"none",padding:0,color:G,fontWeight:600,fontSize:"12px",cursor:"pointer",textDecoration:"underline"}}>Change</button>
-          )}
-        </p>
+        {set && !editingStart && (
+          <button type="button" onClick={() => setEditingStart(true)} style={{background:"none",border:"none",padding:0,margin:"0 0 12px",color:MUT,fontSize:"11.5px",cursor:"pointer",fontFamily:"inherit"}}>
+            Started April {sl.firstDueYear} · <span style={{color:G,fontWeight:600,textDecoration:"underline"}}>Change</span>
+          </button>
+        )}
         {editingStart && (
           <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
             <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>When repayments started</div>
@@ -215,17 +231,6 @@ function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOp
             </div>
           </div>
         )}
-        <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,margin:0}}>
-          {sl.belowThreshold
-            ? `Your salary is below the repayment threshold, so no deductions yet. Interest still accrues at ${sl.slRatePct}% (~${fmt(sl.annualInterest)}/yr).`
-            : !sl.willClear
-              ? "Projected to be written off before you'd clear it — overpaying mostly reduces the write-off, not your repayments."
-              : sl.effectiveBenefit <= 0
-                ? `On track to clear in ~${sl.clearYr} years. The best savings rate (${sl.cashRate}%) ${sl.effectiveBenefit < 0 ? "beats" : "matches"} your loan's average rate over its life (${sl.lifeRatePct}%), so overpaying doesn't come out ahead.`
-                : !sl.beatsPension
-                  ? `On track to clear in ~${sl.clearYr} years. Your pension is assumed to grow ${sl.pensionGrowthPct}% a year, faster than your loan's ${sl.lifeRatePct}% a year on average over its life — so it beats overpaying here.`
-                  : `On track to clear in ~${sl.clearYr} years. Its ${sl.lifeRatePct}% a year beats both the best savings rate and your pension's assumed growth, so paying it off comes out ahead (above).`}
-        </p>
       </div>
     </>
   );
@@ -275,7 +280,7 @@ function LumpSum({ m, overpayAmt, setOverpayAmt, options, scenario, base, worthO
   );
   return (
     <div style={{marginBottom:"14px"}}>
-      <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>What if you paid a lump sum now?</div>
+      <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Lump sum repayment</div>
       <PillSlider value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>
       {scenario && (
         <>
@@ -343,23 +348,23 @@ function SpareCheck({ d, m, amount }) {
   const items = [];
   if (m.expenses > 0) {
     items.push((m.surplusCash || 0) >= amount
-      ? { ok: true, text: `You'd still have ${m.bufferMonths} months of spending in cash.` }
-      : { ok: false, text: `It would leave ${fmt(Math.max(0, Math.round(m.emergencyFund - amount)))} in cash, under ${m.bufferMonths} months of spending (${fmt(Math.round(m.emergencyBuffer))}).` });
-  } else items.push({ ok: null, text: "Your spending isn't in yet, so your cash buffer can't be checked (Cash & savings)." });
+      ? { ok: true, text: "Cash runway is good" }
+      : { ok: false, text: `Leaves under ${m.bufferMonths} months' cash` });
+  } else items.push({ ok: null, text: "Cash runway not checked yet" });
   if (moduleAnswered("cash", d) || moduleAnswered("investments", d)) {
     items.push(m.isaHeadroom > 0
-      ? { ok: false, text: `${fmt(Math.round(m.isaHeadroom))} of this year's ISA allowance is unused. It's lost on 5 April; the loan isn't.` }
-      : { ok: true, text: "This year's ISA allowance is used." });
+      ? { ok: false, text: `${k(m.isaHeadroom)} of ISA allowance remaining` }
+      : { ok: true, text: "ISA allowance used" });
   }
   if (d.hasPension === "yes" && d.employmentStatus === "employed") {
     items.push(m.missedMatch > 0
-      ? { ok: false, text: `${fmt(Math.round(m.missedMatch))} a year of your employer's pension match is unclaimed.` }
-      : { ok: true, text: "You get your employer's full pension match." });
+      ? { ok: false, text: `${k(m.missedMatch)}/yr of employer match unclaimed` }
+      : { ok: true, text: "Employer's full match" });
   }
   return (
     <div style={{padding:"4px 2px 0",marginBottom:"16px"}}>
       <div style={{fontSize:"13px",fontWeight:700,color:G}}>Is the money spare?</div>
-      <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 8px"}}>Paying it off would use {fmt(amount)}. How the rest stands:</div>
+      <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 8px"}}>Paying it off uses {k(amount)}</div>
       {items.map(it => (
         <div key={it.text} style={{display:"flex",gap:"8px",alignItems:"flex-start",fontSize:"13px",color:TEXT,lineHeight:1.45,padding:"4px 0"}}>
           {it.ok ? <Check size={15} color={SUCCESS} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/> : <CircleAlert size={15} color={it.ok === false ? GOLD : MUT} style={{flexShrink:0,marginTop:"2px"}}/>}
@@ -380,7 +385,7 @@ function TurningPoint({ sl }) {
       : ["Not before write-off", "On these figures, repayments never overtake the interest."];
   return (
     <div style={{marginBottom:"10px"}}>
-      <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{sl.balanceFallingNow ? "Your balance" : "Your balance starts falling"}</div>
+      {!sl.balanceFallingNow && <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Starts falling</div>}
       <div style={{fontFamily:SERIF,fontSize:"28px",color:G,fontWeight:700,lineHeight:1.15,marginTop:"2px"}}>{figure}</div>
       <div style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>{note}</div>
     </div>
