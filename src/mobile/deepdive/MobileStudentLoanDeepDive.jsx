@@ -5,8 +5,7 @@ import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
 import { moduleAnswered } from "../../lib/appEntry.js";
-import { overpaymentSources } from "../../lib/loanBalance.js";
-import { premiumBondsRow } from "../../lib/savingsRates.js";
+import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
@@ -134,22 +133,8 @@ function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOp
   // their own value, and re-syncs the next time the editor is opened fresh.
   const suggestedBalance = Math.max(0, Math.round(m.loanBal) - (overpayAmt || 0));
   const balanceInput = manualBalanceInput != null ? manualBalanceInput : suggestedBalance;
-  // Updating the balance: the new figure, then, if it's lower, where the
-  // difference came from (loanBalance.js takeFromSources: the lowest rate
-  // first). Its yearly interest saving, at the loan's rate, counts towards
-  // "Gained from your changes" on Home.
-  const [step, setStep] = useState(1);
-  const [picks, setPicks] = useState([]);
-  const pbRate = premiumBondsRow(savingsRates)?.rate_aer != null ? +premiumBondsRow(savingsRates).rate_aer : null;
-  const sources = overpaymentSources(d, pbRate);
-  const openBalanceEditor = () => { setManualBalanceInput(null); setStep(1); setPicks([]); setEditingBalance(true); };
-  const closeBalanceEditor = () => { setEditingBalance(false); setManualBalanceInput(null); setStep(1); setPicks([]); };
-  const cashDelta = Math.max(0, Math.round(m.loanBal) - balanceInput);
-  const saveBalanceEdit = () => {
-    if (onRecordLoanOverpayment) onRecordLoanOverpayment(Math.max(0, balanceInput), { sources: picks, pbRate, perYear: cashDelta * sl.lifeRatePct / 100 });
-    closeBalanceEditor();
-  };
-  const togglePick = key => setPicks(p => p.includes(key) ? p.filter(k => k !== key) : [...p, key]);
+  const openBalanceEditor = () => { setManualBalanceInput(null); setEditingBalance(true); };
+  const closeBalanceEditor = () => { setEditingBalance(false); setManualBalanceInput(null); };
   // When repayments started decides when the loan is written off. Estimated
   // from age unless the user says (studentLoan.js slFirstDueYear).
   const startValue = startInput ?? sl.firstDueYear;
@@ -175,7 +160,7 @@ function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOp
           <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{m.loanBalEstimated ? "Current balance (estimated)" : d.loanBalanceAsOf ? `Current balance (estimated, updated ${new Date(d.loanBalanceAsOf).toLocaleDateString("en-GB", { day: "numeric", month: "short" })})` : "Current balance"}</div>
           <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"2px"}}>
             <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(m.loanBal)}</div>
-            {onRecordLoanOverpayment && (
+            {set && (
               <button onClick={openBalanceEditor} aria-label="Update your loan balance" style={{background:"rgba(22,47,36,0.06)",border:"none",borderRadius:"50%",width:"26px",height:"26px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                 <Wrench size={12} color={MUT}/>
               </button>
@@ -184,41 +169,7 @@ function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOp
         </div>
 
         {editingBalance && (
-          <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
-            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Update your balance</div>
-            {step === 1 ? (
-              <>
-                <PillMoneyInput label="New balance" value={balanceInput} onChange={setManualBalanceInput}/>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
-                  Your online student loan account shows it. From here, Candid adds the interest and takes off your repayment each payday.
-                </p>
-              </>
-            ) : (
-              <>
-                <div style={{fontSize:"13.5px",fontWeight:700,color:TEXT,lineHeight:1.4}}>Where did the {fmt(cashDelta)} come from?</div>
-                <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"4px 0 10px"}}>Pick any. It comes off the lowest-rate one first, so it isn't counted twice.</p>
-                <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
-                  {sources.map(s => {
-                    const on = picks.includes(s.key);
-                    return (
-                      <button key={s.key} type="button" onClick={() => togglePick(s.key)} aria-pressed={on} style={{
-                        background:on ? G : WHITE, color:on ? WHITE : TEXT, border:`1.5px solid ${on ? G : "rgba(22,47,36,0.18)"}`, borderRadius:"100px",
-                        padding:"8px 14px", fontSize:"13px", fontWeight:600, fontFamily:"inherit", cursor:"pointer",
-                      }}>
-                        {s.label}{s.key !== "other" ? ` · ${fmt(s.amount)}` : ""}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-            <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
-              <button onClick={step === 2 ? () => setStep(1) : closeBalanceEditor} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>{step === 2 ? "Back" : "Cancel"}</button>
-              {step === 1 && cashDelta > 0
-                ? <button onClick={() => setStep(2)} style={{flex:1,background:G,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer"}}>Next</button>
-                : <button onClick={saveBalanceEdit} disabled={step === 2 && !picks.length} style={{flex:1,background:step === 2 && !picks.length ? "rgba(22,47,36,0.25)" : G,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:step === 2 && !picks.length ? "not-allowed" : "pointer"}}>Save</button>}
-            </div>
-          </div>
+          <LoanBalanceEditor d={d} m={m} set={set} savingsRates={savingsRates} initial={balanceInput} onClose={closeBalanceEditor}/>
         )}
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"12px"}}>

@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { G, WHITE, MUT, TEXT } from "../../design-tokens.js";
+import { fmt } from "../../lib/format.js";
+import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PillSlider } from "../PillSlider.jsx";
 import { MODULE_GUIDES } from "../../lib/moduleGuide.js";
 import { capField } from "../../lib/onboarding.js";
@@ -15,6 +18,7 @@ import MobileCashTiersList from "../onboarding/MobileCashTiersList.jsx";
 const sliderFits = options => options.length <= 3 && options.every(o => o.label.length <= 14);
 
 export default function ModuleInputsForm({ moduleKey, d, m, set }) {
+  const [editingLoan, setEditingLoan] = useState(false);
   const ctx = { d, m, regionalRows: null };
   const questions = (MODULE_GUIDES[moduleKey]?.questions || [])
     .filter(q => q.group !== "you" && (!q.showIf || q.showIf(ctx)));
@@ -55,6 +59,17 @@ export default function ModuleInputsForm({ moduleKey, d, m, set }) {
             : <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>{options.map(o => <button key={o.value} type="button" onClick={() => write(q, o.value)} style={chip(raw === o.value)}>{o.label}</button>)}</div>;
         } else if (q.kind === "custom" && q.render === "cashAccounts") {
           control = <MobileCashTiersList d={d} set={set}/>;
+        } else if (q.field === "loanBalance" && raw !== "" && raw != null && !isNaN(+raw)) {
+          // The balance, once there is one: updated in two steps, so an
+          // overpayment's source is asked (LoanBalanceEditor).
+          control = editingLoan
+            ? <LoanBalanceEditor d={d} m={m} set={set} onClose={() => setEditingLoan(false)}/>
+            : (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+                <span style={{fontSize:"17px",fontWeight:700,color:TEXT}}>{fmt(Math.round(+raw))}</span>
+                <button type="button" onClick={() => setEditingLoan(true)} style={{...link,padding:"6px 0"}}>Update</button>
+              </div>
+            );
         } else if (["money", "percent", "years"].includes(q.kind)) {
           const filled = raw !== "" && raw != null && !isNaN(+raw);
           control = <PillMoneyInput label={q.label || ""} unit={{ percent:"%", years:"" }[q.kind] ?? "£"}
