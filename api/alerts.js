@@ -89,7 +89,9 @@ async function recipients(notes) {
   const people = new Map();
   for (const s of subs) {
     const email = cleanEmail(s.email);
-    if (email && s.saved_state && typeof s.saved_state === "object") people.set(email, { email, who: "subscriber", d: s.saved_state });
+    // Saved as { inputs, completedModules } (entitlement.js saveStateSoon).
+    const d = s.saved_state?.inputs;
+    if (email && d && typeof d === "object") people.set(email, { email, who: "subscriber", d });
   }
   // Newest row first, so the first one seen for an email is their latest.
   for (const r of rows) {
