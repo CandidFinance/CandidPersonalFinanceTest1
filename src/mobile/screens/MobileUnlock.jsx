@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import posthog from "posthog-js";
-import { Check, Lock, X } from "lucide-react";
+import { Check, ChevronDown, Lock, X } from "lucide-react";
 import { G, GOLD, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT } from "../../design-tokens.js";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { pitchFor } from "../../lib/appEntry.js";
@@ -32,7 +32,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
   // its low end, so it never overstates. Only a gain is set against what
   // Candid costs, never a loan's repayments (`stake`).
   const worth = amount > 0 ? amount : estimate ? estimate.low : 0;
-  const worthLabel = amount > 0 ? null : estimate?.stake ? "a year repaid from your pay, our rough estimate" : estimate ? "a year or more, our rough estimate" : null;
+  const worthLabel = amount > 0 ? null : estimate?.stake ? "a year repaid from your pay, our estimate" : estimate ? "a year or more, our estimate" : null;
   const range = estimate && (estimate.low === estimate.high ? fmt(estimate.low) : `${fmt(estimate.low)} to ${fmt(estimate.high)}`);
 
   // What's behind the frost, named, so it's clear what unlocking gets them.
@@ -166,6 +166,7 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
   const [panel, setPanel] = useState(null); // "restore" | "alerts"
   const [email, setEmail] = useState(d.email || "");
   const [done, setDone] = useState(null);
+  const [soonOpen, setSoonOpen] = useState(false);
   useEffect(() => { posthog.capture("paywall_shown", { module: moduleKey }); }, [moduleKey]);
 
   const go = async () => {
@@ -186,12 +187,12 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
   };
 
   const card = on => ({ flex:1, textAlign:"left", background:WHITE, border:`2px solid ${on ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"14px", padding:"12px 14px", cursor:"pointer", fontFamily:"inherit" });
-  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
+  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"12.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
+  const fine = { color:MUT, textDecoration:"underline", whiteSpace:"nowrap" };
   return (
     <div>
       <Worth title={title} amount={amount} label={label} compare={compare} lumpSum={lumpSum}/>
-      <div style={{fontSize:"14px",color:TEXT,lineHeight:1.45,marginTop:"12px"}}>Your first answer was free. Subscribe for every module.</div>
-      <div style={{display:"flex",gap:"10px",margin:"16px 0 12px"}}>
+      <div style={{display:"flex",gap:"10px",margin:"18px 0 12px"}}>
         {Object.entries(PLANS).map(([key, p]) => (
           <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>
             {key === "yearly" && ANNUAL_SAVING_PCT > 0 && (
@@ -202,7 +203,7 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
               <span style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color:G}}>{p.price}</span>
               <span style={{fontSize:"12px",color:MUT}}>{p.per}</span>
             </div>
-            <div style={{fontSize:"11.5px",color:MUT,marginTop:"2px"}}>{p.note}</div>
+            {key === "yearly" && <div style={{fontSize:"11.5px",color:MUT,marginTop:"2px"}}>{p.note}</div>}
           </button>
         ))}
       </div>
@@ -210,33 +211,43 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
         {busy && !panel ? "Opening checkout…" : "Subscribe and unlock everything"}
       </button>
       {error && !panel && <div style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
-      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
-        Cancel any time, and get a full refund within 14 days of first subscribing. Payments by Stripe. By subscribing you agree to our <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>.
+      {/* The terms and the guidance-not-advice line in one, each linked to
+          the full page. */}
+      <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
+        Cancel anytime · 14-day refund · <a href="/terms.html" target="_blank" rel="noreferrer" style={fine}>Terms</a> · <a href="/what-candid-is" target="_blank" rel="noreferrer" style={fine}>Guidance, not advice</a>
       </p>
 
-      {/* What's included today, then what's being built: kept apart, so
-          nothing not yet built reads as part of what they're paying for. */}
-      <div style={{borderTop:"1px solid rgba(22,47,36,0.1)",marginTop:"18px",paddingTop:"16px"}}>
+      {/* What's included today; what's being built folded away below it, and
+          kept apart, so nothing not yet built reads as part of what's paid
+          for. */}
+      <div style={{borderTop:"1px solid rgba(22,47,36,0.1)",marginTop:"16px",paddingTop:"14px"}}>
         <div style={listHead}>What's included</div>
         <ul style={listStyle}>
-          {INCLUDED.map(t => (
-            <li key={t} style={{...itemStyle,color:TEXT}}><Check size={15} color={GOLD} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/>{t}</li>
+          {INCLUDED.map(([name, line]) => (
+            <li key={name} style={itemStyle}>
+              <Check size={15} color={GOLD} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/>
+              <span><span style={{fontWeight:700,color:TEXT}}>{name}</span><span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"1px"}}>{line}</span></span>
+            </li>
           ))}
         </ul>
-        <div style={{...listHead,marginTop:"16px"}}>Coming soon</div>
-        <ul style={listStyle}>
-          {COMING_SOON.map(t => (
-            <li key={t} style={{...itemStyle,color:MUT}}><span aria-hidden="true" style={{width:"5px",height:"5px",borderRadius:"50%",background:"rgba(22,47,36,0.3)",flexShrink:0,margin:"7px 5px 0"}}/>{t}</li>
-          ))}
-        </ul>
+        <button type="button" onClick={() => setSoonOpen(o => !o)} aria-expanded={soonOpen}
+          style={{...listHead,background:"none",border:"none",padding:0,margin:"14px 0 0",display:"inline-flex",alignItems:"center",gap:"4px",cursor:"pointer",fontFamily:"inherit"}}>
+          Coming soon<ChevronDown size={13} style={{transform:soonOpen ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
+        </button>
+        {soonOpen && (
+          <ul style={listStyle}>
+            {COMING_SOON.map(([name, line]) => (
+              <li key={name} style={{...itemStyle,paddingLeft:"23px"}}>
+                <span><span style={{fontWeight:700,color:MUT}}>{name}</span><span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"1px"}}>{line}</span></span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"16px 0 0",textAlign:"center"}}>
-        Candid is guidance, not financial advice. It works out what your options are worth, and won't tell you which product to choose. <a href="/what-candid-is" target="_blank" rel="noreferrer" style={{color:MUT}}>What Candid is and isn't</a>
-      </p>
 
       <div style={{display:"flex",justifyContent:"center",gap:"18px",marginTop:"16px"}}>
         <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); }}>Already subscribed?</button>
-        <button type="button" style={link} onClick={() => { setPanel(p => p === "alerts" ? null : "alerts"); setDone(null); setError(null); }}>Not yet? Get rate alerts</button>
+        <button type="button" style={link} onClick={() => { setPanel(p => p === "alerts" ? null : "alerts"); setDone(null); setError(null); }}>Get rate alerts</button>
       </div>
       {panel && (
         done ? (
@@ -271,23 +282,23 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
 // (SignInSetup.jsx), which is for subscribers.
 const ALERTS_LIVE = import.meta.env.VITE_ALERTS_LIVE === "1";
 const INCLUDED = [
-  "Full breakdowns and explanations in every module: pension, cash, investments and student loan",
-  "Candid Assist in every module, for questions about your figures",
-  ALERTS_LIVE ? "Emails when something changes in your favour: a better savings rate, the 5 April deadline, your bonus, a new tax year" : null,
-  "Sign in on all your devices, with Face ID, a fingerprint or a password",
+  ["Unrestricted module access", "Deep-dive breakdowns across your Pension, Cash, Investments and Student Loan."],
+  ["Candid Assist", "On-demand AI guidance inside every module to explain your specific numbers."],
+  ALERTS_LIVE ? ["Proactive financial alerts", "Timely updates when a better savings rate appears, before your bonus lands, or as tax-year deadlines approach."] : null,
+  ["Cross-device sync", "Secure access across all your devices via Face ID, Touch ID or password."],
 ].filter(Boolean);
 // Being built, with no dates promised. Something moves up to INCLUDED only
 // once it's live for subscribers.
 const COMING_SOON = [
-  "Candid Assist sorting the admin of opening and switching accounts and ISAs",
-  "Open banking: link your accounts to see all your money in one place, and where it could work harder",
-  "A savings review: what you could afford to save or invest towards your goals",
-  "More alerts: tax changes that affect you, an approaching tax trap, opportunities you're missing",
-  "New modules first: partner's finances, children's finances, mortgages and inheritance",
+  ["Automated account switching", "Hands-free admin for opening and moving ISAs and savings accounts."],
+  ["Open Banking integration", "Connect your accounts for a live, unified view of your net worth."],
+  ["Savings and goal planner", "Dynamic reviews of how much you could save and invest."],
+  ["Tax trap and leakage alerts", "Warnings for stealth tax bands, policy shifts and missed yield."],
+  ["New expansion modules", "Household finances, children's accounts, property and mortgages, and inheritance."],
 ];
 const listHead = { fontSize:"10.5px", fontWeight:700, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
 const listStyle = { listStyle:"none", padding:0, margin:"10px 0 0", display:"flex", flexDirection:"column", gap:"8px" };
-const itemStyle = { display:"flex", gap:"8px", alignItems:"flex-start", fontSize:"13.5px", lineHeight:1.4 };
+const itemStyle = { display:"flex", gap:"8px", alignItems:"flex-start", fontSize:"13.5px", lineHeight:1.35 };
 
 // What this module is worth against what Candid costs a year: "3x" rounded
 // down, so it never overstates; "more than" under 2x. Lump sums (by 18) and
@@ -300,16 +311,14 @@ function Worth({ title, amount, label = null, compare: comparable = true, lumpSu
   const cost = PLANS.yearly.amount;
   const times = Math.floor(amount / cost);
   const compare = !comparable || lumpSum || amount <= cost ? null
-    : times >= 2 ? `On our estimate, that's ${times}x what Candid costs a year (${PLANS.yearly.price}).`
-    : `On our estimate, that's more than Candid costs a year (${PLANS.yearly.price}).`;
+    : times >= 2 ? `${times}x what Candid costs` : "more than Candid costs";
   return (
     <div>
       <div style={{...kicker,marginTop:"6px"}}>{title}</div>
-      <div style={{display:"flex",alignItems:"baseline",gap:"8px",flexWrap:"wrap",marginTop:"8px"}}>
-        <span style={{fontFamily:SERIF,fontSize:"40px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em"}}>{fmt(amount)}</span>
-        <span style={{fontSize:"14px",color:TEXT,fontWeight:600}}>{label || (lumpSum ? "by the time they're 18, our estimate" : "a year, our estimate on your figures")}</span>
+      <div style={{fontFamily:SERIF,fontSize:"40px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em",marginTop:"8px"}}>{fmt(amount)}</div>
+      <div style={{fontSize:"13.5px",color:TEXT,fontWeight:600,marginTop:"6px",lineHeight:1.4}}>
+        {label || (lumpSum ? "by the time they're 18, our estimate" : "a year, our estimate")}{compare && <span style={{color:G}}> · {compare}</span>}
       </div>
-      {compare && <div style={{fontSize:"14px",color:G,fontWeight:700,lineHeight:1.4,marginTop:"10px"}}>{compare}</div>}
     </div>
   );
 }
