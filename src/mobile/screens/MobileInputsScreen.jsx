@@ -7,6 +7,7 @@ import { MODULE_META } from "../../lib/moduleStatus.js";
 import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
 import { useEmailCheck, DidYouMean } from "../emailCheckForm.jsx";
+import { requestEmailStatus, validEmailShape } from "../../lib/emailCheck.js";
 import { SCORED_MODULES, loanSavingsIn, loanPensionChecked } from "../../lib/appEntry.js";
 
 // Edit inputs (/app/inputs): every answer on one page, so changing one
@@ -146,18 +147,33 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
 // Their email, in About you. A new one is only saved once it passes the
 // same checks as the unlock form (emailCheckForm.jsx), from the button that
 // also emails the link confirming it's theirs (api/email.js). One line
-// says what happened to the link, in place of the button.
+// says what happened to the link, in place of the button. The email they
+// have already, if it isn't confirmed, gets a button to send its link;
+// that's looked up again on coming back to the page, so a link used in
+// another tab shows here.
 function EmailField({ d, onEmailChange }) {
   const [draft, setDraft] = useState(d.email || "");
   const [link, setLink] = useState(null); // { email, sent }
+  const [confirmed, setConfirmed] = useState(null); // d.email's: true, false, or null (not known)
   const check = useEmailCheck("inputs");
+  useEffect(() => {
+    setConfirmed(null);
+    if (!validEmailShape(d.email)) return;
+    let live = true;
+    const look = () => requestEmailStatus(d.email.trim()).then(c => { if (live) setConfirmed(c); });
+    const onShow = () => { if (document.visibilityState === "visible") look(); };
+    look();
+    document.addEventListener("visibilitychange", onShow);
+    return () => { live = false; document.removeEventListener("visibilitychange", onShow); };
+  }, [d.email]);
   const same = (a, b) => (a || "").trim().toLowerCase() === (b || "").trim().toLowerCase();
   const changed = draft.trim() !== "" && !same(draft, d.email);
   // The link didn't go (a send that failed, or the server out of reach):
   // the email is saved, and the button stays, to try again.
   const unsent = link && !["sent", "sent recently", "confirmed already", "sent enough"].includes(link.sent);
+  const unconfirmed = !changed && !link && confirmed === false;
   const outcome = !link ? null
-    : link.sent === "confirmed already" ? `${link.email} is confirmed already.`
+    : confirmed === true || link.sent === "confirmed already" ? `${link.email} is confirmed.`
     : link.sent === "sent enough" ? `We've sent several links to ${link.email} already. Check your inbox and spam folder.`
     : unsent ? `${link.email} is saved, but the link didn't send. Try again shortly.`
     : `Link sent to ${link.email}. Open it to confirm it's yours. If it isn't there in a few minutes, check your spam folder.`;
@@ -165,7 +181,7 @@ function EmailField({ d, onEmailChange }) {
     if (check.busy) return;
     const ok = await check.run(draft, { name: d.name || null });
     if (!ok) return;
-    onEmailChange?.(ok.email);
+    if (!same(ok.email, d.email)) onEmailChange?.(ok.email);
     setDraft(ok.email);
     setLink(ok);
   };
@@ -177,11 +193,12 @@ function EmailField({ d, onEmailChange }) {
         onChange={e => { setDraft(e.target.value); setLink(null); check.clear(); }}
         style={{width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"100px",padding:"13px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       {link && !changed && <p role="status" style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>{outcome}</p>}
-      {(changed || unsent) && (
+      {unconfirmed && <p role="status" style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>This email isn't confirmed yet.</p>}
+      {(changed || unsent || unconfirmed) && (
         <>
           <button type="button" onClick={confirm} disabled={check.busy}
             style={{marginTop:"10px",width:"100%",background:check.busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:check.busy ? "default" : "pointer"}}>
-            {check.busy ? "Checking…" : changed ? "Confirm this email" : "Send the link again"}
+            {check.busy ? "Checking…" : changed ? "Confirm this email" : unsent ? "Send the link again" : "Send a confirmation link"}
           </button>
           {changed && !check.error && !check.suggestion && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0",textAlign:"center"}}>We'll send a link to confirm it's yours.</p>}
         </>

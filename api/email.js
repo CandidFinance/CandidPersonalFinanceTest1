@@ -12,6 +12,9 @@ import { checkEmail } from "../src/lib/emailCheck.js";
 //    never held up. With `confirm` ({ module, amount }, both optional), a
 //    link to confirm the address is theirs is emailed, unless it's
 //    confirmed already or one went out in the last few minutes.
+//  - POST { action: "status", email }: whether that address is confirmed
+//    ({ confirmed: true | false }), for Edit inputs to offer a link for one
+//    that isn't. It says no more than "check" does with `confirm`.
 //  - ?action=confirm&t=…, that link: a page with one button, which POSTs
 //    and records `verified_at`. A GET only asks, so a mail scanner opening
 //    the link can't confirm anyone.
@@ -37,6 +40,7 @@ const MODULE_TITLES = { cash: "Cash & savings", investments: "Investments", pens
 
 const checkLimiter = rateLimiter(15, "10 m", "ratelimit:email-check");
 const confirmLimiter = rateLimiter(30, "10 m", "ratelimit:email-confirm");
+const statusLimiter = rateLimiter(30, "10 m", "ratelimit:email-status");
 
 async function db(path, { method = "GET", body, prefer } = {}) {
   const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
@@ -141,6 +145,18 @@ async function check(req, res) {
   return res.status(200).json({ ok: true, sent });
 }
 
+async function status(req, res) {
+  if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
+  if (statusLimiter) {
+    const { success } = await statusLimiter.limit(clientIp(req)).catch(() => ({ success: true }));
+    if (!success) return res.status(429).json({ error: "Too many requests" });
+  }
+  const { email } = checkEmail(req.body?.email);
+  if (!email) return res.status(422).json({ problem: "format" });
+  const [row] = await db(`email_verifications?select=verified_at&email=eq.${encodeURIComponent(key(email))}`) || [];
+  return res.status(200).json({ confirmed: !!row?.verified_at });
+}
+
 const page = (title, body) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title>
 <style>body{margin:0;background:#f8f5ee;color:#1d2b24;font-family:system-ui,-apple-system,Segoe UI,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
 main{max-width:420px;text-align:center}h1{font-family:Georgia,serif;color:#162f24;font-size:24px}p{line-height:1.5;color:#4a5a52}
@@ -179,6 +195,7 @@ export default async function handler(req, res) {
   try {
     if (req.query?.action === "confirm") return await confirmLink(req, res);
     if (req.method === "POST" && req.body?.action === "check") return await check(req, res);
+    if (req.method === "POST" && req.body?.action === "status") return await status(req, res);
     return res.status(400).json({ error: "Unknown action" });
   } catch (e) {
     console.error("[api/email] failed:", e);

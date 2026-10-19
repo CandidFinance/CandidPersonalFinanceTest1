@@ -104,6 +104,22 @@ export const validEmailShape = raw => checkEmail(raw).problem !== "format";
 // was asked for, or the check didn't finish). Anything that stops the
 // check itself (offline, a timeout, a server error) is no problem, so the
 // answer is never held up by it.
+// Whether the address is confirmed (api/email.js "status"): true, false,
+// or null when that can't be told (offline, a server error).
+export async function requestEmailStatus(email) {
+  try {
+    const res = await fetch("/api/email", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "status", email }),
+    });
+    if (!res.ok) return null;
+    const { confirmed } = await res.json();
+    return typeof confirmed === "boolean" ? confirmed : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function requestEmailCheck(email, { confirm = null } = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 4000);
