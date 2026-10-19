@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
-import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock } from "lucide-react";
+import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock, Clock } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
 import { moduleAnswered, loanVerdictReady, loanPensionChecked } from "../../lib/appEntry.js";
 import { hasAccess } from "../../lib/entitlement.js";
@@ -15,6 +15,9 @@ import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { ExploreToggle } from "../ModuleScreenParts.jsx";
 import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CDARK, CRITICAL, SUCCESS } from "../../design-tokens.js";
+
+// Only the employed have an employer's pension match to check.
+const hasEmployerMatch = d => d.employmentStatus !== "self_employed" && d.employmentStatus !== "not_working";
 
 // £ in thousands, to one place under £100k: £18.5k, £3.9k, £15k, £120k.
 const k = n => { const v = Math.abs(Math.round(n || 0)); return v >= 100000 ? `£${Math.round(v / 1000)}k` : v >= 1000 ? `£${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : fmt(v); };
@@ -124,8 +127,6 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
           <SpareCheck d={d} m={m} amount={lump.amount}/>
         </>
       )}
-
-      <PensionFirst d={d} m={m} checked={pensionChecked}/>
 
       <LoanTrajectory d={d} m={m} tip={tip} savingsRates={savingsRates} ageKnown={+d.age > 0} setOverpayAmt={setOverpayAmt} overpayOptions={overpayOptions} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
 
@@ -359,6 +360,13 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
 function LockedOpportunity({ d }) {
   const navigate = useNavigate();
   const spendingKnown = +d.monthlyExpenses > 0;
+  const askPension = hasEmployerMatch(d) && !loanPensionChecked(d);
+  const add = (to, label) => (
+    <button type="button" onClick={() => navigate(to)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0",cursor:"pointer",fontFamily:"inherit"}}>
+      <span style={{fontSize:"14px",fontWeight:700,color:G}}>{label}</span>
+      <ChevronRight size={17} color={G}/>
+    </button>
+  );
   const line = w => <div style={{height:"9px",width:w,borderRadius:"5px",background:OPPORTUNITY_TILE_BODY,opacity:0.35,marginTop:"8px"}}/>;
   return (
     <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
@@ -369,47 +377,14 @@ function LockedOpportunity({ d }) {
           {line("70%")}{line("100%")}{line("90%")}{line("95%")}{line("60%")}
         </div>
         <div style={{position:"relative",marginTop:"4px",background:"rgba(255,255,255,0.45)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.7)",boxShadow:"0 1px 12px rgba(22,47,36,0.06)",borderRadius:"12px",padding:"14px 16px 4px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",fontWeight:700,color:G}}><Lock size={14} color={G}/>Is paying it off early worth it?</div>
+          <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",fontWeight:700,color:G}}><Clock size={14} color={G}/>Is paying it off early worth it?</div>
           <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 10px"}}>
-            You're most of the way there. Adding your savings{spendingKnown ? "" : " and spending"} will help you understand the trade-off: what that money earns where it is, and how much is spare above a safety buffer.
+            You're most of the way there. Adding your savings{spendingKnown ? "" : " and spending"}{askPension ? " and your pension" : ""} will help you understand the trade-offs: what that money earns where it is, how much is spare above a safety buffer{askPension ? ", and whether your employer's pension match comes first" : ""}.
           </p>
-          <button type="button" onClick={() => navigate("/app/module/cash?from=studentLoan")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0",cursor:"pointer",fontFamily:"inherit"}}>
-            <span style={{fontSize:"14px",fontWeight:700,color:G}}>Add your savings</span>
-            <ChevronRight size={17} color={G}/>
-          </button>
+          {add("/app/module/cash?from=studentLoan", "Add your savings")}
+          {askPension && add("/app/module/pension?from=studentLoan", "Add your pension")}
         </div>
       </div>
-    </div>
-  );
-}
-
-// An employer's pension match beats any overpayment, so it comes first:
-// until it's checked, the questions for it (Pension's short route); once
-// it is, what they're missing, if anything, and the rest of Pension, which
-// may sit behind the paywall. Only for the employed: no match otherwise.
-function PensionFirst({ d, m, checked }) {
-  const navigate = useNavigate();
-  if (d.employmentStatus === "self_employed" || d.employmentStatus === "not_working") return null;
-  const missed = checked && m.missedMatch > 0;
-  const notPaying = checked && d.pensionStatus === "no";
-  if (checked && !missed && !notPaying) return null;
-  return (
-    <div style={{background:WHITE,border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-      <div style={{fontSize:"10px",fontWeight:800,color:CRITICAL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"8px"}}>Critical pension opportunity</div>
-      {missed ? (<>
-        <div style={{fontFamily:SERIF,fontSize:"26px",color:G,fontWeight:700,lineHeight:1.15}}>{fmt(m.missedMatch)} a year</div>
-        <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.55,margin:"4px 0 10px"}}>of your employer's money you're not getting. Paying in up to its match comes before overpaying your loan.</p>
-      </>) : (
-        <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.55,margin:"0 0 10px"}}>
-          {notPaying
-            ? "You don't pay into a pension. Most employers pay in when you do, which beats overpaying your loan. Check what yours offers first."
-            : "If your employer matches what you pay into your pension, paying in up to the match beats overpaying: it's free money. Check yours before deciding."}
-        </p>
-      )}
-      <button type="button" onClick={() => navigate(checked ? "/app/module/pension" : "/app/module/pension?from=studentLoan")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0 0",cursor:"pointer",fontFamily:"inherit"}}>
-        <span style={{fontSize:"14px",fontWeight:700,color:G}}>{checked ? "See your full pension answer" : "Check your pension match"}</span>
-        <ChevronRight size={17} color={G}/>
-      </button>
     </div>
   );
 }
@@ -453,6 +428,7 @@ function CostComparison({ sl, cost }) {
 // ISA allowance and the employer's pension match stand. As they are, not an
 // order to do things in.
 function SpareCheck({ d, m, amount }) {
+  const navigate = useNavigate();
   const items = [];
   if (m.expenses > 0) {
     items.push((m.surplusCash || 0) >= amount
@@ -464,9 +440,17 @@ function SpareCheck({ d, m, amount }) {
       ? { ok: false, text: `${k(m.isaHeadroom)} of ISA allowance remaining`, long: `${k(m.isaHeadroom)} of this year's ISA allowance is unused. Growth in an ISA is tax-free, and the allowance is use it or lose it on 5 April; the loan isn't.` }
       : { ok: true, text: "ISA allowance used", long: "This year's ISA allowance is used, so there's no tax-free allowance this money would miss." });
   }
-  // A missed match is the Critical pension opportunity tile's (PensionFirst).
-  if (d.hasPension === "yes" && d.employmentStatus === "employed" && !(m.missedMatch > 0)) {
-    items.push({ ok: true, text: "Employer's full match", long: "You get your employer's full pension match, so overpaying doesn't miss any money they'd add." });
+  // An employer's match beats any overpayment: critical until it's checked
+  // (Pension's short route), and while any of it is missed.
+  if (hasEmployerMatch(d)) {
+    const checked = loanPensionChecked(d);
+    items.push(!checked
+      ? { ok: "critical", text: "Pension match not checked yet", long: "Your employer may match what you pay into your pension. Paying in up to the match beats overpaying, so check it before deciding.", add: "Add your pension" }
+      : d.pensionStatus === "no"
+        ? { ok: "critical", text: "Not paying into a pension", long: "Most employers pay into your pension when you do, which beats overpaying. Check what yours offers before deciding.", add: "See your full pension answer" }
+        : m.missedMatch > 0
+          ? { ok: "critical", text: `${k(m.missedMatch)}/yr of employer match unclaimed`, long: `${fmt(Math.round(m.missedMatch))} a year of your employer's pension match is unclaimed. Every £1 paid in up to the match gets another £1 from them, plus tax relief: more than overpaying returns.`, add: "See your full pension answer" }
+          : { ok: true, text: "Employer's full match", long: "You get your employer's full pension match, so overpaying doesn't miss any money they'd add." });
   }
   return (
     <div style={{padding:"4px 2px 0",marginBottom:"16px"}}>
@@ -476,8 +460,17 @@ function SpareCheck({ d, m, amount }) {
       <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 8px"}}>Paying it off uses {k(amount)}</div>
       {items.map(it => (
         <div key={it.text} style={{display:"flex",gap:"8px",alignItems:"flex-start",fontSize:"13px",color:TEXT,lineHeight:1.45,padding:"4px 0"}}>
-          {it.ok ? <Check size={15} color={SUCCESS} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/> : <CircleAlert size={15} color={it.ok === false ? GOLD : MUT} style={{flexShrink:0,marginTop:"2px"}}/>}
-          <span><span className="spare-short">{it.text}</span><span className="spare-long">{it.long}</span></span>
+          {it.ok === true ? <Check size={15} color={SUCCESS} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/> : <CircleAlert size={15} color={it.ok === "critical" ? CRITICAL : it.ok === false ? GOLD : MUT} style={{flexShrink:0,marginTop:"2px"}}/>}
+          <span>
+            {it.ok === "critical" && <span style={{fontWeight:700,color:CRITICAL}}>Critical: </span>}
+            <span className="spare-short">{it.text}</span><span className="spare-long">{it.long}</span>
+            {it.add && (
+              <button type="button" onClick={() => navigate(loanPensionChecked(d) ? "/app/module/pension" : "/app/module/pension?from=studentLoan")}
+                style={{display:"flex",alignItems:"center",gap:"2px",background:"none",border:"none",padding:"4px 0 0",cursor:"pointer",fontFamily:"inherit",fontSize:"13px",fontWeight:700,color:G}}>
+                {it.add}<ChevronRight size={15} color={G}/>
+              </button>
+            )}
+          </span>
         </div>
       ))}
     </div>
