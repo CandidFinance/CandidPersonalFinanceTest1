@@ -2381,7 +2381,10 @@
      "pensionGap": -0.7,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 4122,
+     "savingsForgone": 3684
     },
     "overpay": {
      "scenarios": [
@@ -2391,7 +2394,33 @@
        "writeOffBal": 0,
        "totalPaid": 24576,
        "newNetChange": -3070.95,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 17000
+        },
+        {
+         "yr": 1,
+         "bal": 13929
+        },
+        {
+         "yr": 2,
+         "bal": 10197
+        },
+        {
+         "yr": 3,
+         "bal": 5926
+        },
+        {
+         "yr": 4,
+         "bal": 1070
+        },
+        {
+         "yr": 5,
+         "bal": 0
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -2399,7 +2428,29 @@
        "writeOffBal": 0,
        "totalPaid": 23387,
        "newNetChange": -3370.95,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 12000
+        },
+        {
+         "yr": 1,
+         "bal": 8629
+        },
+        {
+         "yr": 2,
+         "bal": 4632
+        },
+        {
+         "yr": 3,
+         "bal": 83
+        },
+        {
+         "yr": 4,
+         "bal": 0
+        }
+       ]
       },
       {
        "amt": 20000,
@@ -2407,7 +2458,17 @@
        "writeOffBal": 0,
        "totalPaid": 22120,
        "newNetChange": -3970.95,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 2000
+        },
+        {
+         "yr": 1,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -2415,7 +2476,37 @@
       "writeOffBal": 0,
       "totalPaid": 26122,
       "newNetChange": -2770.95,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 22000
+       },
+       {
+        "yr": 1,
+        "bal": 19229
+       },
+       {
+        "yr": 2,
+        "bal": 15762
+       },
+       {
+        "yr": 3,
+        "bal": 11770
+       },
+       {
+        "yr": 4,
+        "bal": 7205
+       },
+       {
+        "yr": 5,
+        "bal": 2075
+       },
+       {
+        "yr": 6,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -4956,7 +5047,10 @@
      "pensionGap": -0.7,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 4122,
+     "savingsForgone": 3980
     },
     "overpay": {
      "scenarios": [
@@ -4966,7 +5060,33 @@
        "writeOffBal": 0,
        "totalPaid": 24576,
        "newNetChange": -3070.95,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 17000
+        },
+        {
+         "yr": 1,
+         "bal": 13929
+        },
+        {
+         "yr": 2,
+         "bal": 10197
+        },
+        {
+         "yr": 3,
+         "bal": 5926
+        },
+        {
+         "yr": 4,
+         "bal": 1070
+        },
+        {
+         "yr": 5,
+         "bal": 0
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -4974,7 +5094,29 @@
        "writeOffBal": 0,
        "totalPaid": 23387,
        "newNetChange": -3370.95,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 12000
+        },
+        {
+         "yr": 1,
+         "bal": 8629
+        },
+        {
+         "yr": 2,
+         "bal": 4632
+        },
+        {
+         "yr": 3,
+         "bal": 83
+        },
+        {
+         "yr": 4,
+         "bal": 0
+        }
+       ]
       },
       {
        "amt": 20000,
@@ -4982,7 +5124,17 @@
        "writeOffBal": 0,
        "totalPaid": 22120,
        "newNetChange": -3970.95,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 2000
+        },
+        {
+         "yr": 1,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -4990,7 +5142,37 @@
       "writeOffBal": 0,
       "totalPaid": 26122,
       "newNetChange": -2770.95,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 22000
+       },
+       {
+        "yr": 1,
+        "bal": 19229
+       },
+       {
+        "yr": 2,
+        "bal": 15762
+       },
+       {
+        "yr": 3,
+        "bal": 11770
+       },
+       {
+        "yr": 4,
+        "bal": 7205
+       },
+       {
+        "yr": 5,
+        "bal": 2075
+       },
+       {
+        "yr": 6,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -7473,16 +7655,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -9870,16 +10061,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -12387,16 +12587,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -14803,16 +15012,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -16269,16 +16487,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -17658,16 +17885,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -20259,7 +20495,10 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 246,
+     "savingsForgone": 283
     },
     "overpay": {
      "scenarios": [
@@ -20269,7 +20508,17 @@
        "writeOffBal": 0,
        "totalPaid": 6041,
        "newNetChange": -8968,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 1000
+        },
+        {
+         "yr": 1,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -20277,7 +20526,17 @@
       "writeOffBal": 0,
       "totalPaid": 6246,
       "newNetChange": -8763,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 6000
+       },
+       {
+        "yr": 1,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -22761,7 +23020,10 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 246,
+     "savingsForgone": 306
     },
     "overpay": {
      "scenarios": [
@@ -22771,7 +23033,17 @@
        "writeOffBal": 0,
        "totalPaid": 6041,
        "newNetChange": -8968,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 1000
+        },
+        {
+         "yr": 1,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -22779,7 +23051,17 @@
       "writeOffBal": 0,
       "totalPaid": 6246,
       "newNetChange": -8763,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 6000
+       },
+       {
+        "yr": 1,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -25297,16 +25579,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": null,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -27751,16 +28042,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": null,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -30287,16 +30587,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -32691,16 +33000,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -35437,7 +35755,10 @@
      "pensionGap": -3.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 15710,
+     "savingsForgone": 35539
     },
     "overpay": {
      "scenarios": [
@@ -35447,7 +35768,113 @@
        "writeOffBal": 10313,
        "totalPaid": 33026,
        "newNetChange": 858.55,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 26000
+        },
+        {
+         "yr": 1,
+         "bal": 26859
+        },
+        {
+         "yr": 2,
+         "bal": 27124
+        },
+        {
+         "yr": 3,
+         "bal": 27328
+        },
+        {
+         "yr": 4,
+         "bal": 27468
+        },
+        {
+         "yr": 5,
+         "bal": 27543
+        },
+        {
+         "yr": 6,
+         "bal": 27547
+        },
+        {
+         "yr": 7,
+         "bal": 27481
+        },
+        {
+         "yr": 8,
+         "bal": 27340
+        },
+        {
+         "yr": 9,
+         "bal": 27122
+        },
+        {
+         "yr": 10,
+         "bal": 26823
+        },
+        {
+         "yr": 11,
+         "bal": 26441
+        },
+        {
+         "yr": 12,
+         "bal": 25972
+        },
+        {
+         "yr": 13,
+         "bal": 25412
+        },
+        {
+         "yr": 14,
+         "bal": 24759
+        },
+        {
+         "yr": 15,
+         "bal": 24009
+        },
+        {
+         "yr": 16,
+         "bal": 23159
+        },
+        {
+         "yr": 17,
+         "bal": 22203
+        },
+        {
+         "yr": 18,
+         "bal": 21139
+        },
+        {
+         "yr": 19,
+         "bal": 19963
+        },
+        {
+         "yr": 20,
+         "bal": 18670
+        },
+        {
+         "yr": 21,
+         "bal": 17257
+        },
+        {
+         "yr": 22,
+         "bal": 15719
+        },
+        {
+         "yr": 23,
+         "bal": 14053
+        },
+        {
+         "yr": 24,
+         "bal": 12252
+        },
+        {
+         "yr": 25,
+         "bal": 10313
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -35455,7 +35882,113 @@
        "writeOffBal": 1941,
        "totalPaid": 38026,
        "newNetChange": 653.55,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 21000
+        },
+        {
+         "yr": 1,
+         "bal": 21654
+        },
+        {
+         "yr": 2,
+         "bal": 21815
+        },
+        {
+         "yr": 3,
+         "bal": 21912
+        },
+        {
+         "yr": 4,
+         "bal": 21945
+        },
+        {
+         "yr": 5,
+         "bal": 21909
+        },
+        {
+         "yr": 6,
+         "bal": 21801
+        },
+        {
+         "yr": 7,
+         "bal": 21620
+        },
+        {
+         "yr": 8,
+         "bal": 21361
+        },
+        {
+         "yr": 9,
+         "bal": 21023
+        },
+        {
+         "yr": 10,
+         "bal": 20603
+        },
+        {
+         "yr": 11,
+         "bal": 20096
+        },
+        {
+         "yr": 12,
+         "bal": 19500
+        },
+        {
+         "yr": 13,
+         "bal": 18811
+        },
+        {
+         "yr": 14,
+         "bal": 18026
+        },
+        {
+         "yr": 15,
+         "bal": 17141
+        },
+        {
+         "yr": 16,
+         "bal": 16153
+        },
+        {
+         "yr": 17,
+         "bal": 15057
+        },
+        {
+         "yr": 18,
+         "bal": 13851
+        },
+        {
+         "yr": 19,
+         "bal": 12529
+        },
+        {
+         "yr": 20,
+         "bal": 11087
+        },
+        {
+         "yr": 21,
+         "bal": 9523
+        },
+        {
+         "yr": 22,
+         "bal": 7830
+        },
+        {
+         "yr": 23,
+         "bal": 6006
+        },
+        {
+         "yr": 24,
+         "bal": 4044
+        },
+        {
+         "yr": 25,
+         "bal": 1941
+        }
+       ]
       },
       {
        "amt": 20000,
@@ -35463,7 +35996,85 @@
        "writeOffBal": 0,
        "totalPaid": 34093,
        "newNetChange": 243.55,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 11000
+        },
+        {
+         "yr": 1,
+         "bal": 11244
+        },
+        {
+         "yr": 2,
+         "bal": 11197
+        },
+        {
+         "yr": 3,
+         "bal": 11082
+        },
+        {
+         "yr": 4,
+         "bal": 10897
+        },
+        {
+         "yr": 5,
+         "bal": 10640
+        },
+        {
+         "yr": 6,
+         "bal": 10307
+        },
+        {
+         "yr": 7,
+         "bal": 9896
+        },
+        {
+         "yr": 8,
+         "bal": 9403
+        },
+        {
+         "yr": 9,
+         "bal": 8826
+        },
+        {
+         "yr": 10,
+         "bal": 8162
+        },
+        {
+         "yr": 11,
+         "bal": 7406
+        },
+        {
+         "yr": 12,
+         "bal": 6556
+        },
+        {
+         "yr": 13,
+         "bal": 5608
+        },
+        {
+         "yr": 14,
+         "bal": 4560
+        },
+        {
+         "yr": 15,
+         "bal": 3406
+        },
+        {
+         "yr": 16,
+         "bal": 2143
+        },
+        {
+         "yr": 17,
+         "bal": 767
+        },
+        {
+         "yr": 18,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -35471,7 +36082,113 @@
       "writeOffBal": 18685,
       "totalPaid": 28026,
       "newNetChange": 1063.55,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 31000
+       },
+       {
+        "yr": 1,
+        "bal": 32064
+       },
+       {
+        "yr": 2,
+        "bal": 32433
+       },
+       {
+        "yr": 3,
+        "bal": 32743
+       },
+       {
+        "yr": 4,
+        "bal": 32992
+       },
+       {
+        "yr": 5,
+        "bal": 33177
+       },
+       {
+        "yr": 6,
+        "bal": 33294
+       },
+       {
+        "yr": 7,
+        "bal": 33343
+       },
+       {
+        "yr": 8,
+        "bal": 33319
+       },
+       {
+        "yr": 9,
+        "bal": 33220
+       },
+       {
+        "yr": 10,
+        "bal": 33044
+       },
+       {
+        "yr": 11,
+        "bal": 32786
+       },
+       {
+        "yr": 12,
+        "bal": 32443
+       },
+       {
+        "yr": 13,
+        "bal": 32013
+       },
+       {
+        "yr": 14,
+        "bal": 31492
+       },
+       {
+        "yr": 15,
+        "bal": 30877
+       },
+       {
+        "yr": 16,
+        "bal": 30164
+       },
+       {
+        "yr": 17,
+        "bal": 29348
+       },
+       {
+        "yr": 18,
+        "bal": 28427
+       },
+       {
+        "yr": 19,
+        "bal": 27397
+       },
+       {
+        "yr": 20,
+        "bal": 26253
+       },
+       {
+        "yr": 21,
+        "bal": 24992
+       },
+       {
+        "yr": 22,
+        "bal": 23608
+       },
+       {
+        "yr": 23,
+        "bal": 22100
+       },
+       {
+        "yr": 24,
+        "bal": 20460
+       },
+       {
+        "yr": 25,
+        "bal": 18685
+       }
+      ]
      }
     }
    },
@@ -38123,7 +38840,10 @@
      "pensionGap": -3.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 15710,
+     "savingsForgone": 38400
     },
     "overpay": {
      "scenarios": [
@@ -38133,7 +38853,113 @@
        "writeOffBal": 10313,
        "totalPaid": 33026,
        "newNetChange": 858.55,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 26000
+        },
+        {
+         "yr": 1,
+         "bal": 26859
+        },
+        {
+         "yr": 2,
+         "bal": 27124
+        },
+        {
+         "yr": 3,
+         "bal": 27328
+        },
+        {
+         "yr": 4,
+         "bal": 27468
+        },
+        {
+         "yr": 5,
+         "bal": 27543
+        },
+        {
+         "yr": 6,
+         "bal": 27547
+        },
+        {
+         "yr": 7,
+         "bal": 27481
+        },
+        {
+         "yr": 8,
+         "bal": 27340
+        },
+        {
+         "yr": 9,
+         "bal": 27122
+        },
+        {
+         "yr": 10,
+         "bal": 26823
+        },
+        {
+         "yr": 11,
+         "bal": 26441
+        },
+        {
+         "yr": 12,
+         "bal": 25972
+        },
+        {
+         "yr": 13,
+         "bal": 25412
+        },
+        {
+         "yr": 14,
+         "bal": 24759
+        },
+        {
+         "yr": 15,
+         "bal": 24009
+        },
+        {
+         "yr": 16,
+         "bal": 23159
+        },
+        {
+         "yr": 17,
+         "bal": 22203
+        },
+        {
+         "yr": 18,
+         "bal": 21139
+        },
+        {
+         "yr": 19,
+         "bal": 19963
+        },
+        {
+         "yr": 20,
+         "bal": 18670
+        },
+        {
+         "yr": 21,
+         "bal": 17257
+        },
+        {
+         "yr": 22,
+         "bal": 15719
+        },
+        {
+         "yr": 23,
+         "bal": 14053
+        },
+        {
+         "yr": 24,
+         "bal": 12252
+        },
+        {
+         "yr": 25,
+         "bal": 10313
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -38141,7 +38967,113 @@
        "writeOffBal": 1941,
        "totalPaid": 38026,
        "newNetChange": 653.55,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 21000
+        },
+        {
+         "yr": 1,
+         "bal": 21654
+        },
+        {
+         "yr": 2,
+         "bal": 21815
+        },
+        {
+         "yr": 3,
+         "bal": 21912
+        },
+        {
+         "yr": 4,
+         "bal": 21945
+        },
+        {
+         "yr": 5,
+         "bal": 21909
+        },
+        {
+         "yr": 6,
+         "bal": 21801
+        },
+        {
+         "yr": 7,
+         "bal": 21620
+        },
+        {
+         "yr": 8,
+         "bal": 21361
+        },
+        {
+         "yr": 9,
+         "bal": 21023
+        },
+        {
+         "yr": 10,
+         "bal": 20603
+        },
+        {
+         "yr": 11,
+         "bal": 20096
+        },
+        {
+         "yr": 12,
+         "bal": 19500
+        },
+        {
+         "yr": 13,
+         "bal": 18811
+        },
+        {
+         "yr": 14,
+         "bal": 18026
+        },
+        {
+         "yr": 15,
+         "bal": 17141
+        },
+        {
+         "yr": 16,
+         "bal": 16153
+        },
+        {
+         "yr": 17,
+         "bal": 15057
+        },
+        {
+         "yr": 18,
+         "bal": 13851
+        },
+        {
+         "yr": 19,
+         "bal": 12529
+        },
+        {
+         "yr": 20,
+         "bal": 11087
+        },
+        {
+         "yr": 21,
+         "bal": 9523
+        },
+        {
+         "yr": 22,
+         "bal": 7830
+        },
+        {
+         "yr": 23,
+         "bal": 6006
+        },
+        {
+         "yr": 24,
+         "bal": 4044
+        },
+        {
+         "yr": 25,
+         "bal": 1941
+        }
+       ]
       },
       {
        "amt": 20000,
@@ -38149,7 +39081,85 @@
        "writeOffBal": 0,
        "totalPaid": 34093,
        "newNetChange": 243.55,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 11000
+        },
+        {
+         "yr": 1,
+         "bal": 11244
+        },
+        {
+         "yr": 2,
+         "bal": 11197
+        },
+        {
+         "yr": 3,
+         "bal": 11082
+        },
+        {
+         "yr": 4,
+         "bal": 10897
+        },
+        {
+         "yr": 5,
+         "bal": 10640
+        },
+        {
+         "yr": 6,
+         "bal": 10307
+        },
+        {
+         "yr": 7,
+         "bal": 9896
+        },
+        {
+         "yr": 8,
+         "bal": 9403
+        },
+        {
+         "yr": 9,
+         "bal": 8826
+        },
+        {
+         "yr": 10,
+         "bal": 8162
+        },
+        {
+         "yr": 11,
+         "bal": 7406
+        },
+        {
+         "yr": 12,
+         "bal": 6556
+        },
+        {
+         "yr": 13,
+         "bal": 5608
+        },
+        {
+         "yr": 14,
+         "bal": 4560
+        },
+        {
+         "yr": 15,
+         "bal": 3406
+        },
+        {
+         "yr": 16,
+         "bal": 2143
+        },
+        {
+         "yr": 17,
+         "bal": 767
+        },
+        {
+         "yr": 18,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -38157,7 +39167,113 @@
       "writeOffBal": 18685,
       "totalPaid": 28026,
       "newNetChange": 1063.55,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 31000
+       },
+       {
+        "yr": 1,
+        "bal": 32064
+       },
+       {
+        "yr": 2,
+        "bal": 32433
+       },
+       {
+        "yr": 3,
+        "bal": 32743
+       },
+       {
+        "yr": 4,
+        "bal": 32992
+       },
+       {
+        "yr": 5,
+        "bal": 33177
+       },
+       {
+        "yr": 6,
+        "bal": 33294
+       },
+       {
+        "yr": 7,
+        "bal": 33343
+       },
+       {
+        "yr": 8,
+        "bal": 33319
+       },
+       {
+        "yr": 9,
+        "bal": 33220
+       },
+       {
+        "yr": 10,
+        "bal": 33044
+       },
+       {
+        "yr": 11,
+        "bal": 32786
+       },
+       {
+        "yr": 12,
+        "bal": 32443
+       },
+       {
+        "yr": 13,
+        "bal": 32013
+       },
+       {
+        "yr": 14,
+        "bal": 31492
+       },
+       {
+        "yr": 15,
+        "bal": 30877
+       },
+       {
+        "yr": 16,
+        "bal": 30164
+       },
+       {
+        "yr": 17,
+        "bal": 29348
+       },
+       {
+        "yr": 18,
+        "bal": 28427
+       },
+       {
+        "yr": 19,
+        "bal": 27397
+       },
+       {
+        "yr": 20,
+        "bal": 26253
+       },
+       {
+        "yr": 21,
+        "bal": 24992
+       },
+       {
+        "yr": 22,
+        "bal": 23608
+       },
+       {
+        "yr": 23,
+        "bal": 22100
+       },
+       {
+        "yr": 24,
+        "bal": 20460
+       },
+       {
+        "yr": 25,
+        "bal": 18685
+       }
+      ]
      }
     }
    },
@@ -41007,7 +42123,10 @@
      "pensionGap": -4,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 54158,
+     "savingsForgone": 125434
     },
     "overpay": {
      "scenarios": [
@@ -41017,7 +42136,173 @@
        "writeOffBal": 77025,
        "totalPaid": 18865,
        "newNetChange": 1533.5,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 43000
+        },
+        {
+         "yr": 1,
+         "bal": 44533
+        },
+        {
+         "yr": 2,
+         "bal": 45190
+        },
+        {
+         "yr": 3,
+         "bal": 45854
+        },
+        {
+         "yr": 4,
+         "bal": 46528
+        },
+        {
+         "yr": 5,
+         "bal": 47210
+        },
+        {
+         "yr": 6,
+         "bal": 47901
+        },
+        {
+         "yr": 7,
+         "bal": 48601
+        },
+        {
+         "yr": 8,
+         "bal": 49309
+        },
+        {
+         "yr": 9,
+         "bal": 50027
+        },
+        {
+         "yr": 10,
+         "bal": 50753
+        },
+        {
+         "yr": 11,
+         "bal": 51488
+        },
+        {
+         "yr": 12,
+         "bal": 52233
+        },
+        {
+         "yr": 13,
+         "bal": 52987
+        },
+        {
+         "yr": 14,
+         "bal": 53749
+        },
+        {
+         "yr": 15,
+         "bal": 54521
+        },
+        {
+         "yr": 16,
+         "bal": 55303
+        },
+        {
+         "yr": 17,
+         "bal": 56094
+        },
+        {
+         "yr": 18,
+         "bal": 56895
+        },
+        {
+         "yr": 19,
+         "bal": 57705
+        },
+        {
+         "yr": 20,
+         "bal": 58525
+        },
+        {
+         "yr": 21,
+         "bal": 59354
+        },
+        {
+         "yr": 22,
+         "bal": 60193
+        },
+        {
+         "yr": 23,
+         "bal": 61042
+        },
+        {
+         "yr": 24,
+         "bal": 61901
+        },
+        {
+         "yr": 25,
+         "bal": 62770
+        },
+        {
+         "yr": 26,
+         "bal": 63648
+        },
+        {
+         "yr": 27,
+         "bal": 64537
+        },
+        {
+         "yr": 28,
+         "bal": 65436
+        },
+        {
+         "yr": 29,
+         "bal": 66345
+        },
+        {
+         "yr": 30,
+         "bal": 67264
+        },
+        {
+         "yr": 31,
+         "bal": 68193
+        },
+        {
+         "yr": 32,
+         "bal": 69133
+        },
+        {
+         "yr": 33,
+         "bal": 70082
+        },
+        {
+         "yr": 34,
+         "bal": 71043
+        },
+        {
+         "yr": 35,
+         "bal": 72014
+        },
+        {
+         "yr": 36,
+         "bal": 72995
+        },
+        {
+         "yr": 37,
+         "bal": 73987
+        },
+        {
+         "yr": 38,
+         "bal": 74989
+        },
+        {
+         "yr": 39,
+         "bal": 76002
+        },
+        {
+         "yr": 40,
+         "bal": 77025
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -41025,7 +42310,173 @@
        "writeOffBal": 65757,
        "totalPaid": 23865,
        "newNetChange": 1328.5,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 38000
+        },
+        {
+         "yr": 1,
+         "bal": 39328
+        },
+        {
+         "yr": 2,
+         "bal": 39881
+        },
+        {
+         "yr": 3,
+         "bal": 40439
+        },
+        {
+         "yr": 4,
+         "bal": 41004
+        },
+        {
+         "yr": 5,
+         "bal": 41576
+        },
+        {
+         "yr": 6,
+         "bal": 42155
+        },
+        {
+         "yr": 7,
+         "bal": 42740
+        },
+        {
+         "yr": 8,
+         "bal": 43330
+        },
+        {
+         "yr": 9,
+         "bal": 43928
+        },
+        {
+         "yr": 10,
+         "bal": 44533
+        },
+        {
+         "yr": 11,
+         "bal": 45143
+        },
+        {
+         "yr": 12,
+         "bal": 45761
+        },
+        {
+         "yr": 13,
+         "bal": 46385
+        },
+        {
+         "yr": 14,
+         "bal": 47016
+        },
+        {
+         "yr": 15,
+         "bal": 47653
+        },
+        {
+         "yr": 16,
+         "bal": 48297
+        },
+        {
+         "yr": 17,
+         "bal": 48948
+        },
+        {
+         "yr": 18,
+         "bal": 49606
+        },
+        {
+         "yr": 19,
+         "bal": 50270
+        },
+        {
+         "yr": 20,
+         "bal": 50942
+        },
+        {
+         "yr": 21,
+         "bal": 51620
+        },
+        {
+         "yr": 22,
+         "bal": 52304
+        },
+        {
+         "yr": 23,
+         "bal": 52995
+        },
+        {
+         "yr": 24,
+         "bal": 53693
+        },
+        {
+         "yr": 25,
+         "bal": 54398
+        },
+        {
+         "yr": 26,
+         "bal": 55109
+        },
+        {
+         "yr": 27,
+         "bal": 55827
+        },
+        {
+         "yr": 28,
+         "bal": 56552
+        },
+        {
+         "yr": 29,
+         "bal": 57283
+        },
+        {
+         "yr": 30,
+         "bal": 58020
+        },
+        {
+         "yr": 31,
+         "bal": 58765
+        },
+        {
+         "yr": 32,
+         "bal": 59516
+        },
+        {
+         "yr": 33,
+         "bal": 60273
+        },
+        {
+         "yr": 34,
+         "bal": 61038
+        },
+        {
+         "yr": 35,
+         "bal": 61809
+        },
+        {
+         "yr": 36,
+         "bal": 62586
+        },
+        {
+         "yr": 37,
+         "bal": 63369
+        },
+        {
+         "yr": 38,
+         "bal": 64159
+        },
+        {
+         "yr": 39,
+         "bal": 64955
+        },
+        {
+         "yr": 40,
+         "bal": 65757
+        }
+       ]
       },
       {
        "amt": 20000,
@@ -41033,7 +42484,173 @@
        "writeOffBal": 43222,
        "totalPaid": 33865,
        "newNetChange": 918.5,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 28000
+        },
+        {
+         "yr": 1,
+         "bal": 28918
+        },
+        {
+         "yr": 2,
+         "bal": 29262
+        },
+        {
+         "yr": 3,
+         "bal": 29609
+        },
+        {
+         "yr": 4,
+         "bal": 29957
+        },
+        {
+         "yr": 5,
+         "bal": 30308
+        },
+        {
+         "yr": 6,
+         "bal": 30661
+        },
+        {
+         "yr": 7,
+         "bal": 31016
+        },
+        {
+         "yr": 8,
+         "bal": 31373
+        },
+        {
+         "yr": 9,
+         "bal": 31731
+        },
+        {
+         "yr": 10,
+         "bal": 32092
+        },
+        {
+         "yr": 11,
+         "bal": 32454
+        },
+        {
+         "yr": 12,
+         "bal": 32818
+        },
+        {
+         "yr": 13,
+         "bal": 33183
+        },
+        {
+         "yr": 14,
+         "bal": 33550
+        },
+        {
+         "yr": 15,
+         "bal": 33918
+        },
+        {
+         "yr": 16,
+         "bal": 34287
+        },
+        {
+         "yr": 17,
+         "bal": 34658
+        },
+        {
+         "yr": 18,
+         "bal": 35030
+        },
+        {
+         "yr": 19,
+         "bal": 35402
+        },
+        {
+         "yr": 20,
+         "bal": 35776
+        },
+        {
+         "yr": 21,
+         "bal": 36151
+        },
+        {
+         "yr": 22,
+         "bal": 36526
+        },
+        {
+         "yr": 23,
+         "bal": 36902
+        },
+        {
+         "yr": 24,
+         "bal": 37278
+        },
+        {
+         "yr": 25,
+         "bal": 37654
+        },
+        {
+         "yr": 26,
+         "bal": 38030
+        },
+        {
+         "yr": 27,
+         "bal": 38407
+        },
+        {
+         "yr": 28,
+         "bal": 38783
+        },
+        {
+         "yr": 29,
+         "bal": 39159
+        },
+        {
+         "yr": 30,
+         "bal": 39534
+        },
+        {
+         "yr": 31,
+         "bal": 39908
+        },
+        {
+         "yr": 32,
+         "bal": 40283
+        },
+        {
+         "yr": 33,
+         "bal": 40655
+        },
+        {
+         "yr": 34,
+         "bal": 41027
+        },
+        {
+         "yr": 35,
+         "bal": 41398
+        },
+        {
+         "yr": 36,
+         "bal": 41767
+        },
+        {
+         "yr": 37,
+         "bal": 42134
+        },
+        {
+         "yr": 38,
+         "bal": 42499
+        },
+        {
+         "yr": 39,
+         "bal": 42862
+        },
+        {
+         "yr": 40,
+         "bal": 43222
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -41041,7 +42658,173 @@
       "writeOffBal": 88292,
       "totalPaid": 13865,
       "newNetChange": 1738.5,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 48000
+       },
+       {
+        "yr": 1,
+        "bal": 49738
+       },
+       {
+        "yr": 2,
+        "bal": 50499
+       },
+       {
+        "yr": 3,
+        "bal": 51270
+       },
+       {
+        "yr": 4,
+        "bal": 52051
+       },
+       {
+        "yr": 5,
+        "bal": 52844
+       },
+       {
+        "yr": 6,
+        "bal": 53648
+       },
+       {
+        "yr": 7,
+        "bal": 54463
+       },
+       {
+        "yr": 8,
+        "bal": 55288
+       },
+       {
+        "yr": 9,
+        "bal": 56125
+       },
+       {
+        "yr": 10,
+        "bal": 56974
+       },
+       {
+        "yr": 11,
+        "bal": 57833
+       },
+       {
+        "yr": 12,
+        "bal": 58705
+       },
+       {
+        "yr": 13,
+        "bal": 59588
+       },
+       {
+        "yr": 14,
+        "bal": 60482
+       },
+       {
+        "yr": 15,
+        "bal": 61389
+       },
+       {
+        "yr": 16,
+        "bal": 62308
+       },
+       {
+        "yr": 17,
+        "bal": 63239
+       },
+       {
+        "yr": 18,
+        "bal": 64183
+       },
+       {
+        "yr": 19,
+        "bal": 65139
+       },
+       {
+        "yr": 20,
+        "bal": 66107
+       },
+       {
+        "yr": 21,
+        "bal": 67088
+       },
+       {
+        "yr": 22,
+        "bal": 68082
+       },
+       {
+        "yr": 23,
+        "bal": 69089
+       },
+       {
+        "yr": 24,
+        "bal": 70109
+       },
+       {
+        "yr": 25,
+        "bal": 71142
+       },
+       {
+        "yr": 26,
+        "bal": 72188
+       },
+       {
+        "yr": 27,
+        "bal": 73247
+       },
+       {
+        "yr": 28,
+        "bal": 74320
+       },
+       {
+        "yr": 29,
+        "bal": 75407
+       },
+       {
+        "yr": 30,
+        "bal": 76507
+       },
+       {
+        "yr": 31,
+        "bal": 77621
+       },
+       {
+        "yr": 32,
+        "bal": 78749
+       },
+       {
+        "yr": 33,
+        "bal": 79891
+       },
+       {
+        "yr": 34,
+        "bal": 81048
+       },
+       {
+        "yr": 35,
+        "bal": 82219
+       },
+       {
+        "yr": 36,
+        "bal": 83405
+       },
+       {
+        "yr": 37,
+        "bal": 84605
+       },
+       {
+        "yr": 38,
+        "bal": 85819
+       },
+       {
+        "yr": 39,
+        "bal": 87048
+       },
+       {
+        "yr": 40,
+        "bal": 88292
+       }
+      ]
      }
     }
    },
@@ -43814,7 +45597,10 @@
      "pensionGap": -4,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 54158,
+     "savingsForgone": 135532
     },
     "overpay": {
      "scenarios": [
@@ -43824,7 +45610,173 @@
        "writeOffBal": 77025,
        "totalPaid": 18865,
        "newNetChange": 1533.5,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 43000
+        },
+        {
+         "yr": 1,
+         "bal": 44533
+        },
+        {
+         "yr": 2,
+         "bal": 45190
+        },
+        {
+         "yr": 3,
+         "bal": 45854
+        },
+        {
+         "yr": 4,
+         "bal": 46528
+        },
+        {
+         "yr": 5,
+         "bal": 47210
+        },
+        {
+         "yr": 6,
+         "bal": 47901
+        },
+        {
+         "yr": 7,
+         "bal": 48601
+        },
+        {
+         "yr": 8,
+         "bal": 49309
+        },
+        {
+         "yr": 9,
+         "bal": 50027
+        },
+        {
+         "yr": 10,
+         "bal": 50753
+        },
+        {
+         "yr": 11,
+         "bal": 51488
+        },
+        {
+         "yr": 12,
+         "bal": 52233
+        },
+        {
+         "yr": 13,
+         "bal": 52987
+        },
+        {
+         "yr": 14,
+         "bal": 53749
+        },
+        {
+         "yr": 15,
+         "bal": 54521
+        },
+        {
+         "yr": 16,
+         "bal": 55303
+        },
+        {
+         "yr": 17,
+         "bal": 56094
+        },
+        {
+         "yr": 18,
+         "bal": 56895
+        },
+        {
+         "yr": 19,
+         "bal": 57705
+        },
+        {
+         "yr": 20,
+         "bal": 58525
+        },
+        {
+         "yr": 21,
+         "bal": 59354
+        },
+        {
+         "yr": 22,
+         "bal": 60193
+        },
+        {
+         "yr": 23,
+         "bal": 61042
+        },
+        {
+         "yr": 24,
+         "bal": 61901
+        },
+        {
+         "yr": 25,
+         "bal": 62770
+        },
+        {
+         "yr": 26,
+         "bal": 63648
+        },
+        {
+         "yr": 27,
+         "bal": 64537
+        },
+        {
+         "yr": 28,
+         "bal": 65436
+        },
+        {
+         "yr": 29,
+         "bal": 66345
+        },
+        {
+         "yr": 30,
+         "bal": 67264
+        },
+        {
+         "yr": 31,
+         "bal": 68193
+        },
+        {
+         "yr": 32,
+         "bal": 69133
+        },
+        {
+         "yr": 33,
+         "bal": 70082
+        },
+        {
+         "yr": 34,
+         "bal": 71043
+        },
+        {
+         "yr": 35,
+         "bal": 72014
+        },
+        {
+         "yr": 36,
+         "bal": 72995
+        },
+        {
+         "yr": 37,
+         "bal": 73987
+        },
+        {
+         "yr": 38,
+         "bal": 74989
+        },
+        {
+         "yr": 39,
+         "bal": 76002
+        },
+        {
+         "yr": 40,
+         "bal": 77025
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -43832,7 +45784,173 @@
        "writeOffBal": 65757,
        "totalPaid": 23865,
        "newNetChange": 1328.5,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 38000
+        },
+        {
+         "yr": 1,
+         "bal": 39328
+        },
+        {
+         "yr": 2,
+         "bal": 39881
+        },
+        {
+         "yr": 3,
+         "bal": 40439
+        },
+        {
+         "yr": 4,
+         "bal": 41004
+        },
+        {
+         "yr": 5,
+         "bal": 41576
+        },
+        {
+         "yr": 6,
+         "bal": 42155
+        },
+        {
+         "yr": 7,
+         "bal": 42740
+        },
+        {
+         "yr": 8,
+         "bal": 43330
+        },
+        {
+         "yr": 9,
+         "bal": 43928
+        },
+        {
+         "yr": 10,
+         "bal": 44533
+        },
+        {
+         "yr": 11,
+         "bal": 45143
+        },
+        {
+         "yr": 12,
+         "bal": 45761
+        },
+        {
+         "yr": 13,
+         "bal": 46385
+        },
+        {
+         "yr": 14,
+         "bal": 47016
+        },
+        {
+         "yr": 15,
+         "bal": 47653
+        },
+        {
+         "yr": 16,
+         "bal": 48297
+        },
+        {
+         "yr": 17,
+         "bal": 48948
+        },
+        {
+         "yr": 18,
+         "bal": 49606
+        },
+        {
+         "yr": 19,
+         "bal": 50270
+        },
+        {
+         "yr": 20,
+         "bal": 50942
+        },
+        {
+         "yr": 21,
+         "bal": 51620
+        },
+        {
+         "yr": 22,
+         "bal": 52304
+        },
+        {
+         "yr": 23,
+         "bal": 52995
+        },
+        {
+         "yr": 24,
+         "bal": 53693
+        },
+        {
+         "yr": 25,
+         "bal": 54398
+        },
+        {
+         "yr": 26,
+         "bal": 55109
+        },
+        {
+         "yr": 27,
+         "bal": 55827
+        },
+        {
+         "yr": 28,
+         "bal": 56552
+        },
+        {
+         "yr": 29,
+         "bal": 57283
+        },
+        {
+         "yr": 30,
+         "bal": 58020
+        },
+        {
+         "yr": 31,
+         "bal": 58765
+        },
+        {
+         "yr": 32,
+         "bal": 59516
+        },
+        {
+         "yr": 33,
+         "bal": 60273
+        },
+        {
+         "yr": 34,
+         "bal": 61038
+        },
+        {
+         "yr": 35,
+         "bal": 61809
+        },
+        {
+         "yr": 36,
+         "bal": 62586
+        },
+        {
+         "yr": 37,
+         "bal": 63369
+        },
+        {
+         "yr": 38,
+         "bal": 64159
+        },
+        {
+         "yr": 39,
+         "bal": 64955
+        },
+        {
+         "yr": 40,
+         "bal": 65757
+        }
+       ]
       },
       {
        "amt": 20000,
@@ -43840,7 +45958,173 @@
        "writeOffBal": 43222,
        "totalPaid": 33865,
        "newNetChange": 918.5,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 28000
+        },
+        {
+         "yr": 1,
+         "bal": 28918
+        },
+        {
+         "yr": 2,
+         "bal": 29262
+        },
+        {
+         "yr": 3,
+         "bal": 29609
+        },
+        {
+         "yr": 4,
+         "bal": 29957
+        },
+        {
+         "yr": 5,
+         "bal": 30308
+        },
+        {
+         "yr": 6,
+         "bal": 30661
+        },
+        {
+         "yr": 7,
+         "bal": 31016
+        },
+        {
+         "yr": 8,
+         "bal": 31373
+        },
+        {
+         "yr": 9,
+         "bal": 31731
+        },
+        {
+         "yr": 10,
+         "bal": 32092
+        },
+        {
+         "yr": 11,
+         "bal": 32454
+        },
+        {
+         "yr": 12,
+         "bal": 32818
+        },
+        {
+         "yr": 13,
+         "bal": 33183
+        },
+        {
+         "yr": 14,
+         "bal": 33550
+        },
+        {
+         "yr": 15,
+         "bal": 33918
+        },
+        {
+         "yr": 16,
+         "bal": 34287
+        },
+        {
+         "yr": 17,
+         "bal": 34658
+        },
+        {
+         "yr": 18,
+         "bal": 35030
+        },
+        {
+         "yr": 19,
+         "bal": 35402
+        },
+        {
+         "yr": 20,
+         "bal": 35776
+        },
+        {
+         "yr": 21,
+         "bal": 36151
+        },
+        {
+         "yr": 22,
+         "bal": 36526
+        },
+        {
+         "yr": 23,
+         "bal": 36902
+        },
+        {
+         "yr": 24,
+         "bal": 37278
+        },
+        {
+         "yr": 25,
+         "bal": 37654
+        },
+        {
+         "yr": 26,
+         "bal": 38030
+        },
+        {
+         "yr": 27,
+         "bal": 38407
+        },
+        {
+         "yr": 28,
+         "bal": 38783
+        },
+        {
+         "yr": 29,
+         "bal": 39159
+        },
+        {
+         "yr": 30,
+         "bal": 39534
+        },
+        {
+         "yr": 31,
+         "bal": 39908
+        },
+        {
+         "yr": 32,
+         "bal": 40283
+        },
+        {
+         "yr": 33,
+         "bal": 40655
+        },
+        {
+         "yr": 34,
+         "bal": 41027
+        },
+        {
+         "yr": 35,
+         "bal": 41398
+        },
+        {
+         "yr": 36,
+         "bal": 41767
+        },
+        {
+         "yr": 37,
+         "bal": 42134
+        },
+        {
+         "yr": 38,
+         "bal": 42499
+        },
+        {
+         "yr": 39,
+         "bal": 42862
+        },
+        {
+         "yr": 40,
+         "bal": 43222
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -43848,7 +46132,173 @@
       "writeOffBal": 88292,
       "totalPaid": 13865,
       "newNetChange": 1738.5,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 48000
+       },
+       {
+        "yr": 1,
+        "bal": 49738
+       },
+       {
+        "yr": 2,
+        "bal": 50499
+       },
+       {
+        "yr": 3,
+        "bal": 51270
+       },
+       {
+        "yr": 4,
+        "bal": 52051
+       },
+       {
+        "yr": 5,
+        "bal": 52844
+       },
+       {
+        "yr": 6,
+        "bal": 53648
+       },
+       {
+        "yr": 7,
+        "bal": 54463
+       },
+       {
+        "yr": 8,
+        "bal": 55288
+       },
+       {
+        "yr": 9,
+        "bal": 56125
+       },
+       {
+        "yr": 10,
+        "bal": 56974
+       },
+       {
+        "yr": 11,
+        "bal": 57833
+       },
+       {
+        "yr": 12,
+        "bal": 58705
+       },
+       {
+        "yr": 13,
+        "bal": 59588
+       },
+       {
+        "yr": 14,
+        "bal": 60482
+       },
+       {
+        "yr": 15,
+        "bal": 61389
+       },
+       {
+        "yr": 16,
+        "bal": 62308
+       },
+       {
+        "yr": 17,
+        "bal": 63239
+       },
+       {
+        "yr": 18,
+        "bal": 64183
+       },
+       {
+        "yr": 19,
+        "bal": 65139
+       },
+       {
+        "yr": 20,
+        "bal": 66107
+       },
+       {
+        "yr": 21,
+        "bal": 67088
+       },
+       {
+        "yr": 22,
+        "bal": 68082
+       },
+       {
+        "yr": 23,
+        "bal": 69089
+       },
+       {
+        "yr": 24,
+        "bal": 70109
+       },
+       {
+        "yr": 25,
+        "bal": 71142
+       },
+       {
+        "yr": 26,
+        "bal": 72188
+       },
+       {
+        "yr": 27,
+        "bal": 73247
+       },
+       {
+        "yr": 28,
+        "bal": 74320
+       },
+       {
+        "yr": 29,
+        "bal": 75407
+       },
+       {
+        "yr": 30,
+        "bal": 76507
+       },
+       {
+        "yr": 31,
+        "bal": 77621
+       },
+       {
+        "yr": 32,
+        "bal": 78749
+       },
+       {
+        "yr": 33,
+        "bal": 79891
+       },
+       {
+        "yr": 34,
+        "bal": 81048
+       },
+       {
+        "yr": 35,
+        "bal": 82219
+       },
+       {
+        "yr": 36,
+        "bal": 83405
+       },
+       {
+        "yr": 37,
+        "bal": 84605
+       },
+       {
+        "yr": 38,
+        "bal": 85819
+       },
+       {
+        "yr": 39,
+        "bal": 87048
+       },
+       {
+        "yr": 40,
+        "bal": 88292
+       }
+      ]
      }
     }
    },
@@ -46465,7 +48915,10 @@
      "pensionGap": -0.8,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 4227,
+     "savingsForgone": 3858
     },
     "overpay": {
      "scenarios": [
@@ -46475,7 +48928,37 @@
        "writeOffBal": 0,
        "totalPaid": 15747,
        "newNetChange": -1164,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 9000
+        },
+        {
+         "yr": 1,
+         "bal": 7836
+        },
+        {
+         "yr": 2,
+         "bal": 6465
+        },
+        {
+         "yr": 3,
+         "bal": 4964
+        },
+        {
+         "yr": 4,
+         "bal": 3327
+        },
+        {
+         "yr": 5,
+         "bal": 1546
+        },
+        {
+         "yr": 6,
+         "bal": 0
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -46483,7 +48966,25 @@
        "writeOffBal": 0,
        "totalPaid": 14412,
        "newNetChange": -1464,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 4000
+        },
+        {
+         "yr": 1,
+         "bal": 2536
+        },
+        {
+         "yr": 2,
+         "bal": 900
+        },
+        {
+         "yr": 3,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -46491,7 +48992,53 @@
       "writeOffBal": 0,
       "totalPaid": 18227,
       "newNetChange": -864,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 14000
+       },
+       {
+        "yr": 1,
+        "bal": 13136
+       },
+       {
+        "yr": 2,
+        "bal": 12030
+       },
+       {
+        "yr": 3,
+        "bal": 10807
+       },
+       {
+        "yr": 4,
+        "bal": 9463
+       },
+       {
+        "yr": 5,
+        "bal": 7988
+       },
+       {
+        "yr": 6,
+        "bal": 6375
+       },
+       {
+        "yr": 7,
+        "bal": 4616
+       },
+       {
+        "yr": 8,
+        "bal": 2702
+       },
+       {
+        "yr": 9,
+        "bal": 624
+       },
+       {
+        "yr": 10,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -49023,7 +51570,10 @@
      "pensionGap": -0.8,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 4227,
+     "savingsForgone": 4168
     },
     "overpay": {
      "scenarios": [
@@ -49033,7 +51583,37 @@
        "writeOffBal": 0,
        "totalPaid": 15747,
        "newNetChange": -1164,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 9000
+        },
+        {
+         "yr": 1,
+         "bal": 7836
+        },
+        {
+         "yr": 2,
+         "bal": 6465
+        },
+        {
+         "yr": 3,
+         "bal": 4964
+        },
+        {
+         "yr": 4,
+         "bal": 3327
+        },
+        {
+         "yr": 5,
+         "bal": 1546
+        },
+        {
+         "yr": 6,
+         "bal": 0
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -49041,7 +51621,25 @@
        "writeOffBal": 0,
        "totalPaid": 14412,
        "newNetChange": -1464,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 4000
+        },
+        {
+         "yr": 1,
+         "bal": 2536
+        },
+        {
+         "yr": 2,
+         "bal": 900
+        },
+        {
+         "yr": 3,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -49049,7 +51647,53 @@
       "writeOffBal": 0,
       "totalPaid": 18227,
       "newNetChange": -864,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 14000
+       },
+       {
+        "yr": 1,
+        "bal": 13136
+       },
+       {
+        "yr": 2,
+        "bal": 12030
+       },
+       {
+        "yr": 3,
+        "bal": 10807
+       },
+       {
+        "yr": 4,
+        "bal": 9463
+       },
+       {
+        "yr": 5,
+        "bal": 7988
+       },
+       {
+        "yr": 6,
+        "bal": 6375
+       },
+       {
+        "yr": 7,
+        "bal": 4616
+       },
+       {
+        "yr": 8,
+        "bal": 2702
+       },
+       {
+        "yr": 9,
+        "bal": 624
+       },
+       {
+        "yr": 10,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -51610,16 +54254,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": null,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -54078,16 +56731,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": null,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -56593,16 +59255,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": null,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -58976,16 +61647,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": null,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -61494,16 +64174,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -63880,16 +66569,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -65335,16 +68033,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -66705,16 +69412,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -69640,16 +72356,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -72474,16 +75199,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -75517,7 +78251,10 @@
      "pensionGap": -0.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 31927,
+     "savingsForgone": 29780
     },
     "overpay": {
      "scenarios": [
@@ -75527,7 +78264,93 @@
        "writeOffBal": 3134,
        "totalPaid": 58399,
        "newNetChange": -77.84999999999991,
-       "crossesInflection": true
+       "crossesInflection": true,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 33000
+        },
+        {
+         "yr": 1,
+         "bal": 32922
+        },
+        {
+         "yr": 2,
+         "bal": 32416
+        },
+        {
+         "yr": 3,
+         "bal": 31789
+        },
+        {
+         "yr": 4,
+         "bal": 31032
+        },
+        {
+         "yr": 5,
+         "bal": 30191
+        },
+        {
+         "yr": 6,
+         "bal": 29261
+        },
+        {
+         "yr": 7,
+         "bal": 28235
+        },
+        {
+         "yr": 8,
+         "bal": 27107
+        },
+        {
+         "yr": 9,
+         "bal": 25873
+        },
+        {
+         "yr": 10,
+         "bal": 24524
+        },
+        {
+         "yr": 11,
+         "bal": 23056
+        },
+        {
+         "yr": 12,
+         "bal": 21461
+        },
+        {
+         "yr": 13,
+         "bal": 19731
+        },
+        {
+         "yr": 14,
+         "bal": 17859
+        },
+        {
+         "yr": 15,
+         "bal": 15835
+        },
+        {
+         "yr": 16,
+         "bal": 13652
+        },
+        {
+         "yr": 17,
+         "bal": 11300
+        },
+        {
+         "yr": 18,
+         "bal": 8770
+        },
+        {
+         "yr": 19,
+         "bal": 6052
+        },
+        {
+         "yr": 20,
+         "bal": 3134
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -75535,7 +78358,81 @@
        "writeOffBal": 0,
        "totalPaid": 53658,
        "newNetChange": -377.8499999999999,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 28000
+        },
+        {
+         "yr": 1,
+         "bal": 27622
+        },
+        {
+         "yr": 2,
+         "bal": 26851
+        },
+        {
+         "yr": 3,
+         "bal": 25946
+        },
+        {
+         "yr": 4,
+         "bal": 24897
+        },
+        {
+         "yr": 5,
+         "bal": 23749
+        },
+        {
+         "yr": 6,
+         "bal": 22496
+        },
+        {
+         "yr": 7,
+         "bal": 21132
+        },
+        {
+         "yr": 8,
+         "bal": 19650
+        },
+        {
+         "yr": 9,
+         "bal": 18042
+        },
+        {
+         "yr": 10,
+         "bal": 16302
+        },
+        {
+         "yr": 11,
+         "bal": 14423
+        },
+        {
+         "yr": 12,
+         "bal": 12397
+        },
+        {
+         "yr": 13,
+         "bal": 10213
+        },
+        {
+         "yr": 14,
+         "bal": 7865
+        },
+        {
+         "yr": 15,
+         "bal": 5341
+        },
+        {
+         "yr": 16,
+         "bal": 2633
+        },
+        {
+         "yr": 17,
+         "bal": 0
+        }
+       ]
       },
       {
        "amt": 20000,
@@ -75543,7 +78440,53 @@
        "writeOffBal": 0,
        "totalPaid": 43755,
        "newNetChange": -977.8499999999999,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 18000
+        },
+        {
+         "yr": 1,
+         "bal": 17022
+        },
+        {
+         "yr": 2,
+         "bal": 15721
+        },
+        {
+         "yr": 3,
+         "bal": 14259
+        },
+        {
+         "yr": 4,
+         "bal": 12626
+        },
+        {
+         "yr": 5,
+         "bal": 10864
+        },
+        {
+         "yr": 6,
+         "bal": 8968
+        },
+        {
+         "yr": 7,
+         "bal": 6927
+        },
+        {
+         "yr": 8,
+         "bal": 4734
+        },
+        {
+         "yr": 9,
+         "bal": 2381
+        },
+        {
+         "yr": 10,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -75551,7 +78494,93 @@
       "writeOffBal": 16527,
       "totalPaid": 53399,
       "newNetChange": 222.1500000000001,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 38000
+       },
+       {
+        "yr": 1,
+        "bal": 38222
+       },
+       {
+        "yr": 2,
+        "bal": 37981
+       },
+       {
+        "yr": 3,
+        "bal": 37632
+       },
+       {
+        "yr": 4,
+        "bal": 37168
+       },
+       {
+        "yr": 5,
+        "bal": 36633
+       },
+       {
+        "yr": 6,
+        "bal": 36025
+       },
+       {
+        "yr": 7,
+        "bal": 35337
+       },
+       {
+        "yr": 8,
+        "bal": 34565
+       },
+       {
+        "yr": 9,
+        "bal": 33703
+       },
+       {
+        "yr": 10,
+        "bal": 32746
+       },
+       {
+        "yr": 11,
+        "bal": 31690
+       },
+       {
+        "yr": 12,
+        "bal": 30526
+       },
+       {
+        "yr": 13,
+        "bal": 29249
+       },
+       {
+        "yr": 14,
+        "bal": 27853
+       },
+       {
+        "yr": 15,
+        "bal": 26329
+       },
+       {
+        "yr": 16,
+        "bal": 24670
+       },
+       {
+        "yr": 17,
+        "bal": 22869
+       },
+       {
+        "yr": 18,
+        "bal": 20918
+       },
+       {
+        "yr": 19,
+        "bal": 18807
+       },
+       {
+        "yr": 20,
+        "bal": 16527
+       }
+      ]
      }
     }
    },
@@ -78484,7 +81513,10 @@
      "pensionGap": -0.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 31927,
+     "savingsForgone": 32178
     },
     "overpay": {
      "scenarios": [
@@ -78494,7 +81526,93 @@
        "writeOffBal": 3134,
        "totalPaid": 58399,
        "newNetChange": -77.84999999999991,
-       "crossesInflection": true
+       "crossesInflection": true,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 33000
+        },
+        {
+         "yr": 1,
+         "bal": 32922
+        },
+        {
+         "yr": 2,
+         "bal": 32416
+        },
+        {
+         "yr": 3,
+         "bal": 31789
+        },
+        {
+         "yr": 4,
+         "bal": 31032
+        },
+        {
+         "yr": 5,
+         "bal": 30191
+        },
+        {
+         "yr": 6,
+         "bal": 29261
+        },
+        {
+         "yr": 7,
+         "bal": 28235
+        },
+        {
+         "yr": 8,
+         "bal": 27107
+        },
+        {
+         "yr": 9,
+         "bal": 25873
+        },
+        {
+         "yr": 10,
+         "bal": 24524
+        },
+        {
+         "yr": 11,
+         "bal": 23056
+        },
+        {
+         "yr": 12,
+         "bal": 21461
+        },
+        {
+         "yr": 13,
+         "bal": 19731
+        },
+        {
+         "yr": 14,
+         "bal": 17859
+        },
+        {
+         "yr": 15,
+         "bal": 15835
+        },
+        {
+         "yr": 16,
+         "bal": 13652
+        },
+        {
+         "yr": 17,
+         "bal": 11300
+        },
+        {
+         "yr": 18,
+         "bal": 8770
+        },
+        {
+         "yr": 19,
+         "bal": 6052
+        },
+        {
+         "yr": 20,
+         "bal": 3134
+        }
+       ]
       },
       {
        "amt": 10000,
@@ -78502,7 +81620,81 @@
        "writeOffBal": 0,
        "totalPaid": 53658,
        "newNetChange": -377.8499999999999,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 28000
+        },
+        {
+         "yr": 1,
+         "bal": 27622
+        },
+        {
+         "yr": 2,
+         "bal": 26851
+        },
+        {
+         "yr": 3,
+         "bal": 25946
+        },
+        {
+         "yr": 4,
+         "bal": 24897
+        },
+        {
+         "yr": 5,
+         "bal": 23749
+        },
+        {
+         "yr": 6,
+         "bal": 22496
+        },
+        {
+         "yr": 7,
+         "bal": 21132
+        },
+        {
+         "yr": 8,
+         "bal": 19650
+        },
+        {
+         "yr": 9,
+         "bal": 18042
+        },
+        {
+         "yr": 10,
+         "bal": 16302
+        },
+        {
+         "yr": 11,
+         "bal": 14423
+        },
+        {
+         "yr": 12,
+         "bal": 12397
+        },
+        {
+         "yr": 13,
+         "bal": 10213
+        },
+        {
+         "yr": 14,
+         "bal": 7865
+        },
+        {
+         "yr": 15,
+         "bal": 5341
+        },
+        {
+         "yr": 16,
+         "bal": 2633
+        },
+        {
+         "yr": 17,
+         "bal": 0
+        }
+       ]
       },
       {
        "amt": 20000,
@@ -78510,7 +81702,53 @@
        "writeOffBal": 0,
        "totalPaid": 43755,
        "newNetChange": -977.8499999999999,
-       "crossesInflection": false
+       "crossesInflection": false,
+       "path": [
+        {
+         "yr": 0,
+         "bal": 18000
+        },
+        {
+         "yr": 1,
+         "bal": 17022
+        },
+        {
+         "yr": 2,
+         "bal": 15721
+        },
+        {
+         "yr": 3,
+         "bal": 14259
+        },
+        {
+         "yr": 4,
+         "bal": 12626
+        },
+        {
+         "yr": 5,
+         "bal": 10864
+        },
+        {
+         "yr": 6,
+         "bal": 8968
+        },
+        {
+         "yr": 7,
+         "bal": 6927
+        },
+        {
+         "yr": 8,
+         "bal": 4734
+        },
+        {
+         "yr": 9,
+         "bal": 2381
+        },
+        {
+         "yr": 10,
+         "bal": 0
+        }
+       ]
       }
      ],
      "baseProjection": {
@@ -78518,7 +81756,93 @@
       "writeOffBal": 16527,
       "totalPaid": 53399,
       "newNetChange": 222.1500000000001,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 38000
+       },
+       {
+        "yr": 1,
+        "bal": 38222
+       },
+       {
+        "yr": 2,
+        "bal": 37981
+       },
+       {
+        "yr": 3,
+        "bal": 37632
+       },
+       {
+        "yr": 4,
+        "bal": 37168
+       },
+       {
+        "yr": 5,
+        "bal": 36633
+       },
+       {
+        "yr": 6,
+        "bal": 36025
+       },
+       {
+        "yr": 7,
+        "bal": 35337
+       },
+       {
+        "yr": 8,
+        "bal": 34565
+       },
+       {
+        "yr": 9,
+        "bal": 33703
+       },
+       {
+        "yr": 10,
+        "bal": 32746
+       },
+       {
+        "yr": 11,
+        "bal": 31690
+       },
+       {
+        "yr": 12,
+        "bal": 30526
+       },
+       {
+        "yr": 13,
+        "bal": 29249
+       },
+       {
+        "yr": 14,
+        "bal": 27853
+       },
+       {
+        "yr": 15,
+        "bal": 26329
+       },
+       {
+        "yr": 16,
+        "bal": 24670
+       },
+       {
+        "yr": 17,
+        "bal": 22869
+       },
+       {
+        "yr": 18,
+        "bal": 20918
+       },
+       {
+        "yr": 19,
+        "bal": 18807
+       },
+       {
+        "yr": 20,
+        "bal": 16527
+       }
+      ]
      }
     }
    },
@@ -80945,16 +84269,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },
@@ -83296,16 +86629,25 @@
      "pensionGap": -1.9,
      "beatsPension": false,
      "worthOverpaying": false,
-     "overpayAnnualBenefit": 0
+     "overpayAnnualBenefit": 0,
+     "overpayTotalBenefit": 0,
+     "interestAvoided": 0,
+     "savingsForgone": 0
     },
     "overpay": {
      "scenarios": [],
      "baseProjection": {
-      "clearYr": 1,
+      "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
       "newNetChange": 0,
-      "crossesInflection": false
+      "crossesInflection": false,
+      "path": [
+       {
+        "yr": 0,
+        "bal": 0
+       }
+      ]
      }
     }
    },

@@ -269,7 +269,16 @@ export function calcStudentLoanScenario(d, m) {
   // A genuine £/yr figure: the rate differential applied to the current balance
   // — same shape as Cash's annualYieldGap (rate gap × principal) — rather than a
   // one-off lump sum, so it stays comparable to every other module's £/yr amount.
-  const overpayAnnualBenefit = worthOverpaying ? Math.round(m.loanBal * effectiveBenefit / 100) : 0;
+  // Paying it off today against letting it clear: each year it would have
+  // run, the interest on that year's balance is avoided, and the same
+  // amount, kept in savings instead, would have earned the savings rate. The
+  // gain is the gap, year by year on the balance still owed, so it shrinks
+  // as the loan does: a total, and a year on average until it would have
+  // cleared (the module's £ a year).
+  const interestAvoided = Math.round(lived.reduce((t, p) => t + p.bal * p.rate, 0));
+  const savingsForgone = Math.round(lived.reduce((t, p) => t + p.bal * cashRate / 100, 0));
+  const overpayTotalBenefit = worthOverpaying ? Math.max(0, interestAvoided - savingsForgone) : 0;
+  const overpayAnnualBenefit = worthOverpaying && clearYr ? Math.round(overpayTotalBenefit / clearYr) : 0;
 
   return {
     writeOffYr, writeOffTaxYear, firstDueYear, firstDueEstimated: slFirstDueYearStated(d) == null,
@@ -278,7 +287,7 @@ export function calcStudentLoanScenario(d, m) {
     clearYr, writeOffBal: Math.round(writeOffBal), willClear, totalRepaidProjected,
     balancePath, turningYr, turningTaxYear, balanceFallingNow, peakBal, schedule,
     cashRate, effectiveBenefit, pensionGrowthPct: PENSION_GROWTH_PCT, pensionGap, beatsPension,
-    worthOverpaying, overpayAnnualBenefit,
+    worthOverpaying, overpayAnnualBenefit, overpayTotalBenefit, interestAvoided, savingsForgone,
   };
 }
 
@@ -321,8 +330,11 @@ export function calcOverpaymentScenarios(m, sl, amounts = [5000, 10000, 20000]) 
   function projectLoan(extraOneOff) {
     let bal = Math.max(0, m.loanBal - extraOneOff);
     let totalPaid = extraOneOff;
-    let clearYr = null;
+    let clearYr = bal <= 0 ? 0 : null;
     let writeOffBal = 0;
+    // The balance at the end of each year, year 0 being just after the lump
+    // sum: the balance chart's second line.
+    const path = [{ yr: 0, bal: Math.round(bal) }];
     for (let yr = 1; yr <= writeOffYr; yr++) {
       // Each year's rate and repayment as the scenario has them (pay rising,
       // steady-state RPI after this year), so "no overpayment" here matches
@@ -331,21 +343,45 @@ export function calcOverpaymentScenarios(m, sl, amounts = [5000, 10000, 20000]) 
       bal = bal * (1 + rate);
       // Cap the final year's repayment at what's actually left to clear — see
       // calcStudentLoanScenario above for why this matters.
+      if (bal <= 0) break;
       const payment = Math.min(repayment, bal);
       bal -= payment;
       totalPaid += payment;
+      path.push({ yr, bal: Math.round(Math.max(0, bal)) });
       if (bal <= 0 && !clearYr) { clearYr = yr; break; }
       if (yr === writeOffYr) { writeOffBal = Math.max(0, bal); }
     }
     const newInterestYr1 = Math.round(Math.max(0, m.loanBal - extraOneOff) * slInterestRate);
     const newNetChange = newInterestYr1 - annualRep;
     const crossesInflection = !clearYr && newNetChange <= 0 && balanceGrowing;
-    return { clearYr, writeOffBal: Math.round(writeOffBal), totalPaid: Math.round(totalPaid), newNetChange, crossesInflection };
+    return { clearYr, writeOffBal: Math.round(writeOffBal), totalPaid: Math.round(totalPaid), newNetChange, crossesInflection, path };
   }
   const overpayAmounts = amounts.filter(x => x > 0 && x <= m.loanBal);
   const scenarios = overpayAmounts.map(amt => ({ amt, ...projectLoan(amt) }));
   const baseProjection = projectLoan(0);
   return { scenarios, baseProjection };
+}
+
+// ── What the loan costs: left to clear (or be written off) by itself,
+// against paying it all off today. For a loan that clears, the interest it
+// would add, in all and a year on average; and what the same money would
+// earn in savings meanwhile (at the rate the module compares against), so
+// the yearly gain from paying it off is the gap between the two
+// (overpayAnnualBenefit). For one that's written off, paying it off costs
+// more than would ever be repaid.
+export function loanCostComparison(m, sl) {
+  const balance = Math.round(m.loanBal);
+  const years = sl.willClear ? sl.clearYr : sl.writeOffYr;
+  const total = sl.totalRepaidProjected;
+  const interest = sl.willClear ? Math.max(0, total - balance) : null;
+  return {
+    balance, years, total, interest,
+    interestPerYear: interest != null && years > 0 ? Math.round(interest / years) : null,
+    writtenOff: sl.willClear ? 0 : sl.writeOffBal,
+
+    // Paying today against letting it run: positive saves, negative costs.
+    payNowSaves: total - balance,
+  };
 }
 
 // ── An estimate of what's still owed, for someone who doesn't know: what they

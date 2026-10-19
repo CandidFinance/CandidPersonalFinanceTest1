@@ -43,7 +43,7 @@ function moduleInsights(mm, d, m) {
       if (d.studentLoan === "none") return [];
       const sl = calcStudentLoanScenario(d, m);
       return [
-        { label: "Overpay benefit", value: sl.overpayAnnualBenefit > 0 ? `${fmtCompact(sl.overpayAnnualBenefit)}/yr` : "Not worth it" },
+        { label: "Paying off now", value: sl.overpayAnnualBenefit > 0 ? `${fmtCompact(sl.overpayAnnualBenefit)}/yr` : "Not worth it" },
         { label: "Projected clear year", value: sl.willClear ? String(new Date().getFullYear() + sl.clearYr) : "Written off" },
       ];
     }

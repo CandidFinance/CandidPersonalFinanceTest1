@@ -42,7 +42,12 @@ test("overpaying is weighed against the best savings rate, not a poorer current 
   const { sl } = borrower({ studentLoanRate: "6" });
   assert.equal(sl.cashRate, 4.5);
   assert.equal(sl.effectiveBenefit, 1.5);
-  assert.equal(sl.overpayAnnualBenefit, 675);
+  // The gain is each year's 1.5% gap on that year's balance, so less than
+  // 1.5% of today's £45,000 every year: a total, and that a year on average
+  // until it would have cleared.
+  assert.equal(sl.overpayTotalBenefit, sl.interestAvoided - sl.savingsForgone);
+  assert.equal(sl.overpayAnnualBenefit, Math.round(sl.overpayTotalBenefit / sl.clearYr));
+  assert.ok(sl.overpayAnnualBenefit > 0 && sl.overpayAnnualBenefit < 675);
 });
 
 test("Plan 2 is weighed on its average rate over the loan's life: 6% now, RPI at 2% after", () => {
@@ -157,4 +162,32 @@ test("a Postgraduate loan alongside Plan 2: its own loan, repaid at the same tim
   // Plan 4, or no balance: none.
   assert.equal(hasPgLoan({ ...d, studentLoan: "plan4" }), false);
   assert.equal(pgScenario({ ...d, pgLoanBalance: "" }, m), null);
+});
+
+test("what the loan costs left to clear, against paying it off today; and a lump sum's own path", async () => {
+  const { loanCostComparison, calcOverpaymentScenarios } = await import("./studentLoan.js");
+  // £18,500 on £70,000: clears in a few years.
+  const d = { studentLoan: "plan2", salary: "70000", age: "33", loanBalance: "18500", inputsTaxYear: 2026 };
+  const m = calcMetrics(d);
+  const sl = calcStudentLoanScenario(d, m);
+  const c = loanCostComparison(m, sl);
+  assert.equal(sl.willClear, true);
+  assert.equal(c.balance, 18500);
+  assert.equal(c.interest, sl.totalRepaidProjected - 18500);
+  assert.equal(c.interestPerYear, Math.round(c.interest / sl.clearYr));
+  assert.ok(c.payNowSaves > 0);
+  // A lump sum: its own line, starting below today's balance and clearing sooner.
+  const { scenarios, baseProjection } = calcOverpaymentScenarios(m, sl, [5000]);
+  assert.equal(scenarios[0].path[0].bal, 13500);
+  assert.ok(scenarios[0].clearYr < baseProjection.clearYr);
+  assert.equal(scenarios[0].path[scenarios[0].path.length - 1].bal, 0);
+  // Paying the lot: cleared today.
+  assert.equal(calcOverpaymentScenarios(m, sl, [18500]).scenarios[0].clearYr, 0);
+  // Written off: paying today costs more than would ever be repaid.
+  const grad = { studentLoan: "plan2", salary: "32000", age: "25", loanBalance: "52000", inputsTaxYear: 2026 };
+  const gm = calcMetrics(grad);
+  const gc = loanCostComparison(gm, calcStudentLoanScenario(grad, gm));
+  assert.equal(gc.interest, null);
+  assert.ok(gc.writtenOff > 0);
+  assert.ok(gc.payNowSaves < 0);
 });

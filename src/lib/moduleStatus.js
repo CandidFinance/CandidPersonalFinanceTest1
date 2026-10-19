@@ -300,7 +300,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     impactLabel: sl.belowThreshold
       ? (m.noEarnings ? "Nothing is repaid while you're not earning" : "You earn below the repayment threshold, so nothing comes off your pay")
       : sl.worthOverpaying
-        ? `${fmt(sl.overpayAnnualBenefit)}/yr better off overpaying than saving the money`
+        ? `${fmt(sl.overpayAnnualBenefit)}/yr ahead by paying your loan off now`
         : sl.balanceGrowing && !sl.willClear
           ? `Balance growing by ${fmt(Math.round(sl.netAnnualChange))}/yr, but it'll be written off before you clear it`
           : null,

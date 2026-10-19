@@ -53,6 +53,8 @@ export const PROFILES = {
   familyNone: { ...rich, kidsStatus: "no" },
   familyPlanning: { ...rich, kidsStatus: "planning", kidsCount: "", kidsPreschool: "", kidsSchool: "", salary: "104000" },
   familyPartnerPays: { ...rich, salary: "70000", kidsCount: "2", partnerOver100k: "yes", partnerIncome: "112000" },
+  // Paying it off comes out ahead: the opportunity, "Is the money spare?" and a lump sum.
+  loanWorthOverpaying: { ...rich, salary: "75000", loanBalance: "18500", studentLoanRate: "6.4", hasPgLoan: "no", isaThisYearCash: "5000", cashTiers: [{ name: "Easy", amount: "40000", rate: "4.5" }] },
   loanWithPostgrad: { ...rich, salary: "48000", hasPgLoan: "yes", pgLoanBalance: "14000" },
   loanFastPay: { ...rich, salary: "34000", age: "25", loanBalance: "55000", salaryTrajectory: "high" },
   loanBelowThreshold: { ...rich, salary: "26000", age: "23", loanBalance: "50000", hasPgLoan: "yes", pgLoanBalance: "12000" },

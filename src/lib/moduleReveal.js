@@ -415,13 +415,11 @@ function studentLoanSteps(d, m) {
   }
   if (sl.worthOverpaying) {
     return [
-      { label: ANSWER, figure: `${fmt(sl.overpayAnnualBenefit)} a year`, title: "better off overpaying than saving the money.", ...turning },
-      withBody({ label: WHY, title: `Your loan charges ${sl.slRatePct}% now, about ${sl.lifeRatePct}% a year over its life: more than the best savings rate (${sl.cashRate}%) and your pension's assumed ${sl.pensionGrowthPct}% growth.` },
+      { label: ANSWER, figure: fmt(sl.overpayTotalBenefit), title: `ahead by paying your loan off now, rather than letting it clear in ${years(sl.clearYr)}.`, ...turning },
+      withBody({ label: WHY, title: `Paying it off avoids about ${fmt(sl.interestAvoided)} of interest. In savings at ${sl.cashRate}%, the same money would earn about ${fmt(sl.savingsForgone)} meanwhile.` },
         m.missedMatch > 0 ? `Separately, your employer would add ${fmt(m.missedMatch)} a year to your pension if you paid in up to its match (see Pension).` : null),
-      { label: ACTION, title: m.surplusCash > 0
-          ? `Overpaying with some of your ${fmt(m.surplusCash)} of spare cash would earn that.`
-          : "Overpaying with any spare cash you build up would earn that.",
-        body: "You can overpay on the Student Loans Company website." },
+      { label: ACTION, title: `It would use ${fmt(Math.round(m.loanBal))} of cash. The page shows how your buffer, ISA allowance and pension match stand.`,
+        body: "You can overpay on the Student Loans Company website, all of it or part." },
     ];
   }
   // Written off: what they'd repay in all, and what's left to write off.
