@@ -77,6 +77,13 @@ function personaReviewFields(d) {
     cb_higher_earner: yesNo(d.cbHigherEarner),
     retirement_target: whole(d.retirementTarget) || null,
     extra_income_kinds: Array.isArray(d.extraIncomeKinds) && d.extraIncomeKinds.length ? d.extraIncomeKinds.join(", ") : null,
+    // supabase/hand-run/supabase_kids_family_migration.sql
+    uk_nation: d.ukNation || null,
+    kids_preschool: whole(d.kidsPreschool),
+    kids_school: whole(d.kidsSchool),
+    childcare_monthly: whole(d.childcareMonthly),
+    partner_over_100k: d.partnerOver100k || null,
+    tfc_claiming: d.tfcClaiming || null,
   };
 }
 

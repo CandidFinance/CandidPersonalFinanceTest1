@@ -13,12 +13,14 @@ import {
   PLAN1_RATE, PLAN4_RATE, PLAN5_RATE, POSTGRAD_RATE,
   PLAN2_RPI_BASE, PLAN2_INCOME_LOWER, PLAN2_INCOME_UPPER, PLAN2_MAX_VARIABLE, PLAN2_RATE_CAP,
 } from "./studentLoan.js";
+import { TFC_CAP_PER_CHILD, FUNDED_HOURS_VALUE } from "./childcare.js";
 
-// Childcare support lost above £100k — used only by the £100k calculator.
-// Tax-Free Childcare is a statutory top-up (children under 11); the 30 hours
-// figure is the commonly cited value, which varies by area and provider.
-export const TAX_FREE_CHILDCARE_PER_CHILD = 2000;
-export const THIRTY_HOURS_VALUE_PER_CHILD = 7500;
+// Childcare support lost above £100k, for the £100k calculator: the app's
+// own figures (childcare.js), so the page and the Kids & family module agree.
+// Tax-Free Childcare's yearly cap per child; England's 30 funded hours at
+// Coram's 2026 average nursery price.
+export const TAX_FREE_CHILDCARE_PER_CHILD = TFC_CAP_PER_CHILD;
+export const THIRTY_HOURS_VALUE_PER_CHILD = FUNDED_HOURS_VALUE;
 
 // Student loan interest rates above apply for this period (set each September).
 export const SL_RATES_PERIOD = "1 September 2026 to 31 August 2027";

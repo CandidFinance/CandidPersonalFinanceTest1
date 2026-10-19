@@ -2698,7 +2698,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 66,
@@ -5201,7 +5207,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 66,
@@ -7714,7 +7726,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 84,
@@ -10054,7 +10072,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 84,
@@ -12616,7 +12640,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -14961,7 +14991,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -16458,7 +16494,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 82,
@@ -17790,7 +17832,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 82,
@@ -20449,7 +20497,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 66,
@@ -22879,7 +22933,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 66,
@@ -25418,7 +25478,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 66,
@@ -27829,7 +27895,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 66,
@@ -30410,7 +30482,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -32743,7 +32821,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -35544,7 +35628,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 84,
@@ -38172,7 +38262,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 84,
@@ -41086,7 +41182,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 92,
@@ -43835,7 +43937,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 92,
@@ -46508,7 +46616,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 84,
@@ -49008,7 +49122,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 84,
@@ -51623,7 +51743,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -54020,7 +54146,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -56580,7 +56712,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -58892,7 +59030,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -61455,7 +61599,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 84,
@@ -63770,7 +63920,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -65256,7 +65412,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 92,
@@ -66569,7 +66731,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 92,
@@ -69549,7 +69717,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 82,
@@ -72312,7 +72486,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 82,
@@ -75424,7 +75604,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -78319,7 +78505,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 74,
@@ -80786,7 +80978,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 92,
@@ -83080,7 +83278,13 @@
      "child_benefit_children": null,
      "cb_higher_earner": null,
      "retirement_target": null,
-     "extra_income_kinds": null
+     "extra_income_kinds": null,
+     "uk_nation": null,
+     "kids_preschool": null,
+     "kids_school": null,
+     "childcare_monthly": null,
+     "partner_over_100k": null,
+     "tfc_claiming": null
     },
     "report": {
      "candid_score": 92,

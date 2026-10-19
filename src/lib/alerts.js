@@ -28,6 +28,7 @@ import { calcMetrics, isaFillable } from "./metrics.js";
 import { rollTaxYear, taxYearOf } from "./taxYear.js";
 import { calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, childBenefitCharge } from "./pension.js";
 import { cashOpportunity } from "./assist.js";
+import { childcareSupport } from "./childcare.js";
 import { fmt } from "./format.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
@@ -86,8 +87,12 @@ function taxYearEnd(d, m, today) {
   const items = [];
   const room = calcAnnualAllowanceRoom(d, m).room;
   const taper = calcPensionTaperSaving(m, room);
+  // The same payment restores childcare support (Kids & family): said in
+  // the line, not added to the tax figure.
+  const cc = childcareSupport(d, m);
+  const childcare = cc?.recoverable && cc.atStake > 0 ? ` It would also restore ${fmt(cc.atStake)} a year of childcare support.` : "";
   if (taper.recoverable && taper.taperTaxSaving > 0) {
-    items.push({ tax: taper.taperTaxSaving, line: `${fmt(taper.taperTaxSaving)} of tax: a pension payment of ${fmt(taper.taperSacrificeNeeded)} (including the tax relief added) before 5 April would bring your income back to £100,000 for this tax year.` });
+    items.push({ tax: taper.taperTaxSaving, line: `${fmt(taper.taperTaxSaving)} of tax: a pension payment of ${fmt(taper.taperSacrificeNeeded)} (including the tax relief added) before 5 April would bring your income back to £100,000 for this tax year.${childcare}` });
   }
   const cb = childBenefitCharge(d, m);
   if (cb && cb.charge > 0 && cb.payInNeeded <= room && !(taper.recoverable && taper.taperTaxSaving > 0)) {
@@ -129,9 +134,18 @@ function bonus(d, m, today) {
     key: `bonus:${year}-${paid}`, kind: "bonus",
     subject: `Your bonus: up to ${fmt(Math.round(saving))} of tax you could save`,
     intro: known ? `Your bonus is usually paid in ${MONTHS[paid - 1]}.` : "Many bonuses are paid in March.",
-    items: [`Paying your ${fmt(+d.bonusAmount)} bonus into your pension could save up to ${fmt(Math.round(saving))} in tax. It has to be arranged with HR or payroll before the bonus is paid.`],
+    items: [`Paying your ${fmt(+d.bonusAmount)} bonus into your pension could save up to ${fmt(Math.round(saving))} in tax. It has to be arranged with HR or payroll before the bonus is paid.${bonusChildcare(d, m)}`],
     link: `${SITE}/app/module/pension`,
   };
+}
+
+// A bonus that takes income over £100,000 stops childcare support for the
+// whole year; paying enough of it into a pension keeps it.
+function bonusChildcare(d, m) {
+  const cc = childcareSupport(d, m);
+  return cc?.recoverable && cc.atStake > 0
+    ? ` With it, your income goes over £100,000, which stops ${fmt(cc.atStake)} a year of childcare support; paying ${fmt(cc.payInNeeded)} of it into your pension would keep it.`
+    : "";
 }
 
 function newTaxYear(d, m, today) {

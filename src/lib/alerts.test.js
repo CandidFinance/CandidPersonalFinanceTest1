@@ -47,6 +47,16 @@ test("bonus: the month before it's paid, February when the month isn't known", (
   assert.deepEqual(kinds(alertsDue({ ...d, bonusMonth: "1" }, { today: day("2026-12-05") })), ["bonus:2027-1"]);
 });
 
+test("parents over £100,000: the 5 April and bonus emails say what childcare a pension payment restores", () => {
+  const parent = { ...trap, kidsPreschool: "1", kidsSchool: "0", childcareMonthly: "1500", partnerOver100k: "no", ukNation: "england" };
+  const [march] = alertsDue(parent, { today: day("2027-03-02") });
+  assert.match(march.items[0], /It would also restore £10,290 a year of childcare support\.$/);
+  // The subject stays the tax figure: childcare isn't tax.
+  assert.equal(march.subject, alertsDue(trap, { today: day("2027-03-02") })[0].subject);
+  const bonus = alertsDue({ ...parent, salary: "90000", bonusAmount: "20000", hasBonus: "yes", bonusMonth: "3" }, { today: day("2027-02-10") }).find(a => a.kind === "bonus");
+  assert.match(bonus.items[0], /stops £10,290 a year of childcare support; paying £[\d,]+ of it into your pension would keep it\.$/);
+});
+
 test("new tax year: 10 to 30 April, asking whether pay is still the same", () => {
   const april = alertsDue({ ...trap, salary: "60000" }, { today: day("2027-04-12") });
   assert.deepEqual(kinds(april), ["newTaxYear:2027"]);
