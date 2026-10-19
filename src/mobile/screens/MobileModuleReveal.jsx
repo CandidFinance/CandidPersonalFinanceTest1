@@ -13,7 +13,9 @@ import { MODULE_META } from "../../lib/moduleStatus.js";
 
 const SHIFT_PX = 30;
 
-export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true }) {
+// `limits` (moduleLimits.js): what the answer doesn't include yet, under
+// its last step.
+export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true, limits = null }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const [index, setIndex] = useState(0);
@@ -61,6 +63,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
           {step.body && <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:"10px 0 0"}}>{step.body}</p>}
         </motion.div>
       </AnimatePresence>
+      {last && limits && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"12px 2px 0"}}>{limits}</p>}
 
       <button type="button" onClick={() => last ? onDone("finished", steps.length) : go(1)} style={{
         width:"100%", marginTop:"18px", background:G, color:WHITE, border:"none", borderRadius:"100px", padding:"13px",

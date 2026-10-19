@@ -52,12 +52,14 @@ export function GuidanceIntro() {
   );
 }
 
-// At the foot of a module page, below everything else.
-export function GuidanceFooter({ moduleKey }) {
+// At the foot of a module page, below everything else. `limits`
+// (moduleLimits.js): what the page's figures don't include yet.
+export function GuidanceFooter({ moduleKey, limits = null }) {
   const links = SIGNPOSTS[moduleKey] || [];
   const link = { color: MUT, fontWeight: 600 };
   return (
     <div style={{ borderTop: "1px solid rgba(22,47,36,0.1)", marginTop: "26px", paddingTop: "14px", fontSize: "11.5px", color: MUT, lineHeight: 1.55 }}>
+      {limits && <p style={{ margin: "0 0 8px" }}>{limits}</p>}
       <p style={{ margin: 0 }}>
         Guidance, not advice. Candid works out what each option is worth on the figures you've given it, with no stake in what you choose. It doesn't know everything about your situation, so the decision is yours. <Link to={GUIDANCE_PAGE} style={link}>What Candid is and isn't</Link>
       </p>

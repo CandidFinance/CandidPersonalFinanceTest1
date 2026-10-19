@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Check, Coins } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, SUCCESS } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
+import { moduleLimits } from "../../lib/moduleLimits.js";
 import { statusLabel } from "../statusLabel.js";
 import MobileCashDeepDive from "../deepdive/MobileCashDeepDive.jsx";
 import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx";
@@ -94,7 +95,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
           Back to Modules
         </button>
       </div>
-      <GuidanceFooter moduleKey={moduleKey}/>
+      <GuidanceFooter moduleKey={moduleKey} limits={moduleLimits(moduleKey, d, m)}/>
     </div>
   );
 }

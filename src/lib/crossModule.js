@@ -11,6 +11,7 @@ import { inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.
 import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT, INFLATION_PCT } from "./growth.js";
 import { CASH_RATE_LOW } from "./forecast.js";
 import { DEFAULT_DRAWDOWN_YEARS } from "./drawdown.js";
+import { slEarnings, SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { PA_TAPER_START, HIGHER_RATE_THRESHOLD, ADDITIONAL_RATE_THRESHOLD, PERSONAL_ALLOWANCE, STATE_PENSION_FULL } from "./tax.js";
 
 const round10 = n => Math.round(n / 10) * 10;
@@ -19,7 +20,8 @@ const round10 = n => Math.round(n / 10) * 10;
 // A range from the user's own figures, shown on its tile until the module's
 // questions are answered and the real figure replaces it. Only where the
 // answers already given support one: Investments and Student loan depend on
-// balances not yet asked, so they have none.
+// figures not yet asked, so they have none (studentLoanRepaid is the loan's
+// figure for its paywall).
 //
 // Pension: employer money and tax relief commonly missed, 1% to 3% of salary.
 // Employers must pay at least 3% (auto-enrolment); many match more, often up
@@ -29,6 +31,7 @@ const round10 = n => Math.round(n / 10) * 10;
 // Cash: 3 to 6 months of spending (or take-home pay, if spending isn't known)
 // held at a typical high-street rate (CASH_RATE_LOW) against the best
 // available (m.bestSavingsRate).
+
 export const ESTIMATE_PAY_IN_MONTHLY = 100;
 
 export function moduleEstimate(key, d, m) {
@@ -47,6 +50,23 @@ export function moduleEstimate(key, d, m) {
     return { low: round10(monthly * 3 * gap), high: round10(monthly * 6 * gap), line: "Extra interest on 3 to 6 months' money at the best rates" };
   }
   return null;
+}
+
+// ── Student loan: what comes off pay for it, before its questions ──────
+// What comes off their pay for it a year at their salary, on the plan
+// they've given, or Plan 2 (England, courses started 2012 to 2022, the most
+// common) until it's asked. Not a gain, so never a "worth a look" figure or
+// set against what Candid costs: the locked module's paywall shows it as
+// what the answer is about.
+export function studentLoanRepaid(d, m) {
+  // studentLoan is "none" until the plan's asked (a blank profile's
+  // default), so only their own "I don't have one" rules it out.
+  if (!(m.salary > 0) || d.slPlanAnswer === "none") return null;
+  const known = d.studentLoan in SL_REPAYMENT_THRESHOLDS;
+  const plan = known ? d.studentLoan : "plan2";
+  const repaid = round10((slEarnings(d, m.salary) - SL_REPAYMENT_THRESHOLDS[plan]) * SL_REPAYMENT_RATES[plan]);
+  if (!(repaid > 0)) return null;
+  return { low: repaid, high: repaid, stake: true, line: known ? "Repaid from your pay at your salary" : "Repaid from your pay at your salary, if you're on Plan 2" };
 }
 
 // ── Pension: what its path means for tax later on ───────────────────────

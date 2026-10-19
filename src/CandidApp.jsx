@@ -23,6 +23,7 @@ import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
+import { moduleLimits } from "./lib/moduleLimits.js";
 import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath } from "./lib/appEntry.js";
 import { moduleGuideStarts } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
@@ -833,7 +834,7 @@ export default function AppShell() {
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
-          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps}
+          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={moduleLimits(mobileActiveModule, d, m)}
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
               setRevealModule(null);

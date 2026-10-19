@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { moduleEstimate, pensionOutlook, loanAlternatives, cliffEdge } from "./crossModule.js";
+import { moduleEstimate, studentLoanRepaid, pensionOutlook, loanAlternatives, cliffEdge } from "./crossModule.js";
 import { calcMetrics } from "./metrics.js";
 
 const base = { age: "32", salary: "45000", employmentStatus: "employed", salaryTrajectory: "stable" };
@@ -24,6 +24,18 @@ test("no estimate without the figures to support one", () => {
   assert.equal(moduleEstimate("pension", {}, m), null);
   assert.equal(moduleEstimate("investments", base, calcMetrics(base)), null);
   assert.equal(moduleEstimate("studentLoan", base, calcMetrics(base)), null);
+});
+
+test("student loan repaid: what comes off pay a year, on Plan 2 until the plan is known; never a gain", () => {
+  const m = calcMetrics(base);
+  // A blank profile's "none" is only the default, before the plan's asked.
+  assert.equal(studentLoanRepaid({ ...base, studentLoan: "none" }, m).low, 1410);
+  assert.deepEqual(studentLoanRepaid(base, m), { low: 1410, high: 1410, stake: true, line: "Repaid from your pay at your salary, if you're on Plan 2" }); // 9% of £15,615
+  const p1 = { ...base, studentLoan: "plan1" };
+  assert.deepEqual([studentLoanRepaid(p1, calcMetrics(p1)).low, studentLoanRepaid(p1, calcMetrics(p1)).line], [1630, "Repaid from your pay at your salary"]); // 9% of £18,100
+  assert.equal(studentLoanRepaid({ ...base, slPlanAnswer: "none", studentLoan: "none" }, m), null);
+  const low = { ...base, salary: "25000" };
+  assert.equal(studentLoanRepaid(low, calcMetrics(low)), null); // under Plan 2's £29,385
 });
 
 test("pension outlook: a basic-rate payer whose pot will pay out at higher rate", () => {
