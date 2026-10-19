@@ -1,12 +1,15 @@
 import { REDUNDANCY_TAX_FREE, scottishRate, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { employerPct, unclaimedMatchPct } from "./employer.js";
-import { GROWTH_REAL_PCT } from "./growth.js";
-import { slRateIn, slRepaymentThreshold, SL_REPAYMENT_RATES, slYearsLeft, slThresholdIn, slEarnings, estimateSlBalance } from "./studentLoan.js";
+import { GROWTH_REAL_PCT, payFactor } from "./growth.js";
+import { slRateIn, slRepaymentThreshold, SL_REPAYMENT_RATES, SL_REPAYMENT_THRESHOLDS, slYearsLeft, slThresholdIn, slEarnings, estimateSlBalance, hasPgLoan } from "./studentLoan.js";
 import { allocateCash } from "./cashAllocation.js";
 import { isaUsedThisYear } from "./isa.js";
 
-export const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.15 };
+// Each for the first ten years, then pay rises with prices (growth.js
+// payFactor). "high" was 15%, which over a loan's 30 years compounded to
+// 66 times today's pay.
+export const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.10 };
 
 // marketRates: { isaRate, nonIsaRate, rows } — the live best easy-access rates from
 // savings_rates, plus (optionally) the rows themselves. With rows, the cash
@@ -140,8 +143,16 @@ export function calcMetrics(d, marketRates = {}) {
     annualRepayment = Math.max(0, (slPay - slThreshold) * slRepayRate);
     slRepaymentRegular = Math.max(0, (slPay - (+d.bonusAmount || 0) - slThreshold) * slRepayRate);
     const yearsLeft = slYearsLeft(d, slYear);
-    willClear = (() => { let b = loanBal; for (let y=1; y<=yearsLeft; y++) { const g = Math.pow(1+slGrow,y-1), s = slPay * g; b = b*(1 + slRateIn(d, salary * g, y - 1, slYear)) - Math.max(0,(s-slThresholdIn(d.studentLoan, slYear + y - 1))*slRepayRate); if(b<=0) return true; } return false; })();
+    willClear = (() => { let b = loanBal; for (let y=1; y<=yearsLeft; y++) { const g = payFactor(slGrow, y - 1), s = slPay * g; b = b*(1 + slRateIn(d, salary * g, y - 1, slYear)) - Math.max(0,(s-slThresholdIn(d.studentLoan, slYear + y - 1))*slRepayRate); if(b<=0) return true; } return false; })();
   }
+  // A Postgraduate loan alongside the main plan (GOV.UK: both are repaid at
+  // once, 6% of pay over £21,000 on top of the main plan's 9%): its balance
+  // and this year's repayment, for take-home pay and the Student loan
+  // module (studentLoan.js pgScenario).
+  const pgLoanBal = hasPgLoan(d) ? +d.pgLoanBalance : 0;
+  const pgOver = pay => Math.max(0, (pay - SL_REPAYMENT_THRESHOLDS.postgrad) * SL_REPAYMENT_RATES.postgrad);
+  const pgRepayment = pgLoanBal > 0 ? pgOver(slPay) : 0;
+  const pgRepaymentRegular = pgLoanBal > 0 ? pgOver(slPay - (+d.bonusAmount || 0)) : 0;
   const otherIncome = +d.otherIncome||0;
   const dividendIncome = +d.dividendIncome||0;
   // The stated annual bonus counts: in a year it's paid, it's part of what sets
@@ -269,7 +280,7 @@ export function calcMetrics(d, marketRates = {}) {
   const netAnnualIncome = regularIncome - incomeTaxAnnual - niAnnual;
   const existingMortgagePmt = hasMortgage ? (+d.monthlyMortgage||0) : 0;
   const existingPersonalLoanPmt = d.hasPersonalLoan === "yes" ? plMonthly : 0;
-  const monthlyBalance = netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - slRepaymentRegular / 12;
+  const monthlyBalance = netAnnualIncome / 12 - expenses - existingMortgagePmt - existingPersonalLoanPmt - (slRepaymentRegular + pgRepaymentRegular) / 12;
   const monthlySurplus = Math.max(0, monthlyBalance);
   // More going out than coming in: the gap a month (0 when there's a surplus,
   // or when it's under £25, which is rounding in the inputs, not a gap).
@@ -278,13 +289,13 @@ export function calcMetrics(d, marketRates = {}) {
   // repayments, before living costs. Not less any current mortgage: the
   // Property module's budget check (monthlyBudget.js) is for a purchase that
   // replaces it.
-  const monthlyTakeHome = netAnnualIncome / 12 - existingPersonalLoanPmt - slRepaymentRegular / 12;
+  const monthlyTakeHome = netAnnualIncome / 12 - existingPersonalLoanPmt - (slRepaymentRegular + pgRepaymentRegular) / 12;
 
   return {
     salary, expenses, totalLiquid, runwayMonths,
     emergencyFund, emergencyBuffer, emergencyShortfall, emergencyExcess, surplusCash,
     isaHeadroom, isaUsedThisYear: isaUsedThisYearCalc,
-    missedMatch, annualRepayment, slRepaymentRegular, slEarnings: slPay, willClear, crystallisable, cgtSaving, cgtRate, remainingCgtAllowance,
+    missedMatch, annualRepayment, slRepaymentRegular, slEarnings: slPay, willClear, pgLoanBal, pgRepayment, crystallisable, cgtSaving, cgtRate, remainingCgtAllowance,
     projectedPot, years, annualYieldGap, savingsRate, loanBal, loanBalEstimated: !!slEstimate, tr, savingsTr, cashIsaHeadroom, taxYear,
     cashMoveAmount, cashExcessNotWorthMoving,
     cash, bonds, totalAssets, totalLiabilities, netWorth,

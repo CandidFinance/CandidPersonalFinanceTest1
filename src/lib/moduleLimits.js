@@ -47,7 +47,7 @@ const LIMITS = {
     "Junior ISAs",
   ],
   studentLoan: d => [
-    d.studentLoan === "postgrad" ? "an undergraduate loan repaid alongside this one" : "a Postgraduate loan repaid alongside this one",
+    d.studentLoan === "postgrad" ? "an undergraduate loan repaid alongside this one" : d.studentLoan === "plan4" ? "a Postgraduate loan repaid alongside this one" : null,
     employed(d) && LOWER_PAY,
     selfEmployed(d) && UNEVEN,
   ],

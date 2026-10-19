@@ -8,7 +8,7 @@ import { calcIncomeTax } from "./tax.js";
 import { employerPct } from "./employer.js";
 import { SALARY_GROWTH_RATES, retirementAgeFor } from "./metrics.js";
 import { inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.js";
-import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT, INFLATION_PCT } from "./growth.js";
+import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT, INFLATION_PCT, PAY_FAST_YEARS, PAY_LATER_GROWTH } from "./growth.js";
 import { CASH_RATE_LOW } from "./forecast.js";
 import { DEFAULT_DRAWDOWN_YEARS } from "./drawdown.js";
 import { slEarnings, SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
@@ -85,10 +85,10 @@ export function studentLoanRepaid(d, m) {
 //    Income: three quarters of the pot (a quarter taken tax-free) drawn over
 //    DEFAULT_DRAWDOWN_YEARS at the real growth rate, plus the full State
 //    Pension, in today's money against today's bands.
-// The trajectory's growth rate applies for the first 10 years (no one's pay
-// rises 15% a year for a career), then 2% a year.
-export const FAST_GROWTH_YEARS = 10;
-const LATER_GROWTH = 0.02;
+// The trajectory's growth rate applies for the first 10 years, then pay
+// rises with prices (growth.js, the same rule as the student loan).
+export const FAST_GROWTH_YEARS = PAY_FAST_YEARS;
+const LATER_GROWTH = PAY_LATER_GROWTH;
 
 function topRate(income) {
   return income > ADDITIONAL_RATE_THRESHOLD ? 0.45 : income > HIGHER_RATE_THRESHOLD ? 0.4 : income > PERSONAL_ALLOWANCE ? 0.2 : 0;

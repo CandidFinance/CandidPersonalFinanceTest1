@@ -3,7 +3,8 @@ import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight } from "lucide-react";
-import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension } from "../../lib/studentLoan.js";
+import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
+import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
 import { PillSlider } from "../PillSlider.jsx";
@@ -65,6 +66,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
   }
 
   const sl = calcStudentLoanScenario(d, m);
+  const pg = pgScenario(d, m);
   const worthOverpaying = sl.worthOverpaying;
   const surplusCash = m.surplusCash || 0;
   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
@@ -88,7 +90,9 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
         </div>
       )}
 
-      <LoanTrajectory m={m} ageKnown={+d.age > 0} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
+      <LoanTrajectory d={d} m={m} ageKnown={+d.age > 0} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
+
+      {pg && <PostgradLoan pg={pg} sl={sl}/>}
 
       {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
 
@@ -105,12 +109,15 @@ export default function MobileStudentLoanDeepDive({ d, m, set, onRecordLoanOverp
 
 // Your loan trajectory: when the balance starts falling, and the balance
 // year by year to when it clears or is written off.
-function LoanTrajectory({ m, ageKnown, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
+function LoanTrajectory({ d, m, ageKnown, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
   const stats = [
     { label:"Interest rate", value:`${sl.slRatePct}%` },
     { label:"Annual interest", value:`${fmt(sl.annualInterest)}/yr` },
     { label:"Annual repayments", value:`${fmt(sl.annualRep)}/yr` },
     { label: sl.clearYr ? "Clears in" : "Written off after", value: sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs` },
+    // What they'd pay over the loan's life, and what's left to write off.
+    { label:"You'd repay in all", value: fmt(sl.totalRepaidProjected) },
+    ...(sl.willClear ? [] : [{ label:"Written off", value: fmt(sl.writeOffBal) }]),
   ];
   // Suggests the balance after paying the currently-selected slider amount,
   // rather than a blank/current-balance starting point — if the user came
@@ -182,6 +189,17 @@ function LoanTrajectory({ m, ageKnown, onRecordLoanOverpayment, editingBalance, 
           ))}
         </div>
 
+        {/* Pay growth decides most whether it's cleared: changeable here,
+            and every figure above moves with it. */}
+        {set && (
+          <div style={{marginBottom:"14px"}}>
+            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Your pay over the next ten years</div>
+            <PillSlider value={d.salaryTrajectory || "stable"} onChange={v => set("salaryTrajectory", v)}
+              options={PAY_GROWTH_OPTIONS.map(o => ({ value: o.value, label: { stable:"With prices", moderate:"Steady rises", high:"Fast" }[o.value] }))}/>
+            <div style={{fontSize:"11.5px",color:MUT,marginTop:"6px",lineHeight:1.45}}>{PAY_GROWTH_OPTIONS.find(o => o.value === (d.salaryTrajectory || "stable"))?.label}, then with prices.</div>
+          </div>
+        )}
+
         <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:"0 0 12px"}}>
           Written off in April {sl.writeOffTaxYear}. {sl.firstDueEstimated
             ? (ageKnown ? `We've assumed repayments started in April ${sl.firstDueYear}, the April after you turned 22.` : `We've assumed repayments started in April ${sl.firstDueYear}. Tell us when they did:`)
@@ -211,13 +229,42 @@ function LoanTrajectory({ m, ageKnown, onRecordLoanOverpayment, editingBalance, 
             : !sl.willClear
               ? "Projected to be written off before you'd clear it — overpaying mostly reduces the write-off, not your repayments."
               : sl.effectiveBenefit <= 0
-                ? `On track to clear in ~${sl.clearYr} years. The best savings rate (${sl.cashRate}%) ${sl.effectiveBenefit < 0 ? "beats" : "matches"} your loan's average rate over its life (${sl.lifeRatePct}%) — saving beats overpaying here.`
+                ? `On track to clear in ~${sl.clearYr} years. The best savings rate (${sl.cashRate}%) ${sl.effectiveBenefit < 0 ? "beats" : "matches"} your loan's average rate over its life (${sl.lifeRatePct}%), so overpaying doesn't come out ahead.`
                 : !sl.beatsPension
                   ? `On track to clear in ~${sl.clearYr} years. Your pension is assumed to grow ${sl.pensionGrowthPct}% a year, faster than your loan's ${sl.lifeRatePct}% a year on average over its life — so it beats overpaying here.`
                   : "See the win below for what overpaying could save you."}
         </p>
       </div>
     </>
+  );
+}
+
+// A Postgraduate loan alongside the main one (studentLoan.js pgScenario):
+// repaid at the same time, with its own interest and write-off date.
+function PostgradLoan({ pg, sl }) {
+  const stats = [
+    { label:"Current balance", value: fmt(pg.balancePath[0]?.bal ?? 0) },
+    { label:"Interest rate", value:`${pg.slRatePct}%` },
+    { label:"Annual repayments", value:`${fmt(pg.annualRep)}/yr` },
+    { label: pg.clearYr ? "Clears in" : "Written off after", value: pg.clearYr ? `${pg.clearYr} yrs` : `${pg.writeOffYr} yrs` },
+    { label:"You'd repay in all", value: fmt(pg.totalRepaidProjected) },
+    ...(pg.willClear ? [] : [{ label:"Written off", value: fmt(pg.writeOffBal) }]),
+  ];
+  return (
+    <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+      <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your Postgraduate loan</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"12px"}}>
+        {stats.map(s => (
+          <div key={s.label}>
+            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{s.label}</div>
+            <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700,marginTop:"2px"}}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+      <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.55,margin:0}}>
+        Repaid at the same time as your main loan: 6% of pay over {fmt(SL_REPAYMENT_THRESHOLDS.postgrad)}, on top of 9% over {fmt(sl.threshold)}. Together, about {fmt(sl.annualRep + pg.annualRep)} a year comes off your pay now. Written off in April {pg.writeOffTaxYear}.
+      </p>
+    </div>
   );
 }
 
@@ -299,15 +346,17 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
     <>
       {sl.willClear && (
         <MobileWinTile
-          title={sl.balanceGrowing ? "Your loan balance is growing" : worthOverpaying ? "Overpaying your student loan" : "What overpaying would do"}
+          title={worthOverpaying ? "Overpaying your student loan" : "Is overpaying worth it?"}
           headline={worthOverpaying
             ? (sl.balanceGrowing
                 ? `Growing by ${fmt(sl.netAnnualChange)}/yr — overpaying could still save ${fmt(sl.overpayAnnualBenefit)}/yr`
                 : `${fmt(sl.overpayAnnualBenefit)}/yr better off than saving at the highest rate`)
-            : sl.effectiveBenefit <= 0
+            : sl.effectiveBenefit < 0
               ? `The highest savings rate (${sl.cashRate}%) beats your loan's ${sl.lifeRatePct}% average rate`
+              : sl.effectiveBenefit === 0
+                ? `The highest savings rate (${sl.cashRate}%) matches your loan's ${sl.lifeRatePct}% average rate, so overpaying doesn't come out ahead`
               : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your loan's ${sl.lifeRatePct}% average rate`}
-          tagLabel={worthOverpaying ? "Today" : "Not optimal"} tagColor={worthOverpaying ? GOLD : CRITICAL}>
+          tagLabel={worthOverpaying ? "Today" : "No gain"} tagColor={worthOverpaying ? GOLD : MUT}>
           {sl.balanceGrowing && (
             <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
               <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Why your balance is growing</div>
@@ -324,9 +373,9 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
           ) : (
             <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"6px 0"}}>Step 2 — You don't currently hold cash above your emergency buffer; the comparison still applies to any spare cash you build up.</p>
           )}
-          <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0?SUCCESS:CRITICAL}}>
+          <div style={{...rowStyle,fontWeight:700,color:sl.effectiveBenefit > 0 ? SUCCESS : sl.effectiveBenefit === 0 ? MUT : CRITICAL}}>
             <span>Step 3 — {sl.lifeRatePct}% loan (average over its life) vs {sl.cashRate}% highest savings</span>
-            <span>{sl.effectiveBenefit > 0 ? `Repay wins by ${sl.effectiveBenefit}%` : `Savings win by ${Math.abs(sl.effectiveBenefit)}%`}</span>
+            <span>{sl.effectiveBenefit > 0 ? `Repay wins by ${sl.effectiveBenefit}%` : sl.effectiveBenefit === 0 ? "Level" : `Savings win by ${Math.abs(sl.effectiveBenefit)}%`}</span>
           </div>
           <div style={{...rowStyle,fontWeight:700,color:sl.beatsPension?SUCCESS:CRITICAL}}>
             <span>Step 4 — {sl.lifeRatePct}% loan (average over its life) vs {sl.pensionGrowthPct}% assumed pension growth</span>

@@ -23,8 +23,12 @@ test("pension: self-employed, uneven earnings; no lower-pay line", () => {
 });
 
 test("student loan: the other kind of loan, by plan", () => {
+  // Plans 1, 2 and 5 can have a Postgraduate loan alongside, and it's counted;
+  // Plan 4's isn't asked about yet.
   const d = { ...employee, studentLoan: "plan2" };
-  assert.match(moduleLimits("studentLoan", d, calcMetrics(d)), /a Postgraduate loan repaid alongside this one/);
+  assert.doesNotMatch(moduleLimits("studentLoan", d, calcMetrics(d)), /Postgraduate/);
+  const p4 = { ...employee, studentLoan: "plan4" };
+  assert.match(moduleLimits("studentLoan", p4, calcMetrics(p4)), /a Postgraduate loan repaid alongside this one/);
   const pg = { ...employee, studentLoan: "postgrad" };
   assert.match(moduleLimits("studentLoan", pg, calcMetrics(pg)), /an undergraduate loan repaid alongside this one/);
 });

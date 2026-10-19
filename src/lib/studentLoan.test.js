@@ -126,3 +126,35 @@ test("pay growth counts: a loan that never clears on today's pay can clear as pa
   // The scenario and the metrics agree on whether it clears.
   assert.equal(calcMetrics(rising).willClear, true);
 });
+
+test("pay rises at the expected rate for ten years, then with prices", async () => {
+  const { payFactor } = await import("./growth.js");
+  assert.equal(payFactor(0.10, 0), 1);
+  assert.ok(Math.abs(payFactor(0.10, 10) - Math.pow(1.1, 10)) < 1e-9);
+  assert.ok(Math.abs(payFactor(0.10, 12) - Math.pow(1.1, 10) * 1.02 * 1.02) < 1e-9);
+  // Faster pay clears a loan that pay rising with prices doesn't.
+  const { calcMetrics } = await import("./metrics.js");
+  const grad = { studentLoan: "plan2", salary: "32000", age: "25", loanBalance: "55000", inputsTaxYear: 2026 };
+  const slow = calcStudentLoanScenario({ ...grad, salaryTrajectory: "stable" }, calcMetrics({ ...grad, salaryTrajectory: "stable" }));
+  const fast = calcStudentLoanScenario({ ...grad, salaryTrajectory: "high" }, calcMetrics({ ...grad, salaryTrajectory: "high" }));
+  assert.equal(slow.willClear, false);
+  assert.ok(fast.totalRepaidProjected > slow.totalRepaidProjected * 3);
+});
+
+test("a Postgraduate loan alongside Plan 2: its own loan, repaid at the same time, and in take-home pay", async () => {
+  const { pgScenario, hasPgLoan } = await import("./studentLoan.js");
+  const { calcMetrics } = await import("./metrics.js");
+  const d = { studentLoan: "plan2", salary: "48000", age: "30", loanBalance: "45000", hasPgLoan: "yes", pgLoanBalance: "14000", inputsTaxYear: 2026 };
+  const m = calcMetrics(d);
+  assert.equal(m.pgRepayment, 1620); // 6% of £27,000
+  assert.equal(m.annualRepayment, Math.round((48000 - 29385) * 0.09 * 100) / 100); // the main loan's, unchanged
+  const pg = pgScenario(d, m);
+  assert.equal(pg.slRatePct, 6);
+  assert.equal(pg.annualRep, 1620);
+  assert.equal(pg.writeOffTaxYear, calcStudentLoanScenario(d, m).writeOffTaxYear + 1);
+  // Both come off take-home pay.
+  assert.ok(Math.abs(calcMetrics({ ...d, hasPgLoan: "no" }).monthlyTakeHome - m.monthlyTakeHome - 1620 / 12) < 0.01);
+  // Plan 4, or no balance: none.
+  assert.equal(hasPgLoan({ ...d, studentLoan: "plan4" }), false);
+  assert.equal(pgScenario({ ...d, pgLoanBalance: "" }, m), null);
+});

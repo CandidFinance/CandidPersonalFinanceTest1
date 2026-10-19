@@ -1,6 +1,7 @@
 import { isaUsedThisYear as isaUsedAcrossAll } from "./isa.js";
 import { employerPct } from "./employer.js";
 import { resolveSlRate, slRateIn, slYearsLeft, slThresholdIn, SL_REPAYMENT_RATES, calcStudentLoanScenario } from "./studentLoan.js";
+import { payFactor, payGrowthIn } from "./growth.js";
 import { taxYearFor } from "./taxYear.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
 import { retirementAgeFor } from "./metrics.js";
@@ -24,7 +25,7 @@ export function studentLoanTerms(d, m) {
     repayRate: SL_REPAYMENT_RATES[d.studentLoan] ?? SL_REPAYMENT_RATES.plan1,
     earnings: m.slEarnings ?? m.salary,
     // The interest rate in each year (0 = this one), on that year's pay.
-    rate: year => slRateIn(d, m.salary * Math.pow(1 + (m.salaryGrowthRate || 0), year), year, taxYear),
+    rate: year => slRateIn(d, m.salary * payFactor(m.salaryGrowthRate || 0, year), year, taxYear),
   };
 }
 
@@ -52,7 +53,8 @@ export function simulateLoan(openingBalance, annualSalary, salaryGrowthRate, int
     totalPaid += payment;
     if (balance <= 0 && monthsToClear === null) monthsToClear = month + 1;
     if ((month + 1) % 12 === 0) {
-      salary *= (1 + salaryGrowthRate);
+      // Pay rises at the expected rate for ten years, then with prices.
+      salary *= 1 + payGrowthIn(salaryGrowthRate, Math.floor(month / 12));
       if (trackYearly) yearlyInterest.push(Math.round(totalInterest));
     }
   }

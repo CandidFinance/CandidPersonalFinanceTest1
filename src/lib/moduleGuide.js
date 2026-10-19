@@ -16,7 +16,7 @@ import { itemisedNonCashIsa } from "./isa.js";
 import { estimatePensionPot, LUMP_SUM_ALLOWANCE, hasStartedDrawing } from "./pension.js";
 import { STATE_PENSION_FULL } from "./tax.js";
 import { workingPastRetirementAge } from "./metrics.js";
-import { resolveSlRate, studentLoanPlanFrom, estimateSlBalance, slEstimateReady } from "./studentLoan.js";
+import { resolveSlRate, studentLoanPlanFrom, estimateSlBalance, slEstimateReady, PG_WITH_PLANS } from "./studentLoan.js";
 import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION, NATION_OPTIONS, nationAlso } from "./sharedQuestions.js";
 import { CHILDCARE_INCOME_LIMIT } from "./childcare.js";
 
@@ -348,6 +348,12 @@ const PENSION_QUESTIONS = [
 ];
 
 const hasLoan = ({ d }) => d.studentLoan && d.studentLoan !== "none";
+// metrics.js SALARY_GROWTH_RATES, in words.
+export const PAY_GROWTH_OPTIONS = [
+  { value:"stable", label:"In line with prices (about 2% a year)" },
+  { value:"moderate", label:"Steady pay rises (about 5% a year)" },
+  { value:"high", label:"Fast, with promotions (about 10% a year)" },
+];
 const estimating = ctx => hasLoan(ctx) && ctx.d.slBalanceEstimate === "yes";
 
 // The plan helper, for "Not sure which plan": up to three questions, then the
@@ -483,6 +489,34 @@ const STUDENT_LOAN_QUESTIONS = [
     prefill: ({ d }) => Math.round(resolveSlRate(d, +d.salary || 0) * 1000) / 10,
     note: ({ d }) => filled(d.studentLoanRate) ? null : "That's the usual rate for your plan and salary. Use your own if you know it.",
     showIf: hasLoan,
+  },
+  {
+    // GOV.UK: repaid at the same time as the main plan (studentLoan.js
+    // pgScenario).
+    id:"hasPgLoan", field:"hasPgLoan", kind:"choice",
+    ask: () => "Do you also have a Postgraduate loan, for a Master's or PhD?",
+    why: () => "It's repaid at the same time: another 6% of pay over £21,000.",
+    options: () => [{ value:"no", label:"No" }, { value:"yes", label:"Yes" }],
+    showIf: ctx => hasLoan(ctx) && PG_WITH_PLANS.includes(ctx.d.studentLoan),
+  },
+  {
+    id:"pgLoanBalance", field:"pgLoanBalance", kind:"money", label:"Still owed", cap:"loanBalance", required:true,
+    ask: () => "Roughly how much do you still owe on it?",
+    why: () => "Its interest and write-off date are separate from your main loan's.",
+    note: () => "Your online student loan account shows each loan's balance.",
+    showIf: ctx => ctx.d.hasPgLoan === "yes" && PG_WITH_PLANS.includes(ctx.d.studentLoan),
+  },
+  {
+    // What decides most whether a loan is cleared. Asked once; it's also on
+    // the module's page, and in Edit inputs (About you). The rate is for ten
+    // years, then pay rises with prices (growth.js payFactor).
+    id:"payGrowth", field:"salaryTrajectory", kind:"choice",
+    ask: () => "How do you expect your pay to grow over the next ten years?",
+    why: () => "Repayments come from pay over the threshold, so this decides the most.",
+    options: () => PAY_GROWTH_OPTIONS,
+    note: () => "After ten years, Candid assumes your pay rises with prices.",
+    showIf: hasLoan,
+    ifMissing: ({ d }) => !(d.askedFields || []).includes("salaryTrajectory"),
   },
 ];
 

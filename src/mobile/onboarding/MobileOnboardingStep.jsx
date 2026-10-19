@@ -24,9 +24,9 @@ const TRAJECTORY_OPTIONS = [
   { value:"high", label:"Rapid" },
 ];
 const TRAJECTORY_HINT = {
-  stable: "~2% p.a. salary growth",
-  moderate: "~5% p.a. salary growth",
-  high: "~15% p.a. salary growth",
+  stable: "Rising with prices, about 2% a year",
+  moderate: "About 5% a year for ten years, then with prices",
+  high: "About 10% a year for ten years, then with prices",
 };
 
 const YES_NO_OPTIONS = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }];

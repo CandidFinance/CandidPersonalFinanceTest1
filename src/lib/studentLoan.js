@@ -19,7 +19,7 @@
 // calculated" guidance pages lagged behind and still showed 2025/26 rates.
 // Plan 4 and the Postgraduate Loan aren't offered in the app's onboarding;
 // they're here so the public student loan calculator reads the same figures.
-import { GROWTH_NOMINAL_PCT, INFLATION_PCT } from "./growth.js";
+import { GROWTH_NOMINAL_PCT, INFLATION_PCT, payFactor } from "./growth.js";
 import { taxYearFor } from "./taxYear.js";
 
 export const PLAN2_RPI_BASE = 0.041; // 2026/27 RPI
@@ -201,10 +201,11 @@ export function calcStudentLoanScenario(d, m) {
   // threshold rises as the plan's rules say (slThresholdIn).
   const growth = m.salaryGrowthRate ?? 0;
   const earnings = m.slEarnings ?? m.salary;
-  const repaymentIn = yr => Math.max(0, earnings * Math.pow(1 + growth, yr - 1) - slThresholdIn(d.studentLoan, taxYear + yr - 1)) * repayRateOf(d.studentLoan);
+  // Pay rises at that rate for ten years, then with prices (growth.js).
+  const repaymentIn = yr => Math.max(0, earnings * payFactor(growth, yr - 1) - slThresholdIn(d.studentLoan, taxYear + yr - 1)) * repayRateOf(d.studentLoan);
   // The interest rate each year, on that year's pay (slRateIn): today's
   // published rate this year, then steady-state RPI.
-  const rateIn = yr => slRateIn(d, m.salary * Math.pow(1 + growth, yr - 1), yr - 1, taxYear);
+  const rateIn = yr => slRateIn(d, m.salary * payFactor(growth, yr - 1), yr - 1, taxYear);
   // Each year's rate and repayment, for the overpayment scenarios to run on
   // the same figures (calcOverpaymentScenarios).
   const schedule = [];
@@ -279,6 +280,22 @@ export function calcStudentLoanScenario(d, m) {
     cashRate, effectiveBenefit, pensionGrowthPct: PENSION_GROWTH_PCT, pensionGap, beatsPension,
     worthOverpaying, overpayAnnualBenefit,
   };
+}
+
+// ── A Postgraduate loan alongside a Plan 1, 2 or 5 loan. GOV.UK: both are
+// repaid at once, 6% of pay over £21,000 on top of the main plan's 9%, so
+// neither changes the other; each has its own interest (the Postgraduate
+// loan's RPI + 3%, capped at 6%) and is written off 30 years after its own
+// first April, taken as the April after the main loan's (a Master's usually
+// follows the degree), and no earlier than April 2018, when Postgraduate
+// repayments began. Run as its own loan, on the same pay.
+export const PG_WITH_PLANS = ["plan1", "plan2", "plan5"];
+export const hasPgLoan = d => d.hasPgLoan === "yes" && PG_WITH_PLANS.includes(d.studentLoan) && +d.pgLoanBalance > 0;
+export function pgScenario(d, m) {
+  if (!hasPgLoan(d)) return null;
+  const firstDue = Math.max(SL_EARLIEST_FIRST_DUE.postgrad, slFirstDueYear(d) + 1);
+  const pd = { ...d, studentLoan: "postgrad", studentLoanRate: "", slFirstDueYear: String(firstDue) };
+  return calcStudentLoanScenario(pd, { ...m, loanBal: +d.pgLoanBalance, annualRepayment: m.pgRepayment ?? 0 });
 }
 
 // One-line verdict on overpaying vs the pension, like for like (see

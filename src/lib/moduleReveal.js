@@ -18,7 +18,7 @@ import { retirementAdequacy } from "./crossModule.js";
 import { childcareSupport } from "./childcare.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { calcStudentLoanScenario } from "./studentLoan.js";
+import { calcStudentLoanScenario, pgScenario, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
 import { STATE_PENSION_AGE } from "./tax.js";
 
@@ -384,7 +384,16 @@ export function investmentsReveal(d, m) {
 // screen (calcStudentLoanScenario).
 export function studentLoanReveal(d, m) {
   if (d.studentLoan === "none" || !(m.loanBal > 0)) return null;
+  const steps = studentLoanSteps(d, m);
+  // A Postgraduate loan alongside: what it adds, under the why.
+  const pg = pgScenario(d, m);
+  if (!pg) return steps;
+  const pgLine = `Your Postgraduate loan is repaid at the same time: about ${fmt(pg.annualRep)} a year now (6% of pay over £21,000), ${pg.belowThreshold ? "once you earn over £21,000" : pg.willClear ? `paid off in ${years(pg.clearYr)}` : `with about ${fmt(pg.writeOffBal)} written off in April ${pg.writeOffTaxYear}`}.`;
+  return steps.map(s => s.label === WHY ? withBody(s, join(s.body, pgLine)) : s);
+}
+function studentLoanSteps(d, m) {
   const sl = calcStudentLoanScenario(d, m);
+  const repayPct = `${Math.round((SL_REPAYMENT_RATES[d.studentLoan] ?? 0.09) * 100)}%`;
   const nothing = { label: ACTION, title: "Nothing to change right now.", body: "Repayments come out of your pay automatically." };
   // While the balance is still growing, when it starts to fall (the year
   // repayments overtake the interest), under the answer.
@@ -415,15 +424,16 @@ export function studentLoanReveal(d, m) {
         body: "You can overpay on the Student Loans Company website." },
     ];
   }
+  // Written off: what they'd repay in all, and what's left to write off.
   if (!sl.willClear) {
     return [
-      { label: ANSWER, title: "You're not expected to clear this loan before it's written off.", ...turning },
-      { label: WHY, title: `Your repayments of about ${fmt(sl.annualRep)} a year don't clear the ${fmt(m.loanBal)} balance in time.` },
+      { label: ANSWER, figure: fmt(sl.totalRepaidProjected), title: `you're expected to repay in all, before about ${fmt(sl.writeOffBal)} is written off in April ${sl.writeOffTaxYear}.`, ...turning },
+      { label: WHY, title: `Repayments are ${repayPct} of your pay over ${fmt(sl.threshold)}, about ${fmt(sl.annualRep)} a year now, while interest adds about ${fmt(sl.annualInterest)}.` },
       { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "On these assumptions, savings or a pension may earn more than overpaying." },
     ];
   }
   return [
-    { label: ANSWER, figure: years(sl.clearYr), title: "until your loan is paid off.", ...turning },
+    { label: ANSWER, figure: years(sl.clearYr), title: "until your loan is paid off.", body: join(turning.body, `You'd repay about ${fmt(sl.totalRepaidProjected)} in all.`) },
     { label: WHY, title: sl.effectiveBenefit <= 0
         ? `Savings pay ${sl.cashRate}%, ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.`
         : `Your pension's assumed ${sl.pensionGrowthPct}% growth beats your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.` },

@@ -320,6 +320,8 @@
  * @property {number} loanBal
  * @property {boolean} loanBalEstimated
  * @property {number} annualRepayment
+ * @property {number} pgLoanBal A Postgraduate loan alongside the main plan (studentLoan.js hasPgLoan), else 0.
+ * @property {number} pgRepayment Its repayment this year: 6% of pay over £21,000.
  * @property {number} slRepaymentRegular
  * @property {number} slEarnings
  * @property {boolean} willClear

@@ -50,6 +50,9 @@ export const PROFILES = {
   familyNear: { ...rich, salary: "98000", tfcClaiming: "yes" },
   familyUnclaimed: { ...rich, salary: "55000", tfcClaiming: "no", childBenefitChildren: "2", cbHigherEarner: "yes" },
   familyNoKids: { ...rich, kidsPreschool: "0", kidsSchool: "0", childcareMonthly: "" },
+  loanWithPostgrad: { ...rich, salary: "48000", hasPgLoan: "yes", pgLoanBalance: "14000" },
+  loanFastPay: { ...rich, salary: "34000", age: "25", loanBalance: "55000", salaryTrajectory: "high" },
+  loanBelowThreshold: { ...rich, salary: "26000", age: "23", loanBalance: "50000", hasPgLoan: "yes", pgLoanBalance: "12000" },
 };
 const ROUTES = ["/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/inputs", "/app/property", ...all.map(k => `/app/module/${k}`)];
 const BLOCK = /supabase\.co|posthog|stripe\.com|truelayer|resend\.com/;

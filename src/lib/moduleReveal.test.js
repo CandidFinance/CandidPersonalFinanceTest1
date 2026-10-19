@@ -136,8 +136,13 @@ test("investments: no gains, so the ISA allowance", () => {
 test("student loan: none means nothing to explain; otherwise the screen's own scenario", () => {
   assert.equal(run({ selectedModules: ["studentLoan"], salary: "45000", studentLoan: "none" }, studentLoanReveal).steps, null);
   const loan = (salary, loanBalance, studentLoan) => run({ selectedModules: ["studentLoan"], salary, studentLoan, loanBalance }, studentLoanReveal);
-  // £50,000 of Plan 2 on £45,000: written off before it's cleared.
-  assert.equal(loan("45000", "50000", "plan2").steps[0].title, "You're not expected to clear this loan before it's written off.");
+  // £50,000 of Plan 2 on £45,000: written off before it's cleared, led by
+  // what they'd repay in all, the scenario's own figures.
+  const w = loan("45000", "50000", "plan2");
+  const wsl = calcStudentLoanScenario({ selectedModules: ["studentLoan"], salary: "45000", studentLoan: "plan2", loanBalance: "50000" }, w.m);
+  assert.equal(w.steps[0].figure, `£${wsl.totalRepaidProjected.toLocaleString("en-GB")}`);
+  assert.equal(w.steps[0].title, `you're expected to repay in all, before about £${wsl.writeOffBal.toLocaleString("en-GB")} is written off in April ${wsl.writeOffTaxYear}.`);
+  assert.match(w.steps[1].title, /^Repayments are 9% of your pay over £29,385, about £1,405 a year now, while interest adds about £3,000\.$/);
   // £20,000 of Plan 2 on £24,000: below the threshold.
   assert.equal(loan("24000", "20000", "plan2").steps[0].title, "Nothing comes off your pay yet.");
   // £8,000 of Plan 1 on £60,000: clears in 3 years, the same figure as the scenario.
@@ -176,4 +181,17 @@ test("still earning past retirement age with nothing paid in: the relief gap sta
 
 test("no pot and no earnings: nothing to explain", () => {
   assert.equal(reveal({ ...retired, potValue: "0" }).steps, null);
+});
+
+test("student loan with a Postgraduate loan: the why says what it adds, and its overpaying counts", () => {
+  const d = { selectedModules: ["studentLoan"], answeredModules: ["studentLoan"], salary: "48000", age: "30", studentLoan: "plan2", loanBalance: "45000", hasPgLoan: "yes", pgLoanBalance: "14000" };
+  const { steps } = run(d, studentLoanReveal);
+  // 6% of £27,000 over £21,000: £1,620 a year.
+  assert.match(steps[1].body, /Your Postgraduate loan is repaid at the same time: about £1,620 a year now \(6% of pay over £21,000\)/);
+  assert.equal(run({ ...d, hasPgLoan: "no" }, studentLoanReveal).steps[1].body, undefined);
+});
+
+test("student loan: below the threshold is 'ok', with nothing to act on", () => {
+  const { statuses } = run({ selectedModules: ["studentLoan"], answeredModules: ["studentLoan"], salary: "24000", studentLoan: "plan2", loanBalance: "40000" }, studentLoanReveal);
+  assert.equal(statuses.studentLoan.status, "ok");
 });

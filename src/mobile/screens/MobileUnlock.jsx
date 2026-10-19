@@ -36,7 +36,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
   const range = estimate && (estimate.low === estimate.high ? fmt(estimate.low) : `${fmt(estimate.low)} to ${fmt(estimate.high)}`);
 
   // What's behind the frost, named, so it's clear what unlocking gets them.
-  const hidden = amount > 0 ? ["Why it's happening", "Your options, and what each is worth"] : ["Where you stand", "What to keep an eye on"];
+  const hidden = amount > 0 ? ["Why it's happening", "Your options, and what each is worth"] : PREVIEW_LINES[moduleKey] || ["Where you stand", "What to keep an eye on"];
   const cta = amount > 0 ? "Show me my options" : "Show me";
 
   const label = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
@@ -103,6 +103,13 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
     </div>
   );
 }
+
+// What a module's answer tells them, named under the frost when there's no
+// £ figure to lead with.
+const PREVIEW_LINES = {
+  studentLoan: ["When your balance starts falling", "What you'll repay in all, and whether any is written off"],
+  kids: ["The childcare help you could get", "What crossing £100,000 would cost"],
+};
 
 // The first answer, for their email: one field, and whether they'd like to
 // hear from Candid. The email also goes on their row (unlockPatch).

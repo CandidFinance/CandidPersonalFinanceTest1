@@ -84,9 +84,9 @@ test("not sure of the plan: the helper asks only what it needs, then the loan qu
   const unsure = { ...known, slPlanAnswer: "unsure" };
   assert.deepEqual(ids("studentLoan", unsure, known), ["studentLoanPlan", "slCountry"]);
   assert.deepEqual(ids("studentLoan", { ...unsure, slCountry: "scotland", studentLoan: "plan4" }, known),
-    ["studentLoanPlan", "slCountry", "slPlanResult", "loanBalance", "loanRate"]);
+    ["studentLoanPlan", "slCountry", "slPlanResult", "loanBalance", "loanRate", "payGrowth"]);
   assert.deepEqual(ids("studentLoan", { ...unsure, slCountry: "england", slCourse: "undergrad", slStart: "2023on", studentLoan: "plan5" }, known),
-    ["studentLoanPlan", "slCountry", "slCourse", "slStart", "slPlanResult", "loanBalance", "loanRate"]);
+    ["studentLoanPlan", "slCountry", "slCourse", "slStart", "slPlanResult", "loanBalance", "loanRate", "hasPgLoan", "payGrowth"]);
 });
 
 test("each helper answer sets the plan once there's enough to tell, and the result says which", () => {
@@ -108,8 +108,11 @@ test("the question count shows only once no answer still to come can change it",
   };
   // The plan question decides whether the helper and loan questions come.
   assert.equal(settled("studentLoan", known, "studentLoanPlan"), false);
-  // On plan 2: balance and rate always follow, so it's settled.
-  assert.equal(settled("studentLoan", { ...known, slPlanAnswer: "plan2", studentLoan: "plan2" }, "loanBalance"), true);
+  // On plan 2, a Postgraduate loan alongside adds a question, so the count
+  // settles once that's been asked.
+  const plan2 = { ...known, slPlanAnswer: "plan2", studentLoan: "plan2" };
+  assert.equal(settled("studentLoan", plan2, "loanBalance"), false);
+  assert.equal(settled("studentLoan", { ...plan2, hasPgLoan: "no" }, "payGrowth"), true);
   // Cash: the Premium Bonds and Cash ISA yes/nos are still to come.
   assert.equal(settled("cash", known, "spending"), false);
   assert.equal(settled("cash", { ...known, hasPremiumBonds: "no", hasCashIsaThisYear: "yes" }, "cashIsaEarlier"), true);
@@ -162,7 +165,7 @@ test("not sure of the balance: the borrowing questions come, then the estimate",
   assert.deepEqual(q("loanBalance").also("12000"), { slBalanceEstimate: "" });
   assert.deepEqual(q("slFinishYear").also("2018"), { slFirstDueYear: "2019" });
   const est = { ...known, loanBalance: "", slBalanceEstimate: "yes" };
-  assert.deepEqual(ids("studentLoan", est, known), ["studentLoanPlan", "loanBalance", "slStudyYears", "slTuition", "slMaintenance", "slFinishYear", "loanRate"]);
+  assert.deepEqual(ids("studentLoan", est, known), ["studentLoanPlan", "loanBalance", "slStudyYears", "slTuition", "slMaintenance", "slFinishYear", "loanRate", "hasPgLoan", "payGrowth"]);
   const done = { ...est, slStudyYears: "6", slTuition: "nhs5", slMaintenance: "full", slFinishYear: "2018" };
   assert.ok(ids("studentLoan", done, known).includes("slBalanceResult"));
   // The NHS option only for courses of five years or more.
@@ -202,4 +205,12 @@ test("the bonus month is asked once there's a bonus, straight after it", () => {
   assert.equal(list[list.indexOf("bonus") + 1], "bonusMonth");
   assert.ok(!ids("studentLoan", { ...bonus, bonusAmount: "" }, fresh).includes("bonusMonth"));
   assert.ok(!ids("studentLoan", { ...bonus, bonusMonth: "" }, { ...fresh, bonusMonth: "" }).includes("bonusMonth"));
+});
+
+test("student loan: a Postgraduate loan alongside Plans 1, 2 and 5, and pay growth asked once", () => {
+  const known = { ...fresh, employmentAsked: true, ukNation: "england", scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", age: "30", slPlanAnswer: "plan2", studentLoan: "plan2", loanBalance: "40000" };
+  assert.deepEqual(ids("studentLoan", { ...known, hasPgLoan: "yes" }, known).slice(-3), ["hasPgLoan", "pgLoanBalance", "payGrowth"]);
+  assert.ok(!ids("studentLoan", { ...known, studentLoan: "plan4", slPlanAnswer: "plan4" }, known).includes("hasPgLoan"));
+  // Pay growth, once asked anywhere, isn't asked again.
+  assert.ok(!ids("studentLoan", known, { ...known, askedFields: ["salaryTrajectory"] }).includes("payGrowth"));
 });

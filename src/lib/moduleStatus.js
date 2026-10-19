@@ -9,7 +9,7 @@ import { cashOpportunity } from "./assist.js";
 import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, childBenefitCharge } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { isaFillable as isaFillableBy } from "./metrics.js";
-import { calcStudentLoanScenario } from "./studentLoan.js";
+import { calcStudentLoanScenario , pgScenario } from "./studentLoan.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
 
 // What a mortgage rate is measured against, in order: a rate the user has
@@ -287,11 +287,14 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // (written off regardless, clears but saving or the pension beats
   // overpaying, or below threshold) has nothing actionable.
   const sl = calcStudentLoanScenario(d, m);
-  const slAmount = sl.worthOverpaying ? sl.overpayAnnualBenefit : 0;
+  // A Postgraduate loan alongside: its own overpaying gain, if any.
+  const pg = pgScenario(d, m);
+  const slAmount = (sl.worthOverpaying ? sl.overpayAnnualBenefit : 0) + (pg?.worthOverpaying ? pg.overpayAnnualBenefit : 0);
   s.studentLoan = {
+    // Below the threshold there's nothing to act on, so "ok", with the line
+    // below saying why.
     status: d.studentLoan === "none" ? "na"
-          : sl.worthOverpaying ? (sl.balanceGrowing ? "critical" : "attention")
-          : sl.belowThreshold ? "attention"
+          : sl.worthOverpaying || pg?.worthOverpaying ? (sl.balanceGrowing ? "critical" : "attention")
           : "ok",
     impact: slAmount,
     impactLabel: sl.belowThreshold

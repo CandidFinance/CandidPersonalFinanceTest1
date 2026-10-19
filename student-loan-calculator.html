@@ -99,9 +99,9 @@
         <div class="field">
           <label for="growth">Projected salary growth</label>
           <select id="growth">
-            <option value="stable" selected>Stable (~2% p.a.)</option>
-            <option value="moderate">Steady growth (~5% p.a.)</option>
-            <option value="high">Rapid growth (~15% p.a.)</option>
+            <option value="stable" selected>In line with prices (~2% a year)</option>
+            <option value="moderate">Steady pay rises (~5% a year)</option>
+            <option value="high">Fast, with promotions (~10% a year)</option>
           </select>
         </div>
       </div>
@@ -115,7 +115,7 @@
     <div id="result" style="background:#ffffff;border:2px solid #162F24;border-radius:14px;padding:24px;margin-top:18px;"></div>
 
     <p style="font-size:12px;color:#8a8a8a;margin-top:10px;line-height:1.6;">
-      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your salary grows at the selected rate every year and your loan's interest rate stays flat at today's figure — the real SLC calculation compounds monthly, and if you're on Plan 2, your rate will actually track your income up or down as it changes over time rather than staying fixed. If you have more than one loan (e.g. an undergraduate plan plus a Postgraduate Loan running alongside it), this only models one at a time. Candid Personal Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
+      This is a simplified estimate for education purposes, not regulated financial advice. It assumes your salary grows at the selected rate for ten years, then in line with prices, and your loan's interest rate stays flat at today's figure — the real SLC calculation compounds monthly, and if you're on Plan 2, your rate will actually track your income up or down as it changes over time rather than staying fixed. If you have more than one loan (e.g. an undergraduate plan plus a Postgraduate Loan running alongside it), this only models one at a time. Candid Personal Finance Ltd is not authorised or regulated by the Financial Conduct Authority (FCA).
     </p>
 
     <!-- ── Bridge to full tool ───────────────────────────────────────── -->
@@ -203,6 +203,7 @@
   <script type="module">
     import { resolveSlRate as resolveAppSlRate, studentLoanPlanConstants } from '/src/lib/studentLoan.js';
     import { SALARY_GROWTH_RATES as GROWTH_RATES } from '/src/lib/metrics.js';
+    import { payGrowthIn } from '/src/lib/growth.js';
 
     function resolveSlRate(plan, salary, exactRatePct) {
       return resolveAppSlRate({ studentLoan: plan, studentLoanRate: exactRatePct }, salary);
@@ -228,7 +229,8 @@
         balance -= payment;
         totalPaid += payment;
         if (balance <= 0 && monthsToClear === null) monthsToClear = month + 1;
-        if ((month + 1) % 12 === 0) salary *= (1 + salaryGrowthRate);
+        // The selected rate for ten years, then with prices (growth.js), as in the app.
+        if ((month + 1) % 12 === 0) salary *= 1 + payGrowthIn(salaryGrowthRate, Math.floor(month / 12));
       }
       return { totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid), cleared: balance <= 0, monthsToClear: monthsToClear };
     }

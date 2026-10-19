@@ -29,6 +29,8 @@
     "slRepaymentRegular": 3640.95,
     "slEarnings": 74840,
     "willClear": true,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 1800,
     "cgtSaving": 432,
     "cgtRate": 0.24,
@@ -294,7 +296,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"22000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"22000\",null,null,null,null,null,\"\",null,null,\"moderate\"]",
      "banked": 0
     }
    },
@@ -357,7 +359,8 @@
      {
       "label": "Your position",
       "figure": "6 years",
-      "title": "until your loan is paid off."
+      "title": "until your loan is paid off.",
+      "body": "You'd repay about £26,122 in all."
      },
      {
       "label": "Why",
@@ -2791,6 +2794,8 @@
     "slRepaymentRegular": 3640.95,
     "slEarnings": 74840,
     "willClear": true,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 1800,
     "cgtSaving": 432,
     "cgtRate": 0.24,
@@ -3056,7 +3061,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"22000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"22000\",null,null,null,null,null,\"\",null,null,\"moderate\"]",
      "banked": 0
     }
    },
@@ -3119,7 +3124,8 @@
      {
       "label": "Your position",
       "figure": "6 years",
-      "title": "until your loan is paid off."
+      "title": "until your loan is paid off.",
+      "body": "You'd repay about £26,122 in all."
      },
      {
       "label": "Why",
@@ -5301,6 +5307,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 45600,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 800,
     "cgtSaving": 144,
     "cgtRate": 0.18,
@@ -7818,6 +7826,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 45600,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 800,
     "cgtSaving": 144,
     "cgtRate": 0.18,
@@ -10166,6 +10176,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 89300,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 3000,
     "cgtSaving": 720,
     "cgtRate": 0.24,
@@ -12732,6 +12744,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 89300,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 3000,
     "cgtSaving": 720,
     "cgtRate": 0.24,
@@ -15083,6 +15097,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 26000,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -16584,6 +16600,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 26000,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -17927,6 +17945,8 @@
     "slRepaymentRegular": 7659,
     "slEarnings": 127000,
     "willClear": true,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -18192,7 +18212,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"6000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"6000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -18255,7 +18275,8 @@
      {
       "label": "Your position",
       "figure": "1 year",
-      "title": "until your loan is paid off."
+      "title": "until your loan is paid off.",
+      "body": "You'd repay about £6,246 in all."
      },
      {
       "label": "Why",
@@ -20590,6 +20611,8 @@
     "slRepaymentRegular": 7659,
     "slEarnings": 127000,
     "willClear": true,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -20855,7 +20878,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"6000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"6000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -20918,7 +20941,8 @@
      {
       "label": "Your position",
       "figure": "1 year",
-      "title": "until your loan is paid off."
+      "title": "until your loan is paid off.",
+      "body": "You'd repay about £6,246 in all."
      },
      {
       "label": "Why",
@@ -23028,6 +23052,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 216000,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 3000,
     "cgtSaving": 720,
     "cgtRate": 0.24,
@@ -25571,6 +25597,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 216000,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 3000,
     "cgtSaving": 720,
     "cgtRate": 0.24,
@@ -27989,6 +28017,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 60000,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -30574,6 +30604,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 60000,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -32916,6 +32948,8 @@
     "slRepaymentRegular": 207.45,
     "slEarnings": 36100,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -33181,7 +33215,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"31000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"31000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -33244,12 +33278,13 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off.",
+      "figure": "£28,028",
+      "title": "you're expected to repay in all, before about £18,682 is written off in April 2051.",
       "body": "Your balance is still growing. It starts falling from April 2033, when repayments overtake the interest."
      },
      {
       "label": "Why",
-      "title": "Your repayments of about £207 a year don't clear the £31,000 balance in time."
+      "title": "Repayments are 9% of your pay over £33,795, about £207 a year now, while interest adds about £1,271."
      },
      {
       "label": "What you could do",
@@ -35721,6 +35756,8 @@
     "slRepaymentRegular": 207.45,
     "slEarnings": 36100,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -35986,7 +36023,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"31000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"31000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -36049,12 +36086,13 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off.",
+      "figure": "£28,028",
+      "title": "you're expected to repay in all, before about £18,682 is written off in April 2051.",
       "body": "Your balance is still growing. It starts falling from April 2033, when repayments overtake the interest."
      },
      {
       "label": "Why",
-      "title": "Your repayments of about £207 a year don't clear the £31,000 balance in time."
+      "title": "Repayments are 9% of your pay over £33,795, about £207 a year now, while interest adds about £1,271."
      },
      {
       "label": "What you could do",
@@ -38357,6 +38395,8 @@
     "slRepaymentRegular": 229.5,
     "slEarnings": 27550,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -38622,7 +38662,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"48000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"48000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -38685,12 +38725,13 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off.",
+      "figure": "£13,862",
+      "title": "you're expected to repay in all, before about £88,296 is written off in April 2066.",
       "body": "Your balance is still growing, and on these figures repayments never overtake the interest."
      },
      {
       "label": "Why",
-      "title": "Your repayments of about £230 a year don't clear the £48,000 balance in time."
+      "title": "Repayments are 9% of your pay over £25,000, about £230 a year now, while interest adds about £1,968."
      },
      {
       "label": "What you could do",
@@ -41275,6 +41316,8 @@
     "slRepaymentRegular": 229.5,
     "slEarnings": 27550,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -41540,7 +41583,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"48000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"48000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -41603,12 +41646,13 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off.",
+      "figure": "£13,862",
+      "title": "you're expected to repay in all, before about £88,296 is written off in April 2066.",
       "body": "Your balance is still growing, and on these figures repayments never overtake the interest."
      },
      {
       "label": "Why",
-      "title": "Your repayments of about £230 a year don't clear the £48,000 balance in time."
+      "title": "Repayments are 9% of your pay over £25,000, about £230 a year now, while interest adds about £1,968."
      },
      {
       "label": "What you could do",
@@ -44032,6 +44076,8 @@
     "slRepaymentRegular": 1704,
     "slEarnings": 49400,
     "willClear": true,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -44297,7 +44343,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"14000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"14000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -44361,7 +44407,8 @@
      {
       "label": "Your position",
       "figure": "10 years",
-      "title": "until your loan is paid off."
+      "title": "until your loan is paid off.",
+      "body": "You'd repay about £18,227 in all."
      },
      {
       "label": "Why",
@@ -46709,6 +46756,8 @@
     "slRepaymentRegular": 1704,
     "slEarnings": 49400,
     "willClear": true,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -46974,7 +47023,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"14000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"14000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -47038,7 +47087,8 @@
      {
       "label": "Your position",
       "figure": "10 years",
-      "title": "until your loan is paid off."
+      "title": "until your loan is paid off.",
+      "body": "You'd repay about £18,227 in all."
      },
      {
       "label": "Why",
@@ -49217,6 +49267,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 64600,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -51836,6 +51888,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 64600,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -54240,6 +54294,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 0,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -56804,6 +56860,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 0,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.18,
@@ -59123,6 +59181,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 52250,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -61690,6 +61750,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 52250,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -64012,6 +64074,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 55000,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -65502,6 +65566,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 55000,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -66824,6 +66890,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 52250,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -69808,6 +69876,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 52250,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -72581,6 +72651,8 @@
     "slRepaymentRegular": 2057.85,
     "slEarnings": 52250,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -72846,7 +72918,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"38000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"38000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -72909,12 +72981,13 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off.",
+      "figure": "£53,400",
+      "title": "you're expected to repay in all, before about £16,527 is written off in April 2046.",
       "body": "Your balance is still growing. It starts falling from April 2027, when repayments overtake the interest."
      },
      {
       "label": "Why",
-      "title": "Your repayments of about £2,058 a year don't clear the £38,000 balance in time."
+      "title": "Repayments are 9% of your pay over £29,385, about £2,058 a year now, while interest adds about £2,280."
      },
      {
       "label": "What you could do",
@@ -75697,6 +75770,8 @@
     "slRepaymentRegular": 2057.85,
     "slEarnings": 52250,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -75962,7 +76037,7 @@
     },
     "studentLoan": {
      "amount": 0,
-     "answers": "[null,null,null,null,null,\"38000\",null,null,null,null,null,\"\"]",
+     "answers": "[null,null,null,null,null,\"38000\",null,null,null,null,null,\"\",null,null,\"stable\"]",
      "banked": 0
     }
    },
@@ -76025,12 +76100,13 @@
     "studentLoan": [
      {
       "label": "Your position",
-      "title": "You're not expected to clear this loan before it's written off.",
+      "figure": "£53,400",
+      "title": "you're expected to repay in all, before about £16,527 is written off in April 2046.",
       "body": "Your balance is still growing. It starts falling from April 2027, when repayments overtake the interest."
      },
      {
       "label": "Why",
-      "title": "Your repayments of about £2,058 a year don't clear the £38,000 balance in time."
+      "title": "Repayments are 9% of your pay over £29,385, about £2,058 a year now, while interest adds about £2,280."
      },
      {
       "label": "What you could do",
@@ -78597,6 +78673,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 52250,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
@@ -81068,6 +81146,8 @@
     "slRepaymentRegular": 0,
     "slEarnings": 52250,
     "willClear": false,
+    "pgLoanBal": 0,
+    "pgRepayment": 0,
     "crystallisable": 0,
     "cgtSaving": 0,
     "cgtRate": 0.24,
