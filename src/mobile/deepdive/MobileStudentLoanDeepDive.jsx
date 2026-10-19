@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
-import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert } from "lucide-react";
+import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
 import { moduleAnswered, loanVerdictReady } from "../../lib/appEntry.js";
+import { hasAccess } from "../../lib/entitlement.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
@@ -73,6 +74,9 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   // Pension are answered (appEntry.js loanVerdictReady).
   const verdict = loanVerdictReady(d);
   const worthOverpaying = verdict && sl.worthOverpaying;
+  // Where the money could go instead: for subscribers (and anyone from
+  // before the paywall), or once Cash & savings and Pension are in.
+  const alternativesOpen = verdict || hasAccess() || d.unlockGate !== true;
   const surplusCash = m.surplusCash || 0;
   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
 
@@ -92,6 +96,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
   return (
     <div>
+      {!verdict && <LockedOpportunity d={d}/>}
       {worthOverpaying && (
         <>
           <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"12px"}}>
@@ -123,11 +128,9 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
       {!sl.belowThreshold && <CostComparison sl={sl} cost={cost}/>}
 
-      <FullPicture d={d}/>
-
       {pg && <PostgradLoan pg={pg} sl={sl}/>}
 
-      {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m}/>}
+      {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m} locked={!alternativesOpen}/>}
 
       {verdict && <OverpayingTile sl={sl} worthOverpaying={worthOverpaying} m={m} surplusCash={surplusCash}/>}
 
@@ -351,22 +354,34 @@ const FULL_PICTURE = [
   { key: "cash", title: "Cash & savings", gives: "your cash buffer and ISA allowance" },
   { key: "pension", title: "Pension", gives: "your pension and employer match" },
 ];
-function FullPicture({ d }) {
+// Before Cash & savings and Pension are in: the Opportunity tile, its answer
+// blurred (a stand-in figure, not theirs) under the ask for what it needs.
+function LockedOpportunity({ d }) {
   const navigate = useNavigate();
   const missing = FULL_PICTURE.filter(p => !moduleAnswered(p.key, d));
   if (!missing.length) return null;
+  const line = w => <div style={{height:"9px",width:w,borderRadius:"5px",background:OPPORTUNITY_TILE_BODY,opacity:0.35,marginTop:"8px"}}/>;
   return (
-    <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-      <div style={{fontSize:"13px",fontWeight:700,color:G}}>Is paying it off early worth it?</div>
-      <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 10px"}}>
-        That depends on {missing.map(p => p.gives).join(" and ")}. Add {missing.length > 1 ? "them" : "it"} to see.
-      </p>
-      {missing.map(p => (
-        <button key={p.key} type="button" onClick={() => navigate(`/app/module/${p.key}?from=studentLoan`)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0",cursor:"pointer",fontFamily:"inherit"}}>
-          <span style={{fontSize:"14px",fontWeight:700,color:G}}>Add {p.title}</span>
-          <ChevronRight size={17} color={G}/>
-        </button>
-      ))}
+    <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+      <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+      <div style={{position:"relative"}}>
+        <div aria-hidden="true" style={{position:"absolute",inset:0,overflow:"hidden",filter:"blur(6px)",userSelect:"none",pointerEvents:"none"}}>
+          <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>£0,000</div>
+          {line("70%")}{line("100%")}{line("90%")}{line("95%")}{line("60%")}
+        </div>
+        <div style={{position:"relative",top:"22px",background:"rgba(255,255,255,0.9)",border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginBottom:"22px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",fontWeight:700,color:G}}><Lock size={14} color={G}/>Is paying it off early worth it?</div>
+          <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 10px"}}>
+            That depends on {missing.map(p => p.gives).join(" and ")}. Add {missing.length > 1 ? "them" : "it"} to see.
+          </p>
+          {missing.map(p => (
+            <button key={p.key} type="button" onClick={() => navigate(`/app/module/${p.key}?from=studentLoan`)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0",cursor:"pointer",fontFamily:"inherit"}}>
+              <span style={{fontSize:"14px",fontWeight:700,color:G}}>Add {p.title}</span>
+              <ChevronRight size={17} color={G}/>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -637,27 +652,37 @@ const ALTERNATIVES = {
   investments: { title: "Stocks and Shares ISA", note: () => "Growth is tax-free and you can take it out any time. Can fall as well as rise." },
   cash:        { title: "Savings at the highest rate", note: () => "Safe, and there whenever you need it." },
 };
-function WhereItCouldGo({ m }) {
+function WhereItCouldGo({ m, locked }) {
   const navigate = useNavigate();
   const { monthly, years, paidIn, options } = loanAlternatives(m);
   return (
     <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.1)",borderRadius:"14px",padding:"16px 18px",margin:"0 0 16px"}}>
       <div style={{fontSize:"10px",fontWeight:800,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Where that money could go instead</div>
-      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 4px"}}>£{monthly} a month for {years} years ({fmt(paidIn)} in all) could grow to:</p>
-      {options.map((o, i) => (
-        <button key={o.key} type="button" onClick={() => navigate(`/app/module/${o.key}`)}
-          style={{width:"100%",textAlign:"left",fontFamily:"inherit",cursor:"pointer",background:"none",border:"none",borderTop:i ? "1px solid rgba(22,47,36,0.08)" : "none",padding:"12px 0",display:"flex",alignItems:"center",gap:"12px"}}>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px"}}>
-              <span style={{fontSize:"14px",fontWeight:700,color:TEXT}}>{ALTERNATIVES[o.key].title}</span>
-              <span style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:G}}>{fmt(o.total)}</span>
-            </div>
-            <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>{ALTERNATIVES[o.key].note(m.tr || 0)}</div>
+      <div style={{position:"relative"}}>
+        <div aria-hidden={locked || undefined} inert={locked ? "" : undefined} style={locked ? {filter:"blur(6px)",userSelect:"none",pointerEvents:"none"} : undefined}>
+          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 4px"}}>£{monthly} a month for {years} years ({fmt(paidIn)} in all) could grow to:</p>
+          {options.map((o, i) => (
+            <button key={o.key} type="button" onClick={() => navigate(`/app/module/${o.key}`)}
+              style={{width:"100%",textAlign:"left",fontFamily:"inherit",cursor:"pointer",background:"none",border:"none",borderTop:i ? "1px solid rgba(22,47,36,0.08)" : "none",padding:"12px 0",display:"flex",alignItems:"center",gap:"12px"}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px"}}>
+                  <span style={{fontSize:"14px",fontWeight:700,color:TEXT}}>{ALTERNATIVES[o.key].title}</span>
+                  <span style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:G}}>{fmt(o.total)}</span>
+                </div>
+                <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>{ALTERNATIVES[o.key].note(m.tr || 0)}</div>
+              </div>
+              <ChevronRight size={16} color={MUT} style={{flexShrink:0}}/>
+            </button>
+          ))}
+          <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>Investments growing 6% a year and savings at today's best rate. Not including anything an employer adds to a pension.</p>
+        </div>
+        {locked && (
+          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"8px",textAlign:"center",padding:"0 12px"}}>
+            <span style={{width:"40px",height:"40px",borderRadius:"50%",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><Lock size={18} color={G}/></span>
+            <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"240px"}}>Opens with Cash & savings and Pension, or a subscription</span>
           </div>
-          <ChevronRight size={16} color={MUT} style={{flexShrink:0}}/>
-        </button>
-      ))}
-      <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>Investments growing 6% a year and savings at today's best rate. Not including anything an employer adds to a pension.</p>
+        )}
+      </div>
     </div>
   );
 }
