@@ -291,7 +291,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const pg = pgScenario(d, m);
   // Heading for write-off, a lump sum from spare cash that clears it and
   // comes out ahead counting savings interest: a year on average to clearing.
-  // The verdict only once their savings are in (appEntry.js).
+  // The verdict only once their savings and pension match are in (appEntry.js).
   const verdict = loanVerdictReady(d);
   const lump = verdict && !sl.willClear ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
   const lumpAmount = lump ? Math.round(lump.saving / Math.max(1, lump.clearYr)) : 0;

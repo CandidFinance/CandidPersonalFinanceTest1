@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock, Clock } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
-import { moduleAnswered, loanVerdictReady, loanPensionChecked } from "../../lib/appEntry.js";
+import { moduleAnswered, loanVerdictReady, loanPensionChecked, loanSavingsIn, hasEmployerMatch } from "../../lib/appEntry.js";
 import { hasAccess } from "../../lib/entitlement.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
@@ -15,9 +15,6 @@ import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { ExploreToggle } from "../ModuleScreenParts.jsx";
 import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CDARK, CRITICAL, SUCCESS } from "../../design-tokens.js";
-
-// Only the employed have an employer's pension match to check.
-const hasEmployerMatch = d => d.employmentStatus !== "self_employed" && d.employmentStatus !== "not_working";
 
 // £ in thousands, to one place under £100k: £18.5k, £3.9k, £15k, £120k.
 const k = n => { const v = Math.abs(Math.round(n || 0)); return v >= 100000 ? `£${Math.round(v / 1000)}k` : v >= 1000 ? `£${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : fmt(v); };
@@ -114,6 +111,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
           <SpareCheck d={d} m={m} amount={cost.balance}/>
         </>
       )}
+      {verdict && !worthOverpaying && !lump && !sl.belowThreshold && <NoGain sl={sl}/>}
       {lump && (
         <>
           <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"12px"}}>
@@ -359,11 +357,16 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
 // savings' short route (moduleGuide.js briefQuestions) and back.
 function LockedOpportunity({ d }) {
   const navigate = useNavigate();
-  const spendingKnown = +d.monthlyExpenses > 0;
-  const askPension = hasEmployerMatch(d) && !loanPensionChecked(d);
-  const add = (to, label) => (
-    <button type="button" onClick={() => navigate(to)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"11px 0",cursor:"pointer",fontFamily:"inherit"}}>
-      <span style={{fontSize:"14px",fontWeight:700,color:G}}>{label}</span>
+  // Each detail: a link until it's added, then a tick.
+  const row = { width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", background:"none", border:"none", borderTop:"1px solid rgba(22,47,36,0.08)", padding:"11px 0", fontFamily:"inherit" };
+  const step = (done, to, label) => done ? (
+    <div style={row}>
+      <span style={{fontSize:"14px",fontWeight:700,color:MUT}}>{label}</span>
+      <Check size={17} color={SUCCESS} strokeWidth={3}/>
+    </div>
+  ) : (
+    <button type="button" onClick={() => navigate(to)} style={{...row,cursor:"pointer"}}>
+      <span style={{fontSize:"14px",fontWeight:700,color:G}}>Add {label}</span>
       <ChevronRight size={17} color={G}/>
     </button>
   );
@@ -379,12 +382,30 @@ function LockedOpportunity({ d }) {
         <div style={{position:"relative",marginTop:"4px",background:"rgba(255,255,255,0.45)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.7)",boxShadow:"0 1px 12px rgba(22,47,36,0.06)",borderRadius:"12px",padding:"14px 16px 4px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",fontWeight:700,color:G}}><Clock size={14} color={G}/>Is paying it off early worth it?</div>
           <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 10px"}}>
-            You're most of the way there. Adding your savings{spendingKnown ? "" : " and spending"}{askPension ? " and your pension" : ""} will help you understand the trade-offs: what that money earns where it is, how much is spare above a safety buffer{askPension ? ", and whether your employer's pension match comes first" : ""}.
+            You're most of the way there. Adding a few more details will help you understand the trade-offs and determine if paying off early is right for you.
           </p>
-          {add("/app/module/cash?from=studentLoan", "Add your savings")}
-          {askPension && add("/app/module/pension?from=studentLoan", "Add your pension")}
+          {step(loanSavingsIn(d), "/app/module/cash?from=studentLoan", "Cash & savings")}
+          {hasEmployerMatch(d) && step(loanPensionChecked(d), "/app/module/pension?from=studentLoan", "Pension")}
         </div>
       </div>
+    </div>
+  );
+}
+
+// The verdict when paying it off early doesn't come out ahead: still the
+// Opportunity tile, so the answer sits where it was asked for.
+function NoGain({ sl }) {
+  const why = !sl.willClear
+    ? `It's expected to be written off in April ${sl.writeOffTaxYear}, so overpaying would mostly shrink what's written off, not what you pay.`
+    : sl.effectiveBenefit <= 0
+      ? `Your savings at ${sl.cashRate}% earn ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} the loan's ${sl.lifeRatePct}% average rate.`
+      : `Your pension's assumed ${sl.pensionGrowthPct}% growth beats the loan's ${sl.lifeRatePct}% average rate.`;
+  return (
+    <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+      <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+      <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>No gain</div>
+      <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>from paying it off early, on your figures</div>
+      <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.55,marginTop:"10px"}}>{why}</div>
     </div>
   );
 }
@@ -578,7 +599,7 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
     <>
       {sl.willClear && (
         <MobileWinTile
-          title={worthOverpaying ? "Overpaying your student loan" : "Is overpaying worth it?"}
+          title={worthOverpaying ? "Overpaying your student loan" : "Why overpaying doesn't come out ahead"}
           headline={worthOverpaying
             ? `${fmt(sl.overpayTotalBenefit)} ahead in all: the loan's ${sl.lifeRatePct}% beats savings and your pension`
             : sl.effectiveBenefit < 0
@@ -586,7 +607,7 @@ function OverpayingTile({ sl, worthOverpaying, m, surplusCash }) {
               : sl.effectiveBenefit === 0
                 ? `The highest savings rate (${sl.cashRate}%) matches your loan's ${sl.lifeRatePct}% average rate, so overpaying doesn't come out ahead`
               : `Your pension's ${sl.pensionGrowthPct}% assumed growth beats your loan's ${sl.lifeRatePct}% average rate`}
-          tagLabel={worthOverpaying ? "Today" : "No gain"} tagColor={worthOverpaying ? GOLD : MUT}>
+          tagLabel={worthOverpaying ? "Today" : null} tagColor={worthOverpaying ? GOLD : MUT}>
           {sl.balanceGrowing && (
             <div style={{background:"rgba(192,57,43,0.05)",border:"1.5px solid rgba(192,57,43,0.22)",borderRadius:"10px",padding:"12px 14px",marginBottom:"10px"}}>
               <div style={{fontSize:"11px",fontWeight:700,color:CRITICAL,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Why your balance is growing</div>

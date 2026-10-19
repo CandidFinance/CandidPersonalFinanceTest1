@@ -394,7 +394,7 @@ export function studentLoanReveal(d, m) {
 }
 function studentLoanSteps(d, m) {
   const sl = calcStudentLoanScenario(d, m);
-  // The overpaying verdict needs their savings (appEntry.js).
+  // The overpaying verdict needs their savings and pension match (appEntry.js).
   const verdict = loanVerdictReady(d);
   const repayPct = `${Math.round((SL_REPAYMENT_RATES[d.studentLoan] ?? 0.09) * 100)}%`;
   const nothing = { label: ACTION, title: "Nothing to change right now.", body: "Repayments come out of your pay automatically." };
@@ -429,9 +429,9 @@ function studentLoanSteps(d, m) {
   // and a lump sum from their spare cash, if one clears it and comes out
   // ahead counting savings interest (studentLoan.js bestLumpSum).
   const lump = verdict && !sl.willClear ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
-  // Until their savings are in: what would tell them whether paying it off
-  // early is worth it.
-  const needVerdict = { label: ACTION, title: "Whether paying it off early comes out ahead depends on your savings.", body: "Adding your savings on the page shows it." };
+  // Until their savings and pension match are in: what would tell them
+  // whether paying it off early is worth it.
+  const needVerdict = { label: ACTION, title: "Whether paying it off early comes out ahead needs a few more details.", body: "Adding them on the page shows it." };
   if (!sl.willClear) {
     return [
       { label: ANSWER, figure: fmt(sl.totalRepaidProjected), title: `you're expected to repay in all, before about ${fmt(sl.writeOffBal)} is written off in April ${sl.writeOffTaxYear}.`, ...turning },
@@ -440,7 +440,7 @@ function studentLoanSteps(d, m) {
         ? { label: ACTION, title: `Paying ${fmt(lump.amount)} now would clear it in ${years(lump.clearYr)}, and cost about ${fmt(lump.saving)} less in all, counting what the money would earn in savings.`,
             body: "Smaller sums would mostly shrink what's written off. The page shows how your cash buffer, ISA allowance and pension match stand." }
         : verdict ? { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "On these assumptions, savings or a pension may earn more than overpaying." }
-        : { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "Adding your savings shows what the money could do instead." },
+        : { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "Adding a few more details on the page shows what the money could do instead." },
     ];
   }
   // Clears by itself: what it'll cost in all, against what's owed today.

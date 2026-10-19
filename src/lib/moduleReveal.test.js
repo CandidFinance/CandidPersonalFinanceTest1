@@ -156,8 +156,8 @@ test("student loan: none means nothing to explain; otherwise the screen's own sc
   assert.equal(steps[0].figure, `£${p1.totalRepaidProjected.toLocaleString("en-GB")}`);
   assert.equal(steps[0].title, "you're expected to repay in all, clearing it in 3 years.");
   assert.match(steps[0].body, /^That's £[\d,]+ of interest on top of the £8,000 you owe today\./);
-  // Without their savings, no verdict: what would give one.
-  assert.match(steps[2].title, /depends on your savings\./);
+  // Without their savings and pension match, no verdict: what would give one.
+  assert.match(steps[2].title, /needs a few more details/);
 });
 
 // Retired, with a pot and no salary: not a gap, and the answer is the
@@ -235,16 +235,20 @@ test("planning a child: what they could get once it arrives, not counted as mone
   assert.match(over.steps[2].title, /^A pension payment of £4,500/);
 });
 
-test("student loan: a loan worth paying off gives its cost, then the verdict once their savings are in", () => {
+test("student loan: a loan worth paying off gives its cost, then the verdict once their savings and pension match are in", () => {
   // A small Plan 2 loan on a high salary: it clears by itself and paying it
-  // off comes out ahead, but only once their savings are known.
+  // off comes out ahead, but only once their savings and match are known.
   const d = { selectedModules: ["studentLoan"], answeredModules: ["studentLoan"], salary: "70000", studentLoan: "plan2", loanBalance: "18500", studentLoanRate: "6.4" };
   const before = run(d, studentLoanReveal).steps;
-  assert.match(before[2].title, /depends on your savings\./);
-  // Cash & savings answered, or only its savings question on the short route.
-  const all = ["studentLoan", "cash"];
-  for (const answered of [{ selectedModules: all, answeredModules: all }, { askedFields: ["cashTiers"] }]) {
+  assert.match(before[2].title, /needs a few more details/);
+  // Savings alone isn't enough for someone employed: the match comes first.
+  assert.match(run({ ...d, askedFields: ["cashTiers"] }, studentLoanReveal).steps[2].title, /needs a few more details/);
+  // Both modules answered, or only their questions on the short route.
+  const all = ["studentLoan", "cash", "pension"];
+  for (const answered of [{ selectedModules: all, answeredModules: all }, { askedFields: ["cashTiers", "pensionStatus"] }]) {
     const after = run({ ...d, ...answered }, studentLoanReveal).steps;
-    assert.doesNotMatch(after[2].title, /depends on your savings/);
+    assert.doesNotMatch(after[2].title, /needs a few more details/);
   }
+  // Self-employed: no match to check, so savings alone.
+  assert.doesNotMatch(run({ ...d, employmentStatus: "self_employed", askedFields: ["cashTiers"] }, studentLoanReveal).steps[2].title, /needs a few more details/);
 });

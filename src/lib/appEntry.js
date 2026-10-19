@@ -196,17 +196,19 @@ export function moduleAnswered(key, d) {
   return (d.selectedModules || []).includes(key) && (!Array.isArray(d.answeredModules) || d.answeredModules.includes(key));
 }
 // Whether paying a student loan off early comes out ahead depends on their
-// savings (what they earn, and what's spare above a buffer): until Cash &
-// savings is answered, or its savings question on the short route from
-// Student loan (moduleGuide.js briefQuestions), the Student loan module
-// gives what the loan itself costs, not that verdict.
-export function loanVerdictReady(d) {
-  return moduleAnswered("cash", d) || (d.askedFields || []).includes("cashTiers");
-}
-// Whether their employer's pension match has been checked: Pension
-// answered, or its questions on the short route.
+// savings (what they earn, and what's spare above a buffer) and, for the
+// employed, their employer's pension match, which beats any overpayment.
+// Until both are in (each module answered, or its questions on the short
+// route from Student loan: moduleGuide.js briefQuestions), the Student loan
+// module gives what the loan itself costs, not that verdict.
+export const loanSavingsIn = d => moduleAnswered("cash", d) || (d.askedFields || []).includes("cashTiers");
 export function loanPensionChecked(d) {
   return moduleAnswered("pension", d) || (d.askedFields || []).includes("pensionStatus");
+}
+// Only the employed have an employer's pension match to check.
+export const hasEmployerMatch = d => d.employmentStatus !== "self_employed" && d.employmentStatus !== "not_working";
+export function loanVerdictReady(d) {
+  return loanSavingsIn(d) && (!hasEmployerMatch(d) || loanPensionChecked(d));
 }
 export const withAnswered = (d, key) => ({ answeredModules: [...new Set([...(d.answeredModules || []), key])] });
 
