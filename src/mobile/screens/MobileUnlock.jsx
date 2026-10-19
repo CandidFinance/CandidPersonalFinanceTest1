@@ -190,15 +190,8 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
   return (
     <div>
       <Worth title={title} amount={amount} label={label} compare={compare} lumpSum={lumpSum}/>
-      <div style={{fontSize:"14px",color:TEXT,lineHeight:1.45,marginTop:"12px"}}>Your first answer was free. A subscription adds:</div>
-      <ul style={{listStyle:"none",padding:0,margin:"8px 0 0",display:"flex",flexDirection:"column",gap:"6px"}}>
-        {SUBSCRIPTION_ADDS.map(t => (
-          <li key={t} style={{display:"flex",gap:"8px",alignItems:"flex-start",fontSize:"13.5px",color:TEXT,lineHeight:1.4}}>
-            <Check size={15} color={GOLD} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/>{t}
-          </li>
-        ))}
-      </ul>
-      <div style={{display:"flex",gap:"10px",margin:"14px 0 12px"}}>
+      <div style={{fontSize:"14px",color:TEXT,lineHeight:1.45,marginTop:"12px"}}>Your first answer was free. Subscribe for every module.</div>
+      <div style={{display:"flex",gap:"10px",margin:"16px 0 12px"}}>
         {Object.entries(PLANS).map(([key, p]) => (
           <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>
             {key === "yearly" && ANNUAL_SAVING_PCT > 0 && (
@@ -213,15 +206,32 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
           </button>
         ))}
       </div>
-      <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"0 0 10px",textAlign:"center"}}>
-        Candid is guidance, not financial advice. It works out what your options are worth, and won't tell you which product to choose. <a href="/what-candid-is" target="_blank" rel="noreferrer" style={{color:TEXT}}>What Candid is and isn't</a>
-      </p>
       <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
         {busy && !panel ? "Opening checkout…" : "Subscribe and unlock everything"}
       </button>
       {error && !panel && <div style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
       <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
         Cancel any time, and get a full refund within 14 days of first subscribing. Payments by Stripe. By subscribing you agree to our <a href="/terms.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>.
+      </p>
+
+      {/* What's included today, then what's being built: kept apart, so
+          nothing not yet built reads as part of what they're paying for. */}
+      <div style={{borderTop:"1px solid rgba(22,47,36,0.1)",marginTop:"18px",paddingTop:"16px"}}>
+        <div style={listHead}>What's included</div>
+        <ul style={listStyle}>
+          {INCLUDED.map(t => (
+            <li key={t} style={{...itemStyle,color:TEXT}}><Check size={15} color={GOLD} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/>{t}</li>
+          ))}
+        </ul>
+        <div style={{...listHead,marginTop:"16px"}}>Coming soon</div>
+        <ul style={listStyle}>
+          {COMING_SOON.map(t => (
+            <li key={t} style={{...itemStyle,color:MUT}}><span aria-hidden="true" style={{width:"5px",height:"5px",borderRadius:"50%",background:"rgba(22,47,36,0.3)",flexShrink:0,margin:"7px 5px 0"}}/>{t}</li>
+          ))}
+        </ul>
+      </div>
+      <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"16px 0 0",textAlign:"center"}}>
+        Candid is guidance, not financial advice. It works out what your options are worth, and won't tell you which product to choose. <a href="/what-candid-is" target="_blank" rel="noreferrer" style={{color:MUT}}>What Candid is and isn't</a>
       </p>
 
       <div style={{display:"flex",justifyContent:"center",gap:"18px",marginTop:"16px"}}>
@@ -254,20 +264,30 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
   );
 }
 
-// What a subscription adds, beyond the free first answer. Only what's there
-// today: the gated modules (unlock.js SCORED_MODULES) and Assist on them,
-// the daily rates feed (api/rates.js), and sign-in on other devices
+// What a subscription includes, beyond the free first answer: only what's
+// there today. The gated modules (unlock.js SCORED_MODULES) and Assist on
+// them; the emails (api/alerts.js), once they're being sent, the same
+// setting that turns sending on; and sign-in on other devices
 // (SignInSetup.jsx), which is for subscribers.
-// The emails (api/alerts.js) join it once they're being sent, the same
-// setting that turns sending on.
 const ALERTS_LIVE = import.meta.env.VITE_ALERTS_LIVE === "1";
-const SUBSCRIPTION_ADDS = [
-  "Every module's answer: pension, cash, investments and student loan",
-  "Candid Assist's answers on all of them",
-  ALERTS_LIVE ? "Emails before 5 April, before your bonus and when a better savings rate appears, on your figures" : null,
-  "Figures that move with savings rates, checked every day",
-  "Sign in on your other devices, with Face ID or a password",
+const INCLUDED = [
+  "Full breakdowns and explanations in every module: pension, cash, investments and student loan",
+  "Candid Assist in every module, for questions about your figures",
+  ALERTS_LIVE ? "Emails when something changes in your favour: a better savings rate, the 5 April deadline, your bonus, a new tax year" : null,
+  "Sign in on all your devices, with Face ID, a fingerprint or a password",
 ].filter(Boolean);
+// Being built, with no dates promised. Something moves up to INCLUDED only
+// once it's live for subscribers.
+const COMING_SOON = [
+  "Candid Assist sorting the admin of opening and switching accounts and ISAs",
+  "Open banking: link your accounts to see all your money in one place, and where it could work harder",
+  "A savings review: what you could afford to save or invest towards your goals",
+  "More alerts: tax changes that affect you, an approaching tax trap, opportunities you're missing",
+  "New modules first: partner's finances, children's finances, mortgages and inheritance",
+];
+const listHead = { fontSize:"10.5px", fontWeight:700, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
+const listStyle = { listStyle:"none", padding:0, margin:"10px 0 0", display:"flex", flexDirection:"column", gap:"8px" };
+const itemStyle = { display:"flex", gap:"8px", alignItems:"flex-start", fontSize:"13.5px", lineHeight:1.4 };
 
 // What this module is worth against what Candid costs a year: "3x" rounded
 // down, so it never overstates; "more than" under 2x. Lump sums (by 18) and
