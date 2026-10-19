@@ -327,9 +327,15 @@ export function describeLoanVsPension(sl) {
 // back here would create a lib-to-lib circular import.
 export function calcOverpaymentScenarios(m, sl, amounts = [5000, 10000, 20000]) {
   const { writeOffYr, slInterestRate, annualRep, balanceGrowing, schedule = [] } = sl;
+  // Every payment valued as of today, at the savings rate the module
+  // compares against: a pound repaid in ten years' time costs less than one
+  // paid now, since the money could earn interest meanwhile. So a lump sum
+  // only "saves" if it beats keeping the money in savings.
+  const disc = 1 + (sl.cashRate || 0) / 100;
   function projectLoan(extraOneOff) {
     let bal = Math.max(0, m.loanBal - extraOneOff);
     let totalPaid = extraOneOff;
+    let paidToday = extraOneOff;
     let clearYr = bal <= 0 ? 0 : null;
     let writeOffBal = 0;
     // The balance at the end of each year, year 0 being just after the lump
@@ -347,6 +353,7 @@ export function calcOverpaymentScenarios(m, sl, amounts = [5000, 10000, 20000]) 
       const payment = Math.min(repayment, bal);
       bal -= payment;
       totalPaid += payment;
+      paidToday += payment / Math.pow(disc, yr);
       path.push({ yr, bal: Math.round(Math.max(0, bal)) });
       if (bal <= 0 && !clearYr) { clearYr = yr; break; }
       if (yr === writeOffYr) { writeOffBal = Math.max(0, bal); }
@@ -354,12 +361,49 @@ export function calcOverpaymentScenarios(m, sl, amounts = [5000, 10000, 20000]) 
     const newInterestYr1 = Math.round(Math.max(0, m.loanBal - extraOneOff) * slInterestRate);
     const newNetChange = newInterestYr1 - annualRep;
     const crossesInflection = !clearYr && newNetChange <= 0 && balanceGrowing;
-    return { clearYr, writeOffBal: Math.round(writeOffBal), totalPaid: Math.round(totalPaid), newNetChange, crossesInflection, path };
+    return { clearYr, writeOffBal: Math.round(writeOffBal), totalPaid: Math.round(totalPaid), paidToday: Math.round(paidToday), newNetChange, crossesInflection, path };
   }
   const overpayAmounts = amounts.filter(x => x > 0 && x <= m.loanBal);
   const scenarios = overpayAmounts.map(amt => ({ amt, ...projectLoan(amt) }));
   const baseProjection = projectLoan(0);
   return { scenarios, baseProjection };
+}
+
+// ── A loan heading for write-off, and a lump sum that changes that: paying
+// enough now can bring the balance below the point where repayments
+// overtake the interest, and with pay rising, clear it before the
+// write-off. Smaller sums only shrink what's written off, and cost more.
+// Of lump sums up to `cap` (their spare cash), in £1,000 steps, the one that
+// costs least in all, valued as of today at the savings rate (projectLoan
+// paidToday), so it beats keeping the money in savings; null if none does.
+// `clearsFrom`: the smallest lump sum that clears it before write-off.
+export function bestLumpSum(m, sl, cap) {
+  if (sl.willClear || sl.belowThreshold || !(cap >= 1000)) return null;
+  const top = Math.min(Math.floor(cap / 1000) * 1000, Math.ceil(m.loanBal / 1000) * 1000);
+  const amounts = [];
+  for (let a = 1000; a <= top; a += 1000) amounts.push(Math.min(a, Math.round(m.loanBal)));
+  const { scenarios, baseProjection } = calcOverpaymentScenarios(m, sl, amounts);
+  const clearing = scenarios.filter(s => s.clearYr != null);
+  if (!clearing.length) return null;
+  const best = clearing.reduce((b, s) => (!b || s.paidToday < b.paidToday ? s : b), null);
+  const saving = baseProjection.paidToday - best.paidToday;
+  if (!(saving > 0)) return null;
+  return {
+    amount: best.amt, clearYr: best.clearYr, saving: Math.round(saving),
+    nominalSaving: baseProjection.totalPaid - best.totalPaid,
+    clearsFrom: clearing[0].amt, path: best.path,
+  };
+}
+
+// The smallest lump sum, in £1,000 steps, that clears a loan heading for
+// write-off before it's written off; null if it clears anyway, or nothing
+// short of the whole balance does.
+export function lumpToClear(m, sl) {
+  if (sl.willClear || sl.belowThreshold || !(m.loanBal > 1000)) return null;
+  const amounts = [];
+  for (let a = 1000; a < m.loanBal; a += 1000) amounts.push(a);
+  const first = calcOverpaymentScenarios(m, sl, amounts).scenarios.find(s => s.clearYr != null && s.clearYr > 0);
+  return first ? first.amt : null;
 }
 
 // ── What the loan costs: left to clear (or be written off) by itself,

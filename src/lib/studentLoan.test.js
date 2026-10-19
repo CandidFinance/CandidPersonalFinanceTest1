@@ -191,3 +191,31 @@ test("what the loan costs left to clear, against paying it off today; and a lump
   assert.ok(gc.writtenOff > 0);
   assert.ok(gc.payNowSaves < 0);
 });
+
+test("a loan heading for write-off: the lump sum that clears it and comes out ahead, counting savings interest", async () => {
+  const { bestLumpSum, calcOverpaymentScenarios } = await import("./studentLoan.js");
+  // £60k on £62k, pay rising with prices: written off as it is.
+  const d = { studentLoan: "plan2", salary: "62000", age: "30", loanBalance: "60000", salaryTrajectory: "stable", inputsTaxYear: 2026 };
+  const m = calcMetrics(d);
+  const sl = calcStudentLoanScenario(d, m);
+  assert.equal(sl.willClear, false);
+  // At today's best savings rate (about 5.1%), kept in savings the money
+  // earns as much as the loan charges, so no lump sum comes out ahead.
+  assert.equal(bestLumpSum(m, sl, 50000), null);
+  // With savings earning about inflation (2%) over the long run, a big
+  // enough one does.
+  const best = bestLumpSum(m, { ...sl, cashRate: 2 }, 50000);
+  assert.ok(best, "a lump sum within £50k comes out ahead at 2%");
+  assert.ok(best.clearYr > 0 && best.saving > 0);
+  // Small sums only shrink the write-off: they cost more.
+  const small = calcOverpaymentScenarios(m, sl, [5000]);
+  assert.equal(small.scenarios[0].clearYr, null);
+  assert.ok(small.scenarios[0].totalPaid > small.baseProjection.totalPaid);
+  assert.ok(best.clearsFrom > 5000 && best.clearsFrom <= best.amount);
+  // Not enough spare cash to get there: nothing to suggest.
+  assert.equal(bestLumpSum(m, { ...sl, cashRate: 2 }, 5000), null);
+  // A loan that clears anyway is the overpaying answer's, not this one's.
+  const clears = { ...d, salary: "90000", loanBalance: "30000" };
+  const cm = calcMetrics(clears);
+  assert.equal(bestLumpSum(cm, calcStudentLoanScenario(clears, cm), 50000), null);
+});

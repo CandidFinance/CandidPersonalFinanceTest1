@@ -3,7 +3,7 @@ import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
 import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert } from "lucide-react";
-import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
+import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS } from "../../lib/studentLoan.js";
 import { moduleAnswered } from "../../lib/appEntry.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
@@ -73,10 +73,16 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   const surplusCash = m.surplusCash || 0;
   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
 
-  const overpayOptions = buildOverpayOptions(m.loanBal);
+  const overpayOptionsBase = buildOverpayOptions(m.loanBal);
   const { scenarios, baseProjection } = calcOverpaymentScenarios(m, sl, [overpayAmt]);
   const selectedScenario = scenarios[0];
   const cost = loanCostComparison(m, sl);
+  // Heading for write-off: the smallest lump sum that clears it, and the
+  // best one from spare cash if it comes out ahead counting savings interest.
+  const tip = lumpToClear(m, sl);
+  const lump = bestLumpSum(m, sl, m.surplusCash || 0);
+  // The tipping point is one of the lump sums offered.
+  const overpayOptions = tip ? [...new Set([...overpayOptionsBase, tip])].sort((x, y) => x - y) : overpayOptionsBase;
 
 
 
@@ -96,8 +102,21 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
           <SpareCheck d={d} m={m} amount={cost.balance}/>
         </>
       )}
+      {lump && (
+        <>
+          <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"12px"}}>
+            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+            <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(lump.saving)}</div>
+            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Ahead by paying {k(lump.amount)} off now, in today's money</div>
+            <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.55,marginTop:"10px"}}>
+              Written off without action. Paying {k(lump.amount)} now clears it in {lump.clearYr}yrs, counting what the money would earn in savings.
+            </div>
+          </div>
+          <SpareCheck d={d} m={m} amount={lump.amount}/>
+        </>
+      )}
 
-      <LoanTrajectory d={d} m={m} savingsRates={savingsRates} ageKnown={+d.age > 0} setOverpayAmt={setOverpayAmt} overpayOptions={overpayOptions} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
+      <LoanTrajectory d={d} m={m} tip={tip} savingsRates={savingsRates} ageKnown={+d.age > 0} setOverpayAmt={setOverpayAmt} overpayOptions={overpayOptions} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
 
       {!sl.belowThreshold && <CostComparison sl={sl} cost={cost}/>}
 
@@ -118,7 +137,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
 // Your loan trajectory: when the balance starts falling, and the balance
 // year by year to when it clears or is written off.
-function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOptions, selectedScenario, baseProjection, worthOverpaying, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
+function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, overpayOptions, selectedScenario, baseProjection, worthOverpaying, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
   const stats = [
     { label:"Annual interest", value:`${fmt(sl.annualInterest)}/yr` },
     { label:"Annual repayments", value:`${fmt(sl.annualRep)}/yr` },
@@ -155,7 +174,7 @@ function LoanTrajectory({ d, m, savingsRates, ageKnown, setOverpayAmt, overpayOp
           <BalanceChart sl={sl} width={balanceChartWidth} alt={selectedScenario?.path} altLabel={overpayAmt > 0 ? `With ${fmt(overpayAmt)} paid now` : null}/>
         </div>
         {overpayOptions.length > 0 && !sl.belowThreshold && (
-          <LumpSum m={m} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} options={overpayOptions} scenario={selectedScenario} base={baseProjection} worthOverpaying={worthOverpaying}/>
+          <LumpSum m={m} sl={sl} tip={tip} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} options={overpayOptions} scenario={selectedScenario} base={baseProjection} worthOverpaying={worthOverpaying}/>
         )}
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"12px"}}>
@@ -269,7 +288,12 @@ function PostgradLoan({ pg, sl }) {
 // when it would clear, and what it saves (or costs) in all against letting
 // it run. Paying on the Student Loans Company's site, where it comes out
 // ahead and there's cash to spare.
-function LumpSum({ m, overpayAmt, setOverpayAmt, options, scenario, base, worthOverpaying }) {
+// Heading for write-off (`tip`, the smallest lump sum that clears it):
+// below it a lump sum mostly shrinks what's written off; from it, it clears,
+// and what that's worth is given in today's money too, counting what the
+// money would earn in savings, since in plain pounds it can look better
+// than it is.
+function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, base, worthOverpaying }) {
   const full = Math.round(m.loanBal);
   const saved = scenario ? base.totalPaid - scenario.totalPaid : 0;
   const stat = (label, value) => (
@@ -282,6 +306,9 @@ function LumpSum({ m, overpayAmt, setOverpayAmt, options, scenario, base, worthO
     <div style={{marginBottom:"14px"}}>
       <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Lump sum repayment</div>
       <PillSlider value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>
+      {!scenario && tip && (
+        <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>Under {k(tip)} it mostly shrinks what's written off. From {k(tip)} it clears before write-off.</p>
+      )}
       {scenario && (
         <>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginTop:"12px"}}>
@@ -290,7 +317,12 @@ function LumpSum({ m, overpayAmt, setOverpayAmt, options, scenario, base, worthO
             {stat("You'd pay in all", fmt(scenario.totalPaid))}
           </div>
           <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
-            Against {base.clearYr ? `clearing in ${base.clearYr} yrs` : `${fmt(base.writeOffBal)} written off`} and {fmt(base.totalPaid)} paid in all, as it is.{saved < 0 ? " It would mostly shrink what's written off." : ""}
+            Against {base.clearYr ? `clearing in ${base.clearYr} yrs` : `${fmt(base.writeOffBal)} written off`} and {fmt(base.totalPaid)} paid in all, as it is.{saved < 0 && !scenario.clearYr ? " It would mostly shrink what's written off." : ""}
+            {!base.clearYr && scenario.clearYr > 0 && (() => {
+              const diff = scenario.paidToday - base.paidToday;
+              return ` In today's money, counting what the ${k(overpayAmt)} would earn in savings at ${sl.cashRate}%, it costs ${k(Math.abs(diff))} ${diff < 0 ? "less" : "more"}.`;
+            })()}
+            {!base.clearYr && !scenario.clearYr && tip ? ` From ${k(tip)} it clears before write-off instead.` : ""}
           </p>
           {worthOverpaying && (m.surplusCash || 0) > 0 && (
             <a href="https://www.gov.uk/sign-in-to-manage-your-student-loan-balance" target="_blank" rel="noopener noreferrer" style={{
@@ -348,27 +380,29 @@ function SpareCheck({ d, m, amount }) {
   const items = [];
   if (m.expenses > 0) {
     items.push((m.surplusCash || 0) >= amount
-      ? { ok: true, text: "Cash runway is good" }
-      : { ok: false, text: `Leaves under ${m.bufferMonths} months' cash` });
-  } else items.push({ ok: null, text: "Cash runway not checked yet" });
+      ? { ok: true, text: "Cash runway is good", long: `Paying it off would still leave ${m.bufferMonths} months of spending in cash, so your cash runway isn't affected.` }
+      : { ok: false, text: `Leaves under ${m.bufferMonths} months' cash`, long: `Paying it off would leave ${fmt(Math.max(0, Math.round(m.emergencyFund - amount)))} in cash, under ${m.bufferMonths} months of spending (${fmt(Math.round(m.emergencyBuffer))}), cutting your cash runway.` });
+  } else items.push({ ok: null, text: "Cash runway not checked yet", long: "Your spending isn't in yet, so whether paying it off would cut your cash runway can't be checked (Cash & savings)." });
   if (moduleAnswered("cash", d) || moduleAnswered("investments", d)) {
     items.push(m.isaHeadroom > 0
-      ? { ok: false, text: `${k(m.isaHeadroom)} of ISA allowance remaining` }
-      : { ok: true, text: "ISA allowance used" });
+      ? { ok: false, text: `${k(m.isaHeadroom)} of ISA allowance remaining`, long: `${k(m.isaHeadroom)} of this year's ISA allowance is unused. Growth in an ISA is tax-free, and the allowance is use it or lose it on 5 April; the loan isn't.` }
+      : { ok: true, text: "ISA allowance used", long: "This year's ISA allowance is used, so there's no tax-free allowance this money would miss." });
   }
   if (d.hasPension === "yes" && d.employmentStatus === "employed") {
     items.push(m.missedMatch > 0
-      ? { ok: false, text: `${k(m.missedMatch)}/yr of employer match unclaimed` }
-      : { ok: true, text: "Employer's full match" });
+      ? { ok: false, text: `${k(m.missedMatch)}/yr of employer match unclaimed`, long: `${fmt(Math.round(m.missedMatch))} a year of your employer's pension match is unclaimed. Every £1 paid in up to the match gets another £1 from them, plus tax relief: more than overpaying returns.` }
+      : { ok: true, text: "Employer's full match", long: "You get your employer's full pension match, so overpaying doesn't miss any money they'd add." });
   }
   return (
     <div style={{padding:"4px 2px 0",marginBottom:"16px"}}>
+      {/* Short lines on a phone; the full point on a desktop, where there's room. */}
+      <style>{`.spare-long { display: none; } @media (min-width: 1000px) { .spare-short { display: none; } .spare-long { display: inline; } }`}</style>
       <div style={{fontSize:"13px",fontWeight:700,color:G}}>Is the money spare?</div>
       <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 8px"}}>Paying it off uses {k(amount)}</div>
       {items.map(it => (
         <div key={it.text} style={{display:"flex",gap:"8px",alignItems:"flex-start",fontSize:"13px",color:TEXT,lineHeight:1.45,padding:"4px 0"}}>
           {it.ok ? <Check size={15} color={SUCCESS} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/> : <CircleAlert size={15} color={it.ok === false ? GOLD : MUT} style={{flexShrink:0,marginTop:"2px"}}/>}
-          <span>{it.text}</span>
+          <span><span className="spare-short">{it.text}</span><span className="spare-long">{it.long}</span></span>
         </div>
       ))}
     </div>

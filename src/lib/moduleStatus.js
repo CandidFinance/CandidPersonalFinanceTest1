@@ -9,7 +9,7 @@ import { cashOpportunity } from "./assist.js";
 import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, childBenefitCharge } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { isaFillable as isaFillableBy } from "./metrics.js";
-import { calcStudentLoanScenario , pgScenario } from "./studentLoan.js";
+import { calcStudentLoanScenario , pgScenario, bestLumpSum } from "./studentLoan.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
 
 // What a mortgage rate is measured against, in order: a rate the user has
@@ -289,12 +289,17 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const sl = calcStudentLoanScenario(d, m);
   // A Postgraduate loan alongside: its own overpaying gain, if any.
   const pg = pgScenario(d, m);
-  const slAmount = (sl.worthOverpaying ? sl.overpayAnnualBenefit : 0) + (pg?.worthOverpaying ? pg.overpayAnnualBenefit : 0);
+  // Heading for write-off, a lump sum from spare cash that clears it and
+  // comes out ahead counting savings interest: a year on average to clearing.
+  const lump = !sl.willClear ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
+  const lumpAmount = lump ? Math.round(lump.saving / Math.max(1, lump.clearYr)) : 0;
+  const slAmount = (sl.worthOverpaying ? sl.overpayAnnualBenefit : 0) + (pg?.worthOverpaying ? pg.overpayAnnualBenefit : 0) + lumpAmount;
   s.studentLoan = {
     // Below the threshold there's nothing to act on, so "ok", with the line
     // below saying why.
     status: d.studentLoan === "none" ? "na"
           : sl.worthOverpaying || pg?.worthOverpaying ? (sl.balanceGrowing ? "critical" : "attention")
+          : lump ? "attention"
           : "ok",
     impact: slAmount,
     impactLabel: sl.belowThreshold

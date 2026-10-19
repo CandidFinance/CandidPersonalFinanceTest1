@@ -18,7 +18,7 @@ import { retirementAdequacy } from "./crossModule.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { calcStudentLoanScenario, pgScenario, SL_REPAYMENT_RATES } from "./studentLoan.js";
+import { calcStudentLoanScenario, pgScenario, bestLumpSum, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
 import { STATE_PENSION_AGE } from "./tax.js";
 
@@ -422,12 +422,18 @@ function studentLoanSteps(d, m) {
         body: "You can overpay on the Student Loans Company website, all of it or part." },
     ];
   }
-  // Written off: what they'd repay in all, and what's left to write off.
+  // Written off: what they'd repay in all, and what's left to write off;
+  // and a lump sum from their spare cash, if one clears it and comes out
+  // ahead counting savings interest (studentLoan.js bestLumpSum).
+  const lump = !sl.willClear ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
   if (!sl.willClear) {
     return [
       { label: ANSWER, figure: fmt(sl.totalRepaidProjected), title: `you're expected to repay in all, before about ${fmt(sl.writeOffBal)} is written off in April ${sl.writeOffTaxYear}.`, ...turning },
       { label: WHY, title: `Repayments are ${repayPct} of your pay over ${fmt(sl.threshold)}, about ${fmt(sl.annualRep)} a year now, while interest adds about ${fmt(sl.annualInterest)}.` },
-      { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "On these assumptions, savings or a pension may earn more than overpaying." },
+      lump
+        ? { label: ACTION, title: `Paying ${fmt(lump.amount)} now would clear it in ${years(lump.clearYr)}, and cost about ${fmt(lump.saving)} less in all, counting what the money would earn in savings.`,
+            body: "Smaller sums would mostly shrink what's written off. The page shows how your cash buffer, ISA allowance and pension match stand." }
+        : { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "On these assumptions, savings or a pension may earn more than overpaying." },
     ];
   }
   return [

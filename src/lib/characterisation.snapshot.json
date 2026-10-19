@@ -2393,6 +2393,7 @@
        "clearYr": 5,
        "writeOffBal": 0,
        "totalPaid": 24576,
+       "paidToday": 22284,
        "newNetChange": -3070.95,
        "crossesInflection": false,
        "path": [
@@ -2427,6 +2428,7 @@
        "clearYr": 4,
        "writeOffBal": 0,
        "totalPaid": 23387,
+       "paidToday": 22180,
        "newNetChange": -3370.95,
        "crossesInflection": false,
        "path": [
@@ -2457,6 +2459,7 @@
        "clearYr": 1,
        "writeOffBal": 0,
        "totalPaid": 22120,
+       "paidToday": 22024,
        "newNetChange": -3970.95,
        "crossesInflection": false,
        "path": [
@@ -2475,6 +2478,7 @@
       "clearYr": 6,
       "writeOffBal": 0,
       "totalPaid": 26122,
+      "paidToday": 22404,
       "newNetChange": -2770.95,
       "crossesInflection": false,
       "path": [
@@ -5059,6 +5063,7 @@
        "clearYr": 5,
        "writeOffBal": 0,
        "totalPaid": 24576,
+       "paidToday": 22118,
        "newNetChange": -3070.95,
        "crossesInflection": false,
        "path": [
@@ -5093,6 +5098,7 @@
        "clearYr": 4,
        "writeOffBal": 0,
        "totalPaid": 23387,
+       "paidToday": 22091,
        "newNetChange": -3370.95,
        "crossesInflection": false,
        "path": [
@@ -5123,6 +5129,7 @@
        "clearYr": 1,
        "writeOffBal": 0,
        "totalPaid": 22120,
+       "paidToday": 22017,
        "newNetChange": -3970.95,
        "crossesInflection": false,
        "path": [
@@ -5141,6 +5148,7 @@
       "clearYr": 6,
       "writeOffBal": 0,
       "totalPaid": 26122,
+      "paidToday": 22141,
       "newNetChange": -2770.95,
       "crossesInflection": false,
       "path": [
@@ -7666,6 +7674,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -10072,6 +10081,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -12598,6 +12608,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -15023,6 +15034,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -16498,6 +16510,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -17896,6 +17909,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -20507,6 +20521,7 @@
        "clearYr": 1,
        "writeOffBal": 0,
        "totalPaid": 6041,
+       "paidToday": 5994,
        "newNetChange": -8968,
        "crossesInflection": false,
        "path": [
@@ -20525,6 +20540,7 @@
       "clearYr": 1,
       "writeOffBal": 0,
       "totalPaid": 6246,
+      "paidToday": 5964,
       "newNetChange": -8763,
       "crossesInflection": false,
       "path": [
@@ -23032,6 +23048,7 @@
        "clearYr": 1,
        "writeOffBal": 0,
        "totalPaid": 6041,
+       "paidToday": 5990,
        "newNetChange": -8968,
        "crossesInflection": false,
        "path": [
@@ -23050,6 +23067,7 @@
       "clearYr": 1,
       "writeOffBal": 0,
       "totalPaid": 6246,
+      "paidToday": 5943,
       "newNetChange": -8763,
       "crossesInflection": false,
       "path": [
@@ -25590,6 +25608,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -28053,6 +28072,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -30598,6 +30618,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -33011,6 +33032,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -35767,6 +35789,7 @@
        "clearYr": null,
        "writeOffBal": 10313,
        "totalPaid": 33026,
+       "paidToday": 18486,
        "newNetChange": 858.55,
        "crossesInflection": false,
        "path": [
@@ -35881,6 +35904,7 @@
        "clearYr": null,
        "writeOffBal": 1941,
        "totalPaid": 38026,
+       "paidToday": 23486,
        "newNetChange": 653.55,
        "crossesInflection": false,
        "path": [
@@ -35995,6 +36019,7 @@
        "clearYr": 18,
        "writeOffBal": 0,
        "totalPaid": 34093,
+       "paidToday": 28406,
        "newNetChange": 243.55,
        "crossesInflection": false,
        "path": [
@@ -36081,6 +36106,7 @@
       "clearYr": null,
       "writeOffBal": 18685,
       "totalPaid": 28026,
+      "paidToday": 13486,
       "newNetChange": 1063.55,
       "crossesInflection": false,
       "path": [
@@ -38852,6 +38878,7 @@
        "clearYr": null,
        "writeOffBal": 10313,
        "totalPaid": 33026,
+       "paidToday": 17782,
        "newNetChange": 858.55,
        "crossesInflection": false,
        "path": [
@@ -38966,6 +38993,7 @@
        "clearYr": null,
        "writeOffBal": 1941,
        "totalPaid": 38026,
+       "paidToday": 22782,
        "newNetChange": 653.55,
        "crossesInflection": false,
        "path": [
@@ -39080,6 +39108,7 @@
        "clearYr": 18,
        "writeOffBal": 0,
        "totalPaid": 34093,
+       "paidToday": 28088,
        "newNetChange": 243.55,
        "crossesInflection": false,
        "path": [
@@ -39166,6 +39195,7 @@
       "clearYr": null,
       "writeOffBal": 18685,
       "totalPaid": 28026,
+      "paidToday": 12782,
       "newNetChange": 1063.55,
       "crossesInflection": false,
       "path": [
@@ -42135,6 +42165,7 @@
        "clearYr": null,
        "writeOffBal": 77025,
        "totalPaid": 18865,
+       "paidToday": 10494,
        "newNetChange": 1533.5,
        "crossesInflection": false,
        "path": [
@@ -42309,6 +42340,7 @@
        "clearYr": null,
        "writeOffBal": 65757,
        "totalPaid": 23865,
+       "paidToday": 15494,
        "newNetChange": 1328.5,
        "crossesInflection": false,
        "path": [
@@ -42483,6 +42515,7 @@
        "clearYr": null,
        "writeOffBal": 43222,
        "totalPaid": 33865,
+       "paidToday": 25494,
        "newNetChange": 918.5,
        "crossesInflection": false,
        "path": [
@@ -42657,6 +42690,7 @@
       "clearYr": null,
       "writeOffBal": 88292,
       "totalPaid": 13865,
+      "paidToday": 5494,
       "newNetChange": 1738.5,
       "crossesInflection": false,
       "path": [
@@ -45609,6 +45643,7 @@
        "clearYr": null,
        "writeOffBal": 77025,
        "totalPaid": 18865,
+       "paidToday": 10169,
        "newNetChange": 1533.5,
        "crossesInflection": false,
        "path": [
@@ -45783,6 +45818,7 @@
        "clearYr": null,
        "writeOffBal": 65757,
        "totalPaid": 23865,
+       "paidToday": 15169,
        "newNetChange": 1328.5,
        "crossesInflection": false,
        "path": [
@@ -45957,6 +45993,7 @@
        "clearYr": null,
        "writeOffBal": 43222,
        "totalPaid": 33865,
+       "paidToday": 25169,
        "newNetChange": 918.5,
        "crossesInflection": false,
        "path": [
@@ -46131,6 +46168,7 @@
       "clearYr": null,
       "writeOffBal": 88292,
       "totalPaid": 13865,
+      "paidToday": 5169,
       "newNetChange": 1738.5,
       "crossesInflection": false,
       "path": [
@@ -48927,6 +48965,7 @@
        "clearYr": 6,
        "writeOffBal": 0,
        "totalPaid": 15747,
+       "paidToday": 14168,
        "newNetChange": -1164,
        "crossesInflection": false,
        "path": [
@@ -48965,6 +49004,7 @@
        "clearYr": 3,
        "writeOffBal": 0,
        "totalPaid": 14412,
+       "paidToday": 14058,
        "newNetChange": -1464,
        "crossesInflection": false,
        "path": [
@@ -48991,6 +49031,7 @@
       "clearYr": 10,
       "writeOffBal": 0,
       "totalPaid": 18227,
+      "paidToday": 14325,
       "newNetChange": -864,
       "crossesInflection": false,
       "path": [
@@ -51582,6 +51623,7 @@
        "clearYr": 6,
        "writeOffBal": 0,
        "totalPaid": 15747,
+       "paidToday": 14057,
        "newNetChange": -1164,
        "crossesInflection": false,
        "path": [
@@ -51620,6 +51662,7 @@
        "clearYr": 3,
        "writeOffBal": 0,
        "totalPaid": 14412,
+       "paidToday": 14031,
        "newNetChange": -1464,
        "crossesInflection": false,
        "path": [
@@ -51646,6 +51689,7 @@
       "clearYr": 10,
       "writeOffBal": 0,
       "totalPaid": 18227,
+      "paidToday": 14066,
       "newNetChange": -864,
       "crossesInflection": false,
       "path": [
@@ -54265,6 +54309,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -56742,6 +56787,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -59266,6 +59312,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -61658,6 +61705,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -64185,6 +64233,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -66580,6 +66629,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -68044,6 +68094,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -69423,6 +69474,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -72367,6 +72419,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -75210,6 +75263,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -78263,6 +78317,7 @@
        "clearYr": null,
        "writeOffBal": 3134,
        "totalPaid": 58399,
+       "paidToday": 37972,
        "newNetChange": -77.84999999999991,
        "crossesInflection": true,
        "path": [
@@ -78357,6 +78412,7 @@
        "clearYr": 17,
        "writeOffBal": 0,
        "totalPaid": 53658,
+       "paidToday": 38905,
        "newNetChange": -377.8499999999999,
        "crossesInflection": false,
        "path": [
@@ -78439,6 +78495,7 @@
        "clearYr": 10,
        "writeOffBal": 0,
        "totalPaid": 43755,
+       "paidToday": 38431,
        "newNetChange": -977.8499999999999,
        "crossesInflection": false,
        "path": [
@@ -78493,6 +78550,7 @@
       "clearYr": null,
       "writeOffBal": 16527,
       "totalPaid": 53399,
+      "paidToday": 32972,
       "newNetChange": 222.1500000000001,
       "crossesInflection": false,
       "path": [
@@ -81525,6 +81583,7 @@
        "clearYr": null,
        "writeOffBal": 3134,
        "totalPaid": 58399,
+       "paidToday": 36841,
        "newNetChange": -77.84999999999991,
        "crossesInflection": true,
        "path": [
@@ -81619,6 +81678,7 @@
        "clearYr": 17,
        "writeOffBal": 0,
        "totalPaid": 53658,
+       "paidToday": 38044,
        "newNetChange": -377.8499999999999,
        "crossesInflection": false,
        "path": [
@@ -81701,6 +81761,7 @@
        "clearYr": 10,
        "writeOffBal": 0,
        "totalPaid": 43755,
+       "paidToday": 38080,
        "newNetChange": -977.8499999999999,
        "crossesInflection": false,
        "path": [
@@ -81755,6 +81816,7 @@
       "clearYr": null,
       "writeOffBal": 16527,
       "totalPaid": 53399,
+      "paidToday": 31841,
       "newNetChange": 222.1500000000001,
       "crossesInflection": false,
       "path": [
@@ -84280,6 +84342,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
@@ -86640,6 +86703,7 @@
       "clearYr": 0,
       "writeOffBal": 0,
       "totalPaid": 0,
+      "paidToday": 0,
       "newNetChange": 0,
       "crossesInflection": false,
       "path": [
