@@ -214,3 +214,27 @@ test("student loan: a Postgraduate loan alongside Plans 1, 2 and 5, and pay grow
   // Pay growth, once asked anywhere, isn't asked again.
   assert.ok(!ids("studentLoan", known, { ...known, askedFields: ["salaryTrajectory"] }).includes("payGrowth"));
 });
+
+test("Kids & family: 'No' ends it; the counts offered never add up to more children than they have", () => {
+  const qs = MODULE_GUIDES.kids.questions;
+  const q = id => qs.find(x => x.id === id);
+  assert.equal(qs[0].id, "kidsStatus");
+  assert.equal(q("kidsStatus").endIf("no"), true);
+  assert.equal(q("kidsStatus").endIf("planning"), false);
+  // With "No", none of the module's own questions would show.
+  const none = { ...fresh, kidsStatus: "no", salary: "110000" };
+  for (const id of ["kidsCount", "kidsPreschool", "kidsSchool", "childcareBill", "partnerOver100k", "childBenefit"]) {
+    assert.equal(q(id).showIf ? q(id).showIf(ctxFor(none)) : true, false, id);
+  }
+  // Two children, one not at school yet: at most one more at school.
+  const two = { ...fresh, kidsStatus: "yes", kidsCount: "2", kidsPreschool: "1" };
+  assert.deepEqual(q("kidsSchool").options(ctxFor(two)).map(o => o.value), ["0", "1"]);
+  assert.deepEqual(q("kidsPreschool").options(ctxFor(two)).map(o => o.value), ["0", "1", "2"]);
+  // All of them not at school yet: the school question isn't asked.
+  assert.equal(q("kidsSchool").showIf(ctxFor({ ...two, kidsPreschool: "2" })), false);
+  // Planning: no ages or bill asked, but the partner question is.
+  const planning = { ...fresh, kidsStatus: "planning" };
+  assert.equal(q("kidsCount").showIf(ctxFor(planning)), false);
+  assert.equal(q("childcareBill").showIf(ctxFor(planning)), false);
+  assert.equal(q("partnerOver100k").showIf(ctxFor(planning)), true);
+});

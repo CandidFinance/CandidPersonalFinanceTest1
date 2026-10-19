@@ -70,8 +70,11 @@ test("Tax-Free Childcare not claimed, a partner over £100,000, and close to the
   const unclaimed = kids({ ...family, salary: "60000", kidsPreschool: "0", kidsSchool: "1", childcareMonthly: "400", partnerOver100k: "no", tfcClaiming: "no" });
   assert.equal(unclaimed.steps[0].figure, "£960 a year");
   assert.match(unclaimed.steps[0].title, /Tax-Free Childcare you could claim/);
+  // A partner over £100,000 whose income isn't known: the support is still
+  // theirs to get, and the answer says what would open it up.
   const partner = kids({ ...family, salary: "60000", kidsPreschool: "1", partnerOver100k: "yes" });
-  assert.match(partner.steps[0].title, /out of reach while your partner's income is over £100,000/);
+  assert.equal(partner.steps[0].title, "of childcare support you and your partner could get.");
+  assert.match(partner.steps[2].title, /A pension payment from your partner that brings their income to £100,000 would open it up/);
   assert.equal(partner.statuses.kids.amount, 0);
   const near = kids({ ...family, salary: "100000", kidsPreschool: "1", partnerOver100k: "no", tfcClaiming: "yes", childcareMonthly: "1500" });
   assert.match(near.steps[1].title, /^You're £5,000 under it\./);
@@ -194,4 +197,34 @@ test("student loan with a Postgraduate loan: the why says what it adds, and its 
 test("student loan: below the threshold is 'ok', with nothing to act on", () => {
   const { statuses } = run({ selectedModules: ["studentLoan"], answeredModules: ["studentLoan"], salary: "24000", studentLoan: "plan2", loanBalance: "40000" }, studentLoanReveal);
   assert.equal(statuses.studentLoan.status, "ok");
+});
+
+test("a partner over £100,000 with their income known: the payment from them that opens it up, and what it's worth as pay", () => {
+  const d = { ...family, salary: "70000", kidsPreschool: "1", kidsSchool: "0", childcareMonthly: "1500", partnerOver100k: "yes", partnerIncome: "112000" };
+  const { steps, statuses } = kids(d);
+  assert.equal(steps[0].figure, "£10,290 a year");
+  assert.equal(steps[0].title, "of childcare support you and your partner could get.");
+  // At their 60% rate plus 2% National Insurance: £10,290 / 0.38.
+  assert.match(steps[1].body, /^It's worth the same as about £27,080 of pay before tax\./);
+  assert.match(steps[2].title, /^A pension payment of £12,000 from your partner \(including the tax relief added\) would bring their income to £100,000\.$/);
+  assert.equal(statuses.kids.amount, 10290);
+  assert.equal(statuses.kids.status, "critical");
+});
+
+test("no children and none planned: nothing to explain, and the module reads 'Not applicable'", () => {
+  const { steps, statuses } = kids({ ...family, salary: "110000", kidsStatus: "no", kidsPreschool: "1", childBenefitChildren: "2", cbHigherEarner: "yes" });
+  assert.equal(steps, null);
+  assert.equal(statuses.kids.status, "na");
+  assert.equal(statuses.kids.notApplicable, true);
+  assert.equal(statuses.kids.amount, 0);
+});
+
+test("planning a child: what they could get once it arrives, not counted as money at stake yet", () => {
+  const fine = kids({ ...family, salary: "60000", kidsStatus: "planning", partnerOver100k: "no" });
+  assert.equal(fine.steps[0].figure, "£10,290 a year");
+  assert.equal(fine.steps[0].title, "of childcare support you could get once your child arrives.");
+  assert.equal(fine.statuses.kids.amount, 0);
+  const over = kids({ ...family, salary: "110000", kidsStatus: "planning", partnerOver100k: "no" });
+  assert.equal(over.steps[0].title, "of childcare support you could get once your child arrives.");
+  assert.match(over.steps[2].title, /^A pension payment of £4,500/);
 });

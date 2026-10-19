@@ -90,7 +90,7 @@ function taxYearEnd(d, m, today) {
   // The same payment restores childcare support (Kids & family): said in
   // the line, not added to the tax figure.
   const cc = childcareSupport(d, m);
-  const childcare = cc?.recoverable && cc.atStake > 0 ? ` It would also restore ${fmt(cc.atStake)} a year of childcare support.` : "";
+  const childcare = cc?.recoverable && cc.state === "lost" && !cc.planning && cc.atStake > 0 ? ` It would also restore ${fmt(cc.atStake)} a year of childcare support.` : "";
   if (taper.recoverable && taper.taperTaxSaving > 0) {
     items.push({ tax: taper.taperTaxSaving, line: `${fmt(taper.taperTaxSaving)} of tax: a pension payment of ${fmt(taper.taperSacrificeNeeded)} (including the tax relief added) before 5 April would bring your income back to £100,000 for this tax year.${childcare}` });
   }
@@ -143,7 +143,7 @@ function bonus(d, m, today) {
 // whole year; paying enough of it into a pension keeps it.
 function bonusChildcare(d, m) {
   const cc = childcareSupport(d, m);
-  return cc?.recoverable && cc.atStake > 0
+  return cc?.recoverable && cc.state === "lost" && !cc.planning && cc.atStake > 0
     ? ` With it, your income goes over £100,000, which stops ${fmt(cc.atStake)} a year of childcare support; paying ${fmt(cc.payInNeeded)} of it into your pension would keep it.`
     : "";
 }

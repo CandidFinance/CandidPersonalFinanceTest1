@@ -18,7 +18,7 @@ import { STATE_PENSION_FULL } from "./tax.js";
 import { workingPastRetirementAge } from "./metrics.js";
 import { resolveSlRate, studentLoanPlanFrom, estimateSlBalance, slEstimateReady, PG_WITH_PLANS } from "./studentLoan.js";
 import { ABOUT_YOU, AGE_QUESTION, SPENDING_QUESTION, NATION_OPTIONS, nationAlso } from "./sharedQuestions.js";
-import { CHILDCARE_INCOME_LIMIT } from "./childcare.js";
+import { CHILDCARE_INCOME_LIMIT, kidsSituation } from "./childcare.js";
 
 const YES_NO = [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }];
 const LEAVE_BLANK = { label:"I'm not sure" };
@@ -520,11 +520,24 @@ const STUDENT_LOAN_QUESTIONS = [
   },
 ];
 
-// Kids & family (childcare.js): childcare support, what crossing £100,000
-// costs, and the Child Benefit charge (moved here from Pension).
-const COUNT_OPTIONS = [{ value:"0", label:"None" }, { value:"1", label:"1" }, { value:"2", label:"2" }, { value:"3", label:"3 or more" }];
-const under12 = ({ d }) => (+d.kidsPreschool || 0) + (+d.kidsSchool || 0) > 0;
+// Kids & family (childcare.js): whether they have children or plan to in
+// the next year or two, then childcare support, what crossing £100,000
+// costs, and the Child Benefit charge (moved here from Pension). "No" ends
+// the walk-through there (endIf): nothing else applies, and the module reads
+// "Not applicable". The ages can't add up to more children than they have.
+const counts = (from, to) => Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i).map(n => ({ value: String(n), label: n === 0 ? "None" : String(n) }));
+const totalKids = d => +d.kidsCount > 0 ? Math.round(+d.kidsCount) : 4;
+const hasChildren = ({ d }) => kidsSituation(d) === "yes";
+const kidsInPlay = ({ d }) => ["yes", "planning"].includes(kidsSituation(d));
+const under12 = ctx => kidsSituation(ctx.d) === "planning" || (hasChildren(ctx) && (+ctx.d.kidsPreschool || 0) + (+ctx.d.kidsSchool || 0) > 0);
 const KIDS_QUESTIONS = [
+  {
+    id:"kidsStatus", field:"kidsStatus", kind:"choice",
+    ask: () => "Do you have children, or are you planning to in the next year or two?",
+    why: () => "Childcare help and Child Benefit depend on it.",
+    options: () => [{ value:"yes", label:"Yes, I have children" }, { value:"planning", label:"Planning to, in the next year or two" }, { value:"no", label:"No" }],
+    endIf: value => value === "no",
+  },
   ...ABOUT_YOU,
   {
     // Anyone who answered "No" to the older "Do you live in Scotland?":
@@ -535,19 +548,28 @@ const KIDS_QUESTIONS = [
     why: () => "Childcare help is different in each nation.",
     options: () => NATION_OPTIONS,
     also: nationAlso,
-    showIf: ({ d }) => !d.ukNation && d.scottishTaxpayer !== "yes",
+    showIf: ctx => kidsInPlay(ctx) && !ctx.d.ukNation && ctx.d.scottishTaxpayer !== "yes",
+  },
+  {
+    id:"kidsCount", field:"kidsCount", kind:"choice",
+    ask: () => "How many children do you have?",
+    why: () => "Each child under 12 can get help with childcare costs.",
+    options: () => [...counts(1, 3), { value:"4", label:"4 or more" }],
+    showIf: hasChildren,
   },
   {
     id:"kidsPreschool", field:"kidsPreschool", kind:"choice",
-    ask: () => "How many of your children haven't started school yet?",
+    ask: ({ d }) => +d.kidsCount === 1 ? "Has your child started school yet?" : "How many of them haven't started school yet?",
     why: () => "Under-fives get the most help with childcare costs.",
-    options: () => COUNT_OPTIONS,
+    options: ({ d }) => +d.kidsCount === 1 ? [{ value:"1", label:"Not yet" }, { value:"0", label:"Yes" }] : counts(0, totalKids(d)),
+    showIf: hasChildren,
   },
   {
     id:"kidsSchool", field:"kidsSchool", kind:"choice",
-    ask: () => "And how many are at school, aged 11 or under?",
+    ask: ({ d }) => +d.kidsCount === 1 ? "Are they 11 or under?" : "And how many are at school, aged 11 or under?",
     why: () => "Tax-Free Childcare also covers clubs and holiday care up to 11.",
-    options: () => COUNT_OPTIONS,
+    options: ({ d }) => +d.kidsCount === 1 ? [{ value:"1", label:"Yes" }, { value:"0", label:"No, 12 or over" }] : counts(0, totalKids(d) - (+d.kidsPreschool || 0)),
+    showIf: ctx => hasChildren(ctx) && totalKids(ctx.d) - (+ctx.d.kidsPreschool || 0) > 0,
   },
   {
     id:"childcareBill", field:"childcareMonthly", kind:"money", label:"Childcare a month", cap:"childcareMonthly",
@@ -555,7 +577,7 @@ const KIDS_QUESTIONS = [
     why: () => "Tax-Free Childcare adds 20% of it, up to £2,000 a child.",
     note: () => "Nursery, childminder, clubs and holiday care, before any help.",
     notSure: () => ({ label:"Not sure", value:"" }),
-    showIf: under12,
+    showIf: ctx => hasChildren(ctx) && under12(ctx),
   },
   {
     id:"partnerOver100k", field:"partnerOver100k", kind:"choice",
@@ -567,12 +589,21 @@ const KIDS_QUESTIONS = [
     showIf: under12,
   },
   {
+    // Over £100,000: what a pension payment of theirs would need to be to
+    // bring it back (childcare.js partnerPayIn).
+    id:"partnerIncome", field:"partnerIncome", kind:"money", label:"Partner's income", cap:"salary",
+    ask: () => "Roughly what's your partner's income a year?",
+    why: () => "So Candid can work out what would bring it back under £100,000.",
+    notSure: () => ({ label:"Not sure", value:"" }),
+    showIf: ctx => under12(ctx) && ctx.d.partnerOver100k === "yes",
+  },
+  {
     // Eligible and paying for childcare: whether they're getting it.
     id:"tfcClaiming", field:"tfcClaiming", kind:"choice",
     ask: () => "Do you use Tax-Free Childcare now?",
     why: () => "It adds £2 for every £8 you pay your provider.",
     options: () => [{ value:"yes", label:"Yes" }, { value:"no", label:"No" }, { value:"", label:"Not sure" }],
-    showIf: ctx => under12(ctx) && +ctx.d.childcareMonthly > 0 && ctx.d.partnerOver100k !== "yes"
+    showIf: ctx => hasChildren(ctx) && under12(ctx) && +ctx.d.childcareMonthly > 0 && ctx.d.partnerOver100k !== "yes"
       && (ctx.m?.adjustedNetIncome || 0) <= CHILDCARE_INCOME_LIMIT && !ctx.m?.noEarnings,
   },
   {
@@ -580,8 +611,8 @@ const KIDS_QUESTIONS = [
     id:"childBenefit", field:"childBenefitChildren", kind:"choice",
     ask: () => "How many children do you get Child Benefit for?",
     why: () => "Above £60,000, Child Benefit is clawed back through tax.",
-    options: () => [{ value:"0", label:"None" }, { value:"1", label:"1" }, { value:"2", label:"2" }, { value:"3", label:"3" }, { value:"4", label:"4 or more" }],
-    showIf: ({ m }) => (m?.adjustedNetIncome || 0) > 60000,
+    options: ({ d }) => counts(0, totalKids(d)),
+    showIf: ctx => hasChildren(ctx) && (ctx.m?.adjustedNetIncome || 0) > 60000,
     ifMissing: ({ d }) => d.childBenefitChildren == null || d.childBenefitChildren === "",
   },
   {
@@ -590,7 +621,7 @@ const KIDS_QUESTIONS = [
     why: () => "The charge falls on whichever of you earns more.",
     options: () => [{ value:"yes", label:"Yes, or I don't have a partner" }, { value:"no", label:"No, my partner earns more" }],
     // No partner: they're the one who'd pay it.
-    showIf: ({ d, m }) => (m?.adjustedNetIncome || 0) > 60000 && +d.childBenefitChildren > 0 && d.partnerOver100k !== "single",
+    showIf: ({ d, m }) => kidsSituation(d) === "yes" && (m?.adjustedNetIncome || 0) > 60000 && +d.childBenefitChildren > 0 && d.partnerOver100k !== "single",
   },
 ];
 

@@ -4,7 +4,7 @@
 // does. Up to three, the most relevant to them first; null for a module
 // without one. Pure, unit tested in moduleLimits.test.js.
 
-import { nationOf } from "./childcare.js";
+import { nationOf, kidsSituation } from "./childcare.js";
 
 const MAX = 3;
 // Share awards (RSUs, options, SAYE) mostly come with higher-paid jobs.
@@ -41,7 +41,8 @@ const LIMITS = {
     "Sharia-compliant funds",
     "investments in a partner's name",
   ],
-  kids: d => [
+  // No children, and none planned: nothing to qualify.
+  kids: d => kidsSituation(d) === "no" ? [] : [
     "the extra help for disabled children",
     nationOf(d) === "ni" && "Northern Ireland's Childcare Subsidy",
     "Junior ISAs",

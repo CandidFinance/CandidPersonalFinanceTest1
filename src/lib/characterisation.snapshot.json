@@ -2707,7 +2707,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 66,
@@ -5219,7 +5224,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 66,
@@ -7740,7 +7750,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 84,
@@ -10088,7 +10103,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 84,
@@ -12658,7 +12678,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -15011,7 +15036,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -16516,7 +16546,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 82,
@@ -17856,7 +17891,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 82,
@@ -20524,7 +20564,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 66,
@@ -22963,7 +23008,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 66,
@@ -25510,7 +25560,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 66,
@@ -27929,7 +27984,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 66,
@@ -30518,7 +30578,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -32859,7 +32924,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -35669,7 +35739,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 84,
@@ -38306,7 +38381,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 84,
@@ -41229,7 +41309,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 92,
@@ -43987,7 +44072,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 92,
@@ -46669,7 +46759,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 84,
@@ -49178,7 +49273,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 84,
@@ -51801,7 +51901,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -54206,7 +54311,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -56774,7 +56884,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -59094,7 +59209,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -61665,7 +61785,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 84,
@@ -63988,7 +64113,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -65482,7 +65612,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 92,
@@ -66803,7 +66938,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 92,
@@ -69791,7 +69931,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 82,
@@ -72562,7 +72707,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 82,
@@ -75683,7 +75833,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -78587,7 +78742,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 74,
@@ -81062,7 +81222,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 92,
@@ -83364,7 +83529,12 @@
      "kids_school": null,
      "childcare_monthly": null,
      "partner_over_100k": null,
-     "tfc_claiming": null
+     "tfc_claiming": null,
+     "kids_status": null,
+     "kids_count": null,
+     "partner_income": null,
+     "has_pg_loan": null,
+     "pg_loan_balance": null
     },
     "report": {
      "candid_score": 92,

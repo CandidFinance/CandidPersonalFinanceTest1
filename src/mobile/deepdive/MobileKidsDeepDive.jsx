@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { fmt } from "../../lib/format.js";
-import { childcareSupport, CHILDCARE_INCOME_LIMIT, CHILDCARE_HOURLY_PRICE, TFC_CAP_PER_CHILD } from "../../lib/childcare.js";
+import { childcareSupport, kidsSituation, CHILDCARE_INCOME_LIMIT, CHILDCARE_HOURLY_PRICE, TFC_CAP_PER_CHILD } from "../../lib/childcare.js";
 import { childBenefitCharge, calcAnnualAllowanceRoom } from "../../lib/pension.js";
 import { G, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
 
@@ -21,21 +21,41 @@ export default function MobileKidsDeepDive({ d, m }) {
   // kidsReveal): childcare a pension payment would restore, else Tax-Free
   // Childcare not claimed, else Child Benefit. Child Benefit alongside the
   // first two is a line under it; Home and Modules show the total.
-  const ccLead = cc?.recoverable ? cc.atStake : cc?.unclaimed || 0;
+  const partner = cc?.state === "partner";
+  const ccLead = cc?.recoverable || cc?.planning ? cc.atStake : cc?.unclaimed || 0;
   const lead = ccLead > 0 ? ccLead : cbKeep;
-  const label = cc?.recoverable ? "Childcare support you could keep"
+  const label = cc?.planning ? "Childcare support you could get once your child arrives"
+    : cc?.recoverable ? (partner ? "Childcare support you and your partner could get" : "Childcare support you could keep")
     : cc?.unclaimed > 0 ? "Tax-Free Childcare you could claim"
     : "Child Benefit you could keep";
+  // The pension payment that would open it up: theirs, their partner's, or both.
+  const payLine = !cc?.recoverable ? null
+    : partner ? `A pension payment of ${fmt(cc.partnerPayIn)} from your partner (including the tax relief added) would bring their income to ${fmt(CHILDCARE_INCOME_LIMIT)}${cc.payInNeeded > 0 ? `, and ${fmt(cc.payInNeeded)} from you would do the same for yours` : ""}.`
+    : `A pension payment of ${fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to ${fmt(CHILDCARE_INCOME_LIMIT)} and ${cc.planning ? "keep it open to you" : "restore it"}.`;
   const row = { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px", padding:"12px 0", borderBottom:"1px solid rgba(22,47,36,0.08)" };
   const rowLabel = { fontSize:"13.5px", color:TEXT, fontWeight:600 };
   const rowNote = { fontSize:"12px", color:MUT, marginTop:"2px", lineHeight:1.45 };
   const rowFigure = { fontFamily:SERIF, fontSize:"17px", color:G, fontWeight:700, whiteSpace:"nowrap" };
   const stateLine = !cc ? null
     : cc.state === "lost" ? `Your income is ${fmt(Math.round(cc.ani))}, over the ${fmt(CHILDCARE_INCOME_LIMIT)} limit, so this support stops for the whole year.`
-    : cc.state === "partner" ? `Your partner's income is over ${fmt(CHILDCARE_INCOME_LIMIT)}, so this support isn't available to either of you.`
+    : cc.state === "partner" ? (cc.recoverable
+        ? `Your partner's income is over ${fmt(CHILDCARE_INCOME_LIMIT)}, so this support stops for you both, until a pension payment brings it back under.`
+        : cc.partnerPayIn == null
+          ? `Your partner's income is over ${fmt(CHILDCARE_INCOME_LIMIT)}, so this support stops for you both. Their income, in Edit inputs, shows the pension payment that would open it up.`
+          : `Your partner's income is over ${fmt(CHILDCARE_INCOME_LIMIT)}. Bringing it back would take a pension payment of ${fmt(cc.partnerPayIn)}, more than the usual ${fmt(60000)} allowance.`)
     : cc.state === "near" ? `You're ${fmt(cc.headroom)} under the ${fmt(CHILDCARE_INCOME_LIMIT)} limit. A pay rise or bonus that takes you over would stop it for the whole year.`
     : cc.state === "notWorking" ? "Tax-Free Childcare needs each parent to be working."
+    : cc.planning ? `You're under the ${fmt(CHILDCARE_INCOME_LIMIT)} limit, so this support would be yours: both of you need to be working, and each under it, when you apply.`
     : `You're under the ${fmt(CHILDCARE_INCOME_LIMIT)} limit, so this support is yours.`;
+
+  // No children, and none planned: nothing here applies.
+  if (kidsSituation(d) === "no") {
+    return (
+      <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6}}>
+        You told us you don't have children and aren't planning any in the next year or two, so nothing here applies. If that changes, Edit inputs brings it in.
+      </p>
+    );
+  }
 
   return (
     <div>
@@ -44,9 +64,12 @@ export default function MobileKidsDeepDive({ d, m }) {
           <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
           <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(lead)}</div>
           <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>{label} a year</div>
-          {cc?.recoverable && (
-            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
-              A pension payment of {fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to {fmt(CHILDCARE_INCOME_LIMIT)} and restore it.
+          {payLine && (
+            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>{payLine}</div>
+          )}
+          {cc?.recoverable && cc.payValue > 0 && (
+            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"8px"}}>
+              It's worth the same as about {fmt(cc.payValue)} of pay before tax.
             </div>
           )}
           {ccLead > 0 && cbKeep > 0 && (
@@ -59,12 +82,13 @@ export default function MobileKidsDeepDive({ d, m }) {
 
       {cc && (
         <section style={{marginBottom:"18px"}}>
-          <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Your childcare support, {NATION_NAME[cc.nation]}</div>
+          <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>{cc.planning ? "Childcare support once your child arrives" : "Your childcare support"}, {NATION_NAME[cc.nation]}</div>
           <div style={row}>
             <div>
               <div style={rowLabel}>Tax-Free Childcare</div>
               <div style={rowNote}>
                 {cc.billKnown ? `20% of your ${fmt(Math.round(+d.childcareMonthly * 12))} a year of childcare, up to ${fmt(TFC_CAP_PER_CHILD)} a child.`
+                  : cc.planning ? `${fmt(TFC_CAP_PER_CHILD)} a year, typical for full-time nursery.`
                   : `${fmt(TFC_CAP_PER_CHILD)} for each child not yet at school, typical for full-time nursery.`}
               </div>
             </div>
@@ -74,7 +98,7 @@ export default function MobileKidsDeepDive({ d, m }) {
             <div style={row}>
               <div>
                 <div style={rowLabel}>30 funded hours</div>
-                <div style={rowNote}>30 hours a week for 38 weeks, at about £{CHILDCARE_HOURLY_PRICE.toFixed(2)} an hour, for {cc.preschool === 1 ? "your child" : `your ${cc.preschool} children`} not yet at school.</div>
+                <div style={rowNote}>30 hours a week for 38 weeks, at about £{CHILDCARE_HOURLY_PRICE.toFixed(2)} an hour, {cc.planning ? "from when your child is 9 months old" : `for ${cc.preschool === 1 ? "your child" : `your ${cc.preschool} children`} not yet at school`}.</div>
               </div>
               <div style={rowFigure}>{fmt(cc.hours)}</div>
             </div>

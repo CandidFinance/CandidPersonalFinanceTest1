@@ -84,6 +84,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   const [celebratingKey, setCelebratingKey] = useState(null);
   const { moduleList, modulesWithRec, needActionCount, totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, insights, sortMode);
   const waiting = notStarted(d).filter(k => k !== "property");
+  const notApplicable = MODULE_META.filter(mm => statuses[mm.key]?.notApplicable);
 
   return (
     <div>
@@ -203,6 +204,23 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       {/* Modules with no answers yet: not in the ranking above (they read as
           not applicable until answered), so listed here, picks first, each
           opening its walk-through. Property has its own entry below. */}
+      {/* Answered, but nothing in it applies (Kids & family with no
+          children and none planned): greyed, and still there to change. */}
+      {notApplicable.length > 0 && (<>
+        <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:moduleList.length ? "22px" : "16px",marginBottom:"10px"}}>Not applicable</div>
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          {notApplicable.map(mm => (
+            <button key={mm.key} type="button" onClick={() => onOpenModule(mm.key)} style={{display:"flex",alignItems:"center",gap:"12px",width:"100%",textAlign:"left",background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.08)",borderRadius:"14px",padding:"14px 16px",cursor:"pointer",fontFamily:"inherit",opacity:0.6}}>
+              <div style={{width:"30px",height:"30px",borderRadius:"9px",background:"rgba(22,47,36,0.06)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <mm.icon size={14} color={MUT}/>
+              </div>
+              <span style={{flex:1,fontSize:"14.5px",fontWeight:600,color:MUT}}>{mm.title}</span>
+              <span style={{fontSize:"12px",color:MUT}}>Not applicable</span>
+            </button>
+          ))}
+        </div>
+      </>)}
+
       {waiting.length > 0 && (<>
         <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:moduleList.length ? "22px" : "16px",marginBottom:"10px"}}>Not started</div>
         <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>

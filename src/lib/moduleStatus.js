@@ -1,6 +1,6 @@
 import { moduleAnswered } from "./appEntry.js";
 import { MODULE_GUIDES } from "./moduleGuide.js";
-import { childcareSupport } from "./childcare.js";
+import { childcareSupport, kidsSituation } from "./childcare.js";
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby } from "lucide-react";
 import { fmt } from "./format.js";
 import { taxYearOf } from "./taxYear.js";
@@ -340,18 +340,22 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // over for a pension payment), there's nothing to act on, so it's "ok"
   // with a line that says so.
   const cc = childcareSupport(d, m);
-  const ccKeep = cc?.recoverable ? cc.atStake : 0;
+  // Planning: support they could get, not money at stake yet.
+  const ccKeep = cc?.recoverable && !cc.planning ? cc.atStake : 0;
   const ccUnclaimed = cc?.unclaimed || 0;
   const kidsAmount = Math.round(ccKeep + ccUnclaimed + cbAmount);
-  s.kids = {
+  // No children and none planned: nothing applies. Left out of the totals
+  // and the score like a module not started, but shown as "Not applicable".
+  s.kids = kidsSituation(d) === "no" ? { status: "na", notApplicable: true, impact: 0, impactLabel: "No children, and none planned", amount: 0 } : {
     status: ccKeep > 0 ? "critical" : ccUnclaimed > 0 || cbAmount > 0 ? "attention" : "ok",
     impact: kidsAmount,
     impactLabel: [
-      ccKeep > 0 ? `${fmt(ccKeep)}/yr of childcare support you could keep` : null,
+      ccKeep > 0 ? `${fmt(ccKeep)}/yr of childcare support ${cc.state === "partner" ? "you and your partner could get" : "you could keep"}` : null,
+      cc?.planning ? `Up to ${fmt(cc.atStake)}/yr of childcare support once your child arrives` : null,
       ccUnclaimed > 0 ? `${fmt(ccUnclaimed)}/yr of Tax-Free Childcare unclaimed` : null,
       cbAmount > 0 ? `${fmt(cbAmount)}/yr of Child Benefit paid back` : null,
       cc?.state === "near" ? `${fmt(cc.headroom)} under the £100,000 childcare limit` : null,
-      cc?.state === "partner" ? "Childcare support out of reach while your partner's income is over £100,000" : null,
+      cc?.state === "partner" && !ccKeep ? "Childcare support open to you if your partner's income comes under £100,000" : null,
     ].filter(Boolean).join(" + ") || null,
     amount: kidsAmount,
   };

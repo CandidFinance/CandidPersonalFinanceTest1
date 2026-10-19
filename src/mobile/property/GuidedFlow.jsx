@@ -95,6 +95,9 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
       set("askedFields", askedFields);
       patch = { ...patch, askedFields };
     }
+    // An answer that rules out everything after it (Kids & family's "No"):
+    // done.
+    if (q.endIf && q.endIf(patch?.[q.field], ctx)) { onDone("finished"); return; }
     const after = visibleQuestions(questions, { ...ctx, d: { ...d, ...patch } }, needed);
     const following = after[after.findIndex(x => x.id === q.id) + 1];
     if (!following) { onDone("finished"); return; }

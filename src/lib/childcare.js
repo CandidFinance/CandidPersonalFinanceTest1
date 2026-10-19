@@ -46,24 +46,56 @@ export function nationOf(d) {
   return d.scottishTaxpayer === "yes" ? "scotland" : null;
 }
 
-// Null when there are no children 11 or under. Otherwise:
+// Children, or planning them in the next year or two: Kids & family's first
+// question ("yes", "planning" or "no"). Anyone who answered before it was
+// asked, with children's ages given, has children.
+export function kidsSituation(d) {
+  if (["yes", "planning", "no"].includes(d.kidsStatus)) return d.kidsStatus;
+  return (+d.kidsPreschool || 0) + (+d.kidsSchool || 0) > 0 ? "yes" : null;
+}
+
+// A partner's pension payment can bring their income back to £100,000 within
+// the standard £60,000 Annual Allowance; their own contributions aren't
+// known, so it's the standard allowance.
+export const PARTNER_PENSION_ALLOWANCE = 60000;
+
+// What childcare support is worth as pay: the pay before tax it would take
+// to bring home the same, at the marginal rate of whoever's income is over
+// £100,000 (60% to £125,140, 67.5% in Scotland, then 45% or 48%), with 2%
+// National Insurance. Rounded to £10.
+export function payEquivalent(amount, income, scottish = false) {
+  const tax = income > 125140 ? (scottish ? 0.48 : 0.45) : income > CHILDCARE_INCOME_LIMIT ? (scottish ? 0.675 : 0.60) : (scottish ? 0.42 : 0.40);
+  return Math.round(amount / (1 - tax - 0.02) / 10) * 10;
+}
+
+// Null without children 11 or under (or one on the way), or when they've no
+// children and aren't planning any. Otherwise:
+//  planning: no children yet; counted as one baby, with no bill.
 //  state: "notWorking" (Tax-Free Childcare needs work), "partner" (their
-//    partner's income is over £100,000: lost whatever they earn), "lost"
-//    (their own income is over £100,000), "near" (within £10,000 of it) or
-//    "fine".
+//    partner's income is over £100,000, theirs perhaps too), "lost" (their
+//    own income is over £100,000), "near" (within £10,000 of it) or "fine".
 //  tfc / hours: Tax-Free Childcare and funded hours, £ a year; atStake the
 //    two together. hours is England's only.
-//  recoverable: "lost", and a pension payment of payInNeeded (income less
-//    £100,000) fits within this year's Annual Allowance.
+//  payInNeeded: their own income over £100,000; partnerPayIn their
+//    partner's, when they've said what it is.
+//  recoverable: a pension payment brings every income over £100,000 back to
+//    it: theirs within this year's Annual Allowance, their partner's within
+//    the standard one (PARTNER_PENSION_ALLOWANCE).
+//  payValue: atStake as pay before tax, for whoever is over £100,000.
 //  unclaimed: eligible, paying for childcare, and not using Tax-Free
 //    Childcare: what it would add.
 export function childcareSupport(d, m) {
-  const preschool = Math.max(0, Math.round(+d.kidsPreschool || 0));
-  const school = Math.max(0, Math.round(+d.kidsSchool || 0));
+  const situation = kidsSituation(d);
+  if (situation !== "yes" && situation !== "planning") return null;
+  const planning = situation === "planning";
+  // The ages can't add up to more children than they have.
+  const total = +d.kidsCount > 0 ? Math.round(+d.kidsCount) : Infinity;
+  const preschool = planning ? 1 : Math.min(total, Math.max(0, Math.round(+d.kidsPreschool || 0)));
+  const school = planning ? 0 : Math.min(total - preschool, Math.max(0, Math.round(+d.kidsSchool || 0)));
   const children = preschool + school;
   if (!children) return null;
   const nation = nationOf(d) || "england";
-  const billKnown = filled(d.childcareMonthly);
+  const billKnown = !planning && filled(d.childcareMonthly);
   // Not sure of the bill: a preschool child in full-time nursery costs well
   // over the £10,000 the cap needs, so each counts at the cap; school-age
   // children (clubs and holidays) aren't counted.
@@ -79,12 +111,19 @@ export function childcareSupport(d, m) {
     : ani > CHILDCARE_INCOME_LIMIT - NEAR_LIMIT ? "near"
     : "fine";
   const payInNeeded = over ? Math.ceil(ani - CHILDCARE_INCOME_LIMIT) : 0;
-  const recoverable = state === "lost" && payInNeeded <= calcAnnualAllowanceRoom(d, m).room;
+  const ownFits = !over || payInNeeded <= calcAnnualAllowanceRoom(d, m).room;
+  const partnerIncome = state === "partner" && +d.partnerIncome > CHILDCARE_INCOME_LIMIT ? +d.partnerIncome : null;
+  const partnerPayIn = partnerIncome ? Math.ceil(partnerIncome - CHILDCARE_INCOME_LIMIT) : null;
+  const recoverable = state === "lost" ? ownFits
+    : state === "partner" ? partnerPayIn != null && partnerPayIn <= PARTNER_PENSION_ALLOWANCE && ownFits
+    : false;
   const eligible = state === "fine" || state === "near";
+  const atStake = tfc + hours;
   return {
-    nation, preschool, school, children, billKnown,
-    tfc, hours, atStake: tfc + hours,
-    state, ani, payInNeeded, recoverable,
+    nation, planning, preschool, school, children, billKnown,
+    tfc, hours, atStake,
+    state, ani, payInNeeded, partnerIncome, partnerPayIn, recoverable,
+    payValue: payEquivalent(atStake, state === "partner" ? (partnerIncome ?? CHILDCARE_INCOME_LIMIT + 1) : ani, !!m.scottish),
     headroom: eligible ? Math.round(CHILDCARE_INCOME_LIMIT - ani) : 0,
     unclaimed: eligible && d.tfcClaiming === "no" && billKnown ? tfc : 0,
   };

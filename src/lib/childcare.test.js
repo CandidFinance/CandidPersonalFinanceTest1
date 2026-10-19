@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { childcareSupport, nationOf, FUNDED_HOURS_VALUE } from "./childcare.js";
+import { childcareSupport, nationOf, FUNDED_HOURS_VALUE, payEquivalent, kidsSituation } from "./childcare.js";
 import { calcMetrics } from "./metrics.js";
 
 const parent = { employmentStatus: "employed", salary: "104000", ukNation: "england", kidsPreschool: "1", kidsSchool: "0", childcareMonthly: "1500", partnerOver100k: "no",
@@ -61,4 +61,41 @@ test("over £100,000 by more than this year's pension allowance: lost, not recov
   const c = run({ ...parent, salary: "200000", myContribution: "20", employerMatch: "10" });
   assert.equal(c.state, "lost");
   assert.equal(c.recoverable, false);
+});
+
+test("the first answer: no children means nothing here; planning counts as one baby, with no bill", () => {
+  assert.equal(run({ ...parent, kidsStatus: "no" }), null);
+  const p = run({ ...parent, kidsStatus: "planning", kidsPreschool: "", childcareMonthly: "" });
+  assert.equal(p.planning, true);
+  assert.equal(p.preschool, 1);
+  assert.equal(p.atStake, 2000 + 8290);
+  // Answers from before the first question was asked: children's ages given.
+  assert.equal(kidsSituation({ kidsPreschool: "1" }), "yes");
+  assert.equal(kidsSituation({}), null);
+});
+
+test("the ages can't add up to more children than they have", () => {
+  const c = run({ ...parent, kidsStatus: "yes", kidsCount: "1", kidsPreschool: "3", kidsSchool: "2" });
+  assert.equal(c.preschool, 1);
+  assert.equal(c.school, 0);
+});
+
+test("a partner over £100,000: their pension payment to bring it back, within the usual allowance", () => {
+  const known = run({ ...parent, salary: "70000", partnerOver100k: "yes", partnerIncome: "112000" });
+  assert.equal(known.state, "partner");
+  assert.equal(known.partnerPayIn, 12000);
+  assert.equal(known.recoverable, true);
+  assert.equal(run({ ...parent, salary: "70000", partnerOver100k: "yes", partnerIncome: "" }).recoverable, false);
+  assert.equal(run({ ...parent, salary: "70000", partnerOver100k: "yes", partnerIncome: "200000" }).recoverable, false);
+  // Both over: both payments needed, and theirs must fit too.
+  const both = run({ ...parent, salary: "104000", partnerOver100k: "yes", partnerIncome: "110000" });
+  assert.equal(both.payInNeeded, 4000);
+  assert.equal(both.partnerPayIn, 10000);
+  assert.equal(both.recoverable, true);
+});
+
+test("worth as pay: what it would take before tax, at the marginal rate", () => {
+  assert.equal(payEquivalent(10290, 104500), 27080); // 60% + 2%
+  assert.equal(payEquivalent(10290, 104500, true), 33740); // 67.5% + 2%
+  assert.equal(payEquivalent(2000, 130000), 3770); // 45% + 2%
 });

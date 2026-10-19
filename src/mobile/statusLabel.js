@@ -4,6 +4,7 @@
 export function statusLabel(mm, reviewed) {
   if (reviewed) return "Reviewed";
   if (mm.status === "ok") return "On track";
+  if (mm.status === "na") return "Not applicable";
   if (mm.status === "unknown") return "Find out";
   return "Action needed";
 }

@@ -84,6 +84,12 @@ function personaReviewFields(d) {
     childcare_monthly: whole(d.childcareMonthly),
     partner_over_100k: d.partnerOver100k || null,
     tfc_claiming: d.tfcClaiming || null,
+    // supabase/hand-run/supabase_kids_status_postgrad_migration.sql
+    kids_status: d.kidsStatus || null,
+    kids_count: whole(d.kidsCount),
+    partner_income: whole(d.partnerIncome),
+    has_pg_loan: yesNo(d.hasPgLoan),
+    pg_loan_balance: d.hasPgLoan === "yes" ? whole(d.pgLoanBalance) : null,
   };
 }
 

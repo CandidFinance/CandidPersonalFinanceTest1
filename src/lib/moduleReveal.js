@@ -15,7 +15,7 @@ import { bestDrawdown, defaultDrawdownYears } from "./drawdown.js";
 import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
 import { estimatePensionPot, childBenefitCharge, HICBC_START } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
-import { childcareSupport } from "./childcare.js";
+import { childcareSupport, kidsSituation } from "./childcare.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario, pgScenario, SL_REPAYMENT_RATES } from "./studentLoan.js";
@@ -449,6 +449,7 @@ const NATION_HOURS_NOTE = {
   scotland: "Scotland's 1,140 funded hours have no income limit, so they aren't affected.",
 };
 export function kidsReveal(d, m) {
+  if (kidsSituation(d) === "no") return null;
   const cc = childcareSupport(d, m);
   const cb = childBenefitCharge(d, m);
   const aa = calcAnnualAllowanceRoom(d, m);
@@ -456,15 +457,23 @@ export function kidsReveal(d, m) {
   const support = cc?.hours > 0 ? "Tax-Free Childcare and the 30 funded hours" : "Tax-Free Childcare";
   const nationNote = cc?.preschool > 0 ? NATION_HOURS_NOTE[cc.nation] || null : null;
   const cbLine = cb && cb.charge > 0 ? `You also pay back ${fmt(cb.charge)} of Child Benefit a year.` : null;
+  const asPay = cc?.payValue > 0 ? `It's worth the same as about ${fmt(cc.payValue)} of pay before tax.` : null;
+  const partner = cc?.state === "partner";
+  // A pension payment, theirs or their partner's (or both), brings every
+  // income back to £100,000: the support opens up.
   if (cc?.recoverable && cc.atStake > 0) {
     return [
-      { label: ANSWER, figure: `${fmt(cc.atStake)} a year`, title: "of childcare support you could keep." },
-      withBody({ label: WHY, title: `${support} stop for the whole year once either parent's income is over £100,000. Yours is ${fmt(Math.round(cc.ani))}.` }, join(nationNote, cbLine)),
-      { label: ACTION, title: `A pension payment of ${fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to £100,000 and restore it.`,
-        body: "It saves tax as well: Pension shows how much." },
+      { label: ANSWER, figure: `${fmt(cc.atStake)} a year`,
+        title: cc.planning ? "of childcare support you could get once your child arrives." : partner ? "of childcare support you and your partner could get." : "of childcare support you could keep." },
+      withBody({ label: WHY, title: `${support} stop for the whole year once either parent's income is over £100,000. ${partner ? "Your partner's is." : `Yours is ${fmt(Math.round(cc.ani))}.`}` }, join(asPay, nationNote, cbLine)),
+      partner
+        ? { label: ACTION, title: `A pension payment of ${fmt(cc.partnerPayIn)} from your partner (including the tax relief added) would bring their income to £100,000${cc.payInNeeded > 0 ? `, and ${fmt(cc.payInNeeded)} from you would do the same for yours` : ""}.`,
+            body: "It saves tax at their top rate as well." }
+        : { label: ACTION, title: `A pension payment of ${fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to £100,000 and restore it.`,
+            body: "It saves tax as well: Pension shows how much." },
     ];
   }
-  if (cc?.unclaimed > 0) {
+  if (cc?.unclaimed > 0 && !cc.planning) {
     return [
       { label: ANSWER, figure: `${fmt(cc.unclaimed)} a year`, title: "of Tax-Free Childcare you could claim." },
       { label: WHY, title: "The government adds £2 for every £8 you pay for childcare, up to £2,000 a child a year." },
@@ -483,11 +492,25 @@ export function kidsReveal(d, m) {
     ];
   }
 
-  if (cc?.state === "partner") {
+  // Their partner is over £100,000, and either their income isn't known or
+  // the payment would be more than the usual allowance.
+  if (partner) {
     return [
-      { label: ANSWER, figure: cc.atStake > 0 ? `${fmt(cc.atStake)} a year` : undefined, title: "of childcare support out of reach while your partner's income is over £100,000." },
-      withBody({ label: WHY, title: `${support} stop once either parent's income is over £100,000.` }, nationNote),
-      { label: ACTION, title: "If your partner's income came down to £100,000, for example with a pension payment, it would be restored." },
+      { label: ANSWER, figure: cc.atStake > 0 ? `${fmt(cc.atStake)} a year` : undefined, title: "of childcare support you and your partner could get." },
+      withBody({ label: WHY, title: `${support} stop once either parent's income is over £100,000, and your partner's is.` }, join(asPay, nationNote)),
+      cc.partnerPayIn == null
+        ? { label: ACTION, title: "A pension payment from your partner that brings their income to £100,000 would open it up.", body: "Their income, in Edit inputs, shows how much it would take." }
+        : { label: ACTION, title: `Bringing your partner's income to £100,000 would take a pension payment of ${fmt(cc.partnerPayIn)}, more than the usual £60,000 a year allowance.`,
+            body: "Allowance unused in the last three years can sometimes be carried forward: their pension provider can say." },
+    ];
+  }
+  // Planning: what they could get, and whether their income puts it at risk.
+  if (cc?.planning && (cc.state === "fine" || cc.state === "near")) {
+    return [
+      { label: ANSWER, figure: `${fmt(cc.atStake)} a year`, title: "of childcare support you could get once your child arrives." },
+      withBody({ label: WHY, title: `Tax-Free Childcare adds 20% of childcare costs, up to £2,000 a child${cc.hours > 0 ? ", and in England the 30 funded hours start at 9 months" : ""}.` },
+        cc.state === "near" ? `You're ${fmt(cc.headroom)} under the £100,000 limit, so a pay rise could take you over it.` : nationNote),
+      { label: ACTION, title: "Nothing to change right now.", body: "Both of you need to be working, and each under £100,000, when you apply." },
     ];
   }
   if (cc?.state === "lost") {

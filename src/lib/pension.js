@@ -532,6 +532,8 @@ export function childBenefitChargeAt(income, children) {
 // For this user: null with no Child Benefit, or when a partner earns more.
 // `payInNeeded`: paid into a pension (gross), what brings income to £60,000.
 export function childBenefitCharge(d, m) {
+  // No children, and none planned (Kids & family's first question).
+  if (d.kidsStatus === "no") return null;
   const children = +d.childBenefitChildren || 0;
   if (!children || d.cbHigherEarner === "no") return null;
   const income = m.adjustedNetIncome || 0;
