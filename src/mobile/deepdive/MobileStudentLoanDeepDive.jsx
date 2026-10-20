@@ -106,7 +106,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
             <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayTotalBenefit)}</div>
             <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Ahead by paying it off now, about {fmt(sl.overpayAnnualBenefit)} a year</div>
             <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.55,marginTop:"10px"}}>
-              Clears in {sl.clearYr}yrs, without action. Paying off the {k(cost.balance)} now saves ~{k(sl.interestAvoided)} of interest. Same money in savings? You earn ~{k(sl.savingsForgone)}.
+              Paying off the {k(cost.balance)} now saves ~{k(sl.interestAvoided)} of interest. Same money in savings? You earn ~{k(sl.savingsForgone)}.
             </div>
           </div>
           <SpareCheck d={d} m={m} sl={sl} amount={cost.balance}/>
@@ -120,7 +120,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
             <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(lump.saving)}</div>
             <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Ahead by paying {k(lump.amount)} off now, in today's money</div>
             <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.55,marginTop:"10px"}}>
-              Written off without action. Paying {k(lump.amount)} now clears it in {lump.clearYr}yrs, counting what the money would earn in savings.
+              Paying {k(lump.amount)} now clears it in {lump.clearYr}yrs, counting what the money would earn in savings.
             </div>
           </div>
           <SpareCheck d={d} m={m} sl={sl} amount={lump.amount}/>
