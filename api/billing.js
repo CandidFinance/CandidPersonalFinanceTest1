@@ -4,6 +4,8 @@ import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, red
 import { cleanEmail, makeToken, readToken } from "../server/tokens.js";
 import { accessFor } from "../server/access.js";
 import { referralLink, codeIsValid } from "../server/referrals.js";
+import { sendOnce, unsubscribeUrl, mailReady } from "../server/alertMail.js";
+import { welcomeEmail, PAID_PLANS } from "../src/lib/weekly.js";
 
 // Subscriptions: the first module's answer is free, every one after it needs
 // a subscription (src/lib/unlock.js). One function for all of it, routed by
@@ -136,6 +138,24 @@ async function saveSubscription(sub, email) {
   return who;
 }
 
+// The welcome, once (alert_sends key "welcome", shared with the daily run
+// in api/alerts.js), as they subscribe: the webhook and the return from
+// checkout both get here, and only one send lands. Never holds up access:
+// a failure is logged, and the daily run sends it the next morning.
+async function welcome(sub, email, name) {
+  if (!email || !mailReady() || process.env.VITE_ALERTS_LIVE !== "1") return;
+  const plan = planOf(sub);
+  if (!PAID_PLANS.includes(plan) || !["active", "trialing"].includes(sub.status)) return;
+  const periodEnd = sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end;
+  try {
+    const mail = welcomeEmail({ name, plan, amountPence: sub.items?.data?.[0]?.price?.unit_amount,
+      periodEnd: periodEnd ? new Date(periodEnd * 1000).toISOString() : null, unsubscribeUrl: unsubscribeUrl(email) });
+    await sendOnce({ to: email, key: "welcome", kind: "welcome", ...mail });
+  } catch (e) {
+    console.error("[api/billing] welcome email failed:", e.message);
+  }
+}
+
 // ── The raw body: Vercel's parser is off (config below) so the webhook can
 // check Stripe's signature against the exact bytes; the other actions parse it.
 export const config = { api: { bodyParser: false } };
@@ -158,7 +178,8 @@ async function webhook(req, res, raw) {
   const obj = event.data?.object;
   if (event.type === "checkout.session.completed" && obj?.mode === "subscription" && obj.subscription) {
     const sub = await stripe("GET", `/subscriptions/${obj.subscription}`);
-    await saveSubscription(sub, cleanEmail(obj.customer_details?.email || obj.customer_email));
+    const email = await saveSubscription(sub, cleanEmail(obj.customer_details?.email || obj.customer_email));
+    await welcome(sub, email, obj.customer_details?.name);
   } else if (["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(event.type)) {
     await saveSubscription(obj, null);
   }
@@ -193,6 +214,7 @@ async function confirm(body, res) {
   // Recorded here as well as by the webhook, so access doesn't wait on it.
   const sub = await stripe("GET", `/subscriptions/${session.subscription}`);
   const email = await saveSubscription(sub, cleanEmail(session.customer_details?.email || session.customer_email));
+  await welcome(sub, email, session.customer_details?.name);
   const access = accessFor(await rowFor(email));
   return res.status(200).json({ ...access, token: access.active ? makeToken(email, "access", ACCESS_TTL_MS) : null });
 }

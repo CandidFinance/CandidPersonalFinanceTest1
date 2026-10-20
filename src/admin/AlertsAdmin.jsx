@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { NavBar } from "../NavBar.jsx";
 import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS, ERROR_TEXT } from "../design-tokens.js";
+import WeeklyEditor from "./WeeklyEditor.jsx";
 
 // Internal page for Candid's emails (api/alerts.js): what would go out on
 // any date, worked out on everyone's figures today, and one of them sent to
 // an address of your choosing as a test. Same password as the other admin
 // pages; nothing is remembered across reloads. Whether the daily run really
-// sends is the VITE_ALERTS_LIVE setting in Vercel, shown at the top.
+// sends is the VITE_ALERTS_LIVE setting in Vercel, shown at the top. The
+// Sunday email's issue for each week is written and approved here too
+// (WeeklyEditor).
 
 const button = primary => ({ padding: "8px 14px", borderRadius: "8px", border: primary ? "none" : "1.5px solid rgba(22,47,36,0.2)", background: primary ? G : WHITE, color: primary ? WHITE : G, fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: SANS });
 const input = { padding: "9px 12px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "14px", fontFamily: SANS, boxSizing: "border-box" };
-const KIND_LABEL = { taxYearEnd: "Before 5 April", bonus: "Bonus", newTaxYear: "New tax year", rates: "Better rate" };
+const KIND_LABEL = { taxYearEnd: "Before 5 April", bonus: "Bonus", newTaxYear: "New tax year", rates: "Better rate", welcome: "Welcome", weekly: "Sunday email" };
 
 export default function AlertsAdmin() {
   const [password, setPassword] = useState("");
@@ -41,7 +44,7 @@ export default function AlertsAdmin() {
     }
     return null;
   }
-  const preview = async () => { const json = await call({ action: "preview", date }, "preview"); if (json) { setData(json); setOpen(null); setTestDone(null); } };
+  const preview = async (on = date) => { const json = await call({ action: "preview", date: on }, "preview"); if (json) { setData(json); setOpen(null); setTestDone(null); } };
   const sendTest = async index => { const json = await call({ action: "test", date, index, to: testTo }, `test${index}`); if (json) setTestDone(index); };
 
   if (!data) {
@@ -70,10 +73,11 @@ export default function AlertsAdmin() {
         <div style={{ fontSize: "14px", fontWeight: 700, color: data.live ? SUCCESS : MUT }}>
           {data.live ? "Sending is on: the daily run (08:00 UTC) sends these." : "Dry run: nothing is sent. VITE_ALERTS_LIVE=1 in Vercel turns sending on."}
         </div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginTop: "16px" }}>
+        <WeeklyEditor call={call} busy={busy} onPreview={week => { setDate(week); preview(week); }}/>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginTop: "22px" }}>
           <label style={{ fontSize: "13px", color: MUT }}>As if today were</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} style={input}/>
-          <button type="button" style={button(true)} disabled={!!busy} onClick={preview}>{busy === "preview" ? "Working out..." : "Show what would go out"}</button>
+          <button type="button" style={button(true)} disabled={!!busy} onClick={() => preview()}>{busy === "preview" ? "Working out..." : "Show what would go out"}</button>
         </div>
         <p style={{ fontSize: "13px", color: MUT, lineHeight: 1.5 }}>
           Try 2 March (before 5 April), 10 February (bonus), 12 April (new tax year). Rate alerts can go any day. Figures are everyone's today; what's already been sent is left out.

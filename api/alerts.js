@@ -1,9 +1,10 @@
-import crypto from "crypto";
 import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
 import { alertsDue, alertEmail, inputsFromRow } from "../src/lib/alerts.js";
+import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS } from "../src/lib/weekly.js";
+import { unsubscribeUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from "../server/alertMail.js";
 
-// Candid's emails between visits (src/lib/alerts.js decides what's due).
-// One route:
+// Candid's emails between visits (src/lib/alerts.js decides what's due),
+// subscribers' welcome and the Sunday email (src/lib/weekly.js). One route:
 //  - Vercel Cron, daily (vercel.json), authorised by CRON_SECRET: works out
 //    what's due for everyone who can get emails and, when sending is on,
 //    sends it. Each send is recorded in `alert_sends` first (unique per
@@ -11,7 +12,12 @@ import { alertsDue, alertEmail, inputsFromRow } from "../src/lib/alerts.js";
 //    a failed send is taken back off, to go the next day.
 //  - The /admin/alerts page, authorised by FEEDBACK_ADMIN_PASSWORD: a
 //    preview of what would go out on any date, and one of them sent to an
-//    address of your choosing as a test.
+//    address of your choosing as a test; and the Sunday email's issue for
+//    each week, written, saved and approved there (weekly_issues). Only an
+//    approved issue goes out; the preview shows a draft too.
+//  - The welcome goes to each paid subscriber once (alert_sends key
+//    "welcome"): from api/billing.js as they subscribe, and from the daily
+//    run for anyone that missed it.
 //  - ?action=unsubscribe&t=…, the link in every email (and its one-click
 //    List-Unsubscribe header): adds the email to `alert_optouts`.
 //
@@ -33,11 +39,9 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_PASSWORD = process.env.FEEDBACK_ADMIN_PASSWORD;
 const CRON_SECRET = process.env.CRON_SECRET;
 const RESEND_KEY = process.env.RESEND_API_KEY;
-const TOKEN_SECRET = process.env.ALERTS_TOKEN_SECRET || process.env.STRIPE_BILLING_TOKEN_SECRET;
 const LIVE = process.env.VITE_ALERTS_LIVE === "1";
-const MAIL_FROM = process.env.ALERTS_MAIL_FROM || process.env.BILLING_MAIL_FROM || "Candid <admin@candid-finance.co.uk>";
-const MAIL_REPLY_TO = "admin@candid-finance.co.uk";
 const SITE = "https://www.candid-finance.co.uk";
+const WEEK_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const ACTIVE = ["active", "trialing", "past_due"];
 const SENT_LOOKBACK_DAYS = 400;
@@ -82,7 +86,7 @@ const cleanEmail = e => (typeof e === "string" && EMAIL_RE.test(e.trim())) ? e.t
 // what couldn't be read (a missing table, before the SQL is run): in a live
 // run that stops everything, so no one who unsubscribed is ever emailed.
 async function recipients(notes) {
-  const subs = await all(`subscriptions?select=email,status,saved_state&status=in.(${ACTIVE.join(",")})`);
+  const subs = await all(`subscriptions?select=email,status,plan,amount_pence,current_period_end,created_at,saved_state&status=in.(${ACTIVE.join(",")})`);
   let rows;
   try {
     rows = await all(`test?select=${ROW_COLUMNS}&or=(unlock_call_ok.is.true,alerts_opt_in.is.true)&email=not.is.null&order=id.desc`);
@@ -96,7 +100,8 @@ async function recipients(notes) {
     const email = cleanEmail(s.email);
     // Saved as { inputs, completedModules } (entitlement.js saveStateSoon).
     const d = s.saved_state?.inputs;
-    if (email && d && typeof d === "object") people.set(email, { email, who: "subscriber", d });
+    // Paid, before their answers are saved: the welcome still goes.
+    if (email && (d && typeof d === "object" || PAID_PLANS.includes(s.plan))) people.set(email, { email, who: "subscriber", d: d && typeof d === "object" ? d : null, sub: s });
   }
   // Newest row first, so the first one seen for an email is their latest.
   for (const r of rows) {
@@ -111,16 +116,21 @@ async function optional(path, notes, label) {
   catch (e) { notes.push(`${label} couldn't be read (${e.status || "error"})`); return null; }
 }
 
-export async function plan(today = new Date()) {
+export async function plan(today = new Date(), { drafts = false } = {}) {
   const notes = [];
   const since = new Date(today - SENT_LOOKBACK_DAYS * 86400000).toISOString();
-  const [people, optouts, verified, sent, rates] = await Promise.all([
+  const week = weeklyWeek(today);
+  const [people, optouts, verified, sent, rates, issues] = await Promise.all([
     recipients(notes),
     optional("alert_optouts?select=email", notes, "alert_optouts"),
     optional("email_verifications?select=email&verified_at=not.is.null", notes, "email_verifications"),
     optional(`alert_sends?select=email,alert_key,kind,sent_at,detail&sent_at=gte.${since}`, notes, "alert_sends"),
     db(`savings_rates?select=${RATE_COLUMNS}&order=rate_aer.desc`),
+    week ? optional(`weekly_issues?select=week,subject,intro,items,approved_at&week=eq.${week}`, notes, "weekly_issues") : [],
   ]);
+  // This week's Sunday email: approved, or for the preview, a draft.
+  const issue = issues?.[0] && (issues[0].approved_at || drafts) ? issues[0] : null;
+  if (issues?.[0] && !issues[0].approved_at) notes.push(`The issue for ${week} isn't approved${drafts ? ": shown here, but it won't go out" : ", so it won't go out"}`);
   const out = new Set((optouts || []).map(o => cleanEmail(o.email)));
   const confirmed = new Set((verified || []).map(v => cleanEmail(v.email)));
   const sentBy = new Map();
@@ -132,45 +142,28 @@ export async function plan(today = new Date()) {
   const emails = [];
   for (const p of people) {
     if (out.has(p.email) || (p.who === "free" && !confirmed.has(p.email))) continue;
+    const done = new Set((sentBy.get(p.email) || []).map(s => s.alert_key));
+    const unsubscribe = unsubscribeUrl(p.email);
+    if (p.who === "subscriber" && PAID_PLANS.includes(p.sub.plan) && !done.has("welcome") && new Date(p.sub.created_at) > new Date(since)) {
+      const mail = welcomeEmail({ name: p.d?.name, plan: p.sub.plan, amountPence: p.sub.amount_pence, periodEnd: p.sub.current_period_end, unsubscribeUrl: unsubscribe });
+      emails.push({ to: p.email, who: p.who, kind: "welcome", key: "welcome", detail: null, ...mail });
+    }
+    if (!p.d) continue;
+    if (issue && p.who === "subscriber" && !done.has(`weekly:${issue.week}`)) {
+      try {
+        const mail = weeklyEmail(issue, p.d, { today, rows: rates || [], unsubscribeUrl: unsubscribe });
+        emails.push({ to: p.email, who: p.who, kind: "weekly", key: `weekly:${issue.week}`, detail: null, ...mail });
+      } catch (e) { notes.push(`couldn't write the Sunday email for one subscriber: ${e.message}`); }
+    }
     let due;
     try { due = alertsDue(p.d, { who: p.who, today, sent: sentBy.get(p.email) || [], rows: rates || [] }); }
     catch (e) { notes.push(`couldn't work out alerts for one ${p.who}: ${e.message}`); continue; }
     for (const a of due) {
-      const mail = alertEmail(a, { name: p.d.name, free: p.who === "free", asOf: p.asOf, unsubscribeUrl: unsubscribeUrl(p.email) });
+      const mail = alertEmail(a, { name: p.d.name, free: p.who === "free", asOf: p.asOf, unsubscribeUrl: unsubscribe });
       emails.push({ to: p.email, who: p.who, kind: a.kind, key: a.key, detail: a.detail || null, ...mail });
     }
   }
   return { emails, notes, people: people.length, ready: optouts !== null && sent !== null };
-}
-
-// ── Sending ──────────────────────────────────────────────────────────────────
-async function resend(to, subject, text, unsubscribe) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [to], subject, text,
-      ...(unsubscribe ? { headers: { "List-Unsubscribe": `<${unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } } : {}),
-    }),
-  });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
-}
-
-// Recorded first: only the run whose insert lands sends it.
-async function sendOne(e) {
-  const inserted = await db("alert_sends?on_conflict=email,alert_key", {
-    method: "POST", prefer: "resolution=ignore-duplicates,return=representation",
-    body: { email: e.to, alert_key: e.key, kind: e.kind, detail: e.detail },
-  });
-  if (!inserted?.length) return "duplicate";
-  try {
-    await resend(e.to, e.subject, e.text, unsubscribeUrl(e.to));
-    return "sent";
-  } catch (err) {
-    await db(`alert_sends?email=eq.${encodeURIComponent(e.to)}&alert_key=eq.${encodeURIComponent(e.key)}`, { method: "DELETE" }).catch(() => {});
-    console.error("[api/alerts] send failed:", err.message);
-    return "failed";
-  }
 }
 
 async function run(today = new Date()) {
@@ -184,23 +177,10 @@ async function run(today = new Date()) {
   await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
     while (queue.length) {
       if (Date.now() - started > RUN_BUDGET_MS) { results.left = queue.length; queue.length = 0; return; }
-      results[await sendOne(queue.shift())]++;
+      results[await sendOnce(queue.shift())]++;
     }
   }));
   return { live: true, people, due: emails.length, byKind, ...results, notes };
-}
-
-// ── Unsubscribing: a signed link per email, with no expiry ───────────────────
-const sign = email => crypto.createHmac("sha256", TOKEN_SECRET).update(`alerts-unsubscribe:${email}`).digest("base64url");
-function unsubscribeUrl(email) {
-  if (!TOKEN_SECRET) return `${SITE}/privacy.html`;
-  return `${SITE}/api/alerts?action=unsubscribe&t=${Buffer.from(email).toString("base64url")}.${sign(email)}`;
-}
-function emailFromToken(t) {
-  if (!TOKEN_SECRET || typeof t !== "string") return null;
-  const [e, sig] = t.split(".");
-  const email = cleanEmail(Buffer.from(e || "", "base64url").toString());
-  return email && safeEqual(sig, sign(email)) ? email : null;
 }
 
 const page = (title, body) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title>
@@ -223,11 +203,11 @@ async function unsubscribe(req, res) {
   // unsubscribe, POST.
   if (req.method === "GET") {
     const action = `/api/alerts?action=unsubscribe&t=${encodeURIComponent(t)}`;
-    return res.status(200).send(page("Stop Candid's emails", `<h1>Stop Candid's emails?</h1><p>You won't get reminders or rate alerts at this address any more.</p><form method="post" action="${action}"><button type="submit">Stop the emails</button></form>`));
+    return res.status(200).send(page("Stop Candid's emails", `<h1>Stop Candid's emails?</h1><p>You won't get the Sunday email, reminders or rate alerts at this address any more.</p><form method="post" action="${action}"><button type="submit">Stop the emails</button></form>`));
   }
   if (req.method !== "POST") return res.status(405).end();
   await db("alert_optouts?on_conflict=email", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", body: { email } });
-  return res.status(200).send(page("Emails stopped", `<h1>Done</h1><p>You won't get Candid's reminders or rate alerts any more. Your figures in the app are unchanged.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
+  return res.status(200).send(page("Emails stopped", `<h1>Done</h1><p>You won't get Candid's Sunday email, reminders or rate alerts any more. Your figures in the app are unchanged.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
 }
 
 // ── The route ────────────────────────────────────────────────────────────────
@@ -268,10 +248,23 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   try {
-    const { action, date, index, to } = req.body || {};
+    const { action, date, index, to, week, issue } = req.body || {};
+    // The Sunday email's issue for a week: read, saved, approved.
+    if (action === "weekly-load" || action === "weekly-save" || action === "weekly-approve") {
+      if (typeof week !== "string" || !WEEK_RE.test(week) || new Date(`${week}T12:00:00Z`).getUTCDay() !== 0) return res.status(400).json({ error: "Pick a Sunday" });
+      if (action === "weekly-save") {
+        // Saving changes it, so it needs approving again.
+        await db("weekly_issues?on_conflict=week", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal",
+          body: { week, ...cleanIssue(issue), approved_at: null, updated_at: new Date().toISOString() } });
+      } else if (action === "weekly-approve") {
+        await db(`weekly_issues?week=eq.${week}`, { method: "PATCH", prefer: "return=minimal", body: { approved_at: req.body.approved ? new Date().toISOString() : null } });
+      }
+      const rows = await db(`weekly_issues?select=week,subject,intro,items,approved_at,updated_at&week=eq.${week}`);
+      return res.status(200).json({ issue: rows?.[0] || null });
+    }
     const today = date ? new Date(`${date}T08:00:00Z`) : new Date();
     if (isNaN(today)) return res.status(400).json({ error: "Bad date" });
-    const preview = await plan(today);
+    const preview = await plan(today, { drafts: true });
     if (action === "preview") {
       return res.status(200).json({
         live: LIVE, date: today.toISOString().slice(0, 10), people: preview.people, due: preview.emails.length,
@@ -285,7 +278,7 @@ export default async function handler(req, res) {
       if (!e) return res.status(400).json({ error: "No email at that position" });
       if (!RESEND_KEY) return res.status(503).json({ error: "RESEND_API_KEY isn't set" });
       // To the address given, not the person: nothing recorded.
-      await resend(address, `[Test] ${e.subject}`, e.text, null);
+      await sendMail(address, `[Test] ${e.subject}`, e.text, null);
       return res.status(200).json({ ok: true });
     }
     return res.status(400).json({ error: "Unknown action" });
