@@ -856,7 +856,7 @@ export default function AppShell() {
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
           <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={moduleLimits(mobileActiveModule, d, m)}
-            footer={<InviteFriends d={d} source="reveal"/>}
+            footer={<InviteFriends d={d} source="reveal" moduleKey={mobileActiveModule}/>}
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
               setRevealModule(null);

@@ -206,6 +206,23 @@ const PENSION_QUESTIONS = [
       : { pensionUnknown: false, hasPension: value, pensionKind: value === "yes" ? "dc" : "" },
     // Asked once: on the short route from Student loan, say.
     ifMissing: () => true,
+    // Below a "Yes", on the same screen (GuidedFlow.jsx `follow`): what they
+    // pay in (already there if Property's checks asked it, same field), and
+    // how. Either can be left blank.
+    follow: [
+      { field:"myContribution", kind:"percent", inputLabel:"Your contribution", cap:"myContribution",
+        label: ({ d }) => d.employmentStatus === "self_employed" ? "What percentage of your earnings do you pay in?" : "What percentage of your salary do you pay in?",
+        note: ({ d }) => d.pensionStatus === "db" ? "It's on your payslip. Leave it blank if you're not sure." : "Leave it blank if you're not sure.",
+        showIf: ctx => paying(ctx) || finalSalary(ctx) },
+      { field:"pensionType", kind:"choice", label:"How do you pay in?",
+        options: () => [
+          { value:"sacrifice", label:"Before tax", sub:"Salary sacrifice" },
+          { value:"relief", label:"Take-home pay", sub:"Relief at source" },
+          { value:"", label:"Not sure" },
+        ],
+        note: () => "Your payslip shows it: before tax is taken off means salary sacrifice.",
+        showIf: paying },
+    ],
   },
   {
     id:"pensionPotNotPaying", field:"hasPensionPot", kind:"choice",
@@ -216,32 +233,20 @@ const PENSION_QUESTIONS = [
     showIf: is("pensionStatus", "no"),
   },
   {
-    // Skipped if Property's checks already asked it (same field).
-    id:"pensionContribution", field:"myContribution", kind:"percent", label:"Your contribution", cap:"myContribution", required:true,
-    ask: ({ d }) => d.employmentStatus === "self_employed" ? "What percentage of your earnings do you pay in?" : "What percentage of your salary do you pay in?",
-    why: ({ d }) => d.employmentStatus === "self_employed" ? "Tax relief is added to whatever you pay in." : d.pensionStatus === "db" ? "It lowers your taxable income, which matters near £100,000." : "Your employer may add more if you pay in more.",
-    note: ({ d }) => d.pensionStatus === "db" ? "It's on your payslip." : null,
-    notSure: () => LEAVE_BLANK, showIf: ctx => paying(ctx) || finalSalary(ctx),
-    ifMissing: ({ d }) => !filled(d.myContribution),
-  },
-  {
     // Most employers match what you pay up to a cap; some pay a set % (a
-    // match you can't miss: employer.js).
+    // match you can't miss: employer.js). The percentage below it, on the
+    // same screen. Skipped if Property's checks already had both.
     id:"employerType", field:"employerContributionType", kind:"choice",
     ask: () => "Does your employer match what you pay in, or pay a set amount?",
     why: () => "A match pays more when you pay more. A set amount doesn't.",
     options: () => [{ value:"match", label:"Matches what I pay, up to a limit" }, { value:"fixed", label:"Pays a set percentage, whatever I pay" }, { value:"", label:"Not sure" }],
     showIf: ctx => paying(ctx) && ctx.d.employmentStatus !== "self_employed",
-    ifMissing: ({ d }) => d.employerContributionType == null,
-  },
-  {
-    id:"pensionMatch", field:"employerMatch", kind:"percent", label:"Employer pays", cap:"employerMatch", required:true,
-    ask: ({ d }) => d.employerContributionType === "fixed" ? "What percentage of your salary does your employer pay in?" : "Up to what percentage will your employer match it?",
-    why: ({ d }) => d.employerContributionType === "fixed" ? "It's added to your pension on top of what you pay." : "An unclaimed match is free money.",
-    note: () => "It's in your contract, or ask HR.",
-    notSure: () => LEAVE_BLANK,
-    showIf: ctx => paying(ctx) && ctx.d.employmentStatus !== "self_employed",
-    ifMissing: ({ d }) => !filled(d.employerMatch),
+    ifMissing: ({ d }) => d.employerContributionType == null || !filled(d.employerMatch),
+    follow: [
+      { field:"employerMatch", kind:"percent", inputLabel:"Employer pays", cap:"employerMatch",
+        label: ({ d }) => d.employerContributionType === "fixed" ? "What percentage of your salary does your employer pay in?" : "Up to what percentage will your employer match it?",
+        note: () => "It's in your contract, or ask HR. Leave it blank if you're not sure." },
+    ],
   },
   {
     id:"pensionPot", field:"potValue", kind:"money", label:"Pension now", cap:"potValue", required:true,
@@ -330,31 +335,18 @@ const PENSION_QUESTIONS = [
     min: ({ d }) => workingPastRetirementAge(d) ? (+d.age || 0) + 1 : null,
     minNote: () => "Pick an age after the one you are now.",
     showIf: ctx => (hasPot(ctx) || finalSalary(ctx) || workingPastRetirementAge(ctx.d)) && !hasStartedDrawing(ctx.d),
-  },
-  {
-    // The Retirement Living Standards (Pensions UK, 2025): what a year costs
-    // one person, after tax, owning their home outright.
-    id:"retirementTarget", field:"retirementTarget", kind:"choice",
-    ask: () => "What would you like to live on in retirement, a year?",
-    why: () => "So Candid can say whether you're on course for it.",
-    note: () => "In today's money, after tax, for one person who owns their home. Pensions UK's standards.",
-    options: () => [
-      { value:"13900", label:"Minimum: £13,900" }, { value:"32700", label:"Moderate: £32,700" },
-      { value:"45400", label:"Comfortable: £45,400" }, { value:"", label:"Not sure" },
+    // What they'd like to live on, below it: the Retirement Living
+    // Standards (Pensions UK, 2025), what a year costs one person, after
+    // tax, owning their home outright.
+    follow: [
+      { field:"retirementTarget", kind:"choice", label:"What would you like to live on in retirement, a year?", columns:2,
+        options: () => [
+          { value:"13900", label:"Minimum", sub:"£13,900" }, { value:"32700", label:"Moderate", sub:"£32,700" },
+          { value:"45400", label:"Comfortable", sub:"£45,400" }, { value:"", label:"Not sure" },
+        ],
+        note: () => "So Candid can say whether you're on course for it. In today's money, after tax, for one person who owns their home: Pensions UK's standards.",
+        showIf: ctx => paying(ctx) || finalSalary(ctx) },
     ],
-    showIf: ctx => (paying(ctx) || finalSalary(ctx)) && !hasStartedDrawing(ctx.d),
-  },
-  {
-    id:"pensionType", field:"pensionType", kind:"choice",
-    ask: () => "How do you pay in?",
-    why: () => "Changes how you get tax relief, and whether you must claim some yourself.",
-    options: () => [
-      { value:"sacrifice", label:"From my pay before tax (salary sacrifice)" },
-      { value:"relief", label:"From my take-home pay (relief at source)" },
-      { value:"", label:"Not sure" },
-    ],
-    note: () => "Your payslip shows it: before tax is taken off means salary sacrifice.",
-    showIf: paying,
   },
 ];
 
@@ -669,8 +661,12 @@ const KIDS_QUESTIONS = [
 // shows every answer as one form, and for anything listing a module's
 // fields.
 export function flatQuestions(questions) {
+  // A follow-up's `label` is its question (a string, or worked out from the
+  // answers); `inputLabel`, if any, goes in its field.
   return questions.flatMap(q => [q, ...(q.follow || []).map(f => ({
-    id: `${q.id}.${f.field}`, ask: () => f.label, why: () => "", group: q.group, ...f,
+    id: `${q.id}.${f.field}`, why: () => "", group: q.group, ...f,
+    ask: ctx => typeof f.label === "function" ? f.label(ctx) : f.label,
+    label: f.inputLabel ?? (typeof f.label === "function" ? "" : f.label),
     showIf: ctx => (!q.showIf || q.showIf(ctx)) && (!f.showIf || f.showIf(ctx)),
   }))]);
 }
@@ -692,7 +688,7 @@ export const MODULE_GUIDES = {
 // Pension: whether they pay in, and their employer's match.
 const LOAN_BRIEF = {
   cash: ["spending", "cashAccounts", "hasPremiumBonds", "premiumBonds", "hasCashIsa", "cashIsaThisYear", "otherIsa", "otherIsaThisYear"],
-  pension: ["pensionStatus", "pensionContribution", "employerType", "pensionMatch"],
+  pension: ["pensionStatus", "employerType"],
 };
 const BRIEF_ABOUT = ["employment", "notWorking", "earnedThisYear", "salary"];
 export function briefQuestions(key, from) {

@@ -60,7 +60,7 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }
           const options = q.options(ctx);
           control = sliderFits(options)
             ? <PillSlider value={raw ?? ""} onChange={v => write(q, v)} options={options}/>
-            : <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>{options.map(o => <button key={o.value} type="button" onClick={() => write(q, o.value)} style={chip(raw === o.value)}>{o.label}</button>)}</div>;
+            : <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>{options.map(o => <button key={o.value} type="button" onClick={() => write(q, o.value)} style={chip(raw === o.value)}>{o.label}{o.sub && <span style={{fontWeight:500,color:MUT}}> · {o.sub}</span>}</button>)}</div>;
         } else if (q.kind === "custom" && q.render === "cashAccounts") {
           control = <MobileCashTiersList d={d} set={set}/>;
         } else if (q.field === "loanBalance" && raw !== "" && raw != null && !isNaN(+raw)) {

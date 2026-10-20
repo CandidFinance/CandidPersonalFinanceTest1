@@ -11,7 +11,6 @@ import { fmt } from "./format.js";
 import { DIVIDEND_ALLOWANCE } from "./rentVsBuy.js";
 
 const filled = v => v !== "" && v !== null && v !== undefined && !isNaN(+v);
-const NONE = { label:"None", value:"" };
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const extraIncomeUnasked = ({ d }) => d.hasExtraIncome == null && ![d.bonusAmount, d.dividendIncome, d.otherIncome].some(v => +v > 0);
 // Which kinds of other income: picked on one screen (extraIncomeKinds); for
@@ -79,6 +78,8 @@ export const SALARY_QUESTION = {
   ifMissing: ({ d }) => !(+d.salary > 0),
 };
 
+// The kinds, then how much of each picked, below them on the same screen
+// (GuidedFlow.jsx `follow`); then the bonus month on a screen of its own.
 export const EXTRA_INCOME_QUESTIONS = [
   {
     id:"extraIncome", field:"extraIncomeKinds", kind:"multi", group:"you", required:true,
@@ -88,37 +89,26 @@ export const EXTRA_INCOME_QUESTIONS = [
     options: () => EXTRA_KINDS,
     also: value => ({ hasExtraIncome: (value || []).some(v => v !== "none") ? "yes" : "no" }),
     ifMissing: extraIncomeUnasked,
-  },
-  {
-    id:"bonus", field:"bonusAmount", kind:"money", label:"Bonus a year", cap:"bonusAmount", required:true, group:"you",
-    ask: () => "Roughly how much is your yearly bonus?",
-    why: () => "A bonus is taxed like salary, at your top rate.",
-    notSure: () => ({ label:"No bonus", value:"" }),
-    showIf: hasExtra("bonus"), ifMissing: extraIncomeUnasked,
+    follow: [
+      { field:"bonusAmount", kind:"money", label:"Roughly how much is your yearly bonus?", inputLabel:"Bonus a year", cap:"bonusAmount", required:true,
+        note: () => "A bonus is taxed like salary, at your top rate.", showIf: hasExtra("bonus") },
+      { field:"dividendIncome", kind:"money", label:"How much do you get in dividends a year?", inputLabel:"Dividends a year", cap:"dividendIncome", required:true,
+        note: () => `Dividends above ${fmt(DIVIDEND_ALLOWANCE)} a year are taxed, unless they're in an ISA.`, showIf: hasExtra("dividends") },
+      { field:"otherIncome", kind:"money", label:"How much other income a year, such as rent?", inputLabel:"Other income a year", cap:"otherIncome", required:true,
+        note: () => "It's added to your salary when working out your tax band.", showIf: hasExtra("other") },
+    ],
   },
   {
     // Optional: a subscriber's bonus reminder comes the month before
-    // (src/lib/alerts.js), or in February when it isn't known.
-    id:"bonusMonth", field:"bonusMonth", kind:"choice", group:"you",
+    // (src/lib/alerts.js), or in February when it isn't known. The months
+    // in three columns (`columns`), "Not sure" below them.
+    id:"bonusMonth", field:"bonusMonth", kind:"choice", group:"you", columns:3,
     ask: () => "Which month is your bonus usually paid?",
     why: () => "Paying it into a pension has to be arranged before then.",
-    options: () => [...MONTHS.map((label, i) => ({ value:String(i + 1), label })), { value:"", label:"Not sure" }],
+    options: () => MONTHS.map((label, i) => ({ value:String(i + 1), label })),
+    notSure: () => ({ label:"Not sure", value:"" }),
     showIf: ctx => hasExtra("bonus")(ctx) && +ctx.d.bonusAmount > 0,
     ifMissing: ({ d }) => d.bonusMonth == null,
-  },
-  {
-    id:"dividends", field:"dividendIncome", kind:"money", label:"Dividends a year", cap:"dividendIncome", required:true, group:"you",
-    ask: () => "How much do you get in dividends a year?",
-    why: () => `Dividends above ${fmt(DIVIDEND_ALLOWANCE)} a year are taxed, unless they're in an ISA.`,
-    notSure: () => NONE,
-    showIf: hasExtra("dividends"), ifMissing: extraIncomeUnasked,
-  },
-  {
-    id:"otherIncome", field:"otherIncome", kind:"money", label:"Other income a year", cap:"otherIncome", required:true, group:"you",
-    ask: () => "Any other income a year, such as rent?",
-    why: () => "It's added to your salary when working out your tax band.",
-    notSure: () => NONE,
-    showIf: hasExtra("other"), ifMissing: extraIncomeUnasked,
   },
 ];
 

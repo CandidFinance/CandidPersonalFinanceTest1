@@ -290,7 +290,7 @@
     },
     "pension": {
      "amount": 1440,
-     "answers": "[null,null,\"3\",null,\"5\",\"55000\",null,null,\"8000\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"3\",\"sacrifice\",null,null,\"5\",\"55000\",null,null,\"8000\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -3159,7 +3159,7 @@
     },
     "pension": {
      "amount": 1440,
-     "answers": "[null,null,\"3\",null,\"5\",\"55000\",null,null,\"8000\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"3\",\"sacrifice\",null,null,\"5\",\"55000\",null,null,\"8000\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -5763,7 +5763,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"20000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"20000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -8297,7 +8297,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"20000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"20000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -10662,7 +10662,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"6\",null,\"6\",\"70000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"6\",\"sacrifice\",null,null,\"6\",\"70000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -13245,7 +13245,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"6\",null,\"6\",\"70000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"6\",\"sacrifice\",null,null,\"6\",\"70000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -18505,7 +18505,7 @@
     },
     "pension": {
      "amount": 13512,
-     "answers": "[null,null,\"4\",null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"relief\"]",
+     "answers": "[null,\"4\",\"relief\",null,null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -21201,7 +21201,7 @@
     },
     "pension": {
      "amount": 13512,
-     "answers": "[null,null,\"4\",null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"relief\"]",
+     "answers": "[null,\"4\",\"relief\",null,null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -23658,7 +23658,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"10\",null,\"8\",\"650000\",null,null,\"0\",null,null,null,null,null,\"60\",null,\"sacrifice\"]",
+     "answers": "[null,\"10\",\"sacrifice\",null,null,\"8\",\"650000\",null,null,\"0\",null,null,null,null,null,\"60\",null]",
      "banked": 0
     }
    },
@@ -26218,7 +26218,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"10\",null,\"8\",\"650000\",null,null,\"0\",null,null,null,null,null,\"60\",null,\"sacrifice\"]",
+     "answers": "[null,\"10\",\"sacrifice\",null,null,\"8\",\"650000\",null,null,\"0\",null,null,null,null,null,\"60\",null]",
      "banked": 0
     }
    },
@@ -28653,7 +28653,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"8\",null,\"0\",\"45000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"relief\"]",
+     "answers": "[null,\"8\",\"relief\",null,null,\"0\",\"45000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -31255,7 +31255,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"8\",null,\"0\",\"45000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"relief\"]",
+     "answers": "[null,\"8\",\"relief\",null,null,\"0\",\"45000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -33628,7 +33628,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -36844,7 +36844,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -39891,7 +39891,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"2000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"2000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -43488,7 +43488,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"2000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"2000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -46924,7 +46924,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -49715,7 +49715,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -52323,7 +52323,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"420000\",null,null,\"60000\",null,null,null,null,null,\"62\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"420000\",null,null,\"60000\",null,null,null,null,null,\"62\",null]",
      "banked": 0
     }
    },
@@ -54959,7 +54959,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"420000\",null,null,\"60000\",null,null,null,null,null,\"62\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"420000\",null,null,\"60000\",null,null,null,null,null,\"62\",null]",
      "banked": 0
     }
    },
@@ -57380,7 +57380,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"300000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"300000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -59961,7 +59961,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"300000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"300000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -67181,7 +67181,7 @@
    "baselinePatch": {
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"\",null,\"\",\"\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"\",\"sacrifice\",null,null,\"\",\"\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -68688,7 +68688,7 @@
    "baselinePatch": {
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"\",null,\"\",\"\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"\",\"sacrifice\",null,null,\"\",\"\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -70047,7 +70047,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -73048,7 +73048,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     }
    },
@@ -75871,7 +75871,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {
@@ -79294,7 +79294,7 @@
     },
     "pension": {
      "amount": 0,
-     "answers": "[null,null,\"5\",null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null,\"sacrifice\"]",
+     "answers": "[null,\"5\",\"sacrifice\",null,null,\"5\",\"30000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
     "studentLoan": {

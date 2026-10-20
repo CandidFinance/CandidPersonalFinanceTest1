@@ -1,21 +1,27 @@
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
-import { Share2 } from "lucide-react";
+import { Share2, Copy, Check, Mail, MessageCircle } from "lucide-react";
 import { G, MUT, TEXT, WHITE, ERROR_TEXT } from "../design-tokens.js";
 import { validEmailShape, requestEmailCheck } from "../lib/emailCheck.js";
-import { fetchReferralLink, shareInvite, copyInvite, inviteMailto, inviteUrl, REFERRAL_CAP } from "../lib/referral.js";
+import { fetchReferralLink, inviteMessage, nativeShare, shareInvite, copyInvite, inviteMailto, inviteWhatsApp, REFERRAL_CAP } from "../lib/referral.js";
 
 // Inviting friends (src/lib/referral.js, server/referrals.js): a free month
 // for each friend who joins on their link and completes their first module,
-// up to REFERRAL_CAP; the friend's second module is unlocked for free. The link is for a
-// confirmed email only, so until theirs is, this offers its confirmation
-// link instead. Nothing without an email. `source` is where it's shown, for
-// PostHog. `bare`: no card of its own, inside one already (the paywall).
-export default function InviteFriends({ d, source, bare = false }) {
+// up to REFERRAL_CAP; the friend's second module is unlocked for free. The
+// link is for a confirmed email only, so until theirs is, this offers its
+// confirmation link instead. Nothing without an email.
+// Sharing: the phone's own share sheet on a phone; on a computer, Email and
+// WhatsApp under the button. Beside it, a copy button for the message with
+// its link, to paste anywhere. The message says what they've used Candid for
+// (`moduleKey`, the answer just seen, else their last one unlocked).
+// `source` is where it's shown, for PostHog. `bare`: no card of its own,
+// inside one already (the paywall).
+export default function InviteFriends({ d, source, moduleKey = null, bare = false }) {
   const email = validEmailShape(d.email) ? d.email.trim() : null;
   const [link, setLink] = useState(null); // { confirmed, code, earned, cap }
   const [failed, setFailed] = useState(false);
-  const [note, setNote] = useState(null);
+  const [copied, setCopied] = useState(null); // true, or "failed"
+  const [choices, setChoices] = useState(false);
   const [resent, setResent] = useState(null);
 
   useEffect(() => {
@@ -32,10 +38,19 @@ export default function InviteFriends({ d, source, bare = false }) {
 
   if (!email || failed || !link) return null;
 
-  const share = async (how = "sheet") => {
-    const result = how === "copy" ? await copyInvite(link.code) : await shareInvite(link.code);
-    posthog.capture("referral_shared", { source, how: result });
-    setNote(result === "copied" ? "Link copied. Paste it into a message to a friend." : result === "failed" ? "Couldn't copy it. Select the link below and copy it instead." : null);
+  const text = link.confirmed ? inviteMessage(link.code, d, moduleKey) : "";
+  const shared = how => posthog.capture("referral_shared", { source, how });
+  const share = async () => {
+    if (!nativeShare()) { setChoices(c => !c); return; }
+    const result = await shareInvite(text);
+    if (result === "failed") setChoices(true);
+    shared(result === "shared" ? "sheet" : result);
+  };
+  const copy = async () => {
+    const result = await copyInvite(text);
+    shared(result === "copied" ? "copy" : "copy_failed");
+    setCopied(result === "copied" ? true : "failed");
+    if (result === "copied") setTimeout(() => setCopied(null), 2500);
   };
   const resend = async () => {
     setResent("sending");
@@ -45,6 +60,8 @@ export default function InviteFriends({ d, source, bare = false }) {
 
   const wrap = bare ? {} : { background:WHITE, border:"1.5px solid rgba(22,47,36,0.12)", borderRadius:"14px", padding:"16px 18px", marginTop:"16px" };
   const textLink = { background:"none", border:"none", padding:0, color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
+  const pill = { border:"none", borderRadius:"100px", padding:"12px", fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"7px", boxSizing:"border-box" };
+  const choice = { ...pill, flex:1, background:WHITE, color:G, border:`1.5px solid ${G}`, padding:"10px", textDecoration:"none" };
   return (
     <div style={wrap}>
       <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Give a friend a free module, get a free month</div>
@@ -53,19 +70,26 @@ export default function InviteFriends({ d, source, bare = false }) {
       </p>
       {link.confirmed ? (
         <>
-          <button type="button" onClick={() => share()} style={{marginTop:"12px",width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"7px"}}>
-            <Share2 size={15}/>Share your link
-          </button>
-          {/* Email: its subject and the link filled in, in their mail app. */}
-          <div style={{display:"flex",justifyContent:"center",gap:"20px",marginTop:"10px"}}>
-            <a href={inviteMailto(link.code)} onClick={() => posthog.capture("referral_shared", { source, how: "email" })} style={{...textLink,textDecoration:"none"}}>Email it</a>
-            <button type="button" onClick={() => share("copy")} style={textLink}>Copy link</button>
+          <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
+            <button type="button" onClick={share} aria-expanded={nativeShare() ? undefined : choices} style={{...pill,flex:4,background:G,color:WHITE}}>
+              <Share2 size={15}/>Share your link
+            </button>
+            <button type="button" onClick={copy} aria-label="Copy your invite" title="Copy your invite"
+              style={{...pill,flex:1,background:WHITE,color:G,border:`1.5px solid ${G}`}}>
+              {copied === true ? <Check size={17}/> : <Copy size={17}/>}
+            </button>
           </div>
-          {note && <div role="status" style={{fontSize:"12.5px",color:TEXT,marginTop:"8px",textAlign:"center"}}>{note}</div>}
-          <div style={{display:"flex",justifyContent:"space-between",gap:"10px",marginTop:"10px",fontSize:"12px",color:MUT}}>
-            <span style={{userSelect:"all",overflowWrap:"anywhere"}}>{inviteUrl(link.code).replace(/^https?:\/\//, "")}</span>
-            <span style={{whiteSpace:"nowrap"}}>{link.earned} of {link.cap} months earned</span>
-          </div>
+          {choices && (
+            <div style={{display:"flex",gap:"8px",marginTop:"8px"}}>
+              <a href={inviteMailto(text)} onClick={() => shared("email")} style={choice}><Mail size={15}/>Email</a>
+              <a href={inviteWhatsApp(text)} target="_blank" rel="noopener noreferrer" onClick={() => shared("whatsapp")} style={choice}><MessageCircle size={15}/>WhatsApp</a>
+            </div>
+          )}
+          {copied && (
+            <div role="status" style={{fontSize:"12.5px",color:copied === true ? TEXT : ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>
+              {copied === true ? "Copied. Paste it into a message to a friend." : "Couldn't copy it. Use Share your link instead."}
+            </div>
+          )}
         </>
       ) : (
         <div style={{marginTop:"10px",fontSize:"12.5px",color:TEXT,lineHeight:1.5}}>

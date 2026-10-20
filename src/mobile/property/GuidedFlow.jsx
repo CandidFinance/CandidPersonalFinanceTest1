@@ -131,8 +131,19 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   // screen, once it's answered and each one's showIf holds. Answering one
   // doesn't move on; Continue does, once every required one is answered. A
   // follow-up marked `once` is remembered as asked, like an ask-once
-  // question.
+  // question. A follow-up's `label` is its question, a string or worked
+  // out from the answers.
   const follows = (q.follow || []).filter(f => !f.showIf || f.showIf(ctx));
+  const followsFor = patch => (q.follow || []).filter(f => !f.showIf || f.showIf({ ...ctx, d: { ...d, ...patch } }));
+  // A choice with follow-ups: picked on this screen (so "Not sure", an empty
+  // value, counts), and straight on when the pick has none to ask.
+  const [chosen, setChosen] = useState(() => new Set());
+  const [followPicked, setFollowPicked] = useState(() => new Set());
+  const pick = value => {
+    const patch = write(q.field, value);
+    if (!followsFor(patch).length) { next(patch); return; }
+    setChosen(c => new Set(c).add(q.id));
+  };
   const writeFollow = (f, value) => {
     const v = f.cap ? capField(f.cap, value ?? "") : value;
     const patch = { [f.field]: v, ...(f.also ? f.also(v, ctx) : {}) };
@@ -162,7 +173,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     : q.yearRange ? yearInRange(raw, q.yearRange(ctx))
     : raw !== "" && raw != null && !isNaN(+raw) && (minFor(q, ctx) == null || +raw >= minFor(q, ctx));
   // With follow-ups showing, every required one has to be answered too.
-  const mainReady = q.follow && q.kind === "choice" ? raw !== "" && raw != null : (hasAnswer || !q.required);
+  const mainReady = q.follow && q.kind === "choice" ? chosen.has(q.id) || (raw !== "" && raw != null) : (hasAnswer || !q.required);
   const followsReady = (hasAnswer || (q.follow && q.kind === "choice" && mainReady)) ? follows.every(f => (!f.required || followAnswered(f)) && !followWrong(f)) : true;
   const canGo = mainReady && followsReady;
   const continueButton = (
@@ -178,14 +189,17 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     <div style={{display:"flex",flexDirection:"column",gap:"16px",marginTop:"18px"}}>
       {follows.map(f => (
         <div key={f.field}>
-          <div style={{fontSize:"13.5px",fontWeight:700,color:TEXT,marginBottom:"8px"}}>{f.label}</div>
+          <div style={{fontSize:"13.5px",fontWeight:700,color:TEXT,marginBottom:"8px"}}>{typeof f.label === "function" ? f.label(ctx) : f.label}</div>
           {f.kind === "choice" ? (
-            <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+            // `columns`: in a grid, for more answers than fit in a row.
+            <div style={f.columns ? {display:"grid",gridTemplateColumns:`repeat(${f.columns}, 1fr)`,gap:"8px"} : {display:"flex",flexWrap:"wrap",gap:"8px"}}>
               {f.options(ctx).map(o => {
-                const on = d[f.field] === o.value;
+                // An empty answer ("Not sure") shows as picked only once it's
+                // been tapped, not because the field starts empty.
+                const on = d[f.field] === o.value && (o.value !== "" || followPicked.has(f.field));
                 return (
-                  <button key={o.value} type="button" aria-pressed={on} onClick={() => writeFollow(f, o.value)} style={{
-                    flex:o.sub ? "1 1 0" : "0 0 auto", minWidth:o.sub ? 0 : undefined, background:on ? G : WHITE, color:on ? WHITE : TEXT,
+                  <button key={o.value} type="button" aria-pressed={on} onClick={() => { setFollowPicked(s => new Set(s).add(f.field)); writeFollow(f, o.value); }} style={{
+                    flex:o.sub || f.columns ? "1 1 0" : "0 0 auto", minWidth:o.sub || f.columns ? 0 : undefined, background:on ? G : WHITE, color:on ? WHITE : TEXT,
                     border:`1.5px solid ${on ? G : "rgba(22,47,36,0.15)"}`, borderRadius:o.sub ? "14px" : "100px", padding:o.sub ? "9px 6px" : "9px 15px",
                     fontFamily:"inherit", cursor:"pointer", lineHeight:1.2, textAlign:"center",
                   }}>
@@ -245,9 +259,9 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
             <form onSubmit={submit}>
               <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
                 {q.options(ctx).map(o => {
-                  const selected = raw === o.value;
+                  const selected = mainReady && raw === o.value;
                   return (
-                    <button key={o.value} type="button" onClick={() => write(q.field, o.value)} style={answerButton(selected)}>
+                    <button key={o.value} type="button" onClick={() => pick(o.value)} style={answerButton(selected)}>
                       {o.label}
                       {selected && <Check size={16} color={G}/>}
                     </button>
@@ -259,17 +273,19 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
               {continueButton}
             </form>
           ) : q.kind === "choice" ? (
-            <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+            // `columns`: short answers (months) in a grid across the width.
+            <div style={q.columns ? {display:"grid",gridTemplateColumns:`repeat(${q.columns}, 1fr)`,gap:"8px"} : {display:"flex",flexDirection:"column",gap:"8px"}}>
               {q.options(ctx).map(o => {
                 const selected = answered.has(q.id) && d[q.field] === o.value;
                 return (
-                  <button key={o.value} type="button" onClick={() => choose(o.value)} style={answerButton(selected)}>
+                  <button key={o.value} type="button" onClick={() => choose(o.value)}
+                    style={q.columns ? {...answerButton(selected),justifyContent:"center",textAlign:"center",padding:"13px 6px"} : answerButton(selected)}>
                     {o.label}
-                    {selected && <Check size={16} color={G}/>}
+                    {selected && !q.columns && <Check size={16} color={G}/>}
                   </button>
                 );
               })}
-              {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>{note}</p>}
+              {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0",gridColumn:"1 / -1"}}>{note}</p>}
             </div>
           ) : q.kind === "multi" ? (
             <form onSubmit={submit}>
@@ -285,6 +301,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
                 })}
                 {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>{note}</p>}
               </div>
+              {followBlock}
               {continueButton}
             </form>
           ) : q.kind === "info" ? (

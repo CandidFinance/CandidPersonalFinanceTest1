@@ -27,9 +27,14 @@ test("a later module doesn't ask about you again", () => {
   assert.deepEqual(ids("pension", answered), ["pensionStatus"]);
 });
 
-test("other income opens its three questions only when there is some", () => {
-  const yes = { ...fresh, hasExtraIncome: "yes" };
-  assert.deepEqual(ids("pension", yes, fresh).slice(0, 7), [...aboutYou, "bonus", "dividends", "otherIncome"]);
+test("other income: how much of each kind picked, on the same screen", () => {
+  const q = MODULE_GUIDES.pension.questions.find(x => x.id === "extraIncome");
+  const shown = kinds => q.follow.filter(f => f.showIf(ctxFor({ ...fresh, extraIncomeKinds: kinds, hasExtraIncome: kinds.includes("none") ? "no" : "yes" }))).map(f => f.field);
+  assert.deepEqual(shown(["bonus"]), ["bonusAmount"]);
+  assert.deepEqual(shown(["bonus", "dividends", "other"]), ["bonusAmount", "dividendIncome", "otherIncome"]);
+  assert.deepEqual(shown(["none"]), []);
+  // No screen of their own.
+  for (const id of ["bonus", "dividends", "otherIncome"]) assert.ok(!ids("pension", { ...fresh, hasExtraIncome: "yes" }, fresh).includes(id), id);
 });
 
 test("someone not working isn't asked for a salary", () => {
@@ -56,11 +61,24 @@ test("investments: no investments ends after one question; outside an ISA opens 
   ]);
 });
 
-test("pension: the match question is skipped for the self-employed, or if Property already asked it", () => {
+test("pension: the employer's match, with its percentage below, is skipped for the self-employed, or if Property already had both", () => {
   const known = { ...fresh, employmentAsked: true, ukNation: "england", scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no", age: "31", pensionStatus: "yes" };
-  assert.ok(ids("pension", known).includes("pensionMatch"));
-  assert.ok(!ids("pension", { ...known, employmentStatus: "self_employed" }).includes("pensionMatch"));
-  assert.ok(!ids("pension", { ...known, myContribution: "5", employerMatch: "5" }).includes("pensionMatch"));
+  assert.ok(ids("pension", known).includes("employerType"));
+  assert.ok(!ids("pension", { ...known, employmentStatus: "self_employed" }).includes("employerType"));
+  assert.ok(!ids("pension", { ...known, employerContributionType: "match", employerMatch: "5" }).includes("employerType"));
+  const type = MODULE_GUIDES.pension.questions.find(q => q.id === "employerType");
+  assert.deepEqual(type.follow.map(f => f.field), ["employerMatch"]);
+  assert.equal(type.follow[0].label(ctxFor({ ...known, employerContributionType: "fixed" })), "What percentage of your salary does your employer pay in?");
+});
+
+test("pension: what they pay in and how, below a yes; the retirement income below the age", () => {
+  const qs = MODULE_GUIDES.pension.questions;
+  const below = (id, d) => qs.find(q => q.id === id).follow.filter(f => !f.showIf || f.showIf(ctxFor(d))).map(f => f.field);
+  assert.deepEqual(below("pensionStatus", { ...fresh, pensionStatus: "yes" }), ["myContribution", "pensionType"]);
+  assert.deepEqual(below("pensionStatus", { ...fresh, pensionStatus: "db" }), ["myContribution"]);
+  assert.deepEqual(below("pensionStatus", { ...fresh, pensionStatus: "no" }), []);
+  assert.deepEqual(below("retirementAge", { ...fresh, pensionStatus: "yes" }), ["retirementTarget"]);
+  for (const id of ["pensionContribution", "pensionMatch", "pensionType", "retirementTarget"]) assert.ok(!qs.some(q => q.id === id), id);
 });
 
 test("pension 'not sure' keeps the unknown flag the module reads; yes and no set hasPension", () => {
@@ -75,8 +93,8 @@ test("pension 'not sure' keeps the unknown flag the module reads; yes and no set
 test("pension, final salary: no pot or match questions, but what it'll pay", () => {
   const d = { ...fresh, employmentAsked: true, ukNation: "england", scottishTaxpayer: "no", salary: "58000", hasExtraIncome: "no", age: "33", pensionStatus: "db", pensionKind: "db", hasPension: "yes" };
   const asked = ids("pension", d);
-  for (const id of ["pensionPot", "employerType", "pensionMatch", "pensionType"]) assert.equal(asked.includes(id), false, id);
-  for (const id of ["pensionContribution", "dbIncome", "retirementAge"]) assert.ok(asked.includes(id), id);
+  for (const id of ["pensionPot", "employerType"]) assert.equal(asked.includes(id), false, id);
+  for (const id of ["pensionStatus", "dbIncome", "retirementAge"]) assert.ok(asked.includes(id), id);
 });
 
 test("not sure of the plan: the helper asks only what it needs, then the loan questions follow", () => {
@@ -198,18 +216,10 @@ test("student loan: not age, where they live or other income", () => {
   for (const id of ["age", "nation", "extraIncome"]) assert.ok(!ids("studentLoan", known).includes(id), id);
 });
 
-// Other income on one screen: only the kinds picked are asked about.
-test("other income: one screen, then only the kinds picked", () => {
-  const d = { ...fresh, employmentAsked: true, ukNation: "england", scottishTaxpayer: "no", salary: "60000", age: "30" };
-  const after = kinds => ids("pension", { ...d, extraIncomeKinds: kinds, hasExtraIncome: kinds.includes("none") ? "no" : "yes" }, d);
-  assert.deepEqual(after(["bonus"]).filter(id => ["bonus", "dividends", "otherIncome"].includes(id)), ["bonus"]);
-  assert.deepEqual(after(["none"]).filter(id => ["bonus", "dividends", "otherIncome"].includes(id)), []);
-});
-
 test("the bonus month is asked once there's a bonus, straight after it", () => {
   const bonus = { ...fresh, hasExtraIncome: "yes", extraIncomeKinds: ["bonus"], bonusAmount: "10000" };
   const list = ids("pension", bonus, fresh);
-  assert.equal(list[list.indexOf("bonus") + 1], "bonusMonth");
+  assert.equal(list[list.indexOf("extraIncome") + 1], "bonusMonth");
   assert.ok(!ids("pension", { ...bonus, bonusAmount: "" }, fresh).includes("bonusMonth"));
   assert.ok(!ids("pension", { ...bonus, bonusMonth: "" }, { ...fresh, bonusMonth: "" }).includes("bonusMonth"));
 });
@@ -270,7 +280,7 @@ test("from Student loan: only what its answer uses, each asked once so the modul
   assert.deepEqual(brief("pension"), ["pensionStatus"]);
   const paying = { ...slUser, pensionStatus: "yes", hasPension: "yes" };
   const qs = briefQuestions("pension", "studentLoan");
-  assert.deepEqual(visibleQuestions(qs, ctxFor(paying), neededAtStart(qs, ctxFor(slUser))).map(q => q.id), ["pensionStatus", "pensionContribution", "employerType", "pensionMatch"]);
+  assert.deepEqual(visibleQuestions(qs, ctxFor(paying), neededAtStart(qs, ctxFor(slUser))).map(q => q.id), ["pensionStatus", "employerType"]);
   // Asked there, the full walk-through starts past them.
   const after = { ...slUser, monthlyExpenses: "1500", cashTiers: [{ amount: "8000", rate: "3" }], askedFields: ["monthlyExpenses", "cashTiers", "pensionStatus"] };
   assert.ok(!ids("cash", after).includes("cashAccounts"));

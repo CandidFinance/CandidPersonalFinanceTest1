@@ -61,23 +61,40 @@ export const fetchReferralLink = email => call("referral-link", { email });
 // homepage too.
 export const inviteUrl = code => `${typeof window !== "undefined" ? window.location.origin : "https://www.candid-finance.co.uk"}/app/start?ref=${code}`;
 export const INVITE_SUBJECT = "Try Candid: your second module is unlocked for free";
-export const INVITE_TEXT = "I've been using Candid to see what my money could be doing. Start with my link and your second module is unlocked for free:";
-const inviteMessage = code => `${INVITE_TEXT}\n${inviteUrl(code)}`;
 
-// The phone's share sheet where there is one, else the link copied. The
-// link goes in the text itself, not only as `url`, which some apps (an email
-// one, on Windows) drop. Resolves to "shared", "copied", "cancelled" or
-// "failed".
-export async function shareInvite(code) {
-  if (typeof navigator !== "undefined" && navigator.share) {
-    try { await navigator.share({ title: INVITE_SUBJECT, text: inviteMessage(code) }); return "shared"; }
-    catch (e) { if (e?.name === "AbortError") return "cancelled"; }
-  }
-  return copyInvite(code);
+// What they've used Candid for, in their own words, so the friend knows
+// what it is: the module given (the answer just seen), else the last one
+// they unlocked, else in general.
+const USED_FOR = {
+  studentLoan: "work out whether to pay off my student loan early",
+  cash: "see if I could be earning more on my savings",
+  pension: "check I'm getting everything I can out of my pension",
+  investments: "see if I'm paying more tax than I need to on my investments",
+  kids: "check I'm getting all the childcare help I'm entitled to",
+  property: "understand whether buying a house actually makes sense",
+};
+export function inviteMessage(code, d = {}, moduleKey = null) {
+  const key = USED_FOR[moduleKey] ? moduleKey : [...(d.unlockedModules || [])].reverse().find(k => USED_FOR[k]);
+  const usedFor = USED_FOR[key] || "see where I could be keeping more of my money";
+  return `I've been using Candid to ${usedFor}. It's a tool that helps people like us work out if we're leaking money. Start with my link and your second module is unlocked for free:\n${inviteUrl(code)}`;
 }
-export async function copyInvite(code) {
-  try { await navigator.clipboard.writeText(inviteMessage(code)); return "copied"; }
+
+// A phone's own share sheet (email, WhatsApp, recent apps and the rest) on
+// a touch screen that has one. A computer's is thinner, so the card offers
+// its own choices there (InviteFriends.jsx).
+export const nativeShare = () => typeof navigator !== "undefined" && !!navigator.share
+  && typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)").matches;
+// The link goes in the text itself, not only as `url`, which some apps
+// drop. Resolves to "shared", "cancelled" or "failed".
+export async function shareInvite(text) {
+  try { await navigator.share({ title: INVITE_SUBJECT, text }); return "shared"; }
+  catch (e) { return e?.name === "AbortError" ? "cancelled" : "failed"; }
+}
+export async function copyInvite(text) {
+  try { await navigator.clipboard.writeText(text); return "copied"; }
   catch { return "failed"; }
 }
-// An email with its subject and the link filled in, in their own mail app.
-export const inviteMailto = code => `mailto:?subject=${encodeURIComponent(INVITE_SUBJECT)}&body=${encodeURIComponent(`Hi,\n\n${inviteMessage(code)}\n`)}`;
+// An email with its subject and the message filled in, in their mail app;
+// and the same message in WhatsApp.
+export const inviteMailto = text => `mailto:?subject=${encodeURIComponent(INVITE_SUBJECT)}&body=${encodeURIComponent(`Hi,\n\n${text}\n`)}`;
+export const inviteWhatsApp = text => `https://wa.me/?text=${encodeURIComponent(text)}`;
