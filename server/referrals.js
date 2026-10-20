@@ -7,8 +7,9 @@
 //    many free months it has earned. api/billing.js ?action=referral-link.
 //  - codeIsValid: whether a ?ref= code is real. ?action=referral-check.
 //  - recordReferral: a friend's email, given on the unlock form with the
-//    code they arrived on. A friend counts once, ever, and not if they were
-//    on Candid already (their email confirmed before) or are the referrer.
+//    code they arrived on. A friend counts once, ever, whatever the
+//    spelling of their inbox (inboxOf), and not if they were on Candid
+//    already (their email confirmed before) or are the referrer.
 //    api/email.js, with the confirmation link.
 //  - rewardReferral: their email confirmed, the referrer's month: £2.99 off
 //    a paying subscriber's next bill (a Stripe customer balance credit), or
@@ -73,6 +74,21 @@ async function stripe(path, params) {
   return json;
 }
 
+// One person's inbox under its other spellings: anything after a "+" in the
+// name goes to the same inbox (sam+1@ is sam@), and Gmail ignores dots and
+// takes googlemail.com too (s.a.m@googlemail.com is sam@gmail.com). A
+// friend is kept under this (`friend_email`), so a friend counts once
+// whatever the spelling, and inviting yourself under another is caught.
+export function inboxOf(rawEmail) {
+  const email = cleanEmail(rawEmail);
+  if (!email) return null;
+  const at = email.lastIndexOf("@");
+  let local = email.slice(0, at).split("+")[0], domain = email.slice(at + 1);
+  if (domain === "googlemail.com") domain = "gmail.com";
+  if (domain === "gmail.com") local = local.replace(/\./g, "");
+  return local ? `${local}@${domain}` : email;
+}
+
 async function confirmed(email) {
   const [row] = await db(`email_verifications?select=verified_at&email=eq.${q(email)}`) || [];
   return !!row?.verified_at;
@@ -112,13 +128,16 @@ export async function recordReferral(friendEmail, code) {
   const friend = cleanEmail(friendEmail);
   const referrer = friend && await referrerOf(code);
   if (!referrer) return "no code";
-  if (referrer === friend) return "self";
-  if (await confirmed(friend)) return "existing";
-  const [sub] = await db(`subscriptions?select=email&email=eq.${q(friend)}`) || [];
-  if (sub) return "existing";
+  const inbox = inboxOf(friend);
+  if (inboxOf(referrer) === inbox) return "self";
+  // On Candid already, as typed or under the inbox's plain address.
+  const spellings = [...new Set([friend, inbox])];
+  for (const e of spellings) if (await confirmed(e)) return "existing";
+  const subs = await db(`subscriptions?select=email&email=in.(${spellings.map(e => `"${e}"`).map(q).join(",")})`) || [];
+  if (subs.length) return "existing";
   await db("referrals?on_conflict=friend_email", {
     method: "POST", prefer: "resolution=ignore-duplicates,return=minimal",
-    body: { code, referrer_email: referrer, friend_email: friend },
+    body: { code, referrer_email: referrer, friend_email: inbox },
   });
   return "recorded";
 }
@@ -178,7 +197,7 @@ async function grantMonth(referrer, referralId, now = Date.now()) {
 
 // Returns what happened, for the logs.
 export async function rewardReferral(friendEmail) {
-  const friend = cleanEmail(friendEmail);
+  const friend = inboxOf(friendEmail);
   if (!friend) return "no email";
   const now = new Date().toISOString();
   // Claimed by marking it confirmed: of two requests at once, only one gets

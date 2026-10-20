@@ -24,3 +24,13 @@ test("invite codes: eight characters, none easily misread", () => {
   assert.ok(CODE_RE.test("abcd2345"));
   for (const bad of ["abcd234", "abcd23456", "abcd2340", "abcd234l", "abcd234i", "abcd234o", "ABCD2345", "abcd-234"]) assert.ok(!CODE_RE.test(bad), bad);
 });
+
+test("one inbox, however it's spelt: + tags, and Gmail's dots and googlemail", async () => {
+  const { inboxOf } = await import("../server/referrals.js");
+  assert.equal(inboxOf("Sam+candid@Example.co.uk"), "sam@example.co.uk");
+  assert.equal(inboxOf("s.a.m+2@gmail.com"), "sam@gmail.com");
+  assert.equal(inboxOf("sam@googlemail.com"), "sam@gmail.com");
+  // Dots matter elsewhere.
+  assert.equal(inboxOf("s.am@outlook.com"), "s.am@outlook.com");
+  assert.equal(inboxOf("not an email"), null);
+});

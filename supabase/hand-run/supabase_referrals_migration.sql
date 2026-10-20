@@ -6,7 +6,10 @@
 --    they ask for their link. The code is what goes in ?ref=, so the link
 --    never carries an email.
 --  - referrals: one row per friend (a friend counts once, ever), from when
---    they give their email on someone's link. `status`:
+--    they give their email on someone's link. `friend_email` is their
+--    inbox's plain address (server/referrals.js inboxOf: no "+tag", and no
+--    dots in a Gmail name), so another spelling of it doesn't count again.
+--    `status`:
 --      pending   their email isn't confirmed yet
 --      rewarded  confirmed, and the free month given (`reward` says how:
 --                free_month, a month's access; stripe_credit, £2.99 off a
