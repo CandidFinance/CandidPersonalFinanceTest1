@@ -99,14 +99,15 @@ export function marginalRate(d, m, salary = m.salary) {
 }
 
 // The marginal rate at every income from £0, for the chart: [{ income,
-// rate }]. On their own setup (where they live, a student loan, employed or
-// self-employed), with income all from salary, so each step shows where it
-// comes: the 20%, 40% and 45% bands, NI, and the £100,000 trap.
+// rate, tax, ni, sl }], the rate and its parts. On their own setup (where
+// they live, a student loan, employed or self-employed), with income all
+// from salary, so each step shows where it comes: the 20%, 40% and 45%
+// bands, NI, and the £100k trap.
 export function rateCurve(d, m, from = 0, to = 130000, step = 1000) {
   const plain = { ...d, bonusAmount: 0, otherIncome: 0, dividendIncome: 0, myContribution: 0 };
   const points = [];
   for (let income = from; income <= to; income += step) {
-    points.push({ income, rate: marginalRate(plain, { ...m, salary: income, adjustedNetIncome: income }, income).rate });
+    points.push({ income, ...marginalRate(plain, { ...m, salary: income, adjustedNetIncome: income }, income) });
   }
   return points;
 }
