@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
-import { taxTrap, position, marginalRate, allowanceLost, trapInView } from "./taxTrap.js";
+import { taxTrap, position, marginalRate, allowanceLost, trapInView, rateCurve, lostTo } from "./taxTrap.js";
 
 // £110,000, 5% by salary sacrifice: £104,500 of adjusted net income. A
 // toddler in nursery in England, £1,500 a month.
@@ -68,4 +68,16 @@ test("in view near or over £100,000, or heading there; not with no salary", () 
   assert.ok(!trapInView({ salary: "120000", employmentStatus: "not_working" }));
   assert.equal(taxTrap({ salary: "" }, calcMetrics({ salary: "" })), null);
   assert.equal(pct(marginalRate(base, calcMetrics(base)).rate), 62);
+});
+
+test("the chart runs from £0: the marginal rate at each band, and the trap", () => {
+  const { m } = at(base);
+  const curve = rateCurve(base, m);
+  const rate = income => pct(curve.find(p => p.income === income).rate);
+  assert.equal(rate(10000), 0);
+  assert.equal(rate(30000), 28);
+  assert.equal(rate(70000), 42);
+  assert.equal(rate(110000), 62);
+  assert.equal(rate(130000), 47);
+  assert.equal(lostTo({ ni: 0.02, sl: 0.09 }), "tax, National Insurance and student loan");
 });

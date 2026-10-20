@@ -68,5 +68,5 @@ test("a Scottish taxpayer's rate, take-home and £100k trap follow Scottish rate
   assert.equal(scot.taxBandLabel, "higher"); // UK band, for savings and dividends
   const sophie = { ...fiona, salary: "110000", scottishTaxpayer: "yes" };
   // 45% plus the 22.5% of allowance lost, and 2% NI.
-  assert.match(taxTrapReveal(sophie, calcMetrics(sophie))[1].title, /costs you 69\.5%: 67\.5% tax and 2% National Insurance\.$/);
+  assert.match(taxTrapReveal(sophie, calcMetrics(sophie))[1].title, /marginal tax rate is 69\.5%: for every extra £1 you earn, 69\.5p is lost to tax and National Insurance \(67\.5% tax and 2% National Insurance\)\.$/);
 });

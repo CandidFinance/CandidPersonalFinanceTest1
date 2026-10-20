@@ -382,8 +382,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     status: trap.amount > 0 ? "critical" : trap.over ? "attention" : "ok",
     impact: trap.amount,
     impactLabel: trap.over
-      ? (trap.amount > 0 ? `${fmt(trap.amount)}/yr of tax${trap.childcareLost > 0 && trap.fits ? " and childcare" : ""} back by returning to £100,000` : `${fmt(trap.needed)} over £100,000: a ${Math.round(trap.rate.rate * 100)}% rate on it`)
-      : `${fmt(trap.headroom)} under £100,000, where your rate jumps to ${Math.round(trap.trapRate * 100)}%`,
+      ? (trap.amount > 0 ? `${fmt(trap.amount)}/yr of tax${trap.childcareLost > 0 && trap.fits ? " and childcare" : ""} back by returning to £100,000` : `${fmt(trap.needed)} over £100,000, at a ${Math.round(trap.rate.rate * 100)}% marginal tax rate`)
+      : `${fmt(trap.headroom)} under £100,000, where your marginal tax rate jumps to ${Math.round(trap.trapRate * 100)}%`,
     amount: trap.amount,
   };
 

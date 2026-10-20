@@ -119,7 +119,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
 const PREVIEW_LINES = {
   studentLoan: ["When your balance starts falling", "What you'll repay in all, and whether any is written off"],
   kids: ["The childcare help you could get", "What crossing £100,000 would cost"],
-  taxTrap: ["Your rate on the next £1,000", "The ways back to £100,000, and what each costs"],
+  taxTrap: ["Your marginal tax rate", "The ways back to £100,000, and what each costs"],
 };
 
 // The first answer, for their email: one field, and whether they'd like to

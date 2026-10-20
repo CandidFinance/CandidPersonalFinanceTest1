@@ -99,13 +99,13 @@ test("£100k tax trap: the saving and the payment needed come from the module's 
   const { steps, statuses } = run(d, taxTrapReveal);
   assert.match(steps[0].title, /^of tax you could save\.$/);
   assert.equal(steps[0].figure, `£${statuses.taxTrap.amount.toLocaleString("en-GB")} a year`);
-  assert.match(steps[1].title, /each extra £1 costs you 62%: 60% tax and 2% National Insurance\.$/);
+  assert.match(steps[1].title, /so your marginal tax rate is 62%: for every extra £1 you earn, 62p is lost to tax and National Insurance \(60% tax and 2% National Insurance\)\.$/);
   assert.match(steps[2].title, /^Paying £4,500 into your pension would bring your income back to £100,000\.$/);
   // Pension no longer counts it.
   assert.equal(reveal(d).statuses.pension.amount, 0);
   // Under £100,000: how far, and the rate past it.
   const near = run({ ...d, salary: "95000" }, taxTrapReveal).steps;
-  assert.match(near[0].title, /^under £100,000, where your rate on each extra £1 jumps to 62%\.$/);
+  assert.match(near[0].title, /^under £100,000, where your marginal tax rate jumps to 62%\.$/);
 });
 
 import { cashReveal, investmentsReveal, studentLoanReveal, taxTrapReveal, MODULE_REVEALS } from "./moduleReveal.js";

@@ -60,7 +60,7 @@ function moduleInsights(mm, d, m) {
       const t = taxTrap(d, m);
       if (!t) return [];
       return [
-        { label: t.over ? "Your rate on the next £1,000" : "Your rate past £100,000", value: `${Math.round((t.over ? t.rate.rate : t.trapRate) * 1000) / 10}%` },
+        { label: t.over ? "Marginal tax rate" : "Marginal tax rate past £100,000", value: `${Math.round((t.over ? t.rate.rate : t.trapRate) * 1000) / 10}%` },
         { label: "£100,000 limit", value: t.over ? `${fmtCompact(t.needed)} over` : `${fmtCompact(t.headroom)} under` },
       ];
     }

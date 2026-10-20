@@ -98,13 +98,24 @@ export function marginalRate(d, m, salary = m.salary) {
   return { rate: tax + ni + sl, tax, ni, sl };
 }
 
-// The rate across £90,000 to £130,000 of adjusted net income, moved by
-// salary, for the chart: [{ income, rate }].
-export function rateCurve(d, m, from = 90000, to = 130000, step = 500) {
-  const offset = m.adjustedNetIncome - m.salary;
+// The marginal rate at every income from £0, for the chart: [{ income,
+// rate }]. On their own setup (where they live, a student loan, employed or
+// self-employed), with income all from salary, so each step shows where it
+// comes: the 20%, 40% and 45% bands, NI, and the £100,000 trap.
+export function rateCurve(d, m, from = 0, to = 130000, step = 1000) {
+  const plain = { ...d, bonusAmount: 0, otherIncome: 0, dividendIncome: 0, myContribution: 0 };
   const points = [];
-  for (let income = from; income <= to; income += step) points.push({ income, rate: marginalRate(d, m, income - offset).rate });
+  for (let income = from; income <= to; income += step) {
+    points.push({ income, rate: marginalRate(plain, { ...m, salary: income, adjustedNetIncome: income }, income).rate });
+  }
   return points;
+}
+
+// What the rate is made of, in words: "tax and National Insurance", with
+// student loan where there is one.
+export function lostTo(rate) {
+  const parts = ["tax", rate.ni > 0 ? "National Insurance" : null, rate.sl > 0 ? "student loan" : null].filter(Boolean);
+  return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts[0];
 }
 
 // The Personal Allowance lost at an adjusted net income, and the tax it

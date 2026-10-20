@@ -16,7 +16,7 @@ import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
 import { estimatePensionPot, childBenefitCharge, HICBC_START } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
-import { taxTrap, trapInView } from "./taxTrap.js";
+import { taxTrap, trapInView, lostTo } from "./taxTrap.js";
 import { loanVerdictReady } from "./appEntry.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
@@ -543,6 +543,7 @@ export function kidsReveal(d, m) {
 // and why; under it, how far, and what changes past it. The same figures as
 // the module's status and page.
 const pctOf = r => `${Math.round(r * 1000) / 10}%`;
+const penceOf = r => `${Math.round(r * 1000) / 10}p`;
 function rateParts(rate) {
   return [`${pctOf(rate.tax)} tax`, rate.ni > 0 ? `${pctOf(rate.ni)} National Insurance` : null, rate.sl > 0 ? `${pctOf(rate.sl)} student loan` : null].filter(Boolean)
     .reduce((out, part, i, all) => out + (i === 0 ? "" : i === all.length - 1 ? " and " : ", ") + part, "");
@@ -552,7 +553,10 @@ export function taxTrapReveal(d, m) {
   if (!t || !trapInView(d, m.adjustedNetIncome)) return null;
   const support = t.nation === "england" ? "Tax-Free Childcare and the 30 funded hours" : "Tax-Free Childcare";
   if (t.over) {
-    const why = { label: WHY, title: `Over £100,000 you lose £1 of tax-free allowance for every £2 earned, so each extra £1 costs you ${pctOf(t.rate.rate)}: ${rateParts(t.rate)}.` };
+    // Over £125,140 the allowance has gone already: the rate is the top one,
+    // and getting back to £100,000 wins all of the allowance back.
+    const how = t.aboveTaper ? "Over £125,140 your tax-free allowance has gone completely" : "Over £100,000 you lose £1 of tax-free allowance for every £2 earned";
+    const why = { label: WHY, title: `${how}, so your marginal tax rate is ${pctOf(t.rate.rate)}: for every extra £1 you earn, ${penceOf(t.rate.rate)} is lost to ${lostTo(t.rate)} (${rateParts(t.rate)}).` };
     const childcare = t.childcareLost > 0 ? `${support} stop too, worth ${fmt(t.childcareLost)} a year.` : null;
     const others = "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay.";
     return t.amount > 0 ? [
@@ -560,13 +564,13 @@ export function taxTrapReveal(d, m) {
       withBody(why, childcare),
       { label: ACTION, title: `Paying ${fmt(t.needed)} into your pension would bring your income back to £100,000.`, body: others },
     ] : [
-      { label: ANSWER, figure: pctOf(t.rate.rate), title: "of each extra £1 you earn goes in tax, National Insurance and student loan." },
+      { label: ANSWER, figure: pctOf(t.rate.rate), title: `is your marginal tax rate: for every extra £1 you earn, ${penceOf(t.rate.rate)} is lost to ${lostTo(t.rate)}.` },
       withBody(why, childcare),
       { label: ACTION, title: `Getting back to £100,000 would take ${fmt(t.needed)}, more than this year's pension allowance left.`, body: others },
     ];
   }
   return [
-    { label: ANSWER, figure: fmt(t.headroom), title: `under £100,000, where your rate on each extra £1 jumps to ${pctOf(t.trapRate)}.` },
+    { label: ANSWER, figure: fmt(t.headroom), title: `under £100,000, where your marginal tax rate jumps to ${pctOf(t.trapRate)}.` },
     withBody({ label: WHY, title: "From £100,000 you lose £1 of tax-free allowance for every £2 earned, until it's gone at £125,140." },
       t.childcareAtRisk > 0 ? `${support}, worth ${fmt(t.childcareAtRisk)} a year, stop as soon as you're over.` : null),
     { label: ACTION, title: "A pay rise or bonus that takes you over can go into your pension instead, to keep you under.", body: "The module shows what crossing would cost you." },
