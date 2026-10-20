@@ -467,32 +467,33 @@ function CostComparison({ sl, cost }) {
 // order to do things in.
 function SpareCheck({ d, m, sl, amount }) {
   const navigate = useNavigate();
+  // Each point leads with its topic, in bold, for anyone scanning.
   const items = [];
   if (m.expenses > 0) {
     items.push((m.surplusCash || 0) >= amount
-      ? { ok: true, text: "Cash runway is good", long: `Paying it off would still leave ${m.bufferMonths} months of spending in cash, so your cash runway isn't affected.` }
-      : { ok: false, text: `Leaves under ${m.bufferMonths} months' cash`, long: `Paying it off would leave ${fmt(Math.max(0, Math.round(m.emergencyFund - amount)))} in cash, under ${m.bufferMonths} months of spending (${fmt(Math.round(m.emergencyBuffer))}), cutting your cash runway.` });
-  } else items.push({ ok: null, text: "Cash runway not checked yet", long: "Your spending isn't in yet, so whether paying it off would cut your cash runway can't be checked (Cash & savings)." });
+      ? { topic: "Cash runway", ok: true, text: "Good", long: `Paying it off would still leave ${m.bufferMonths} months of spending in cash, so your cash runway isn't affected.` }
+      : { topic: "Cash runway", ok: false, text: `Leaves under ${m.bufferMonths} months' cash`, long: `Paying it off would leave ${fmt(Math.max(0, Math.round(m.emergencyFund - amount)))} in cash, under ${m.bufferMonths} months of spending (${fmt(Math.round(m.emergencyBuffer))}), cutting your cash runway.` });
+  } else items.push({ topic: "Cash runway", ok: null, text: "Not checked yet", long: "Your spending isn't in yet, so whether paying it off would cut your cash runway can't be checked (Cash & savings)." });
   if (loanIsaIn(d)) {
     items.push(m.isaHeadroom > 0
-      ? { ok: false, text: `${k(m.isaHeadroom)} of ISA allowance remaining`, long: `${k(m.isaHeadroom)} of this year's ISA allowance is unused. Growth in an ISA is tax-free, and the allowance is use it or lose it on 5 April; the loan isn't.` }
-      : { ok: true, text: "ISA allowance used", long: "This year's ISA allowance is used, so there's no tax-free allowance this money would miss." });
+      ? { topic: "ISA allowance", ok: false, text: `${k(m.isaHeadroom)} remaining`, long: `${k(m.isaHeadroom)} of this year's ISA allowance is unused. Growth in an ISA is tax-free, and the allowance is use it or lose it on 5 April; the loan isn't.` }
+      : { topic: "ISA allowance", ok: true, text: "Used", long: "This year's ISA allowance is used, so there's no tax-free allowance this money would miss." });
   }
   // An employer's match beats any overpayment: critical until it's checked
   // (Pension's short route), and while any of it is missed.
   if (hasEmployerMatch(d)) {
     const checked = loanPensionChecked(d);
     items.push(!checked
-      ? { ok: "critical", text: "Pension match not checked yet", long: "Your employer may match what you pay into your pension. Paying in up to the match beats overpaying, so check it before deciding.", add: "Add your pension" }
+      ? { topic: "Pension match", ok: "critical", text: "Not checked yet", long: "Your employer may match what you pay into your pension. Paying in up to the match beats overpaying, so check it before deciding.", add: "Add your pension" }
       : d.pensionStatus === "no"
-        ? { ok: "critical", text: "Not paying into a pension", long: "Most employers pay into your pension when you do, which beats overpaying. Check what yours offers before deciding.", add: "See your full pension answer" }
+        ? { topic: "Pension match", ok: "critical", text: "Not paying into a pension", long: "Most employers pay into your pension when you do, which beats overpaying. Check what yours offers before deciding.", add: "See your full pension answer" }
         : m.missedMatch > 0
-          ? { ok: "critical", text: `${k(m.missedMatch)}/yr of employer match unclaimed`, long: `${fmt(Math.round(m.missedMatch))} a year of your employer's pension match is unclaimed. Every £1 paid in up to the match gets another £1 from them, plus tax relief: more than overpaying returns.`, add: "See your full pension answer" }
-          : { ok: true, text: "Employer's full match", long: "You get your employer's full pension match, so overpaying doesn't miss any money they'd add." });
+          ? { topic: "Pension match", ok: "critical", text: `${k(m.missedMatch)}/yr unclaimed`, long: `${fmt(Math.round(m.missedMatch))} a year of your employer's pension match is unclaimed. Every £1 paid in up to the match gets another £1 from them, plus tax relief: more than overpaying returns.`, add: "See your full pension answer" }
+          : { topic: "Pension match", ok: true, text: "Full match", long: "You get your employer's full pension match, so overpaying doesn't miss any money they'd add." });
   }
   // A pension's assumed growth beating the loan: flagged, with its caveats.
   const caveat = pensionCaveat(sl);
-  if (caveat) items.push({ ok: false, text: `A pension could grow more (${sl.pensionGrowthPct}% assumed)`, long: caveat, note: "Not guaranteed, and locked away until 57." });
+  if (caveat) items.push({ topic: "Pension growth", ok: false, text: `Could grow more (${sl.pensionGrowthPct}% assumed)`, long: caveat, note: "Not guaranteed, and locked away until 57." });
   return (
     <div style={{padding:"4px 2px 0",marginBottom:"16px"}}>
       {/* Short lines on a phone; the full point on a desktop, where there's room. */}
@@ -500,10 +501,11 @@ function SpareCheck({ d, m, sl, amount }) {
       <div style={{fontSize:"13px",fontWeight:700,color:G}}>Is the money spare?</div>
       <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 8px"}}>Paying it off uses {k(amount)}</div>
       {items.map(it => (
-        <div key={it.text} style={{display:"flex",gap:"8px",alignItems:"flex-start",fontSize:"13px",color:TEXT,lineHeight:1.45,padding:"4px 0"}}>
+        <div key={it.topic} style={{display:"flex",gap:"8px",alignItems:"flex-start",fontSize:"13px",color:TEXT,lineHeight:1.45,padding:"4px 0"}}>
           {it.ok === true ? <Check size={15} color={SUCCESS} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/> : <CircleAlert size={15} color={it.ok === "critical" ? CRITICAL : it.ok === false ? GOLD : MUT} style={{flexShrink:0,marginTop:"2px"}}/>}
           <span>
-            {it.ok === "critical" && <span style={{fontWeight:700,color:CRITICAL}}>Critical: </span>}
+            <span style={{fontWeight:700}}>{it.topic}: </span>
+            {it.ok === "critical" && <span style={{fontWeight:700,color:CRITICAL}}>Critical. </span>}
             <span className="spare-short">{it.text}{it.note && <span style={{display:"block",color:MUT,fontSize:"12px"}}>{it.note}</span>}</span><span className="spare-long">{it.long}</span>
             {it.add && (
               <button type="button" onClick={() => navigate(loanPensionChecked(d) ? "/app/module/pension" : "/app/module/pension?from=studentLoan")}
