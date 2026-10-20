@@ -5,7 +5,7 @@ import { motion, MotionConfig } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
 import { NavBar } from "../../NavBar.jsx";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, CREAM } from "../../design-tokens.js";
-import { ENTRY_QUESTIONS, toHandFor, entryChat, readingMs, CHAT_VARIANTS, firstPick, MODULE_NAMES } from "../../lib/appEntry.js";
+import { ENTRY_QUESTIONS, CATCH_UP_QUESTIONS, toHandFor, entryChat, readingMs, CHAT_VARIANTS, firstPick, MODULE_NAMES } from "../../lib/appEntry.js";
 import GuidedFlow from "../property/GuidedFlow.jsx";
 import { Bubble, Dots, DotsKeyframes, Replies, ReplyButton } from "../chat/ChatParts.jsx";
 
@@ -14,7 +14,11 @@ import { Bubble, Dots, DotsKeyframes, Replies, ReplyButton } from "../chat/ChatP
 // have to hand, marked as the questions being done, then how Candid works,
 // as messages from Candid with replies to tap. Spec:
 // docs/onboarding-guided-questions.md.
-export default function MobileEntryScreen({ d, m, set, onDone }) {
+// `catchUp`: for someone who came in on a module link and skipped this
+// (appEntry.js needsCatchUp): the same entry, its questions owning up to
+// that, ending on `doneLabel` (where they were heading) rather than their
+// first module.
+export default function MobileEntryScreen({ d, m, set, onDone, catchUp = false, doneLabel = null }) {
   const [part, setPart] = useState("questions");
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [part]);
 
@@ -30,7 +34,7 @@ export default function MobileEntryScreen({ d, m, set, onDone }) {
   if (part === "chat") return (
     <div style={{height:"100dvh",background:CREAM,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <NavBar light center="How Candid works"/>
-      <HowCandidWorks d={d} onDone={onDone}/>
+      <HowCandidWorks d={d} onDone={onDone} doneLabel={doneLabel}/>
     </div>
   );
 
@@ -43,7 +47,7 @@ export default function MobileEntryScreen({ d, m, set, onDone }) {
           <div style={{fontSize:"13px",fontWeight:600,color:G,lineHeight:1.45,marginBottom:"14px"}}>A friend invited you: your second module is unlocked for free.</div>
         )}
         {part === "questions" && (
-          <GuidedFlow questions={ENTRY_QUESTIONS} d={d} m={m} set={save} skipLabel={null} animateFirst onDone={() => setPart("toHand")}/>
+          <GuidedFlow questions={catchUp ? CATCH_UP_QUESTIONS : ENTRY_QUESTIONS} d={d} m={m} set={save} skipLabel={null} animateFirst onDone={() => setPart("toHand")}/>
         )}
         {part === "toHand" && <ToHand d={d} onBack={() => setPart("questions")} onContinue={() => setPart("chat")}/>}
       </div>
@@ -89,7 +93,7 @@ function ToHand({ d, onBack, onContinue }) {
 // (the same bubble, grown to fit), so nothing lands and is then pushed up;
 // a new bubble rises from the bottom with a slight scale and fade; the rest
 // glide up to make room (framer-motion layout animations).
-function HowCandidWorks({ d, onDone }) {
+function HowCandidWorks({ d, onDone, doneLabel = null }) {
   const [variant] = useState(() => ({
     opener: Math.floor(Math.random() * CHAT_VARIANTS.openers),
     checkIn: Math.floor(Math.random() * CHAT_VARIANTS.checkIns),
@@ -151,7 +155,7 @@ function HowCandidWorks({ d, onDone }) {
         {replies === "enter" && (
           <motion.div key="enter" {...rise}>
             <button type="button" onClick={onDone} style={{width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"14px",fontSize:"14.5px",fontWeight:700,fontFamily:SANS,cursor:"pointer"}}>
-              {firstPick(d) ? `Start with ${MODULE_NAMES[firstPick(d)]}` : "Explore my modules"}
+              {doneLabel || (firstPick(d) ? `Start with ${MODULE_NAMES[firstPick(d)]}` : "Explore my modules")}
             </button>
           </motion.div>
         )}

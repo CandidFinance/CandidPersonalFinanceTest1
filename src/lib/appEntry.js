@@ -100,6 +100,17 @@ export const ENTRY_QUESTIONS = [
   },
 ];
 
+// Someone who came in on a link straight to a module (or Property) skips
+// the entry, so the app opens without their name. Before Home, Modules,
+// Forecast or Chat, they're taken through it, the first question owning up
+// to having skipped it, and the topics they'd like help with already set to
+// the one they came for. Not for anyone with an old report.
+export const needsCatchUp = (d, insights) => !insights && !!d.appEntered && !(typeof d.name === "string" && d.name.trim());
+export const CATCH_UP_PATHS = ["/app/home", "/app/modules", "/app/forecast", "/app/chat"];
+export const CATCH_UP_QUESTIONS = ENTRY_QUESTIONS.map(q => q.id === "name"
+  ? { ...q, ask: () => "We didn't catch your name", why: () => "Before you look around: what should we call you? It's only used to talk to you in the app." }
+  : { ...q, ask: () => "What else would you like help with?", why: () => "We'll set up your modules around these. You can add the rest any time." });
+
 // The modules' names as the entry's messages say them.
 export const MODULE_NAMES = { pension:"Pension", cash:"Cash & savings", investments:"Investments", studentLoan:"Student loan", kids:"Kids & family", property:"Buying a home" };
 // The first module picked at the entry, which the app opens straight after

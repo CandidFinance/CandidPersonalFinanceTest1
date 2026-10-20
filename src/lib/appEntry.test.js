@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { entryGoals, toHandFor, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION, entryChat, readingMs,
-  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath } from "./appEntry.js";
+  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, needsCatchUp, CATCH_UP_QUESTIONS } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -116,4 +116,15 @@ test("retirement planning leads to the Pension module", () => {
   assert.deepEqual(pickedModules(["retirement", "cash"]), ["pension", "cash"]);
   assert.equal(moduleOrder({ interests: ["retirement"] })[0], "pension");
   assert.deepEqual(entryGoals(["retirement"]), ["retirement"]);
+});
+
+test("in on a module link without a name: caught up before the main pages, not anyone else", () => {
+  assert.equal(needsCatchUp({ appEntered: true, name: "" }, null), true);
+  assert.equal(needsCatchUp({ appEntered: true, name: "  " }, null), true);
+  assert.equal(needsCatchUp({ appEntered: true, name: "Sam" }, null), false);
+  // Not in the app yet (the entry itself handles them), or an old report.
+  assert.equal(needsCatchUp({ appEntered: false, name: "" }, null), false);
+  assert.equal(needsCatchUp({ appEntered: true, name: "" }, { score: 70 }), false);
+  assert.deepEqual(CATCH_UP_QUESTIONS.map(q => q.id), ["name", "interests"]);
+  assert.equal(CATCH_UP_QUESTIONS[0].ask(), "We didn't catch your name");
 });
