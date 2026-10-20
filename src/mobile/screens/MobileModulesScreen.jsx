@@ -6,7 +6,7 @@ import { getModuleBreakdown, MODULE_META } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel } from "../statusLabel.js";
-import { notStarted, MODULE_PITCH } from "../../lib/appEntry.js";
+import { notStarted, dormantModules, MODULE_PITCH } from "../../lib/appEntry.js";
 import { taxTrap } from "../../lib/taxTrap.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import BankConfirm from "../BankConfirm.jsx";
@@ -93,6 +93,9 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   const [celebratingKey, setCelebratingKey] = useState(null);
   const { moduleList, modulesWithRec, needActionCount, totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, insights, sortMode);
   const waiting = notStarted(d).filter(k => k !== "property");
+  // Not open to them yet (the £100k tax trap under £90,000): greyed, after
+  // the rest, so they know it's there.
+  const dormant = dormantModules(d);
   const notApplicable = MODULE_META.filter(mm => statuses[mm.key]?.notApplicable);
 
   return (
@@ -230,10 +233,11 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
         </div>
       </>)}
 
-      {waiting.length > 0 && (<>
+      {(waiting.length > 0 || dormant.length > 0) && (<>
         <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:moduleList.length ? "22px" : "16px",marginBottom:"10px"}}>Not started</div>
         <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
           {waiting.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={moduleEstimate(key, d, m)} onOpen={onOpenModule}/>)}
+          {dormant.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} dormant onOpen={onOpenModule}/>)}
         </div>
       </>)}
 

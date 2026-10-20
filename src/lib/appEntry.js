@@ -315,5 +315,13 @@ export function moduleOrder(d) {
 export function modulesInView(d, keys = START_MODULES) {
   return keys.filter(k => k !== "taxTrap" || moduleAnswered("taxTrap", d) || trapInView(d));
 }
+// Not offered yet, but shown greyed on Modules so they know it's there: the
+// £100k tax trap below £90,000, with what it's for and when it opens. In
+// colour, and to start, once it's in view.
+export const dormantModules = d => START_MODULES.filter(k => k === "taxTrap" && !modulesInView(d).includes(k));
+export const MODULE_DORMANT_LINE = {
+  taxTrap: "Over £100,000, each extra £1 can cost 62% and childcare support stops. Opens as your income nears it.",
+};
+
 // The scored modules this user is offered, for "N of M areas checked".
 export const scoredInView = d => modulesInView(d, SCORED_MODULES);

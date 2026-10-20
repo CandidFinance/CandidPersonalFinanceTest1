@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { entryGoals, toHandFor, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION, entryChat, readingMs,
-  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, needsCatchUp, CATCH_UP_QUESTIONS, modulesInView } from "./appEntry.js";
+  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, needsCatchUp, CATCH_UP_QUESTIONS, modulesInView, dormantModules } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -102,6 +102,9 @@ test("the £100k tax trap is offered near or over £100,000, or heading there, a
   // £92,000 growing 5% a year passes £100,000 within three years.
   assert.ok(modulesInView({ salary: "87000", salaryTrajectory: "moderate" }).includes("taxTrap"));
   assert.ok(modulesInView({ salary: "60000", selectedModules: ["taxTrap"] }).includes("taxTrap"));
+  // Not in view: shown greyed instead, until it is.
+  assert.deepEqual(dormantModules({ salary: "60000" }), ["taxTrap"]);
+  assert.deepEqual(dormantModules({ salary: "95000" }), []);
 });
 
 test("Property never locks the score: picked at the entry, or set by a shared Property link", () => {

@@ -2,7 +2,7 @@ import { Check, ChevronRight, Home } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
 import { MODULE_META } from "../lib/moduleStatus.js";
-import { pitchFor } from "../lib/appEntry.js";
+import { pitchFor, MODULE_DORMANT_LINE } from "../lib/appEntry.js";
 
 // One module to start (or done): icon, title, what it gives you, then a
 // chevron, or "Done" once answered. Shared by home with and without a
@@ -11,13 +11,29 @@ import { pitchFor } from "../lib/appEntry.js";
 // `estimate` (src/lib/crossModule.js moduleEstimate): a rough £ range from
 // what's already known, shown in place of the pitch until it's answered.
 // Where a module's actual figure sits (right of the title), as a range.
+// `dormant`: not open to them yet (appEntry.js dormantModules): greyed, not
+// tappable, with what it's for and when it opens in place of the pitch.
 export const estimateText = e => e.low === e.high ? `~${fmt(e.high)}/yr` : `${fmt(e.low)}–${fmt(e.high)}/yr`;
 
 const PROPERTY_META = { key:"property", icon:Home, title:"Property" };
 export const moduleMeta = key => key === "property" ? PROPERTY_META : MODULE_META.find(mm => mm.key === key);
 
-export default function ModuleStartRow({ moduleKey, d = null, done = false, estimate = null, onOpen }) {
+export default function ModuleStartRow({ moduleKey, d = null, done = false, estimate = null, onOpen, dormant = false }) {
   const mm = moduleMeta(moduleKey);
+  if (dormant) return (
+    <div aria-disabled="true" style={{
+      background:"rgba(22,47,36,0.03)", border:"1px solid rgba(22,47,36,0.08)", borderRadius:RADIUS_CARD,
+      padding:"14px 16px", display:"flex", alignItems:"center", gap:"12px", opacity:0.6,
+    }}>
+      <div style={{width:"30px",height:"30px",borderRadius:"9px",background:"rgba(22,47,36,0.06)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <mm.icon size={14} color={MUT}/>
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <span style={{fontSize:"14.5px",fontWeight:600,color:MUT}}>{mm.title}</span>
+        <div style={{fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>{MODULE_DORMANT_LINE[moduleKey]}</div>
+      </div>
+    </div>
+  );
   return (
     <button type="button" onClick={() => onOpen(moduleKey)} style={{
       background:WHITE, border:"1px solid rgba(22,47,36,0.08)", borderRadius:RADIUS_CARD, boxShadow:"0 2px 10px rgba(22,47,36,0.05)",
