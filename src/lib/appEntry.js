@@ -25,7 +25,7 @@ export const MODULE_PITCH = {
   investments: "Make the most of your tax-free allowances.",
   studentLoan: "Find out whether paying it off early is worth it.",
   kids:        "See the childcare help you could get, and what £100,000 costs a parent.",
-  taxTrap:     "See what crossing £100,000 costs you, and the ways back under it.",
+  taxTrap:     "See what crossing £100k costs you, and the ways back under it.",
   property:    "See what you could borrow, and whether buying beats renting.",
 };
 
@@ -320,7 +320,7 @@ export function modulesInView(d, keys = START_MODULES) {
 // colour, and to start, once it's in view.
 export const dormantModules = d => START_MODULES.filter(k => k === "taxTrap" && !modulesInView(d).includes(k));
 export const MODULE_DORMANT_LINE = {
-  taxTrap: "Over £100,000, each extra £1 can cost 62% and childcare support stops. Opens as your income nears it.",
+  taxTrap: "Over £100k, each extra £1 can cost 62% and childcare support stops. Opens as your income nears it.",
 };
 
 // The scored modules this user is offered, for "N of M areas checked".

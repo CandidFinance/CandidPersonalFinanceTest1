@@ -378,12 +378,12 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // saves, and the childcare it restores. Nowhere near £100,000, nothing
   // applies: "Not applicable", like Kids & family without children.
   const trap = taxTrap(d, m);
-  s.taxTrap = !trap || !trapInView(d, m.adjustedNetIncome) ? { status: "na", notApplicable: true, impact: 0, impactLabel: "Your income isn't near £100,000", amount: 0 } : {
+  s.taxTrap = !trap || !trapInView(d, m.adjustedNetIncome) ? { status: "na", notApplicable: true, impact: 0, impactLabel: "Your income isn't near £100k", amount: 0 } : {
     status: trap.amount > 0 ? "critical" : trap.over ? "attention" : "ok",
     impact: trap.amount,
     impactLabel: trap.over
-      ? (trap.amount > 0 ? `${fmt(trap.amount)}/yr of tax${trap.childcareLost > 0 && trap.fits ? " and childcare" : ""} back by returning to £100,000` : `${fmt(trap.needed)} over £100,000, at a ${Math.round(trap.rate.rate * 100)}% marginal tax rate`)
-      : `${fmt(trap.headroom)} under £100,000, where your marginal tax rate jumps to ${Math.round(trap.trapRate * 100)}%`,
+      ? (trap.amount > 0 ? `${fmt(trap.amount)}/yr of tax${trap.childcareLost > 0 && trap.fits ? " and childcare" : ""} back by returning to £100k` : `${fmt(trap.needed)} over £100k, at a ${Math.round(trap.rate.rate * 100)}% marginal tax rate`)
+      : `${fmt(trap.headroom)} under £100k, where your marginal tax rate jumps to ${Math.round(trap.trapRate * 100)}%`,
     amount: trap.amount,
   };
 

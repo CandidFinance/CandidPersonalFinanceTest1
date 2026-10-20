@@ -177,8 +177,13 @@ export function taxTrap(d, m) {
     ani: Math.round(ani), over, aboveTaper: ani >= TRAP_END, needed, fits, aaRoom,
     headroom: over ? 0 : Math.round(TRAP_START - ani),
     rate, allowance, childcareLost, childcareAtRisk, nation: cc?.nation || null,
-    // The rate just over £100,000, for someone under it.
+    // The rate just over £100,000, for someone under it, and just under it,
+    // to set the trap's rate against.
     trapRate: marginalRate(d, m, m.salary + (TRAP_START + 1000 - ani)).rate,
+    belowRate: marginalRate(d, m, m.salary + (TRAP_START - 2000 - ani)).rate,
+    // The childcare at stake, in its two parts (childcare.js): null without
+    // children 11 or under, or one on the way.
+    childcare: cc ? { tfc: cc.tfc, hours: cc.hours, preschool: cc.preschool, children: cc.children, planning: cc.planning, state: cc.state } : null,
     taxSaving: taper.recoverable ? taper.taperTotalSaving : 0,
     amount, options, takeHome: Math.round(now.takeHome),
     payValue: round10(amount / Math.max(0.01, 1 - rate.rate)),

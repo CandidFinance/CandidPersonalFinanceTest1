@@ -691,7 +691,7 @@ export const MODULE_GUIDES = {
   pension:     { questions: PENSION_QUESTIONS,      emptyText: "Answer a few questions below to see where your pension stands." },
   studentLoan: { questions: STUDENT_LOAN_QUESTIONS, emptyText: "Answer a few questions below to see whether overpaying is worth it." },
   kids:        { questions: KIDS_QUESTIONS,         emptyText: "Answer a few questions below to see the childcare help you could get." },
-  taxTrap:     { questions: TAX_TRAP_QUESTIONS,     emptyText: "Answer a few questions below to see what crossing £100,000 costs you." },
+  taxTrap:     { questions: TAX_TRAP_QUESTIONS,     emptyText: "Answer a few questions below to see what crossing £100k costs you." },
 };
 
 // The short route from Student loan (?from=studentLoan): only the questions
