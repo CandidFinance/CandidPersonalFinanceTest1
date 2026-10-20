@@ -128,12 +128,12 @@ function rewardEmail(kind, until) {
   if (kind === "stripe_credit") {
     return {
       subject: "A friend joined Candid: a month off your bill",
-      text: `Hi,\n\nA friend you invited has joined Candid and got their first answer, so £2.99, a month of Candid, comes off your next bill.\n\nYou can earn up to ${REFERRAL_CAP} months this way. Your link is in Candid, under Edit inputs.\n\nCandid\n${SITE}`,
+      text: `Hi,\n\nA friend you invited has joined Candid and completed their first module, so £2.99, a month of Candid, comes off your next bill.\n\nYou can earn up to ${REFERRAL_CAP} months this way. Your link is in Candid, under Edit inputs.\n\nCandid\n${SITE}`,
     };
   }
   return {
     subject: "A friend joined Candid: you've got a free month",
-    text: `Hi,\n\nA friend you invited has joined Candid and got their first answer, so you've got a free month: every module's answer, Candid Assist, and Candid on your other devices, until ${date}.\n\nOpen this link on the phone or computer you use Candid on, and it's on. The link works for 7 days.\n\n{link}\n\nThe month ends by itself, and nothing is charged. You can earn up to ${REFERRAL_CAP} months this way. Your link is in Candid, under Edit inputs.\n\nCandid\n${SITE}`,
+    text: `Hi,\n\nA friend you invited has joined Candid and completed their first module, so you've got a free month: every module's answer, Candid Assist, and Candid on your other devices, until ${date}.\n\nOpen this link on the phone or computer you use Candid on, and it's on. The link works for 7 days.\n\n{link}\n\nThe month ends by itself, and nothing is charged. You can earn up to ${REFERRAL_CAP} months this way. Your link is in Candid, under Edit inputs.\n\nCandid\n${SITE}`,
   };
 }
 async function sendRewardEmail(to, kind, until) {

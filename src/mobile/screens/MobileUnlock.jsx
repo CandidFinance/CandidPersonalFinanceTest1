@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import posthog from "posthog-js";
 import { Check, ChevronDown, Lock, X } from "lucide-react";
-import { G, GOLD, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT } from "../../design-tokens.js";
+import { G, GOLD, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT, CTA_BLUE } from "../../design-tokens.js";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { pitchFor } from "../../lib/appEntry.js";
 import { moduleEstimate, studentLoanRepaid } from "../../lib/crossModule.js";
@@ -11,7 +11,7 @@ import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
 import { useEmailCheck, DidYouMean } from "../emailCheckForm.jsx";
 import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../lib/entitlement.js";
-import { referralCode, hasReferralBonus } from "../../lib/referral.js";
+import { referralCode, invitedHere } from "../../lib/referral.js";
 import InviteFriends from "../InviteFriends.jsx";
 
 // A locked module (src/lib/unlock.js): what it's worth, in £, with the answer
@@ -103,7 +103,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
 
       {ask.kind === "free" && (
         <>
-          {ask.invite && <div style={{fontSize:"14px",color:TEXT,fontWeight:600,marginBottom:"10px"}}>Free with your friend's invite.</div>}
+          {ask.invite && <div style={{fontSize:"14px",color:TEXT,fontWeight:600,marginBottom:"10px"}}>Unlocked for free with your friend's invite.</div>}
           <button type="button" style={primary(false)} onClick={() => onUnlock(ask, null)}>{cta}</button>
         </>
       )}
@@ -136,7 +136,7 @@ function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
   return (
     <form onSubmit={submit}>
       <div style={{fontSize:"15px",color:TEXT,fontWeight:600,lineHeight:1.4,marginBottom:"10px"}}>Add your email to see your answer.</div>
-      {hasReferralBonus() && <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"-4px 0 10px"}}>Invited by a friend: your first two answers are free.</div>}
+      {invitedHere() && <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"-4px 0 10px"}}>Invited by a friend: your second module is unlocked for free.</div>}
       <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
         style={{width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       <label style={{display:"flex",alignItems:"flex-start",gap:"10px",margin:"12px 2px 16px",fontSize:"13px",color:TEXT,lineHeight:1.45,cursor:"pointer"}}>
@@ -241,10 +241,19 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
           </button>
         ))}
       </div>
-      <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
+      <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:CTA_BLUE,opacity:busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
         {busy && !panel ? "Opening checkout…" : "Subscribe and unlock everything"}
       </button>
       {error && !panel && <div style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
+      {/* The other way in: a free month for inviting a friend
+          (InviteFriends.jsx), opened here. */}
+      {validEmail(d.email) && (
+        <button type="button" aria-expanded={panel === "invite"} onClick={() => { setPanel(p => p === "invite" ? null : "invite"); setDone(null); setError(null); check.clear(); }}
+          style={{width:"100%",marginTop:"10px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+          Invite a friend, get a free month
+        </button>
+      )}
+      {panel === "invite" && <div style={{marginTop:"14px"}}><InviteFriends d={d} source="paywall" bare/></div>}
       {/* The terms and the guidance-not-advice line in one, each linked to
           the full page. */}
       <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
@@ -282,9 +291,7 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
       <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",columnGap:"18px",rowGap:"6px",marginTop:"16px"}}>
         <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); check.clear(); }}>Already subscribed?</button>
         <button type="button" style={link} onClick={() => { setPanel(p => p === "alerts" ? null : "alerts"); setDone(null); setError(null); check.clear(); }}>Get rate alerts</button>
-        {validEmail(d.email) && <button type="button" style={link} onClick={() => { setPanel(p => p === "invite" ? null : "invite"); setDone(null); setError(null); check.clear(); }}>Invite a friend, get a free month</button>}
       </div>
-      {panel === "invite" && <div style={{marginTop:"14px"}}><InviteFriends d={d} source="paywall" bare/></div>}
       {panel && panel !== "invite" && (
         done ? (
           <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"14px 0 0",textAlign:"center"}}>

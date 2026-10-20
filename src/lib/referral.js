@@ -48,22 +48,36 @@ export function captureReferral(search = typeof window !== "undefined" ? window.
 // been found real, which is what gives the second answer free.
 export const referralCode = () => read()?.code || null;
 export const hasReferralBonus = () => read()?.valid === true;
+// For telling them they were invited: a code kept and not found false (the
+// check may still be on its way when the first screen shows).
+export const invitedHere = () => { const r = read(); return !!r && r.valid !== false; };
 
 // Their own link: { confirmed: false } until their email is confirmed,
 // then { confirmed: true, code, earned, cap }.
 export const fetchReferralLink = email => call("referral-link", { email });
 
-export const inviteUrl = code => `${typeof window !== "undefined" ? window.location.origin : "https://www.candid-finance.co.uk"}/?ref=${code}`;
-export const INVITE_TEXT = "I've been using Candid to see what my money could be doing. Your first two answers are free with my link:";
+// Straight into the app's first questions (/app/start), not the homepage.
+// A /?ref= link (the first ones shared) still counts: it's kept on the
+// homepage too.
+export const inviteUrl = code => `${typeof window !== "undefined" ? window.location.origin : "https://www.candid-finance.co.uk"}/app/start?ref=${code}`;
+export const INVITE_SUBJECT = "Try Candid: your second module is unlocked for free";
+export const INVITE_TEXT = "I've been using Candid to see what my money could be doing. Start with my link and your second module is unlocked for free:";
+const inviteMessage = code => `${INVITE_TEXT}\n${inviteUrl(code)}`;
 
-// The phone's share sheet where there is one, else the link copied.
-// Resolves to "shared", "copied", "cancelled" or "failed".
+// The phone's share sheet where there is one, else the link copied. The
+// link goes in the text itself, not only as `url`, which some apps (an email
+// one, on Windows) drop. Resolves to "shared", "copied", "cancelled" or
+// "failed".
 export async function shareInvite(code) {
-  const url = inviteUrl(code);
   if (typeof navigator !== "undefined" && navigator.share) {
-    try { await navigator.share({ title: "Candid", text: INVITE_TEXT, url }); return "shared"; }
+    try { await navigator.share({ title: INVITE_SUBJECT, text: inviteMessage(code) }); return "shared"; }
     catch (e) { if (e?.name === "AbortError") return "cancelled"; }
   }
-  try { await navigator.clipboard.writeText(`${INVITE_TEXT} ${url}`); return "copied"; }
+  return copyInvite(code);
+}
+export async function copyInvite(code) {
+  try { await navigator.clipboard.writeText(inviteMessage(code)); return "copied"; }
   catch { return "failed"; }
 }
+// An email with its subject and the link filled in, in their own mail app.
+export const inviteMailto = code => `mailto:?subject=${encodeURIComponent(INVITE_SUBJECT)}&body=${encodeURIComponent(`Hi,\n\n${inviteMessage(code)}\n`)}`;

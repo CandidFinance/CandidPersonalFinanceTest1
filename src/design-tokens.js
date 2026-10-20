@@ -12,6 +12,10 @@ export const CDARK = "#ede7db"; // secondary/darker cream surface
 export const TEXT  = "#1a1a1a"; // body text
 export const MUT   = "#6b6b6b"; // muted/secondary text
 export const WHITE = "#ffffff";
+// Apple's own button blue: the one accent that departs from Candid's usual
+// green and gold, reserved for the main call to action (the site's start
+// button, the paywall's subscribe button).
+export const CTA_BLUE = "#0071E3";
 // Deliberately darker than G — every form <input>/<select> that sits on a G
 // (or near-G) dark surface uses this as a "recessed" background so the
 // field reads as tappable/editable rather than blending into the panel

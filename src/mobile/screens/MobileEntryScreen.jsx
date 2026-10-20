@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { reportStorageFailure } from "../../lib/storage.js";
+import { invitedHere } from "../../lib/referral.js";
 import { motion, MotionConfig } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
 import { NavBar } from "../../NavBar.jsx";
@@ -37,6 +38,10 @@ export default function MobileEntryScreen({ d, m, set, onDone }) {
     <div style={{minHeight:"100vh",background:CREAM,display:"flex",flexDirection:"column"}}>
       <NavBar light center="Getting started"/>
       <div style={{flex:1,maxWidth:"580px",margin:"0 auto",padding:"24px 20px",width:"100%",boxSizing:"border-box"}}>
+        {/* Arrived on a friend's invite link (src/lib/referral.js). */}
+        {part === "questions" && invitedHere() && (
+          <div style={{fontSize:"13px",fontWeight:600,color:G,lineHeight:1.45,marginBottom:"14px"}}>A friend invited you: your second module is unlocked for free.</div>
+        )}
         {part === "questions" && (
           <GuidedFlow questions={ENTRY_QUESTIONS} d={d} m={m} set={save} skipLabel={null} animateFirst onDone={() => setPart("toHand")}/>
         )}
