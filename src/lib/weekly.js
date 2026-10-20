@@ -39,6 +39,8 @@ const RATES_LINE_MIN = 50;
 // Above this, National Insurance on pay is 2%; below, 8% (2026/27).
 const NI_UPPER = 50270;
 export const PAID_PLANS = ["monthly", "yearly"];
+// The most free months invites can earn (server/referrals.js REFERRAL_CAP).
+export const REFERRAL_MONTHS = 12;
 export const STATUSES = { rumour: "Rumour", confirmed: "Confirmed", news: "News" };
 
 const firstName = name => (name || "").trim().split(/\s+/)[0] || "";
@@ -182,7 +184,9 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
 }
 
 // The welcome, as someone subscribes. `periodEnd`: when it renews (a date).
-export function welcomeEmail({ name = "", plan, amountPence, periodEnd, unsubscribeUrl }) {
+// `inviteCode`: their referral code (server/referrals.js), for their invite
+// link; without one (email not confirmed yet), where to find it in Candid.
+export function welcomeEmail({ name = "", plan, amountPence, periodEnd, inviteCode = null, unsubscribeUrl }) {
   const first = firstName(name);
   const price = amountPence > 0 ? `£${(amountPence / 100).toFixed(2)} a ${plan === "yearly" ? "year" : "month"}` : null;
   const renews = periodEnd && !isNaN(new Date(periodEnd)) ? new Date(periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" }) : null;
@@ -192,13 +196,17 @@ export function welcomeEmail({ name = "", plan, amountPence, periodEnd, unsubscr
     "Thanks for subscribing to Candid. Every module is now open to you, and your answers are saved to this email address.",
     "",
     "What you'll get:",
-    "- Every module's figures, kept current as you update your answers",
-    "- A short email on Sunday mornings: rate changes and Budget news, and what each would mean on your figures",
-    "- Reminders before 5 April, before a bonus is paid, and when a better savings rate appears",
+    "- Every module's figures, kept current as you update your answers. Open Banking is in testing: in future you'll be able to connect your bank accounts, and your figures will update automatically",
+    "- An email roundup on Sunday mornings: rate changes and Budget news, and what each would mean on your figures",
+    "- Updates on key dates in the tax calendar that apply to you, from your bonus to 5 April, and whenever a better savings rate appears",
     "",
     `On another phone or computer, sign in with this email address: ${SITE}/signin`,
-    `To change or cancel your subscription: ${SITE}/app/inputs, then Manage subscription.`,
-    ...(price ? ["", `Your plan: ${price}${renews ? `, renewing on ${renews}` : ""}.`] : []),
+    "",
+    ...(price ? [`Your plan: ${price}${renews ? `, renewing on ${renews}` : ""}.`] : []),
+    `To manage your subscription: ${SITE}/app/inputs, then Manage subscription.`,
+    "",
+    `Know someone who'd find Candid useful? For each friend who joins with your link and completes their first module, you get a month free, up to ${REFERRAL_MONTHS} months.${inviteCode ? "" : " Your link is in Candid, under Edit inputs."}`,
+    ...(inviteCode ? [`${SITE}/app/start?ref=${inviteCode}`] : []),
     "",
     "Any questions or feedback, just reply to this email.",
     "",

@@ -120,14 +120,17 @@ export async function plan(today = new Date(), { drafts = false } = {}) {
   const notes = [];
   const since = new Date(today - SENT_LOOKBACK_DAYS * 86400000).toISOString();
   const week = weeklyWeek(today);
-  const [people, optouts, verified, sent, rates, issues] = await Promise.all([
+  const [people, optouts, verified, sent, rates, issues, codes] = await Promise.all([
     recipients(notes),
     optional("alert_optouts?select=email", notes, "alert_optouts"),
     optional("email_verifications?select=email&verified_at=not.is.null", notes, "email_verifications"),
     optional(`alert_sends?select=email,alert_key,kind,sent_at,detail&sent_at=gte.${since}`, notes, "alert_sends"),
     db(`savings_rates?select=${RATE_COLUMNS}&order=rate_aer.desc`),
     week ? optional(`weekly_issues?select=week,subject,intro,items,approved_at&week=eq.${week}`, notes, "weekly_issues") : [],
+    optional("referral_codes?select=email,code", notes, "referral_codes"),
   ]);
+  // Invite links for the welcome: read only, so a preview never makes one.
+  const codeOf = new Map((codes || []).map(c => [cleanEmail(c.email), c.code]));
   // This week's Sunday email: approved, or for the preview, a draft.
   const issue = issues?.[0] && (issues[0].approved_at || drafts) ? issues[0] : null;
   if (issues?.[0] && !issues[0].approved_at) notes.push(`The issue for ${week} isn't approved${drafts ? ": shown here, but it won't go out" : ", so it won't go out"}`);
@@ -145,7 +148,7 @@ export async function plan(today = new Date(), { drafts = false } = {}) {
     const done = new Set((sentBy.get(p.email) || []).map(s => s.alert_key));
     const unsubscribe = unsubscribeUrl(p.email);
     if (p.who === "subscriber" && PAID_PLANS.includes(p.sub.plan) && !done.has("welcome") && new Date(p.sub.created_at) > new Date(since)) {
-      const mail = welcomeEmail({ name: p.d?.name, plan: p.sub.plan, amountPence: p.sub.amount_pence, periodEnd: p.sub.current_period_end, unsubscribeUrl: unsubscribe });
+      const mail = welcomeEmail({ name: p.d?.name, plan: p.sub.plan, amountPence: p.sub.amount_pence, periodEnd: p.sub.current_period_end, inviteCode: codeOf.get(p.email) || null, unsubscribeUrl: unsubscribe });
       emails.push({ to: p.email, who: p.who, kind: "welcome", key: "welcome", detail: null, ...mail });
     }
     if (!p.d) continue;

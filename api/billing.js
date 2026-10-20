@@ -148,7 +148,9 @@ async function welcome(sub, email, name) {
   if (!PAID_PLANS.includes(plan) || !["active", "trialing"].includes(sub.status)) return;
   const periodEnd = sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end;
   try {
-    const mail = welcomeEmail({ name, plan, amountPence: sub.items?.data?.[0]?.price?.unit_amount,
+    // Their invite link, when their email's confirmed (most have, at the unlock).
+    const invite = await referralLink(email).catch(() => null);
+    const mail = welcomeEmail({ name, plan, amountPence: sub.items?.data?.[0]?.price?.unit_amount, inviteCode: invite?.code || null,
       periodEnd: periodEnd ? new Date(periodEnd * 1000).toISOString() : null, unsubscribeUrl: unsubscribeUrl(email) });
     await sendOnce({ to: email, key: "welcome", kind: "welcome", ...mail });
   } catch (e) {
