@@ -10,9 +10,10 @@ import { fetchReferralLink, inviteMessage, nativeShare, shareInvite, copyInvite,
 // up to REFERRAL_CAP; the friend's second module is unlocked for free. The
 // link is for a confirmed email only, so until theirs is, this offers its
 // confirmation link instead. Nothing without an email.
-// Sharing: the phone's own share sheet on a phone; on a computer, Email and
-// WhatsApp under the button. Beside it, a copy button for the message with
-// its link, to paste anywhere. The message says what they've used Candid for
+// Sharing, on a phone: Share (its own share sheet), Email (subject filled
+// in) and a copy icon. On a computer: "Share your link", which shows Email
+// and WhatsApp under it, and a copy button beside it. Copying takes the
+// message with its link, to paste anywhere. The message says what they've used Candid for
 // (`moduleKey`, the answer just seen, else their last one unlocked).
 // `source` is where it's shown, for PostHog. `bare`: no card of its own,
 // inside one already (the paywall).
@@ -39,6 +40,7 @@ export default function InviteFriends({ d, source, moduleKey = null, bare = fals
   if (!email || failed || !link) return null;
 
   const text = link.confirmed ? inviteMessage(link.code, d, moduleKey) : "";
+  const phone = nativeShare();
   const shared = how => posthog.capture("referral_shared", { source, how });
   const share = async () => {
     if (!nativeShare()) { setChoices(c => !c); return; }
@@ -68,7 +70,29 @@ export default function InviteFriends({ d, source, moduleKey = null, bare = fals
       <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>
         When a friend joins on your link and completes their first module, you get a month of Candid free, up to {REFERRAL_CAP}. Their second module is unlocked for free. <a href="/terms.html#referrals" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>
       </p>
-      {link.confirmed ? (
+      {link.confirmed && phone ? (
+        <>
+          {/* A phone: its share sheet, an email with the subject filled in
+              (a share sheet's mail app may drop it), and a plain copy icon. */}
+          <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"12px"}}>
+            <button type="button" onClick={share} style={{...pill,flex:1,background:G,color:WHITE}}>
+              <Share2 size={16}/>Share
+            </button>
+            <a href={inviteMailto(text)} onClick={() => shared("email")} style={{...choice,padding:"12px"}}>
+              <Mail size={16}/>Email
+            </a>
+            <button type="button" onClick={copy} aria-label="Copy your invite" title="Copy your invite"
+              style={{background:"none",border:"none",padding:"10px",color:G,cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
+              {copied === true ? <Check size={20}/> : <Copy size={20}/>}
+            </button>
+          </div>
+          {copied && (
+            <div role="status" style={{fontSize:"12.5px",color:copied === true ? TEXT : ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>
+              {copied === true ? "Copied. Paste it into a message to a friend." : "Couldn't copy it. Use Share instead."}
+            </div>
+          )}
+        </>
+      ) : link.confirmed ? (
         <>
           <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
             <button type="button" onClick={share} aria-expanded={nativeShare() ? undefined : choices} style={{...pill,flex:4,background:G,color:WHITE}}>
