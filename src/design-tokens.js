@@ -54,6 +54,7 @@ export const MODULE_CHART_COLOR = {
   pension:      "#1f8a4c",
   studentLoan:  STUDENT_PURPLE,
   kids:         "#d27a5b",
+  taxTrap:      "#b9661a",
   mortgage:     CRITICAL,    // and property equity
   personalLoan: "#e87ba4",   // and Forecast's "Debts"
 };

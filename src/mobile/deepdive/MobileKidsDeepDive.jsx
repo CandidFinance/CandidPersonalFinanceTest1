@@ -22,14 +22,17 @@ export default function MobileKidsDeepDive({ d, m }) {
   // Childcare not claimed, else Child Benefit. Child Benefit alongside the
   // first two is a line under it; Home and Modules show the total.
   const partner = cc?.state === "partner";
-  const ccLead = cc?.recoverable || cc?.planning ? cc.atStake : cc?.unclaimed || 0;
+  // Lost to their own income over £100,000: the £100k tax trap's figure
+  // (taxTrap.js), so not led with here.
+  const ownLost = cc?.state === "lost" && !cc.planning;
+  const ccLead = (cc?.recoverable && !ownLost) || cc?.planning ? cc.atStake : cc?.unclaimed || 0;
   const lead = ccLead > 0 ? ccLead : cbKeep;
   const label = cc?.planning ? "Childcare support you could get once your child arrives"
     : cc?.recoverable ? (partner ? "Childcare support you and your partner could get" : "Childcare support you could keep")
     : cc?.unclaimed > 0 ? "Tax-Free Childcare you could claim"
     : "Child Benefit you could keep";
   // The pension payment that would open it up: theirs, their partner's, or both.
-  const payLine = !cc?.recoverable ? null
+  const payLine = !cc?.recoverable || ownLost ? null
     : partner ? `A pension payment of ${fmt(cc.partnerPayIn)} from your partner (including the tax relief added) would bring their income to ${fmt(CHILDCARE_INCOME_LIMIT)}${cc.payInNeeded > 0 ? `, and ${fmt(cc.payInNeeded)} from you would do the same for yours` : ""}.`
     : `A pension payment of ${fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to ${fmt(CHILDCARE_INCOME_LIMIT)} and ${cc.planning ? "keep it open to you" : "restore it"}.`;
   const row = { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px", padding:"12px 0", borderBottom:"1px solid rgba(22,47,36,0.08)" };
@@ -67,7 +70,7 @@ export default function MobileKidsDeepDive({ d, m }) {
           {payLine && (
             <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>{payLine}</div>
           )}
-          {cc?.recoverable && cc.payValue > 0 && (
+          {cc?.recoverable && !ownLost && cc.payValue > 0 && (
             <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"8px"}}>
               It's worth the same as about {fmt(cc.payValue)} of pay before tax.
             </div>
@@ -126,7 +129,16 @@ export default function MobileKidsDeepDive({ d, m }) {
         </section>
       )}
 
-      {cc?.recoverable && (
+      {ownLost && (
+        <button type="button" onClick={() => navigate("/app/module/taxTrap")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",padding:"14px 0",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
+          <span>
+            <span style={{display:"block",fontSize:"14px",fontWeight:700,color:G}}>The ways back under £100,000</span>
+            <span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"2px"}}>In the £100k tax trap, with what each costs in take-home pay</span>
+          </span>
+          <ChevronRight size={18} color={G}/>
+        </button>
+      )}
+      {cc?.recoverable && !ownLost && (
         <button type="button" onClick={() => navigate("/app/module/pension")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",padding:"14px 0",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
           <span>
             <span style={{display:"block",fontSize:"14px",fontWeight:700,color:G}}>The tax a pension payment saves</span>

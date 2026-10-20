@@ -12,6 +12,7 @@ import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx
 import MobileInvestmentsDeepDive from "../deepdive/MobileInvestmentsDeepDive.jsx";
 import MobilePensionDeepDive from "../deepdive/MobilePensionDeepDive.jsx";
 import MobileKidsDeepDive from "../deepdive/MobileKidsDeepDive.jsx";
+import MobileTaxTrapDeepDive from "../deepdive/MobileTaxTrapDeepDive.jsx";
 
 // Shell for every mobile module deep-dive page: shared header (icon/title/
 // status), the module-specific content in the middle, and a shared footer
@@ -24,6 +25,7 @@ const CONTENT_BY_KEY = {
   investments: MobileInvestmentsDeepDive,
   pension: MobilePensionDeepDive,
   kids: MobileKidsDeepDive,
+  taxTrap: MobileTaxTrapDeepDive,
 };
 
 // `onShowReveal` replays its answer step by step (MobileModuleReveal), where

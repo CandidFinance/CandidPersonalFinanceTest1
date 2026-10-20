@@ -174,9 +174,9 @@ test("pension answers: final salary scheme, and not sure on the legal minimum", 
   const steps = pensionReveal(db, calcMetrics(db, MARKET));
   assert.equal(steps[0].figure, "£21,000 a year");
   assert.match(steps[1].title, /no pot/);
-  // In the £100k trap, that comes first, and extra paid into the scheme counts.
+  // In the £100k trap, that's the £100k tax trap module's, not Pension's.
   const high = { ...db, salary: "110000" };
-  assert.match(pensionReveal(high, calcMetrics(high, MARKET))[0].title, /of tax you could save/);
+  assert.equal(pensionReveal(high, calcMetrics(high, MARKET))[0].figure, "£21,000 a year");
   const unsure = { ...base, salary: "45000", age: "35", pensionUnknown: true, myContribution: "", employerMatch: "", potValue: "" };
   const u = pensionReveal(unsure, calcMetrics(unsure, MARKET));
   assert.match(u[0].title, /if you pay the legal minimum/);

@@ -9,7 +9,7 @@ import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
-import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, SCORED_MODULES } from "../../lib/appEntry.js";
+import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, scoredInView } from "../../lib/appEntry.js";
 import { moduleEstimate } from "../../lib/crossModule.js";
 import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
@@ -129,8 +129,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   const netWorthPositive = m.netWorth >= 0;
   // How much of the picture the score covers: a high score from one module
   // answered mustn't read as everything being fine.
-  const checked = doneModules(d, propertyDone).filter(k => SCORED_MODULES.includes(k)).length;
-  const unchecked = SCORED_MODULES.length - checked;
+  // The £100k tax trap counts only for someone near or over £100,000.
+  const scored = scoredInView(d);
+  const checked = doneModules(d, propertyDone).filter(k => scored.includes(k)).length;
+  const unchecked = scored.length - checked;
 
   return (
     <div>
@@ -166,7 +168,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
                 <span style={{fontSize:"11px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"2px 8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain}</span>
               )}
             </div>
-            {unchecked > 0 && <div style={{fontSize:"11px",color:MUT,marginTop:"2px",whiteSpace:"nowrap"}}>{checked} of {SCORED_MODULES.length} areas checked</div>}
+            {unchecked > 0 && <div style={{fontSize:"11px",color:MUT,marginTop:"2px",whiteSpace:"nowrap"}}>{checked} of {scored.length} areas checked</div>}
           </div>
         </div>
 

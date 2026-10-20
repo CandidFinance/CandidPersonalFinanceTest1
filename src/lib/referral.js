@@ -72,6 +72,7 @@ const USED_FOR = {
   investments: "see if I'm paying more tax than I need to on my investments",
   kids: "check I'm getting all the childcare help I'm entitled to",
   property: "understand whether buying a house actually makes sense",
+  taxTrap: "see what earning over £100,000 really costs me",
 };
 export function inviteMessage(code, d = {}, moduleKey = null) {
   const key = USED_FOR[moduleKey] ? moduleKey : [...(d.unlockedModules || [])].reverse().find(k => USED_FOR[k]);

@@ -1,12 +1,13 @@
 import { moduleAnswered , loanVerdictReady } from "./appEntry.js";
 import { MODULE_GUIDES, flatQuestions } from "./moduleGuide.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
-import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby } from "lucide-react";
+import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby, Percent } from "lucide-react";
+import { taxTrap, trapInView } from "./taxTrap.js";
 import { fmt } from "./format.js";
 import { taxYearOf } from "./taxYear.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { isPensionContributing, calcPensionTaperSaving, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, childBenefitCharge } from "./pension.js";
+import { isPensionContributing, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, childBenefitCharge } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { isaFillable as isaFillableBy } from "./metrics.js";
 import { calcStudentLoanScenario , pgScenario, bestLumpSum } from "./studentLoan.js";
@@ -34,6 +35,7 @@ export const MODULE_META = [
   { key:"mortgage",    icon:Home,          title:"Mortgage"        },
   { key:"personalLoan",icon:CreditCard,    title:"Personal loan"   },
   { key:"kids",        icon:Baby,          title:"Kids & family"   },
+  { key:"taxTrap",     icon:Percent,       title:"£100k tax trap"  },
 ];
 
 // ── Dashboard module tiles — category pill + short context, keyed to MODULE_META ──
@@ -47,6 +49,7 @@ export const MODULE_TAG = {
   mortgage:     { label:"Today",             color:"#c4963a" },
   personalLoan: { label:"Today",             color:"#c4963a" },
   kids:         { label:"Today",             color:"#c4963a" },
+  taxTrap:      { label:"Today",             color:"#c4963a" },
 };
 
 // ── MVP scope ──────────────────────────────────────────────────────────────
@@ -216,8 +219,9 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // tapered allowance would otherwise have been nudged towards.
   const contributing = isPensionContributing(d);
   const aaRoom = calcAnnualAllowanceRoom(d, m);
-  const pensionTaper = calcPensionTaperSaving(m, aaRoom.room);
-  const pensionTaperAmount = pensionTaper.recoverable ? pensionTaper.taperTotalSaving : 0;
+  // Winning back the Personal Allowance over £100,000 is the £100k tax
+  // trap module's figure (taxTrap.js), not counted here as well.
+  const pensionTaperAmount = 0;
   const bonusSacrifice = calcBonusSacrificePotential(d, m);
   // "Not contributing" and "missed employer match" are mutually exclusive (the
   // latter only applies once you're contributing) — taper is an independent
@@ -347,8 +351,10 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // over for a pension payment), there's nothing to act on, so it's "ok"
   // with a line that says so.
   const cc = childcareSupport(d, m);
-  // Planning: support they could get, not money at stake yet.
-  const ccKeep = cc?.recoverable && !cc.planning ? cc.atStake : 0;
+  // Planning: support they could get, not money at stake yet. Lost to their
+  // own income over £100,000, it's the £100k tax trap module's figure
+  // (taxTrap.js); a partner's income over it stays here.
+  const ccKeep = cc?.recoverable && !cc.planning && cc.state === "partner" ? cc.atStake : 0;
   const ccUnclaimed = cc?.unclaimed || 0;
   const kidsAmount = Math.round(ccKeep + ccUnclaimed + cbAmount);
   // No children and none planned: nothing applies. Left out of the totals
@@ -362,9 +368,23 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
       ccUnclaimed > 0 ? `${fmt(ccUnclaimed)}/yr of Tax-Free Childcare unclaimed` : null,
       cbAmount > 0 ? `${fmt(cbAmount)}/yr of Child Benefit paid back` : null,
       cc?.state === "near" ? `${fmt(cc.headroom)} under the £100,000 childcare limit` : null,
+      cc?.state === "lost" && !cc.planning ? "Childcare support stops over £100,000: see the £100k tax trap" : null,
       cc?.state === "partner" && !ccKeep ? "Childcare support open to you if your partner's income comes under £100,000" : null,
     ].filter(Boolean).join(" + ") || null,
     amount: kidsAmount,
+  };
+
+  // £100k tax trap (taxTrap.js): the tax a pension payment back to £100,000
+  // saves, and the childcare it restores. Nowhere near £100,000, nothing
+  // applies: "Not applicable", like Kids & family without children.
+  const trap = taxTrap(d, m);
+  s.taxTrap = !trap || !trapInView(d, m.adjustedNetIncome) ? { status: "na", notApplicable: true, impact: 0, impactLabel: "Your income isn't near £100,000", amount: 0 } : {
+    status: trap.amount > 0 ? "critical" : trap.over ? "attention" : "ok",
+    impact: trap.amount,
+    impactLabel: trap.over
+      ? (trap.amount > 0 ? `${fmt(trap.amount)}/yr of tax${trap.childcareLost > 0 && trap.fits ? " and childcare" : ""} back by returning to £100,000` : `${fmt(trap.needed)} over £100,000: a ${Math.round(trap.rate.rate * 100)}% rate on it`)
+      : `${fmt(trap.headroom)} under £100,000, where your rate jumps to ${Math.round(trap.trapRate * 100)}%`,
+    amount: trap.amount,
   };
 
   // Modules the user didn't pick on the "Focus" onboarding step read as not
@@ -376,8 +396,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Opened but skipped counts as not answered too (moduleAnswered): its
   // figures would be guesses from blank answers, and the totals show actual
   // figures only.
-  const selectedModules = new Set(["cash", "investments", "pension", "studentLoan", "kids"].filter(k => moduleAnswered(k, d)));
-  for (const key of ["cash", "investments", "pension", "kids"]) {
+  const selectedModules = new Set(["cash", "investments", "pension", "studentLoan", "kids", "taxTrap"].filter(k => moduleAnswered(k, d)));
+  for (const key of ["cash", "investments", "pension", "kids", "taxTrap"]) {
     if (!selectedModules.has(key)) {
       s[key] = { status: "na", impact: 0, impactLabel: null, amount: 0 };
     }

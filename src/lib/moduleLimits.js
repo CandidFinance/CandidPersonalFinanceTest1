@@ -47,6 +47,11 @@ const LIMITS = {
     nationOf(d) === "ni" && "Northern Ireland's Childcare Subsidy",
     "Junior ISAs",
   ],
+  taxTrap: (d, m) => [
+    "Gift Aid you already give",
+    highPaid(d, m) && "share awards from work",
+    "a partner's income (Kids & family has it, for childcare)",
+  ],
   studentLoan: d => [
     d.studentLoan === "postgrad" ? "an undergraduate loan repaid alongside this one" : d.studentLoan === "plan4" ? "a Postgraduate loan repaid alongside this one" : null,
     employed(d) && LOWER_PAY,

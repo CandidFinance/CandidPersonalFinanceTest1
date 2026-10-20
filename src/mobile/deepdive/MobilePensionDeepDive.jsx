@@ -2,7 +2,8 @@ import { useState } from "react";
 import { pensionReveal } from "../../lib/moduleReveal.js";
 import { childcareSupport } from "../../lib/childcare.js";
 import { pensionOutlook, cliffEdge } from "../../lib/crossModule.js";
-import { AlertTriangle, PartyPopper, Banknote, Check } from "lucide-react";
+import { AlertTriangle, PartyPopper, Banknote, Check, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   isPensionContributing,
   calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
@@ -90,6 +91,7 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
 }
 
 export default function MobilePensionDeepDive({ d, m, set }) {
+  const navigate = useNavigate();
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const [cfYears, setCfYears] = useState(defaultCarryForwardYears());
   const [showTaxFreeInfo, setShowTaxFreeInfo] = useState(false);
@@ -170,7 +172,6 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   const opportunityCols = [];
   if (notPayingIn) opportunityCols.push({ label:"Tax relief you're missing", value: fmtCompact(missedRelief) });
   else if (contributing && m.missedMatch > 0) opportunityCols.push({ label:"Employer match you're not getting", value: fmtCompact(m.missedMatch) });
-  if (taper.recoverable && taper.taperTotalSaving > 0) opportunityCols.push({ label:"Tax you could save by winning back your tax-free allowance", value: fmtCompact(taper.taperTotalSaving) });
 
   // Drawdown planning: from the minimum pension age (55, 57 from April
   // 2028), or once retired, for anyone with a pot.
@@ -183,7 +184,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
 
   let winCounter = 0;
   const win1Num = showMatchWin ? ++winCounter : null;
-  const win2Num = showSacrificeCalc && taper.recoverable ? ++winCounter : null;
+  const win2Num = null;
   const drawdownNum = drawdownBest ? ++winCounter : null;
   const exploreNum = showExplore ? ++winCounter : null;
   // Looking ahead: what the pension's path, with salary growth, means for
@@ -315,7 +316,17 @@ export default function MobilePensionDeepDive({ d, m, set }) {
 
       <EmployerMatchTile showMatchWin={showMatchWin} win1Num={win1Num} m={m} d={d} trPct={trPct} contributing={contributing} rowStyle={rowStyle} set={set} taxFreeCash={taxFreeCash}/>
 
-      {showSacrificeCalc && taper.recoverable && sacrificeTile}
+      {/* Over £100,000: the £100k tax trap module has the figures now
+          (taxTrap.js), so this links to it rather than repeating them. */}
+      {taper.ani > taper.taperStart && (
+        <button type="button" onClick={() => navigate("/app/module/taxTrap")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",borderBottom:"1px solid rgba(22,47,36,0.1)",padding:"14px 0",marginBottom:"16px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
+          <span>
+            <span style={{display:"block",fontSize:"14px",fontWeight:700,color:G}}>Over £100,000: the £100k tax trap</span>
+            <span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"2px"}}>What paying into your pension saves, against the other ways back under it</span>
+          </span>
+          <ChevronRight size={18} color={G}/>
+        </button>
+      )}
 
       {aa.inAATaper && (
         <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>

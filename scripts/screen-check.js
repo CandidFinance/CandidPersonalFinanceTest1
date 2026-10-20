@@ -22,7 +22,7 @@ if (!existsSync("dist/app-shell.html")) {
   process.exit(1);
 }
 
-const all = ["pension", "cash", "investments", "studentLoan", "kids"];
+const all = ["pension", "cash", "investments", "studentLoan", "kids", "taxTrap"];
 const done = { selectedModules: all, answeredModules: all, unlockedModules: all, goalsAsked: true, confidenceAsked: true, email: "check@example.com",
   employmentAsked: true, hasExtraIncome: "no", extraIncomeKinds: ["none"] };
 const rich = { ...done, name: "Sam", age: "38", employmentStatus: "employed", scottishTaxpayer: "no", salary: "110000", hasPension: "yes", pensionStatus: "yes",

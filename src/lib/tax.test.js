@@ -59,7 +59,7 @@ test("Scottish income tax: the six bands", async () => {
 
 test("a Scottish taxpayer's rate, take-home and £100k trap follow Scottish rates", async () => {
   const { calcMetrics } = await import("./metrics.js");
-  const { pensionReveal } = await import("./moduleReveal.js");
+  const { taxTrapReveal } = await import("./moduleReveal.js");
   const fiona = { salary: "95000", age: "38", hasPension: "yes", myContribution: "6", employerMatch: "6", potValue: "85000", pensionType: "sacrifice", selectedModules: ["pension"] };
   const rUK = calcMetrics(fiona), scot = calcMetrics({ ...fiona, scottishTaxpayer: "yes" });
   assert.equal(rUK.tr, 0.4);
@@ -67,5 +67,6 @@ test("a Scottish taxpayer's rate, take-home and £100k trap follow Scottish rate
   assert.ok(scot.monthlyTakeHome < rUK.monthlyTakeHome, "more tax in Scotland at £95k");
   assert.equal(scot.taxBandLabel, "higher"); // UK band, for savings and dividends
   const sophie = { ...fiona, salary: "110000", scottishTaxpayer: "yes" };
-  assert.match(pensionReveal(sophie, calcMetrics(sophie))[1].title, /taxed at 67\.5%/);
+  // 45% plus the 22.5% of allowance lost, and 2% NI.
+  assert.match(taxTrapReveal(sophie, calcMetrics(sophie))[1].title, /costs you 69\.5%: 67\.5% tax and 2% National Insurance\.$/);
 });

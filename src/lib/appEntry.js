@@ -1,3 +1,5 @@
+import { trapInView } from "./taxTrap.js";
+
 // The app's entry, and what the home screen offers a user who
 // hasn't had a report yet. Pure logic, unit tested in appEntry.test.js.
 // Spec: docs/onboarding-guided-questions.md.
@@ -9,8 +11,10 @@
 
 // The modules a user can start from, in the order offered when nothing
 // else decides it. "property" isn't in MODULE_META yet (see
-// MobilePropertyScreen) but is offered the same way.
-export const START_MODULES = ["pension", "cash", "investments", "studentLoan", "kids", "property"];
+// MobilePropertyScreen) but is offered the same way. The £100k tax trap
+// (taxTrap.js) is only offered near or over £100,000 (modulesInView), though
+// a link straight to it always opens it.
+export const START_MODULES = ["pension", "cash", "investments", "studentLoan", "kids", "taxTrap", "property"];
 
 // One line per module on the home screen, saying what the user gets.
 export const MODULE_PITCH_SELF_EMPLOYED = { pension: "See the tax relief on what you pay in, and where it's heading." };
@@ -21,6 +25,7 @@ export const MODULE_PITCH = {
   investments: "Make the most of your tax-free allowances.",
   studentLoan: "Find out whether paying it off early is worth it.",
   kids:        "See the childcare help you could get, and what £100,000 costs a parent.",
+  taxTrap:     "See what crossing £100,000 costs you, and the ways back under it.",
   property:    "See what you could borrow, and whether buying beats renting.",
 };
 
@@ -112,7 +117,7 @@ export const CATCH_UP_QUESTIONS = ENTRY_QUESTIONS.map(q => q.id === "name"
   : { ...q, ask: () => "What else would you like help with?", why: () => "We'll set up your modules around these. You can add the rest any time." });
 
 // The modules' names as the entry's messages say them.
-export const MODULE_NAMES = { pension:"Pension", cash:"Cash & savings", investments:"Investments", studentLoan:"Student loan", kids:"Kids & family", property:"Buying a home" };
+export const MODULE_NAMES = { pension:"Pension", cash:"Cash & savings", investments:"Investments", studentLoan:"Student loan", kids:"Kids & family", taxTrap:"£100k tax trap", property:"Buying a home" };
 // The first module picked at the entry, which the app opens straight after
 // it, and where it lives; null for "Just exploring".
 export const firstPick = d => pickedModules(d.interests)[0] || null;
@@ -301,5 +306,14 @@ export function goalsWith(interests, chosenGoals) {
 export function moduleOrder(d) {
   const picked = pickedModules(d.interests);
   const first = picked.length ? picked : [DEFAULT_FIRST_MODULE];
-  return [...first, ...START_MODULES.filter(k => !first.includes(k))];
+  return modulesInView(d, [...first, ...START_MODULES.filter(k => !first.includes(k))]);
 }
+
+// The modules offered to this user: the £100k tax trap only when their
+// income is near or over £100,000, or heading there (taxTrap.js
+// trapInView), or once they've answered it.
+export function modulesInView(d, keys = START_MODULES) {
+  return keys.filter(k => k !== "taxTrap" || moduleAnswered("taxTrap", d) || trapInView(d));
+}
+// The scored modules this user is offered, for "N of M areas checked".
+export const scoredInView = d => modulesInView(d, SCORED_MODULES);

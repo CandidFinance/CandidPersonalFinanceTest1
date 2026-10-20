@@ -10,12 +10,13 @@
 // student loan, say), in which case no reveal or "Explain this" is offered.
 
 import { fmt } from "./format.js";
-import { isPensionContributing, calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, finalSalaryScheme } from "./pension.js";
+import { isPensionContributing, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, LUMP_SUM_ALLOWANCE, inRetirement, pensionAccessAge, NON_EARNER_PENSION_NET, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, finalSalaryScheme } from "./pension.js";
 import { bestDrawdown, defaultDrawdownYears } from "./drawdown.js";
 import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
 import { estimatePensionPot, childBenefitCharge, HICBC_START } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
+import { taxTrap, trapInView } from "./taxTrap.js";
 import { loanVerdictReady } from "./appEntry.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
@@ -84,18 +85,9 @@ function pensionSteps(d, m) {
   // status and the score use (computeModuleStatuses).
   // Not paying in, with no earnings to pay in from (retired, say): what
   // matters is what can come out tax-free, not relief there's none of.
-  // A final salary or career average scheme: no pot to project. The £100k
-  // trap still applies (paying more in, or extra into the scheme, lowers
-  // taxable income), so that comes first.
-  if (finalSalaryScheme(d) && !inRetirement(d)) {
-    const ft = calcPensionTaperSaving(m, calcAnnualAllowanceRoom(d, m).room);
-    if (ft.recoverable && ft.taperTotalSaving > 0) return [
-      { label: ANSWER, figure: `${fmt(ft.taperTotalSaving)} a year`, title: "of tax you could save." },
-      { label: WHY, title: `Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at ${m.scottish ? "67.5" : "60"}%.` },
-      { label: ACTION, title: `Paying ${fmt(ft.taperSacrificeNeeded)} more into a pension would bring your income back to £100,000.`, body: "Your scheme may take extra (Additional Voluntary Contributions, or buying added pension); its website says how." },
-    ];
-    return finalSalarySteps(d, m);
-  }
+  // A final salary or career average scheme: no pot to project. (The £100k
+  // trap is its own module: taxTrapReveal.)
+  if (finalSalaryScheme(d) && !inRetirement(d)) return finalSalarySteps(d, m);
 
   // No earnings and not retired (between jobs, a career break, studying, or
   // retired before the pension can be taken): the pension is for later.
@@ -165,21 +157,7 @@ function pensionSteps(d, m) {
     ];
   }
 
-  // Getting the full match: the £100k tax trap is the next thing to check.
-  const taper = calcPensionTaperSaving(m, aa.room);
-  if (taper.recoverable && taper.taperTotalSaving > 0) {
-    // Childcare is Kids & family's figure: a line here, not added in.
-    const cc = childcareSupport(d, m);
-    const childcareLine = cc?.recoverable && cc.atStake > 0 ? `It would also restore ${fmt(cc.atStake)} a year of childcare support: see Kids & family.`
-      : !cc && +d.childBenefitChildren > 0 ? "Over £100,000, Tax-Free Childcare and the free childcare hours stop too: Kids & family works out what that costs." : null;
-    return [
-      { label: ANSWER, figure: `${fmt(taper.taperTotalSaving)} a year`, title: "of tax you could save." },
-      withBody({ label: WHY, title: `Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at ${m.scottish ? "67.5" : "60"}%.` }, childcareLine),
-      selfEmployed(d)
-        ? { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into a pension (including the tax relief added) would bring your income back to £100,000.`, body: `The money usually can't be taken out until you're 55 (57 from 2028). ${SELF_EMPLOYED_PENSION}` }
-        : { label: ACTION, title: `Paying ${fmt(taper.taperSacrificeNeeded)} more into your pension through salary sacrifice would bring your income back to £100,000.`, body: `It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028). ${HR}` },
-    ];
-  }
+  // (The £100k tax trap is its own module now: taxTrapReveal.)
 
   // Short of what they'd like to live on in retirement.
   const adequacy = retirementAdequacy(d, m);
@@ -478,13 +456,16 @@ export function kidsReveal(d, m) {
   if (cc?.recoverable && cc.atStake > 0) {
     return [
       { label: ANSWER, figure: `${fmt(cc.atStake)} a year`,
-        title: cc.planning ? "of childcare support you could get once your child arrives." : partner ? "of childcare support you and your partner could get." : "of childcare support you could keep." },
+        title: cc.planning ? "of childcare support you could get once your child arrives." : partner ? "of childcare support you and your partner could get." : "of childcare support stops while your income is over £100,000." },
       withBody({ label: WHY, title: `${support} stop for the whole year once either parent's income is over £100,000. ${partner ? "Your partner's is." : `Yours is ${fmt(Math.round(cc.ani))}.`}` }, join(asPay, nationNote, cbLine)),
       partner
         ? { label: ACTION, title: `A pension payment of ${fmt(cc.partnerPayIn)} from your partner (including the tax relief added) would bring their income to £100,000${cc.payInNeeded > 0 ? `, and ${fmt(cc.payInNeeded)} from you would do the same for yours` : ""}.`,
             body: "It saves tax at their top rate as well." }
-        : { label: ACTION, title: `A pension payment of ${fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to £100,000 and restore it.`,
-            body: "It saves tax as well: Pension shows how much." },
+        : cc.planning
+          ? { label: ACTION, title: `A pension payment of ${fmt(cc.payInNeeded)} (including the tax relief added) would bring your income to £100,000 and keep it open to you.`,
+              body: "The £100k tax trap shows the other ways under it, and what each costs." }
+          : { label: ACTION, title: "The £100k tax trap shows the ways back under £100,000, and what each costs in take-home pay.",
+              body: `A pension payment of ${fmt(cc.payInNeeded)} (including the tax relief added) is one.` },
     ];
   }
   if (cc?.unclaimed > 0 && !cc.planning) {
@@ -558,4 +539,38 @@ export function kidsReveal(d, m) {
 }
 
 // The modules with a reveal, by key.
-export const MODULE_REVEALS = { pension: pensionReveal, cash: cashReveal, investments: investmentsReveal, studentLoan: studentLoanReveal, kids: kidsReveal };
+// £100k tax trap (taxTrap.js): over it, what returning to £100,000 is worth
+// and why; under it, how far, and what changes past it. The same figures as
+// the module's status and page.
+const pctOf = r => `${Math.round(r * 1000) / 10}%`;
+function rateParts(rate) {
+  return [`${pctOf(rate.tax)} tax`, rate.ni > 0 ? `${pctOf(rate.ni)} National Insurance` : null, rate.sl > 0 ? `${pctOf(rate.sl)} student loan` : null].filter(Boolean)
+    .reduce((out, part, i, all) => out + (i === 0 ? "" : i === all.length - 1 ? " and " : ", ") + part, "");
+}
+export function taxTrapReveal(d, m) {
+  const t = taxTrap(d, m);
+  if (!t || !trapInView(d, m.adjustedNetIncome)) return null;
+  const support = t.nation === "england" ? "Tax-Free Childcare and the 30 funded hours" : "Tax-Free Childcare";
+  if (t.over) {
+    const why = { label: WHY, title: `Over £100,000 you lose £1 of tax-free allowance for every £2 earned, so each extra £1 costs you ${pctOf(t.rate.rate)}: ${rateParts(t.rate)}.` };
+    const childcare = t.childcareLost > 0 ? `${support} stop too, worth ${fmt(t.childcareLost)} a year.` : null;
+    const others = "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay.";
+    return t.amount > 0 ? [
+      { label: ANSWER, figure: `${fmt(t.amount)} a year`, title: t.childcareLost > 0 && t.fits ? "of tax and childcare support you could keep." : "of tax you could save." },
+      withBody(why, childcare),
+      { label: ACTION, title: `Paying ${fmt(t.needed)} into your pension would bring your income back to £100,000.`, body: others },
+    ] : [
+      { label: ANSWER, figure: pctOf(t.rate.rate), title: "of each extra £1 you earn goes in tax, National Insurance and student loan." },
+      withBody(why, childcare),
+      { label: ACTION, title: `Getting back to £100,000 would take ${fmt(t.needed)}, more than this year's pension allowance left.`, body: others },
+    ];
+  }
+  return [
+    { label: ANSWER, figure: fmt(t.headroom), title: `under £100,000, where your rate on each extra £1 jumps to ${pctOf(t.trapRate)}.` },
+    withBody({ label: WHY, title: "From £100,000 you lose £1 of tax-free allowance for every £2 earned, until it's gone at £125,140." },
+      t.childcareAtRisk > 0 ? `${support}, worth ${fmt(t.childcareAtRisk)} a year, stop as soon as you're over.` : null),
+    { label: ACTION, title: "A pay rise or bonus that takes you over can go into your pension instead, to keep you under.", body: "The module shows what crossing would cost you." },
+  ];
+}
+
+export const MODULE_REVEALS = { pension: pensionReveal, cash: cashReveal, investments: investmentsReveal, studentLoan: studentLoanReveal, kids: kidsReveal, taxTrap: taxTrapReveal };

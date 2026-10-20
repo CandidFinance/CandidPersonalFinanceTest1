@@ -127,6 +127,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 58,
@@ -201,6 +207,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -371,7 +388,8 @@
       "body": "You can overpay on the Student Loans Company website, all of it or part."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -2996,6 +3014,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 58,
@@ -3070,6 +3094,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -3240,7 +3275,8 @@
       "body": "You can overpay on the Student Loans Company website, all of it or part."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -5613,6 +5649,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 84,
@@ -5687,6 +5729,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -5824,7 +5877,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -8147,6 +8201,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 84,
@@ -8221,6 +8281,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -8358,7 +8429,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -10512,6 +10584,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -10586,6 +10664,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -10723,7 +10812,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -13095,6 +13185,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -13169,6 +13265,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -13306,7 +13413,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -15462,6 +15570,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 82,
@@ -15536,6 +15650,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -15634,7 +15759,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -16980,6 +17106,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 82,
@@ -17054,6 +17186,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -17152,7 +17295,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -18311,10 +18455,10 @@
      "amount": 0
     },
     "pension": {
-     "status": "attention",
-     "impact": 13512,
-     "impactLabel": "£13,512/yr of tax-free allowance you could win back",
-     "amount": 13512,
+     "status": "ok",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
      "potentialAmount": 0
     },
     "studentLoan": {
@@ -18341,9 +18485,15 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
-   "score": 66,
+   "score": 74,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -18371,11 +18521,11 @@
      "key": "pension",
      "icon": "<element undefined>",
      "title": "Pension",
-     "status": "attention",
-     "summary": "£13,512/yr of tax-free allowance you could win back",
-     "impact": 13512,
-     "impactLabel": "£13,512/yr of tax-free allowance you could win back",
-     "amount": 13512,
+     "status": "ok",
+     "summary": "On track: nothing to act on right now.",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
      "amountIsLumpSum": false
     },
     "studentLoan": {
@@ -18421,23 +18571,21 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
     }
    },
    "breakdown": {
     "moduleList": [
-     {
-      "key": "pension",
-      "icon": "<element undefined>",
-      "title": "Pension",
-      "status": "attention",
-      "summary": "£13,512/yr of tax-free allowance you could win back",
-      "impact": 13512,
-      "impactLabel": "£13,512/yr of tax-free allowance you could win back",
-      "amount": 13512,
-      "amountIsLumpSum": false,
-      "banked": 0,
-      "pending": 0
-     },
      {
       "key": "cash",
       "icon": "<element undefined>",
@@ -18465,6 +18613,19 @@
       "pending": 0
      },
      {
+      "key": "pension",
+      "icon": "<element undefined>",
+      "title": "Pension",
+      "status": "ok",
+      "summary": "On track: nothing to act on right now.",
+      "impact": 0,
+      "impactLabel": null,
+      "amount": 0,
+      "amountIsLumpSum": false,
+      "banked": 0,
+      "pending": 0
+     },
+     {
       "key": "studentLoan",
       "icon": "<element undefined>",
       "title": "Student loan",
@@ -18479,17 +18640,17 @@
      }
     ],
     "modulesWithRec": [
-     "<circular>",
      "<circular>"
     ],
     "modulesNoRec": [
      "<circular>",
+     "<circular>",
      "<circular>"
     ],
     "kidsModule": null,
-    "needActionCount": 2,
-    "onTrackCount": 2,
-    "totalOpp": 14596,
+    "needActionCount": 1,
+    "onTrackCount": 3,
+    "totalOpp": 1084,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -18504,7 +18665,7 @@
      "banked": 0
     },
     "pension": {
-     "amount": 13512,
+     "amount": 0,
      "answers": "[null,\"4\",\"relief\",null,null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
@@ -18524,17 +18685,18 @@
     "pension": [
      {
       "label": "Your position",
-      "figure": "£13,512 a year",
-      "title": "of tax you could save."
+      "figure": "£661,214",
+      "title": "projected in your pension by 65."
      },
      {
       "label": "Why",
-      "title": "Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at 60%."
+      "title": "You pay 4% and get your employer's full 4% match, so you're not leaving money on the table.",
+      "body": "In today's money: growth of 6% a year, less 2% inflation."
      },
      {
       "label": "What you could do",
-      "title": "Paying £22,520 more into your pension through salary sacrifice would bring your income back to £100,000.",
-      "body": "It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028). HR or payroll can change it, usually from the next month."
+      "title": "Paying your £15,000 bonus into your pension could save up to £9,000 in tax.",
+      "body": "It has to be arranged with HR or payroll before the bonus is paid."
      }
     ],
     "cash": [
@@ -18586,7 +18748,23 @@
       "body": "Repayments come out of your pay automatically."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": [
+     {
+      "label": "Your position",
+      "figure": "£13,512 a year",
+      "title": "of tax you could save."
+     },
+     {
+      "label": "Why",
+      "title": "Over £100,000 you lose £1 of tax-free allowance for every £2 earned, so each extra £1 costs you 71%: 60% tax, 2% National Insurance and 9% student loan."
+     },
+     {
+      "label": "What you could do",
+      "title": "Paying £22,520 into your pension would bring your income back to £100,000.",
+      "body": "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay."
+     }
+    ]
    },
    "propertyReveals": {
     "readiness": null,
@@ -19499,13 +19677,6 @@
    "priorities": {
     "first": [
      {
-      "key": "pension",
-      "title": "Pension",
-      "amount": 13512,
-      "amountIsLumpSum": false,
-      "line": "£13,512/yr of tax-free allowance you could win back"
-     },
-     {
       "key": "cash",
       "title": "Cash & savings",
       "amount": 1084,
@@ -19514,6 +19685,7 @@
      }
     ],
     "onTrack": [
+     "Pension",
      "Student loan"
     ]
    },
@@ -20855,8 +21027,8 @@
      "pg_loan_balance": null
     },
     "report": {
-     "candid_score": 66,
-     "total_opportunity_gbp": 15000,
+     "candid_score": 74,
+     "total_opportunity_gbp": 1400,
      "critical_modules": "cash"
     },
     "property": {
@@ -21007,10 +21179,10 @@
      "amount": 0
     },
     "pension": {
-     "status": "attention",
-     "impact": 13512,
-     "impactLabel": "£13,512/yr of tax-free allowance you could win back",
-     "amount": 13512,
+     "status": "ok",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
      "potentialAmount": 0
     },
     "studentLoan": {
@@ -21037,9 +21209,15 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
-   "score": 66,
+   "score": 74,
    "summaries": {
     "cash": {
      "key": "cash",
@@ -21067,11 +21245,11 @@
      "key": "pension",
      "icon": "<element undefined>",
      "title": "Pension",
-     "status": "attention",
-     "summary": "£13,512/yr of tax-free allowance you could win back",
-     "impact": 13512,
-     "impactLabel": "£13,512/yr of tax-free allowance you could win back",
-     "amount": 13512,
+     "status": "ok",
+     "summary": "On track: nothing to act on right now.",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
      "amountIsLumpSum": false
     },
     "studentLoan": {
@@ -21117,23 +21295,21 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
     }
    },
    "breakdown": {
     "moduleList": [
-     {
-      "key": "pension",
-      "icon": "<element undefined>",
-      "title": "Pension",
-      "status": "attention",
-      "summary": "£13,512/yr of tax-free allowance you could win back",
-      "impact": 13512,
-      "impactLabel": "£13,512/yr of tax-free allowance you could win back",
-      "amount": 13512,
-      "amountIsLumpSum": false,
-      "banked": 0,
-      "pending": 0
-     },
      {
       "key": "cash",
       "icon": "<element undefined>",
@@ -21161,6 +21337,19 @@
       "pending": 0
      },
      {
+      "key": "pension",
+      "icon": "<element undefined>",
+      "title": "Pension",
+      "status": "ok",
+      "summary": "On track: nothing to act on right now.",
+      "impact": 0,
+      "impactLabel": null,
+      "amount": 0,
+      "amountIsLumpSum": false,
+      "banked": 0,
+      "pending": 0
+     },
+     {
       "key": "studentLoan",
       "icon": "<element undefined>",
       "title": "Student loan",
@@ -21175,17 +21364,17 @@
      }
     ],
     "modulesWithRec": [
-     "<circular>",
      "<circular>"
     ],
     "modulesNoRec": [
      "<circular>",
+     "<circular>",
      "<circular>"
     ],
     "kidsModule": null,
-    "needActionCount": 2,
-    "onTrackCount": 2,
-    "totalOpp": 14496,
+    "needActionCount": 1,
+    "onTrackCount": 3,
+    "totalOpp": 984,
     "totalBanked": 0
    },
    "baselinePatch": {
@@ -21200,7 +21389,7 @@
      "banked": 0
     },
     "pension": {
-     "amount": 13512,
+     "amount": 0,
      "answers": "[null,\"4\",\"relief\",null,null,\"4\",\"180000\",null,null,\"0\",null,null,null,null,null,\"65\",null]",
      "banked": 0
     },
@@ -21220,17 +21409,18 @@
     "pension": [
      {
       "label": "Your position",
-      "figure": "£13,512 a year",
-      "title": "of tax you could save."
+      "figure": "£661,214",
+      "title": "projected in your pension by 65."
      },
      {
       "label": "Why",
-      "title": "Between £100,000 and £125,140 you lose some of your tax-free allowance, so that slice is taxed at 60%."
+      "title": "You pay 4% and get your employer's full 4% match, so you're not leaving money on the table.",
+      "body": "In today's money: growth of 6% a year, less 2% inflation."
      },
      {
       "label": "What you could do",
-      "title": "Paying £22,520 more into your pension through salary sacrifice would bring your income back to £100,000.",
-      "body": "It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028). HR or payroll can change it, usually from the next month."
+      "title": "Paying your £15,000 bonus into your pension could save up to £9,000 in tax.",
+      "body": "It has to be arranged with HR or payroll before the bonus is paid."
      }
     ],
     "cash": [
@@ -21282,7 +21472,23 @@
       "body": "Repayments come out of your pay automatically."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": [
+     {
+      "label": "Your position",
+      "figure": "£13,512 a year",
+      "title": "of tax you could save."
+     },
+     {
+      "label": "Why",
+      "title": "Over £100,000 you lose £1 of tax-free allowance for every £2 earned, so each extra £1 costs you 71%: 60% tax, 2% National Insurance and 9% student loan."
+     },
+     {
+      "label": "What you could do",
+      "title": "Paying £22,520 into your pension would bring your income back to £100,000.",
+      "body": "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay."
+     }
+    ]
    },
    "propertyReveals": {
     "readiness": null,
@@ -22026,13 +22232,6 @@
    "priorities": {
     "first": [
      {
-      "key": "pension",
-      "title": "Pension",
-      "amount": 13512,
-      "amountIsLumpSum": false,
-      "line": "£13,512/yr of tax-free allowance you could win back"
-     },
-     {
       "key": "cash",
       "title": "Cash & savings",
       "amount": 984,
@@ -22041,6 +22240,7 @@
      }
     ],
     "onTrack": [
+     "Pension",
      "Student loan"
     ]
    },
@@ -23324,8 +23524,8 @@
      "pg_loan_balance": null
     },
     "report": {
-     "candid_score": 66,
-     "total_opportunity_gbp": 14900,
+     "candid_score": 74,
+     "total_opportunity_gbp": 1300,
      "critical_modules": "cash"
     },
     "property": {
@@ -23508,6 +23708,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 66,
@@ -23582,6 +23788,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -23720,7 +23937,23 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": [
+     {
+      "label": "Your position",
+      "figure": "47%",
+      "title": "of each extra £1 you earn goes in tax, National Insurance and student loan."
+     },
+     {
+      "label": "Why",
+      "title": "Over £100,000 you lose £1 of tax-free allowance for every £2 earned, so each extra £1 costs you 47%: 45% tax and 2% National Insurance."
+     },
+     {
+      "label": "What you could do",
+      "title": "Getting back to £100,000 would take £136,000, more than this year's pension allowance left.",
+      "body": "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay."
+     }
+    ]
    },
    "propertyReveals": {
     "readiness": null,
@@ -26068,6 +26301,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 66,
@@ -26142,6 +26381,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -26280,7 +26530,23 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": [
+     {
+      "label": "Your position",
+      "figure": "47%",
+      "title": "of each extra £1 you earn goes in tax, National Insurance and student loan."
+     },
+     {
+      "label": "Why",
+      "title": "Over £100,000 you lose £1 of tax-free allowance for every £2 earned, so each extra £1 costs you 47%: 45% tax and 2% National Insurance."
+     },
+     {
+      "label": "What you could do",
+      "title": "Getting back to £100,000 would take £136,000, more than this year's pension allowance left.",
+      "body": "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay."
+     }
+    ]
    },
    "propertyReveals": {
     "readiness": null,
@@ -28503,6 +28769,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -28577,6 +28849,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -28714,7 +28997,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -31105,6 +31389,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -31179,6 +31469,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -31316,7 +31617,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -33464,6 +33766,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 84,
@@ -33538,6 +33846,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -33710,7 +34029,8 @@
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -36680,6 +37000,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 84,
@@ -36754,6 +37080,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -36926,7 +37263,8 @@
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -39727,6 +40065,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 92,
@@ -39801,6 +40145,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -39973,7 +40328,8 @@
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -43324,6 +43680,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 92,
@@ -43398,6 +43760,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -43570,7 +43943,8 @@
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -46760,6 +47134,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 76,
@@ -46834,6 +47214,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -47006,7 +47397,8 @@
       "body": "You can overpay on the Student Loans Company website, all of it or part."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -49551,6 +49943,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 76,
@@ -49625,6 +50023,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -49797,7 +50206,8 @@
       "body": "You can overpay on the Student Loans Company website, all of it or part."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -52173,6 +52583,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -52247,6 +52663,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -52384,7 +52811,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -54809,6 +55237,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -54883,6 +55317,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -55020,7 +55465,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -57230,6 +57676,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -57304,6 +57756,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -57441,7 +57904,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -59811,6 +60275,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -59885,6 +60355,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -60022,7 +60503,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -62146,6 +62628,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 84,
@@ -62220,6 +62708,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -62338,7 +62837,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -64730,6 +65230,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -64804,6 +65310,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -64922,7 +65439,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -67070,6 +67588,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 92,
@@ -67144,6 +67668,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -67242,7 +67777,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -68577,6 +69113,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 92,
@@ -68651,6 +69193,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -68749,7 +69302,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -69916,6 +70470,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 82,
@@ -69990,6 +70550,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -70108,7 +70679,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": [
@@ -72917,6 +73489,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 82,
@@ -72991,6 +73569,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -73109,7 +73698,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": [
@@ -75707,6 +76297,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -75781,6 +76377,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -75953,7 +76560,8 @@
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": [
@@ -79130,6 +79738,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 74,
@@ -79204,6 +79818,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -79376,7 +80001,8 @@
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": [
@@ -82336,6 +82962,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 92,
@@ -82410,6 +83042,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -82508,7 +83151,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,
@@ -84824,6 +85468,12 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0
+    },
+    "taxTrap": {
+     "status": "na",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0
     }
    },
    "score": 92,
@@ -84898,6 +85548,17 @@
      "key": "kids",
      "icon": "<element undefined>",
      "title": "Kids & family",
+     "status": "na",
+     "summary": "N/A",
+     "impact": 0,
+     "impactLabel": null,
+     "amount": 0,
+     "amountIsLumpSum": false
+    },
+    "taxTrap": {
+     "key": "taxTrap",
+     "icon": "<element undefined>",
+     "title": "£100k tax trap",
      "status": "na",
      "summary": "N/A",
      "impact": 0,
@@ -84996,7 +85657,8 @@
      }
     ],
     "studentLoan": null,
-    "kids": null
+    "kids": null,
+    "taxTrap": null
    },
    "propertyReveals": {
     "readiness": null,

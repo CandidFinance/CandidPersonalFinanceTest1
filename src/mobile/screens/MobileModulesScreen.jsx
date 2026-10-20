@@ -7,6 +7,7 @@ import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel } from "../statusLabel.js";
 import { notStarted, MODULE_PITCH } from "../../lib/appEntry.js";
+import { taxTrap } from "../../lib/taxTrap.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import BankConfirm from "../BankConfirm.jsx";
 import { moduleEstimate } from "../../lib/crossModule.js";
@@ -53,6 +54,14 @@ function moduleInsights(mm, d, m) {
       return [
         { label: "Childcare support", value: `${fmtCompact(cc.atStake)}/yr` },
         { label: "£100,000 limit", value: cc.state === "near" || cc.state === "fine" ? `${fmtCompact(cc.headroom)} under` : cc.state === "lost" ? "Over" : cc.state === "partner" ? "Partner over" : "Not working" },
+      ];
+    }
+    case "taxTrap": {
+      const t = taxTrap(d, m);
+      if (!t) return [];
+      return [
+        { label: t.over ? "Your rate on the next £1,000" : "Your rate past £100,000", value: `${Math.round((t.over ? t.rate.rate : t.trapRate) * 1000) / 10}%` },
+        { label: "£100,000 limit", value: t.over ? `${fmtCompact(t.needed)} over` : `${fmtCompact(t.headroom)} under` },
       ];
     }
     default:

@@ -9,7 +9,7 @@ import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
 import { useEmailCheck, DidYouMean } from "../emailCheckForm.jsx";
 import { requestEmailStatus, validEmailShape } from "../../lib/emailCheck.js";
-import { SCORED_MODULES, loanSavingsIn, loanPensionChecked } from "../../lib/appEntry.js";
+import { SCORED_MODULES, scoredInView, loanSavingsIn, loanPensionChecked } from "../../lib/appEntry.js";
 
 // Edit inputs (/app/inputs): every answer on one page, so changing one
 // figure is one tap away rather than a walk back through onboarding. About
@@ -40,7 +40,7 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
   // Cash & savings and Pension answered only as far as Student loan needs
   // (its short route): those answers, and only those, to change here.
   const partly = SCORED_MODULES.filter(k => !answered.includes(k) && ((k === "cash" && loanSavingsIn(d)) || (k === "pension" && loanPensionChecked(d))));
-  const notYet = SCORED_MODULES.filter(k => !answered.includes(k) && !partly.includes(k));
+  const notYet = scoredInView(d).filter(k => !answered.includes(k) && !partly.includes(k));
   const shown = [...answered, ...partly];
   const [openKey, setOpenKey] = useState([...answered, "cash", "pension"].includes(open) ? open : "about");
   const refs = useRef({});

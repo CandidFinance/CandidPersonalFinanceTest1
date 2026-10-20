@@ -656,6 +656,19 @@ const KIDS_QUESTIONS = [
   },
 ];
 
+// £100k tax trap (taxTrap.js): pay and other income first (the shared
+// questions about them), then how they pay into a pension, which sets what
+// each way back to £100,000 costs, then children, for the childcare that
+// stops over it. Each is the same question as in Pension or Kids & family,
+// and asked only if that module hasn't asked it already.
+// Their own ids, as copies (ids are unique across walk-throughs).
+const askedOnce = q => ({ ...q, id: `${q.id}Trap`, ifMissing: ({ d }) => d[q.field] == null || d[q.field] === "" });
+const TAX_TRAP_QUESTIONS = [
+  ...ABOUT_YOU,
+  PENSION_QUESTIONS.find(q => q.id === "pensionStatus"),
+  ...KIDS_QUESTIONS.filter(q => ["kidsStatus", "kidsCount", "kidsPreschool", "kidsSchool", "childcareBill"].includes(q.id)).map(askedOnce),
+];
+
 // A walk-through's questions with each follow-up (a question asked below
 // another on the same screen) as one of its own: for Edit inputs, which
 // shows every answer as one form, and for anything listing a module's
@@ -678,6 +691,7 @@ export const MODULE_GUIDES = {
   pension:     { questions: PENSION_QUESTIONS,      emptyText: "Answer a few questions below to see where your pension stands." },
   studentLoan: { questions: STUDENT_LOAN_QUESTIONS, emptyText: "Answer a few questions below to see whether overpaying is worth it." },
   kids:        { questions: KIDS_QUESTIONS,         emptyText: "Answer a few questions below to see the childcare help you could get." },
+  taxTrap:     { questions: TAX_TRAP_QUESTIONS,     emptyText: "Answer a few questions below to see what crossing £100,000 costs you." },
 };
 
 // The short route from Student loan (?from=studentLoan): only the questions

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { entryGoals, toHandFor, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION, entryChat, readingMs,
-  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, needsCatchUp, CATCH_UP_QUESTIONS } from "./appEntry.js";
+  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, needsCatchUp, CATCH_UP_QUESTIONS, modulesInView } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -91,7 +91,17 @@ test("picks come first in the order offered, then the rest", () => {
 test("just exploring leads with the module most people start with", () => {
   const order = moduleOrder({ interests: ["exploring"] });
   assert.equal(order[0], DEFAULT_FIRST_MODULE);
-  assert.deepEqual([...order].sort(), [...START_MODULES].sort());
+  // The £100k tax trap only near or over £100,000.
+  assert.deepEqual([...order].sort(), START_MODULES.filter(k => k !== "taxTrap").sort());
+});
+
+test("the £100k tax trap is offered near or over £100,000, or heading there, and once answered", () => {
+  assert.ok(!modulesInView({ salary: "60000" }).includes("taxTrap"));
+  assert.ok(modulesInView({ salary: "92000" }).includes("taxTrap"));
+  assert.ok(modulesInView({ salary: "80000", bonusAmount: "15000" }).includes("taxTrap"));
+  // £92,000 growing 5% a year passes £100,000 within three years.
+  assert.ok(modulesInView({ salary: "87000", salaryTrajectory: "moderate" }).includes("taxTrap"));
+  assert.ok(modulesInView({ salary: "60000", selectedModules: ["taxTrap"] }).includes("taxTrap"));
 });
 
 test("Property never locks the score: picked at the entry, or set by a shared Property link", () => {
