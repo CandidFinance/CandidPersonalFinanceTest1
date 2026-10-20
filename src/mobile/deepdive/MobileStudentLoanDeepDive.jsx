@@ -149,14 +149,6 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 // Your loan trajectory: when the balance starts falling, and the balance
 // year by year to when it clears or is written off.
 function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, overpayOptions, selectedScenario, baseProjection, worthOverpaying, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
-  const stats = [
-    { label:"Annual interest", value:`${fmt(sl.annualInterest)}/yr` },
-    { label:"Annual repayments", value:`${fmt(sl.annualRep)}/yr` },
-    { label: sl.clearYr ? "Clears in" : "Written off after", value: sl.clearYr ? `${sl.clearYr} yrs` : `${sl.writeOffYr} yrs` },
-    // What they'd pay over the loan's life, and what's left to write off.
-    { label:"You'd repay in all", value: fmt(sl.totalRepaidProjected) },
-    ...(sl.willClear ? [] : [{ label:"Written off", value: fmt(sl.writeOffBal) }]),
-  ];
   // Suggests the balance after paying the currently-selected slider amount,
   // rather than a blank/current-balance starting point — if the user came
   // here having just modelled an overpayment above, that's almost certainly
@@ -184,44 +176,42 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
       <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
         <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your balance</div>
 
-        <TurningPoint sl={sl}/>
-        <div ref={balanceChartRef} style={{width:"100%",marginBottom:"14px"}}>
+        <ClearOrWriteOff sl={sl}/>
+        {/* When repayments started sets the write-off date just above. */}
+        {set && !editingStart && (
+          <button type="button" onClick={() => setEditingStart(true)} style={{background:"none",border:"none",padding:0,margin:"0 0 12px",color:MUT,fontSize:"11.5px",cursor:"pointer",fontFamily:"inherit"}}>
+            Started April {sl.firstDueYear} · <span style={{color:G,fontWeight:600,textDecoration:"underline"}}>Change</span>
+          </button>
+        )}
+        {editingStart && (
+          <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
+            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>When repayments started</div>
+            <YearPicker label="April of" range={startRange} value={startValue} onChange={v => setStartInput(v)}/>
+            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
+              Usually the April after you left your course. Your payslips or your online student loan account will show it.
+            </p>
+            <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
+              {!sl.firstDueEstimated
+                ? <button onClick={resetStart} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Use the estimate</button>
+                : <button onClick={() => { setEditingStart(false); setStartInput(null); }} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Cancel</button>}
+              <button onClick={saveStart} disabled={!startOk} style={{flex:1,background:startOk ? G : "rgba(22,47,36,0.2)",border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:startOk ? "pointer" : "not-allowed"}}>Save</button>
+            </div>
+          </div>
+        )}
+
+        <div ref={balanceChartRef} style={{width:"100%",marginBottom:"6px"}}>
           <BalanceChart sl={sl} width={balanceChartWidth} alt={selectedScenario?.path} altLabel={overpayAmt > 0 ? `With ${fmt(overpayAmt)} paid now` : null}/>
         </div>
+        <TurningPoint sl={sl}/>
         {overpayOptions.length > 0 && !sl.belowThreshold && (
           <LumpSum m={m} sl={sl} tip={tip} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} options={overpayOptions} scenario={selectedScenario} base={baseProjection} worthOverpaying={worthOverpaying}/>
         )}
 
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"12px"}}>
-          <div>
-            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Estimated balance</div>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"2px"}}>
-              <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700}}>{fmt(m.loanBal)}</div>
-              {set && (
-                <button onClick={openBalanceEditor} aria-label="Update your loan balance" style={{background:"rgba(22,47,36,0.06)",border:"none",borderRadius:"50%",width:"26px",height:"26px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
-                  <Wrench size={12} color={MUT}/>
-                </button>
-              )}
-            </div>
-          </div>
-          <div>
-            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Interest rate</div>
-            <div style={{fontFamily:SERIF,fontSize:"20px",color:G,fontWeight:700,marginTop:"2px"}}>{sl.slRatePct}%</div>
-          </div>
-        </div>
+        <LoanStats sl={sl} balanceLabel="Estimated balance" balance={m.loanBal} editBalance={set ? openBalanceEditor : null}/>
 
         {editingBalance && (
           <LoanBalanceEditor d={d} m={m} set={set} savingsRates={savingsRates} initial={balanceInput} onClose={closeBalanceEditor}/>
         )}
-
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"12px"}}>
-          {stats.map((s,i) => (
-            <div key={i}>
-              <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{s.label}</div>
-              <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700,marginTop:"2px"}}>{s.value}</div>
-            </div>
-          ))}
-        </div>
 
         {/* Pay growth decides most whether it's cleared: changeable here,
             and every figure above moves with it. */}
@@ -244,56 +234,80 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
             </div>
           </div>
         )}
-
-        {set && !editingStart && (
-          <button type="button" onClick={() => setEditingStart(true)} style={{background:"none",border:"none",padding:0,margin:"0 0 12px",color:MUT,fontSize:"11.5px",cursor:"pointer",fontFamily:"inherit"}}>
-            Started April {sl.firstDueYear} · <span style={{color:G,fontWeight:600,textDecoration:"underline"}}>Change</span>
-          </button>
-        )}
-        {editingStart && (
-          <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
-            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>When repayments started</div>
-            <YearPicker label="April of" range={startRange} value={startValue} onChange={v => setStartInput(v)}/>
-            <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
-              Usually the April after you left your course. Your payslips or your online student loan account will show it.
-            </p>
-            <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
-              {!sl.firstDueEstimated
-                ? <button onClick={resetStart} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Use the estimate</button>
-                : <button onClick={() => { setEditingStart(false); setStartInput(null); }} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer"}}>Cancel</button>}
-              <button onClick={saveStart} disabled={!startOk} style={{flex:1,background:startOk ? G : "rgba(22,47,36,0.2)",border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:startOk ? "pointer" : "not-allowed"}}>Save</button>
-            </div>
-          </div>
-        )}
       </div>
     </>
+  );
+}
+
+// The answer the rest of the tile explains: whether the loan clears before
+// it's written off, and so whether paying early changes what's repaid. Plain
+// pounds only; whether it beats savings is the Opportunity tile's answer.
+// Year 1 is this tax year, so a loan cleared in year n is cleared by April
+// taxYear + n, and the write-off is in April taxYear + writeOffYr.
+function ClearOrWriteOff({ sl }) {
+  const taxYear = sl.writeOffTaxYear - sl.writeOffYr;
+  const early = sl.writeOffYr - sl.clearYr;
+  const [figure, note] = sl.willClear
+    ? [`Cleared by April ${taxYear + sl.clearYr}`,
+       `${early > 0 ? `${early === 1 ? "A year" : `${early} years`} before` : "Just before"} it would be written off, in April ${sl.writeOffTaxYear}. Paying early lowers what you repay in all.`]
+    : [`Written off April ${sl.writeOffTaxYear}`,
+       `About ${fmt(sl.writeOffBal)} still owed then is cancelled. Paying early mostly shrinks that, not what you pay, so the loan works more like a graduate tax.`];
+  return (
+    <div style={{marginBottom:"8px"}}>
+      <div style={{fontFamily:SERIF,fontSize:"28px",color:G,fontWeight:700,lineHeight:1.15}}>{figure}</div>
+      <div style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,marginTop:"4px"}}>{note}</div>
+    </div>
+  );
+}
+
+// The figures behind it, in pairs: today's balance against what's repaid in
+// all, and the interest added each year against what's repaid each year.
+function LoanStats({ sl, balanceLabel, balance, editBalance = null }) {
+  const label = text => <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{text}</div>;
+  const figure = { fontFamily:SERIF, fontSize:"19px", color:G, fontWeight:700 };
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px 12px",marginBottom:"14px"}}>
+      <div>
+        {label(balanceLabel)}
+        <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"2px"}}>
+          <div style={figure}>{fmt(balance)}</div>
+          {editBalance && (
+            <button onClick={editBalance} aria-label="Update your loan balance" style={{background:"rgba(22,47,36,0.06)",border:"none",borderRadius:"50%",width:"26px",height:"26px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+              <Wrench size={12} color={MUT}/>
+            </button>
+          )}
+        </div>
+      </div>
+      <div>
+        {label("Total you'll repay")}
+        <div style={{...figure,marginTop:"2px"}}>{fmt(sl.totalRepaidProjected)}</div>
+      </div>
+      <div>
+        {label("Annual interest")}
+        <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"6px",marginTop:"2px"}}>
+          <span style={figure}>{fmt(sl.annualInterest)}/yr</span>
+          <span style={{fontSize:"11.5px",color:MUT,fontWeight:600}}>{sl.slRatePct}% rate</span>
+        </div>
+      </div>
+      <div>
+        {label("Annual repayments")}
+        <div style={{...figure,marginTop:"2px"}}>{fmt(sl.annualRep)}/yr</div>
+      </div>
+    </div>
   );
 }
 
 // A Postgraduate loan alongside the main one (studentLoan.js pgScenario):
 // repaid at the same time, with its own interest and write-off date.
 function PostgradLoan({ pg, sl }) {
-  const stats = [
-    { label:"Current balance", value: fmt(pg.balancePath[0]?.bal ?? 0) },
-    { label:"Interest rate", value:`${pg.slRatePct}%` },
-    { label:"Annual repayments", value:`${fmt(pg.annualRep)}/yr` },
-    { label: pg.clearYr ? "Clears in" : "Written off after", value: pg.clearYr ? `${pg.clearYr} yrs` : `${pg.writeOffYr} yrs` },
-    { label:"You'd repay in all", value: fmt(pg.totalRepaidProjected) },
-    ...(pg.willClear ? [] : [{ label:"Written off", value: fmt(pg.writeOffBal) }]),
-  ];
   return (
     <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
       <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"12px"}}>Your Postgraduate loan</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"12px"}}>
-        {stats.map(s => (
-          <div key={s.label}>
-            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{s.label}</div>
-            <div style={{fontFamily:SERIF,fontSize:"17px",color:G,fontWeight:700,marginTop:"2px"}}>{s.value}</div>
-          </div>
-        ))}
-      </div>
+      <ClearOrWriteOff sl={pg}/>
+      <div style={{height:"8px"}}/>
+      <LoanStats sl={pg} balanceLabel="Current balance" balance={pg.balancePath[0]?.bal ?? 0}/>
       <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.55,margin:0}}>
-        Repaid at the same time as your main loan: 6% of pay over {fmt(SL_REPAYMENT_THRESHOLDS.postgrad)}, on top of 9% over {fmt(sl.threshold)}. Together, about {fmt(sl.annualRep + pg.annualRep)} a year comes off your pay now. Written off in April {pg.writeOffTaxYear}.
+        Repaid at the same time as your main loan: 6% of pay over {fmt(SL_REPAYMENT_THRESHOLDS.postgrad)}, on top of 9% over {fmt(sl.threshold)}. Together, about {fmt(sl.annualRep + pg.annualRep)} a year comes off your pay now.
       </p>
     </div>
   );
@@ -420,14 +434,14 @@ function CostComparison({ sl, cost }) {
   const big = { fontFamily:SERIF, fontSize:"18px", color:G, fontWeight:700, whiteSpace:"nowrap" };
   return (
     <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-      <div style={{fontSize:"13px",fontWeight:600,color:G}}>What it costs you</div>
+      <div style={{fontSize:"13px",fontWeight:600,color:G}}>Left as it is vs paid off today</div>
       <div style={row}>
         <div>
           <div style={{fontSize:"13.5px",fontWeight:600,color:TEXT}}>Left as it is</div>
           <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>
             {sl.willClear
               ? `${fmt(cost.balance)} owed + ${fmt(cost.interest)} interest, over ${cost.years === 1 ? "a year" : `${cost.years} years`}: about ${fmt(cost.interestPerYear)} of interest a year.`
-              : `Repaid over ${cost.years} years, then ${fmt(cost.writtenOff)} written off in April ${sl.writeOffTaxYear}.`}
+              : `Repaid over ${cost.years} years, before the rest is written off.`}
           </div>
         </div>
         <div style={big}>{fmt(cost.total)}</div>
@@ -507,17 +521,15 @@ function SpareCheck({ d, m, sl, amount }) {
 // The turning point: the year repayments overtake the interest, so the
 // balance starts falling rather than just growing more slowly.
 function TurningPoint({ sl }) {
-  const [figure, note] = sl.balanceFallingNow
-    ? ["Falling now", "Your repayments already outpace the interest."]
+  const [lead, note] = sl.balanceFallingNow
+    ? ["Falling now.", "Your repayments already outpace the interest."]
     : sl.turningTaxYear
-      ? [`April ${sl.turningTaxYear}`, "Until then it keeps growing, even with repayments coming off your pay."]
-      : ["Not before write-off", "On these figures, repayments never overtake the interest."];
+      ? [`Starts falling April ${sl.turningTaxYear}.`, "Until then it keeps growing, even with repayments coming off your pay."]
+      : ["Never falls before write-off.", "On these figures, repayments never overtake the interest."];
   return (
-    <div style={{marginBottom:"10px"}}>
-      {!sl.balanceFallingNow && <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Starts falling</div>}
-      <div style={{fontFamily:SERIF,fontSize:"28px",color:G,fontWeight:700,lineHeight:1.15,marginTop:"2px"}}>{figure}</div>
-      <div style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>{note}</div>
-    </div>
+    <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
+      <span style={{color:G,fontWeight:600}}>{lead}</span> {note}
+    </p>
   );
 }
 
