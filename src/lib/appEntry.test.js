@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { entryGoals, toHandFor, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION, entryChat, readingMs,
-  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, needsCatchUp, CATCH_UP_QUESTIONS, modulesInView, dormantModules } from "./appEntry.js";
+  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, needsCatchUp, CATCH_UP_QUESTIONS, modulesInView, dormantModules, isNewModule, worthALookShown } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -105,6 +105,18 @@ test("the £100k tax trap is offered near or over £100,000, or heading there, a
   // Not in view: shown greyed instead, until it is.
   assert.deepEqual(dormantModules({ salary: "60000" }), ["taxTrap"]);
   assert.deepEqual(dormantModules({ salary: "95000" }), []);
+});
+
+test("New modules wear their star for six weeks after launch", () => {
+  assert.equal(isNewModule("taxTrap", new Date("2026-10-21")), true);
+  assert.equal(isNewModule("taxTrap", new Date("2026-12-05")), false);
+  assert.equal(isNewModule("cash", new Date("2026-10-21")), false);
+});
+
+test("Worth a look, dismissed, comes back only for a module it didn't hold", () => {
+  assert.equal(worthALookShown({}, ["pension"]), true);
+  assert.equal(worthALookShown({ worthALookDismissed: ["pension", "kids"] }, ["pension"]), false);
+  assert.equal(worthALookShown({ worthALookDismissed: ["pension"] }, ["pension", "taxTrap"]), true);
 });
 
 test("Property never locks the score: picked at the entry, or set by a shared Property link", () => {

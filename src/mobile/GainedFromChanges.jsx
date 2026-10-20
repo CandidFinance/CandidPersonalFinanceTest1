@@ -4,7 +4,7 @@ import { bankedChanges, gainedSoFar, taxYearStart, MODULE_META } from "../lib/mo
 import { hasAccess, accessInfo, PLANS } from "../lib/entitlement.js";
 import { fmt } from "../lib/format.js";
 
-// Home's "Gained from your changes" (moduleStatus.js gainedSoFar). The
+// Home's "Gains" (moduleStatus.js gainedSoFar). The
 // yearly worth of the changes leads, since the pot itself starts small (a
 // change worth £900 a year is £2 on its first day); the chart shows the pot
 // filling over the tax year, split by module, solid to today and pale for
@@ -32,7 +32,7 @@ export default function GainedFromChanges({ d }) {
 
   if (!gained.count) return (
     <div style={{marginTop:"22px"}}>
-      <div style={kicker}>Gained from your changes</div>
+      <div style={kicker}>Gains</div>
       <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
         When you make a change and update your figures in a module, what it's worth adds up here.
       </p>
@@ -50,7 +50,7 @@ export default function GainedFromChanges({ d }) {
 
   return (
     <div style={{marginTop:"16px",background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px 18px 16px",boxShadow:"0 4px 18px rgba(22,47,36,0.07)"}}>
-      <div style={kicker}>Gained from your changes</div>
+      <div style={kicker}>Gains</div>
       <div style={{display:"flex",alignItems:"baseline",gap:"6px",marginTop:"6px"}}>
         <span style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:SUCCESS,lineHeight:1.1}}>{fmt(gained.perYear)}</span>
         <span style={{fontSize:"15px",fontWeight:600,color:TEXT}}>a year</span>

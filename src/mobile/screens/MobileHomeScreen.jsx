@@ -9,10 +9,11 @@ import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
-import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, scoredInView } from "../../lib/appEntry.js";
+import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, scoredInView, worthALookShown } from "../../lib/appEntry.js";
 import { moduleEstimate } from "../../lib/crossModule.js";
 import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
+import WorthALookTile from "../WorthALookTile.jsx";
 import GoalsCard from "./GoalsCard.jsx";
 import ConfidenceCard from "./ConfidenceCard.jsx";
 import PayCheckCard from "./PayCheckCard.jsx";
@@ -141,7 +142,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       </h1>
 
       {/* The hero: the score, in a pale iridescent wash (HERO_TILE_BG) that
-          only it and "Gained from your changes" wear, so they read as the
+          only it and "Gains" wear, so they read as the
           headlines.
           The ring in the score's band colour, the opportunity, and the
           opportunities by size opening in place. Nothing says where to start:
@@ -151,7 +152,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
             beside it shows how far along they are. */}
         <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>At stake each year, estimated</div>
+            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Estimated leakage/yr</div>
             <div style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:G,lineHeight:1.1,marginTop:"6px"}}>{fmt(totalOpp)}</div>
             <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
               {totalOpp > 0 ? "What your money could be doing that it isn't, across what you've answered."
@@ -241,18 +242,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         </div>
       )}
 
-      {worthALook.length > 0 && (
-        <div style={{marginTop:"22px"}}>
-          <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Worth a look</div>
-          <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
-            {worthALook.map(({ key, estimate }) => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={estimate} onOpen={onStartModule}/>)}
-          </div>
-        </div>
-      )}
-
       {/* Net worth — a tile; tap anywhere on it to expand the assets/liabilities
           breakdown in place (same white card treatment as "Your biggest win"). */}
-      <div onClick={() => setNetWorthOpen(v => !v)} style={{marginTop:"20px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",cursor:"pointer"}}>
+      <div onClick={() => setNetWorthOpen(v => !v)} style={{marginTop:"16px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",cursor:"pointer"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Net worth</span>
           <ChevronDown size={14} color={MUT} style={{transform:netWorthOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
@@ -293,6 +285,13 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
           </div>
         )}
       </div>
+
+      {/* Dismissed with its X or a swipe, until a module it didn't hold
+          appears (appEntry.js worthALookShown). */}
+      {worthALook.length > 0 && worthALookShown(d, worthALook.map(w => w.key)) && (
+        <WorthALookTile items={worthALook} d={d} onOpen={onStartModule}
+          onDismiss={() => set("worthALookDismissed", worthALook.map(w => w.key))}/>
+      )}
 
     </div>
   );

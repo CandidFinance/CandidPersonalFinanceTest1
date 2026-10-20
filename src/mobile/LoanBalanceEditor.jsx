@@ -13,7 +13,7 @@ import { G, WHITE, MUT, TEXT, CDARK } from "../design-tokens.js";
 // taken from the lowest rate first (loanBalance.js takeFromSources). The new
 // figure is the starting point the monthly updates run from, and the
 // overpayment's yearly interest saving, at the loan's rate, counts towards
-// "Gained from your changes" on Home (moduleStatus.js bankChange).
+// "Gains" on Home (moduleStatus.js bankChange).
 // `initial`: the figure to start from (the page suggests today's balance
 // less any lump sum being modelled).
 export default function LoanBalanceEditor({ d, m, set, savingsRates, initial = null, onClose }) {

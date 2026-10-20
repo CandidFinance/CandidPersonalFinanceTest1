@@ -323,5 +323,18 @@ export const MODULE_DORMANT_LINE = {
   taxTrap: "Over £100k, each extra £1 can cost 62% and childcare support stops. Opens as your income nears it.",
 };
 
+// Modules marked new (a gold star on their icon, ModuleStartRow) for
+// NEW_DAYS after they went live.
+export const MODULE_LAUNCHED = { property: "2026-10-01", studentLoan: "2026-10-20", taxTrap: "2026-10-20" };
+export const NEW_DAYS = 42;
+export function isNewModule(key, now = new Date()) {
+  const on = MODULE_LAUNCHED[key];
+  return !!on && now - Date.parse(on) < NEW_DAYS * 86400000;
+}
+
+// Home's "Worth a look", once dismissed, stays away until a module they
+// haven't seen in it appears (`worthALookDismissed`: the keys it held).
+export const worthALookShown = (d, keys) => keys.some(k => !(d.worthALookDismissed || []).includes(k));
+
 // The scored modules this user is offered, for "N of M areas checked".
 export const scoredInView = d => modulesInView(d, SCORED_MODULES);
