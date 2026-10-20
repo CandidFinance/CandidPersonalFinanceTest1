@@ -41,3 +41,12 @@ test("modules unlocked before payments, by email or a question, stay unlocked", 
   assert.deepEqual(unlockPatch(d, "investments", { kind: "question", question: UNLOCK_QUESTIONS[0] }, "friend").unlockFeedback, { heard: "friend" });
   assert.ok(!validEmail("nope"));
 });
+
+test("arriving on a friend's invite makes the second answer free, and only the second", () => {
+  const one = { unlockGate: true, unlockedModules: ["cash"], email: "a@b.co" };
+  assert.deepEqual(unlockAsk(one, false, true), { kind: "free", invite: true });
+  assert.equal(unlockAsk(one, false, false).kind, "pay");
+  assert.equal(unlockAsk({ ...one, unlockedModules: ["cash", "pension"] }, false, true).kind, "pay");
+  // The first answer still asks for their email.
+  assert.equal(unlockAsk({ unlockGate: true }, false, true).kind, "email");
+});

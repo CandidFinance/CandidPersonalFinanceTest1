@@ -11,6 +11,8 @@ import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
 import { useEmailCheck, DidYouMean } from "../emailCheckForm.jsx";
 import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../lib/entitlement.js";
+import { referralCode, hasReferralBonus } from "../../lib/referral.js";
+import InviteFriends from "../InviteFriends.jsx";
 
 // A locked module (src/lib/unlock.js): what it's worth, in £, with the answer
 // itself frosted until it's unlocked. The first module is free; after that,
@@ -100,11 +102,14 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
       )}
 
       {ask.kind === "free" && (
-        <button type="button" style={primary(false)} onClick={() => onUnlock(ask, null)}>{cta}</button>
+        <>
+          {ask.invite && <div style={{fontSize:"14px",color:TEXT,fontWeight:600,marginBottom:"10px"}}>Free with your friend's invite.</div>}
+          <button type="button" style={primary(false)} onClick={() => onUnlock(ask, null)}>{cta}</button>
+        </>
       )}
 
       {ask.kind === "email" && <EmailUnlock d={d} cta={cta} primary={primary} onUnlock={answer => onUnlock(ask, answer)}
-        confirm={{ module: moduleKey, amount: amount > 0 && !mod?.amountIsLumpSum ? amount : null, name: d.name || null }}/>}
+        confirm={{ module: moduleKey, amount: amount > 0 && !mod?.amountIsLumpSum ? amount : null, name: d.name || null, ...(referralCode() ? { ref: referralCode() } : {}) }}/>}
     </div>
   );
 }
@@ -131,6 +136,7 @@ function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
   return (
     <form onSubmit={submit}>
       <div style={{fontSize:"15px",color:TEXT,fontWeight:600,lineHeight:1.4,marginBottom:"10px"}}>Add your email to see your answer.</div>
+      {hasReferralBonus() && <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"-4px 0 10px"}}>Invited by a friend: your first two answers are free.</div>}
       <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
         style={{width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       <label style={{display:"flex",alignItems:"flex-start",gap:"10px",margin:"12px 2px 16px",fontSize:"13px",color:TEXT,lineHeight:1.45,cursor:"pointer"}}>
@@ -273,11 +279,13 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
         )}
       </div>
 
-      <div style={{display:"flex",justifyContent:"center",gap:"18px",marginTop:"16px"}}>
+      <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",columnGap:"18px",rowGap:"6px",marginTop:"16px"}}>
         <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); check.clear(); }}>Already subscribed?</button>
         <button type="button" style={link} onClick={() => { setPanel(p => p === "alerts" ? null : "alerts"); setDone(null); setError(null); check.clear(); }}>Get rate alerts</button>
+        {validEmail(d.email) && <button type="button" style={link} onClick={() => { setPanel(p => p === "invite" ? null : "invite"); setDone(null); setError(null); check.clear(); }}>Invite a friend, get a free month</button>}
       </div>
-      {panel && (
+      {panel === "invite" && <div style={{marginTop:"14px"}}><InviteFriends d={d} source="paywall" bare/></div>}
+      {panel && panel !== "invite" && (
         done ? (
           <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"14px 0 0",textAlign:"center"}}>
             {done === "restore" ? "If that email has a subscription, a sign-in link is on its way. Open it on this device." : "Thanks. Use the link we've just emailed to confirm it's you, and we'll email you when you could be keeping more."}

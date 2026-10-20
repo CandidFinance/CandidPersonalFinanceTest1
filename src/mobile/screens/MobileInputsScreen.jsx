@@ -1,5 +1,6 @@
 import { hasAccess, accessInfo, openBillingPortal, PLANS } from "../../lib/entitlement.js";
 import SignInSetup, { switchAccount } from "../SignInSetup.jsx";
+import InviteFriends from "../InviteFriends.jsx";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, User } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
@@ -140,6 +141,7 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
       )}
 
       <Subscription/>
+      <InviteFriends d={d} source="edit_inputs"/>
     </div>
   );
 }
@@ -212,18 +214,21 @@ function EmailField({ d, onEmailChange }) {
 // For a subscriber: their plan, Stripe's page to change or cancel it, and
 // their ways to sign in on another device (SignInSetup).
 // A "comp" plan (a free row added by hand in `subscriptions`, for testing)
-// has no Stripe customer, so no portal.
+// and a "referral" one (free months from inviting friends, server/
+// referrals.js) have no Stripe customer, so no portal; free months end,
+// never renew.
 function Subscription() {
   const [error, setError] = useState(null);
   if (!hasAccess()) return null;
   const a = accessInfo();
-  const comp = a.plan === "comp";
-  const planLabel = comp ? "complimentary" : PLANS[a.plan]?.label.toLowerCase();
+  const referral = a.plan === "referral";
+  const comp = a.plan === "comp" || referral;
+  const planLabel = referral ? "free months from invites" : a.plan === "comp" ? "complimentary" : PLANS[a.plan]?.label.toLowerCase();
   const until = a.periodEnd ? new Date(a.periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : null;
   return (
     <div style={{marginTop:"28px",paddingTop:"16px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
       <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Candid subscription{planLabel ? `, ${planLabel}` : ""}</div>
-      <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>{a.email}{until ? ` · ${a.cancelling ? "ends" : "renews"} ${until}` : ""}</div>
+      <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>{a.email}{until ? ` · ${a.cancelling || referral ? "ends" : "renews"} ${until}` : ""}</div>
       <div style={{display:"flex",gap:"20px"}}>
         {!comp && <button type="button" onClick={() => openBillingPortal().catch(e => setError(e.message))}
           style={{background:"none",border:"none",padding:"8px 0 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>

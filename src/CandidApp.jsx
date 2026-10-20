@@ -22,6 +22,7 @@ import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
+import InviteFriends from "./mobile/InviteFriends.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
 import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
 import { bankChange } from "./lib/moduleStatus.js";
@@ -842,7 +843,7 @@ export default function AppShell() {
             onUnlock={(ask, answer) => {
               const patch = unlockPatch(d, mobileActiveModule, ask, answer);
               Object.entries(patch).forEach(([k, v]) => set(k, v));
-              posthog.capture("module_unlocked", { module: mobileActiveModule, via: ask.kind, question: ask.question?.id ?? null, answer: ask.kind === "question" ? answer : null, call_ok: ask.kind === "email" ? !!answer.callOk : null });
+              posthog.capture("module_unlocked", { module: mobileActiveModule, via: ask.invite ? "invite" : ask.kind, question: ask.question?.id ?? null, answer: ask.kind === "question" ? answer : null, call_ok: ask.kind === "email" ? !!answer.callOk : null });
               if (ask.kind === "email") { posthog.capture("email_captured", { source: "unlock", call_ok: !!answer.callOk }); if (answer.callOk) set("alertsOptIn", true); }
               setUnlockSaveTick(t => t + 1);
               if (revealSteps) setRevealModule(mobileActiveModule);
@@ -855,6 +856,7 @@ export default function AppShell() {
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
           <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={moduleLimits(mobileActiveModule, d, m)}
+            footer={<InviteFriends d={d} source="reveal"/>}
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
               setRevealModule(null);

@@ -15,7 +15,9 @@ const SHIFT_PX = 30;
 
 // `limits` (moduleLimits.js): what the answer doesn't include yet, under
 // its last step.
-export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true, limits = null }) {
+// `footer`: shown under the last step's button (inviting friends, where the
+// answer has just been seen).
+export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true, limits = null, footer = null }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const [index, setIndex] = useState(0);
@@ -71,6 +73,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
       }}>
         {last ? "See everything" : "Next"}
       </button>
+      {last && footer}
       {index > 0 && (
         <button type="button" onClick={() => go(-1)} style={{...textLink,color:MUT,display:"inline-flex",alignItems:"center",gap:"2px",marginTop:"14px",fontSize:"13px"}}>
           <ChevronLeft size={15}/>Back

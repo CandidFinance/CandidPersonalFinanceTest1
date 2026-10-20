@@ -11,6 +11,7 @@ import CookieNotice from "./CookieNotice.jsx"
 import { getConsent, analyticsPersistence } from "./lib/consent.js"
 import { setSupabaseFailureReporter, updateRow } from "./lib/supabase.js"
 import { setStorageFailureReporter, reportStorageFailure } from "./lib/storage.js"
+import { captureReferral } from "./lib/referral.js"
 import { appEntryPath } from "./site/StartCheckButton.jsx"
 const RatesAdmin = lazy(() => import("./admin/RatesAdmin.jsx"))
 const AlertsAdmin = lazy(() => import("./admin/AlertsAdmin.jsx"))
@@ -89,6 +90,11 @@ posthog.register({
 if (acquisition.fresh && acquisition.source === 'referral') {
   posthog.capture('referral_started', { referred_by: acquisition.referred_by })
 }
+// A friend's invite link (?ref=<code>): kept and checked, for their second
+// answer free and the friend's reward (src/lib/referral.js). Unlike the
+// first-touch record above, it's taken from any visit before their first
+// answer, so an invite still counts for someone who's been to the site.
+captureReferral()
 
 // ── Dev tools (test profile loader) — genuinely excluded from prod builds ──────
 // Vite statically replaces import.meta.env.VITE_* at build time. Set

@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { promises as dns } from "dns";
 import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
 import { checkEmail } from "../src/lib/emailCheck.js";
+import { recordReferral, rewardReferral } from "../server/referrals.js";
 
 // Checking and confirming the emails people leave for their first answer or
 // for rate alerts (src/lib/emailCheck.js, MobileUnlock.jsx).
@@ -11,7 +12,9 @@ import { checkEmail } from "../src/lib/emailCheck.js";
 //    is a 200, including a lookup that couldn't finish, so the answer is
 //    never held up. With `confirm` ({ module, amount }, both optional), a
 //    link to confirm the address is theirs is emailed, unless it's
-//    confirmed already or one went out in the last few minutes.
+//    confirmed already or one went out in the last few minutes. With
+//    `confirm.ref`, the code of the friend's link they arrived on, a
+//    referral is recorded, and confirming rewards it (server/referrals.js).
 //  - POST { action: "status", email }: whether that address is confirmed
 //    ({ confirmed: true | false }), for Edit inputs to offer a link for one
 //    that isn't. It says no more than "check" does with `confirm`.
@@ -139,6 +142,12 @@ async function check(req, res) {
   if (await takesMail(domain) === "no") return res.status(422).json({ problem: "domain" });
   let sent = null;
   if (confirm && typeof confirm === "object") {
+    // Arrived on a friend's link: counted once this address is confirmed
+    // (server/referrals.js). Never holds up the answer.
+    if (typeof confirm.ref === "string") {
+      try { await recordReferral(checked.email, confirm.ref); }
+      catch (e) { console.error("[api/email] referral not recorded:", e.message); }
+    }
     try { sent = await sendConfirmation(checked.email, { module: confirm.module, amount: Number(confirm.amount), name: confirm.name }); }
     catch (e) { console.error("[api/email] confirmation not sent:", e.message); sent = "failed"; }
   }
@@ -183,6 +192,10 @@ async function confirmLink(req, res) {
       method: "POST", prefer: "resolution=merge-duplicates,return=minimal",
       body: { email, verified_at: new Date().toISOString() },
     });
+    // Whoever invited them gets their free month. A failure is logged and
+    // left on the referral to give by hand; the confirmation stands.
+    try { await rewardReferral(email); }
+    catch (e) { console.error("[api/email] referral reward failed:", e.message); }
   }
   return res.status(200).send(page("Email confirmed", `<h1>Email confirmed</h1><p>Thanks. Your figures in Candid are unchanged.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
 }

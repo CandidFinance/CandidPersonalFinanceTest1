@@ -1,6 +1,9 @@
 import crypto from "crypto";
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, redis } from "../server/http.js";
+import { cleanEmail, makeToken, readToken } from "../server/tokens.js";
+import { accessFor } from "../server/access.js";
+import { referralLink, codeIsValid } from "../server/referrals.js";
 
 // Subscriptions: the first module's answer is free, every one after it needs
 // a subscription (src/lib/unlock.js). One function for all of it, routed by
@@ -17,6 +20,10 @@ import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, red
 //   passkey-login-options / passkey-login  -> signs in with a passkey
 //   password-set   POST {token, password}  -> sets or changes the password
 //   password-login POST {email, password}  -> signs in with them
+//   referral-link  POST {email}            -> { confirmed, code, earned, cap }:
+//                                             their invite link's code
+//   referral-check POST {code}             -> { valid }: a ?ref= code is real
+//                                             (server/referrals.js)
 //   webhook   Stripe's events, signature-checked, keep `subscriptions` current
 //
 // Stripe is called over its REST API (no SDK). Who has paid lives in the
@@ -43,11 +50,8 @@ const MAIL_REPLY_TO = "admin@candid-finance.co.uk";
 // (comma-separated), for trying checkout on a Vercel preview in test mode.
 const BILLING_HOSTNAMES = [...ALLOWED_HOSTNAMES,
   ...(process.env.BILLING_EXTRA_HOSTS || "").split(",").map(h => h.trim()).filter(Boolean)];
-// Statuses that keep access: past_due while Stripe retries a failed payment.
-const ACTIVE = ["active", "trialing", "past_due"];
 const ACCESS_TTL_MS = 30 * 24 * 3600 * 1000;
 const RESTORE_TTL_MS = 20 * 60 * 1000;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // The app's inputs are a few kB; this is a ceiling, not a target.
 const MAX_STATE_CHARS = 200000;
 
@@ -59,24 +63,11 @@ const configured = () => !!(STRIPE_KEY && WEBHOOK_SECRET && PRICES.monthly && PR
 
 // The site the request came from, if it's ours: where checkout returns to.
 const ourOrigin = req => allowedOrigin(req, BILLING_HOSTNAMES);
-const cleanEmail = e => typeof e === "string" && EMAIL_RE.test(e.trim()) ? e.trim().toLowerCase() : null;
 
-// ── Tokens: base64url(JSON) + "." + HMAC ─────────────────────────────────
+// Tokens (access, and sign-in links): server/tokens.js. The passkey
+// challenges below are signed the same way, with these.
 const b64 = s => Buffer.from(s).toString("base64url");
 const sign = body => crypto.createHmac("sha256", TOKEN_SECRET).update(body).digest("base64url");
-function makeToken(email, kind, ttl) {
-  const body = b64(JSON.stringify({ e: email, k: kind, x: Date.now() + ttl }));
-  return `${body}.${sign(body)}`;
-}
-function readToken(token, kind) {
-  if (typeof token !== "string" || !token.includes(".")) return null;
-  const [body, mac] = token.split(".");
-  if (!safeEqual(mac, sign(body))) return null;
-  try {
-    const t = JSON.parse(Buffer.from(body, "base64url").toString());
-    return t.k === kind && t.x > Date.now() ? cleanEmail(t.e) : null;
-  } catch { return null; }
-}
 
 // ── Stripe and Supabase over REST ────────────────────────────────────────
 function form(obj, prefix = "") {
@@ -144,10 +135,6 @@ async function saveSubscription(sub, email) {
   });
   return who;
 }
-const accessFor = row => {
-  const active = !!row && ACTIVE.includes(row.status);
-  return { active, email: row?.email || null, plan: row?.plan || null, periodEnd: row?.current_period_end || null, cancelling: !!row?.cancel_at_period_end };
-};
 
 // ── The raw body: Vercel's parser is off (config below) so the webhook can
 // check Stripe's signature against the exact bytes; the other actions parse it.
@@ -488,6 +475,8 @@ export default async function handler(req, res) {
     if (action === "passkey-login") return await passkeyLogin(body, res, returnTo);
     if (action === "password-set") return await passwordSet(body, res);
     if (action === "password-login") return await passwordLogin(req, body, res);
+    if (action === "referral-link") return res.status(200).json(await referralLink(body.email));
+    if (action === "referral-check") return res.status(200).json({ valid: await codeIsValid(body.code) });
     return res.status(404).json({ error: "Unknown action" });
   } catch (e) {
     console.error("billing", action, e);

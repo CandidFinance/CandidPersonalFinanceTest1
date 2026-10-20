@@ -16,6 +16,7 @@
 import { SCORED_MODULES } from "./appEntry.js";
 import { hasAccess } from "./entitlement.js";
 import { validEmailShape } from "./emailCheck.js";
+import { hasReferralBonus } from "./referral.js";
 
 export const UNLOCK_GATE_ON = true;
 
@@ -71,9 +72,13 @@ export function firstUnlockPatch(d, key, paid = hasAccess()) {
 // ({ kind: "email" }; nothing if Candid has it already), then a
 // subscription ("pay"). The feedback questions (UNLOCK_QUESTIONS) are no
 // longer asked here; unlockPatch still records an answer to one.
-export function unlockAsk(d, paid = hasAccess()) {
+// Arriving on a friend's invite (referral.js) makes the second answer free
+// too ({ kind: "free", invite: true }).
+export function unlockAsk(d, paid = hasAccess(), invited = hasReferralBonus()) {
   if (paid) return { kind: "free" };
-  if (!(d.unlockedModules || []).length) return validEmail(d.email) ? { kind: "free" } : { kind: "email" };
+  const unlocked = (d.unlockedModules || []).length;
+  if (!unlocked) return validEmail(d.email) ? { kind: "free" } : { kind: "email" };
+  if (invited && unlocked === 1) return { kind: "free", invite: true };
   return { kind: "pay" };
 }
 
