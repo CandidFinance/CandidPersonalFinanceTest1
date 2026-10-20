@@ -71,7 +71,7 @@ export default function AlertsAdmin() {
       <NavBar center="Alerts admin"/>
       <div style={{ fontFamily: SANS, padding: "24px", maxWidth: "900px", margin: "0 auto", width: "100%", boxSizing: "border-box", color: TEXT }}>
         <div style={{ fontSize: "14px", fontWeight: 700, color: data.live ? SUCCESS : MUT }}>
-          {data.live ? "Sending is on: the daily run (08:00 UTC) sends these." : "Dry run: nothing is sent. VITE_ALERTS_LIVE=1 in Vercel turns sending on."}
+          {data.live ? "Sending is on: the daily run (04:00 UTC, 5am UK time in summer and 4am in winter) sends these." : "Dry run: nothing is sent. VITE_ALERTS_LIVE=1 in Vercel turns sending on."}
         </div>
         <WeeklyEditor call={call} busy={busy} onPreview={week => { setDate(week); preview(week); }}/>
         <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginTop: "22px" }}>

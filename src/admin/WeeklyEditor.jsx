@@ -5,7 +5,7 @@ import { IMPACTS, STATUSES, nextSunday, cleanIssue } from "../lib/weekly.js";
 // The Sunday email's issue for a week (src/lib/weekly.js), on
 // /admin/alerts: written here or pasted in as a draft, saved, previewed
 // for every subscriber, then approved. Only an approved issue goes out, at
-// the 08:00 UTC run that Sunday; saving it again needs approving again.
+// the 04:00 UTC run that Sunday (before 6am UK time); saving it again needs approving again.
 // `call(body, label)` is the page's own request to /api/alerts; `onPreview`
 // shows what would go out on that Sunday, draft included.
 
@@ -45,7 +45,7 @@ export default function WeeklyEditor({ call, busy, onPreview }) {
         <label style={{ fontSize: "13px", color: MUT }}>For Sunday</label>
         <input type="date" value={week} onChange={e => setWeek(e.target.value)} style={{ ...input, width: "auto" }}/>
         <span style={{ fontSize: "13px", fontWeight: 700, color: approved ? SUCCESS : MUT }}>
-          {approved ? "Approved: goes out at 08:00 UTC that Sunday" : saved ? (unsaved ? "Changes not saved" : "Draft: not approved, so it won't go out") : "Nothing saved for this week"}
+          {approved ? "Approved: goes out before 6am UK time that Sunday" : saved ? (unsaved ? "Changes not saved" : "Draft: not approved, so it won't go out") : "Nothing saved for this week"}
         </span>
       </div>
 

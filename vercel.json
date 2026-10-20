@@ -32,6 +32,6 @@
     { "source": "/app/assessment/:step", "destination": "/app-shell.html" },
     { "source": "/app/start", "destination": "/app-shell.html" }
   ],
-  "crons": [{ "path": "/api/rates", "schedule": "0 6 * * *" }, { "path": "/api/alerts", "schedule": "0 8 * * *" }],
+  "crons": [{ "path": "/api/rates", "schedule": "0 3 * * *" }, { "path": "/api/alerts", "schedule": "0 4 * * *" }],
   "functions": { "api/rates.js": { "maxDuration": 60 }, "api/alerts.js": { "maxDuration": 60 } }
 }

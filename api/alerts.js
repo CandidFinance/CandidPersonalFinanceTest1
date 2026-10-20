@@ -5,7 +5,9 @@ import { unsubscribeUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from
 
 // Candid's emails between visits (src/lib/alerts.js decides what's due),
 // subscribers' welcome and the Sunday email (src/lib/weekly.js). One route:
-//  - Vercel Cron, daily (vercel.json), authorised by CRON_SECRET: works out
+//  - Vercel Cron, daily at 04:00 UTC (vercel.json; Vercel may start it
+//    any time in that hour), so emails arrive before 6am UK time, after
+//    api/rates has refreshed the rates at 03:00. Authorised by CRON_SECRET: works out
 //    what's due for everyone who can get emails and, when sending is on,
 //    sends it. Each send is recorded in `alert_sends` first (unique per
 //    person and alert), so a second run the same day never sends twice;
