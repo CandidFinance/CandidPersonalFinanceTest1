@@ -61,7 +61,9 @@ test("over £100,000 with a toddler in England: the childcare that stops, counte
   assert.match(steps[1].title, /^Tax-Free Childcare and the 30 funded hours stop for the whole year once either parent's income is over £100,000\. Yours is £104,500\.$/);
   assert.match(steps[2].title, /^The £100k tax trap shows the ways back under £100,000/);
   // Not Kids & family's figure, nor Pension's: the tax trap's, with the tax.
+  // Kids & family says where it is rather than "On track".
   assert.equal(statuses.kids.amount, 0);
+  assert.equal(statuses.kids.elsewhere, "taxTrap");
   // £900 of tax on the £2,250 of allowance lost, and the £10,290.
   const trap = taxTrapReveal(d, m);
   assert.equal(trap[0].figure, "£11,190 a year");

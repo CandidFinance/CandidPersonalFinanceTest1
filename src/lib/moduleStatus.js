@@ -372,6 +372,11 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
       cc?.state === "partner" && !ccKeep ? "Childcare support open to you if your partner's income comes under £100,000" : null,
     ].filter(Boolean).join(" + ") || null,
     amount: kidsAmount,
+    // Childcare stopped by their own income over £100k, with nothing else
+    // here: the £100k tax trap counts it, so Kids & family says where it is
+    // rather than "On track" (statusLabel.js), with its status left as it
+    // is, so the score isn't docked twice for it.
+    elsewhere: cc?.state === "lost" && !cc.planning && kidsAmount === 0 ? "taxTrap" : null,
   };
 
   // £100k tax trap (taxTrap.js): what being over £100k costs them a year,
@@ -426,7 +431,7 @@ export function getModuleSummary(mm, d, m, statuses, insights) {
     : status === "ok" ? ON_TRACK_LINE
     : `Review your ${mm.title.toLowerCase()} situation.`;
   const impact = local.impact || 0;
-  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum };
+  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum, elsewhere: local.elsewhere || null };
 }
 
 // ── Candid score — deterministic, local, free ────────────────────────────────

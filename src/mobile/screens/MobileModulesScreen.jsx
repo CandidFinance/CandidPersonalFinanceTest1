@@ -5,7 +5,7 @@ import { SUCCESS, G, GOLD, WHITE, MUT, TEXT, SERIF, SC, CDARK } from "../../desi
 import { getModuleBreakdown, MODULE_META } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
-import { statusLabel } from "../statusLabel.js";
+import { statusLabel, ELSEWHERE } from "../statusLabel.js";
 import { notStarted, dormantModules, MODULE_PITCH } from "../../lib/appEntry.js";
 import { taxTrap } from "../../lib/taxTrap.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
@@ -141,7 +141,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
           // Priority reads through the headline figure and status dot, both
           // coloured by statusColor. The module icon stays neutral (module
           // identity, not urgency), and the tile itself stays flat white.
-          const statusColor = reviewed ? MUT : (SC[mm.status] || MUT);
+          const statusColor = reviewed || mm.elsewhere ? MUT : (SC[mm.status] || MUT);
           const isOpen = expandedKey === mm.key;
           const insights = isOpen ? moduleInsights(mm, d, m) : [];
           return (
@@ -152,9 +152,9 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-                    <div style={{fontSize:"16px",fontWeight:600,color:TEXT}}>{mm.title}</div>
+                    <div style={{fontSize:"16px",fontWeight:600,color:TEXT,whiteSpace:"nowrap"}}>{mm.title}</div>
                     <div style={{fontFamily:SERIF,fontWeight:700,fontSize:"16px",color:statusColor,flexShrink:0}}>
-                      {hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : "On track"}
+                      {hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : "On track"}
                     </div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>

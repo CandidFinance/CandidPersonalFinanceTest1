@@ -35,7 +35,8 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
   const status = statuses[moduleKey]?.status || "na";
   // Status has exactly one visual indicator here — the dot below. The
   // header icon (module identity, not module status) stays neutral.
-  const statusColor = isComplete ? MUT : (SC[status] || MUT);
+  const elsewhere = statuses[moduleKey]?.elsewhere || null;
+  const statusColor = isComplete || elsewhere ? MUT : (SC[status] || MUT);
   const Content = CONTENT_BY_KEY[moduleKey];
   // Same celebration as desktop's "Mark as reviewed": two floating coins and
   // a brief gold flash on the button — only when marking complete (not when
@@ -63,7 +64,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
           <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
           <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"3px"}}>
             <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
-            <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel({status}, isComplete)}</span>
+            <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel({status, elsewhere}, isComplete)}</span>
           </div>
         </div>
         {/* The answer step by step, beside the module's name on every

@@ -146,7 +146,8 @@
      "impact": 618,
      "impactLabel": "£618/yr more your savings could earn",
      "amount": 618,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -157,7 +158,8 @@
      "impact": 792,
      "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
      "amount": 432,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -168,7 +170,8 @@
      "impact": 3440,
      "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
      "amount": 1440,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -179,7 +182,8 @@
      "impact": 73,
      "impactLabel": "£73/yr ahead by paying your loan off now",
      "amount": 73,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -190,7 +194,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -201,7 +206,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -212,7 +218,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -223,7 +230,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -238,6 +246,7 @@
       "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
       "amount": 1440,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -251,6 +260,7 @@
       "impactLabel": "£618/yr more your savings could earn",
       "amount": 618,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -264,6 +274,7 @@
       "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
       "amount": 432,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -277,6 +288,7 @@
       "impactLabel": "£73/yr ahead by paying your loan off now",
       "amount": 73,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -3033,7 +3045,8 @@
      "impact": 623,
      "impactLabel": "£623/yr more your savings could earn",
      "amount": 623,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -3044,7 +3057,8 @@
      "impact": 792,
      "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
      "amount": 432,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -3055,7 +3069,8 @@
      "impact": 3440,
      "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
      "amount": 1440,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -3066,7 +3081,8 @@
      "impact": 24,
      "impactLabel": "£24/yr ahead by paying your loan off now",
      "amount": 24,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -3077,7 +3093,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -3088,7 +3105,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -3099,7 +3117,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -3110,7 +3129,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -3125,6 +3145,7 @@
       "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
       "amount": 1440,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -3138,6 +3159,7 @@
       "impactLabel": "£623/yr more your savings could earn",
       "amount": 623,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -3151,6 +3173,7 @@
       "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
       "amount": 432,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -3164,6 +3187,7 @@
       "impactLabel": "£24/yr ahead by paying your loan off now",
       "amount": 24,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -5668,7 +5692,8 @@
      "impact": 204,
      "impactLabel": "£204/yr more your savings could earn",
      "amount": 204,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -5679,7 +5704,8 @@
      "impact": 144,
      "impactLabel": "£144 less capital gains tax available",
      "amount": 144,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -5690,7 +5716,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -5701,7 +5728,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -5712,7 +5740,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -5723,7 +5752,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -5734,7 +5764,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -5745,7 +5776,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -5760,6 +5792,7 @@
       "impactLabel": "£204/yr more your savings could earn",
       "amount": 204,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -5773,6 +5806,7 @@
       "impactLabel": "£144 less capital gains tax available",
       "amount": 144,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -5786,6 +5820,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -8220,7 +8255,8 @@
      "impact": 204,
      "impactLabel": "£204/yr more your savings could earn",
      "amount": 204,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -8231,7 +8267,8 @@
      "impact": 144,
      "impactLabel": "£144 less capital gains tax available",
      "amount": 144,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -8242,7 +8279,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -8253,7 +8291,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -8264,7 +8303,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -8275,7 +8315,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -8286,7 +8327,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -8297,7 +8339,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -8312,6 +8355,7 @@
       "impactLabel": "£204/yr more your savings could earn",
       "amount": 204,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -8325,6 +8369,7 @@
       "impactLabel": "£144 less capital gains tax available",
       "amount": 144,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -8338,6 +8383,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -10603,7 +10649,8 @@
      "impact": 1070,
      "impactLabel": "£1,070/yr more your savings could earn, with £43,400 more than your emergency fund needs",
      "amount": 1070,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -10614,7 +10661,8 @@
      "impact": 1128,
      "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
      "amount": 720,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -10625,7 +10673,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -10636,7 +10685,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -10647,7 +10697,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -10658,7 +10709,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -10669,7 +10721,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -10680,7 +10733,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -10695,6 +10749,7 @@
       "impactLabel": "£1,070/yr more your savings could earn, with £43,400 more than your emergency fund needs",
       "amount": 1070,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -10708,6 +10763,7 @@
       "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
       "amount": 720,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -10721,6 +10777,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -13204,7 +13261,8 @@
      "impact": 1185,
      "impactLabel": "£1,185/yr more your savings could earn, with £43,400 more than your emergency fund needs",
      "amount": 1185,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -13215,7 +13273,8 @@
      "impact": 1128,
      "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
      "amount": 720,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -13226,7 +13285,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -13237,7 +13297,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -13248,7 +13309,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -13259,7 +13321,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -13270,7 +13333,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -13281,7 +13345,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -13296,6 +13361,7 @@
       "impactLabel": "£1,185/yr more your savings could earn, with £43,400 more than your emergency fund needs",
       "amount": 1185,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -13309,6 +13375,7 @@
       "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
       "amount": 720,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -13322,6 +13389,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -15589,7 +15657,8 @@
      "impact": 24,
      "impactLabel": "£6,700 short of your 6-month emergency fund",
      "amount": 24,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -15600,7 +15669,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -15611,7 +15681,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -15622,7 +15693,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -15633,7 +15705,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -15644,7 +15717,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -15655,7 +15729,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -15666,7 +15741,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -15681,6 +15757,7 @@
       "impactLabel": "£6,700 short of your 6-month emergency fund",
       "amount": 24,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -17125,7 +17202,8 @@
      "impact": 25,
      "impactLabel": "£6,700 short of your 6-month emergency fund",
      "amount": 25,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -17136,7 +17214,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -17147,7 +17226,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -17158,7 +17238,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -17169,7 +17250,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -17180,7 +17262,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -17191,7 +17274,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -17202,7 +17286,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -17217,6 +17302,7 @@
       "impactLabel": "£6,700 short of your 6-month emergency fund",
       "amount": 25,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -18504,7 +18590,8 @@
      "impact": 1084,
      "impactLabel": "£1,084/yr more your savings could earn, with £39,000 more than your emergency fund needs",
      "amount": 1084,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -18515,7 +18602,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -18526,7 +18614,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -18537,7 +18626,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -18548,7 +18638,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -18559,7 +18650,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -18570,7 +18662,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -18581,7 +18674,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -18596,6 +18690,7 @@
       "impactLabel": "£1,084/yr more your savings could earn, with £39,000 more than your emergency fund needs",
       "amount": 1084,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -18609,6 +18704,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -18622,6 +18718,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -18635,6 +18732,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -21229,7 +21327,8 @@
      "impact": 984,
      "impactLabel": "£984/yr more your savings could earn, with £39,000 more than your emergency fund needs",
      "amount": 984,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -21240,7 +21339,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -21251,7 +21351,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -21262,7 +21363,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -21273,7 +21375,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -21284,7 +21387,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -21295,7 +21399,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -21306,7 +21411,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -21321,6 +21427,7 @@
       "impactLabel": "£984/yr more your savings could earn, with £39,000 more than your emergency fund needs",
       "amount": 984,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -21334,6 +21441,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -21347,6 +21455,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -21360,6 +21469,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -23729,7 +23839,8 @@
      "impact": 975,
      "impactLabel": "£975/yr more your savings could earn, with £114,000 more than your emergency fund needs",
      "amount": 975,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -23740,7 +23851,8 @@
      "impact": 720,
      "impactLabel": "£720 less capital gains tax available",
      "amount": 720,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -23751,7 +23863,8 @@
      "impact": 0,
      "impactLabel": "Payments in may go over your reduced £38,000 pension annual allowance",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -23762,7 +23875,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -23773,7 +23887,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -23784,7 +23899,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -23795,7 +23911,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -23806,7 +23923,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -23821,6 +23939,7 @@
       "impactLabel": "£975/yr more your savings could earn, with £114,000 more than your emergency fund needs",
       "amount": 975,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -23834,6 +23953,7 @@
       "impactLabel": "£720 less capital gains tax available",
       "amount": 720,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -23847,6 +23967,7 @@
       "impactLabel": "Payments in may go over your reduced £38,000 pension annual allowance",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -26323,7 +26444,8 @@
      "impact": 675,
      "impactLabel": "£675/yr more your savings could earn, with £114,000 more than your emergency fund needs",
      "amount": 675,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -26334,7 +26456,8 @@
      "impact": 720,
      "impactLabel": "£720 less capital gains tax available",
      "amount": 720,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -26345,7 +26468,8 @@
      "impact": 0,
      "impactLabel": "Payments in may go over your reduced £38,000 pension annual allowance",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -26356,7 +26480,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -26367,7 +26492,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -26378,7 +26504,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -26389,7 +26516,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -26400,7 +26528,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -26415,6 +26544,7 @@
       "impactLabel": "£720 less capital gains tax available",
       "amount": 720,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -26428,6 +26558,7 @@
       "impactLabel": "£675/yr more your savings could earn, with £114,000 more than your emergency fund needs",
       "amount": 675,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -26441,6 +26572,7 @@
       "impactLabel": "Payments in may go over your reduced £38,000 pension annual allowance",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -28792,7 +28924,8 @@
      "impact": 908,
      "impactLabel": "£908/yr more your savings could earn, with £14,200 more than your emergency fund needs",
      "amount": 908,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -28803,7 +28936,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -28814,7 +28948,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -28825,7 +28960,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -28836,7 +28972,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -28847,7 +28984,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -28858,7 +28996,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -28869,7 +29008,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -28884,6 +29024,7 @@
       "impactLabel": "£908/yr more your savings could earn, with £14,200 more than your emergency fund needs",
       "amount": 908,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -28897,6 +29038,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -28910,6 +29052,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -31412,7 +31555,8 @@
      "impact": 950,
      "impactLabel": "£950/yr more your savings could earn, with £14,200 more than your emergency fund needs",
      "amount": 950,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -31423,7 +31567,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -31434,7 +31579,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -31445,7 +31591,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -31456,7 +31603,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -31467,7 +31615,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -31478,7 +31627,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -31489,7 +31639,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -31504,6 +31655,7 @@
       "impactLabel": "£950/yr more your savings could earn, with £14,200 more than your emergency fund needs",
       "amount": 950,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -31517,6 +31669,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -31530,6 +31683,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -33789,7 +33943,8 @@
      "impact": 222,
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 222,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -33800,7 +33955,8 @@
      "impact": 35,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -33811,7 +33967,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -33822,7 +33979,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -33833,7 +33991,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -33844,7 +34003,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -33855,7 +34015,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -33866,7 +34027,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -33881,6 +34043,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 222,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -33894,6 +34057,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -33907,6 +34071,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -33920,6 +34085,7 @@
       "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -37023,7 +37189,8 @@
      "impact": 250,
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 250,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -37034,7 +37201,8 @@
      "impact": 35,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -37045,7 +37213,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -37056,7 +37225,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -37067,7 +37237,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -37078,7 +37249,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -37089,7 +37261,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -37100,7 +37273,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -37115,6 +37289,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 250,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -37128,6 +37303,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -37141,6 +37317,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -37154,6 +37331,7 @@
       "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -40088,7 +40266,8 @@
      "impact": 37,
      "impactLabel": "£5,400 short of your 6-month emergency fund",
      "amount": 37,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -40099,7 +40278,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -40110,7 +40290,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -40121,7 +40302,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -40132,7 +40314,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -40143,7 +40326,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -40154,7 +40338,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -40165,7 +40350,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -40180,6 +40366,7 @@
       "impactLabel": "£5,400 short of your 6-month emergency fund",
       "amount": 37,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -40193,6 +40380,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -40206,6 +40394,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -40219,6 +40408,7 @@
       "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -43703,7 +43893,8 @@
      "impact": 45,
      "impactLabel": "£5,400 short of your 6-month emergency fund",
      "amount": 45,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -43714,7 +43905,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -43725,7 +43917,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -43736,7 +43929,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -43747,7 +43941,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -43758,7 +43953,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -43769,7 +43965,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -43780,7 +43977,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -43795,6 +43993,7 @@
       "impactLabel": "£5,400 short of your 6-month emergency fund",
       "amount": 45,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -43808,6 +44007,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -43821,6 +44021,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -43834,6 +44035,7 @@
       "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -47157,7 +47359,8 @@
      "impact": 222,
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 222,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -47168,7 +47371,8 @@
      "impact": 83,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -47179,7 +47383,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -47190,7 +47395,8 @@
      "impact": 37,
      "impactLabel": "£37/yr ahead by paying your loan off now",
      "amount": 37,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -47201,7 +47407,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -47212,7 +47419,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -47223,7 +47431,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -47234,7 +47443,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -47249,6 +47459,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 222,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -47262,6 +47473,7 @@
       "impactLabel": "£37/yr ahead by paying your loan off now",
       "amount": 37,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -47275,6 +47487,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -47288,6 +47501,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -49966,7 +50180,8 @@
      "impact": 250,
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 250,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -49977,7 +50192,8 @@
      "impact": 83,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -49988,7 +50204,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -49999,7 +50216,8 @@
      "impact": 6,
      "impactLabel": "£6/yr ahead by paying your loan off now",
      "amount": 6,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -50010,7 +50228,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -50021,7 +50240,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -50032,7 +50252,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -50043,7 +50264,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -50058,6 +50280,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 250,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -50071,6 +50294,7 @@
       "impactLabel": "£6/yr ahead by paying your loan off now",
       "amount": 6,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -50084,6 +50308,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -50097,6 +50322,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -52606,7 +52832,8 @@
      "impact": 312,
      "impactLabel": "£312/yr more your savings could earn, with £119,200 more than your emergency fund needs",
      "amount": 312,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -52617,7 +52844,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -52628,7 +52856,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -52639,7 +52868,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -52650,7 +52880,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -52661,7 +52892,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -52672,7 +52904,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -52683,7 +52916,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -52698,6 +52932,7 @@
       "impactLabel": "£312/yr more your savings could earn, with £119,200 more than your emergency fund needs",
       "amount": 312,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -52711,6 +52946,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -52724,6 +52960,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -55260,7 +55497,8 @@
      "impact": 44,
      "impactLabel": "£44/yr more your savings could earn, with £119,200 more than your emergency fund needs",
      "amount": 44,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -55271,7 +55509,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -55282,7 +55521,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -55293,7 +55533,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -55304,7 +55545,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -55315,7 +55557,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -55326,7 +55569,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -55337,7 +55581,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -55352,6 +55597,7 @@
       "impactLabel": "£44/yr more your savings could earn, with £119,200 more than your emergency fund needs",
       "amount": 44,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -55365,6 +55611,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -55378,6 +55625,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -57699,7 +57947,8 @@
      "impact": 1008,
      "impactLabel": "£1,008/yr more your savings could earn, with £29,200 more than your emergency fund needs",
      "amount": 1008,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -57710,7 +57959,8 @@
      "impact": 180,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -57721,7 +57971,8 @@
      "impact": 0,
      "impactLabel": "£75,000 could be taken tax-free",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -57732,7 +57983,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -57743,7 +57995,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -57754,7 +58007,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -57765,7 +58019,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -57776,7 +58031,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -57791,6 +58047,7 @@
       "impactLabel": "£1,008/yr more your savings could earn, with £29,200 more than your emergency fund needs",
       "amount": 1008,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -57804,6 +58061,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -57817,6 +58075,7 @@
       "impactLabel": "£75,000 could be taken tax-free",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -60298,7 +60557,8 @@
      "impact": 1071,
      "impactLabel": "£1,071/yr more your savings could earn, with £29,200 more than your emergency fund needs",
      "amount": 1071,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -60309,7 +60569,8 @@
      "impact": 180,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -60320,7 +60581,8 @@
      "impact": 0,
      "impactLabel": "£75,000 could be taken tax-free",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -60331,7 +60593,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -60342,7 +60605,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -60353,7 +60617,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -60364,7 +60629,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -60375,7 +60641,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -60390,6 +60657,7 @@
       "impactLabel": "£1,071/yr more your savings could earn, with £29,200 more than your emergency fund needs",
       "amount": 1071,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -60403,6 +60671,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -60416,6 +60685,7 @@
       "impactLabel": "£75,000 could be taken tax-free",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -62651,7 +62921,8 @@
      "impact": 759,
      "impactLabel": "£759/yr more your savings could earn",
      "amount": 759,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -62662,7 +62933,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -62673,7 +62945,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -62684,7 +62957,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -62695,7 +62969,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -62706,7 +62981,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -62717,7 +62993,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -62728,7 +63005,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -62743,6 +63021,7 @@
       "impactLabel": "£759/yr more your savings could earn",
       "amount": 759,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -62756,6 +63035,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -65253,7 +65533,8 @@
      "impact": 801,
      "impactLabel": "£801/yr more your savings could earn",
      "amount": 801,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -65264,7 +65545,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -65275,7 +65557,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -65286,7 +65569,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -65297,7 +65581,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -65308,7 +65593,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -65319,7 +65605,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -65330,7 +65617,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -65345,6 +65633,7 @@
       "impactLabel": "£801/yr more your savings could earn",
       "amount": 801,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -65358,6 +65647,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -67611,7 +67901,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -67622,7 +67913,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -67633,7 +67925,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -67644,7 +67937,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -67655,7 +67949,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -67666,7 +67961,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -67677,7 +67973,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -67688,7 +67985,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -67703,6 +68001,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -69136,7 +69435,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -69147,7 +69447,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -69158,7 +69459,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -69169,7 +69471,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -69180,7 +69483,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -69191,7 +69495,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -69202,7 +69507,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -69213,7 +69519,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -69228,6 +69535,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -70493,7 +70801,8 @@
      "impact": 508,
      "impactLabel": "£508/yr more your savings could earn, with £34,200 more than your emergency fund needs",
      "amount": 508,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -70504,7 +70813,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -70515,7 +70825,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -70526,7 +70837,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -70537,7 +70849,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -70548,7 +70861,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -70559,7 +70873,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -70570,7 +70885,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -70585,6 +70901,7 @@
       "impactLabel": "£508/yr more your savings could earn, with £34,200 more than your emergency fund needs",
       "amount": 508,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -70598,6 +70915,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -73512,7 +73830,8 @@
      "impact": 272,
      "impactLabel": "£272/yr more your savings could earn, with £34,200 more than your emergency fund needs",
      "amount": 272,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -73523,7 +73842,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -73534,7 +73854,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -73545,7 +73866,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -73556,7 +73878,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -73567,7 +73890,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -73578,7 +73902,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -73589,7 +73914,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -73604,6 +73930,7 @@
       "impactLabel": "£272/yr more your savings could earn, with £34,200 more than your emergency fund needs",
       "amount": 272,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -73617,6 +73944,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -76320,7 +76648,8 @@
      "impact": 1161,
      "impactLabel": "£1,161/yr more your savings could earn, with £59,200 more than your emergency fund needs",
      "amount": 1161,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -76331,7 +76660,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -76342,7 +76672,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -76353,7 +76684,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -76364,7 +76696,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -76375,7 +76708,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -76386,7 +76720,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -76397,7 +76732,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -76412,6 +76748,7 @@
       "impactLabel": "£1,161/yr more your savings could earn, with £59,200 more than your emergency fund needs",
       "amount": 1161,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -76425,6 +76762,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -76438,6 +76776,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -76451,6 +76790,7 @@
       "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -79761,7 +80101,8 @@
      "impact": 989,
      "impactLabel": "£989/yr more your savings could earn, with £59,200 more than your emergency fund needs",
      "amount": 989,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -79772,7 +80113,8 @@
      "impact": 360,
      "impactLabel": "£15,000 of this year's ISA allowance unused",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -79783,7 +80125,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -79794,7 +80137,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -79805,7 +80149,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -79816,7 +80161,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -79827,7 +80173,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -79838,7 +80185,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -79853,6 +80201,7 @@
       "impactLabel": "£989/yr more your savings could earn, with £59,200 more than your emergency fund needs",
       "amount": 989,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -79866,6 +80215,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -79879,6 +80229,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      },
@@ -79892,6 +80243,7 @@
       "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -82985,7 +83337,8 @@
      "impact": 222,
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 222,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -82996,7 +83349,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -83007,7 +83361,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -83018,7 +83373,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -83029,7 +83385,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -83040,7 +83397,8 @@
      "impact": 0,
      "impactLabel": "£0 interest remaining at 11.9%",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -83051,7 +83409,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -83062,7 +83421,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -83077,6 +83437,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 222,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
@@ -85491,7 +85852,8 @@
      "impact": 250,
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 250,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "investments": {
      "key": "investments",
@@ -85502,7 +85864,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "pension": {
      "key": "pension",
@@ -85513,7 +85876,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -85524,7 +85888,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -85535,7 +85900,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -85546,7 +85912,8 @@
      "impact": 0,
      "impactLabel": "£0 interest remaining at 11.9%",
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "kids": {
      "key": "kids",
@@ -85557,7 +85924,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -85568,7 +85936,8 @@
      "impact": 0,
      "impactLabel": null,
      "amount": 0,
-     "amountIsLumpSum": false
+     "amountIsLumpSum": false,
+     "elsewhere": null
     }
    },
    "breakdown": {
@@ -85583,6 +85952,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 250,
       "amountIsLumpSum": false,
+      "elsewhere": null,
       "banked": 0,
       "pending": 0
      }
