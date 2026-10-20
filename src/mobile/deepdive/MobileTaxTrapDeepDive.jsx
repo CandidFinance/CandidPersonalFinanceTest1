@@ -5,7 +5,7 @@ import { fmt } from "../../lib/format.js";
 import { taxTrap, trapInView, rateCurve, lostTo, TRAP_START, TRAP_END } from "../../lib/taxTrap.js";
 import { PERSONAL_ALLOWANCE } from "../../lib/tax.js";
 import { kidsSituation, TFC_CAP_PER_CHILD, FUNDED_HOURS_VALUE } from "../../lib/childcare.js";
-import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, RADIUS_CARD, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
 
 // £100k tax trap (taxTrap.js), in the order the answer runs:
 //  1. What the trap costs them a year: the tax on the allowance lost and
@@ -191,7 +191,8 @@ function Options({ t }) {
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"12px"}}>
         {ways.map(w => (
-          <div key={w.key} style={{border:"1px solid rgba(22,47,36,0.1)",borderRadius:"12px",padding:"12px 14px"}}>
+          // Nested tiles as the Pension module's what-ifs have them (MobileWinTile).
+          <div key={w.key} style={{background:WHITE,border:"1px solid transparent",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",borderRadius:RADIUS_CARD,padding:"14px 16px"}}>
             <div style={{fontSize:"14.5px",fontWeight:700,color:TEXT}}>{w.option}</div>
             <div style={{fontSize:"13px",color:TEXT,lineHeight:1.45,marginTop:"3px"}}>{w.needed}</div>
             {/* Two to a row; an odd last one across both. */}
