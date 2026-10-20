@@ -23,6 +23,7 @@
 import crypto from "crypto";
 import { ACTIVE, PAID_PLANS } from "./access.js";
 import { cleanEmail, makeToken } from "./tokens.js";
+import { referralRewardEmail } from "../src/lib/accountEmails.js";
 
 const SUPA_URL = process.env.VITE_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -142,27 +143,14 @@ export async function recordReferral(friendEmail, code) {
   return "recorded";
 }
 
-function rewardEmail(kind, until) {
-  const date = until && new Date(until).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" });
-  if (kind === "stripe_credit") {
-    return {
-      subject: "A friend joined Candid: a month off your bill",
-      text: `Hi,\n\nA friend you invited has joined Candid and completed their first module, so £2.99, a month of Candid, comes off your next bill.\n\nYou can earn up to ${REFERRAL_CAP} months this way. Your link is in Candid, under Edit inputs.\n\nCandid\n${SITE}`,
-    };
-  }
-  return {
-    subject: "A friend joined Candid: you've got a free month",
-    text: `Hi,\n\nA friend you invited has joined Candid and completed their first module, so you've got a free month: every module's answer, Candid Assist, and Candid on your other devices, until ${date}.\n\nOpen this link on the phone or computer you use Candid on, and it's on. The link works for 7 days.\n\n{link}\n\nThe month ends by itself, and nothing is charged. You can earn up to ${REFERRAL_CAP} months this way. Your link is in Candid, under Edit inputs.\n\nCandid\n${SITE}`,
-  };
-}
 async function sendRewardEmail(to, kind, until) {
   if (!RESEND_KEY) return;
-  const { subject, text } = rewardEmail(kind, until);
   const link = `${SITE}/signin?restore=${q(makeToken(to, "restore", SIGN_IN_LINK_MS))}`;
+  const { subject, text, html } = referralRewardEmail({ kind, until, url: link, cap: REFERRAL_CAP });
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [to], subject, text: text.replace("{link}", link) }),
+    body: JSON.stringify({ from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [to], subject, text, html }),
   });
   if (!res.ok) console.error("[referrals] reward email not sent:", res.status, await res.text());
 }

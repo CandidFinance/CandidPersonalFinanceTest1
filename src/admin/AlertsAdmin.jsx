@@ -105,7 +105,10 @@ export default function AlertsAdmin() {
               </button>
               {open === i && (
                 <>
-                  <pre style={{ whiteSpace: "pre-wrap", fontFamily: SANS, fontSize: "13px", lineHeight: 1.55, color: TEXT, background: CREAM, borderRadius: "8px", padding: "12px", margin: "10px 0" }}>{e.text}</pre>
+                  {/* As it arrives: the HTML email, sandboxed; the plain text for mail apps without HTML. */}
+                  {e.html
+                    ? <iframe title={e.subject} srcDoc={e.html} sandbox="" style={{ width: "100%", height: "720px", border: "1px solid rgba(22,47,36,0.1)", borderRadius: "8px", margin: "10px 0", background: CREAM }}/>
+                    : <pre style={{ whiteSpace: "pre-wrap", fontFamily: SANS, fontSize: "13px", lineHeight: 1.55, color: TEXT, background: CREAM, borderRadius: "8px", padding: "12px", margin: "10px 0" }}>{e.text}</pre>}
                   <button type="button" style={button(false)} disabled={!!busy || !testTo} onClick={() => sendTest(i)}>
                     {busy === `test${i}` ? "Sending..." : testDone === i ? "Sent to you" : "Send this to me as a test"}
                   </button>

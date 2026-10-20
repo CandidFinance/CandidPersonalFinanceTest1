@@ -6,6 +6,7 @@ import { accessFor } from "../server/access.js";
 import { referralLink, codeIsValid } from "../server/referrals.js";
 import { sendOnce, unsubscribeUrl, mailReady } from "../server/alertMail.js";
 import { welcomeEmail, PAID_PLANS } from "../src/lib/weekly.js";
+import { signInEmail } from "../src/lib/accountEmails.js";
 
 // Subscriptions: the first module's answer is free, every one after it needs
 // a subscription (src/lib/unlock.js). One function for all of it, routed by
@@ -265,8 +266,7 @@ async function restore(req, body, res, origin) {
       method: "POST",
       headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [email], subject: "Your Candid sign-in link",
-        text: `Open this link on the device you want to use Candid on. It works for 20 minutes.\n\n${link}\n\nIf you didn't ask for this, you can ignore it.`,
+        from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [email], ...signInEmail({ url: link }),
       }),
     });
     if (!sent.ok) console.error("Resend failed", sent.status, await sent.text());

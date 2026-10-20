@@ -31,12 +31,12 @@ export function emailFromToken(t) {
   return email && safeEqual(sig, sign(email)) ? email : null;
 }
 
-export async function sendMail(to, subject, text, unsubscribe) {
+export async function sendMail(to, subject, text, unsubscribe, html = null) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [to], subject, text,
+      from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [to], subject, text, ...(html ? { html } : {}),
       ...(unsubscribe ? { headers: { "List-Unsubscribe": `<${unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } } : {}),
     }),
   });
@@ -61,7 +61,7 @@ export async function sendOnce(e) {
   });
   if (!inserted?.length) return "duplicate";
   try {
-    await sendMail(e.to, e.subject, e.text, unsubscribeUrl(e.to));
+    await sendMail(e.to, e.subject, e.text, unsubscribeUrl(e.to), e.html);
     return "sent";
   } catch (err) {
     await sends(`?email=eq.${encodeURIComponent(e.to)}&alert_key=eq.${encodeURIComponent(e.key)}`, { method: "DELETE" }).catch(() => {});

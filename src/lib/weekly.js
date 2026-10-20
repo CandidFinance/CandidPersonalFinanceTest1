@@ -24,9 +24,9 @@ import { rollTaxYear } from "./taxYear.js";
 import { cashOpportunity } from "./assist.js";
 import { calcBonusSacrificePotential } from "./pension.js";
 import { fmt } from "./format.js";
+import { renderEmail } from "./emailLayout.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
-const COMPANY = "Candid Personal Finance Ltd · Company no. 17383565 · 66 Paul Street, London, EC2A 4NA";
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_MS = 86400000;
 // The Sunday email can still go on the two days after, if a run doesn't
@@ -118,14 +118,14 @@ function yourWeek(d, m, today, rows) {
   const opp = rows?.length ? cashOpportunity(d, m, rows) : null;
   if (opp && opp.gain >= RATES_LINE_MIN) {
     const top = opp.lines[0]?.option;
-    lines.push(`Rates: at today's best rates, your cash could earn about ${fmt(Math.round(opp.gain))} a year more after tax${top ? `. Highest for you: ${top.provider}${top.product ? ` ${top.product}` : ""} at ${top.ratePct}%` : ""}.`);
+    lines.push({ label: "Rates", text: `at today's best rates, your cash could earn about ${fmt(Math.round(opp.gain))} a year more after tax${top ? `. Highest for you: ${top.provider}${top.product ? ` ${top.product}` : ""} at ${top.ratePct}%` : ""}.` });
   } else if (m.cash > 0 && opp) {
-    lines.push("Rates: your savings are within £50 a year of today's best rates.");
+    lines.push({ label: "Rates", text: "your savings are within £50 a year of today's best rates." });
   }
   if (m.isaHeadroom > 0 && isaFillable(d, m, today) > 0) {
-    lines.push(`ISA: ${fmt(m.isaHeadroom)} of this year's allowance left, until 5 April.`);
+    lines.push({ label: "ISA", text: `${fmt(m.isaHeadroom)} of this year's allowance left, until 5 April.` });
   }
-  for (const s of comingUp(d, m, today)) lines.push(s);
+  for (const text of comingUp(d, m, today)) lines.push({ label: "Coming up", text });
   return lines;
 }
 
@@ -134,20 +134,22 @@ function comingUp(d, m, today) {
   const day = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
   const yearEnd = Date.UTC(today.getUTCMonth() > 3 || (today.getUTCMonth() === 3 && today.getUTCDate() > 5) ? today.getUTCFullYear() + 1 : today.getUTCFullYear(), 3, 5);
   const toYearEnd = Math.round((yearEnd - day) / DAY_MS);
-  if (toYearEnd <= SOON_DAYS) out.push(`Coming up: the tax year ends on 5 April, in ${toYearEnd} ${toYearEnd === 1 ? "day" : "days"}.`);
+  if (toYearEnd <= SOON_DAYS) out.push(`the tax year ends on 5 April, in ${toYearEnd} ${toYearEnd === 1 ? "day" : "days"}.`);
   const month = +d.bonusMonth;
   if (d.employmentStatus === "employed" && +d.bonusAmount > 0 && month >= 1 && month <= 12) {
     const y = today.getUTCMonth() + 1 > month ? today.getUTCFullYear() + 1 : today.getUTCFullYear();
     const toBonus = Math.round((Date.UTC(y, month - 1, 1) - day) / DAY_MS);
     if (toBonus >= 0 && toBonus <= SOON_DAYS) {
       const saving = Math.round(calcBonusSacrificePotential(d, m).standalone || 0);
-      out.push(`Coming up: your bonus is usually paid in ${MONTHS[month - 1]}.${saving > 0 ? ` Paid into your pension, it could save up to ${fmt(saving)} in tax, if arranged with payroll before it's paid.` : ""}`);
+      out.push(`your bonus is usually paid in ${MONTHS[month - 1]}.${saving > 0 ? ` Paid into your pension, it could save up to ${fmt(saving)} in tax, if arranged with payroll before it's paid.` : ""}`);
     }
   }
   return out;
 }
 
-// ── The emails ───────────────────────────────────────────────────────────────
+// ── The emails ──────────────────────────────────────────────────────────────
+// Each as HTML and plain text (emailLayout.js).
+
 // The Sunday email for one subscriber. `rows`: savings_rates.
 export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubscribeUrl }) {
   const d = rollTaxYear(rawD || {}, today);
@@ -155,32 +157,23 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
   const first = firstName(d.name);
   const items = (issue.items || []).filter(i => i && i.title && i.body);
   const mine = yourWeek(d, m, today, rows);
-  const lines = [first ? `Hi ${first},` : "Hi,", ""];
-  if (issue.intro) lines.push(issue.intro.trim(), "");
-  if (mine.length) {
-    lines.push("YOUR WEEK", ...mine.map(l => `- ${l}`), "");
-  }
-  if (items.length) {
-    lines.push("THIS WEEK", "");
-    for (const i of items) {
-      lines.push(`${i.title.trim()}${STATUSES[i.status] ? ` (${STATUSES[i.status]})` : ""}`, i.body.trim());
-      const impact = i.impact && IMPACTS[i.impact.kind];
-      const forYou = impact ? impact.line(d, m, i.impact) : null;
-      if (forYou) lines.push(`For you: ${forYou}`);
-      if (i.source) lines.push(`Source: ${i.source.trim()}${i.url ? ` (${i.url.trim()})` : ""}`);
-      lines.push("");
-    }
-  }
-  lines.push(
-    `Your figures in Candid: ${SITE}/app/home`,
-    "",
-    `Rumours are just that: nothing changes until it's announced. Candid works out what each change would mean on the figures you've given it, with no stake in what you choose. It's guidance, not advice.`,
-    "",
-    `Stop these emails: ${unsubscribeUrl}`,
-    COMPANY,
-  );
   const subject = (issue.subject || "").trim() || `This week: ${items[0]?.title?.trim() || "your money"}`;
-  return { subject, text: lines.join("\n") };
+  return renderEmail({
+    subject, preheader: issue.intro || items.map(i => i.title).join(" · "),
+    greeting: first ? `Hi ${first},` : "Hi,",
+    blocks: [
+      ...(issue.intro ? [{ p: issue.intro.trim() }] : []),
+      ...(mine.length ? [{ h: "Your week" }, { list: mine.map(l => [{ b: l.label }, `: ${l.text}`]) }] : []),
+      ...(items.length ? [{ h: "This week" }] : []),
+      ...items.map(i => {
+        const impact = i.impact && IMPACTS[i.impact.kind];
+        return { news: { title: i.title.trim(), status: i.status, body: i.body.trim(), forYou: impact ? impact.line(d, m, i.impact) : null, source: i.source?.trim() || null, url: i.url?.trim() || null } };
+      }),
+      { button: { label: "Open Candid", href: `${SITE}/app/home` } },
+    ],
+    note: "Rumours are just that: nothing changes until it's announced. Candid works out what each change would mean on the figures you've given it, with no stake in what you choose. It's guidance, not advice.",
+    unsubscribeUrl,
+  });
 }
 
 // The welcome, as someone subscribes. `periodEnd`: when it renews (a date).
@@ -190,33 +183,30 @@ export function welcomeEmail({ name = "", plan, amountPence, periodEnd, inviteCo
   const first = firstName(name);
   const price = amountPence > 0 ? `£${(amountPence / 100).toFixed(2)} a ${plan === "yearly" ? "year" : "month"}` : null;
   const renews = periodEnd && !isNaN(new Date(periodEnd)) ? new Date(periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" }) : null;
-  const lines = [
-    first ? `Hi ${first},` : "Hi,",
-    "",
-    "Thanks for subscribing to Candid. Every module is now open to you, and your answers are saved to this email address.",
-    "",
-    "What you'll get:",
-    "- Every module's figures, kept current as you update your answers. Open Banking is in testing: in future you'll be able to connect your bank accounts, and your figures will update automatically",
-    "- An email roundup on Sunday mornings: rate changes and Budget news, and what each would mean on your figures",
-    "- Updates on key dates in the tax calendar that apply to you, from your bonus to 5 April, and whenever a better savings rate appears",
-    "",
-    `On another phone or computer, sign in with this email address: ${SITE}/signin`,
-    "",
-    ...(price ? [`Your plan: ${price}${renews ? `, renewing on ${renews}` : ""}.`] : []),
-    `To manage your subscription: ${SITE}/app/inputs, then Manage subscription.`,
-    "",
-    `Know someone who'd find Candid useful? For each friend who joins with your link and completes their first module, you get a month free, up to ${REFERRAL_MONTHS} months.${inviteCode ? "" : " Your link is in Candid, under Edit inputs."}`,
-    ...(inviteCode ? [`${SITE}/app/start?ref=${inviteCode}`] : []),
-    "",
-    "Any questions or feedback, just reply to this email.",
-    "",
-    "The Candid team",
-    "",
-    "Candid is guidance, not advice.",
-    `Stop Candid's emails: ${unsubscribeUrl}`,
-    COMPANY,
-  ];
-  return { subject: "Welcome to Candid", text: lines.join("\n") };
+  const invite = inviteCode ? `${SITE}/app/start?ref=${inviteCode}` : null;
+  return renderEmail({
+    subject: "Welcome to Candid", preheader: "Every module is now open to you.",
+    greeting: first ? `Hi ${first},` : "Hi,",
+    blocks: [
+      { p: "Thanks for subscribing to Candid. Every module is now open to you, and your answers are saved to this email address." },
+      { h: "What you'll get" },
+      { list: [
+        [{ b: "Every module's figures" }, ", kept current as you update your answers. Open Banking is in testing: in future you'll be able to connect your bank accounts, and your figures will update automatically."],
+        [{ b: "An email roundup on Sunday mornings" }, ": rate changes and Budget news, and what each would mean on your figures."],
+        [{ b: "Updates on key dates in the tax calendar" }, " that apply to you, from your bonus to 5 April, and whenever a better savings rate appears."],
+      ] },
+      { button: { label: "Open Candid", href: `${SITE}/app/home` } },
+      { p: ["On another phone or computer, ", { a: "sign in", href: `${SITE}/signin` }, " with this email address."] },
+      ...(price ? [{ panel: { label: "Your plan", text: `${price}${renews ? `, renewing on ${renews}` : ""}` } }] : []),
+      { small: ["To manage your subscription, go to ", { a: "Edit inputs", href: `${SITE}/app/inputs` }, " in Candid, then Manage subscription."] },
+      { h: "Share Candid" },
+      { p: `Know someone who'd find Candid useful? For each friend who joins with your link and completes their first module, you get a month free, up to ${REFERRAL_MONTHS} months.${invite ? "" : " Your link is in Candid, under Edit inputs."}` },
+      ...(invite ? [{ panel: { label: "Your invite link", text: [{ a: invite.replace(/^https:\/\/www\./, ""), href: invite }] } }] : []),
+      { p: "Any questions or feedback, just reply to this email." },
+    ],
+    note: "Candid is guidance, not advice.",
+    unsubscribeUrl,
+  });
 }
 
 // An issue as saved from the editor, or pasted in as a draft: only the

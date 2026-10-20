@@ -3,6 +3,7 @@ import { promises as dns } from "dns";
 import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
 import { checkEmail } from "../src/lib/emailCheck.js";
 import { recordReferral, rewardReferral } from "../server/referrals.js";
+import { confirmEmail } from "../src/lib/accountEmails.js";
 
 // Checking and confirming the emails people leave for their first answer or
 // for rate alerts (src/lib/emailCheck.js, MobileUnlock.jsx).
@@ -89,21 +90,11 @@ function emailFromToken(t) {
   return email ? key(email) : null;
 }
 
-// Their first name as they typed it into Candid, for "Hi Jo,", as the
-// alert emails greet them (src/lib/alerts.js). It's theirs to type, so only
-// a plain name is used: letters, an apostrophe or hyphen, nothing that could
-// read as a link or a message.
-function greeting(name) {
-  const first = typeof name === "string" ? name.trim().split(/\s+/)[0] : "";
-  return /^\p{L}[\p{L}'’-]{0,29}$/u.test(first) ? `Hi ${first},` : "Hi,";
-}
-
-function confirmText(email, { module, amount, name } = {}) {
-  const title = MODULE_TITLES[module];
+// The confirmation email (src/lib/accountEmails.js), with the answer they
+// just got when there is one.
+function confirmMail(email, { module, amount, name } = {}) {
   const figure = Number.isFinite(amount) && amount > 0 && amount < 10_000_000 ? `£${Math.round(amount).toLocaleString("en-GB")}` : null;
-  const answer = title && figure ? `Your ${title.toLowerCase()} answer: ${figure} a year, our estimate on your figures. It's saved in Candid on the device you used.\n\n`
-    : title ? `Your ${title.toLowerCase()} answer is saved in Candid on the device you used.\n\n` : "";
-  return `${greeting(name)}\n\n${answer}Confirm this is your email address:\n${confirmUrl(email)}\n\nThe link works for ${LINK_DAYS} days. If you didn't enter this address on Candid, ignore this email and nothing more will be sent.\n\nCandid\n${SITE}`;
+  return confirmEmail({ name, title: MODULE_TITLES[module] || null, figure, url: confirmUrl(email), days: LINK_DAYS });
 }
 
 // Sends the link unless the address is confirmed, one went out a few
@@ -123,7 +114,7 @@ async function sendConfirmation(email, confirm) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [email], subject: "Confirm your email for Candid", text: confirmText(email, confirm) }),
+    body: JSON.stringify({ from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [email], ...confirmMail(email, confirm) }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
   return "sent";

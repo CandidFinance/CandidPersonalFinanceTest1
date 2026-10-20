@@ -30,6 +30,7 @@ import { calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePote
 import { cashOpportunity } from "./assist.js";
 import { childcareSupport } from "./childcare.js";
 import { fmt } from "./format.js";
+import { renderEmail } from "./emailLayout.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
 export const SUBSCRIBER_KINDS = ["taxYearEnd", "bonus", "newTaxYear", "rates"];
@@ -41,7 +42,6 @@ export const RATES_MIN_CHANGE = 50;
 const FINAL_FROM = 26;
 const DAY_MS = 86400000;
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const COMPANY = "Candid Personal Finance Ltd · Company no. 17383565 · 66 Paul Street, London, EC2A 4NA";
 
 const num = v => (v === null || v === undefined || v === "") ? "" : String(v);
 
@@ -204,26 +204,22 @@ export function alertsDue(rawD, { who = "subscriber", today = new Date(), sent =
     .filter(a => a && !done.has(a.key));
 }
 
-// The email itself, plain text. `asOf`: for a free user, when their figures
-// are from. `unsubscribeUrl` is made by the server (a signed link).
+// The email itself, as HTML and plain text (emailLayout.js). `asOf`: for a
+// free user, when their figures are from. `unsubscribeUrl` is made by the
+// server (a signed link).
 export function alertEmail(alert, { name = "", free = false, asOf = null, unsubscribeUrl }) {
   const first = (name || "").trim().split(/\s+/)[0];
-  const asOfLine = free && asOf ? `These figures are from what you told Candid in ${MONTHS[asOf.getMonth()]} ${asOf.getFullYear()}. If they've changed, so will these.` : null;
-  const lines = [
-    first ? `Hi ${first},` : "Hi,",
-    "",
-    alert.intro,
-    "",
-    ...alert.items.map(i => `- ${i}`),
-    "",
-    `See it in Candid: ${alert.link}`,
-    ...(asOfLine ? ["", asOfLine] : []),
-    ...(free ? ["", "A subscription keeps every module's figures current, with reminders before 5 April, at bonus time and when a better rate appears."] : []),
-    "",
-    "Candid works out what each option is worth on the figures you've given it, with no stake in what you choose. It's guidance, not advice.",
-    "",
-    `Stop these emails: ${unsubscribeUrl}`,
-    COMPANY,
-  ];
-  return { subject: alert.subject, text: lines.join("\n") };
+  return renderEmail({
+    subject: alert.subject, preheader: alert.intro,
+    greeting: first ? `Hi ${first},` : "Hi,",
+    blocks: [
+      { p: alert.intro },
+      { list: alert.items },
+      { button: { label: "See it in Candid", href: alert.link } },
+      ...(free && asOf ? [{ small: `These figures are from what you told Candid in ${MONTHS[asOf.getMonth()]} ${asOf.getFullYear()}. If they've changed, so will these.` }] : []),
+      ...(free ? [{ small: "A subscription keeps every module's figures current, with reminders before 5 April, at bonus time and when a better rate appears." }] : []),
+    ],
+    note: "Candid works out what each option is worth on the figures you've given it, with no stake in what you choose. It's guidance, not advice.",
+    unsubscribeUrl,
+  });
 }

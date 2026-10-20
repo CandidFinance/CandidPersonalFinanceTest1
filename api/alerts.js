@@ -273,7 +273,7 @@ export default async function handler(req, res) {
     if (action === "preview") {
       return res.status(200).json({
         live: LIVE, date: today.toISOString().slice(0, 10), people: preview.people, due: preview.emails.length,
-        notes: preview.notes, emails: preview.emails.slice(0, PREVIEW_MAX).map(({ to, who, kind, subject, text }) => ({ to, who, kind, subject, text })),
+        notes: preview.notes, emails: preview.emails.slice(0, PREVIEW_MAX).map(({ to, who, kind, subject, text, html }) => ({ to, who, kind, subject, text, html })),
       });
     }
     if (action === "test") {
@@ -283,7 +283,7 @@ export default async function handler(req, res) {
       if (!e) return res.status(400).json({ error: "No email at that position" });
       if (!RESEND_KEY) return res.status(503).json({ error: "RESEND_API_KEY isn't set" });
       // To the address given, not the person: nothing recorded.
-      await sendMail(address, `[Test] ${e.subject}`, e.text, null);
+      await sendMail(address, `[Test] ${e.subject}`, e.text, null, e.html);
       return res.status(200).json({ ok: true });
     }
     return res.status(400).json({ error: "Unknown action" });
