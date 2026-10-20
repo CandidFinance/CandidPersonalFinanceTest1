@@ -556,17 +556,15 @@ export function taxTrapReveal(d, m) {
     // Over £125,140 the allowance has gone already: the rate is the top one,
     // and getting back to £100k wins all of the allowance back.
     const how = t.aboveTaper ? "Over £125,140 your tax-free allowance has gone completely" : "Over £100k you lose £1 of tax-free allowance for every £2 earned";
-    const why = { label: WHY, title: `${how}, so your marginal tax rate is ${pctOf(t.rate.rate)}: for every extra £1 you earn, ${penceOf(t.rate.rate)} is lost to ${lostTo(t.rate)} (${rateParts(t.rate)}).` };
-    const childcare = t.childcareLost > 0 ? `${support} stop too, worth ${fmt(t.childcareLost)} a year.` : null;
-    const others = "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay.";
-    return t.amount > 0 ? [
-      { label: ANSWER, figure: `${fmt(t.amount)} a year`, title: t.childcareLost > 0 && t.fits ? "of tax and childcare support you could keep." : "of tax you could save." },
-      withBody(why, childcare),
-      { label: ACTION, title: `Paying ${fmt(t.needed)} into your pension would bring your income back to £100k.`, body: others },
-    ] : [
-      { label: ANSWER, figure: pctOf(t.rate.rate), title: `is your marginal tax rate: for every extra £1 you earn, ${penceOf(t.rate.rate)} is lost to ${lostTo(t.rate)}.` },
-      withBody(why, childcare),
-      { label: ACTION, title: `Getting back to £100k would take ${fmt(t.needed)}, more than this year's pension allowance left.`, body: others },
+    const pension = t.options.find(o => o.key === "pension");
+    return [
+      withBody({ label: ANSWER, figure: `${fmt(t.amount)} a year`, title: "is what the £100k trap costs you." },
+        `${fmt(t.allowance.tax)} of extra tax on the tax-free allowance you've lost${t.childcareLost > 0 ? `, and ${fmt(t.childcareLost)} of ${support}` : ""}.`),
+      { label: WHY, title: `${how}, so your marginal tax rate is ${pctOf(t.rate.rate)}: for every extra £1 you earn, ${penceOf(t.rate.rate)} is lost to ${lostTo(t.rate)} (${rateParts(t.rate)}).` },
+      t.fits
+        ? withBody({ label: ACTION, title: `Paying ${fmt(t.needed)} into your pension would bring your income back to £100k.` },
+            `It costs ${fmt(pension.takeHome)} of take-home, and your pension gains ${fmt(pension.pension)}.${pension.childcare > 0 ? ` Your childcare support comes back too.` : ""}`)
+        : { label: ACTION, title: `Getting back to £100k would take ${fmt(t.needed)}, more than this year's pension allowance left.`, body: "A 4-day week and the other ways back are on the module's page." },
     ];
   }
   return [

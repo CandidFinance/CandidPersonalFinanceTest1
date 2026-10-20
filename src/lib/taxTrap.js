@@ -22,7 +22,7 @@ import { PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD, PERSONAL_ALLOWANCE, calcInco
 import { SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { SALARY_GROWTH_RATES } from "./metrics.js";
 import { payFactor } from "./growth.js";
-import { calcPensionTaperSaving, calcAnnualAllowanceRoom } from "./pension.js";
+import { calcAnnualAllowanceRoom } from "./pension.js";
 import { childcareSupport } from "./childcare.js";
 
 export const TRAP_START = PA_TAPER_START;
@@ -125,9 +125,15 @@ export function allowanceLost(ani, scottish = false) {
   return { lost: Math.round(lost), tax: Math.round(lost * (scottish ? 0.45 : 0.4)) };
 }
 
-const round10 = n => Math.round(n / 10) * 10;
-
 // Everything the module shows. Null without a salary.
+//  amount: what the trap costs them a year, in money: the tax on the
+//    allowance lost, and the childcare support their own income over £100k
+//    stops (a partner's is Kids & family's). The module's £, on Home too.
+//  options: the ways back to £100k, each with its outcome in £ a year:
+//    takeHome (what it takes off take-home pay, or for Gift Aid what it
+//    costs them after the relief), what it adds (pension, charity), taxSaved
+//    (what it doesn't cost, for what goes in), childcare (support back) and
+//    bank (childcare back less the take-home it costs).
 export function taxTrap(d, m) {
   if (!(m.salary > 0) || m.noEarnings) return null;
   const ani = m.adjustedNetIncome;
@@ -135,57 +141,56 @@ export function taxTrap(d, m) {
   const now = position(d, m);
   const rate = marginalRate(d, m);
   const aaRoom = calcAnnualAllowanceRoom(d, m).room;
-  const taper = calcPensionTaperSaving(m, aaRoom);
   const allowance = allowanceLost(ani, !!m.scottish);
   const cc = childcareSupport(d, m);
-  // Their own income over £100,000 stops the support; back at £100,000 it's
+  // Their own income over £100k stops the support; back at £100k it's
   // theirs again (unless a partner is over too: Kids & family has that).
   const childcareLost = cc && cc.state === "lost" && !cc.planning ? cc.atStake : 0;
   const childcareAtRisk = cc && cc.state === "near" ? cc.atStake : 0;
   const needed = over ? Math.ceil(ani - TRAP_START) : 0;
   const fits = needed <= aaRoom;
-  // The module's £: the tax a payment back to £100,000 saves (Pension's
-  // figure until now), and the childcare it restores.
-  const amount = Math.round((taper.recoverable ? taper.taperTotalSaving : 0) + (fits && cc?.recoverable ? childcareLost : 0));
+  const amount = over ? Math.round(allowance.tax + childcareLost) : 0;
 
   const employed = d.employmentStatus !== "self_employed";
   const cost = after => Math.max(0, Math.round(now.takeHome - after.takeHome));
+  const outcome = (o, childcare) => ({ ...o, childcare, bank: childcare - o.takeHome });
   const options = [];
   if (over) {
+    const share = needed / m.salary;
     // Pension, the way they pay in (salary sacrifice where their employer
     // offers it; relief at source otherwise, and for the self-employed).
     const bySacrifice = employed && d.pensionType === "sacrifice";
-    const pension = position(d, m, bySacrifice ? { sacrifice: needed } : { relief: needed });
-    options.push({ key: "pension", route: bySacrifice ? "sacrifice" : "relief", amount: needed, takeHome: cost(pension), pension: needed, childcare: fits ? childcareLost : 0, fits,
-      bonus: Math.min(needed, num(d.bonusAmount)) });
-    const giftAid = position(d, m, { relief: needed });
-    options.push({ key: "giftAid", amount: needed, takeHome: cost(giftAid), charity: needed, childcare: childcareLost });
+    const pension = cost(position(d, m, bySacrifice ? { sacrifice: needed } : { relief: needed }));
+    options.push(outcome({ key: "pension", route: bySacrifice ? "sacrifice" : "relief", amount: needed, share, fits,
+      takeHome: pension, pension: needed, taxSaved: needed - pension }, fits ? childcareLost : 0));
     if (employed) {
-      const other = position(d, m, { sacrifice: needed });
-      options.push({ key: "sacrifice", amount: needed, takeHome: cost(other), perPound: Math.round(cost(other) / needed * 100), childcare: childcareLost });
+      const other = cost(position(d, m, { sacrifice: needed }));
+      options.push(outcome({ key: "sacrifice", amount: needed, share, takeHome: other, taxSaved: needed - other }, childcareLost));
     }
-  }
-  // A 4-day week: 80% of the salary, the same share of it paid in.
-  if (over) {
+    // Gift Aid: they give 80% and the charity claims the rest; the higher
+    // rate comes back to them through Self Assessment.
+    const giftAid = cost(position(d, m, { relief: needed }));
+    options.push(outcome({ key: "giftAid", amount: needed, given: Math.round(needed * 0.8), takeHome: giftAid, charity: needed,
+      taxSaved: Math.round(needed * 0.8) - giftAid }, childcareLost));
+    // A 4-day week: 80% of the salary, the same share of it paid in.
     const fourDay = position(d, m, { salary: m.salary * FOUR_DAY_SHARE });
-    const fourDayUnder = fourDay.ani <= TRAP_START;
-    options.push({ key: "fourDay", gross: Math.round(m.salary * (1 - FOUR_DAY_SHARE)), takeHome: cost(fourDay),
-      childcare: fourDayUnder ? childcareLost : 0, under: fourDayUnder, daysOff: 52 });
+    const gross = Math.round(m.salary * (1 - FOUR_DAY_SHARE));
+    const fourDayCost = cost(fourDay);
+    options.push(outcome({ key: "fourDay", gross, takeHome: fourDayCost, taxSaved: gross - fourDayCost, under: fourDay.ani <= TRAP_START, daysOff: 52 },
+      fourDay.ani <= TRAP_START ? childcareLost : 0));
   }
 
   return {
     ani: Math.round(ani), over, aboveTaper: ani >= TRAP_END, needed, fits, aaRoom,
     headroom: over ? 0 : Math.round(TRAP_START - ani),
     rate, allowance, childcareLost, childcareAtRisk, nation: cc?.nation || null,
-    // The rate just over £100,000, for someone under it, and just under it,
-    // to set the trap's rate against.
+    // The rate just over £100k, for someone under it, and just under it, to
+    // set the trap's rate against.
     trapRate: marginalRate(d, m, m.salary + (TRAP_START + 1000 - ani)).rate,
     belowRate: marginalRate(d, m, m.salary + (TRAP_START - 2000 - ani)).rate,
     // The childcare at stake, in its two parts (childcare.js): null without
     // children 11 or under, or one on the way.
     childcare: cc ? { tfc: cc.tfc, hours: cc.hours, preschool: cc.preschool, children: cc.children, planning: cc.planning, state: cc.state } : null,
-    taxSaving: taper.recoverable ? taper.taperTotalSaving : 0,
     amount, options, takeHome: Math.round(now.takeHome),
-    payValue: round10(amount / Math.max(0.01, 1 - rate.rate)),
   };
 }

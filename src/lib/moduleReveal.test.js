@@ -62,9 +62,12 @@ test("over £100,000 with a toddler in England: the childcare that stops, counte
   assert.match(steps[2].title, /^The £100k tax trap shows the ways back under £100,000/);
   // Not Kids & family's figure, nor Pension's: the tax trap's, with the tax.
   assert.equal(statuses.kids.amount, 0);
+  // £900 of tax on the £2,250 of allowance lost, and the £10,290.
   const trap = taxTrapReveal(d, m);
-  assert.equal(trap[0].title, "of tax and childcare support you could keep.");
+  assert.equal(trap[0].figure, "£11,190 a year");
+  assert.equal(trap[0].title, "is what the £100k trap costs you.");
   assert.match(trap[2].title, /^Paying £4,500 into your pension would bring your income back to £100k\.$/);
+  assert.match(trap[2].body, /^It costs £1,710 of take-home, and your pension gains £4,500\. Your childcare support comes back too\.$/);
 });
 
 test("Tax-Free Childcare not claimed, a partner over £100,000, and close to the line", () => {
@@ -94,10 +97,10 @@ test("retirement: short of the target says by how much, and roughly what would c
   assert.match(steps[2].title, /^Paying in about \d+% more of your salary would close it\.$/);
 });
 
-test("£100k tax trap: the saving and the payment needed come from the module's own calculation", () => {
+test("£100k tax trap: the cost and the payment needed come from the module's own calculation", () => {
   const d = { ...base, salary: "110000", myContribution: "5", employerMatch: "5", selectedModules: ["taxTrap"] };
   const { steps, statuses } = run(d, taxTrapReveal);
-  assert.match(steps[0].title, /^of tax you could save\.$/);
+  assert.equal(steps[0].title, "is what the £100k trap costs you.");
   assert.equal(steps[0].figure, `£${statuses.taxTrap.amount.toLocaleString("en-GB")} a year`);
   assert.match(steps[1].title, /so your marginal tax rate is 62%: for every extra £1 you earn, 62p is lost to tax and National Insurance \(60% tax and 2% National Insurance\)\.$/);
   assert.match(steps[2].title, /^Paying £4,500 into your pension would bring your income back to £100k\.$/);

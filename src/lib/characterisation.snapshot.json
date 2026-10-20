@@ -18752,8 +18752,9 @@
     "taxTrap": [
      {
       "label": "Your position",
-      "figure": "£13,512 a year",
-      "title": "of tax you could save."
+      "figure": "£4,504 a year",
+      "title": "is what the £100k trap costs you.",
+      "body": "£4,504 of extra tax on the tax-free allowance you've lost."
      },
      {
       "label": "Why",
@@ -18762,7 +18763,7 @@
      {
       "label": "What you could do",
       "title": "Paying £22,520 into your pension would bring your income back to £100k.",
-      "body": "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay."
+      "body": "It costs £9,008 of take-home, and your pension gains £22,520."
      }
     ]
    },
@@ -21476,8 +21477,9 @@
     "taxTrap": [
      {
       "label": "Your position",
-      "figure": "£13,512 a year",
-      "title": "of tax you could save."
+      "figure": "£4,504 a year",
+      "title": "is what the £100k trap costs you.",
+      "body": "£4,504 of extra tax on the tax-free allowance you've lost."
      },
      {
       "label": "Why",
@@ -21486,7 +21488,7 @@
      {
       "label": "What you could do",
       "title": "Paying £22,520 into your pension would bring your income back to £100k.",
-      "body": "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay."
+      "body": "It costs £9,008 of take-home, and your pension gains £22,520."
      }
     ]
    },
@@ -23941,8 +23943,9 @@
     "taxTrap": [
      {
       "label": "Your position",
-      "figure": "47%",
-      "title": "is your marginal tax rate: for every extra £1 you earn, 47p is lost to tax and National Insurance."
+      "figure": "£5,028 a year",
+      "title": "is what the £100k trap costs you.",
+      "body": "£5,028 of extra tax on the tax-free allowance you've lost."
      },
      {
       "label": "Why",
@@ -23951,7 +23954,7 @@
      {
       "label": "What you could do",
       "title": "Getting back to £100k would take £136,000, more than this year's pension allowance left.",
-      "body": "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay."
+      "body": "A 4-day week and the other ways back are on the module's page."
      }
     ]
    },
@@ -26534,8 +26537,9 @@
     "taxTrap": [
      {
       "label": "Your position",
-      "figure": "47%",
-      "title": "is your marginal tax rate: for every extra £1 you earn, 47p is lost to tax and National Insurance."
+      "figure": "£5,028 a year",
+      "title": "is what the £100k trap costs you.",
+      "body": "£5,028 of extra tax on the tax-free allowance you've lost."
      },
      {
       "label": "Why",
@@ -26544,7 +26548,7 @@
      {
       "label": "What you could do",
       "title": "Getting back to £100k would take £136,000, more than this year's pension allowance left.",
-      "body": "A 4-day week, Gift Aid and other salary sacrifice do it too: the module shows what each costs in take-home pay."
+      "body": "A 4-day week and the other ways back are on the module's page."
      }
     ]
    },

@@ -19,14 +19,14 @@ test("the rate on the next £1,000: 62% in England, 69.5% in Scotland, 71% with 
   assert.equal(pct(near.trapRate), 62);
 });
 
-test("over £100,000: the allowance lost, the childcare that stops, and the module's £", () => {
+test("over £100k: the allowance lost, the childcare that stops, and what the trap costs a year", () => {
   const { t } = at(base);
   assert.equal(t.needed, 4500);
   assert.deepEqual(t.allowance, { lost: 2250, tax: 900 });
   // £2,000 of Tax-Free Childcare and £8,290 of funded hours.
   assert.equal(t.childcareLost, 10290);
-  // 60% tax and 2% NI on the £4,500, and the childcare.
-  assert.equal(t.amount, 2790 + 10290);
+  // £900 of tax on the allowance lost, and the childcare: money, a year.
+  assert.equal(t.amount, 900 + 10290);
 });
 
 test("the ways back: what each costs in take-home, and the childcare it brings back", () => {
@@ -37,7 +37,12 @@ test("the ways back: what each costs in take-home, and the childcare it brings b
   assert.equal(way("pension").route, "sacrifice");
   // Gift Aid saves the 60% tax, not the NI.
   assert.equal(way("giftAid").takeHome, 1800);
-  assert.equal(way("sacrifice").perPound, 38);
+  // What goes in, less the take-home it costs, is the tax saved.
+  assert.equal(way("pension").taxSaved, 2790);
+  assert.equal(way("sacrifice").taxSaved, 2790);
+  // What's left in the bank: the childcare back, less the take-home.
+  assert.equal(way("pension").bank, 10290 - 1710);
+  assert.equal(way("giftAid").given, 3600);
   // A 4-day week: £22,000 less pay, much less take-home, under £100,000.
   assert.equal(way("fourDay").gross, 22000);
   assert.ok(way("fourDay").under);
