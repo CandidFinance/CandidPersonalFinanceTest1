@@ -1,65 +1,98 @@
 import { useState } from "react";
-import { Lock, ChevronDown, X, Plus, Layers } from "lucide-react";
-import { MAX_PLANS, newPlan } from "../../lib/loanPlan.js";
+import { Lock, ChevronDown, X, Plus, Layers, Pencil, CircleAlert } from "lucide-react";
+import { MAX_PLANS, MONTHS, newPlan, monthsFrom } from "../../lib/loanPlan.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import WheelPicker from "../WheelPicker.jsx";
 import { PillSlider } from "../PillSlider.jsx";
 import SubscribeButtons from "./SubscribeButtons.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, STUDENT_PURPLE } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, STUDENT_PURPLE, CTA_BLUE, CRITICAL } from "../../design-tokens.js";
 
 // "Scenario modelling" at the top of the student loan page's figures to
 // try: a collapsed tile, marked as a subscriber feature for everyone, that
 // opens to the repayment plan builder (lib/loanPlan.js) for subscribers, or
-// a blurred example and the way to subscribe for anyone else.
+// a blurred example and the way to subscribe for anyone else. In the site's
+// CTA blue to draw the eye: for anyone else always, for a subscriber until
+// they first open it (d.slScenarioSeen).
 //
 // Plans are saved with their answers (d.slPlans, up to MAX_PLANS), and the
 // one picked (d.slPlanShown) is drawn on the balance chart beside the lump
 // sum, so the two can be compared. `run`: the picked plan run against the
 // loan (loanPlan.js runPlan), worked out by the page.
 
-const badge = locked => (
-  <span style={{display:"inline-flex",alignItems:"center",gap:"4px",background:"rgba(196,150,58,0.14)",color:"#8a6a24",borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase",flexShrink:0}}>
-    {locked && <Lock size={10} strokeWidth={2.6}/>}Subscribers
-  </span>
-);
-
 export default function ScenarioModelling({ d, m, sl, set, open, run }) {
   const [expanded, setExpanded] = useState(false);
+  const blue = !open || !d.slScenarioSeen;
+  const toggle = () => {
+    if (open && !d.slScenarioSeen) set("slScenarioSeen", true);
+    setExpanded(e => !e);
+  };
+  const ink = blue ? WHITE : TEXT;
   return (
-    <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"12px 14px",marginBottom:"16px",boxShadow:"0 1px 3px rgba(22,47,36,0.06)"}}>
-      <button type="button" aria-expanded={expanded} onClick={() => setExpanded(e => !e)} style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:"none",border:"none",padding:0,fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
-        <Layers size={17} color={STUDENT_PURPLE} style={{flexShrink:0}}/>
+    <div style={{background:blue ? CTA_BLUE : WHITE,border:blue ? "none" : "1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px",boxShadow:blue ? "0 2px 8px rgba(0,113,227,0.28)" : "0 1px 3px rgba(22,47,36,0.06)"}}>
+      <button type="button" aria-expanded={expanded} onClick={toggle} style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:"none",border:"none",padding:0,fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
+        <Layers size={17} color={blue ? WHITE : STUDENT_PURPLE} style={{flexShrink:0}}/>
         <span style={{flex:1,minWidth:0}}>
           <span style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
-            <span style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Scenario modelling</span>
-            {badge(!open)}
+            <span style={{fontSize:"14px",fontWeight:700,color:ink}}>Scenario modelling</span>
+            <span style={{display:"inline-flex",alignItems:"center",gap:"4px",background:blue ? WHITE : "rgba(196,150,58,0.14)",color:blue ? CTA_BLUE : "#8a6a24",borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+              {!open && <Lock size={10} strokeWidth={2.6}/>}Subscribers
+            </span>
           </span>
-          <span style={{display:"block",fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>Plan lump sums and monthly overpayments, year by year.</span>
+          <span style={{display:"block",fontSize:"12px",color:blue ? "rgba(255,255,255,0.88)" : MUT,lineHeight:1.45,marginTop:"2px"}}>Plan lump sums and monthly overpayments, month by month.</span>
         </span>
-        <ChevronDown size={16} color={MUT} style={{flexShrink:0,transition:"transform 0.15s",transform:expanded ? "rotate(180deg)" : "none"}}/>
+        <ChevronDown size={16} color={blue ? WHITE : MUT} style={{flexShrink:0,transition:"transform 0.15s",transform:expanded ? "rotate(180deg)" : "none"}}/>
       </button>
-      {expanded && (open ? <PlanBuilder d={d} m={m} sl={sl} set={set} run={run}/> : <Locked d={d}/>)}
+      {expanded && (
+        <div style={blue ? {background:WHITE,borderRadius:"10px",padding:"2px 12px 12px",marginTop:"12px"} : undefined}>
+          {open ? <PlanBuilder d={d} m={m} sl={sl} set={set} run={run}/> : <Locked d={d}/>}
+        </div>
+      )}
     </div>
   );
 }
 
-// A year on the wheel, earliest first: "April 2027".
-const yearItems = (from, to, blank = null) => [
-  ...(blank ? [{ value: "", label: blank }] : []),
-  ...Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => ({ value: String(from + i), label: `April ${from + i}` })),
-];
 const describe = it => it.kind === "once"
-  ? `${fmt(+it.amount)} in April ${it.year}`
+  ? `${fmt(+it.amount)} in ${MONTHS[(+it.month || 4) - 1]} ${it.year}`
   : `${fmt(+it.amount)} a month from April ${it.from}${+it.to > 0 ? ` to March ${+it.to + 1}` : ", until it's cleared"}`;
 
+// Whether they could pay it: a one-off (with the one-offs before it) against
+// their cash above the emergency buffer today; monthly payments against what
+// they have left each month after spending. Null when it fits.
+// { level: "over" | "close" | "unknown", text }.
+function affordability(m, it, before = 0) {
+  const amount = +it.amount || 0;
+  if (m.expensesUnknown) return { level: "unknown", text: "Add your monthly spending in Cash & savings to check this fits." };
+  if (it.kind === "once") {
+    const spare = m.surplusCash || 0, total = before + amount;
+    if (total <= spare) return null;
+    return { level: "over", text: spare > 0
+      ? `${before > 0 ? "With the payments before it, more" : "More"} than the ${fmt(Math.round(spare))} you have above your ${m.bufferMonths}-month cash buffer today.`
+      : `You have no cash above your ${m.bufferMonths}-month buffer today, so this would come from it.` };
+  }
+  const left = Math.round(m.monthlySurplus || 0);
+  if (amount > left) return { level: "over", text: `More than the ${fmt(left)} a month you have left after your spending.` };
+  if (amount > left * 0.8) return { level: "close", text: `Close to all of the ${fmt(left)} a month you have left after your spending.` };
+  return null;
+}
+const FLAG = { over: CRITICAL, close: GOLD, unknown: MUT };
+const Flag = ({ check }) => check && (
+  <div style={{display:"flex",gap:"6px",alignItems:"flex-start",fontSize:"11.5px",lineHeight:1.45,color:check.level === "unknown" ? MUT : TEXT,marginTop:"4px"}}>
+    <CircleAlert size={13} color={FLAG[check.level]} style={{flexShrink:0,marginTop:"1px"}}/>{check.text}
+  </div>
+);
+
 function PlanBuilder({ d, m, sl, set, run }) {
+  const now = new Date();
+  const years = sl.willClear ? sl.clearYr : sl.writeOffYr;
   const taxYear = sl.writeOffTaxYear - sl.writeOffYr;
-  const lastYear = taxYear + (sl.willClear ? sl.clearYr : sl.writeOffYr) - 1;
+  const lastYear = taxYear + years - 1;
   const plans = d.slPlans || [];
   const plan = plans.find(p => p.id === d.slPlanShown) || null;
   const [adding, setAdding] = useState(null); // "once" | "monthly"
-  const blank = { amount: null, year: String(taxYear), from: String(taxYear), to: "" };
+  const [editing, setEditing] = useState(null); // the item's id
+  const [naming, setNaming] = useState(false);
+  const blank = { amount: null, month: String(now.getMonth() + 1), year: String(now.getFullYear()), from: String(taxYear), to: "" };
   const [draft, setDraft] = useState(blank);
 
   const savePlan = next => set("slPlans", plans.map(p => p.id === next.id ? next : p));
@@ -67,41 +100,60 @@ function PlanBuilder({ d, m, sl, set, run }) {
     const p = newPlan(plans);
     set("slPlans", [...plans, p]);
     set("slPlanShown", p.id);
-    setAdding("once"); setDraft(blank);
+    setAdding("once"); setEditing(null); setDraft(blank);
   };
   const remove = () => {
     set("slPlans", plans.filter(p => p.id !== plan.id));
     set("slPlanShown", "");
-    setAdding(null);
+    setAdding(null); setEditing(null);
   };
-  const add = () => {
+  const close = () => { setAdding(null); setEditing(null); setDraft(blank); };
+  const openForm = (kind, item = null) => {
+    setAdding(kind); setEditing(item?.id || null);
+    setDraft(item ? { ...blank, ...item, amount: +item.amount, month: String(item.month || 4) } : blank);
+  };
+  const save = () => {
     const item = adding === "once"
-      ? { id: `i${Date.now().toString(36)}`, kind: "once", amount: String(draft.amount), year: draft.year }
-      : { id: `i${Date.now().toString(36)}`, kind: "monthly", amount: String(draft.amount), from: draft.from, to: draft.to };
-    savePlan({ ...plan, items: [...plan.items, item] });
-    setAdding(null); setDraft(blank);
+      ? { id: editing || `i${Date.now().toString(36)}`, kind: "once", amount: String(draft.amount), month: draft.month, year: draft.year }
+      : { id: editing || `i${Date.now().toString(36)}`, kind: "monthly", amount: String(draft.amount), from: draft.from, to: draft.to };
+    savePlan({ ...plan, items: editing ? plan.items.map(x => x.id === editing ? item : x) : [...plan.items, item] });
+    close();
   };
-  const canAdd = draft.amount > 0 && (adding === "once" ? !!draft.year : !!draft.from && (!draft.to || +draft.to >= +draft.from));
+  const ahead = adding === "once" ? monthsFrom(now, +draft.year, +draft.month) : 0;
+  const whenOk = adding === "once" ? ahead >= 0 && ahead < years * 12 : !!draft.from && (!draft.to || +draft.to >= +draft.from);
+  const canSave = draft.amount > 0 && whenOk;
+  const hasMonthly = plan?.items.some(x => x.kind === "monthly");
+  // One-offs in date order, each checked with the ones before it.
+  const onceOrder = (plan?.items || []).filter(x => x.kind === "once").sort((a, b) => monthsFrom(now, +a.year, +a.month || 4) - monthsFrom(now, +b.year, +b.month || 4));
+  const checkOf = it => {
+    if (it.kind !== "once") return affordability(m, it);
+    const before = onceOrder.slice(0, onceOrder.indexOf(it)).reduce((t, x) => t + (+x.amount || 0), 0);
+    return affordability(m, it, before);
+  };
+  const draftCheck = draft.amount > 0 ? affordability(m, { kind: adding, amount: draft.amount }) : null;
 
   const label = { fontSize:"10px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase", marginBottom:"6px" };
   const ghost = { display:"inline-flex", alignItems:"center", gap:"5px", background:"none", border:`1px dashed ${GOLD}`, borderRadius:"100px", padding:"7px 12px", color:GOLD, fontSize:"12px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
   const solid = on => ({ flex:1, background:on ? G : "rgba(22,47,36,0.2)", color:WHITE, border:"none", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit", cursor:on ? "pointer" : "not-allowed" });
   const outline = { flex:1, background:WHITE, color:G, border:"1.3px solid rgba(22,47,36,0.2)", borderRadius:"100px", padding:"10px", fontSize:"13px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
+  const iconBtn = { background:"none", border:"none", padding:"4px", cursor:"pointer", color:MUT, display:"flex" };
+  const tile = { background:"rgba(22,47,36,0.04)", borderRadius:"12px", padding:"10px", minWidth:0 };
   const stat = (name, value) => (
-    <div>
+    <div style={tile}>
       <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{name}</div>
       <div style={{fontFamily:SERIF,fontSize:"18px",color:G,fontWeight:700,marginTop:"2px"}}>{value}</div>
     </div>
   );
   const saved = run ? run.base.totalPaid - run.totalPaid : 0;
+  const years12 = Array.from({ length: lastYear - now.getFullYear() + 2 }, (_, i) => now.getFullYear() + i).filter(y => y <= lastYear + 1);
 
   return (
-    <div style={{marginTop:"14px",borderTop:"1px solid rgba(22,47,36,0.08)",paddingTop:"12px"}}>
+    <div style={{marginTop:"12px"}}>
       <div style={label}>Your plans</div>
       <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
         {plans.length > 0 && (
           <div style={{flex:1,minWidth:0}}>
-            <PillSlider compact value={d.slPlanShown || ""} onChange={v => { set("slPlanShown", v); setAdding(null); }}
+            <PillSlider compact value={d.slPlanShown || ""} onChange={v => { set("slPlanShown", v); close(); setNaming(false); }}
               options={[{ value:"", label:"None" }, ...plans.map(p => ({ value:p.id, label:p.name }))]}/>
           </div>
         )}
@@ -110,11 +162,30 @@ function PlanBuilder({ d, m, sl, set, run }) {
 
       {plan && (
         <div style={{marginTop:"12px"}}>
+          {/* Its name, renamed in place. */}
+          {naming ? (
+            <form onSubmit={e => { e.preventDefault(); setNaming(false); }} style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"6px"}}>
+              <input autoFocus maxLength={20} value={plan.name} aria-label="Plan name" onChange={e => savePlan({ ...plan, name: e.target.value })}
+                onBlur={() => { if (!plan.name.trim()) savePlan({ ...plan, name: newPlan(plans.filter(p => p.id !== plan.id)).name }); setNaming(false); }}
+                style={{flex:1,fontSize:"14px",fontWeight:700,color:TEXT,border:"1.5px solid rgba(22,47,36,0.25)",borderRadius:"8px",padding:"6px 10px",fontFamily:"inherit"}}/>
+              <button type="submit" style={{...outline,flex:"0 0 auto",padding:"6px 14px"}}>Done</button>
+            </form>
+          ) : (
+            <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
+              <span style={{fontSize:"14px",fontWeight:700,color:TEXT}}>{plan.name}</span>
+              <button type="button" aria-label={`Rename ${plan.name}`} onClick={() => setNaming(true)} style={iconBtn}><Pencil size={13}/></button>
+            </div>
+          )}
+
           {plan.items.length === 0 && !adding && <p style={{fontSize:"12.5px",color:MUT,margin:"0 0 8px"}}>Add a payment to see {plan.name} on the chart.</p>}
           {plan.items.map(it => (
-            <div key={it.id} style={{display:"flex",alignItems:"center",gap:"8px",padding:"8px 0",borderBottom:"1px solid rgba(22,47,36,0.08)"}}>
-              <span style={{flex:1,fontSize:"13.5px",color:TEXT,fontWeight:600}}>{describe(it)}</span>
-              <button type="button" aria-label={`Remove ${describe(it)}`} onClick={() => savePlan({ ...plan, items: plan.items.filter(x => x.id !== it.id) })} style={{background:"none",border:"none",padding:"4px",cursor:"pointer",color:MUT}}><X size={15}/></button>
+            <div key={it.id} style={{padding:"8px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",opacity:editing === it.id ? 0.45 : 1}}>
+              <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
+                <span style={{flex:1,fontSize:"13.5px",color:TEXT,fontWeight:600}}>{describe(it)}</span>
+                <button type="button" aria-label={`Change ${describe(it)}`} onClick={() => openForm(it.kind, it)} style={iconBtn}><Pencil size={14}/></button>
+                <button type="button" aria-label={`Remove ${describe(it)}`} onClick={() => { savePlan({ ...plan, items: plan.items.filter(x => x.id !== it.id) }); if (editing === it.id) close(); }} style={iconBtn}><X size={15}/></button>
+              </div>
+              <Flag check={checkOf(it)}/>
             </div>
           ))}
 
@@ -122,34 +193,39 @@ function PlanBuilder({ d, m, sl, set, run }) {
             <div style={{marginTop:"10px",display:"flex",flexDirection:"column",gap:"10px"}}>
               <PillMoneyInput label={adding === "once" ? "One-off payment" : "Each month"} value={draft.amount} onChange={v => setDraft(x => ({ ...x, amount: v }))}/>
               {adding === "once" ? (
-                <div>
-                  <div style={label}>Paid in</div>
-                  <WheelPicker label="Paid in" items={yearItems(taxYear, lastYear)} value={draft.year} onChange={v => setDraft(x => ({ ...x, year: v || String(taxYear) }))}/>
+                <div style={{display:"flex",gap:"8px"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={label}>Month</div>
+                    <WheelPicker label="Month" items={MONTHS.map((name, i) => ({ value: String(i + 1), label: name }))} value={draft.month} onChange={v => setDraft(x => ({ ...x, month: v }))}/>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={label}>Year</div>
+                    <WheelPicker label="Year" items={years12.map(y => ({ value: String(y), label: String(y) }))} value={draft.year} onChange={v => setDraft(x => ({ ...x, year: v }))}/>
+                  </div>
                 </div>
               ) : (
                 <div style={{display:"flex",gap:"8px"}}>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={label}>From</div>
-                    <WheelPicker label="From" items={yearItems(taxYear, lastYear)} value={draft.from} onChange={v => setDraft(x => ({ ...x, from: v || String(taxYear) }))}/>
+                    <div style={label}>From April</div>
+                    <WheelPicker label="From April" items={Array.from({ length: lastYear - taxYear + 1 }, (_, i) => ({ value: String(taxYear + i), label: String(taxYear + i) }))} value={draft.from} onChange={v => setDraft(x => ({ ...x, from: v }))}/>
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={label}>Until</div>
-                    <WheelPicker label="Until" items={yearItems(+draft.from || taxYear, lastYear, "It's cleared")} value={draft.to} onChange={v => setDraft(x => ({ ...x, to: v }))}/>
+                    <div style={label}>Until March</div>
+                    <WheelPicker label="Until March" items={[{ value: "", label: "It's cleared" }, ...Array.from({ length: Math.max(0, lastYear - (+draft.from || taxYear) + 1) }, (_, i) => ({ value: String((+draft.from || taxYear) + i), label: String((+draft.from || taxYear) + i + 1) }))]} value={draft.to} onChange={v => setDraft(x => ({ ...x, to: v }))}/>
                   </div>
                 </div>
               )}
-              {adding === "monthly" && (m.monthlySurplus || 0) > 0 && (
-                <p style={{fontSize:"11.5px",color:MUT,margin:0}}>About {fmt(Math.round(m.monthlySurplus))} a month is left after your spending.</p>
-              )}
+              {adding === "once" && !whenOk && <p style={{fontSize:"11.5px",color:CRITICAL,margin:0}}>Pick a month from now until the loan would be {sl.willClear ? "cleared" : "written off"}.</p>}
+              <Flag check={draftCheck}/>
               <div style={{display:"flex",gap:"8px"}}>
-                <button type="button" onClick={() => { setAdding(null); setDraft(blank); }} style={outline}>Cancel</button>
-                <button type="button" disabled={!canAdd} onClick={add} style={solid(canAdd)}>Add</button>
+                <button type="button" onClick={close} style={outline}>Cancel</button>
+                <button type="button" disabled={!canSave} onClick={save} style={solid(canSave)}>{editing ? "Save" : "Add"}</button>
               </div>
             </div>
           ) : (
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginTop:"10px"}}>
-              <button type="button" onClick={() => { setAdding("once"); setDraft(blank); }} style={ghost}><Plus size={13}/>One-off payment</button>
-              <button type="button" onClick={() => { setAdding("monthly"); setDraft(blank); }} style={ghost}><Plus size={13}/>Monthly payments</button>
+              <button type="button" onClick={() => openForm("once")} style={ghost}><Plus size={13}/>One-off payment</button>
+              {!hasMonthly && <button type="button" onClick={() => openForm("monthly")} style={ghost}><Plus size={13}/>Monthly payments</button>}
             </div>
           )}
 
@@ -157,8 +233,8 @@ function PlanBuilder({ d, m, sl, set, run }) {
             <>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginTop:"14px"}}>
                 {stat(run.clearYr === 0 ? "Cleared" : run.clearYr ? "Clears in" : "Written off", run.clearYr === 0 ? "Today" : run.clearYr ? `${run.clearYr} yrs` : fmt(run.writeOffBal))}
-                {stat(saved >= 0 ? "Saves in all" : "Costs more", fmt(Math.abs(saved)))}
-                {stat("You'd pay in all", fmt(run.totalPaid))}
+                {stat(saved >= 0 ? "Saves" : "Costs more", fmt(Math.abs(saved)))}
+                {stat("Paid", fmt(run.totalPaid))}
               </div>
               <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
                 {fmt(run.paidIn)} paid in by {plan.name}, against {run.base.clearYr ? `clearing in ${run.base.clearYr} yrs` : `${fmt(run.base.writeOffBal)} written off`} and {fmt(run.base.totalPaid)} paid in all, as it is.
@@ -177,9 +253,9 @@ function PlanBuilder({ d, m, sl, set, run }) {
 
 // Anyone else: an example plan, blurred, and the way to subscribe.
 function Locked({ d }) {
-  const example = ["£5,000 in April 2027", "£200 a month, until it's cleared"];
+  const example = ["£5,000 in October 2027", "£200 a month, until it's cleared"];
   return (
-    <div style={{position:"relative",marginTop:"14px",borderTop:"1px solid rgba(22,47,36,0.08)",paddingTop:"12px"}}>
+    <div style={{position:"relative",paddingTop:"10px"}}>
       <div aria-hidden="true" inert="" style={{filter:"blur(5px)",userSelect:"none",pointerEvents:"none"}}>
         {example.map(t => <div key={t} style={{padding:"8px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",fontSize:"13.5px",fontWeight:600,color:TEXT}}>{t}</div>)}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginTop:"12px",fontFamily:SERIF,fontSize:"18px",fontWeight:700,color:G}}>
@@ -187,7 +263,7 @@ function Locked({ d }) {
         </div>
       </div>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"10px",textAlign:"center"}}>
-        <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"260px"}}>Plan payments year by year and compare them with a lump sum, with a subscription</span>
+        <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"260px"}}>Plan payments month by month and compare them with a lump sum, with a subscription</span>
         <SubscribeButtons d={d} module="studentLoan" from="scenario_modelling"/>
       </div>
     </div>

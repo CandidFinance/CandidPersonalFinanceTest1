@@ -238,8 +238,8 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
             cleared, then a lump sum, which "Where £x does most" below
             follows. */}
         {(set || showLump) && (
-          <div style={{background:"rgba(22,47,36,0.035)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"14px 14px 2px",margin:"10px 0 14px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",fontWeight:700,color:G,marginBottom:"12px"}}>
+          <div style={{background:"rgba(22,47,36,0.035)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"12px 12px 2px",margin:"10px 0 14px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",fontWeight:700,color:G,marginBottom:"10px"}}>
               <SlidersHorizontal size={14}/>Try your own figures
             </div>
             {set && !sl.belowThreshold && <ScenarioModelling d={d} m={m} sl={sl} set={set} open={subscriber} run={planRun}/>}
@@ -274,12 +274,15 @@ function PayGrowth({ d, m, set }) {
   const implied = typed > 0 && salary > 0 ? Math.round((Math.pow(typed / salary, 0.1) - 1) * 1000) / 10 : null;
   const shown = p => Math.round(p * 10) / 10;
   const onType = v => { setTyped(v); if (v > 0 && salary > 0) setPct((Math.pow(v / salary, 0.1) - 1) * 100); };
-  const label = { fontSize:"10px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase" };
-  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"12px", fontWeight:600, textDecoration:"underline", cursor:"pointer", fontFamily:"inherit", flexShrink:0 };
-  const aside = { fontSize:"12px", color:MUT, fontWeight:600, whiteSpace:"nowrap" };
+  const label = { fontSize:"9.5px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase" };
+  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"11.5px", fontWeight:600, textDecoration:"underline", cursor:"pointer", fontFamily:"inherit", flexShrink:0 };
+  const aside = { fontSize:"11.5px", color:MUT, fontWeight:600, whiteSpace:"nowrap" };
+  // The input across about three quarters of the width, what it comes to
+  // beside it, in the room its text needs.
+  const side = { flex:"0 0 auto", textAlign:"right", lineHeight:1.25 };
   return (
-    <div style={{marginBottom:"16px"}}>
-      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",marginBottom:"6px"}}>
+    <div style={{marginBottom:"12px"}}>
+      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",marginBottom:"4px"}}>
         <span style={label}>Salary growth, next 10 years</span>
         {salary > 0 && (
           <button type="button" onClick={() => { setTyping(t => !t); setTyped(typing ? null : inTen(exact)); }} style={link}>
@@ -287,27 +290,28 @@ function PayGrowth({ d, m, set }) {
           </button>
         )}
       </div>
-      {typing && salary > 0 ? (
-        <>
-          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-            <PillMoneyInput label="Your salary in 10 years" value={typed} onChange={onType}/>
-            <span style={aside}>(+{pct}% a year)</span>
-          </div>
-          {implied != null && (implied < SALARY_GROWTH_MIN_PCT || implied > SALARY_GROWTH_MAX_PCT) && (
-            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
-              That's {implied}% a year. Candid works between {SALARY_GROWTH_MIN_PCT}% and {SALARY_GROWTH_MAX_PCT}% a year, so it uses {shown(keep(implied))}%.
-            </p>
-          )}
-        </>
-      ) : (
-        <>
-          <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"8px"}}>
-            <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:G}}>+{pct}% a year</span>
-            {salary > 0 && <span style={aside}>({fmt(inTen(exact))} in 10 years)</span>}
-          </div>
-          <input type="range" min={SALARY_GROWTH_MIN_PCT} max={SALARY_GROWTH_MAX_PCT} step="0.5" value={pct} aria-label="Salary growth a year"
-            onChange={e => setPct(+e.target.value)} style={{width:"100%",accentColor:G,margin:"8px 0 0"}}/>
-        </>
+      <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+        <div style={{flex:"1 1 0",minWidth:0}}>
+          {typing && salary > 0
+            ? <PillMoneyInput label="Your salary in 10 years" value={typed} onChange={onType}/>
+            : <input type="range" min={SALARY_GROWTH_MIN_PCT} max={SALARY_GROWTH_MAX_PCT} step="0.5" value={pct} aria-label="Salary growth a year"
+                onChange={e => setPct(+e.target.value)} style={{width:"100%",accentColor:G,margin:0}}/>}
+        </div>
+        <div style={side}>
+          {typing && salary > 0
+            ? <span style={aside}>(+{pct}% a year)</span>
+            : (
+              <>
+                <div style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>+{pct}%/yr</div>
+                {salary > 0 && <div style={{fontSize:"10.5px",color:MUT,fontWeight:600,whiteSpace:"nowrap"}}>({fmtK(inTen(exact))} in 10 yrs)</div>}
+              </>
+            )}
+        </div>
+      </div>
+      {typing && implied != null && (implied < SALARY_GROWTH_MIN_PCT || implied > SALARY_GROWTH_MAX_PCT) && (
+        <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
+          That's {implied}% a year. Candid works between {SALARY_GROWTH_MIN_PCT}% and {SALARY_GROWTH_MAX_PCT}% a year, so it uses {shown(keep(implied))}%.
+        </p>
       )}
     </div>
   );
@@ -325,13 +329,13 @@ function ClearOrWriteOff({ sl }) {
   const taxYear = sl.writeOffTaxYear - sl.writeOffYr;
   const figure = sl.willClear ? `Cleared by April ${taxYear + sl.clearYr}` : `Written off April ${sl.writeOffTaxYear}`;
   const [lead, turning] = sl.balanceFallingNow
-    ? ["Falling now", "your repayments already outpace the interest"]
+    ? ["Falling", "repayments outpace interest"]
     : sl.turningTaxYear
-      ? [`Starts falling April ${sl.turningTaxYear}`, "until then it keeps growing"]
-      : ["Never falls before write-off", "repayments never overtake the interest"];
+      ? [`Rising until April ${sl.turningTaxYear}`, "then repayments outpace interest"]
+      : ["Rising", "repayments never outpace interest"];
   const parts = sl.willClear
-    ? [`Write-off April ${sl.writeOffTaxYear}`, "Paying early lowers what you repay in all."]
-    : [`About ${fmt(sl.writeOffBal)} cancelled then`, "Paying early mostly shrinks that, not what you pay."];
+    ? [`Write-off April ${sl.writeOffTaxYear}`, "Paying early lowers total cost"]
+    : [`${fmt(sl.writeOffBal)} written off`, "Paying early mostly shrinks that"];
   const dot = <span aria-hidden="true" style={{color:MUT,margin:"0 6px"}}>•</span>;
   return (
     <div style={{marginBottom:"8px"}}>
@@ -434,9 +438,20 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
     </div>
   );
   return (
-    <div style={{marginBottom:"14px"}}>
-      <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>Lump sum repayment</div>
-      <PillSlider value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>
+    <div style={{marginBottom:"12px"}}>
+      <div style={{fontSize:"9.5px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"4px"}}>Lump sum repayment</div>
+      <PillSlider compact value={overpayAmt} onChange={setOverpayAmt} options={[{ value:0, label:"None" }, ...options.map(a => ({ value:a, label: a === full ? "All" : fmtK(a) }))]}/>
+      {/* Whether it's spare: against cash above the emergency buffer. */}
+      {overpayAmt > 0 && (m.expensesUnknown
+        ? <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>Add your monthly spending in Cash & savings to check you could spare this.</p>
+        : overpayAmt > (m.surplusCash || 0) && (
+          <div style={{display:"flex",gap:"6px",alignItems:"flex-start",fontSize:"11.5px",lineHeight:1.45,color:TEXT,marginTop:"6px"}}>
+            <CircleAlert size={13} color={CRITICAL} style={{flexShrink:0,marginTop:"1px"}}/>
+            {(m.surplusCash || 0) > 0
+              ? `More than the ${fmt(Math.round(m.surplusCash))} you have above your ${m.bufferMonths}-month cash buffer.`
+              : `You have no cash above your ${m.bufferMonths}-month buffer, so this would come from it.`}
+          </div>
+        ))}
       {!scenario && tip && (
         <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>Under {k(tip)} it mostly shrinks what's written off. From {k(tip)} it clears before write-off.</p>
       )}

@@ -66,22 +66,20 @@ function debtRow(amount, owed, ratePct, years, endYears, cashPct) {
 }
 
 // `paid`: a lump sum today (a number), or a plan's payments as they were
-// made ([{ at, amount }], loanPlan.js planEvents, `at` years from now).
+// made ([{ t, amount }], loanPlan.js planEvents, `t` years from now).
 // Every place gets the same payments on the same dates, each grown to the
 // end date. The loan's own row: its repayments no longer due, kept in
 // savings, plus anything paid in beyond what was owed.
 export function loanComparison(d, m, sl, paid) {
   const years = sl.willClear ? sl.clearYr : sl.writeOffYr;
-  const events = (typeof paid === "number" ? [{ at: 0, amount: paid }] : paid || []).filter(e => e.amount > 0 && e.at <= years);
+  const events = (typeof paid === "number" ? [{ t: 0, amount: paid }] : paid || []).filter(e => e.amount > 0 && e.t <= years);
   const amount = events.reduce((t, e) => t + e.amount, 0);
   if (!(amount > 0) || !(years > 0) || !(m.loanBal > 0)) return null;
   const cash = sl.cashRate || 0;
   const taxYear = sl.writeOffTaxYear - sl.writeOffYr;
-  const extras = [];
-  events.forEach(e => { extras[e.at] = (extras[e.at] || 0) + e.amount; });
-  const base = projectPlan(m, sl, []), after = projectPlan(m, sl, extras);
+  const base = projectPlan(m, sl, []), after = projectPlan(m, sl, events);
   const freed = base.repayments.reduce((t, p, i) => t + (p - (after.repayments[i] || 0)) * Math.pow(1 + cash / 100, years - (i + 1)), 0);
-  const over = events.reduce((t, e) => t + grow(e.amount, cash, years - e.at), 0) - after.absorbed.reduce((t, a, k) => t + grow(a, cash, years - k), 0);
+  const over = events.reduce((t, e) => t + grow(e.amount, cash, years - e.t), 0) - after.paid.reduce((t, p) => t + grow(p.amount, cash, years - p.t), 0);
   const each = fn => events.reduce((t, e) => t + fn(e), 0);
   const scottish = d.scottishTaxpayer === "yes";
   const income = m.adjustedNetIncome || m.salary || 0;
@@ -91,16 +89,16 @@ export function loanComparison(d, m, sl, paid) {
   const gross = reliefs.reduce((t, r) => t + r.gross, 0);
   const rows = [
     { key: "loan", value: freed + Math.max(0, over), certain: true },
-    { key: "savings", value: each(e => grow(e.amount, cash, years - e.at)), certain: true, ratePct: cash },
-    { key: "isa", value: each(e => grow(e.amount, GROWTH_NOMINAL_PCT, years - e.at)), certain: false, ratePct: GROWTH_NOMINAL_PCT },
-    { key: "pension", value: events.reduce((t, e, i) => t + grow(reliefs[i].gross, GROWTH_NOMINAL_PCT, years - e.at), 0) * (1 - (1 - PENSION_TAX_FREE_SHARE) * laterRate),
+    { key: "savings", value: each(e => grow(e.amount, cash, years - e.t)), certain: true, ratePct: cash },
+    { key: "isa", value: each(e => grow(e.amount, GROWTH_NOMINAL_PCT, years - e.t)), certain: false, ratePct: GROWTH_NOMINAL_PCT },
+    { key: "pension", value: events.reduce((t, e, i) => t + grow(reliefs[i].gross, GROWTH_NOMINAL_PCT, years - e.t), 0) * (1 - (1 - PENSION_TAX_FREE_SHARE) * laterRate),
       certain: false, ratePct: GROWTH_NOMINAL_PCT, reliefPct: Math.round((1 - amount / gross) * 100), laterPct: Math.round(laterRate * 100) },
   ];
   // A debt: each payment on what's still owed after the ones before it.
   const debt = (owed, ratePct, termYears) => {
     let left = owed;
     return each(e => {
-      const v = debtRow(e.amount, owed > 0 ? left : null, ratePct, termYears - e.at, years - e.at, cash);
+      const v = debtRow(e.amount, owed > 0 ? left : null, ratePct, termYears - e.t, years - e.t, cash);
       left -= e.amount;
       return v;
     });
