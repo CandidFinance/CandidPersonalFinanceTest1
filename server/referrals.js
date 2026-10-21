@@ -35,8 +35,12 @@ const SITE = "https://www.candid-finance.co.uk";
 
 export const REFERRAL_CAP = 12;
 export const FREE_MONTH_DAYS = 30;
-// A month of the monthly plan, as a credit: the same for an annual subscriber.
-export const MONTH_CREDIT_PENCE = 299;
+// A month of what they pay, as a credit: their monthly price, or a twelfth
+// of their annual one (so a subscriber kept on £2.99 gets £2.99 off).
+export const monthCreditPence = row => {
+  const pence = Number(row?.amount_pence) || 0;
+  return row?.plan === "yearly" ? Math.round(pence / 12) : pence;
+};
 // The emailed link that starts a free month signs them in: good for a week,
 // since it may not be opened the day it's sent.
 const SIGN_IN_LINK_MS = 7 * 24 * 3600 * 1000;
@@ -143,10 +147,10 @@ export async function recordReferral(friendEmail, code) {
   return "recorded";
 }
 
-async function sendRewardEmail(to, kind, until) {
+async function sendRewardEmail(to, kind, until, creditPence) {
   if (!RESEND_KEY) return;
   const link = `${SITE}/signin?restore=${q(makeToken(to, "restore", SIGN_IN_LINK_MS))}`;
-  const { subject, text, html } = referralRewardEmail({ kind, until, url: link, cap: REFERRAL_CAP });
+  const { subject, text, html } = referralRewardEmail({ kind, until, url: link, cap: REFERRAL_CAP, creditPence });
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
@@ -165,11 +169,13 @@ async function grantMonth(referrer, referralId, now = Date.now()) {
   // stays on their Stripe balance for if they resubscribe), noted so it can
   // be looked at.
   if (live && row.stripe_customer_id && (row.stripe_subscription_id || PAID_PLANS.includes(row.plan))) {
+    const credit = monthCreditPence(row);
+    if (!credit) throw new Error("No price on their subscription row to credit a month of");
     const txn = await stripe(`/customers/${row.stripe_customer_id}/balance_transactions`, {
-      amount: String(-MONTH_CREDIT_PENCE), currency: "gbp",
+      amount: String(-credit), currency: "gbp",
       description: "Candid referral: a free month", "metadata[referral_id]": String(referralId),
     });
-    return { reward: "stripe_credit", txn: txn.id, note: row.cancel_at_period_end ? "subscription set to end: credit is on their Stripe balance" : null };
+    return { reward: "stripe_credit", txn: txn.id, creditPence: credit, note: row.cancel_at_period_end ? "subscription set to end: credit is on their Stripe balance" : null };
   }
   // Free access with no end (given by hand): nothing to add.
   if (live && row.plan === "comp" && !row.current_period_end) return { reward: "free_month", until: null };
@@ -197,9 +203,9 @@ export async function rewardReferral(friendEmail) {
   const done = patch => db(`referrals?id=eq.${ref.id}`, { method: "PATCH", prefer: "return=minimal", body: patch });
   if (await earned(ref.referrer_email) >= REFERRAL_CAP) { await done({ status: "capped" }); return "capped"; }
   try {
-    const { reward, until, txn, note } = await grantMonth(ref.referrer_email, ref.id);
+    const { reward, until, txn, creditPence, note } = await grantMonth(ref.referrer_email, ref.id);
     await done({ status: "rewarded", reward, stripe_balance_txn: txn || null, note: note || null, rewarded_at: new Date().toISOString() });
-    if (!(reward === "free_month" && !until)) await sendRewardEmail(ref.referrer_email, reward, until);
+    if (!(reward === "free_month" && !until)) await sendRewardEmail(ref.referrer_email, reward, until, creditPence);
     return "rewarded";
   } catch (e) {
     await done({ status: "failed", note: String(e.message).slice(0, 500) }).catch(() => {});

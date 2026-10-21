@@ -92,13 +92,14 @@ export function confirmedWelcomeEmail({ name, founding, optedIn, optInUrl, invit
 
 // `kind`: "stripe_credit" (a month off a paid subscription's next bill) or
 // "free_month" (until `until`, turned on by `url` on their device).
-export function referralRewardEmail({ kind, until = null, url = null, cap }) {
+export function referralRewardEmail({ kind, until = null, url = null, cap, creditPence = null }) {
   const where = `You can earn up to ${cap} months this way. Your link is in Candid, under Edit inputs.`;
   if (kind === "stripe_credit") {
+    const off = creditPence > 0 ? `£${(creditPence / 100).toFixed(2)}` : "A month of Candid";
     return renderEmail({
-      subject: "A friend joined Candid: a month off your bill", preheader: "£2.99 comes off your next bill.",
+      subject: "A friend joined Candid: a month off your bill", preheader: `${off} comes off your next bill.`,
       blocks: [
-        { p: "A friend you invited has joined Candid and completed their first module, so £2.99, a month of Candid, comes off your next bill." },
+        { p: `A friend you invited has joined Candid and completed their first module, so ${creditPence > 0 ? `${off}, a month of Candid,` : "a month of Candid"} comes off your next bill.` },
         { p: where },
       ],
     });

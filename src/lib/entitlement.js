@@ -14,9 +14,10 @@ const KEY = "candid_access";
 
 // Display only: the prices themselves are set in Stripe, and these must
 // match them. Monthly first; the annual saving is worked out from the two.
+// Subscribers from before 21 Oct 2026 stay on £2.99 a month or £24 a year.
 export const PLANS = {
-  monthly: { label: "Monthly",  amount: 2.99, price: "£2.99", per: "a month", note: "Cancel any time" },
-  yearly:  { label: "Annually", amount: 24,   price: "£24",   per: "a year",  note: "£2 a month" },
+  monthly: { label: "Monthly",  amount: 7.99, price: "£7.99", per: "a month", note: "Cancel any time" },
+  yearly:  { label: "Annually", amount: 49,   price: "£49",   per: "a year",  note: "About £4 a month" },
 };
 export const ANNUAL_SAVING_PCT = Math.round((1 - PLANS.yearly.amount / (PLANS.monthly.amount * 12)) * 100);
 

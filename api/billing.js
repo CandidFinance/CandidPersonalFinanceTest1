@@ -113,9 +113,11 @@ async function rowForCustomer(customerId) {
   const rows = await supa("GET", `?stripe_customer_id=eq.${encodeURIComponent(customerId)}&select=*`);
   return rows[0] || null;
 }
+// From the price's billing interval, not its id, so subscribers kept on an
+// earlier price (£2.99 a month, £24 a year) still read as monthly or yearly.
 const planOf = sub => {
-  const price = sub?.items?.data?.[0]?.price?.id;
-  return price === PRICES.yearly ? "yearly" : price === PRICES.monthly ? "monthly" : null;
+  const interval = sub?.items?.data?.[0]?.price?.recurring?.interval;
+  return interval === "year" ? "yearly" : interval === "month" ? "monthly" : null;
 };
 // Records a Stripe subscription against its customer's email.
 async function saveSubscription(sub, email) {
