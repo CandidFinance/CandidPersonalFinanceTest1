@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useElementWidth } from "../useElementWidth.js";
 import { useNavigate } from "react-router-dom";
 import { loanAlternatives } from "../../lib/crossModule.js";
-import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock, Clock } from "lucide-react";
+import { ExternalLink, Wrench, ChevronRight, Check, CircleAlert, Lock, Clock, SlidersHorizontal } from "lucide-react";
 import { calcStudentLoanScenario, calcOverpaymentScenarios, describeLoanVsPension, pgScenario, loanCostComparison, bestLumpSum, lumpToClear, SL_REPAYMENT_THRESHOLDS, slFirstDueRange, pensionCaveat } from "../../lib/studentLoan.js";
 import YearPicker, { yearInRange } from "../YearPicker.jsx";
 import { loanVerdictReady, loanPensionChecked, loanSavingsIn, loanIsaIn, hasEmployerMatch } from "../../lib/appEntry.js";
@@ -140,11 +140,11 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
       {pg && <PostgradLoan pg={pg} sl={sl}/>}
 
       {!sl.belowThreshold && (compareOpen
-        ? <LoanCompare d={d} m={m} sl={sl} set={set} open/>
+        ? <LoanCompare d={d} m={m} sl={sl} set={set} open picked={overpayAmt}/>
         : (
           <>
             {!worthOverpaying && <WhereItCouldGo m={m} locked={!alternativesOpen}/>}
-            {alternativesOpen && <LoanCompare d={d} m={m} sl={sl} set={set} open={false}/>}
+            {alternativesOpen && <LoanCompare d={d} m={m} sl={sl} set={set} open={false} picked={overpayAmt}/>}
           </>
         ))}
 
@@ -184,6 +184,7 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
     setEditingStart(false); setStartInput(null);
   };
   const resetStart = () => { if (set) set("slFirstDueYear", ""); setEditingStart(false); setStartInput(null); };
+  const showLump = overpayOptions.length > 0 && !sl.belowThreshold;
   return (
     <>
       <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
@@ -215,35 +216,45 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
         <div ref={balanceChartRef} style={{width:"100%",marginBottom:"6px"}}>
           <BalanceChart sl={sl} width={balanceChartWidth} alt={selectedScenario?.path} altLabel={overpayAmt > 0 ? `With ${fmt(overpayAmt)} paid now` : null}/>
         </div>
-        <TurningPoint sl={sl}/>
-        {overpayOptions.length > 0 && !sl.belowThreshold && (
-          <LumpSum m={m} sl={sl} tip={tip} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} options={overpayOptions} scenario={selectedScenario} base={baseProjection} worthOverpaying={worthOverpaying}/>
-        )}
 
-        <LoanStats sl={sl} balanceLabel="Estimated balance" balance={m.loanBal} editBalance={set ? openBalanceEditor : null}/>
+        {/* The figures to try, straight under the chart, which moves with
+            them: salary growth first, as it decides most whether the loan
+            is cleared, then a lump sum. */}
+        {(set || showLump) && (
+          <div style={{background:"rgba(22,47,36,0.035)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"14px 14px 2px",margin:"10px 0 14px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",fontWeight:700,color:G,marginBottom:"12px"}}>
+              <SlidersHorizontal size={14}/>Try your own figures
+            </div>
+            {set && <PayGrowth d={d} m={m} set={set}/>}
+            {showLump && (
+              <LumpSum m={m} sl={sl} tip={tip} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} options={overpayOptions} scenario={selectedScenario} base={baseProjection} worthOverpaying={worthOverpaying}/>
+            )}
+          </div>
+        )}
+        <TurningPoint sl={sl}/>
+
+        <LoanStats sl={sl} balanceLabel="Estimated balance" balance={m.loanBal} editBalance={set ? openBalanceEditor : null} wide={balanceChartWidth >= 520}/>
 
         {editingBalance && (
           <LoanBalanceEditor d={d} m={m} set={set} savingsRates={savingsRates} initial={balanceInput} onClose={closeBalanceEditor}/>
         )}
-
-        {/* Pay growth decides most whether it's cleared: changeable here,
-            and every figure above moves with it. */}
-        {set && <PayGrowth d={d} m={m} set={set}/>}
       </div>
     </>
   );
 }
 
-// Pay growth, their own: 1% to 10% a year for ten years, then with prices
-// (growth.js payFactor), read as the pay it comes to in ten years, since
-// people think in pay, not percentages. Or the other way round: the pay they
-// expect then, typed, and the rate that takes (kept to the same range). It's
-// the one pay growth figure the whole app uses (metrics.js salaryGrowthOf).
+// Salary growth, their own: 1% to 10% a year for ten years, then with
+// prices (growth.js payFactor). Set as a rate on the slider, with the salary
+// it comes to in ten years beside it; or the other way round, as the salary
+// they expect then, with the rate that takes beside it (kept to the same
+// range). It's the one pay growth figure the whole app uses (metrics.js
+// salaryGrowthOf).
 function PayGrowth({ d, m, set }) {
   const [typing, setTyping] = useState(false);
   const [typed, setTyped] = useState(null);
   const salary = m.salary || 0;
-  const pct = Math.round(salaryGrowthOf(d) * 1000) / 10;
+  const exact = salaryGrowthOf(d) * 100;
+  const pct = Math.round(exact * 10) / 10;
   const inTen = p => Math.round(salary * Math.pow(1 + p / 100, 10) / 100) * 100;
   // To 0.01%, so a typed figure comes back as typed.
   const keep = p => Math.min(SALARY_GROWTH_MAX_PCT, Math.max(SALARY_GROWTH_MIN_PCT, Math.round(p * 100) / 100));
@@ -252,19 +263,25 @@ function PayGrowth({ d, m, set }) {
   const implied = typed > 0 && salary > 0 ? Math.round((Math.pow(typed / salary, 0.1) - 1) * 1000) / 10 : null;
   const shown = p => Math.round(p * 10) / 10;
   const onType = v => { setTyped(v); if (v > 0 && salary > 0) setPct((Math.pow(v / salary, 0.1) - 1) * 100); };
-  const label = { fontSize:"10px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase", marginBottom:"6px" };
-  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"12px", fontWeight:600, textDecoration:"underline", cursor:"pointer", fontFamily:"inherit" };
+  const label = { fontSize:"10px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase" };
+  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"12px", fontWeight:600, textDecoration:"underline", cursor:"pointer", fontFamily:"inherit", flexShrink:0 };
+  const aside = { fontSize:"12px", color:MUT, fontWeight:600, whiteSpace:"nowrap" };
   return (
-    <div style={{marginBottom:"14px"}}>
-      <div style={label}>{salary > 0 ? "Your pay in 10 years" : "10yr pay growth"}</div>
-      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",marginBottom:"4px"}}>
-        {/* While typing, the figure is the one in the field. */}
-        {salary > 0 && !typing && <span style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color:G}}>{fmt(inTen(salaryGrowthOf(d) * 100))}</span>}
-        <span style={{fontSize:"13px",fontWeight:600,color:TEXT}}>+{pct}% a year</span>
+    <div style={{marginBottom:"16px"}}>
+      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",marginBottom:"6px"}}>
+        <span style={label}>Salary growth, next 10 years</span>
+        {salary > 0 && (
+          <button type="button" onClick={() => { setTyping(t => !t); setTyped(typing ? null : inTen(exact)); }} style={link}>
+            {typing ? "Enter a %" : "Enter a salary"}
+          </button>
+        )}
       </div>
       {typing && salary > 0 ? (
         <>
-          <PillMoneyInput label="Pay you expect in 10 years" value={typed} onChange={onType}/>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <PillMoneyInput label="Your salary in 10 years" value={typed} onChange={onType}/>
+            <span style={aside}>(+{pct}% a year)</span>
+          </div>
           {implied != null && (implied < SALARY_GROWTH_MIN_PCT || implied > SALARY_GROWTH_MAX_PCT) && (
             <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
               That's {implied}% a year. Candid works between {SALARY_GROWTH_MIN_PCT}% and {SALARY_GROWTH_MAX_PCT}% a year, so it uses {shown(keep(implied))}%.
@@ -272,17 +289,15 @@ function PayGrowth({ d, m, set }) {
           )}
         </>
       ) : (
-        <input type="range" min={SALARY_GROWTH_MIN_PCT} max={SALARY_GROWTH_MAX_PCT} step="0.5" value={pct} aria-label="Pay growth a year"
-          onChange={e => setPct(+e.target.value)} style={{width:"100%",accentColor:G,margin:"6px 0 2px"}}/>
+        <>
+          <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"8px"}}>
+            <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:G}}>+{pct}% a year</span>
+            {salary > 0 && <span style={aside}>({fmt(inTen(exact))} in 10 years)</span>}
+          </div>
+          <input type="range" min={SALARY_GROWTH_MIN_PCT} max={SALARY_GROWTH_MAX_PCT} step="0.5" value={pct} aria-label="Salary growth a year"
+            onChange={e => setPct(+e.target.value)} style={{width:"100%",accentColor:G,margin:"8px 0 0"}}/>
+        </>
       )}
-      <div style={{display:"flex",justifyContent:"space-between",gap:"10px",fontSize:"11.5px",color:MUT,lineHeight:1.5,marginTop:"4px"}}>
-        <span>{salary > 0 ? `From ${fmt(salary)} today, then rising with prices.` : "For ten years, then rising with prices."}</span>
-        {salary > 0 && (
-          <button type="button" onClick={() => { setTyping(t => !t); setTyped(null); }} style={{...link,flexShrink:0}}>
-            {typing ? "Use the slider" : "Type a figure"}
-          </button>
-        )}
-      </div>
     </div>
   );
 }
@@ -310,12 +325,15 @@ function ClearOrWriteOff({ sl }) {
 
 // The figures behind it, in pairs: today's balance against what's repaid in
 // all, and the interest added each year against what's repaid each year.
-function LoanStats({ sl, balanceLabel, balance, editBalance = null }) {
+// Four tiles: two by two on a phone, one row across where there's room
+// (`wide`, e.g. on a computer).
+function LoanStats({ sl, balanceLabel, balance, editBalance = null, wide = false }) {
   const label = text => <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{text}</div>;
   const figure = { fontFamily:SERIF, fontSize:"19px", color:G, fontWeight:700 };
+  const tile = { background:"rgba(22,47,36,0.04)", borderRadius:"12px", padding:"12px", minWidth:0 };
   return (
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px 12px",marginBottom:"14px"}}>
-      <div>
+    <div style={{display:"grid",gridTemplateColumns:wide ? "repeat(4, 1fr)" : "1fr 1fr",gap:"8px",marginBottom:"14px"}}>
+      <div style={tile}>
         {label(balanceLabel)}
         <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"2px"}}>
           <div style={figure}>{fmt(balance)}</div>
@@ -326,18 +344,18 @@ function LoanStats({ sl, balanceLabel, balance, editBalance = null }) {
           )}
         </div>
       </div>
-      <div>
+      <div style={tile}>
         {label("Total you'll repay")}
         <div style={{...figure,marginTop:"2px"}}>{fmt(sl.totalRepaidProjected)}</div>
       </div>
-      <div>
+      <div style={tile}>
         {label("Annual interest")}
         <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"6px",marginTop:"2px"}}>
           <span style={figure}>{fmt(sl.annualInterest)}/yr</span>
           <span style={{fontSize:"11.5px",color:MUT,fontWeight:600}}>{sl.slRatePct}% rate</span>
         </div>
       </div>
-      <div>
+      <div style={tile}>
         {label("Annual repayments")}
         <div style={{...figure,marginTop:"2px"}}>{fmt(sl.annualRep)}/yr</div>
       </div>

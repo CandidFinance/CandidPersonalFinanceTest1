@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
 import { calcStudentLoanScenario } from "./studentLoan.js";
-import { loanComparison } from "./loanCompare.js";
+import { loanComparison, pensionRelief, drawnTaxRate } from "./loanCompare.js";
 
 const run = (d, amount) => {
   const m = calcMetrics(d);
@@ -58,4 +58,32 @@ test("a pension: relief going in, a quarter tax-free and the rest at 20% coming 
   const p = row(c, "pension");
   assert.equal(p.reliefPct, 40);
   assert.equal(p.value, Math.round(5000 / 0.6 * Math.pow(1.06, c.years) * 0.85));
+});
+
+test("pension relief is what the payment really saves in tax: 60% where it brings back the Personal Allowance", () => {
+  assert.equal(Math.round(pensionRelief(30000, 4000).rate * 100), 20);
+  assert.equal(Math.round(pensionRelief(80000, 6000).rate * 100), 40);
+  // £110,000: £6,000 paid in is £15,000 gross, all of it inside the £100k to £125,140 band.
+  assert.equal(Math.round(pensionRelief(115000, 6000).rate * 100), 60);
+  assert.equal(Math.round(pensionRelief(115000, 6000).gross), 15000);
+  // Straddling £100,000: part at 60%, part at 40%.
+  const r = pensionRelief(104000, 6000).rate;
+  assert.ok(r > 0.4 && r < 0.6);
+});
+
+test("tax on the pension when drawn: the rate their retirement income is on track for, 20% at least", () => {
+  assert.equal(drawnTaxRate(0), 0.2);
+  assert.equal(drawnTaxRate(30000), 0.2);
+  assert.equal(drawnTaxRate(70000), 0.4);
+  assert.equal(drawnTaxRate(110000), 0.6);
+  assert.equal(drawnTaxRate(150000), 0.45);
+});
+
+test("a pension on track to be taxed at 40% in retirement keeps less of what it drew", () => {
+  const big = { ...clears, salary: "110000", hasPension: "yes", pensionStatus: "yes", myContribution: "10", employerMatch: "10", employerContributionType: "match", potValue: "400000" };
+  const p = row(run(big, 5000), "pension");
+  assert.ok(p.laterPct >= 40);
+  // Their own 10% already takes £110,000 under £100,000 (adjusted net
+  // income), so more paid in gets 40%, not 60%.
+  assert.equal(p.reliefPct, 40);
 });

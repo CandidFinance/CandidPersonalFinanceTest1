@@ -9,25 +9,27 @@ import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { G, WHITE, MUT, TEXT, SERIF, CDARK, CRITICAL } from "../../design-tokens.js";
 
-// The student loan page's "Where £X does most" (lib/loanCompare.js): a lump
-// sum of their choosing, valued in each place it could go by the date the
-// loan would end, largest first. For subscribers; anyone else sees the top
-// row and the rest blurred, with the way to subscribe. A mortgage not yet
-// known is a row to tap, which asks for it here (its rate and what's owed).
+// The student loan page's "Where £X does most" (lib/loanCompare.js): the
+// lump sum being tried above (`amount`; a stand-in until one's picked),
+// valued in each place it could go by the date the loan would end, largest
+// first, each on a tile of its own. For subscribers; anyone else sees the
+// top tile and the rest blurred, with the way to subscribe. A mortgage not
+// yet known is a tile to tap, which asks for it here (its rate and what's
+// owed).
 
 const ROWS = {
   loan:         { title: "Paying it into the loan", note: (r, c) => c.cleared ? "Repayments you no longer make, kept in savings." : "Repayments you no longer make, kept in savings. Most of it would otherwise have been written off." },
   savings:      { title: "Savings", note: r => `At ${r.ratePct}%, there whenever you need it.` },
   isa:          { title: "Stocks and Shares ISA", note: r => `Growing ${r.ratePct}% a year, tax-free. Can fall as well as rise.` },
-  pension:      { title: "Pension", note: (r, c, d) => `With ${r.reliefPct}% tax relief, growing ${r.ratePct}% a year, taxed when drawn. Locked until ${pensionAccessAge(d)}.` },
+  pension:      { title: "Pension", note: (r, c, d) => `With ${r.reliefPct}% tax relief, growing ${r.ratePct}% a year. A quarter tax-free when drawn, the rest taxed at ${r.laterPct}%. Locked until ${pensionAccessAge(d)}.` },
   mortgage:     { title: "Paying off your mortgage", note: r => `Saves its ${r.ratePct}%. Most lenders allow 10% of the balance a year without a fee.` },
   personalLoan: { title: "Paying off your personal loan", note: r => `Saves its ${r.ratePct}%, while it has left to run.` },
 };
-const AMOUNTS = [1000, 5000, 10000, 20000];
+// Until a lump sum is picked above: £5,000, or the balance if it's less.
+const STAND_IN = 5000;
 
-export default function LoanCompare({ d, m, sl, set, open }) {
-  const options = AMOUNTS.filter(a => a <= Math.max(m.loanBal, m.surplusCash || 0));
-  const [amount, setAmount] = useState(() => options.includes(5000) ? 5000 : options[0] || 1000);
+export default function LoanCompare({ d, m, sl, set, open, picked }) {
+  const amount = picked > 0 ? picked : Math.min(STAND_IN, Math.round(m.loanBal));
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
@@ -40,13 +42,12 @@ export default function LoanCompare({ d, m, sl, set, open }) {
     try { await startCheckout(plan, "studentLoan", d.email); }
     catch (e) { setError(e.message); setBusy(null); }
   };
-  const chip = on => ({ flex:"1 1 0", minWidth:0, border:"none", borderRadius:"100px", padding:"7px 4px", background:on ? G : "transparent", color:on ? WHITE : MUT, fontSize:"13px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" });
-  const rowStyle = first => ({ borderTop:first ? "none" : "1px solid rgba(22,47,36,0.08)", padding:"12px 0" });
+  const tile = { background:WHITE, borderRadius:"12px", padding:"12px 14px", marginTop:"8px", boxShadow:"0 1px 4px rgba(22,47,36,0.12), 0 0 0 1px rgba(22,47,36,0.04)" };
   const valued = c.rows.filter(r => !r.ask);
   const ask = c.rows.find(r => r.ask);
 
-  const row = (r, i) => (
-    <div key={r.key} style={rowStyle(i === 0)}>
+  const row = r => (
+    <div key={r.key} style={tile}>
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px"}}>
         <span style={{fontSize:"14px",fontWeight:700,color:TEXT}}>{ROWS[r.key].title}</span>
         <span style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{fmt(r.value)}</span>
@@ -58,22 +59,18 @@ export default function LoanCompare({ d, m, sl, set, open }) {
   );
 
   return (
-    <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.1)",borderRadius:"14px",padding:"16px 18px",margin:"0 0 16px"}}>
+    <div style={{background:CDARK,borderRadius:"14px",padding:"16px 14px",margin:"0 0 16px"}}>
       <div style={{fontSize:"10px",fontWeight:800,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Where {fmt(amount)} does most</div>
-      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 10px"}}>
-        What it comes to by April {c.byTaxYear}, when your loan would {c.cleared ? "be cleared" : "be written off"}, largest first.
+      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 4px"}}>
+        What {picked > 0 ? "the lump sum above" : "it"} comes to by April {c.byTaxYear}, when your loan would {c.cleared ? "be cleared" : "be written off"}, largest first.
+        {!(picked > 0) && " Pick a lump sum above to try another amount."}
       </p>
-      {options.length > 1 && (
-        <div role="group" aria-label="Amount" style={{display:"flex",background:CDARK,borderRadius:"100px",padding:"3px",gap:"2px",marginBottom:"6px"}}>
-          {options.map(a => <button key={a} type="button" aria-pressed={a === amount} onClick={() => setAmount(a)} style={chip(a === amount)}>{fmt(a)}</button>)}
-        </div>
-      )}
 
       {valued.slice(0, open ? valued.length : 1).map(row)}
       {!open && (
         <div style={{position:"relative"}}>
           <div aria-hidden="true" inert="" style={{filter:"blur(6px)",userSelect:"none",pointerEvents:"none"}}>
-            {valued.slice(1).map((r, i) => row(r, i + 1))}
+            {valued.slice(1).map(row)}
           </div>
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"10px",textAlign:"center",padding:"0 12px"}}>
             <span style={{width:"40px",height:"40px",borderRadius:"50%",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><Lock size={18} color={G}/></span>
@@ -93,7 +90,7 @@ export default function LoanCompare({ d, m, sl, set, open }) {
       {/* Open until Done: once a rate's in, the mortgage gets its own row
           above and the ask goes, but the balance may still be to come. */}
       {open && (ask || asking) && set && (
-        <div style={rowStyle(false)}>
+        <div style={tile}>
           {!asking ? (
             <button type="button" onClick={() => setAsking(true)} style={{background:"none",border:"none",padding:0,width:"100%",textAlign:"left",fontFamily:"inherit",cursor:"pointer"}}>
               <span style={{display:"block",fontSize:"14px",fontWeight:700,color:TEXT}}>Paying off a mortgage</span>
