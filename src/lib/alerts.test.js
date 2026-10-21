@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { alertsDue, alertEmail, inputsFromRow, RATES_MIN_DAYS } from "./alerts.js";
+import { alertsDue, alertEmail, inputsFromRow, isFounding, RATES_MIN_DAYS } from "./alerts.js";
 
 const day = s => new Date(`${s}T08:00:00`);
 const trap = {
@@ -112,4 +112,13 @@ test("the email: greeting, items, the link, guidance, unsubscribe and company de
   assert.match(free, /^Hi,\n/);
   assert.match(free, /from what you told Candid in September 2026/);
   assert.match(free, /A subscription keeps every module's figures current/);
+});
+
+test("free users' better rates: from ratesFrom (a few days after they confirm), and none when it's false (not a founding user)", () => {
+  const d = inputsFromRow({ email: "a@b.co", employment_status: "employed", salary: 50000, cash_savings: 20000, savings_rate: 1, created_at: "2026-10-01T10:00:00Z" });
+  const opts = ratesFrom => ({ who: "free", today: day("2026-10-18"), rows: ROWS, ratesFrom });
+  assert.deepEqual(alertsDue(d, opts(day("2026-10-19"))), []);
+  assert.equal(alertsDue(d, opts(day("2026-10-18"))).length, 1);
+  assert.deepEqual(alertsDue(d, opts(false)), []);
+  assert.equal(isFounding("2026-10-20T09:00:00Z"), true); // FOUNDING_UNTIL is open
 });

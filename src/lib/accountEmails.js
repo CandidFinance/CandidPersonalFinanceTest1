@@ -1,10 +1,10 @@
 // The emails about someone's account, in the same layout as the rest
 // (emailLayout.js): confirming an email address (api/email.js), a sign-in
-// link (api/billing.js), and a friend's invite rewarded
-// (server/referrals.js). Each { subject, text, html }. Pure, unit tested in
-// emailLayout.test.js.
+// link (api/billing.js), a friend's invite rewarded (server/referrals.js),
+// and the welcome the day after a free user confirms (api/alerts.js). Each
+// { subject, text, html }. Pure, unit tested in emailLayout.test.js.
 
-import { renderEmail } from "./emailLayout.js";
+import { renderEmail, SITE } from "./emailLayout.js";
 
 // Their first name as they typed it into Candid, for "Hi Jo,". It's theirs
 // to type, so only a plain name is used: letters, an apostrophe or hyphen,
@@ -38,6 +38,36 @@ export function signInEmail({ url }) {
       { small: "If you didn't ask for this, you can ignore it." },
     ],
     signoff: false,
+  });
+}
+
+// The day after a free user confirms their email. `founding`: rate alerts
+// are theirs free, offered with `optInUrl` unless `optedIn` already.
+// `inviteCode`: their invite link's, or null (it's in Edit inputs).
+export function confirmedWelcomeEmail({ name, founding, optedIn, optInUrl, inviteCode = null, cap, unsubscribeUrl }) {
+  const invite = inviteCode ? `${SITE}/app/start?ref=${inviteCode}` : null;
+  const offer = founding && !optedIn;
+  return renderEmail({
+    subject: "Thanks for confirming - welcome to Candid",
+    preheader: offer ? "Rate alerts are free for founding users." : "Your invite link, and how to keep your answers.",
+    greeting: hi(name),
+    blocks: [
+      { p: "Thanks for confirming your email address, and welcome to Candid." },
+      { p: "Your answers are saved on the device you used. Subscribe and they're saved to this email address, so you can sign in on any device and pick up where you left off." },
+      ...(founding ? [
+        { h: "Rate alerts, free for founding users" },
+        optedIn
+          ? { p: "You're signed up. When a better savings rate could earn you £100+ a year more on your figures, we'll email you - at most once a month." }
+          : { p: "Turn them on and we'll email you when a better savings rate could earn you £100+ a year more on your figures - at most once a month. They're free for founding users only, so don't miss out." },
+        ...(optedIn ? [] : [{ button: { label: "Turn on rate alerts", href: optInUrl } }]),
+      ] : []),
+      { h: "Share Candid" },
+      { p: `Know a partner, friend or colleague who could do with a hand with their money? Send them your link. When they join and complete their first module, you get a free month of Candid, up to ${cap} months, and they get an extra answer free.${invite ? "" : " Your link is in Candid, under Edit inputs."}` },
+      ...(invite ? [{ panel: { label: "Your invite link", text: [{ a: invite.replace(/^https:\/\/www\./, ""), href: invite }] } }] : []),
+      { p: "Any questions or feedback, just reply to this email." },
+    ],
+    note: "Candid is guidance, not advice.",
+    unsubscribeUrl,
   });
 }
 

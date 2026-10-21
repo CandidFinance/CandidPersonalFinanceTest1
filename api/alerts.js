@@ -1,7 +1,9 @@
 import { isAllowedOrigin, clientIp, safeEqual, rateLimiter, checkAdminPassword } from "../server/http.js";
-import { alertsDue, alertEmail, inputsFromRow } from "../src/lib/alerts.js";
-import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS } from "../src/lib/weekly.js";
-import { unsubscribeUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from "../server/alertMail.js";
+import { alertsDue, alertEmail, inputsFromRow, isFounding, FREE_RATES_DELAY_DAYS } from "../src/lib/alerts.js";
+import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS, REFERRAL_MONTHS } from "../src/lib/weekly.js";
+import { confirmedWelcomeEmail } from "../src/lib/accountEmails.js";
+import { unsubscribeUrl, optInUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from "../server/alertMail.js";
+import { referralLink } from "../server/referrals.js";
 
 // Candid's emails between visits (src/lib/alerts.js decides what's due),
 // subscribers' welcome and the Sunday email (src/lib/weekly.js). One route:
@@ -20,8 +22,13 @@ import { unsubscribeUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from
 //  - The welcome goes to each paid subscriber once (alert_sends key
 //    "welcome"): from api/billing.js as they subscribe, and from the daily
 //    run for anyone that missed it.
+//  - A free user's welcome goes the day after they confirm their email
+//    (alert_sends key "confirmed"): rate alerts to turn on, free for
+//    founding users, and their invite link (confirmedWelcomes).
 //  - ?action=unsubscribe&t=…, the link in every email (and its one-click
 //    List-Unsubscribe header): adds the email to `alert_optouts`.
+//  - ?action=optin&t=…, the welcome's link: a tick box that turns on rate
+//    alerts for that address.
 //
 // A free user gets emails only once they've confirmed their address (its
 // link, api/email.js, sets `email_verifications.verified_at`). Subscribers
@@ -47,6 +54,10 @@ const WEEK_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const ACTIVE = ["active", "trialing", "past_due"];
 const SENT_LOOKBACK_DAYS = 400;
+// A confirmation older than this gets no welcome: a missed run catches up,
+// but no one who confirmed long ago gets one out of the blue.
+const WELCOME_LOOKBACK_DAYS = 4;
+const DAY_MS = 86400000;
 const RUN_BUDGET_MS = 50000;
 const CONCURRENCY = 3;
 const PREVIEW_MAX = 300;
@@ -81,6 +92,16 @@ async function all(path) {
 }
 
 const cleanEmail = e => (typeof e === "string" && EMAIL_RE.test(e.trim())) ? e.trim().toLowerCase() : null;
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+// The date in the UK, as YYYY-MM-DD.
+const ukDay = d => new Date(d).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+
+// Someone's rows in `test`, newest first. Rows keep the address as typed,
+// so it's matched without case, then exactly.
+async function rowsFor(email, columns) {
+  const rows = await db(`test?select=email,${columns}&email=ilike.${encodeURIComponent(email)}&order=id.desc&limit=50`);
+  return (rows || []).filter(r => cleanEmail(r.email) === email);
+}
 
 // ── Who can get emails, and what's due for each ──────────────────────────────
 // Subscribers, on their saved answers; free users who asked for emails, on
@@ -118,14 +139,44 @@ async function optional(path, notes, label) {
   catch (e) { notes.push(`${label} couldn't be read (${e.status || "error"})`); return null; }
 }
 
-export async function plan(today = new Date(), { drafts = false } = {}) {
+// The day after a free user confirms their email (by UK date), their
+// welcome, once. Not for subscribers, who have their own. Their name, and
+// whether they've asked for emails already, from their latest row. Invite
+// codes are made only when `makeCodes` (a live run), so a preview never
+// makes one.
+async function confirmedWelcomes(today, { verified, people, out, sentBy, codeOf, makeCodes }, notes) {
+  const subscribers = new Set(people.filter(p => p.who === "subscriber").map(p => p.email));
+  const due = (verified || []).filter(v => {
+    const email = cleanEmail(v.email);
+    return email && ukDay(v.verified_at) < ukDay(today) && today - new Date(v.verified_at) < WELCOME_LOOKBACK_DAYS * DAY_MS
+      && !out.has(email) && !subscribers.has(email) && !(sentBy.get(email) || []).some(s => s.alert_key === "confirmed");
+  });
+  const emails = await Promise.all(due.map(async v => {
+    const email = cleanEmail(v.email);
+    try {
+      const rows = await rowsFor(email, "name,alerts_opt_in,unlock_call_ok");
+      const code = codeOf.get(email) || (makeCodes ? (await referralLink(email)).code : null) || null;
+      const mail = confirmedWelcomeEmail({
+        name: rows[0]?.name, founding: isFounding(v.verified_at), optedIn: rows.some(r => r.alerts_opt_in || r.unlock_call_ok),
+        optInUrl: optInUrl(email), inviteCode: code, cap: REFERRAL_MONTHS, unsubscribeUrl: unsubscribeUrl(email),
+      });
+      return { to: email, who: "free", kind: "confirmed", key: "confirmed", detail: null, ...mail };
+    } catch (e) {
+      notes.push(`couldn't write the welcome for one confirmed free user: ${e.message}`);
+      return null;
+    }
+  }));
+  return emails.filter(Boolean);
+}
+
+export async function plan(today = new Date(), { drafts = false, makeCodes = false } = {}) {
   const notes = [];
   const since = new Date(today - SENT_LOOKBACK_DAYS * 86400000).toISOString();
   const week = weeklyWeek(today);
   const [people, optouts, verified, sent, rates, issues, codes] = await Promise.all([
     recipients(notes),
     optional("alert_optouts?select=email", notes, "alert_optouts"),
-    optional("email_verifications?select=email&verified_at=not.is.null", notes, "email_verifications"),
+    optional("email_verifications?select=email,verified_at&verified_at=not.is.null", notes, "email_verifications"),
     optional(`alert_sends?select=email,alert_key,kind,sent_at,detail&sent_at=gte.${since}`, notes, "alert_sends"),
     db(`savings_rates?select=${RATE_COLUMNS}&order=rate_aer.desc`),
     week ? optional(`weekly_issues?select=week,subject,intro,items,approved_at&week=eq.${week}`, notes, "weekly_issues") : [],
@@ -137,7 +188,7 @@ export async function plan(today = new Date(), { drafts = false } = {}) {
   const issue = issues?.[0] && (issues[0].approved_at || drafts) ? issues[0] : null;
   if (issues?.[0] && !issues[0].approved_at) notes.push(`The issue for ${week} isn't approved${drafts ? ": shown here, but it won't go out" : ", so it won't go out"}`);
   const out = new Set((optouts || []).map(o => cleanEmail(o.email)));
-  const confirmed = new Set((verified || []).map(v => cleanEmail(v.email)));
+  const verifiedAt = new Map((verified || []).map(v => [cleanEmail(v.email), v.verified_at]));
   const sentBy = new Map();
   for (const s of sent || []) {
     const e = cleanEmail(s.email);
@@ -146,7 +197,7 @@ export async function plan(today = new Date(), { drafts = false } = {}) {
   }
   const emails = [];
   for (const p of people) {
-    if (out.has(p.email) || (p.who === "free" && !confirmed.has(p.email))) continue;
+    if (out.has(p.email) || (p.who === "free" && !verifiedAt.has(p.email))) continue;
     const done = new Set((sentBy.get(p.email) || []).map(s => s.alert_key));
     const unsubscribe = unsubscribeUrl(p.email);
     if (p.who === "subscriber" && PAID_PLANS.includes(p.sub.plan) && !done.has("welcome") && new Date(p.sub.created_at) > new Date(since)) {
@@ -160,20 +211,25 @@ export async function plan(today = new Date(), { drafts = false } = {}) {
         emails.push({ to: p.email, who: p.who, kind: "weekly", key: `weekly:${issue.week}`, detail: null, ...mail });
       } catch (e) { notes.push(`couldn't write the Sunday email for one subscriber: ${e.message}`); }
     }
+    // A free user's better rates: founding users only, from a few days
+    // after they confirm, so the first never lands with their welcome.
+    const confirmedAt = verifiedAt.get(p.email);
+    const ratesFrom = p.who !== "free" ? null : isFounding(confirmedAt) ? new Date(new Date(confirmedAt).getTime() + FREE_RATES_DELAY_DAYS * DAY_MS) : false;
     let due;
-    try { due = alertsDue(p.d, { who: p.who, today, sent: sentBy.get(p.email) || [], rows: rates || [] }); }
+    try { due = alertsDue(p.d, { who: p.who, today, sent: sentBy.get(p.email) || [], rows: rates || [], ratesFrom }); }
     catch (e) { notes.push(`couldn't work out alerts for one ${p.who}: ${e.message}`); continue; }
     for (const a of due) {
       const mail = alertEmail(a, { name: p.d.name, free: p.who === "free", asOf: p.asOf, unsubscribeUrl: unsubscribe });
       emails.push({ to: p.email, who: p.who, kind: a.kind, key: a.key, detail: a.detail || null, ...mail });
     }
   }
+  emails.push(...await confirmedWelcomes(today, { verified, people, out, sentBy, codeOf, makeCodes }, notes));
   return { emails, notes, people: people.length, ready: optouts !== null && sent !== null };
 }
 
 async function run(today = new Date()) {
   const started = Date.now();
-  const { emails, notes, people, ready } = await plan(today);
+  const { emails, notes, people, ready } = await plan(today, { makeCodes: LIVE });
   const byKind = emails.reduce((t, e) => ({ ...t, [e.kind]: (t[e.kind] || 0) + 1 }), {});
   if (!LIVE) return { live: false, people, due: emails.length, byKind, notes };
   if (!ready || !RESEND_KEY || !TOKEN_SECRET) return { live: true, stopped: "Not sending: the alert tables, RESEND_API_KEY or a token secret is missing", notes };
@@ -190,7 +246,7 @@ async function run(today = new Date()) {
 
 const page = (title, body) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title>
 <style>body{margin:0;background:#f8f5ee;color:#1d2b24;font-family:system-ui,-apple-system,Segoe UI,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
-main{max-width:420px;text-align:center}h1{font-family:Georgia,serif;color:#162f24;font-size:24px}p{line-height:1.5;color:#4a5a52}
+main{max-width:420px;text-align:center}label{display:flex;gap:10px;align-items:flex-start;text-align:left;margin:20px 0;line-height:1.5}input{width:18px;height:18px;margin:2px 0 0;flex:none;accent-color:#162f24}h1{font-family:Georgia,serif;color:#162f24;font-size:24px}p{line-height:1.5;color:#4a5a52}
 button{background:#162f24;color:#fff;border:0;border-radius:100px;padding:13px 26px;font-size:15px;font-weight:700;cursor:pointer}a{color:#162f24}</style></head>
 <body><main>${body}</main></body></html>`;
 
@@ -215,6 +271,33 @@ async function unsubscribe(req, res) {
   return res.status(200).send(page("Emails stopped", `<h1>Done</h1><p>You won't get Candid's Sunday email, reminders or rate alerts any more. Your figures in the app are unchanged.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
 }
 
+// The welcome's "Turn on rate alerts": opening the link shows the tick box,
+// and only the form's POST changes anything, so a mail scanner opening it
+// can't sign anyone up. Ticked, it's the same as the app's "Get rate
+// alerts" on every row with their address, and takes them off
+// `alert_optouts`: asking for alerts outranks stopping emails earlier.
+async function optIn(req, res) {
+  if (unsubscribeLimiter) {
+    const { success } = await unsubscribeLimiter.limit(clientIp(req)).catch(() => ({ success: true }));
+    if (!success) return res.status(429).send("Too many requests. Try again shortly.");
+  }
+  const t = String(req.query.t || "");
+  const email = emailFromToken(t, "optin");
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  if (!email) return res.status(400).send(page("Link not recognised", `<h1>That link isn't working</h1><p>Reply to any Candid email and we'll turn rate alerts on for you.</p>`));
+  if (req.method === "GET") {
+    const action = `/api/alerts?action=optin&t=${encodeURIComponent(t)}`;
+    return res.status(200).send(page("Turn on rate alerts", `<h1>Rate alerts</h1><p>Free for founding users: an email when a better savings rate could earn you £100+ a year more on your figures, at most once a month.</p><form method="post" action="${action}"><label><input type="checkbox" name="optin" value="1" required><span>Email me rate alerts at ${esc(email)}</span></label><button type="submit">Turn on rate alerts</button></form>`));
+  }
+  if (req.method !== "POST") return res.status(405).end();
+  if (req.body?.optin !== "1") return res.status(400).send(page("Nothing changed", `<h1>Nothing changed</h1><p>Tick the box to turn rate alerts on.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
+  const rows = await rowsFor(email, "id");
+  if (!rows.length) return res.status(404).send(page("Answers not found", `<h1>We couldn't find your answers</h1><p>Reply to any Candid email and we'll turn rate alerts on for you.</p>`));
+  await db(`test?id=in.(${rows.map(r => +r.id).join(",")})`, { method: "PATCH", prefer: "return=minimal", body: { alerts_opt_in: true } });
+  await db(`alert_optouts?email=eq.${encodeURIComponent(email)}`, { method: "DELETE" });
+  return res.status(200).send(page("Rate alerts on", `<h1>Done</h1><p>We'll email you when a better savings rate could earn you £100+ a year more, at most once a month. You can stop them from any Candid email.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
+}
+
 // ── The route ────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
   if (!SUPA_URL || !SERVICE_KEY) {
@@ -224,6 +307,10 @@ export default async function handler(req, res) {
   if (req.query?.action === "unsubscribe") {
     try { return await unsubscribe(req, res); }
     catch (e) { console.error("[api/alerts] unsubscribe failed:", e); return res.status(500).send("Something went wrong. Reply to any Candid email and we'll stop them for you."); }
+  }
+  if (req.query?.action === "optin") {
+    try { return await optIn(req, res); }
+    catch (e) { console.error("[api/alerts] opt-in failed:", e); return res.status(500).send("Something went wrong. Reply to any Candid email and we'll turn rate alerts on for you."); }
   }
 
   // Vercel Cron: GET with the cron secret.

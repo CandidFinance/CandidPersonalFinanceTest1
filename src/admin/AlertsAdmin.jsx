@@ -13,7 +13,7 @@ import WeeklyEditor from "./WeeklyEditor.jsx";
 
 const button = primary => ({ padding: "8px 14px", borderRadius: "8px", border: primary ? "none" : "1.5px solid rgba(22,47,36,0.2)", background: primary ? G : WHITE, color: primary ? WHITE : G, fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: SANS });
 const input = { padding: "9px 12px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "14px", fontFamily: SANS, boxSizing: "border-box" };
-const KIND_LABEL = { taxYearEnd: "Before 5 April", bonus: "Bonus", newTaxYear: "New tax year", rates: "Better rate", welcome: "Welcome", weekly: "Sunday email" };
+const KIND_LABEL = { taxYearEnd: "Before 5 April", bonus: "Bonus", newTaxYear: "New tax year", rates: "Better rate", welcome: "Welcome", confirmed: "Welcome (free)", weekly: "Sunday email" };
 
 export default function AlertsAdmin() {
   const [password, setPassword] = useState("");

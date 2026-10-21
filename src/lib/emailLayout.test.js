@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { renderEmail } from "./emailLayout.js";
-import { confirmEmail, signInEmail, referralRewardEmail } from "./accountEmails.js";
+import { confirmEmail, signInEmail, referralRewardEmail, confirmedWelcomeEmail } from "./accountEmails.js";
 import { welcomeEmail } from "./weekly.js";
 
 test("One email, as HTML and plain text: the same words in each", () => {
@@ -46,4 +46,19 @@ test("The welcome: bold lead-ins on its bullets, the plan and the invite link in
   assert.match(html, /<strong[^>]*>An email roundup on Sunday mornings<\/strong>/);
   assert.match(html, />Your plan<\/div>/);
   assert.match(html, />Your invite link<\/div>[\s\S]*href="https:\/\/www\.candid-finance\.co\.uk\/app\/start\?ref=abcd2345"/);
+});
+
+test("A free user's welcome: rate alerts offered to a founding user who hasn't asked for them, and their invite link", () => {
+  const base = { name: "Jo", optInUrl: "https://o", cap: 12, unsubscribeUrl: "https://u" };
+  const offer = confirmedWelcomeEmail({ ...base, founding: true, optedIn: false, inviteCode: "abcd2345" });
+  assert.match(offer.html, /href="https:\/\/o"[^>]*>Turn on rate alerts<\/a>/);
+  assert.match(offer.text, /free for founding users only/);
+  assert.match(offer.text, /candid-finance\.co\.uk\/app\/start\?ref=abcd2345/);
+  assert.match(offer.text, /Subscribe and they're saved to this email address/);
+  const on = confirmedWelcomeEmail({ ...base, founding: true, optedIn: true });
+  assert.doesNotMatch(on.text, /Turn on rate alerts/);
+  assert.match(on.text, /You're signed up/);
+  assert.match(on.text, /Your link is in Candid, under Edit inputs/);
+  const later = confirmedWelcomeEmail({ ...base, founding: false, optedIn: false });
+  assert.doesNotMatch(later.text, /founding|Turn on rate alerts/);
 });

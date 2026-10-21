@@ -18,17 +18,23 @@ const SITE = "https://www.candid-finance.co.uk";
 
 export const mailReady = () => !!(RESEND_KEY && TOKEN_SECRET && SUPA_URL && SERVICE_KEY);
 
-// ── Unsubscribing: a signed link per email, with no expiry ───────────────────
-const sign = email => crypto.createHmac("sha256", TOKEN_SECRET).update(`alerts-unsubscribe:${email}`).digest("base64url");
+// ── Unsubscribing and turning on rate alerts: a signed link per email and
+// purpose, with no expiry ────────────────────────────────────────────────────
+const sign = (email, purpose) => crypto.createHmac("sha256", TOKEN_SECRET).update(`alerts-${purpose}:${email}`).digest("base64url");
+const token = (email, purpose) => `${Buffer.from(email).toString("base64url")}.${sign(email, purpose)}`;
 export function unsubscribeUrl(email) {
   if (!TOKEN_SECRET) return `${SITE}/privacy.html`;
-  return `${SITE}/api/alerts?action=unsubscribe&t=${Buffer.from(email).toString("base64url")}.${sign(email)}`;
+  return `${SITE}/api/alerts?action=unsubscribe&t=${token(email, "unsubscribe")}`;
 }
-export function emailFromToken(t) {
+export function optInUrl(email) {
+  if (!TOKEN_SECRET) return `${SITE}/app/home`;
+  return `${SITE}/api/alerts?action=optin&t=${token(email, "optin")}`;
+}
+export function emailFromToken(t, purpose = "unsubscribe") {
   if (!TOKEN_SECRET || typeof t !== "string") return null;
   const [e, sig] = t.split(".");
   const email = cleanEmail(Buffer.from(e || "", "base64url").toString());
-  return email && safeEqual(sig, sign(email)) ? email : null;
+  return email && safeEqual(sig, sign(email, purpose)) ? email : null;
 }
 
 export async function sendMail(to, subject, text, unsubscribe, html = null) {

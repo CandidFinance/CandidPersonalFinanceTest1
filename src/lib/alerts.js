@@ -8,7 +8,10 @@
 //    four kinds.
 //  - Free users who asked for emails (the unlock tick box or "Get rate
 //    alerts"), on what their row in `test` holds: the 5 April reminder and
-//    better rates, each saying which date the figures are from.
+//    better rates, each saying which date the figures are from. Better
+//    rates are free for founding users only (confirmed by FOUNDING_UNTIL),
+//    and start FREE_RATES_DELAY_DAYS after they confirm, so never alongside
+//    their welcome (accountEmails.js confirmedWelcomeEmail).
 //
 // The kinds:
 //  - taxYearEnd: early March, and again from 26 March, while there's
@@ -38,6 +41,11 @@ export const FREE_KINDS = ["taxYearEnd", "rates"];
 export const RATES_MIN_GAIN = 100;
 export const RATES_MIN_DAYS = 30;
 export const RATES_MIN_CHANGE = 50;
+export const FREE_RATES_DELAY_DAYS = 3;
+// Free users who confirm their email by this date are founding users, with
+// rate alerts free. null: still open, so everyone who confirms is one.
+export const FOUNDING_UNTIL = null;
+export const isFounding = verifiedAt => !FOUNDING_UNTIL || new Date(verifiedAt) <= new Date(FOUNDING_UNTIL);
 // The final reminder before 5 April starts here (day of March).
 const FINAL_FROM = 26;
 const DAY_MS = 86400000;
@@ -164,7 +172,8 @@ function newTaxYear(d, m, today) {
   };
 }
 
-function rates(d, m, today, { rows, sent, free }) {
+function rates(d, m, today, { rows, sent, free, ratesFrom }) {
+  if (ratesFrom && today < ratesFrom) return null;
   // A free user's row may not say what their savings pay, and Candid's
   // usual assumption isn't enough to email a figure on.
   if (free && !(+d.savingsRate > 0)) return null;
@@ -194,13 +203,14 @@ const KINDS = { taxYearEnd, bonus, newTaxYear, rates };
 
 // Everything due for one person today, not already sent. `who`: "subscriber"
 // or "free". `sent`: their alert_sends rows. `rows`: savings_rates.
-export function alertsDue(rawD, { who = "subscriber", today = new Date(), sent = [], rows = [] } = {}) {
+// `ratesFrom`: a free user's first day for better rates; false: none.
+export function alertsDue(rawD, { who = "subscriber", today = new Date(), sent = [], rows = [], ratesFrom = null } = {}) {
   const d = rollTaxYear(rawD || {}, today);
   const m = calcMetrics(d);
   const free = who === "free";
   const done = new Set((sent || []).map(s => s.alert_key));
-  return (free ? FREE_KINDS : SUBSCRIBER_KINDS)
-    .map(kind => KINDS[kind](d, m, today, { rows, sent, free }))
+  return (free ? FREE_KINDS.filter(k => k !== "rates" || ratesFrom !== false) : SUBSCRIBER_KINDS)
+    .map(kind => KINDS[kind](d, m, today, { rows, sent, free, ratesFrom }))
     .filter(a => a && !done.has(a.key));
 }
 
