@@ -66,3 +66,21 @@ export const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_
 // `window` (e.g. "10 m"), counted under `prefix`.
 export const rateLimiter = (requests, window, prefix) =>
   redis && new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(requests, window), prefix });
+
+// The shared admin password in x-admin-password, behind a brute-force guard:
+// 200, 401 or 429. Only wrong guesses use up the limiter, so a signed-in admin
+// can approve any number of things; once the guesses run out, even the right
+// password waits for the window. A Redis failure lets the check through.
+export async function checkAdminPassword(req, password, limiter, tag) {
+  const ip = clientIp(req);
+  if (limiter) {
+    try {
+      if ((await limiter.getRemaining(ip)).remaining <= 0) return 429;
+    } catch (e) {
+      console.error(`[${tag}] rate-limit check failed:`, e?.message);
+    }
+  }
+  if (safeEqual(req.headers["x-admin-password"], password)) return 200;
+  if (limiter) await limiter.limit(ip).catch(e => console.error(`[${tag}] rate-limit count failed:`, e?.message));
+  return 401;
+}

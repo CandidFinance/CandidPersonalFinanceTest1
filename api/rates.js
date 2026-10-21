@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
+import { isAllowedOrigin, safeEqual, rateLimiter, checkAdminPassword } from "../server/http.js";
 import { EXTRACTION_TOOL, EXTRACTION_SYSTEM, htmlToText, planChanges, reviewDedupeKey } from "../src/lib/rateFeed.js";
 import { cleanIosAppUrl, cleanAndroidAppUrl } from "../src/lib/appLinks.js";
 
@@ -238,15 +238,9 @@ export default async function handler(req, res) {
   // Everything else is the admin page.
   if (!ADMIN_PASSWORD) return res.status(503).json({ error: "Service temporarily unavailable" });
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
-  if (attemptLimiter) {
-    try {
-      const { success } = await attemptLimiter.limit(clientIp(req));
-      if (!success) return res.status(429).json({ error: "Too many attempts, try again shortly" });
-    } catch (e) {
-      console.error("[api/rates] rate-limit check failed:", e?.message);
-    }
-  }
-  if (!safeEqual(req.headers["x-admin-password"], ADMIN_PASSWORD)) return res.status(401).json({ error: "Unauthorized" });
+  const auth = await checkAdminPassword(req, ADMIN_PASSWORD, attemptLimiter, "api/rates");
+  if (auth === 429) return res.status(429).json({ error: "Too many attempts, try again shortly" });
+  if (auth === 401) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     if (req.method === "GET") return res.status(200).json(await adminOverview());

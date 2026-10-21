@@ -1,4 +1,4 @@
-import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
+import { isAllowedOrigin, clientIp, safeEqual, rateLimiter, checkAdminPassword } from "../server/http.js";
 import { alertsDue, alertEmail, inputsFromRow } from "../src/lib/alerts.js";
 import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS } from "../src/lib/weekly.js";
 import { unsubscribeUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from "../server/alertMail.js";
@@ -241,15 +241,9 @@ export default async function handler(req, res) {
   // Everything else is the admin page.
   if (!ADMIN_PASSWORD) return res.status(503).json({ error: "Service temporarily unavailable" });
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
-  if (adminLimiter) {
-    try {
-      const { success } = await adminLimiter.limit(clientIp(req));
-      if (!success) return res.status(429).json({ error: "Too many attempts, try again shortly" });
-    } catch (e) {
-      console.error("[api/alerts] rate-limit check failed:", e?.message);
-    }
-  }
-  if (!safeEqual(req.headers["x-admin-password"], ADMIN_PASSWORD)) return res.status(401).json({ error: "Unauthorized" });
+  const auth = await checkAdminPassword(req, ADMIN_PASSWORD, adminLimiter, "api/alerts");
+  if (auth === 429) return res.status(429).json({ error: "Too many attempts, try again shortly" });
+  if (auth === 401) return res.status(401).json({ error: "Unauthorized" });
   if (req.method !== "POST") return res.status(405).end();
 
   try {

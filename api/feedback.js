@@ -1,4 +1,4 @@
-import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
+import { isAllowedOrigin, rateLimiter, checkAdminPassword } from "../server/http.js";
 
 // service_role — never VITE_-prefixed, so it's never bundled to the client.
 // The `test` table's RLS now denies SELECT to everyone except service_role
@@ -27,19 +27,9 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const ip = clientIp(req);
-  if (attemptLimiter) {
-    try {
-      const { success } = await attemptLimiter.limit(ip);
-      if (!success) return res.status(429).json({ error: "Too many attempts — try again shortly" });
-    } catch (e) {
-      console.error("[api/feedback] rate-limit check failed, allowing through:", e?.message);
-    }
-  }
-
-  if (!safeEqual(req.headers["x-admin-password"], ADMIN_PASSWORD)) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  const auth = await checkAdminPassword(req, ADMIN_PASSWORD, attemptLimiter, "api/feedback");
+  if (auth === 429) return res.status(429).json({ error: "Too many attempts — try again shortly" });
+  if (auth === 401) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     const columns = "id,session_id,created_at,confidence_score,post_feedback_knew_something,post_feedback_useful_text,post_feedback_would_change,post_feedback_change_details";
