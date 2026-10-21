@@ -10,6 +10,8 @@ import { hasAccess } from "../../lib/entitlement.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import InfoButton from "../InfoButton.jsx";
 import LoanCompare from "./LoanCompare.jsx";
+import ScenarioModelling from "./ScenarioModelling.jsx";
+import { runPlan } from "../../lib/loanPlan.js";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
@@ -18,7 +20,7 @@ import { PillSlider } from "../PillSlider.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { ExploreToggle } from "../ModuleScreenParts.jsx";
-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CDARK, CRITICAL, SUCCESS } from "../../design-tokens.js";
+import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CDARK, CRITICAL, SUCCESS, STUDENT_PURPLE } from "../../design-tokens.js";
 
 // £ in thousands, to one place under £100k: £18.5k, £3.9k, £15k, £120k.
 const k = n => { const v = Math.abs(Math.round(n || 0)); return v >= 100000 ? `£${Math.round(v / 1000)}k` : v >= 1000 ? `£${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : fmt(v); };
@@ -93,6 +95,10 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   const { scenarios, baseProjection } = calcOverpaymentScenarios(m, sl, [overpayAmt]);
   const selectedScenario = scenarios[0];
   const cost = loanCostComparison(m, sl);
+  // A subscriber's repayment plan on the chart (ScenarioModelling), beside
+  // the lump sum: the one picked, once it has a payment in it.
+  const shownPlan = compareOpen ? (d.slPlans || []).find(p => p.id === d.slPlanShown && p.items?.length) : null;
+  const planRun = shownPlan ? runPlan(m, sl, shownPlan) : null;
   // Heading for write-off: the smallest lump sum that clears it, and the
   // best one from spare cash if it comes out ahead counting savings interest.
   const tip = lumpToClear(m, sl);
@@ -134,13 +140,13 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
         </>
       )}
 
-      <LoanTrajectory d={d} m={m} tip={tip} savingsRates={savingsRates} ageKnown={+d.age > 0} setOverpayAmt={setOverpayAmt} overpayOptions={overpayOptions} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
+      <LoanTrajectory d={d} m={m} tip={tip} savingsRates={savingsRates} ageKnown={+d.age > 0} setOverpayAmt={setOverpayAmt} overpayOptions={overpayOptions} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth} subscriber={compareOpen} planRun={planRun} planName={shownPlan?.name}/>
 
 
       {pg && <PostgradLoan pg={pg} sl={sl}/>}
 
       {!sl.belowThreshold && (compareOpen
-        ? <LoanCompare d={d} m={m} sl={sl} set={set} open picked={overpayAmt}/>
+        ? <LoanCompare d={d} m={m} sl={sl} set={set} open picked={overpayAmt} plan={planRun ? { name: shownPlan.name, run: planRun } : null}/>
         : (
           <>
             {!worthOverpaying && <WhereItCouldGo m={m} locked={!alternativesOpen}/>}
@@ -161,7 +167,7 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
 // Your loan trajectory: when the balance starts falling, and the balance
 // year by year to when it clears or is written off.
-function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, overpayOptions, selectedScenario, baseProjection, worthOverpaying, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth }) {
+function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, overpayOptions, selectedScenario, baseProjection, worthOverpaying, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth, subscriber = false, planRun = null, planName = null }) {
   // Suggests the balance after paying the currently-selected slider amount,
   // rather than a blank/current-balance starting point — if the user came
   // here having just modelled an overpayment above, that's almost certainly
@@ -214,7 +220,8 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
         )}
 
         <div ref={balanceChartRef} style={{width:"100%",marginBottom:"6px"}}>
-          <BalanceChart sl={sl} width={balanceChartWidth} alt={selectedScenario?.path} altLabel={overpayAmt > 0 ? `With ${fmt(overpayAmt)} paid now` : null}/>
+          <BalanceChart sl={sl} width={balanceChartWidth} alt={selectedScenario?.path} altLabel={overpayAmt > 0 ? `With ${fmt(overpayAmt)} paid now` : null}
+            plan={planRun?.path} planLabel={planRun ? planName : null}/>
         </div>
 
         {/* The headline figures straight under the chart; what's left as it
@@ -225,7 +232,6 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
         {editingBalance && (
           <LoanBalanceEditor d={d} m={m} set={set} savingsRates={savingsRates} initial={balanceInput} onClose={closeBalanceEditor}/>
         )}
-        <TurningPoint sl={sl}/>
 
         {/* The figures to try, which the chart and figures above move with:
             salary growth first, as it decides most whether the loan is
@@ -236,6 +242,7 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
             <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",fontWeight:700,color:G,marginBottom:"12px"}}>
               <SlidersHorizontal size={14}/>Try your own figures
             </div>
+            {set && !sl.belowThreshold && <ScenarioModelling d={d} m={m} sl={sl} set={set} open={subscriber} run={planRun}/>}
             {set && <PayGrowth d={d} m={m} set={set}/>}
             {showLump && (
               <LumpSum m={m} sl={sl} tip={tip} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} options={overpayOptions} scenario={selectedScenario} base={baseProjection} worthOverpaying={worthOverpaying}/>
@@ -311,18 +318,27 @@ function PayGrowth({ d, m, set }) {
 // pounds only; whether it beats savings is the Opportunity tile's answer.
 // Year 1 is this tax year, so a loan cleared in year n is cleared by April
 // taxYear + n, and the write-off is in April taxYear + writeOffYr.
+// Under it, one line: whether the balance is falling (the turning point,
+// where repayments overtake the interest), the write-off, and what paying
+// early does.
 function ClearOrWriteOff({ sl }) {
   const taxYear = sl.writeOffTaxYear - sl.writeOffYr;
-  const early = sl.writeOffYr - sl.clearYr;
-  const [figure, note] = sl.willClear
-    ? [`Cleared by April ${taxYear + sl.clearYr}`,
-       `${early > 0 ? `${early === 1 ? "A year" : `${early} years`} before` : "Just before"} it would be written off, in April ${sl.writeOffTaxYear}. Paying early lowers what you repay in all.`]
-    : [`Written off April ${sl.writeOffTaxYear}`,
-       `About ${fmt(sl.writeOffBal)} still owed then is cancelled. Paying early mostly shrinks that, not what you pay, so the loan works more like a graduate tax.`];
+  const figure = sl.willClear ? `Cleared by April ${taxYear + sl.clearYr}` : `Written off April ${sl.writeOffTaxYear}`;
+  const [lead, turning] = sl.balanceFallingNow
+    ? ["Falling now", "your repayments already outpace the interest"]
+    : sl.turningTaxYear
+      ? [`Starts falling April ${sl.turningTaxYear}`, "until then it keeps growing"]
+      : ["Never falls before write-off", "repayments never overtake the interest"];
+  const parts = sl.willClear
+    ? [`Write-off April ${sl.writeOffTaxYear}`, "Paying early lowers what you repay in all."]
+    : [`About ${fmt(sl.writeOffBal)} cancelled then`, "Paying early mostly shrinks that, not what you pay."];
+  const dot = <span aria-hidden="true" style={{color:MUT,margin:"0 6px"}}>•</span>;
   return (
     <div style={{marginBottom:"8px"}}>
       <div style={{fontFamily:SERIF,fontSize:"28px",color:G,fontWeight:700,lineHeight:1.15}}>{figure}</div>
-      <div style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,marginTop:"4px"}}>{note}</div>
+      <div style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,marginTop:"4px"}}>
+        <span style={{color:G,fontWeight:700}}>{lead}:</span> {turning}{dot}{parts[0]}{dot}{parts[1]}
+      </div>
     </div>
   );
 }
@@ -571,26 +587,13 @@ function SpareCheck({ d, m, sl, amount }) {
   );
 }
 
-// The turning point: the year repayments overtake the interest, so the
-// balance starts falling rather than just growing more slowly.
-function TurningPoint({ sl }) {
-  const [lead, note] = sl.balanceFallingNow
-    ? ["Falling now.", "Your repayments already outpace the interest."]
-    : sl.turningTaxYear
-      ? [`Starts falling April ${sl.turningTaxYear}.`, "Until then it keeps growing, even with repayments coming off your pay."]
-      : ["Never falls before write-off.", "On these figures, repayments never overtake the interest."];
-  return (
-    <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
-      <span style={{color:G,fontWeight:600}}>{lead}</span> {note}
-    </p>
-  );
-}
-
 // The balance year by year (sl.balancePath), its peak marked: the peak is
 // the turning point, where repayments overtake the interest.
 // `alt`: the same, with a lump sum paid today (calcOverpaymentScenarios), as
 // a dashed second line.
-function BalanceChart({ sl, width, alt = null, altLabel = null }) {
+// `alt`: a lump sum today, dashed gold; `plan`: a repayment plan
+// (ScenarioModelling), purple. Each named in a key at the top.
+function BalanceChart({ sl, width, alt = null, altLabel = null, plan = null, planLabel = null }) {
   const path = sl.balancePath || [];
   if (path.length < 2) return null;
   const VW = width, VH = 160, PL = 36, PR = 8, PT = 24, PB = 20;
@@ -598,7 +601,7 @@ function BalanceChart({ sl, width, alt = null, altLabel = null }) {
   // The y-axis spans the balance's own range, not £0 up, so a hump of a few
   // thousand on a £40k loan is visible; the labelled gridlines keep the scale
   // honest. A loan that clears runs to £0, so its axis starts there anyway.
-  const lo = Math.min(...path.map(p => p.bal), ...(alt || []).map(p => p.bal)), hi = sl.peakBal;
+  const lo = Math.min(...path.map(p => p.bal), ...(alt || []).map(p => p.bal), ...(plan || []).map(p => p.bal)), hi = sl.peakBal;
   const pad = (hi - lo) * 0.25 || hi * 0.05 || 1;
   const yMin = Math.max(0, lo - pad), yMax = hi + pad * 0.5;
   const sx = yr => PL + (yr / lastYr) * (VW - PL - PR);
@@ -662,10 +665,20 @@ function BalanceChart({ sl, width, alt = null, altLabel = null }) {
       {end.bal > 0 && (
         <text x={VW-PR} y={sy(end.bal) + (end.bal < path[path.length - 2].bal ? 16 : -10)} fontSize="10" fontWeight="700" fill={G} textAnchor="end">{fmt(end.bal)} written off</text>
       )}
+      {plan && plan.length > 1 && (
+        <path d={plan.map((p, i) => `${i ? "L" : "M"}${sx(p.yr).toFixed(1)},${sy(p.bal).toFixed(1)}`).join(" ")}
+          fill="none" stroke={STUDENT_PURPLE} strokeWidth="2.2" strokeDasharray="1.5 3.5" strokeLinecap="round" strokeLinejoin="round"/>
+      )}
       {altLabel && (
         <g>
           <line x1={PL} x2={PL + 16} y1={8} y2={8} stroke={GOLD} strokeWidth="2.2" strokeDasharray="5 4"/>
           <text x={PL + 20} y={11} fontSize="9.5" fontWeight="700" fill={G}>{altLabel}</text>
+        </g>
+      )}
+      {planLabel && plan && (
+        <g>
+          <line x1={VW - PR - 16} x2={VW - PR} y1={8} y2={8} stroke={STUDENT_PURPLE} strokeWidth="2.2" strokeDasharray="1.5 3.5" strokeLinecap="round"/>
+          <text x={VW - PR - 20} y={11} fontSize="9.5" fontWeight="700" fill={G} textAnchor="end">{planLabel}</text>
         </g>
       )}
       <text x={PL} y={VH-4} fontSize="9" fontWeight="700" fill={MUT} textAnchor="start">{startYear}</text>

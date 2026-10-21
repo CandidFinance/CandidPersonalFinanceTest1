@@ -1,13 +1,14 @@
 import { useState } from "react";
-import posthog from "posthog-js";
 import { Lock, ShieldCheck, TrendingUp, ChevronDown } from "lucide-react";
 import { loanComparison } from "../../lib/loanCompare.js";
 import { pensionAccessAge } from "../../lib/pension.js";
-import { PLANS, startCheckout } from "../../lib/entitlement.js";
+import { planEvents } from "../../lib/loanPlan.js";
+import SubscribeButtons from "./SubscribeButtons.jsx";
+import { PillSlider } from "../PillSlider.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, CRITICAL, SUCCESS } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS } from "../../design-tokens.js";
 
 // The student loan page's "Where £X does most" (lib/loanCompare.js): the
 // lump sum being tried above (`amount`; a stand-in until one's picked),
@@ -17,7 +18,9 @@ import { G, GOLD, WHITE, MUT, TEXT, SERIF, CRITICAL, SUCCESS } from "../../desig
 // say how it's worked out. For subscribers; anyone else sees the
 // top tile and the rest blurred, with the way to subscribe. A mortgage not
 // yet known is a tile to tap, which asks for it here (its rate and what's
-// owed).
+// owed). With a repayment plan on the chart (`plan`, its run from
+// loanPlan.js runPlan), subscribers switch between it and the lump sum: the
+// plan's payments, each valued from the year it's paid.
 
 const ROWS = {
   loan:         { title: "Paying it into the loan", note: (r, c) => c.cleared ? "Repayments you no longer make, kept in savings." : "Repayments you no longer make, kept in savings. Most of it would otherwise have been written off." },
@@ -36,21 +39,15 @@ const SURE = {
 // Until a lump sum is picked above: £5,000, or the balance if it's less.
 const STAND_IN = 5000;
 
-export default function LoanCompare({ d, m, sl, set, open, picked }) {
-  const amount = picked > 0 ? picked : Math.min(STAND_IN, Math.round(m.loanBal));
+export default function LoanCompare({ d, m, sl, set, open, picked, plan = null }) {
+  const lump = picked > 0 ? picked : Math.min(STAND_IN, Math.round(m.loanBal));
   const [asking, setAsking] = useState(false);
   const [opened, setOpened] = useState(() => new Set());
-  const [busy, setBusy] = useState(null);
-  const [error, setError] = useState(null);
-  const c = loanComparison(d, m, sl, amount);
+  const [mode, setMode] = useState("plan");
+  const usePlan = open && plan && planEvents(plan.run).length > 0 && mode === "plan";
+  const c = loanComparison(d, m, sl, usePlan ? planEvents(plan.run) : lump);
   if (!c) return null;
 
-  const subscribe = async plan => {
-    setBusy(plan); setError(null);
-    posthog.capture("checkout_started", { module: "studentLoan", plan, from: "loan_compare" });
-    try { await startCheckout(plan, "studentLoan", d.email); }
-    catch (e) { setError(e.message); setBusy(null); }
-  };
   const tile = { background:WHITE, borderRadius:"12px", padding:"12px 14px", marginTop:"8px", boxShadow:"0 1px 4px rgba(22,47,36,0.12), 0 0 0 1px rgba(22,47,36,0.04)" };
   const valued = c.rows.filter(r => !r.ask);
   const ask = c.rows.find(r => r.ask);
@@ -79,10 +76,17 @@ export default function LoanCompare({ d, m, sl, set, open, picked }) {
 
   return (
     <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-      <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px"}}>Where {fmt(amount)} does most</div>
+      <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px"}}>Where {usePlan ? `${plan.name}'s ${fmt(c.amount)}` : fmt(c.amount)} does most</div>
+      {open && plan && planEvents(plan.run).length > 0 && (
+        <div style={{marginBottom:"8px"}}>
+          <PillSlider compact value={usePlan ? "plan" : "lump"} onChange={setMode} options={[{ value:"lump", label:"Lump sum" }, { value:"plan", label:plan.name }]}/>
+        </div>
+      )}
       <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:0}}>
-        What {picked > 0 ? "the lump sum above" : "it"} comes to by April {c.byTaxYear}, when your loan would {c.cleared ? "be cleared" : "be written off"}, largest first.
-        {!(picked > 0) && " Pick a lump sum above to try another amount."}
+        {usePlan
+          ? `${plan.name}'s payments, each from the year it's paid, and what they come to by April ${c.byTaxYear}, when your loan would ${c.cleared ? "be cleared" : "be written off"}, largest first.`
+          : `What ${picked > 0 ? "the lump sum above" : "it"} comes to by April ${c.byTaxYear}, when your loan would ${c.cleared ? "be cleared" : "be written off"}, largest first.`}
+        {!usePlan && !(picked > 0) && " Pick a lump sum above to try another amount."}
       </p>
       {key}
 
@@ -95,14 +99,7 @@ export default function LoanCompare({ d, m, sl, set, open, picked }) {
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"10px",textAlign:"center",padding:"0 12px"}}>
             <span style={{width:"40px",height:"40px",borderRadius:"50%",background:WHITE,border:"1.5px solid rgba(22,47,36,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}><Lock size={18} color={G}/></span>
             <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"250px"}}>Every option side by side, your mortgage included, comes with a subscription</span>
-            <div style={{display:"flex",gap:"8px"}}>
-              {["monthly", "yearly"].map(p => (
-                <button key={p} type="button" disabled={!!busy} onClick={() => subscribe(p)} style={{background:p === "yearly" ? G : WHITE,color:p === "yearly" ? WHITE : G,border:`1.5px solid ${G}`,borderRadius:"100px",padding:"8px 14px",fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer",opacity:busy && busy !== p ? 0.5 : 1}}>
-                  {PLANS[p].price} {PLANS[p].per}
-                </button>
-              ))}
-            </div>
-            {error && <span style={{fontSize:"12px",color:CRITICAL}}>{error}</span>}
+            <SubscribeButtons d={d} module="studentLoan" from="loan_compare"/>
           </div>
         </div>
       )}

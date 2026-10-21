@@ -87,3 +87,17 @@ test("a pension on track to be taxed at 40% in retirement keeps less of what it 
   // income), so more paid in gets 40%, not 60%.
   assert.equal(p.reliefPct, 40);
 });
+
+test("a plan's payments, each valued from the date it's paid; one payment today is the lump sum", () => {
+  const m = calcMetrics(writtenOff), sl = calcStudentLoanScenario(writtenOff, m);
+  assert.deepEqual(loanComparison(writtenOff, m, sl, [{ at: 0, amount: 5000 }]), loanComparison(writtenOff, m, sl, 5000));
+  const later = loanComparison(writtenOff, m, sl, [{ at: 3, amount: 5000 }]);
+  assert.equal(row(later, "savings").value, Math.round(5000 * Math.pow(1 + sl.cashRate / 100, later.years - 3)));
+});
+
+test("a mortgage paid off by earlier payments takes no more at its rate", () => {
+  const d = { ...writtenOff, slCompareMortgage: "yes", mortgageRate: "5", mortgageBalance: "3000" };
+  const m = calcMetrics(d), sl = calcStudentLoanScenario(d, m);
+  const c = loanComparison(d, m, sl, [{ at: 0, amount: 3000 }, { at: 1, amount: 2000 }]), y = c.years, cash = sl.cashRate / 100;
+  assert.equal(row(c, "mortgage").value, Math.round(3000 * Math.pow(1.05, y) + 2000 * Math.pow(1 + cash, y - 1)));
+});
