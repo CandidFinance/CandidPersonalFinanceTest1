@@ -348,7 +348,8 @@ function ClearOrWriteOff({ sl }) {
 }
 
 // The figures behind it, in pairs: today's balance against what's repaid in
-// all, and the interest added each year against what's repaid each year.
+// all, and this year's interest against this year's repayments (from
+// today's pay, so salary growth doesn't move them).
 // Four tiles: two by two on a phone, one row across where there's room
 // (`wide`, e.g. on a computer). With `cost` (studentLoan.js
 // loanCostComparison), "Total you'll repay" has a ? that opens, right under
@@ -392,11 +393,11 @@ function LoanStats({ sl, balanceLabel, balance, editBalance = null, wide = false
         </div>
       )}
       <div style={tile}>
-        {label(`Annual interest (${sl.slRatePct}%)`)}
+        {label(`Interest this year (${sl.slRatePct}%)`)}
         <div style={{...figure,marginTop:"2px"}}>{fmt(sl.annualInterest)}/yr</div>
       </div>
       <div style={tile}>
-        {label("Annual repayments")}
+        {label("Repayments this year")}
         <div style={{...figure,marginTop:"2px"}}>{fmt(sl.annualRep)}/yr</div>
       </div>
     </div>
