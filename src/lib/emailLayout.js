@@ -6,7 +6,8 @@
 // card with the wordmark (public/email/candid-logo.png) and a short gold
 // rule, Playfair Display for the greeting, headings and sign-off (Georgia
 // where a mail app won't load web fonts), DM Sans for the rest, gold-dot
-// bullets and green pill buttons; the small print under the card.
+// bullets and pill buttons in the site's CTA blue (CTA_BLUE, Apple's
+// button blue); the small print under the card.
 // Email-safe: tables and inline styles only, light scheme only.
 //
 // Text within a block: a string, or a list of pieces, each a string,
@@ -24,7 +25,7 @@
 export const SITE = "https://www.candid-finance.co.uk";
 const COMPANY = "Candid Personal Finance Ltd · Company no. 17383565 · 66 Paul Street, London, EC2A 4NA";
 
-const C = { green: "#162f24", gold: "#c4963a", cream: "#faf7f0", line: "#ece6d9", text: "#1a1a1a", muted: "#6b6b6b", success: "#2d6b4a" };
+const C = { blue: "#0071E3", green: "#162f24", gold: "#c4963a", cream: "#faf7f0", line: "#ece6d9", text: "#1a1a1a", muted: "#6b6b6b", success: "#2d6b4a" };
 const SANS = "'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const SERIF = "'Playfair Display',Georgia,'Times New Roman',serif";
 const FONTS = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@700&display=swap";
@@ -73,7 +74,7 @@ function htmlOf(b) {
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">${rows}</table>`;
   }
   if (b.button) {
-    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px;"><tr><td style="border-radius:100px;background:${C.green};"><a href="${esc(b.button.href)}" style="display:inline-block;padding:13px 26px;border-radius:100px;font-family:${SANS};font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">${esc(b.button.label)}</a></td></tr></table>`;
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px;"><tr><td style="border-radius:100px;background:${C.blue};"><a href="${esc(b.button.href)}" style="display:inline-block;padding:13px 26px;border-radius:100px;font-family:${SANS};font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">${esc(b.button.label)}</a></td></tr></table>`;
   }
   if (b.panel) {
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px;"><tr><td style="padding:14px 16px;background:${C.cream};border:1px solid ${C.line};border-radius:12px;">`

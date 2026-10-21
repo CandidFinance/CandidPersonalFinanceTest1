@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { renderEmail } from "./emailLayout.js";
-import { confirmEmail, signInEmail, referralRewardEmail, confirmedWelcomeEmail } from "./accountEmails.js";
+import { confirmEmail, signInEmail, referralRewardEmail, confirmedWelcomeEmail, confirmReminderEmail } from "./accountEmails.js";
 import { welcomeEmail } from "./weekly.js";
 
 test("One email, as HTML and plain text: the same words in each", () => {
@@ -61,4 +61,12 @@ test("A free user's welcome: rate alerts offered to a founding user who hasn't a
   assert.match(on.text, /Your link is in Candid, under Edit inputs/);
   const later = confirmedWelcomeEmail({ ...base, founding: false, optedIn: false });
   assert.doesNotMatch(later.text, /founding|Turn on rate alerts/);
+});
+
+test("The reminder to confirm: a fresh link on a CTA-blue button, and the founding offer while it's open", () => {
+  const r = confirmReminderEmail({ name: "Jo", url: "https://c", days: 14, founding: true, unsubscribeUrl: "https://u" });
+  assert.match(r.html, /background:#0071E3;"><a href="https:\/\/c"[^>]*>Confirm my email<\/a>/);
+  assert.match(r.text, /isn't confirmed yet/);
+  assert.match(r.text, /founding user, with rate alerts free/);
+  assert.doesNotMatch(confirmReminderEmail({ name: "Jo", url: "https://c", days: 14, founding: false, unsubscribeUrl: "https://u" }).text, /founding/);
 });

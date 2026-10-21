@@ -1,7 +1,8 @@
 import { isAllowedOrigin, clientIp, safeEqual, rateLimiter, checkAdminPassword } from "../server/http.js";
 import { alertsDue, alertEmail, inputsFromRow, isFounding, FREE_RATES_DELAY_DAYS } from "../src/lib/alerts.js";
 import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS, REFERRAL_MONTHS } from "../src/lib/weekly.js";
-import { confirmedWelcomeEmail } from "../src/lib/accountEmails.js";
+import { confirmedWelcomeEmail, confirmReminderEmail } from "../src/lib/accountEmails.js";
+import { confirmUrl, LINK_DAYS } from "../server/confirmLink.js";
 import { unsubscribeUrl, optInUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from "../server/alertMail.js";
 import { referralLink } from "../server/referrals.js";
 
@@ -25,6 +26,9 @@ import { referralLink } from "../server/referrals.js";
 //  - A free user's welcome goes the day after they confirm their email
 //    (alert_sends key "confirmed"): rate alerts to turn on, free for
 //    founding users, and their invite link (confirmedWelcomes).
+//  - An address still not confirmed two days after its confirmation email
+//    gets one reminder, with a fresh link (alert_sends key
+//    "confirm-reminder", confirmReminders).
 //  - ?action=unsubscribe&t=…, the link in every email (and its one-click
 //    List-Unsubscribe header): adds the email to `alert_optouts`.
 //  - ?action=optin&t=…, the welcome's link: a tick box that turns on rate
@@ -57,6 +61,9 @@ const SENT_LOOKBACK_DAYS = 400;
 // A confirmation older than this gets no welcome: a missed run catches up,
 // but no one who confirmed long ago gets one out of the blue.
 const WELCOME_LOOKBACK_DAYS = 4;
+// The reminder to confirm: this many UK days after the first confirmation
+// email, and not for one older than the link's life.
+const REMINDER_AFTER_DAYS = 2;
 const DAY_MS = 86400000;
 const RUN_BUDGET_MS = 50000;
 const CONCURRENCY = 3;
@@ -169,19 +176,45 @@ async function confirmedWelcomes(today, { verified, people, out, sentBy, codeOf,
   return emails.filter(Boolean);
 }
 
+// One reminder for an address not yet confirmed, REMINDER_AFTER_DAYS (by UK
+// date) after its first confirmation email. Not for subscribers, who sign in
+// with theirs, or anyone who has stopped Candid's emails.
+async function confirmReminders(today, { pending, people, out, sentBy }, notes) {
+  const subscribers = new Set(people.filter(p => p.who === "subscriber").map(p => p.email));
+  const due = (pending || []).filter(v => {
+    const email = cleanEmail(v.email);
+    return email && ukDay(v.created_at) <= ukDay(today - REMINDER_AFTER_DAYS * DAY_MS) && today - new Date(v.created_at) < LINK_DAYS * DAY_MS
+      && !out.has(email) && !subscribers.has(email) && !(sentBy.get(email) || []).some(s => s.alert_key === "confirm-reminder");
+  });
+  const emails = await Promise.all(due.map(async v => {
+    const email = cleanEmail(v.email);
+    try {
+      const [row] = await rowsFor(email, "name");
+      const mail = confirmReminderEmail({ name: row?.name, url: confirmUrl(email), days: LINK_DAYS, founding: isFounding(today), unsubscribeUrl: unsubscribeUrl(email) });
+      return { to: email, who: "unconfirmed", kind: "confirmReminder", key: "confirm-reminder", detail: null, ...mail };
+    } catch (e) {
+      notes.push(`couldn't write the reminder for one unconfirmed address: ${e.message}`);
+      return null;
+    }
+  }));
+  return emails.filter(Boolean);
+}
+
 export async function plan(today = new Date(), { drafts = false, makeCodes = false } = {}) {
   const notes = [];
   const since = new Date(today - SENT_LOOKBACK_DAYS * 86400000).toISOString();
   const week = weeklyWeek(today);
-  const [people, optouts, verified, sent, rates, issues, codes] = await Promise.all([
+  const [people, optouts, verifications, sent, rates, issues, codes] = await Promise.all([
     recipients(notes),
     optional("alert_optouts?select=email", notes, "alert_optouts"),
-    optional("email_verifications?select=email,verified_at&verified_at=not.is.null", notes, "email_verifications"),
+    optional("email_verifications?select=email,verified_at,created_at", notes, "email_verifications"),
     optional(`alert_sends?select=email,alert_key,kind,sent_at,detail&sent_at=gte.${since}`, notes, "alert_sends"),
     db(`savings_rates?select=${RATE_COLUMNS}&order=rate_aer.desc`),
     week ? optional(`weekly_issues?select=week,subject,intro,items,approved_at&week=eq.${week}`, notes, "weekly_issues") : [],
     optional("referral_codes?select=email,code", notes, "referral_codes"),
   ]);
+  const verified = verifications && verifications.filter(v => v.verified_at);
+  const pending = verifications && verifications.filter(v => !v.verified_at);
   // Invite links for the welcome: read only, so a preview never makes one.
   const codeOf = new Map((codes || []).map(c => [cleanEmail(c.email), c.code]));
   // This week's Sunday email: approved, or for the preview, a draft.
@@ -224,6 +257,7 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
     }
   }
   emails.push(...await confirmedWelcomes(today, { verified, people, out, sentBy, codeOf, makeCodes }, notes));
+  emails.push(...await confirmReminders(today, { pending, people, out, sentBy }, notes));
   return { emails, notes, people: people.length, ready: optouts !== null && sent !== null };
 }
 

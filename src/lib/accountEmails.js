@@ -1,8 +1,9 @@
 // The emails about someone's account, in the same layout as the rest
 // (emailLayout.js): confirming an email address (api/email.js), a sign-in
 // link (api/billing.js), a friend's invite rewarded (server/referrals.js),
-// and the welcome the day after a free user confirms (api/alerts.js). Each
-// { subject, text, html }. Pure, unit tested in emailLayout.test.js.
+// and from the daily run (api/alerts.js), a reminder to confirm and the
+// welcome the day after a free user does. Each { subject, text, html }.
+// Pure, unit tested in emailLayout.test.js.
 
 import { renderEmail, SITE } from "./emailLayout.js";
 
@@ -38,6 +39,24 @@ export function signInEmail({ url }) {
       { small: "If you didn't ask for this, you can ignore it." },
     ],
     signoff: false,
+  });
+}
+
+// Once, a couple of days after the confirmation email, for an address
+// still not confirmed. `url`: a fresh link, good for `days`. `founding`:
+// confirming now makes them a founding user.
+export function confirmReminderEmail({ name, url, days, founding, unsubscribeUrl }) {
+  return renderEmail({
+    subject: "Confirm your email for Candid",
+    preheader: founding ? "Confirm it and rate alerts are free for you." : "One tap to confirm it's you.",
+    greeting: hi(name),
+    blocks: [
+      { p: "You left this email address on Candid, but it isn't confirmed yet." },
+      ...(founding ? [{ p: "Confirm it and you're a founding user, with rate alerts free: an email when a better savings rate could earn you £100+ a year more on your figures - at most once a month." }] : []),
+      { button: { label: "Confirm my email", href: url } },
+      { small: `The link works for ${days} days. If you didn't enter this address on Candid, ignore this email and nothing more will be sent.` },
+    ],
+    unsubscribeUrl,
   });
 }
 

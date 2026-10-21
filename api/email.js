@@ -1,6 +1,6 @@
-import crypto from "crypto";
 import { promises as dns } from "dns";
-import { isAllowedOrigin, clientIp, safeEqual, rateLimiter } from "../server/http.js";
+import { isAllowedOrigin, clientIp, rateLimiter } from "../server/http.js";
+import { confirmUrl, emailFromConfirmToken, LINK_DAYS } from "../server/confirmLink.js";
 import { checkEmail } from "../src/lib/emailCheck.js";
 import { recordReferral, rewardReferral } from "../server/referrals.js";
 import { confirmEmail } from "../src/lib/accountEmails.js";
@@ -37,7 +37,6 @@ const MAIL_REPLY_TO = "admin@candid-finance.co.uk";
 const SITE = "https://www.candid-finance.co.uk";
 
 const DNS_TIMEOUT_MS = 2500;
-const LINK_DAYS = 14;
 const RESEND_AFTER_MS = 10 * 60 * 1000;
 const MAX_SENDS = 5;
 const MODULE_TITLES = { cash: "Cash & savings", investments: "Investments", pension: "Pension", studentLoan: "Student loan", kids: "Kids & family" };
@@ -73,21 +72,6 @@ async function takesMail(domain) {
   } catch (e) {
     return e.code === "ENOTFOUND" || e.code === "ENODATA" ? "no" : "unknown";
   }
-}
-
-// ── The confirmation link: signed, and good for LINK_DAYS ────────────────────
-const sign = payload => crypto.createHmac("sha256", TOKEN_SECRET).update(`email-confirm:${payload}`).digest("base64url");
-function confirmUrl(email) {
-  const payload = `${Buffer.from(key(email)).toString("base64url")}.${Date.now().toString(36)}`;
-  return `${SITE}/api/email?action=confirm&t=${payload}.${sign(payload)}`;
-}
-function emailFromToken(t) {
-  if (!TOKEN_SECRET || typeof t !== "string") return null;
-  const [e, issued, sig] = t.split(".");
-  if (!e || !issued || !safeEqual(sig, sign(`${e}.${issued}`))) return null;
-  if (Date.now() - parseInt(issued, 36) > LINK_DAYS * 86400000) return null;
-  const { email } = checkEmail(Buffer.from(e, "base64url").toString());
-  return email ? key(email) : null;
 }
 
 // The confirmation email (src/lib/accountEmails.js), with the answer they
@@ -170,7 +154,7 @@ async function confirmLink(req, res) {
     if (!success) return res.status(429).send("Too many requests. Try again shortly.");
   }
   const t = String(req.query.t || "");
-  const email = emailFromToken(t);
+  const email = emailFromConfirmToken(t);
   if (!email) return res.status(400).send(page("Link not recognised", `<h1>That link isn't working</h1><p>It may be more than ${LINK_DAYS} days old. Enter your email in Candid again and we'll send a new one.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
   if (req.method === "GET") {
     const action = `/api/email?action=confirm&t=${encodeURIComponent(t)}`;
