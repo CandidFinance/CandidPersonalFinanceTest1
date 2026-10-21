@@ -5,8 +5,6 @@ import posthog from "posthog-js";
 import { Check, ChevronDown, Lock, X } from "lucide-react";
 import { G, GOLD, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT, CTA_BLUE } from "../../design-tokens.js";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
-import { pitchFor } from "../../lib/appEntry.js";
-import { moduleEstimate, studentLoanRepaid } from "../../lib/crossModule.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
 import { useEmailCheck, DidYouMean } from "../emailCheckForm.jsx";
@@ -20,26 +18,17 @@ import InviteFriends from "../InviteFriends.jsx";
 // frosted lines are stand-ins, not the real answer blurred, so nothing can
 // be read from the page. `onUnlock(ask, answer)` unlocks a free one and goes
 // on to the answer; `onLeaveEmail(email)` records an email for rate alerts
-// from someone not subscribing yet.
-// `preview`: the module's questions aren't answered yet (a locked module
-// opened before its walk-through), so the figure is Candid's estimate from
-// what it already knows, if it has one.
+// from someone not subscribing yet. It shows once the module's questions
+// are answered, so the figure is always their own.
 // `returnTo`: opened from that module's "add this to see the full answer":
 // a way back to it, where the answer now uses these figures, and closing
 // goes there too.
-export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLeaveEmail, preview = false, returnTo = null }) {
+export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLeaveEmail, returnTo = null }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const mod = getModuleBreakdown(d, m, statuses, null, "amount").moduleList.find(mm => mm.key === moduleKey);
   const ask = unlockAsk(d);
-  const estimate = !preview ? null : moduleKey === "studentLoan" ? studentLoanRepaid(d, m) : moduleEstimate(moduleKey, d, m);
-  const amount = !preview && mod?.amount > 0 ? mod.amount : 0;
-  // Before its questions, the paywall card carries the estimate instead:
-  // its low end, so it never overstates. Only a gain is set against what
-  // Candid costs, never a loan's repayments (`stake`).
-  const worth = amount > 0 ? amount : estimate ? estimate.low : 0;
-  const worthLabel = amount > 0 ? null : estimate?.stake ? "a year repaid from your pay, our estimate" : estimate ? "a year or more, our estimate" : null;
-  const range = estimate && (estimate.low === estimate.high ? fmt(estimate.low) : `${fmt(estimate.low)} to ${fmt(estimate.high)}`);
+  const amount = mod?.amount > 0 ? mod.amount : 0;
 
   // What's behind the frost, named, so it's clear what unlocking gets them.
   const hidden = amount > 0 ? ["Why it's happening", "Your options, and what each is worth"] : PREVIEW_LINES[moduleKey] || ["Where you stand", "What to keep an eye on"];
@@ -58,22 +47,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
       </div>
 
       {/* The figure is the first thing they see. */}
-      {preview ? (
-        <div style={{margin:"22px 0 4px"}}>
-          {estimate ? (
-            <>
-              <div style={{fontFamily:SERIF,fontSize:"44px",fontWeight:700,color:G,lineHeight:1.05}}>{range}</div>
-              <div style={{fontSize:"15px",color:TEXT,fontWeight:600,marginTop:"10px"}}>a year: {estimate.line.charAt(0).toLowerCase() + estimate.line.slice(1)}, our rough estimate</div>
-            </>
-          ) : (
-            <>
-              <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,lineHeight:1.2}}>Your {(meta?.title || moduleKey).toLowerCase()} answer</div>
-              <div style={{fontSize:"15px",color:TEXT,fontWeight:600,marginTop:"10px"}}>{pitchFor(moduleKey, d)}</div>
-            </>
-          )}
-          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>A few questions, then your figures and options, worked out in pounds.</p>
-        </div>
-      ) : amount > 0 ? (
+      {amount > 0 ? (
         <div style={{margin:"22px 0 4px"}}>
           <div style={{fontFamily:SERIF,fontSize:"64px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em"}}>{fmt(amount)}</div>
           <div style={{fontSize:"16px",color:TEXT,fontWeight:600,marginTop:"10px"}}>{mod.amountIsLumpSum ? "by the time they're 18, our estimate" : "a year, our estimate on your figures"}</div>
@@ -97,7 +71,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
 
       {ask.kind === "pay" && (
         <PaywallSheet returnTo={returnTo}>
-          <Subscribe moduleKey={moduleKey} returnTo={returnTo} title={meta?.title || moduleKey} d={d} amount={worth} label={worthLabel} compare={!estimate?.stake} lumpSum={!!mod?.amountIsLumpSum} onLeaveEmail={onLeaveEmail}/>
+          <Subscribe moduleKey={moduleKey} returnTo={returnTo} title={meta?.title || moduleKey} d={d} amount={amount} lumpSum={!!mod?.amountIsLumpSum} onLeaveEmail={onLeaveEmail}/>
         </PaywallSheet>
       )}
 
@@ -180,7 +154,7 @@ function PaywallSheet({ children, returnTo = null }) {
 // Subscribing: the two plans, then Stripe's own checkout page. Below, a way
 // back in for someone already subscribed (an emailed link), and a way to
 // hear about rate changes without subscribing.
-function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLeaveEmail, returnTo = null }) {
+function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnTo = null }) {
   const navigate = useNavigate();
   const backTitle = returnTo ? MODULE_META.find(mm => mm.key === returnTo)?.title : null;
   const [plan, setPlan] = useState("yearly");
@@ -220,7 +194,7 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
   const fine = { color:MUT, textDecoration:"underline", whiteSpace:"nowrap" };
   return (
     <div>
-      <Worth title={title} amount={amount} label={label} compare={compare} lumpSum={lumpSum}/>
+      <Worth title={title} amount={amount} lumpSum={lumpSum}/>
       {returnTo && (
         <button type="button" onClick={() => navigate(`/app/module/${returnTo}`)} style={{width:"100%",marginTop:"14px",background:WHITE,color:G,border:`1.5px solid ${G}`,borderRadius:"14px",padding:"11px 14px",fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
           <span style={{display:"block",fontSize:"14px",fontWeight:700}}>Back to {backTitle}</span>
@@ -243,7 +217,7 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
         ))}
       </div>
       <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:CTA_BLUE,opacity:busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
-        {busy && !panel ? "Opening checkout…" : "Subscribe and unlock everything"}
+        {busy && !panel ? "Opening checkout…" : "Subscribe and see your options"}
       </button>
       {error && !panel && <div style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
       {/* The other way in: a free month for inviting a friend
@@ -320,17 +294,20 @@ function Subscribe({ moduleKey, title, d, amount, label, compare, lumpSum, onLea
   );
 }
 
-// What a subscription includes, beyond the free first answer: only what's
-// there today. The gated modules (unlock.js SCORED_MODULES) and Assist on
-// them; the emails (api/alerts.js), once they're being sent, the same
-// setting that turns sending on; and sign-in on other devices
-// (SignInSetup.jsx), which is for subscribers.
+// What a subscription includes, beyond the free figures: only what's there
+// today, led by what keeps going after the first look (a subscription is
+// for staying current, not for more answers). The options in each gated
+// module (unlock.js SCORED_MODULES) and Assist on them; the figures worked
+// out again on each day's rates (api/rates.js); the emails (api/alerts.js),
+// once they're being sent, the same setting that turns sending on; and
+// sign-in on other devices (SignInSetup.jsx), which is for subscribers.
 const ALERTS_LIVE = import.meta.env.VITE_ALERTS_LIVE === "1";
 const INCLUDED = [
-  ["Unrestricted module access", "Deep-dive breakdowns across your Pension, Cash, Investments, Student Loan and Kids & family."],
-  ["Candid Assist", "On-demand AI guidance inside every module to explain your specific numbers."],
-  ALERTS_LIVE ? ["Proactive financial alerts", "Timely updates when a better savings rate appears, before your bonus lands, or as tax-year deadlines approach."] : null,
-  ["Cross-device sync", "Secure access across all your devices via Face ID, Touch ID or password."],
+  ["Kept up to date", "Your savings checked against each day's best rates, and every figure worked out again whenever you update your pay or savings."],
+  ALERTS_LIVE ? ["Alerts when something changes", "An email when a better savings rate appears, before your bonus lands, or as tax-year deadlines approach."] : null,
+  ["Your options in every module", "Why each figure is what it is, and what each option is worth, across Pension, Cash, Investments, Student Loan and Kids & family."],
+  ["Candid Assist", "Questions about your own numbers, answered inside every module."],
+  ["On all your devices", "Sign in with Face ID, a fingerprint or a password."],
 ].filter(Boolean);
 // Being built, with no dates promised. Something moves up to INCLUDED only
 // once it's live for subscribers.
@@ -348,21 +325,19 @@ const itemStyle = { display:"flex", gap:"8px", alignItems:"flex-start", fontSize
 // What this module is worth against what Candid costs a year: "3x" rounded
 // down, so it never overstates; "more than" under 2x. Lump sums (by 18) and
 // small amounts just show the figure; nothing found, just the module.
-// `label` replaces the line under the figure (an estimate before the
-// questions); `compare={false}` leaves out the comparison.
-function Worth({ title, amount, label = null, compare: comparable = true, lumpSum }) {
+function Worth({ title, amount, lumpSum }) {
   const kicker = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase", paddingRight:"40px" };
   if (!(amount > 0)) return <div style={{...kicker,marginTop:"6px"}}>{title}</div>;
   const cost = PLANS.yearly.amount;
   const times = Math.floor(amount / cost);
-  const compare = !comparable || lumpSum || amount <= cost ? null
+  const compare = lumpSum || amount <= cost ? null
     : times >= 2 ? `${times}x what Candid costs` : "more than Candid costs";
   return (
     <div>
       <div style={{...kicker,marginTop:"6px"}}>{title}</div>
       <div style={{fontFamily:SERIF,fontSize:"40px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em",marginTop:"8px"}}>{fmt(amount)}</div>
       <div style={{fontSize:"13.5px",color:TEXT,fontWeight:600,marginTop:"6px",lineHeight:1.4}}>
-        {label || (lumpSum ? "by the time they're 18, our estimate" : "a year, our estimate")}{compare && <span style={{color:G}}> · {compare}</span>}
+        {lumpSum ? "by the time they're 18, our estimate" : "a year, our estimate"}{compare && <span style={{color:G}}> · {compare}</span>}
       </div>
     </div>
   );

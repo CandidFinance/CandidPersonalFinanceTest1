@@ -2,8 +2,9 @@
 // what Assist says about it) stays hidden until it's unlocked. The first
 // module's answer is theirs for their email; every one after that needs a
 // subscription (src/lib/entitlement.js, api/billing.js), which unlocks them
-// all, and its frosted answer and the paywall show before its questions, so
-// nothing is answered for an answer they can't see. Modules unlocked before
+// all. Every module's questions can be answered free, and its £ figure is
+// shown (it adds to their total); what's behind the paywall is why, and
+// their options and what each is worth. Modules unlocked before
 // payments, with an email or a feedback question, stay unlocked.
 // They choose which to unlock, so the order never depends on which is
 // biggest. Pure, unit tested in unlock.test.js.

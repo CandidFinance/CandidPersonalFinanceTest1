@@ -15,7 +15,7 @@ import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
-import { isLocked, unlockPatch, firstUnlockPatch, unlockAsk, UNLOCK_GATE_ON } from "./lib/unlock.js";
+import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import { checkAccessOnLoad, accessInfo, saveStateSoon } from "./lib/entitlement.js";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
@@ -797,17 +797,6 @@ export default function AppShell() {
               navigate(`/app/module/${returnTo}`, { replace: true });
               scrollToTop();
             }}/>
-        </MobileLayout>
-      );
-    }
-    // A locked module needing a subscription: its frosted answer and the
-    // paywall first, before any questions (unlock.js).
-    if (moduleGuideStarts(mobileActiveModule, d) && isLocked(d, mobileActiveModule) && unlockAsk(d).kind === "pay" && !returnTo) {
-      return (
-        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
-          <MobileUnlock preview moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses}
-            onLeaveEmail={email => { set("email", email); set("alertsOptIn", true); posthog.capture("email_captured", { source: "paywall" }); setUnlockSaveTick(t => t + 1); }}
-            onUnlock={() => {}}/>
         </MobileLayout>
       );
     }
