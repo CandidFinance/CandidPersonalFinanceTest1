@@ -15,7 +15,7 @@ import { runPlan } from "../../lib/loanPlan.js";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
-import { salaryGrowthOf, trajectoryNearest, SALARY_GROWTH_MIN_PCT, SALARY_GROWTH_MAX_PCT } from "../../lib/metrics.js";
+import { salaryGrowthOf, trajectoryNearest, payPathOf, SALARY_GROWTH_MIN_PCT, SALARY_GROWTH_MAX_PCT } from "../../lib/metrics.js";
 import { PillSlider } from "../PillSlider.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -280,6 +280,26 @@ function PayGrowth({ d, m, set }) {
   // The input across about three quarters of the width, what it comes to
   // beside it, in the room its text needs.
   const side = { flex:"0 0 auto", textAlign:"right", lineHeight:1.25 };
+  // Pay by year in use (Scenario modelling): it sets pay, not the slider.
+  const path = payPathOf(d, +d.salary || 0, m.taxYear);
+  if (path) {
+    const avg = Math.round((Math.pow(path.factor(10), 0.1) - 1) * 1000) / 10;
+    return (
+      <div style={{marginBottom:"12px"}}>
+        <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",marginBottom:"4px"}}>
+          <span style={label}>Salary growth, next 10 years</span>
+          <button type="button" onClick={() => set("payByYear", [])} style={link}>Use a % instead</button>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+          <div style={{flex:"1 1 0",minWidth:0,fontSize:"12px",color:TEXT,lineHeight:1.45}}>Set year by year in Scenario modelling.</div>
+          <div style={side}>
+            <div style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>+{avg}%/yr</div>
+            <div style={{fontSize:"10.5px",color:MUT,fontWeight:600,whiteSpace:"nowrap"}}>({fmtK(Math.round(salary * path.factor(10) / 100) * 100)} in 10 yrs)</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div style={{marginBottom:"12px"}}>
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",marginBottom:"4px"}}>

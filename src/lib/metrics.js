@@ -1,7 +1,7 @@
 import { REDUNDANCY_TAX_FREE, scottishRate, ADDITIONAL_RATE_THRESHOLD, HIGHER_RATE_THRESHOLD, INCOME_TAX_RATES, ISA_ALLOWANCE, savingsTaxRates, cashIsaLimit, STATE_PENSION_WEEKLY, STATE_PENSION_FULL, calcNI, calcIncomeAndDividendTax, PAST_STATE_PENSION_AGE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
 import { taxYearFor } from "./taxYear.js";
 import { employerPct, unclaimedMatchPct } from "./employer.js";
-import { GROWTH_REAL_PCT, payFactor } from "./growth.js";
+import { GROWTH_REAL_PCT, payFactor, PAY_LATER_GROWTH } from "./growth.js";
 import { slRateIn, slRepaymentThreshold, SL_REPAYMENT_RATES, SL_REPAYMENT_THRESHOLDS, slYearsLeft, slThresholdIn, slEarnings, estimateSlBalance, hasPgLoan } from "./studentLoan.js";
 import { allocateCash } from "./cashAllocation.js";
 import { isaUsedThisYear } from "./isa.js";
@@ -19,6 +19,35 @@ export function salaryGrowthOf(d, fallback = SALARY_GROWTH_RATES.stable) {
   if (own > 0) return Math.min(SALARY_GROWTH_MAX_PCT, Math.max(SALARY_GROWTH_MIN_PCT, own)) / 100;
   return SALARY_GROWTH_RATES[d.salaryTrajectory] ?? fallback;
 }
+// Their pay year by year, where they know it (d.payByYear: [{ year, salary
+// }], the tax year from April and its pay in money of the day; a
+// subscriber's, set in Scenario modelling): from today's salary, rising
+// steadily between the years given, then with prices after the last. Usable
+// wherever a growth rate is (growth.js payFactor, payGrowthIn), as
+// { points, factor(years) }, pay `years` on as a multiple of today's. Null
+// without a year after this one.
+export function payPathOf(d, salary, taxYear) {
+  if (!(salary > 0)) return null;
+  const byYear = new Map();
+  for (const p of d.payByYear || []) if (+p.year > taxYear && +p.salary > 0) byYear.set(+p.year - taxYear, +p.salary);
+  if (!byYear.size) return null;
+  const points = [{ i: 0, pay: salary }, ...[...byYear].sort((a, b) => a[0] - b[0]).map(([i, pay]) => ({ i, pay }))];
+  const last = points[points.length - 1];
+  return {
+    points,
+    factor(years) {
+      if (years <= 0) return 1;
+      for (let k = 1; k < points.length; k++) {
+        const a = points[k - 1], b = points[k];
+        if (years <= b.i) return a.pay * Math.pow(b.pay / a.pay, (years - a.i) / (b.i - a.i)) / salary;
+      }
+      return last.pay * Math.pow(1 + PAY_LATER_GROWTH, years - last.i) / salary;
+    },
+  };
+}
+// The pay growth every projection uses: their pay by year, else a rate.
+export const payGrowthOf = (d, salary, taxYear, fallback) => payPathOf(d, salary, taxYear) || salaryGrowthOf(d, fallback);
+
 // The band nearest a rate of their own, kept alongside it for anything that
 // asks by band (the walk-through's question, a free user's saved row).
 export const trajectoryNearest = pct => pct < 3.5 ? "stable" : pct < 7.5 ? "moderate" : "high";
@@ -92,7 +121,11 @@ export function statePensionIncome(d) {
  */
 export function calcMetrics(d, marketRates = {}) {
   const { isaRate = 5.1, nonIsaRate = 5.1, rows = null } = marketRates;
-  const salaryGrowthRate = salaryGrowthOf(d);
+  // Pay by year where they've given it (payGrowth, for the projections),
+  // and as a single rate, its ten-year average then, for what's said in
+  // words (salaryGrowthRate).
+  const payGrowth = payGrowthOf(d, +d.salary || 0, taxYearFor(d));
+  const salaryGrowthRate = typeof payGrowth === "number" ? payGrowth : Math.pow(payGrowth.factor(10), 0.1) - 1;
   const salary = +d.salary||0, expenses = +d.monthlyExpenses||0,
         bonds = +d.premiumBonds||0;
   // Cash: prefer sum of cashTiers (more granular); fall back to d.cashSavings
@@ -155,7 +188,7 @@ export function calcMetrics(d, marketRates = {}) {
     annualRepayment = Math.max(0, (slPay - slThreshold) * slRepayRate);
     slRepaymentRegular = Math.max(0, (slPay - (+d.bonusAmount || 0) - slThreshold) * slRepayRate);
     const yearsLeft = slYearsLeft(d, slYear);
-    willClear = (() => { let b = loanBal; for (let y=1; y<=yearsLeft; y++) { const g = payFactor(slGrow, y - 1), s = slPay * g; b = b*(1 + slRateIn(d, salary * g, y - 1, slYear)) - Math.max(0,(s-slThresholdIn(d.studentLoan, slYear + y - 1))*slRepayRate); if(b<=0) return true; } return false; })();
+    willClear = (() => { let b = loanBal; for (let y=1; y<=yearsLeft; y++) { const g = payFactor(payGrowth, y - 1), s = slPay * g; b = b*(1 + slRateIn(d, salary * g, y - 1, slYear)) - Math.max(0,(s-slThresholdIn(d.studentLoan, slYear + y - 1))*slRepayRate); if(b<=0) return true; } return false; })();
   }
   // A Postgraduate loan alongside the main plan (GOV.UK: both are repaid at
   // once, 6% of pay over £21,000 on top of the main plan's 9%): its balance
@@ -313,7 +346,7 @@ export function calcMetrics(d, marketRates = {}) {
     cash, bonds, totalAssets, totalLiabilities, netWorth,
     taxBandLabel, adjustedNetIncome, nonSavingsIncome, bufferMonths,
     statePensionWeekly, statePensionAnnual, niYearsToFull,
-    daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate,
+    daysToFixExpiry, effectiveSavingsRate, salaryGrowthRate, payGrowth,
     propertyEquity, propertyValue, ltv,
     pensionStatus, personalLoanAnnualRepayment, personalLoanPayoffMonths,
     // For the pension figures that depend on how it's paid in (NI on salary

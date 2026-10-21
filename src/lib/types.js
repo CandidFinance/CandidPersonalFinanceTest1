@@ -253,7 +253,8 @@
  * @property {number} savingsTr Tax rate on savings interest, as a fraction.
  * @property {number} taxYear
  * @property {number} salarySacrifice
- * @property {number} salaryGrowthRate
+ * @property {number} salaryGrowthRate Pay growth as one rate: their own, their band, or the ten-year average of their pay by year.
+ * @property {number|Object} payGrowth What the projections use: salaryGrowthRate, or their pay by year (metrics.js payPathOf).
  * @property {number} monthlyTakeHome
  * @property {number} monthlySurplus
  * @property {number} monthlyShortfall More going out than coming in, a month (0 with a surplus).

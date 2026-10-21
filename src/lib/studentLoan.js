@@ -220,7 +220,7 @@ export function calcStudentLoanScenario(d, m) {
   // as if it never will be, and overpaying as if it's wasted.
   // Pay includes the bonus, less salary sacrifice (slEarnings), and the
   // threshold rises as the plan's rules say (slThresholdIn).
-  const growth = m.salaryGrowthRate ?? 0;
+  const growth = m.payGrowth ?? m.salaryGrowthRate ?? 0;
   const earnings = m.slEarnings ?? m.salary;
   // Pay rises at that rate for ten years, then with prices (growth.js).
   const repaymentIn = yr => Math.max(0, earnings * payFactor(growth, yr - 1) - slThresholdIn(d.studentLoan, taxYear + yr - 1)) * repayRateOf(d.studentLoan);

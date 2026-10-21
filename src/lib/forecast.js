@@ -25,7 +25,7 @@ export function studentLoanTerms(d, m) {
     repayRate: SL_REPAYMENT_RATES[d.studentLoan] ?? SL_REPAYMENT_RATES.plan1,
     earnings: m.slEarnings ?? m.salary,
     // The interest rate in each year (0 = this one), on that year's pay.
-    rate: year => slRateIn(d, m.salary * payFactor(m.salaryGrowthRate || 0, year), year, taxYear),
+    rate: year => slRateIn(d, m.salary * payFactor(m.payGrowth ?? (m.salaryGrowthRate || 0), year), year, taxYear),
   };
 }
 
@@ -121,7 +121,7 @@ export function calcLoanMarginalReturnCurve(d, m, sl, chartWidth = 340, layout =
   const mortReturn = 1 + mortRate / 100;
   const terms = studentLoanTerms(d, m);
   const planThreshold = terms.threshold;
-  const growthRate = m.salaryGrowthRate;
+  const growthRate = m.payGrowth ?? m.salaryGrowthRate;
   // simulateLoan compounds monthly, so the pension compounds monthly too —
   // equal rates then give identical lines.
   const pensionExponent = Math.log(1 + pensionGrowth / 12) / Math.log(1 + loanRate / 12);
@@ -207,16 +207,16 @@ export function calcForecast(d, m, surplusOverride, horizonYears, lumpSumOverrid
     const overBal = Math.max(0, m.loanBal - lump);
 
     // First check whether overpaying changes the write-off outcome at all
-    const baseWriteOff = simulateLoan(m.loanBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, writeOffYr, 0);
-    const overWriteOff = simulateLoan(overBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, writeOffYr, surplus);
+    const baseWriteOff = simulateLoan(m.loanBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, writeOffYr, 0);
+    const overWriteOff = simulateLoan(overBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, writeOffYr, surplus);
     // If the loan is written off in both scenarios, overpaying just reduces the amount forgiven — no benefit
     const writtenOffAnyway = !baseWriteOff.cleared && !overWriteOff.cleared;
 
     let slCentral = 0, slLow = 0, slHigh = 0;
     if (!writtenOffAnyway) {
       // Benefit = cumulative interest saved vs baseline (not a compounding figure)
-      const base = simulateLoan(m.loanBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, 0);
-      const over = simulateLoan(overBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, surplus);
+      const base = simulateLoan(m.loanBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, 0);
+      const over = simulateLoan(overBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, surplus);
       const interestSaved = Math.max(0, base.totalInterest - over.totalInterest);
       // Low/high reflect salary growth uncertainty — not rate-sensitive
       slCentral = Math.round(interestSaved);
@@ -312,8 +312,8 @@ export function calcForecastSeries(d, m, surplusOverride, horizonYears, lumpSumO
       const overBal = Math.max(0, m.loanBal - lump);
       // Simulate both scenarios once, capturing yearly cumulative interest snapshots
       const simYears = Math.min(horizonYears, writeOffYr);
-      const base = simulateLoan(m.loanBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, 0, true);
-      const over = simulateLoan(overBal, earnings, m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, surplus, true);
+      const base = simulateLoan(m.loanBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, 0, true);
+      const over = simulateLoan(overBal, earnings, m.payGrowth ?? m.salaryGrowthRate, baseSlRate, threshold, repayRate, simYears, surplus, true);
       // Flatline at the year the overpayment scenario clears: once cleared, the
       // interest saving is fully realised and the curve stops growing.
       const clearYear = over.monthsToClear !== null ? Math.ceil(over.monthsToClear / 12) : null;

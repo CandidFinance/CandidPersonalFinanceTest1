@@ -6,9 +6,10 @@
 
 import { calcIncomeTax } from "./tax.js";
 import { employerPct } from "./employer.js";
-import { salaryGrowthOf, retirementAgeFor } from "./metrics.js";
+import { payGrowthOf, retirementAgeFor } from "./metrics.js";
+import { taxYearFor } from "./taxYear.js";
 import { inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.js";
-import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT, INFLATION_PCT, PAY_FAST_YEARS, PAY_LATER_GROWTH } from "./growth.js";
+import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT, INFLATION_PCT, PAY_FAST_YEARS, PAY_LATER_GROWTH, payFactor } from "./growth.js";
 import { CASH_RATE_LOW } from "./forecast.js";
 import { DEFAULT_DRAWDOWN_YEARS } from "./drawdown.js";
 import { slEarnings, SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
@@ -103,13 +104,14 @@ export function pensionOutlook(d, m) {
 
   const myPct = +d.myContribution || 0;
   const rate = (myPct + employerPct(d, myPct)) / 100;
-  const fast = salaryGrowthOf(d, LATER_GROWTH);
+  // Their pay by year, or a rate for ten years then with prices (growth.js).
+  const growth = payGrowthOf(d, m.salary, taxYearFor(d), LATER_GROWTH);
   const g = GROWTH_NOMINAL_PCT / 100;
   const ani = m.adjustedNetIncome || m.salary;
   let pot = (+d.potValue || 0) + (+d.potValue2 || 0), pay = m.salary;
   let taperAge = null, lsaAge = null;
   for (let y = 1; y <= years; y++) {
-    pay *= 1 + (y <= FAST_GROWTH_YEARS ? fast : LATER_GROWTH);
+    pay = m.salary * payFactor(growth, y);
     pot = pot * (1 + g) + pay * rate;
     if (taperAge === null && ani < PA_TAPER_START && ani * pay / m.salary >= PA_TAPER_START) taperAge = age + y;
     if (lsaAge === null && pot >= LSA_INFLECTION_POT) lsaAge = age + y;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Lock, ChevronDown, X, Plus, Layers, Pencil, CircleAlert } from "lucide-react";
 import { MAX_PLANS, MONTHS, newPlan, monthsFrom } from "../../lib/loanPlan.js";
+import { payPathOf } from "../../lib/metrics.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import WheelPicker from "../WheelPicker.jsx";
@@ -39,13 +40,13 @@ export default function ScenarioModelling({ d, m, sl, set, open, run }) {
               {!open && <Lock size={10} strokeWidth={2.6}/>}Subscribers
             </span>
           </span>
-          <span style={{display:"block",fontSize:"12px",color:blue ? "rgba(255,255,255,0.88)" : MUT,lineHeight:1.45,marginTop:"2px"}}>Plan lump sums and monthly overpayments, month by month.</span>
+          <span style={{display:"block",fontSize:"12px",color:blue ? "rgba(255,255,255,0.88)" : MUT,lineHeight:1.45,marginTop:"2px"}}>Your pay year by year, and plans of lump sums and monthly overpayments.</span>
         </span>
         <ChevronDown size={16} color={blue ? WHITE : MUT} style={{flexShrink:0,transition:"transform 0.15s",transform:expanded ? "rotate(180deg)" : "none"}}/>
       </button>
       {expanded && (
         <div style={blue ? {background:WHITE,borderRadius:"10px",padding:"2px 12px 12px",marginTop:"12px"} : undefined}>
-          {open ? <PlanBuilder d={d} m={m} sl={sl} set={set} run={run}/> : <Locked d={d}/>}
+          {open ? <><PayByYear d={d} m={m} sl={sl} set={set}/><PlanBuilder d={d} m={m} sl={sl} set={set} run={run}/></> : <Locked d={d}/>}
         </div>
       )}
     </div>
@@ -251,6 +252,69 @@ function PlanBuilder({ d, m, sl, set, run }) {
   );
 }
 
+// Their pay in the years they know it (d.payByYear: [{ id, year, salary }],
+// from April of `year`), used by every projection in Candid in place of a
+// growth rate (metrics.js payPathOf): steady rises between, then with prices.
+function PayByYear({ d, m, sl, set }) {
+  const taxYear = sl.writeOffTaxYear - sl.writeOffYr;
+  const rows = (d.payByYear || []).filter(p => +p.year > taxYear && +p.salary > 0).sort((a, b) => +a.year - +b.year);
+  const [form, setForm] = useState(null); // { id?, year, salary }
+  const path = payPathOf(d, +d.salary || 0, taxYear);
+  const save = () => {
+    const row = { id: form.id || `y${Date.now().toString(36)}`, year: form.year, salary: String(form.salary) };
+    // One figure a year: a year given again replaces it.
+    set("payByYear", [...rows.filter(r => r.id !== form.id && r.year !== form.year), row]);
+    setForm(null);
+  };
+  const label = { fontSize:"10px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase", marginBottom:"6px" };
+  const ghost = { display:"inline-flex", alignItems:"center", gap:"5px", background:"none", border:`1px dashed ${GOLD}`, borderRadius:"100px", padding:"7px 12px", color:GOLD, fontSize:"12px", fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
+  const iconBtn = { background:"none", border:"none", padding:"4px", cursor:"pointer", color:MUT, display:"flex" };
+  const canSave = form && form.salary > 0 && +form.year > taxYear;
+  return (
+    <div style={{marginTop:"12px",paddingBottom:"12px",borderBottom:"1px solid rgba(22,47,36,0.08)"}}>
+      <div style={label}>Your pay, year by year</div>
+      {rows.length === 0 && !form && (
+        <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"0 0 8px"}}>Know what you'll earn in some years? Add them and every projection in Candid uses them, rising steadily between, then with prices.</p>
+      )}
+      {rows.length > 0 && (
+        <div style={{fontSize:"12.5px",color:MUT,margin:"0 0 4px"}}>{fmt(+d.salary || 0)} today</div>
+      )}
+      {rows.map(r => (
+        <div key={r.id} style={{display:"flex",alignItems:"center",gap:"4px",padding:"7px 0",borderBottom:"1px solid rgba(22,47,36,0.08)",opacity:form?.id === r.id ? 0.45 : 1}}>
+          <span style={{flex:1,fontSize:"13.5px",color:TEXT,fontWeight:600}}>{fmt(+r.salary)} from April {r.year}</span>
+          <button type="button" aria-label={`Change pay from April ${r.year}`} onClick={() => setForm({ id: r.id, year: r.year, salary: +r.salary })} style={iconBtn}><Pencil size={14}/></button>
+          <button type="button" aria-label={`Remove pay from April ${r.year}`} onClick={() => set("payByYear", rows.filter(x => x.id !== r.id))} style={iconBtn}><X size={15}/></button>
+        </div>
+      ))}
+      {form ? (
+        <div style={{marginTop:"10px",display:"flex",flexDirection:"column",gap:"10px"}}>
+          <div style={{display:"flex",gap:"8px",alignItems:"flex-start"}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={label}>From April</div>
+              <WheelPicker label="From April" items={Array.from({ length: 30 }, (_, i) => ({ value: String(taxYear + 1 + i), label: String(taxYear + 1 + i) }))} value={form.year} onChange={v => setForm(f => ({ ...f, year: v }))}/>
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={label}>Pay a year</div>
+              <PillMoneyInput label="Salary" value={form.salary} onChange={v => setForm(f => ({ ...f, salary: v }))}/>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:"8px"}}>
+            <button type="button" onClick={() => setForm(null)} style={{flex:1,background:WHITE,color:G,border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,fontFamily:"inherit",cursor:"pointer"}}>Cancel</button>
+            <button type="button" disabled={!canSave} onClick={save} style={{flex:1,background:canSave ? G : "rgba(22,47,36,0.2)",color:WHITE,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,fontFamily:"inherit",cursor:canSave ? "pointer" : "not-allowed"}}>{form.id ? "Save" : "Add"}</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setForm({ year: String(taxYear + Math.min(5, Math.max(1, rows.length ? +rows[rows.length - 1].year - taxYear + 2 : 3))), salary: null })} style={{...ghost,marginTop:"8px"}}><Plus size={13}/>A year's pay</button>
+      )}
+      {path && !form && (
+        <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+          Used across Candid in place of your salary growth: {fmt(Math.round(+d.salary * path.factor(10) / 100) * 100)} in ten years.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // Anyone else: an example plan, blurred, and the way to subscribe.
 function Locked({ d }) {
   const example = ["£5,000 in October 2027", "£200 a month, until it's cleared"];
@@ -263,7 +327,7 @@ function Locked({ d }) {
         </div>
       </div>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"10px",textAlign:"center"}}>
-        <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"260px"}}>Plan payments month by month and compare them with a lump sum, with a subscription</span>
+        <span style={{fontSize:"12.5px",fontWeight:600,color:G,lineHeight:1.45,maxWidth:"260px"}}>Set your pay year by year, and plan payments to compare with a lump sum, with a subscription</span>
         <SubscribeButtons d={d} module="studentLoan" from="scenario_modelling"/>
       </div>
     </div>

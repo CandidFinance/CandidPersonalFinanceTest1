@@ -13,10 +13,14 @@ export const GROWTH_REAL_PCT = 4;
 // the student loan projections, the forecast and the pension outlook.
 export const PAY_FAST_YEARS = 10;
 export const PAY_LATER_GROWTH = INFLATION_PCT / 100;
+// `rate` can instead be their own pay year by year (metrics.js payPathOf),
+// a { factor(years) }: it then sets pay in each year itself.
+const isPath = rate => !!rate && typeof rate === "object";
 // The rise from year i to year i + 1 (year 0 is today).
-export const payGrowthIn = (rate, i) => i < PAY_FAST_YEARS ? rate : PAY_LATER_GROWTH;
+export const payGrowthIn = (rate, i) => isPath(rate) ? rate.factor(i + 1) / rate.factor(i) - 1 : i < PAY_FAST_YEARS ? rate : PAY_LATER_GROWTH;
 // Pay in `years` years' time, as a multiple of today's.
 export function payFactor(rate, years) {
+  if (isPath(rate)) return rate.factor(years);
   let f = 1;
   for (let i = 0; i < years; i++) f *= 1 + payGrowthIn(rate, i);
   return f;

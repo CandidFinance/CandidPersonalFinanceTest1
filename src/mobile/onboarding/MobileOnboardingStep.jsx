@@ -253,7 +253,7 @@ export default function MobileOnboardingStep({ stepId, d, set, bare = false }) {
         )}
 
         <label style={fieldLabel}>Salary trajectory</label>
-        <PillSlider value={d.salaryTrajectory} onChange={v => { set("salaryTrajectory", v); set("salaryGrowthPct", ""); }} options={TRAJECTORY_OPTIONS}/>
+        <PillSlider value={d.salaryTrajectory} onChange={v => { set("salaryTrajectory", v); set("salaryGrowthPct", ""); set("payByYear", []); }} options={TRAJECTORY_OPTIONS}/>
         <p style={{fontSize:"11.5px",color:MUT,marginTop:"6px",marginBottom:"18px"}}>{TRAJECTORY_HINT[d.salaryTrajectory] || "Used to project your salary over time."}</p>
 
         <button type="button" onClick={() => setShowAdditionalIncome(v => !v)} style={{background:"none",border:"none",color:GOLD,fontSize:"13px",fontWeight:600,cursor:"pointer",padding:0,marginBottom:"16px",display:"block"}}>

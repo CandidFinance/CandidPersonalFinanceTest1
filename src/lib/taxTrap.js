@@ -20,7 +20,8 @@
 
 import { PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD, PERSONAL_ALLOWANCE, calcIncomeAndDividendTax, calcNI, salarySacrificeNiCap } from "./tax.js";
 import { SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
-import { salaryGrowthOf } from "./metrics.js";
+import { payGrowthOf } from "./metrics.js";
+import { taxYearFor } from "./taxYear.js";
 import { payFactor } from "./growth.js";
 import { calcAnnualAllowanceRoom } from "./pension.js";
 import { childcareSupport } from "./childcare.js";
@@ -46,7 +47,7 @@ export function roughAdjustedNetIncome(d) {
 export function trapInView(d, ani = roughAdjustedNetIncome(d)) {
   if (!(num(d.salary) > 0) || d.employmentStatus === "not_working") return false;
   if (ani >= TRAP_START - TRAP_NEAR) return true;
-  const growth = salaryGrowthOf(d);
+  const growth = payGrowthOf(d, num(d.salary), taxYearFor(d));
   return ani * payFactor(growth, TRAP_YEARS) >= TRAP_START;
 }
 
