@@ -1,39 +1,92 @@
-import { G, WHITE, TEXT, CRITICAL } from "../design-tokens.js";
-import PillMoneyInput from "./PillMoneyInput.jsx";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { G, MUT, TEXT, WHITE, CDARK } from "../design-tokens.js";
 
 // A year from a known range ({ min, max }, e.g. studentLoan.js
-// slFinishYearRange): one button a year when the range is short enough to
-// show them all, otherwise typed, with a line saying which years fit when
-// the one typed doesn't. `value` is the stored answer (a string, or "");
-// `onChange` gets a string, or "" when cleared.
-export const YEAR_BUTTONS_MAX = 16;
+// slFinishYearRange), on a wheel that turns like a tombola drum: newest year
+// at the top, the one in the middle band is the answer. Scrolled, dragged,
+// tapped (a year moves to the middle) or moved with the arrow keys; the
+// answer lands once the wheel stops. `blankLabel`: a first row meaning no
+// answer ("" — "Not sure"), or null for none. `value` is the stored answer
+// (a string, or ""); `onChange` gets a string, or "".
 export const yearInRange = (v, { min, max }) => v !== "" && v != null && Number.isInteger(+v) && +v >= min && +v <= max;
 
-export default function YearPicker({ value, onChange, range, label = "" }) {
+const ROW = 44;
+const VISIBLE = 5; // odd, so one row sits in the middle
+const PAD = ROW * ((VISIBLE - 1) / 2);
+const SETTLE_MS = 120;
+
+export default function YearPicker({ value, onChange, range, label = "", blankLabel = "Not sure" }) {
   const { min, max } = range;
-  if (max - min + 1 <= YEAR_BUTTONS_MAX) {
-    const years = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-    return (
-      <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
-        {years.map(y => {
-          const on = String(value) === String(y);
+  const items = [
+    ...(blankLabel ? [{ value: "", label: blankLabel }] : []),
+    ...Array.from({ length: Math.max(0, max - min + 1) }, (_, i) => ({ value: String(max - i), label: String(max - i) })),
+  ];
+  const at = Math.max(0, items.findIndex(o => o.value === (yearInRange(value, range) ? String(+value) : "")));
+
+  const ref = useRef(null);
+  const [top, setTop] = useState(at * ROW);
+  const touched = useRef(false); // the user moved it, not a re-render
+  const settle = useRef(null);
+  const frame = useRef(null);
+
+  // Onto the stored answer: on opening, and when it changes from outside
+  // (or the range does), unless the wheel is being moved.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || touched.current) return;
+    el.scrollTop = at * ROW;
+    setTop(at * ROW);
+  }, [at, min, max]);
+  useEffect(() => () => { clearTimeout(settle.current); cancelAnimationFrame(frame.current); }, []);
+
+  const onScroll = () => {
+    const el = ref.current;
+    cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(() => setTop(el.scrollTop));
+    clearTimeout(settle.current);
+    settle.current = setTimeout(() => {
+      if (!touched.current) return;
+      touched.current = false;
+      const i = Math.min(items.length - 1, Math.max(0, Math.round(el.scrollTop / ROW)));
+      if (items[i].value !== (yearInRange(value, range) ? String(+value) : "")) onChange(items[i].value);
+    }, SETTLE_MS);
+  };
+  const moveTo = i => {
+    touched.current = true;
+    ref.current?.scrollTo({ top: Math.min(items.length - 1, Math.max(0, i)) * ROW, behavior: "smooth" });
+  };
+  const onKeyDown = e => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    moveTo(Math.round(ref.current.scrollTop / ROW) + (e.key === "ArrowDown" ? 1 : -1));
+  };
+  const markTouched = () => { touched.current = true; };
+
+  return (
+    <div style={{position:"relative",height:ROW * VISIBLE,background:CDARK,borderRadius:"18px",overflow:"hidden"}}>
+      {/* The middle band: the answer. */}
+      <div aria-hidden="true" style={{position:"absolute",left:"8px",right:"8px",top:PAD,height:ROW,background:WHITE,borderRadius:"100px",boxShadow:"0 1px 4px rgba(22,47,36,0.12)"}}/>
+      <div ref={ref} role="listbox" tabIndex={0} aria-label={label || "Year"}
+        onScroll={onScroll} onKeyDown={onKeyDown} onWheel={markTouched} onPointerDown={markTouched} onTouchStart={markTouched}
+        style={{
+          position:"relative", height:"100%", overflowY:"scroll", scrollSnapType:"y mandatory", scrollbarWidth:"none",
+          padding:`${PAD}px 0`, boxSizing:"border-box", outline:"none", perspective:"500px",
+          WebkitMaskImage:"linear-gradient(transparent, #000 32%, #000 68%, transparent)",
+          maskImage:"linear-gradient(transparent, #000 32%, #000 68%, transparent)",
+        }}>
+        {items.map((o, i) => {
+          // How far from the middle, in rows: tipped back and faded with it.
+          const off = Math.max(-3, Math.min(3, (i * ROW - top) / ROW));
+          const on = Math.abs(off) < 0.5;
           return (
-            <button key={y} type="button" aria-pressed={on} onClick={() => onChange(on ? "" : String(y))} style={{
-              background:on ? G : WHITE, color:on ? WHITE : TEXT, border:`1.5px solid ${on ? G : "rgba(22,47,36,0.15)"}`,
-              borderRadius:"100px", padding:"8px 13px", fontSize:"13.5px", fontWeight:600, fontFamily:"inherit", cursor:"pointer",
-            }}>{y}</button>
+            <div key={o.value || "blank"} role="option" aria-selected={i === at} onClick={() => moveTo(i)} style={{
+              height:ROW, display:"flex", alignItems:"center", justifyContent:"center", scrollSnapAlign:"center", cursor:"pointer",
+              fontSize:on ? "17px" : "15px", fontWeight:on ? 700 : 600, color:on ? (o.value ? G : TEXT) : MUT,
+              transform:`rotateX(${-off * 22}deg)`, opacity:Math.max(0.25, 1 - Math.abs(off) * 0.3), userSelect:"none",
+            }}>{o.label}</div>
           );
         })}
       </div>
-    );
-  }
-  const filled = value !== "" && value != null && !isNaN(+value);
-  // Four digits typed and still outside the range: say which years fit.
-  const wrong = filled && String(Math.round(+value)).length >= 4 && !yearInRange(value, range);
-  return (
-    <>
-      <PillMoneyInput label={label} unit="" value={filled ? +value : null} onChange={v => onChange(v == null ? "" : String(v))}/>
-      {wrong && <p style={{fontSize:"12px",color:CRITICAL,lineHeight:1.5,margin:"6px 0 0"}}>Pick a year from {min} to {max}.</p>}
-    </>
+    </div>
   );
 }

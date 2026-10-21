@@ -57,7 +57,7 @@ test("investments: no investments ends after one question; outside an ISA opens 
   const known = { ...fresh, employmentAsked: true, ukNation: "england", scottishTaxpayer: "no", salary: "45000", hasExtraIncome: "no" };
   assert.deepEqual(ids("investments", known), ["hasInvestments"]);
   assert.deepEqual(ids("investments", { ...known, hasInvestments: "yes", hasUnwrapped: "yes", hasSoldAssetsOutsideWrapper: "yes" }, known), [
-    "hasInvestments", "ssIsaEarlier", "ssIsaThisYear", "hasLisa", "hasUnwrapped", "unwrappedValue", "unrealisedGains", "soldThisYear", "realisedGains",
+    "hasInvestments", "hasSsIsa", "hasLisa", "hasUnwrapped", "unwrappedValue", "unrealisedGains", "soldThisYear", "realisedGains",
   ]);
 });
 
@@ -134,7 +134,7 @@ test("the question count shows only once no answer still to come can change it",
   assert.equal(settled("studentLoan", plan2, "loanBalance"), true);
   // The Postgraduate loan's balance is below its question, not a question
   // of its own, so from the rate on the count is settled.
-  assert.equal(settled("studentLoan", { ...plan2, askedFields: ["salaryTrajectory"] }, "loanRate"), true);
+  assert.equal(settled("studentLoan", { ...plan2, askedFields: ["salaryTrajectory"] }, "hasPgLoan"), true);
   // Cash: the Premium Bonds and Cash ISA yes/nos are still to come.
   assert.equal(settled("cash", known, "spending"), false);
   assert.equal(settled("cash", { ...known, hasPremiumBonds: "no", hasCashIsaThisYear: "yes" }, "cashIsaEarlier"), true);
@@ -300,4 +300,45 @@ test("student loan: the finish year is one the plan allows, and a plan that rule
   // 2019 fits Plan 2 but not Plan 5 (from 2025): switching clears it.
   assert.deepEqual(plan.also("plan5", ctx({ slPlanAnswer: "plan2", slFinishYear: "2019" })), { studentLoan: "plan5", slFinishYear: "", slFirstDueYear: "" });
   assert.deepEqual(plan.also("plan1", ctx({ slPlanAnswer: "plan2", slFinishYear: "2019" })), { studentLoan: "plan1" });
+});
+
+test("the loan's rate: below the balance once the plan's picked there, worked out until changed; on its own otherwise", () => {
+  const known = { ...fresh, employmentAsked: true, ukNation: "england", scottishTaxpayer: "no", salary: "29385", hasExtraIncome: "no", age: "30", askedFields: ["salaryTrajectory"] };
+  const balance = MODULE_GUIDES.studentLoan.questions.find(q => q.id === "loanBalance");
+  const rate = balance.follow.find(f => f.field === "studentLoanRate");
+  const given = { ...known, loanBalance: "30000", slPlanAnswer: "plan2", studentLoan: "plan2" };
+  assert.ok(rate.showIf({ d: given }));
+  assert.equal(rate.prefill(ctxFor(given)), 4.1);
+  assert.ok(!ids("studentLoan", given, known).includes("loanRate"));
+  // Plan not known on the balance screen, or the balance estimated: asked on its own.
+  assert.ok(!rate.showIf({ d: { ...given, slPlanAnswer: "unsure" } }));
+  assert.ok(ids("studentLoan", { ...given, slBalanceEstimate: "yes" }, known).includes("loanRate"));
+  // In Edit inputs it shows once, wherever it applies.
+  const shown = d => flatQuestions(MODULE_GUIDES.studentLoan.questions).filter(q => q.field === "studentLoanRate" && (!q.showIf || q.showIf(ctxFor(d))));
+  assert.equal(shown(given).length, 1);
+  assert.equal(shown({ ...given, slBalanceEstimate: "yes" }).length, 1);
+});
+
+test("cash savings: a Yes opens the accounts on the same screen; No clears them; asked once", () => {
+  const q = MODULE_GUIDES.cash.questions.find(x => x.id === "cashAccounts");
+  const accounts = q.follow[0];
+  assert.equal(accounts.kind, "custom");
+  assert.ok(!accounts.showIf({ d: fresh }));
+  assert.ok(accounts.showIf({ d: { ...fresh, hasCashSavings: "yes" } }));
+  assert.ok(accounts.showIf({ d: { ...fresh, cashTiers: [{ amount: "5000", rate: "4" }] } })); // answered before this question
+  assert.ok(!accounts.answered({ d: { ...fresh, hasCashSavings: "yes" } }));
+  assert.deepEqual(q.also("no"), { cashTiers: [{ amount: "", rate: "" }] });
+  assert.ok(!q.ifMissing({ d: { ...fresh, askedFields: ["cashTiers"] } }));
+});
+
+test("ISAs: each one's figures before and since 6 April below its own Yes; No clears them", () => {
+  const qs = MODULE_GUIDES.investments.questions;
+  for (const [id, prev, now] of [["hasSsIsa", "isaPrevSS", "isaThisYearSS"], ["hasLisa", "isaPrevLISA", "isaThisYearLISA"]]) {
+    const q = qs.find(x => x.id === id);
+    assert.deepEqual(q.follow.map(f => f.field), [prev, now]);
+    assert.ok(!q.follow[0].showIf({ d: fresh }));
+    assert.ok(q.follow[0].showIf({ d: { ...fresh, [q.field]: "yes" } }));
+    assert.ok(q.follow[1].showIf({ d: { ...fresh, [now]: "2000" } })); // answered before this question
+    assert.deepEqual(q.also("no"), { [prev]: "", [now]: "" });
+  }
 });

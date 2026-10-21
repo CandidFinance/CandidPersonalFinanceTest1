@@ -75,7 +75,7 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }
               </div>
             );
         } else if (q.yearRange) {
-          control = <YearPicker range={q.yearRange(ctx)} value={raw ?? ""} onChange={v => write(q, v)}/>;
+          control = <YearPicker label={q.label} range={q.yearRange(ctx)} value={raw ?? ""} onChange={v => write(q, v)} blankLabel={q.required ? "Pick a year" : "Not sure"}/>;
         } else if (["money", "percent", "years"].includes(q.kind)) {
           const filled = raw !== "" && raw != null && !isNaN(+raw);
           control = <PillMoneyInput label={q.label || ""} unit={{ percent:"%", years:"" }[q.kind] ?? "£"}

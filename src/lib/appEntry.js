@@ -217,7 +217,7 @@ export function moduleAnswered(key, d) {
 // Until both are in (each module answered, or its questions on the short
 // route from Student loan: moduleGuide.js briefQuestions), the Student loan
 // module gives what the loan itself costs, not that verdict.
-export const loanSavingsIn = d => moduleAnswered("cash", d) || (d.askedFields || []).includes("cashTiers");
+export const loanSavingsIn = d => moduleAnswered("cash", d) || (d.askedFields || []).some(f => f === "cashTiers" || f === "hasCashSavings");
 export function loanPensionChecked(d) {
   return moduleAnswered("pension", d) || (d.askedFields || []).includes("pensionStatus");
 }

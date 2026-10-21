@@ -186,7 +186,7 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
         {editingStart && (
           <div style={{background:CDARK,borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}}>
             <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>When repayments started</div>
-            <YearPicker label="April of" range={startRange} value={startValue} onChange={v => setStartInput(v)}/>
+            <YearPicker label="April of" range={startRange} value={startValue} onChange={v => setStartInput(v)} blankLabel={null}/>
             <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"10px",marginBottom:0}}>
               Usually the April after you left your course. Your payslips or your online student loan account will show it.
             </p>

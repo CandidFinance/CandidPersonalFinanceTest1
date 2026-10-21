@@ -483,8 +483,13 @@ const OWN_FIELDS = {
 // an overpayment is banked when it's recorded (bankChange), so neither
 // counts as an answer changing.
 const NOT_ANSWERS = ["loanBalance", "pgLoanBalance"];
+// Questions added after fingerprints were first taken, left out so one
+// taken before still matches: a "Yes" that only opens the figures below it
+// (by field), and the loan's rate asked again below the balance (by id).
+const ADDED_LATER = ["hasCashSavings", "hasSsIsa", "loanBalance.studentLoanRate"];
 const ownAnswers = (d, key) => JSON.stringify((OWN_FIELDS[key] || flatQuestions(MODULE_GUIDES[key]?.questions || [])
-  .filter(q => q.group !== "you" && !NOT_ANSWERS.includes(q.field)).map(q => q.field)).map(f => d[f] ?? null));
+  .filter(q => q.group !== "you" && !NOT_ANSWERS.includes(q.field) && !ADDED_LATER.includes(q.field) && !ADDED_LATER.includes(q.id))
+  .map(q => q.field)).map(f => d[f] ?? null));
 // A change made, banked straight away: its £ a year, dated today, on the
 // module's baseline (made if there isn't one yet).
 export function bankChange(d, key, perYear, on = new Date().toISOString().slice(0, 10)) {

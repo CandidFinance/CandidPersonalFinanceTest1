@@ -40,9 +40,9 @@ const SHIFT_PX = 30;
 // confidence check). `animateFirst` has the first question rise in too, for
 // a flow arrived at from another page of questions (the entry, after the
 // confidence check), so the movement carries on across the page change.
-// A "custom" question (e.g. the list of savings accounts) is drawn by
-// `renderers[q.render]({ d, set })`, with q.answered(ctx) saying whether
-// Continue can be pressed.
+// A "custom" question or follow-up (e.g. the list of savings accounts) is
+// drawn by `renderers[render]({ d, set })`, with answered(ctx) saying
+// whether Continue can be pressed.
 export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered, skipLabel = "Skip to the full view", showProgress = true, animateFirst = false, renderers = {} }) {
   const ctx = { d, m, regionalRows };
   // Which questions with `ifMissing` to ask is decided once, at the start.
@@ -149,7 +149,11 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     const patch = { [f.field]: v, ...(f.also ? f.also(v, ctx) : {}) };
     Object.entries(patch).forEach(([k, val]) => set(k, val));
   };
-  const followAnswered = f => { const v = d[f.field]; return v !== "" && v != null && (f.kind === "choice" || !isNaN(+v)) && (!f.yearRange || yearInRange(v, f.yearRange(ctx))); };
+  const followAnswered = f => {
+    if (f.kind === "custom") return f.answered ? f.answered(ctx) : true;
+    const v = d[f.field];
+    return v !== "" && v != null && (f.kind === "choice" || !isNaN(+v)) && (!f.yearRange || yearInRange(v, f.yearRange(ctx)));
+  };
   // A year outside its range (`yearRange`) holds Continue back, even unasked-for.
   const followWrong = f => { const v = d[f.field]; return !!f.yearRange && v !== "" && v != null && !yearInRange(v, f.yearRange(ctx)); };
   // One "not sure" answer or several (Property's price: the most they could
@@ -209,11 +213,14 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
                 );
               })}
             </div>
+          ) : f.kind === "custom" ? (
+            renderers[f.render]?.({ d, set })
           ) : f.yearRange ? (
-            <YearPicker range={f.yearRange(ctx)} value={d[f.field] ?? ""} onChange={v => writeFollow(f, v)}/>
+            <YearPicker range={f.yearRange(ctx)} value={d[f.field] ?? ""} onChange={v => writeFollow(f, v)} label={f.inputLabel || f.label}/>
           ) : (
+            // `prefill`: a worked-out figure shown until they type their own.
             <PillMoneyInput label={f.inputLabel || ""} unit={{ percent:"%", years:"" }[f.kind] ?? "£"}
-              value={followAnswered(f) ? +d[f.field] : null} onChange={v => writeFollow(f, v ?? "")}/>
+              value={followAnswered(f) ? +d[f.field] : (f.prefill ? f.prefill(ctx) : null)} onChange={v => writeFollow(f, v ?? "")}/>
           )}
           {f.note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>{f.note(ctx)}</p>}
         </div>
@@ -338,7 +345,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
             </form>
           ) : (
             <form onSubmit={submit}>
-              {q.yearRange ? <YearPicker label={q.label} range={q.yearRange(ctx)} value={raw ?? ""} onChange={v => write(q.field, v)}/> : (
+              {q.yearRange ? <YearPicker label={q.label} range={q.yearRange(ctx)} value={raw ?? ""} onChange={v => write(q.field, v)} blankLabel={q.required ? "Pick a year" : "Not sure"}/> : (
                 <PillMoneyInput label={q.label} unit={{ percent:"%", years:"" }[q.kind] ?? "£"}
                   value={hasAnswer ? +raw : (q.prefill ? q.prefill(ctx) : null)}
                   onChange={v => write(q.field, q.cap ? capField(q.cap, v ?? "") : (v ?? ""))}/>

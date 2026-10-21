@@ -29,20 +29,28 @@ const is = (field, value) => ({ d }) => d[field] === value;
 const LISA_LIMIT = FIELD_CAPS.isaThisYearLISA;
 const LISA_BONUS = LISA_LIMIT * 0.25;
 
+const hasCashTiers = d => (d.cashTiers || []).some(t => +t.amount > 0);
+
 const CASH_QUESTIONS = [
   ...ABOUT_YOU,
   SPENDING_QUESTION,
   {
-    // Each account's balance and rate, on one screen (MobileCashTiersList).
-    id:"cashAccounts", field:"cashTiers", kind:"custom", render:"cashAccounts", required:true,
-    ask: () => "How much is in your savings, and what rate does it pay?",
+    // Whether they have savings, then below a "Yes", each account's balance
+    // and rate on the same screen (MobileCashTiersList). "No" clears them.
+    id:"cashAccounts", field:"hasCashSavings", kind:"choice",
+    ask: () => "Do you have any cash savings?",
     why: () => "Shows what your cash earns against the best rates available.",
-    note: () => "Add each account. Leave the rate blank if you're not sure.",
-    answered: ({ d }) => (d.cashTiers || []).some(t => +t.amount > 0),
+    options: () => YES_NO,
+    also: value => value === "no" ? { cashTiers: [{ amount:"", rate:"" }] } : {},
     // Asked once: on the short route from Student loan, say, after which
-    // this walk-through skips it.
-    ifMissing: ({ d }) => !(d.cashTiers || []).some(t => +t.amount > 0),
-    notSure: () => ({ label:"I don't have any savings", value:[{ amount:"", rate:"" }] }),
+    // this walk-through skips it. Asked before as "cashTiers".
+    ifMissing: ({ d }) => !hasCashTiers(d) && !(d.askedFields || []).includes("cashTiers"),
+    follow: [
+      { field:"cashTiers", kind:"custom", render:"cashAccounts", label:"Each account, and the rate it pays", required:true,
+        answered: ({ d }) => hasCashTiers(d),
+        note: () => "Leave the rate blank if you're not sure.",
+        showIf: ({ d }) => d.hasCashSavings === "yes" || hasCashTiers(d) },
+    ],
   },
   {
     id:"hasPremiumBonds", field:"hasPremiumBonds", kind:"choice",
@@ -106,6 +114,16 @@ const CASH_QUESTIONS = [
 
 const investing = is("hasInvestments", "yes");
 const unwrapped = is("hasUnwrapped", "yes");
+// A "Yes", or figures given before the question was asked this way.
+const hasIsa = (field, ...amounts) => ({ d }) => d[field] === "yes" || amounts.some(a => +d[a] > 0);
+// What was in an ISA before 6 April and what's gone in since, below its
+// "Yes". Either can be left blank for none.
+const isaFollows = (prev, thisYear, showIf, thisYearNote) => [
+  { field:prev, kind:"money", label:"How much was in it before 6 April?", inputLabel:"", cap:prev, showIf },
+  { field:thisYear, kind:"money", label:"How much have you paid in since 6 April?", inputLabel:"", cap:thisYear, note:thisYearNote, showIf },
+];
+const ssIsa = hasIsa("hasSsIsa", "isaPrevSS", "isaThisYearSS");
+const lisa = hasIsa("hasLisa", "isaPrevLISA", "isaThisYearLISA");
 
 const INVESTMENTS_QUESTIONS = [
   ...ABOUT_YOU,
@@ -116,34 +134,20 @@ const INVESTMENTS_QUESTIONS = [
     options: () => YES_NO,
   },
   {
-    id:"ssIsaEarlier", field:"isaPrevSS", kind:"money", label:"Before 6 April", cap:"isaPrevSS", required:true,
-    ask: () => "How much did you have in Stocks and Shares ISAs before 6 April?",
+    id:"hasSsIsa", field:"hasSsIsa", kind:"choice",
+    ask: () => "Do you have a Stocks and Shares ISA?",
     why: () => "Growth inside an ISA is never taxed.",
-    notSure: () => NONE, showIf: investing,
-  },
-  {
-    id:"ssIsaThisYear", field:"isaThisYearSS", kind:"money", label:"Paid in since 6 April", cap:"isaThisYearSS", required:true,
-    ask: () => "And how much have you paid in since 6 April?",
-    why: () => `Your ${fmt(ISA_ALLOWANCE)} allowance is shared across all your ISAs.`,
-    notSure: () => NONE, showIf: investing,
+    options: () => YES_NO, showIf: investing,
+    also: value => value === "no" ? { isaPrevSS: "", isaThisYearSS: "" } : {},
+    follow: isaFollows("isaPrevSS", "isaThisYearSS", ssIsa, () => `Your ${fmt(ISA_ALLOWANCE)} allowance is shared across all your ISAs.`),
   },
   {
     id:"hasLisa", field:"hasLisa", kind:"choice",
     ask: () => "Do you have a Lifetime ISA?",
     why: () => `The government adds 25% to what you pay in, up to ${fmt(LISA_BONUS)} a year.`,
     options: () => YES_NO, showIf: investing,
-  },
-  {
-    id:"lisaEarlier", field:"isaPrevLISA", kind:"money", label:"Before 6 April", cap:"isaPrevLISA", required:true,
-    ask: () => "How much was in it before 6 April?",
-    why: () => "It counts towards a first home or retirement, with the bonus added.",
-    notSure: () => NONE, showIf: ctx => investing(ctx) && ctx.d.hasLisa === "yes",
-  },
-  {
-    id:"lisaThisYear", field:"isaThisYearLISA", kind:"money", label:"Paid in since 6 April", cap:"isaThisYearLISA", required:true,
-    ask: () => "And how much have you paid in since 6 April?",
-    why: () => `You can pay in up to ${fmt(LISA_LIMIT)} a year and still get the bonus.`,
-    notSure: () => NONE, showIf: ctx => investing(ctx) && ctx.d.hasLisa === "yes",
+    also: value => value === "no" ? { isaPrevLISA: "", isaThisYearLISA: "" } : {},
+    follow: isaFollows("isaPrevLISA", "isaThisYearLISA", lisa, () => `You can pay in up to ${fmt(LISA_LIMIT)} a year and still get the bonus.`),
   },
   {
     id:"hasUnwrapped", field:"hasUnwrapped", kind:"choice",
@@ -358,6 +362,13 @@ export const PAY_GROWTH_OPTIONS = [
   { value:"high", label:"Fast, with promotions (about 10% a year)" },
 ];
 const estimating = ctx => hasLoan(ctx) && ctx.d.slBalanceEstimate === "yes";
+// The rate for their plan and salary, shown until they change it: the same
+// rate the calculations use when it's left blank (resolveSlRate).
+const usualRate = ({ d }) => Math.round(resolveSlRate(d, +d.salary || 0) * 1000) / 10;
+const rateNote = ({ d }) => filled(d.studentLoanRate) ? null : "Worked out from your plan and salary. Change it if your student loan account shows a different rate.";
+// Asked below the balance once the plan's known there; on its own otherwise
+// (an estimated balance, or the plan worked out afterwards).
+const rateUnderBalance = ({ d }) => !!d.slPlanAnswer && d.slPlanAnswer !== "unsure" && d.slBalanceEstimate !== "yes";
 
 // The plan helper, for "Not sure which plan": up to three questions, then the
 // plan (studentLoanPlanFrom, src/lib/studentLoan.js, GOV.UK's rules). Each
@@ -405,8 +416,8 @@ const PAY_GROWTH_FOLLOW = {
 
 // For someone landing here from a link, only what the answer needs, in an
 // order that's easy to follow: work, then pay (with its growth below it),
-// then the loan (its plan and when the course finished below the balance),
-// its rate, and a Postgraduate loan alongside (its balance below a "Yes").
+// then the loan (its plan, when the course finished and its rate below the
+// balance), and a Postgraduate loan alongside (its balance below a "Yes").
 // Questions below another on the same screen are its `follow`
 // (GuidedFlow.jsx).
 const STUDENT_LOAN_QUESTIONS = [
@@ -433,7 +444,8 @@ const STUDENT_LOAN_QUESTIONS = [
     follow: [
       { field:"slPlanAnswer", kind:"choice", label:"Which plan?", required:true, options: () => PLAN_OPTIONS, also: planAlso },
       { field:"slFinishYear", kind:"years", label:"Year you finished your course", yearRange: finishRange, also: finishAlso,
-        note: () => "Sets when it's written off. Leave it blank if you're not sure.", showIf: ({ d }) => !!d.slPlanAnswer },
+        note: () => "Sets when it's written off. Leave it on Not sure if you don't know.", showIf: ({ d }) => !!d.slPlanAnswer },
+      { field:"studentLoanRate", kind:"percent", label:"Interest rate", inputLabel:"", prefill: usualRate, note: rateNote, showIf: rateUnderBalance },
     ],
   },
   {
@@ -528,14 +540,12 @@ const STUDENT_LOAN_QUESTIONS = [
     showIf: ctx => estimating(ctx) && slEstimateReady(ctx.d),
   },
   {
-    // Shows the usual rate for their plan and salary until they change it,
-    // the same rate the calculations use when it's left blank.
+    // When the rate wasn't asked below the balance (rateUnderBalance).
     id:"loanRate", field:"studentLoanRate", kind:"percent", label:"Interest rate",
     ask: () => "What interest rate is it charging?",
     why: () => "Sets whether paying it off early would save you money.",
-    prefill: ({ d }) => Math.round(resolveSlRate(d, +d.salary || 0) * 1000) / 10,
-    note: ({ d }) => filled(d.studentLoanRate) ? null : "That's the usual rate for your plan and salary. Use your own if you know it.",
-    showIf: hasLoan,
+    prefill: usualRate, note: rateNote,
+    showIf: ctx => hasLoan(ctx) && !rateUnderBalance(ctx),
   },
   {
     // GOV.UK: repaid at the same time as the main plan (studentLoan.js

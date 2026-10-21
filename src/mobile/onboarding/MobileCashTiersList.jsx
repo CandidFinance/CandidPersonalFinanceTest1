@@ -7,9 +7,12 @@ import { capField } from "../../lib/onboarding.js";
 // cashTiers' data shape ([{amount,rate}]) and FIELD_CAPS' field caps, so
 // values written here read back identically everywhere else in the app.
 // Each account can also have a name (optional), which Candid Assist uses to
-// say exactly which account money would move from.
+// say exactly which account money would move from. Two rows to start with,
+// as most people have more than one account; a blank row counts for nothing.
+const BLANK = { amount:"", rate:"" };
 export default function MobileCashTiersList({ d, set }) {
-  const tiers = d.cashTiers || [{ amount:"", rate:"" }];
+  const stored = d.cashTiers || [];
+  const tiers = stored.length >= 2 ? stored : [...stored, BLANK, BLANK].slice(0, 2);
 
   const updateTier = (i, patch) => {
     const t = [...tiers];
@@ -18,7 +21,7 @@ export default function MobileCashTiersList({ d, set }) {
   };
   const removeTier = i => {
     const t = tiers.filter((_, j) => j !== i);
-    set("cashTiers", t.length ? t : [{ amount:"", rate:"" }]);
+    set("cashTiers", t.length ? t : [BLANK]);
   };
 
   return (
@@ -34,7 +37,7 @@ export default function MobileCashTiersList({ d, set }) {
         <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
           <PillMoneyInput label="Amount" value={tier.amount || null} onChange={v => updateTier(i, { amount: capField("isaPrevCash", v ?? "") })}/>
           <PillMoneyInput label="Rate" unit="%" value={tier.rate || null} onChange={v => updateTier(i, { rate: capField("savingsRate", v ?? "") })}/>
-          {tiers.length > 1 && (
+          {tiers.length > 2 && (
             <button type="button" onClick={() => removeTier(i)} aria-label="Remove account" style={{background:"none",border:"none",padding:"6px",cursor:"pointer",flexShrink:0,color:MUT}}>
               <X size={16}/>
             </button>
@@ -42,7 +45,7 @@ export default function MobileCashTiersList({ d, set }) {
         </div>
         </div>
       ))}
-      <button type="button" onClick={() => set("cashTiers", [...tiers, { amount:"", rate:"" }])} style={{
+      <button type="button" onClick={() => set("cashTiers", [...tiers, BLANK])} style={{
         display:"flex",alignItems:"center",gap:"6px",background:"none",border:`1px dashed ${GOLD}`,borderRadius:"100px",
         padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:600,cursor:"pointer",marginTop:"4px",
       }}>
