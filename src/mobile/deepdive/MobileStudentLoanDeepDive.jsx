@@ -619,9 +619,27 @@ function BalanceChart({ sl, width, alt = null, altLabel = null }) {
   const altClear = alt?.find(p => p.bal <= 0)?.yr;
   const altX = altClear != null ? sx(altClear) : null;
   const showAltYear = altX != null && altClear !== lastYr && altX - PL > 30 && VW - PR - altX > 30;
+  // A faint line each year, so the loan's length reads at a glance: the
+  // chart always spans start to end, so a loan clearing in 4 years and one
+  // in 3 would otherwise look alike. Every 2, 5 or 10 years when yearly
+  // lines would crowd. Labelled every year, or every 2, 5, 10 or 20 where
+  // that leaves room, clear of the start, end and lump-sum years already
+  // shown.
+  const perYear = (VW - PL - PR) / lastYr;
+  const step = [1, 2, 5, 10].find(n => n * perYear >= 14) || 10;
+  const labelEvery = [1, 2, 5, 10, 20].find(n => n % step === 0 && n * perYear >= 40) || 20;
+  const yearLines = [];
+  for (let yr = step; yr < lastYr; yr += step) yearLines.push(yr);
+  const labelled = yr => yr % labelEvery === 0 && sx(yr) - PL > 44 && VW - PR - sx(yr) > 44 && !(showAltYear && Math.abs(sx(yr) - altX) < 40);
   return (
     <svg width={VW} height={VH} viewBox={`0 0 ${VW} ${VH}`} style={{display:"block"}} role="img"
       aria-label={`Loan balance from ${fmt(path[0].bal)} today${showPeak ? `, peaking at ${fmt(peak.bal)}` : ""}, to ${end.bal > 0 ? `${fmt(end.bal)} written off` : "cleared"} in ${startYear + lastYr}`}>
+      {yearLines.map(yr => (
+        <g key={`yr${yr}`}>
+          <line x1={sx(yr)} x2={sx(yr)} y1={PT} y2={VH-PB} stroke="rgba(22,47,36,0.07)" strokeWidth="1"/>
+          {labelled(yr) && <text x={sx(yr)} y={VH-4} fontSize="9" fontWeight="600" fill={MUT} textAnchor="middle" opacity="0.8">{startYear + yr}</text>}
+        </g>
+      ))}
       {yTicks.map((t, i) => (
         <g key={i}>
           <line x1={PL} x2={VW-PR} y1={sy(t)} y2={sy(t)} stroke={i ? "rgba(22,47,36,0.08)" : "rgba(22,47,36,0.25)"} strokeWidth={i ? 1 : 1.3}/>
