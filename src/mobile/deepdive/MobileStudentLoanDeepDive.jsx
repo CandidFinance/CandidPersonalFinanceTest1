@@ -8,6 +8,7 @@ import YearPicker, { yearInRange } from "../YearPicker.jsx";
 import { loanVerdictReady, loanPensionChecked, loanSavingsIn, loanIsaIn, hasEmployerMatch } from "../../lib/appEntry.js";
 import { hasAccess } from "../../lib/entitlement.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
+import LoanCompare from "./LoanCompare.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
@@ -80,6 +81,10 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   // Where the money could go instead: for subscribers (and anyone from
   // before the paywall), or once their savings and pension match are in.
   const alternativesOpen = (verdict && pensionChecked) || hasAccess() || d.unlockGate !== true;
+  // A lump sum against every place it could go (LoanCompare): subscribers,
+  // and anyone from before the paywall. Others keep the £100 a month view
+  // above, with the comparison's top row and the way to subscribe.
+  const compareOpen = hasAccess() || d.unlockGate !== true;
   const surplusCash = m.surplusCash || 0;
   const curve = calcLoanMarginalReturnCurve(d, m, sl, chartWidth);
 
@@ -134,7 +139,14 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
       {pg && <PostgradLoan pg={pg} sl={sl}/>}
 
-      {!worthOverpaying && !sl.belowThreshold && <WhereItCouldGo m={m} locked={!alternativesOpen}/>}
+      {!sl.belowThreshold && (compareOpen
+        ? <LoanCompare d={d} m={m} sl={sl} set={set} open/>
+        : (
+          <>
+            {!worthOverpaying && <WhereItCouldGo m={m} locked={!alternativesOpen}/>}
+            {alternativesOpen && <LoanCompare d={d} m={m} sl={sl} set={set} open={false}/>}
+          </>
+        ))}
 
       {verdict && <OverpayingTile sl={sl} worthOverpaying={worthOverpaying} m={m} surplusCash={surplusCash}/>}
 
