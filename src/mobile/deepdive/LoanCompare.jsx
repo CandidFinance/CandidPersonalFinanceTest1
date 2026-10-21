@@ -1,18 +1,20 @@
 import { useState } from "react";
 import posthog from "posthog-js";
-import { Lock } from "lucide-react";
+import { Lock, ShieldCheck, TrendingUp, ChevronDown } from "lucide-react";
 import { loanComparison } from "../../lib/loanCompare.js";
 import { pensionAccessAge } from "../../lib/pension.js";
 import { PLANS, startCheckout } from "../../lib/entitlement.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
-import { G, WHITE, MUT, TEXT, SERIF, CDARK, CRITICAL } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, CRITICAL, SUCCESS } from "../../design-tokens.js";
 
 // The student loan page's "Where £X does most" (lib/loanCompare.js): the
 // lump sum being tried above (`amount`; a stand-in until one's picked),
 // valued in each place it could go by the date the loan would end, largest
-// first, each on a tile of its own. For subscribers; anyone else sees the
+// first, each on a tile of its own: its name and £, with an icon for how
+// sure the figure is (certain, or resting on assumed growth), opening to
+// say how it's worked out. For subscribers; anyone else sees the
 // top tile and the rest blurred, with the way to subscribe. A mortgage not
 // yet known is a tile to tap, which asks for it here (its rate and what's
 // owed).
@@ -25,12 +27,19 @@ const ROWS = {
   mortgage:     { title: "Paying off your mortgage", note: r => `Saves its ${r.ratePct}%. Most lenders allow 10% of the balance a year without a fee.` },
   personalLoan: { title: "Paying off your personal loan", note: r => `Saves its ${r.ratePct}%, while it has left to run.` },
 };
+// How sure each figure is: one icon each, with a key above the tiles.
+const SURE = {
+  true:  { Icon: ShieldCheck, color: SUCCESS, label: "Certain" },
+  false: { Icon: TrendingUp, color: GOLD, label: "If growth holds" },
+};
+
 // Until a lump sum is picked above: £5,000, or the balance if it's less.
 const STAND_IN = 5000;
 
 export default function LoanCompare({ d, m, sl, set, open, picked }) {
   const amount = picked > 0 ? picked : Math.min(STAND_IN, Math.round(m.loanBal));
   const [asking, setAsking] = useState(false);
+  const [opened, setOpened] = useState(() => new Set());
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const c = loanComparison(d, m, sl, amount);
@@ -46,25 +55,36 @@ export default function LoanCompare({ d, m, sl, set, open, picked }) {
   const valued = c.rows.filter(r => !r.ask);
   const ask = c.rows.find(r => r.ask);
 
-  const row = r => (
-    <div key={r.key} style={tile}>
-      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px"}}>
-        <span style={{fontSize:"14px",fontWeight:700,color:TEXT}}>{ROWS[r.key].title}</span>
-        <span style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{fmt(r.value)}</span>
+  const toggle = key => setOpened(o => { const n = new Set(o); n.has(key) ? n.delete(key) : n.add(key); return n; });
+  const row = r => {
+    const { Icon, color, label } = SURE[r.certain];
+    const isOpen = opened.has(r.key);
+    return (
+      <div key={r.key} style={tile}>
+        <button type="button" aria-expanded={isOpen} onClick={() => toggle(r.key)} style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:"none",border:"none",padding:0,fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
+          <Icon size={17} color={color} aria-label={label} style={{flexShrink:0}}><title>{label}</title></Icon>
+          <span style={{flex:1,minWidth:0,fontSize:"14px",fontWeight:700,color:TEXT}}>{ROWS[r.key].title}</span>
+          <span style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{fmt(r.value)}</span>
+          <ChevronDown size={16} color={MUT} style={{flexShrink:0,transition:"transform 0.15s",transform:isOpen ? "rotate(180deg)" : "none"}}/>
+        </button>
+        {isOpen && <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.45,margin:"8px 0 0 27px"}}>{ROWS[r.key].note(r, c, d)}</div>}
       </div>
-      <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>
-        <span style={{fontWeight:700,color:TEXT}}>{r.certain ? "Certain" : "If growth holds"}.</span> {ROWS[r.key].note(r, c, d)}
-      </div>
+    );
+  };
+  const key = (
+    <div style={{display:"flex",flexWrap:"wrap",gap:"4px 14px",fontSize:"11.5px",color:MUT,fontWeight:600,margin:"8px 0 2px"}}>
+      {[true, false].map(sure => { const { Icon, color, label } = SURE[sure]; return <span key={label} style={{display:"inline-flex",alignItems:"center",gap:"5px"}}><Icon size={13} color={color}/>{label}</span>; })}
     </div>
   );
 
   return (
-    <div style={{background:CDARK,borderRadius:"14px",padding:"16px 14px",margin:"0 0 16px"}}>
-      <div style={{fontSize:"10px",fontWeight:800,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Where {fmt(amount)} does most</div>
-      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 4px"}}>
+    <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+      <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px"}}>Where {fmt(amount)} does most</div>
+      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:0}}>
         What {picked > 0 ? "the lump sum above" : "it"} comes to by April {c.byTaxYear}, when your loan would {c.cleared ? "be cleared" : "be written off"}, largest first.
         {!(picked > 0) && " Pick a lump sum above to try another amount."}
       </p>
+      {key}
 
       {valued.slice(0, open ? valued.length : 1).map(row)}
       {!open && (

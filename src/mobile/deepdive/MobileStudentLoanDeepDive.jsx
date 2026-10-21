@@ -8,6 +8,7 @@ import YearPicker, { yearInRange } from "../YearPicker.jsx";
 import { loanVerdictReady, loanPensionChecked, loanSavingsIn, loanIsaIn, hasEmployerMatch } from "../../lib/appEntry.js";
 import { hasAccess } from "../../lib/entitlement.js";
 import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
+import InfoButton from "../InfoButton.jsx";
 import LoanCompare from "./LoanCompare.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
@@ -135,7 +136,6 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 
       <LoanTrajectory d={d} m={m} tip={tip} savingsRates={savingsRates} ageKnown={+d.age > 0} setOverpayAmt={setOverpayAmt} overpayOptions={overpayOptions} selectedScenario={selectedScenario} baseProjection={baseProjection} worthOverpaying={worthOverpaying} onRecordLoanOverpayment={onRecordLoanOverpayment} editingBalance={editingBalance} setManualBalanceInput={setManualBalanceInput} sl={sl} set={set} editingStart={editingStart} setEditingStart={setEditingStart} setStartInput={setStartInput} overpayAmt={overpayAmt} manualBalanceInput={manualBalanceInput} setEditingBalance={setEditingBalance} startInput={startInput} balanceChartRef={balanceChartRef} balanceChartWidth={balanceChartWidth}/>
 
-      {!sl.belowThreshold && <CostComparison sl={sl} cost={cost}/>}
 
       {pg && <PostgradLoan pg={pg} sl={sl}/>}
 
@@ -217,9 +217,20 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
           <BalanceChart sl={sl} width={balanceChartWidth} alt={selectedScenario?.path} altLabel={overpayAmt > 0 ? `With ${fmt(overpayAmt)} paid now` : null}/>
         </div>
 
-        {/* The figures to try, straight under the chart, which moves with
-            them: salary growth first, as it decides most whether the loan
-            is cleared, then a lump sum. */}
+        {/* The headline figures straight under the chart; what's left as it
+            is explained under "Total you'll repay" (its ?). */}
+        <LoanStats sl={sl} balanceLabel="Estimated balance" balance={m.loanBal} editBalance={set ? openBalanceEditor : null} wide={balanceChartWidth >= 520}
+          cost={sl.belowThreshold ? null : loanCostComparison(m, sl)}/>
+
+        {editingBalance && (
+          <LoanBalanceEditor d={d} m={m} set={set} savingsRates={savingsRates} initial={balanceInput} onClose={closeBalanceEditor}/>
+        )}
+        <TurningPoint sl={sl}/>
+
+        {/* The figures to try, which the chart and figures above move with:
+            salary growth first, as it decides most whether the loan is
+            cleared, then a lump sum, which "Where £x does most" below
+            follows. */}
         {(set || showLump) && (
           <div style={{background:"rgba(22,47,36,0.035)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"14px 14px 2px",margin:"10px 0 14px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",fontWeight:700,color:G,marginBottom:"12px"}}>
@@ -230,13 +241,6 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
               <LumpSum m={m} sl={sl} tip={tip} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} options={overpayOptions} scenario={selectedScenario} base={baseProjection} worthOverpaying={worthOverpaying}/>
             )}
           </div>
-        )}
-        <TurningPoint sl={sl}/>
-
-        <LoanStats sl={sl} balanceLabel="Estimated balance" balance={m.loanBal} editBalance={set ? openBalanceEditor : null} wide={balanceChartWidth >= 520}/>
-
-        {editingBalance && (
-          <LoanBalanceEditor d={d} m={m} set={set} savingsRates={savingsRates} initial={balanceInput} onClose={closeBalanceEditor}/>
         )}
       </div>
     </>
@@ -326,13 +330,19 @@ function ClearOrWriteOff({ sl }) {
 // The figures behind it, in pairs: today's balance against what's repaid in
 // all, and the interest added each year against what's repaid each year.
 // Four tiles: two by two on a phone, one row across where there's room
-// (`wide`, e.g. on a computer).
-function LoanStats({ sl, balanceLabel, balance, editBalance = null, wide = false }) {
+// (`wide`, e.g. on a computer). With `cost` (studentLoan.js
+// loanCostComparison), "Total you'll repay" has a ? that opens, right under
+// its row, what that total is made of and what paying it off today would
+// cost instead.
+function LoanStats({ sl, balanceLabel, balance, editBalance = null, wide = false, cost = null }) {
+  const [why, setWhy] = useState(false);
   const label = text => <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{text}</div>;
   const figure = { fontFamily:SERIF, fontSize:"19px", color:G, fontWeight:700 };
   const tile = { background:"rgba(22,47,36,0.04)", borderRadius:"12px", padding:"12px", minWidth:0 };
   return (
-    <div style={{display:"grid",gridTemplateColumns:wide ? "repeat(4, 1fr)" : "1fr 1fr",gap:"8px",marginBottom:"14px"}}>
+    // `dense`: the explanation takes the row under the tiles' first row,
+    // and on one row across, the last two tiles stay beside the first two.
+    <div style={{display:"grid",gridTemplateColumns:wide ? "repeat(4, 1fr)" : "1fr 1fr",gridAutoFlow:"row dense",gap:"8px",marginBottom:"14px"}}>
       <div style={tile}>
         {label(balanceLabel)}
         <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"2px"}}>
@@ -345,15 +355,25 @@ function LoanStats({ sl, balanceLabel, balance, editBalance = null, wide = false
         </div>
       </div>
       <div style={tile}>
-        {label("Total you'll repay")}
+        <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+          {label("Total you'll repay")}
+          {cost && <InfoButton onClick={() => setWhy(w => !w)} open={why}/>}
+        </div>
         <div style={{...figure,marginTop:"2px"}}>{fmt(sl.totalRepaidProjected)}</div>
       </div>
-      <div style={tile}>
-        {label("Annual interest")}
-        <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",columnGap:"6px",marginTop:"2px"}}>
-          <span style={figure}>{fmt(sl.annualInterest)}/yr</span>
-          <span style={{fontSize:"11.5px",color:MUT,fontWeight:600}}>{sl.slRatePct}% rate</span>
+      {cost && why && (
+        <div style={{gridColumn:"1 / -1",background:CDARK,borderRadius:"10px",padding:"10px 12px",fontSize:"12.5px",color:TEXT,lineHeight:1.5}}>
+          {sl.willClear
+            ? `${fmt(cost.balance)} owed + ${fmt(cost.interest)} interest, over ${cost.years === 1 ? "a year" : `${cost.years} years`}: about ${fmt(cost.interestPerYear)} of interest a year.`
+            : `Repaid over ${cost.years} years, before the rest is written off.`}
+          {" "}{cost.payNowSaves >= 0
+            ? `Paying it off today would cost ${fmt(cost.balance)}, ${fmt(cost.payNowSaves)} less in all, before what the money could earn elsewhere meanwhile.`
+            : `Paying it off today would cost ${fmt(cost.balance)}, ${fmt(-cost.payNowSaves)} more than you'd ever repay.`}
         </div>
+      )}
+      <div style={tile}>
+        {label(`Annual interest (${sl.slRatePct}%)`)}
+        <div style={{...figure,marginTop:"2px"}}>{fmt(sl.annualInterest)}/yr</div>
       </div>
       <div style={tile}>
         {label("Annual repayments")}
@@ -489,41 +509,6 @@ function NoGain({ sl }) {
       <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>No gain</div>
       <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>from paying it off early, on your figures</div>
       <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.55,marginTop:"10px"}}>{why}</div>
-    </div>
-  );
-}
-
-// What the loan costs: left to clear (or be written off) by itself,
-// against paying it off today (studentLoan.js loanCostComparison).
-function CostComparison({ sl, cost }) {
-  const row = { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px", padding:"12px 0", borderBottom:"1px solid rgba(22,47,36,0.08)" };
-  const big = { fontFamily:SERIF, fontSize:"18px", color:G, fontWeight:700, whiteSpace:"nowrap" };
-  return (
-    <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-      <div style={{fontSize:"13px",fontWeight:600,color:G}}>Left as it is vs paid off today</div>
-      <div style={row}>
-        <div>
-          <div style={{fontSize:"13.5px",fontWeight:600,color:TEXT}}>Left as it is</div>
-          <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>
-            {sl.willClear
-              ? `${fmt(cost.balance)} owed + ${fmt(cost.interest)} interest, over ${cost.years === 1 ? "a year" : `${cost.years} years`}: about ${fmt(cost.interestPerYear)} of interest a year.`
-              : `Repaid over ${cost.years} years, before the rest is written off.`}
-          </div>
-        </div>
-        <div style={big}>{fmt(cost.total)}</div>
-      </div>
-      <div style={{...row,borderBottom:"none"}}>
-        <div>
-          <div style={{fontSize:"13.5px",fontWeight:600,color:TEXT}}>Paid off today</div>
-          <div style={{fontSize:"12px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>No more interest.</div>
-        </div>
-        <div style={big}>{fmt(cost.balance)}</div>
-      </div>
-      <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"4px 0 0"}}>
-        {cost.payNowSaves >= 0
-          ? `Paying it off today costs ${fmt(cost.payNowSaves)} less in all, before what the money could earn elsewhere meanwhile.`
-          : `Paying it off today would cost ${fmt(-cost.payNowSaves)} more than you'd ever repay.`}
-      </p>
     </div>
   );
 }
