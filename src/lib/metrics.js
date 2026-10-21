@@ -10,6 +10,18 @@ import { isaUsedThisYear } from "./isa.js";
 // payFactor). "high" was 15%, which over a loan's 30 years compounded to
 // 66 times today's pay.
 export const SALARY_GROWTH_RATES = { stable:0.02, moderate:0.05, high:0.10 };
+// Their own rate, set on the student loan page (salaryGrowthPct, 1% to 10%
+// a year, or from what they expect to earn in ten years), else the band
+// they picked (salaryTrajectory), else `fallback`. A fraction (0.05).
+export const SALARY_GROWTH_MIN_PCT = 1, SALARY_GROWTH_MAX_PCT = 10;
+export function salaryGrowthOf(d, fallback = SALARY_GROWTH_RATES.stable) {
+  const own = +d.salaryGrowthPct;
+  if (own > 0) return Math.min(SALARY_GROWTH_MAX_PCT, Math.max(SALARY_GROWTH_MIN_PCT, own)) / 100;
+  return SALARY_GROWTH_RATES[d.salaryTrajectory] ?? fallback;
+}
+// The band nearest a rate of their own, kept alongside it for anything that
+// asks by band (the walk-through's question, a free user's saved row).
+export const trajectoryNearest = pct => pct < 3.5 ? "stable" : pct < 7.5 ? "moderate" : "high";
 
 // marketRates: { isaRate, nonIsaRate, rows } — the live best easy-access rates from
 // savings_rates, plus (optionally) the rows themselves. With rows, the cash
@@ -80,7 +92,7 @@ export function statePensionIncome(d) {
  */
 export function calcMetrics(d, marketRates = {}) {
   const { isaRate = 5.1, nonIsaRate = 5.1, rows = null } = marketRates;
-  const salaryGrowthRate = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
+  const salaryGrowthRate = salaryGrowthOf(d);
   const salary = +d.salary||0, expenses = +d.monthlyExpenses||0,
         bonds = +d.premiumBonds||0;
   // Cash: prefer sum of cashTiers (more granular); fall back to d.cashSavings
@@ -123,7 +135,7 @@ export function calcMetrics(d, marketRates = {}) {
         projectedPot = potVal * Math.pow(1 + pensionGrowth, years) +
           annualContrib * ((Math.pow(1 + pensionGrowth, years) - 1) / pensionGrowth);
   let annualRepayment = 0, willClear = false;
-  const slGrow = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
+  const slGrow = salaryGrowthOf(d);
   // The balance they gave, or, if they weren't sure, Candid's estimate from
   // what they borrowed (estimateSlBalance).
   const slEstimate = d.loanBalance === "" || d.loanBalance == null ? estimateSlBalance(d, { salary, growth: slGrow }) : null;

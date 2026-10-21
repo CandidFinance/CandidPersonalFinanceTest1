@@ -407,6 +407,8 @@ const finishAlso = (value, ctx) => ({ slFirstDueYear: inRange(value, ctx ? finis
 // known): what decides most whether a loan is cleared. Asked once.
 const PAY_GROWTH_FOLLOW = {
   field:"salaryTrajectory", kind:"choice", label:"How will your pay grow over the next ten years?", once:true,
+  // A band picked replaces a rate of their own (salaryGrowthPct).
+  also: () => ({ salaryGrowthPct: "" }),
   options: () => [
     { value:"stable", label:"With prices", sub:"+2%/yr" },
     { value:"moderate", label:"Steady rises", sub:"+5%/yr" },
@@ -429,6 +431,7 @@ const STUDENT_LOAN_QUESTIONS = [
     ask: () => "How do you expect your pay to grow over the next ten years?",
     why: () => "Repayments come from pay over the threshold, so this decides the most.",
     options: () => PAY_GROWTH_OPTIONS,
+    also: () => ({ salaryGrowthPct: "" }),
     note: () => "After ten years, Candid assumes your pay rises with prices.",
     showIf: ({ d }) => !(d.askedFields || []).includes("salaryTrajectory") && d.employmentStatus !== "not_working",
     ifMissing: ({ d }) => !(d.askedFields || []).includes("salaryTrajectory"),

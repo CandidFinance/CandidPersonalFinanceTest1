@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FAST_GROWTH_YEARS } from "../../lib/crossModule.js";
-import { SALARY_GROWTH_RATES } from "../../lib/metrics.js";
+import { salaryGrowthOf } from "../../lib/metrics.js";
 import { AlertTriangle, PiggyBank, Users, CalendarClock, ChevronRight, ChevronDown } from "lucide-react";
 import { LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "../../lib/pension.js";
 import { fmt, fmtBig } from "../../lib/format.js";
@@ -108,7 +108,7 @@ export function LookingAhead({ d, outlook, cliff, number, open, onOpenChange }) 
   const headline = lumpSum ? `Your pot could pass the tax-free cash limit around age ${lumpSum.age}`
     : later ? `Your retirement income could be taxed at ${pct(later.laterRate)}`
     : `Your pay could pass £100,000 around age ${trap.age}`;
-  const growth = Math.round((SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02) * 100);
+  const growth = Math.round(salaryGrowthOf(d) * 1000) / 10;
   const payGrowth = growth === 2 ? "your pay rising 2% a year" : `your pay rising ${growth}% a year for ${FAST_GROWTH_YEARS} years, then 2%`;
   const section = { fontSize:"10px", fontWeight:800, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", margin:"0 0 8px" };
   const item = { padding:"12px 0", borderTop:"1px solid rgba(22,47,36,0.08)" };

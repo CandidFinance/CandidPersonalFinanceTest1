@@ -8,6 +8,7 @@ import { capField } from "../../lib/onboarding.js";
 import { withAnswered } from "../../lib/appEntry.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import YearPicker from "../YearPicker.jsx";
+import WheelPicker from "../WheelPicker.jsx";
 import MobileCashTiersList from "../onboarding/MobileCashTiersList.jsx";
 
 // A module's answers as one form, for its tile on Edit inputs: the module's
@@ -56,7 +57,9 @@ export default function ModuleInputsForm({ moduleKey, d, m, set, brief = false }
         const notSure = [q.notSure ? q.notSure(ctx) : null].flat()
           .filter(o => o && o.value !== undefined && (o.value !== "" || q.also) && String(raw ?? "") !== String(o.value));
         let control;
-        if (q.kind === "choice") {
+        if (q.kind === "choice" && q.wheel) {
+          control = <WheelPicker label={q.ask(ctx)} items={[{ value:"", label:q.wheel }, ...q.options(ctx)]} value={raw ?? ""} onChange={v => write(q, v)}/>;
+        } else if (q.kind === "choice") {
           const options = q.options(ctx);
           control = sliderFits(options)
             ? <PillSlider value={raw ?? ""} onChange={v => write(q, v)} options={options}/>

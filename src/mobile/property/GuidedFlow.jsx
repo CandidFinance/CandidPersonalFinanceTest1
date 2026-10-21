@@ -6,6 +6,7 @@ import { capField } from "../../lib/onboarding.js";
 import { neededAtStart, visibleQuestions, countSettled } from "../../lib/propertyGuide.js";
 import PillMoneyInput, { pillFieldStyle } from "../PillMoneyInput.jsx";
 import YearPicker, { yearInRange } from "../YearPicker.jsx";
+import WheelPicker from "../WheelPicker.jsx";
 
 // A question's lowest allowed answer: a number, or worked out from the answers.
 const minFor = (q, ctx) => typeof q.min === "function" ? q.min(ctx) : q.min;
@@ -279,8 +280,16 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
               {followBlock}
               {continueButton}
             </form>
+          ) : q.kind === "choice" && q.wheel ? (
+            // `wheel`: a long list (the months) on the tombola wheel, then
+            // Continue; q.wheel is its first row, for no answer yet.
+            <form onSubmit={submit}>
+              <WheelPicker label={q.ask(ctx)} items={[{ value:"", label:q.wheel }, ...q.options(ctx)]} value={raw ?? ""} onChange={v => write(q.field, v)}/>
+              {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>{note}</p>}
+              {continueButton}
+            </form>
           ) : q.kind === "choice" ? (
-            // `columns`: short answers (months) in a grid across the width.
+            // `columns`: short answers in a grid across the width.
             <div style={q.columns ? {display:"grid",gridTemplateColumns:`repeat(${q.columns}, 1fr)`,gap:"8px"} : {display:"flex",flexDirection:"column",gap:"8px"}}>
               {q.options(ctx).map(o => {
                 const selected = answered.has(q.id) && d[q.field] === o.value;

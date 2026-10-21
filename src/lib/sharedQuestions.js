@@ -101,8 +101,9 @@ export const EXTRA_INCOME_QUESTIONS = [
   {
     // Optional: a subscriber's bonus reminder comes the month before
     // (src/lib/alerts.js), or in February when it isn't known. The months
-    // in three columns (`columns`), "Not sure" below them.
-    id:"bonusMonth", field:"bonusMonth", kind:"choice", group:"you", columns:3,
+    // on a wheel (`wheel`: its first row, for no answer yet), "Not sure"
+    // below it.
+    id:"bonusMonth", field:"bonusMonth", kind:"choice", group:"you", wheel:"Pick a month", required:true,
     ask: () => "Which month is your bonus usually paid?",
     why: () => "Paying it into a pension has to be arranged before then.",
     options: () => MONTHS.map((label, i) => ({ value:String(i + 1), label })),

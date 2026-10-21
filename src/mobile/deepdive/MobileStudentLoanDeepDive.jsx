@@ -11,6 +11,7 @@ import LoanBalanceEditor from "../LoanBalanceEditor.jsx";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
+import { salaryGrowthOf, trajectoryNearest, SALARY_GROWTH_MIN_PCT, SALARY_GROWTH_MAX_PCT } from "../../lib/metrics.js";
 import { PillSlider } from "../PillSlider.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
@@ -215,27 +216,62 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
 
         {/* Pay growth decides most whether it's cleared: changeable here,
             and every figure above moves with it. */}
-        {set && (
-          <div style={{marginBottom:"14px"}}>
-            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:"6px"}}>10yr pay growth</div>
-            <div style={{display:"flex",background:CDARK,borderRadius:"100px",padding:"3px",gap:"2px"}}>
-              {[["stable", "With prices", "+2%/yr"], ["moderate", "Steady rises", "+5%/yr"], ["high", "Fast", "+10%/yr"]].map(([value, label, rate]) => {
-                const on = (d.salaryTrajectory || "stable") === value;
-                return (
-                  <button key={value} type="button" onClick={() => set("salaryTrajectory", value)} aria-pressed={on} style={{
-                    flex:1, border:"none", borderRadius:"100px", padding:"7px 4px", background:on ? G : "transparent", color:on ? WHITE : MUT,
-                    fontFamily:"inherit", cursor:"pointer", lineHeight:1.2,
-                  }}>
-                    <span style={{display:"block",fontSize:"13px",fontWeight:600}}>{label}</span>
-                    <span style={{display:"block",fontSize:"10.5px",fontWeight:500,opacity:0.8}}>{rate}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {set && <PayGrowth d={d} m={m} set={set}/>}
       </div>
     </>
+  );
+}
+
+// Pay growth, their own: 1% to 10% a year for ten years, then with prices
+// (growth.js payFactor), read as the pay it comes to in ten years, since
+// people think in pay, not percentages. Or the other way round: the pay they
+// expect then, typed, and the rate that takes (kept to the same range). It's
+// the one pay growth figure the whole app uses (metrics.js salaryGrowthOf).
+function PayGrowth({ d, m, set }) {
+  const [typing, setTyping] = useState(false);
+  const [typed, setTyped] = useState(null);
+  const salary = m.salary || 0;
+  const pct = Math.round(salaryGrowthOf(d) * 1000) / 10;
+  const inTen = p => Math.round(salary * Math.pow(1 + p / 100, 10) / 100) * 100;
+  // To 0.01%, so a typed figure comes back as typed.
+  const keep = p => Math.min(SALARY_GROWTH_MAX_PCT, Math.max(SALARY_GROWTH_MIN_PCT, Math.round(p * 100) / 100));
+  const setPct = p => { set("salaryGrowthPct", String(keep(p))); set("salaryTrajectory", trajectoryNearest(keep(p))); };
+  // The rate a typed figure takes, before it's kept to the range.
+  const implied = typed > 0 && salary > 0 ? Math.round((Math.pow(typed / salary, 0.1) - 1) * 1000) / 10 : null;
+  const shown = p => Math.round(p * 10) / 10;
+  const onType = v => { setTyped(v); if (v > 0 && salary > 0) setPct((Math.pow(v / salary, 0.1) - 1) * 100); };
+  const label = { fontSize:"10px", color:MUT, fontWeight:600, letterSpacing:"0.04em", textTransform:"uppercase", marginBottom:"6px" };
+  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"12px", fontWeight:600, textDecoration:"underline", cursor:"pointer", fontFamily:"inherit" };
+  return (
+    <div style={{marginBottom:"14px"}}>
+      <div style={label}>{salary > 0 ? "Your pay in 10 years" : "10yr pay growth"}</div>
+      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",marginBottom:"4px"}}>
+        {/* While typing, the figure is the one in the field. */}
+        {salary > 0 && !typing && <span style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color:G}}>{fmt(inTen(salaryGrowthOf(d) * 100))}</span>}
+        <span style={{fontSize:"13px",fontWeight:600,color:TEXT}}>+{pct}% a year</span>
+      </div>
+      {typing && salary > 0 ? (
+        <>
+          <PillMoneyInput label="Pay you expect in 10 years" value={typed} onChange={onType}/>
+          {implied != null && (implied < SALARY_GROWTH_MIN_PCT || implied > SALARY_GROWTH_MAX_PCT) && (
+            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
+              That's {implied}% a year. Candid works between {SALARY_GROWTH_MIN_PCT}% and {SALARY_GROWTH_MAX_PCT}% a year, so it uses {shown(keep(implied))}%.
+            </p>
+          )}
+        </>
+      ) : (
+        <input type="range" min={SALARY_GROWTH_MIN_PCT} max={SALARY_GROWTH_MAX_PCT} step="0.5" value={pct} aria-label="Pay growth a year"
+          onChange={e => setPct(+e.target.value)} style={{width:"100%",accentColor:G,margin:"6px 0 2px"}}/>
+      )}
+      <div style={{display:"flex",justifyContent:"space-between",gap:"10px",fontSize:"11.5px",color:MUT,lineHeight:1.5,marginTop:"4px"}}>
+        <span>{salary > 0 ? `From ${fmt(salary)} today, then rising with prices.` : "For ten years, then rising with prices."}</span>
+        {salary > 0 && (
+          <button type="button" onClick={() => { setTyping(t => !t); setTyped(null); }} style={{...link,flexShrink:0}}>
+            {typing ? "Use the slider" : "Type a figure"}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

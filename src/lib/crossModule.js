@@ -6,7 +6,7 @@
 
 import { calcIncomeTax } from "./tax.js";
 import { employerPct } from "./employer.js";
-import { SALARY_GROWTH_RATES, retirementAgeFor } from "./metrics.js";
+import { salaryGrowthOf, retirementAgeFor } from "./metrics.js";
 import { inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "./pension.js";
 import { GROWTH_NOMINAL_PCT, GROWTH_REAL_PCT, INFLATION_PCT, PAY_FAST_YEARS, PAY_LATER_GROWTH } from "./growth.js";
 import { CASH_RATE_LOW } from "./forecast.js";
@@ -103,7 +103,7 @@ export function pensionOutlook(d, m) {
 
   const myPct = +d.myContribution || 0;
   const rate = (myPct + employerPct(d, myPct)) / 100;
-  const fast = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? LATER_GROWTH;
+  const fast = salaryGrowthOf(d, LATER_GROWTH);
   const g = GROWTH_NOMINAL_PCT / 100;
   const ani = m.adjustedNetIncome || m.salary;
   let pot = (+d.potValue || 0) + (+d.potValue2 || 0), pay = m.salary;

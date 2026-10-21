@@ -1,5 +1,5 @@
 import { calcBonusTaxBreakdown, calcIncomeTax, marginalNiRate, EMPLOYER_NI_RATE, PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD, NI_RATE_ABOVE_UEL, salarySacrificeNiCap } from "./tax.js";
-import { SALARY_GROWTH_RATES, pastStatePensionAge, retirementAgeFor } from "./metrics.js";
+import { salaryGrowthOf, pastStatePensionAge, retirementAgeFor } from "./metrics.js";
 import { slRepaymentThreshold, resolveSlRate, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { taxYearFor, taxYearOf } from "./taxYear.js";
 import { employerPct } from "./employer.js";
@@ -142,7 +142,7 @@ export function estimatePensionPot(d) {
   const yearsWorked = Math.max(0, Math.min(45, age - CAREER_START_AGE));
   if (salary <= 0 || yearsWorked === 0) return 0;
 
-  const salaryGrowth = SALARY_GROWTH_RATES[d.salaryTrajectory] ?? 0.02;
+  const salaryGrowth = salaryGrowthOf(d);
   const statedRate = ((+d.myContribution || 0) + (+d.employerMatch || 0)) / 100;
   const totalContribRate = statedRate > 0 ? statedRate : DEFAULT_TOTAL_CONTRIB_RATE;
 
