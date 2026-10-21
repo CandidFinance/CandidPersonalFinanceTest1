@@ -16,8 +16,8 @@ const KEY = "candid_access";
 // match them. Monthly first; the annual saving is worked out from the two.
 // Subscribers from before 21 Oct 2026 stay on £2.99 a month or £24 a year.
 export const PLANS = {
-  monthly: { label: "Monthly",  amount: 7.99, price: "£7.99", per: "a month", note: "Cancel any time" },
-  yearly:  { label: "Annually", amount: 49,   price: "£49",   per: "a year",  note: "About £4 a month" },
+  monthly: { label: "Monthly",  amount: 7.99,  price: "£7.99",  per: "a month", note: "Cancel any time" },
+  yearly:  { label: "Annually", amount: 49.99, price: "£49.99", per: "a year", note: "About £4.17 a month" },
 };
 export const ANNUAL_SAVING_PCT = Math.round((1 - PLANS.yearly.amount / (PLANS.monthly.amount * 12)) * 100);
 
