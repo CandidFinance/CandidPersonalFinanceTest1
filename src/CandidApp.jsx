@@ -21,15 +21,18 @@ import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx"
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
-import StudentLoanQuickStart from "./mobile/studentLoan/StudentLoanQuickStart.jsx";
-import { estimateLine } from "./lib/studentLoanQuick.js";
+import QuickStart from "./mobile/QuickStart.jsx";
+import { STUDENT_LOAN_QUICK, estimatePhrases } from "./lib/studentLoanQuick.js";
+import { CASH_QUICK } from "./lib/cashQuick.js";
+import { PENSION_QUICK } from "./lib/pensionQuick.js";
+import { questionOrder, estimateItems } from "./lib/quickStart.js";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import InviteFriends from "./mobile/InviteFriends.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
 import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
 import { bankChange } from "./lib/moduleStatus.js";
 import { moduleLimits } from "./lib/moduleLimits.js";
-import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, needsCatchUp, CATCH_UP_PATHS } from "./lib/appEntry.js";
+import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, needsCatchUp, CATCH_UP_PATHS, loanSavingsIn, loanPensionChecked, hasEmployerMatch, loanVerdictReady } from "./lib/appEntry.js";
 import { moduleGuideStarts, briefQuestions } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { readinessMissing } from "./lib/propertyReadiness.js";
@@ -170,6 +173,27 @@ function loadCompletedModules() {
 
 // Screens open at their top, not where the last one was scrolled to.
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: "instant" });
+
+// The quick starts used on the short route from Student loan.
+const QUICK_SETUPS = { cash: CASH_QUICK, pension: PENSION_QUICK };
+// The next module Student loan's verdict still needs (appEntry.js
+// loanVerdictReady), for its detailed view.
+const loanDetailNext = d => !loanSavingsIn(d) ? "cash" : hasEmployerMatch(d) && !loanPensionChecked(d) ? "pension" : null;
+// The most questions the detailed view could ask: Cash's with a Cash ISA
+// question (asked for larger savings) and, if needed, Pension's for a
+// matching employer. Fewer if they don't apply, hence "up to".
+function loanDetailCount(d, m) {
+  const cash = !loanSavingsIn(d) ? questionOrder(CASH_QUICK, { d, m, a: { savings: "100+" } }).length : 0;
+  const pension = hasEmployerMatch(d) && !loanPensionChecked(d) ? questionOrder(PENSION_QUICK, { d, m, a: { payIn: "yes", type: "match" } }).length : 0;
+  return cash + pension;
+}
+// Student loan's estimate line: its own bands, then Cash's and Pension's
+// once the verdict uses them.
+function loanEstimateLine(d) {
+  const used = loanVerdictReady(d) ? [...estimateItems(d, "cash"), ...estimateItems(d, "pension")].map(i => i.phrase) : [];
+  const parts = [...estimatePhrases(d), ...used];
+  return parts.length ? `Based on estimates: ${parts.join(", ")}.` : null;
+}
 
 export default function AppShell() {
   const navigate = useNavigate();
@@ -787,6 +811,31 @@ export default function AppShell() {
     const brief = briefQuestions(mobileActiveModule, returnTo);
     if (brief) {
       const backTo = MODULE_META.find(mm => mm.key === returnTo)?.title;
+      // From Student loan, the quick questions (cashQuick.js,
+      // pensionQuick.js). In its detailed view (&detail=1) one leads to the
+      // next the verdict still needs, then back to the answer, replayed.
+      const quick = returnTo === "studentLoan" && QUICK_SETUPS[mobileActiveModule];
+      if (quick) {
+        const detail = new URLSearchParams(location.search).get("detail") === "1";
+        return (
+          <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
+            <QuickStart key={mobileActiveModule} setup={quick} d={d} m={m} intro={false} flow={detail ? "detail" : "brief"}
+              kicker={`${moduleLabel}, for your ${backTo.toLowerCase()} answer`}
+              onPatch={patch => Object.entries(patch).forEach(([k, v]) => set(k, v))}
+              onDone={(how, at) => {
+                posthog.capture(how === "finished" ? "brief_finished" : "brief_skipped", { module: mobileActiveModule, from: returnTo, at });
+                setRowSaveTick(t => t + 1);
+                const next = detail && how === "finished" ? loanDetailNext(d) : null;
+                if (next) navigate(`/app/module/${next}?from=studentLoan&detail=1`, { replace: true });
+                else {
+                  if (detail && loanVerdictReady(d)) setRevealModule(returnTo);
+                  navigate(`/app/module/${returnTo}`, { replace: true });
+                }
+                scrollToTop();
+              }}/>
+          </MobileLayout>
+        );
+      }
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
           <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} questions={brief}
@@ -834,7 +883,7 @@ export default function AppShell() {
           {/* Student loan opens on what's at stake, then one-tap questions in
               bands, for a first answer before any exact figures. */}
           {mobileActiveModule === "studentLoan"
-            ? <StudentLoanQuickStart d={d} onPatch={patch => Object.entries(patch).forEach(([k, v]) => set(k, v))} onDone={finishGuide}/>
+            ? <QuickStart setup={STUDENT_LOAN_QUICK} d={d} m={m} onPatch={patch => Object.entries(patch).forEach(([k, v]) => set(k, v))} onDone={finishGuide}/>
             : <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} onDone={finishGuide}/>}
         </MobileLayout>
       );
@@ -869,7 +918,17 @@ export default function AppShell() {
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
-          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={moduleLimits(mobileActiveModule, d, m)} large={mobileActiveModule === "studentLoan"}
+          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={mobileActiveModule === "studentLoan" ? null : moduleLimits(mobileActiveModule, d, m)} large={mobileActiveModule === "studentLoan"}
+            doneLabel={mobileActiveModule === "studentLoan" ? "Explore student loans" : "See everything"}
+            lastAction={mobileActiveModule === "studentLoan" && loanDetailNext(d) ? {
+              label: `Detailed view · up to ${loanDetailCount(d, m)} more questions`,
+              onClick: () => {
+                posthog.capture("detail_view_started", { module: "studentLoan", questions: loanDetailCount(d, m) });
+                setRevealModule(null);
+                navigate(`/app/module/${loanDetailNext(d)}?from=studentLoan&detail=1`);
+                scrollToTop();
+              },
+            } : null}
             footer={<InviteFriends d={d} source="reveal" moduleKey={mobileActiveModule}/>}
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
@@ -884,9 +943,9 @@ export default function AppShell() {
         {/* Keyed by module, so each module page opens fresh, every tile collapsed,
             however it's reached. */}
         {/* Figures from the quick start's bands, until they're changed. */}
-        {mobileActiveModule === "studentLoan" && estimateLine(d) && (
+        {mobileActiveModule === "studentLoan" && loanEstimateLine(d) && (
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
-            {estimateLine(d)}{" "}
+            {loanEstimateLine(d)}{" "}
             <button type="button" onClick={() => openInputs("studentLoan")} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Use your exact figures</button>
           </p>
         )}

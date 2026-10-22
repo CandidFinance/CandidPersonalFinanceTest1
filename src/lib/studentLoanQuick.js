@@ -1,7 +1,8 @@
 // Student loan's quick start: four one-tap questions in bands (plan, salary,
 // balance, when the course finished) that give a first answer from the
 // middle of each band, before any exact figures. Pure logic, unit tested in
-// studentLoanQuick.test.js; the screens are StudentLoanQuickStart.jsx.
+// studentLoanQuick.test.js; the screens are the quick-start engine's
+// (mobile/QuickStart.jsx), with STUDENT_LOAN_QUICK below.
 //
 // The answer is worked out by the usual calculations from the figures these
 // write. `slEstimate` keeps the bands chosen and the figures written for
@@ -137,7 +138,28 @@ export function estimatedNow(d) {
 
 // The line under the answer: which figures are estimates, in bands.
 export function estimateLine(d) {
-  const parts = estimatedNow(d).map(({ key, band }) =>
-    key === "salary" ? `${band} salary` : key === "balance" ? (band.startsWith("£") ? `${band} owed` : `balance ${band}`) : band === "Still studying" ? "still studying" : `finished ${band}`);
+  const parts = estimatePhrases(d);
   return parts.length ? `Based on estimates: ${parts.join(", ")}.` : null;
 }
+export function estimatePhrases(d) {
+  return estimatedNow(d).map(({ key, band }) =>
+    key === "salary" ? `${band} salary` : key === "balance" ? (band.startsWith("£") ? `${band} owed` : `balance ${band}`) : band === "Still studying" ? "still studying" : `finished ${band}`);
+}
+
+// The setup for the quick-start engine (quickStart.js). Its estimates stay
+// in slEstimate, as before the engine.
+const planFrom = ({ d, a }) => a.plan === "unsure" ? helperChoicePlan(a.helper) : a.plan || d.studentLoan;
+export const STUDENT_LOAN_QUICK = {
+  module: "studentLoan",
+  intro: { title: "Student loan", subtitle: "After a home, it's likely the biggest thing you'll ever buy.", question: "Is paying it off early worth it for you?" },
+  order: ["plan", "helper", "salary", "balance", "finish"],
+  questions: {
+    plan:    { ask: "Which student loan plan are you on?", why: "Your Student Loans Company account shows it.", options: () => PLAN_CHOICES, when: ({ d }) => quickQuestions(d).includes("plan") },
+    helper:  { ask: "When did your course start?", why: "That decides your plan, by GOV.UK's rules.", options: () => PLAN_HELPER_CHOICES, when: ({ a }) => a.plan === "unsure" },
+    salary:  { ask: "Roughly what do you earn a year, before tax?", why: "Repayments are a share of your pay over a threshold.", options: () => SALARY_BANDS, when: ({ d }) => quickQuestions(d).includes("salary") },
+    balance: { ask: "Roughly how much do you still owe?", why: "Your Student Loans Company account shows it. A band is fine.", options: () => BALANCE_BANDS, when: ({ d }) => quickQuestions(d).includes("balance") },
+    finish:  { ask: "When did you finish your course?", why: "Whatever's left is written off a set number of years after.", options: ctx => finishBands(planFrom(ctx)), when: ({ d }) => quickQuestions(d).includes("finish") },
+  },
+  patch: (d, m, a) => quickPatch(d, a),
+  estimateLine,
+};

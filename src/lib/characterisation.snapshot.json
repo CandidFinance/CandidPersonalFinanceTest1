@@ -388,17 +388,54 @@
      {
       "label": "Your position",
       "figure": "£438",
-      "title": "lost to interest by letting it run 6 years, against paying it off now."
+      "title": "lost to interest by letting it run 6 years, against paying it off now.",
+      "rows": [
+       {
+        "figure": "£73/yr",
+        "tone": "cost",
+        "size": "xl",
+        "note": "additional cost by not acting today."
+       },
+       {
+        "figure": "£438",
+        "tone": "cost",
+        "size": "m",
+        "note": "total additional cost"
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "Paying it off avoids about £4,122 of interest. In savings at 4.72%, the same money would earn about £3,684 meanwhile.",
-      "body": "Separately, your employer would add £1,440 a year to your pension if you paid in up to its match (see Pension). A pension could grow more: it's assumed to grow 6% a year, against the loan's 5.3%. That growth isn't guaranteed, and money in a pension is locked away until 57; paying off the loan saves its interest for certain."
+      "aside": "Separately, your employer would add £1,440 a year to your pension if you paid in up to its match. See Pension.",
+      "rows": [
+       {
+        "figure": "£4,122",
+        "tone": "repay",
+        "size": "xl",
+        "note": "total saved by paying it off."
+       },
+       {
+        "prefix": "vs",
+        "figure": "£3,684",
+        "size": "l",
+        "note": "earned by the same money in a savings account at today's best rate, 4.72%.",
+        "alert": "Your savings earn about 1.5% now, less than this."
+       }
+      ],
+      "body": "That cash in a pension could earn more, but it isn't guaranteed, and it's locked away until you're 57."
      },
      {
       "label": "What you could do",
       "title": "It would use £22,000 of cash. The page shows how your buffer, ISA allowance and pension match stand.",
-      "body": "You can overpay on the Student Loans Company website, all of it or part."
+      "body": "The next page helps you see if your finances can support you paying this off.\nYou can repay all or part, via the SLC website.",
+      "rows": [
+       {
+        "figure": "£22,000",
+        "size": "l",
+        "note": "is required."
+       }
+      ]
      }
     ],
     "kids": null,
@@ -3288,17 +3325,54 @@
      {
       "label": "Your position",
       "figure": "£142",
-      "title": "lost to interest by letting it run 6 years, against paying it off now."
+      "title": "lost to interest by letting it run 6 years, against paying it off now.",
+      "rows": [
+       {
+        "figure": "£24/yr",
+        "tone": "cost",
+        "size": "xl",
+        "note": "additional cost by not acting today."
+       },
+       {
+        "figure": "£142",
+        "tone": "cost",
+        "size": "m",
+        "note": "total additional cost"
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "Paying it off avoids about £4,122 of interest. In savings at 5.1%, the same money would earn about £3,980 meanwhile.",
-      "body": "Separately, your employer would add £1,440 a year to your pension if you paid in up to its match (see Pension). A pension could grow more: it's assumed to grow 6% a year, against the loan's 5.3%. That growth isn't guaranteed, and money in a pension is locked away until 57; paying off the loan saves its interest for certain."
+      "aside": "Separately, your employer would add £1,440 a year to your pension if you paid in up to its match. See Pension.",
+      "rows": [
+       {
+        "figure": "£4,122",
+        "tone": "repay",
+        "size": "xl",
+        "note": "total saved by paying it off."
+       },
+       {
+        "prefix": "vs",
+        "figure": "£3,980",
+        "size": "l",
+        "note": "earned by the same money in a savings account at today's best rate, 5.1%.",
+        "alert": "Your savings earn about 1.5% now, less than this."
+       }
+      ],
+      "body": "That cash in a pension could earn more, but it isn't guaranteed, and it's locked away until you're 57."
      },
      {
       "label": "What you could do",
       "title": "It would use £22,000 of cash. The page shows how your buffer, ISA allowance and pension match stand.",
-      "body": "You can overpay on the Student Loans Company website, all of it or part."
+      "body": "The next page helps you see if your finances can support you paying this off.\nYou can repay all or part, via the SLC website.",
+      "rows": [
+       {
+        "figure": "£22,000",
+        "size": "l",
+        "note": "is required."
+       }
+      ]
      }
     ],
     "kids": null,
@@ -18855,7 +18929,23 @@
      },
      {
       "label": "Why",
-      "title": "Savings pay 4.72%, more than your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead."
+      "title": "Savings pay 4.72%, more than your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead.",
+      "rows": [
+       {
+        "lead": "Your loan costs",
+        "figure": "4.1%",
+        "tone": "cost",
+        "size": "l",
+        "note": "a year, on average over its life."
+       },
+       {
+        "lead": "Savings pay",
+        "figure": "4.72%",
+        "tone": "repay",
+        "size": "l",
+        "note": "at today's best rate, more than the loan, so overpaying doesn't come out ahead."
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -21601,7 +21691,23 @@
      },
      {
       "label": "Why",
-      "title": "Savings pay 5.1%, more than your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead."
+      "title": "Savings pay 5.1%, more than your loan's 4.1% a year on average over its life, so overpaying doesn't come out ahead.",
+      "rows": [
+       {
+        "lead": "Your loan costs",
+        "figure": "4.1%",
+        "tone": "cost",
+        "size": "l",
+        "note": "a year, on average over its life."
+       },
+       {
+        "lead": "Savings pay",
+        "figure": "5.1%",
+        "tone": "repay",
+        "size": "l",
+        "note": "at today's best rate, more than the loan, so overpaying doesn't come out ahead."
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -47733,17 +47839,54 @@
      {
       "label": "Your position",
       "figure": "£369",
-      "title": "lost to interest by letting it run 10 years, against paying it off now."
+      "title": "lost to interest by letting it run 10 years, against paying it off now.",
+      "rows": [
+       {
+        "figure": "£37/yr",
+        "tone": "cost",
+        "size": "xl",
+        "note": "additional cost by not acting today."
+       },
+       {
+        "figure": "£369",
+        "tone": "cost",
+        "size": "m",
+        "note": "total additional cost"
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "Paying it off avoids about £4,227 of interest. In savings at 4.72%, the same money would earn about £3,858 meanwhile.",
-      "body": "A pension could grow more: it's assumed to grow 6% a year, against the loan's 5.2%. That growth isn't guaranteed, and money in a pension is locked away until 57; paying off the loan saves its interest for certain."
+      "aside": null,
+      "rows": [
+       {
+        "figure": "£4,227",
+        "tone": "repay",
+        "size": "xl",
+        "note": "total saved by paying it off."
+       },
+       {
+        "prefix": "vs",
+        "figure": "£3,858",
+        "size": "l",
+        "note": "earned by the same money in a savings account at today's best rate, 4.72%.",
+        "alert": "Your savings earn about 2.5% now, less than this."
+       }
+      ],
+      "body": "That cash in a pension could earn more, but it isn't guaranteed, and it's locked away until you're 57."
      },
      {
       "label": "What you could do",
       "title": "It would use £14,000 of cash. The page shows how your buffer, ISA allowance and pension match stand.",
-      "body": "You can overpay on the Student Loans Company website, all of it or part."
+      "body": "The next page helps you see if your finances can support you paying this off.\nYou can repay all or part, via the SLC website.",
+      "rows": [
+       {
+        "figure": "£14,000",
+        "size": "l",
+        "note": "is required."
+       }
+      ]
      }
     ],
     "kids": null,
@@ -50555,17 +50698,54 @@
      {
       "label": "Your position",
       "figure": "£59",
-      "title": "lost to interest by letting it run 10 years, against paying it off now."
+      "title": "lost to interest by letting it run 10 years, against paying it off now.",
+      "rows": [
+       {
+        "figure": "£6/yr",
+        "tone": "cost",
+        "size": "xl",
+        "note": "additional cost by not acting today."
+       },
+       {
+        "figure": "£59",
+        "tone": "cost",
+        "size": "m",
+        "note": "total additional cost"
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "Paying it off avoids about £4,227 of interest. In savings at 5.1%, the same money would earn about £4,168 meanwhile.",
-      "body": "A pension could grow more: it's assumed to grow 6% a year, against the loan's 5.2%. That growth isn't guaranteed, and money in a pension is locked away until 57; paying off the loan saves its interest for certain."
+      "aside": null,
+      "rows": [
+       {
+        "figure": "£4,227",
+        "tone": "repay",
+        "size": "xl",
+        "note": "total saved by paying it off."
+       },
+       {
+        "prefix": "vs",
+        "figure": "£4,168",
+        "size": "l",
+        "note": "earned by the same money in a savings account at today's best rate, 5.1%.",
+        "alert": "Your savings earn about 2.5% now, less than this."
+       }
+      ],
+      "body": "That cash in a pension could earn more, but it isn't guaranteed, and it's locked away until you're 57."
      },
      {
       "label": "What you could do",
       "title": "It would use £14,000 of cash. The page shows how your buffer, ISA allowance and pension match stand.",
-      "body": "You can overpay on the Student Loans Company website, all of it or part."
+      "body": "The next page helps you see if your finances can support you paying this off.\nYou can repay all or part, via the SLC website.",
+      "rows": [
+       {
+        "figure": "£14,000",
+        "size": "l",
+        "note": "is required."
+       }
+      ]
      }
     ],
     "kids": null,

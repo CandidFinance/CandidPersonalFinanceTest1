@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL } from "../../design-tokens.js";
+import { ChevronLeft, CircleAlert } from "lucide-react";
+import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 
 // A module's answer in three steps (src/lib/moduleReveal.js): the answer,
@@ -19,7 +19,10 @@ const SHIFT_PX = 30;
 // answer has just been seen).
 // `large`: each step across the full width with no card or label, its
 // `rows` as very large figures (Student loan, for now).
-export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true, limits = null, footer = null, large = false }) {
+// `lastAction` ({ label, onClick }): the last step's main button instead of
+// "See everything", which becomes a link under it (Student loan's detailed
+// view). `doneLabel`: what that link, or the last button, says.
+export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true, limits = null, footer = null, large = false, lastAction = null, doneLabel = "See everything" }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const [index, setIndex] = useState(0);
@@ -75,12 +78,17 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
       </AnimatePresence>
       {last && limits && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"12px 2px 0"}}>{limits}</p>}
 
-      <button type="button" onClick={() => last ? onDone("finished", steps.length) : go(1)} style={{
+      <button type="button" onClick={() => last ? (lastAction ? lastAction.onClick() : onDone("finished", steps.length)) : go(1)} style={{
         width:"100%", marginTop:"18px", background:G, color:WHITE, border:"none", borderRadius:"100px", padding:"13px",
         fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
       }}>
-        {last ? "See everything" : "Next"}
+        {last ? (lastAction ? lastAction.label : doneLabel) : "Next"}
       </button>
+      {last && lastAction && (
+        <div style={{textAlign:"center",marginTop:"8px"}}>
+          <button type="button" onClick={() => onDone("finished", steps.length)} style={{...textLink,fontSize:"13.5px"}}>{doneLabel}</button>
+        </div>
+      )}
       {last && footer}
       {index > 0 && (
         <button type="button" onClick={() => go(-1)} style={{...textLink,color:MUT,display:"inline-flex",alignItems:"center",gap:"2px",marginTop:"14px",fontSize:"13px"}}>
@@ -94,6 +102,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
 // One step in the large layout: its rows as big figures, a line above each
 // and a note below; a step without rows as a large statement.
 const TONE = { repay: SUCCESS, cost: CRITICAL };
+const SIZE = { xl: "clamp(56px, 17vw, 78px)", l: "clamp(40px, 12vw, 54px)", m: "clamp(28px, 8vw, 36px)" };
 function LargeStep({ step }) {
   const rows = step.rows || (step.figure ? [{ figure: step.figure, size: "xl", note: step.title }] : null);
   return (
@@ -101,13 +110,26 @@ function LargeStep({ step }) {
       {rows ? rows.map((r, i) => (
         <div key={i} style={{marginTop: i ? "30px" : 0}}>
           {r.lead && <div style={{fontSize:"19px",fontWeight:600,color:TEXT,lineHeight:1.3}}>{r.lead}</div>}
-          <div style={{fontFamily:SERIF,fontSize: r.size === "xl" ? "clamp(56px, 17vw, 78px)" : "clamp(40px, 12vw, 54px)",fontWeight:700,color:TONE[r.tone] || G,lineHeight:1.05,margin:"6px 0 6px",letterSpacing:"-0.01em"}}>{r.figure}</div>
+          <div style={{fontFamily:SERIF,fontSize:SIZE[r.size] || SIZE.l,fontWeight:700,color:TONE[r.tone] || G,lineHeight:1.05,margin:"6px 0 6px",letterSpacing:"-0.01em"}}>
+            {r.prefix && <span style={{fontFamily:"inherit",fontSize:"0.45em",fontWeight:600,color:MUT,marginRight:"8px"}}>{r.prefix}</span>}
+            {r.figure}
+          </div>
           {r.note && <div style={{fontSize:"16px",color:MUT,lineHeight:1.45}}>{r.note}</div>}
+          {r.alert && (
+            <div style={{display:"flex",alignItems:"flex-start",gap:"6px",fontSize:"14px",color:TEXT,lineHeight:1.4,marginTop:"8px"}}>
+              <CircleAlert size={16} color={WARNING} style={{flexShrink:0,marginTop:"1px"}} aria-hidden="true"/>{r.alert}
+            </div>
+          )}
         </div>
       )) : (
         <p style={{fontFamily:SERIF,fontSize:"clamp(26px, 7.5vw, 32px)",fontWeight:700,color:G,lineHeight:1.2,margin:0}}>{step.title}</p>
       )}
-      {step.body && <p style={{fontSize:"16px",color:MUT,lineHeight:1.5,margin:"20px 0 0"}}>{step.body}</p>}
+      {step.body && <p style={{fontSize:"16px",color:MUT,lineHeight:1.5,margin:"20px 0 0",whiteSpace:"pre-line"}}>{step.body}</p>}
+      {step.aside && (
+        <div style={{display:"flex",alignItems:"flex-start",gap:"10px",margin:"20px 0 0",padding:"2px 0 2px 12px",borderLeft:`3px solid ${G}`,fontSize:"15px",color:TEXT,lineHeight:1.45}}>
+          <CircleAlert size={18} color={G} style={{flexShrink:0,marginTop:"1px"}} aria-hidden="true"/>{step.aside}
+        </div>
+      )}
     </div>
   );
 }
