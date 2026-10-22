@@ -20,7 +20,7 @@ import { taxTrap, trapInView, lostTo } from "./taxTrap.js";
 import { loanVerdictReady } from "./appEntry.js";
 import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
-import { calcStudentLoanScenario, pgScenario, bestLumpSum, SL_REPAYMENT_RATES, pensionCaveat } from "./studentLoan.js";
+import { calcStudentLoanScenario, pgScenario, bestLumpSum, SL_REPAYMENT_RATES, pensionCaveat, resolveSlRate } from "./studentLoan.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
 import { STATE_PENSION_AGE } from "./tax.js";
 
@@ -370,8 +370,12 @@ export function studentLoanReveal(d, m) {
   const pgLine = `Your Postgraduate loan is repaid at the same time: about ${fmt(pg.annualRep)} a year now (6% of pay over £21,000), ${pg.belowThreshold ? "once you earn over £21,000" : pg.willClear ? `paid off in ${years(pg.clearYr)}` : `with about ${fmt(pg.writeOffBal)} written off in April ${pg.writeOffTaxYear}`}.`;
   return steps.map(s => s.label === WHY ? withBody(s, join(s.body, pgLine)) : s);
 }
+// `rows` lay a step out as large figures, each with a line above and a note
+// below (MobileModuleReveal's large layout); `tone` "repay" or "cost"
+// colours the figure. The title and body stay, for the usual layout.
 function studentLoanSteps(d, m) {
   const sl = calcStudentLoanScenario(d, m);
+  const ratePct = Math.round(resolveSlRate(d, m.salary || 0) * 1000) / 10;
   // The overpaying verdict needs their savings and pension match (appEntry.js).
   const verdict = loanVerdictReady(d);
   const repayPct = `${Math.round((SL_REPAYMENT_RATES[d.studentLoan] ?? 0.09) * 100)}%`;
@@ -409,26 +413,33 @@ function studentLoanSteps(d, m) {
   const lump = verdict && !sl.willClear ? bestLumpSum(m, sl, m.surplusCash || 0) : null;
   // Until their savings and pension match are in: what would tell them
   // whether paying it off early is worth it.
-  const needVerdict = { label: ACTION, title: "Whether paying it off early comes out ahead needs a few more details.", body: "Adding them on the page shows it." };
+  const needVerdict = { label: ACTION, title: "Exactly what paying it off early could save needs the full module.", body: "It weighs your savings and pension match too. Adding them on the page shows it." };
+  // Why, in two figures: what comes off pay, and what interest adds.
+  const whyRows = [
+    { lead: "Your repayments", figure: fmt(sl.annualRep), tone: "repay", size: "xl", note: `a year: ${repayPct} of your salary over the ${fmt(sl.threshold)} threshold` },
+    { lead: "Interest adds", figure: fmt(sl.annualInterest), tone: "cost", size: "l", note: `a year, at ${ratePct}%` },
+  ];
   if (!sl.willClear) {
     return [
-      { label: ANSWER, figure: fmt(sl.totalRepaidProjected), title: `you're expected to repay in all, before about ${fmt(sl.writeOffBal)} is written off in April ${sl.writeOffTaxYear}.`, ...turning },
-      { label: WHY, title: `Repayments are ${repayPct} of your pay over ${fmt(sl.threshold)}, about ${fmt(sl.annualRep)} a year now, while interest adds about ${fmt(sl.annualInterest)}.` },
+      { label: ANSWER, figure: fmt(sl.totalRepaidProjected), title: `you're expected to repay in all, before about ${fmt(sl.writeOffBal)} is written off in April ${sl.writeOffTaxYear}.`, ...turning,
+        rows: [{ lead: "You're expected to repay", figure: fmt(sl.totalRepaidProjected), size: "xl", note: `Then about ${fmt(sl.writeOffBal)} is written off in April ${sl.writeOffTaxYear}.` }] },
+      { label: WHY, title: `Repayments are ${repayPct} of your pay over ${fmt(sl.threshold)}, about ${fmt(sl.annualRep)} a year now, while interest adds about ${fmt(sl.annualInterest)}.`, rows: whyRows },
       lump
         ? { label: ACTION, title: `Paying ${fmt(lump.amount)} now would clear it in ${years(lump.clearYr)}, and cost about ${fmt(lump.saving)} less in all, counting what the money would earn in savings.`,
             body: "Smaller sums would mostly shrink what's written off. The page shows how your cash buffer, ISA allowance and pension match stand." }
         : verdict ? { label: ACTION, title: "Overpaying would mostly go on debt that's written off anyway.", body: "On these assumptions, savings or a pension may earn more than overpaying." }
-        : { label: ACTION, title: "Overpaying would mostly go on debt that's written off anyway.", body: "Adding a few more details on the page shows what the money could do instead." },
+        : { label: ACTION, title: "Overpaying would mostly go on debt that's written off anyway.", body: "Exactly what paying it off early could save needs the full module: your savings and pension match too." },
     ];
   }
   // Clears by itself: what it'll cost in all, against what's owed today.
   const interest = Math.max(0, sl.totalRepaidProjected - Math.round(m.loanBal));
   return [
     { label: ANSWER, figure: fmt(sl.totalRepaidProjected), title: `you're expected to repay in all, clearing it in ${years(sl.clearYr)}.`,
-      body: join(`That's ${fmt(interest)} of interest on top of the ${fmt(Math.round(m.loanBal))} you owe today.`, turning.body) },
+      body: join(`That's ${fmt(interest)} of interest on top of the ${fmt(Math.round(m.loanBal))} you owe today.`, turning.body),
+      rows: [{ lead: "You're expected to pay", figure: fmt(sl.totalRepaidProjected), size: "xl", note: `You'll likely clear it in ${years(sl.clearYr)}, repaying it all.` }] },
     verdict
       ? { label: WHY, title: `Savings pay ${sl.cashRate}%, ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} your loan's ${sl.lifeRatePct}% a year on average over its life, so overpaying doesn't come out ahead.` }
-      : { label: WHY, title: `Repayments are ${repayPct} of your pay over ${fmt(sl.threshold)}, about ${fmt(sl.annualRep)} a year now, while interest adds about ${fmt(sl.annualInterest)}.` },
+      : { label: WHY, title: `Repayments are ${repayPct} of your pay over ${fmt(sl.threshold)}, about ${fmt(sl.annualRep)} a year now, while interest adds about ${fmt(sl.annualInterest)}.`, rows: whyRows },
     verdict ? nothing : needVerdict,
   ];
 }

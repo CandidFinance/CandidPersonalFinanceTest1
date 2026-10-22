@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 
 // A module's answer in three steps (src/lib/moduleReveal.js): the answer,
@@ -17,7 +17,9 @@ const SHIFT_PX = 30;
 // its last step.
 // `footer`: shown under the last step's button (inviting friends, where the
 // answer has just been seen).
-export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true, limits = null, footer = null }) {
+// `large`: each step across the full width with no card or label, its
+// `rows` as very large figures (Student loan, for now).
+export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true, limits = null, footer = null, large = false }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const [index, setIndex] = useState(0);
@@ -42,7 +44,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
         </div>
         <div style={{flex:1,minWidth:0}}>
           <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
-          <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>Your position, step by step</div>
+          <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>{large ? "Your answer, step by step" : "Your position, step by step"}</div>
         </div>
       </div>}
 
@@ -53,6 +55,11 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
 
       {/* The step itself sits in a card, like the result card it replaces. */}
       <AnimatePresence mode="wait" custom={direction} initial={true}>
+        {large ? (
+          <motion.div key={index} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" style={{marginTop:"22px"}}>
+            <LargeStep step={step}/>
+          </motion.div>
+        ) : (
         <motion.div key={index} custom={direction} variants={variants} initial="enter" animate="center" exit="exit"
           style={{marginTop:"10px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"22px 20px"}}>
           <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>{step.label}</div>
@@ -64,6 +71,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
           </p>
           {step.body && <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:"10px 0 0"}}>{step.body}</p>}
         </motion.div>
+        )}
       </AnimatePresence>
       {last && limits && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"12px 2px 0"}}>{limits}</p>}
 
@@ -79,6 +87,27 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
           <ChevronLeft size={15}/>Back
         </button>
       )}
+    </div>
+  );
+}
+
+// One step in the large layout: its rows as big figures, a line above each
+// and a note below; a step without rows as a large statement.
+const TONE = { repay: SUCCESS, cost: CRITICAL };
+function LargeStep({ step }) {
+  const rows = step.rows || (step.figure ? [{ figure: step.figure, size: "xl", note: step.title }] : null);
+  return (
+    <div>
+      {rows ? rows.map((r, i) => (
+        <div key={i} style={{marginTop: i ? "30px" : 0}}>
+          {r.lead && <div style={{fontSize:"19px",fontWeight:600,color:TEXT,lineHeight:1.3}}>{r.lead}</div>}
+          <div style={{fontFamily:SERIF,fontSize: r.size === "xl" ? "clamp(56px, 17vw, 78px)" : "clamp(40px, 12vw, 54px)",fontWeight:700,color:TONE[r.tone] || G,lineHeight:1.05,margin:"6px 0 6px",letterSpacing:"-0.01em"}}>{r.figure}</div>
+          {r.note && <div style={{fontSize:"16px",color:MUT,lineHeight:1.45}}>{r.note}</div>}
+        </div>
+      )) : (
+        <p style={{fontFamily:SERIF,fontSize:"clamp(26px, 7.5vw, 32px)",fontWeight:700,color:G,lineHeight:1.2,margin:0}}>{step.title}</p>
+      )}
+      {step.body && <p style={{fontSize:"16px",color:MUT,lineHeight:1.5,margin:"20px 0 0"}}>{step.body}</p>}
     </div>
   );
 }

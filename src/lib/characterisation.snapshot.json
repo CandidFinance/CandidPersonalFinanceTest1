@@ -18843,7 +18843,15 @@
       "label": "Your position",
       "figure": "£6,246",
       "title": "you're expected to repay in all, clearing it in 1 year.",
-      "body": "That's £246 of interest on top of the £6,000 you owe today."
+      "body": "That's £246 of interest on top of the £6,000 you owe today.",
+      "rows": [
+       {
+        "lead": "You're expected to pay",
+        "figure": "£6,246",
+        "size": "xl",
+        "note": "You'll likely clear it in 1 year, repaying it all."
+       }
+      ]
      },
      {
       "label": "Why",
@@ -21581,7 +21589,15 @@
       "label": "Your position",
       "figure": "£6,246",
       "title": "you're expected to repay in all, clearing it in 1 year.",
-      "body": "That's £246 of interest on top of the £6,000 you owe today."
+      "body": "That's £246 of interest on top of the £6,000 you owe today.",
+      "rows": [
+       {
+        "lead": "You're expected to pay",
+        "figure": "£6,246",
+        "size": "xl",
+        "note": "You'll likely clear it in 1 year, repaying it all."
+       }
+      ]
      },
      {
       "label": "Why",
@@ -34202,11 +34218,35 @@
       "label": "Your position",
       "figure": "£28,028",
       "title": "you're expected to repay in all, before about £18,682 is written off in April 2051.",
-      "body": "Your balance is still growing. It starts falling from April 2033, when repayments overtake the interest."
+      "body": "Your balance is still growing. It starts falling from April 2033, when repayments overtake the interest.",
+      "rows": [
+       {
+        "lead": "You're expected to repay",
+        "figure": "£28,028",
+        "size": "xl",
+        "note": "Then about £18,682 is written off in April 2051."
+       }
+      ]
      },
      {
       "label": "Why",
-      "title": "Repayments are 9% of your pay over £33,795, about £207 a year now, while interest adds about £1,271."
+      "title": "Repayments are 9% of your pay over £33,795, about £207 a year now, while interest adds about £1,271.",
+      "rows": [
+       {
+        "lead": "Your repayments",
+        "figure": "£207",
+        "tone": "repay",
+        "size": "xl",
+        "note": "a year: 9% of your salary over the £33,795 threshold"
+       },
+       {
+        "lead": "Interest adds",
+        "figure": "£1,271",
+        "tone": "cost",
+        "size": "l",
+        "note": "a year, at 4.1%"
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -37449,11 +37489,35 @@
       "label": "Your position",
       "figure": "£28,028",
       "title": "you're expected to repay in all, before about £18,682 is written off in April 2051.",
-      "body": "Your balance is still growing. It starts falling from April 2033, when repayments overtake the interest."
+      "body": "Your balance is still growing. It starts falling from April 2033, when repayments overtake the interest.",
+      "rows": [
+       {
+        "lead": "You're expected to repay",
+        "figure": "£28,028",
+        "size": "xl",
+        "note": "Then about £18,682 is written off in April 2051."
+       }
+      ]
      },
      {
       "label": "Why",
-      "title": "Repayments are 9% of your pay over £33,795, about £207 a year now, while interest adds about £1,271."
+      "title": "Repayments are 9% of your pay over £33,795, about £207 a year now, while interest adds about £1,271.",
+      "rows": [
+       {
+        "lead": "Your repayments",
+        "figure": "£207",
+        "tone": "repay",
+        "size": "xl",
+        "note": "a year: 9% of your salary over the £33,795 threshold"
+       },
+       {
+        "lead": "Interest adds",
+        "figure": "£1,271",
+        "tone": "cost",
+        "size": "l",
+        "note": "a year, at 4.1%"
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -40527,11 +40591,35 @@
       "label": "Your position",
       "figure": "£13,862",
       "title": "you're expected to repay in all, before about £88,296 is written off in April 2066.",
-      "body": "Your balance is still growing, and on these figures repayments never overtake the interest."
+      "body": "Your balance is still growing, and on these figures repayments never overtake the interest.",
+      "rows": [
+       {
+        "lead": "You're expected to repay",
+        "figure": "£13,862",
+        "size": "xl",
+        "note": "Then about £88,296 is written off in April 2066."
+       }
+      ]
      },
      {
       "label": "Why",
-      "title": "Repayments are 9% of your pay over £25,000, about £230 a year now, while interest adds about £1,968."
+      "title": "Repayments are 9% of your pay over £25,000, about £230 a year now, while interest adds about £1,968.",
+      "rows": [
+       {
+        "lead": "Your repayments",
+        "figure": "£230",
+        "tone": "repay",
+        "size": "xl",
+        "note": "a year: 9% of your salary over the £25,000 threshold"
+       },
+       {
+        "lead": "Interest adds",
+        "figure": "£1,968",
+        "tone": "cost",
+        "size": "l",
+        "note": "a year, at 4.1%"
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -44155,11 +44243,35 @@
       "label": "Your position",
       "figure": "£13,862",
       "title": "you're expected to repay in all, before about £88,296 is written off in April 2066.",
-      "body": "Your balance is still growing, and on these figures repayments never overtake the interest."
+      "body": "Your balance is still growing, and on these figures repayments never overtake the interest.",
+      "rows": [
+       {
+        "lead": "You're expected to repay",
+        "figure": "£13,862",
+        "size": "xl",
+        "note": "Then about £88,296 is written off in April 2066."
+       }
+      ]
      },
      {
       "label": "Why",
-      "title": "Repayments are 9% of your pay over £25,000, about £230 a year now, while interest adds about £1,968."
+      "title": "Repayments are 9% of your pay over £25,000, about £230 a year now, while interest adds about £1,968.",
+      "rows": [
+       {
+        "lead": "Your repayments",
+        "figure": "£230",
+        "tone": "repay",
+        "size": "xl",
+        "note": "a year: 9% of your salary over the £25,000 threshold"
+       },
+       {
+        "lead": "Interest adds",
+        "figure": "£1,968",
+        "tone": "cost",
+        "size": "l",
+        "note": "a year, at 4.1%"
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -76923,11 +77035,35 @@
       "label": "Your position",
       "figure": "£53,400",
       "title": "you're expected to repay in all, before about £16,527 is written off in April 2046.",
-      "body": "Your balance is still growing. It starts falling from April 2027, when repayments overtake the interest."
+      "body": "Your balance is still growing. It starts falling from April 2027, when repayments overtake the interest.",
+      "rows": [
+       {
+        "lead": "You're expected to repay",
+        "figure": "£53,400",
+        "size": "xl",
+        "note": "Then about £16,527 is written off in April 2046."
+       }
+      ]
      },
      {
       "label": "Why",
-      "title": "Repayments are 9% of your pay over £29,385, about £2,058 a year now, while interest adds about £2,280."
+      "title": "Repayments are 9% of your pay over £29,385, about £2,058 a year now, while interest adds about £2,280.",
+      "rows": [
+       {
+        "lead": "Your repayments",
+        "figure": "£2,058",
+        "tone": "repay",
+        "size": "xl",
+        "note": "a year: 9% of your salary over the £29,385 threshold"
+       },
+       {
+        "lead": "Interest adds",
+        "figure": "£2,280",
+        "tone": "cost",
+        "size": "l",
+        "note": "a year, at 6%"
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -80377,11 +80513,35 @@
       "label": "Your position",
       "figure": "£53,400",
       "title": "you're expected to repay in all, before about £16,527 is written off in April 2046.",
-      "body": "Your balance is still growing. It starts falling from April 2027, when repayments overtake the interest."
+      "body": "Your balance is still growing. It starts falling from April 2027, when repayments overtake the interest.",
+      "rows": [
+       {
+        "lead": "You're expected to repay",
+        "figure": "£53,400",
+        "size": "xl",
+        "note": "Then about £16,527 is written off in April 2046."
+       }
+      ]
      },
      {
       "label": "Why",
-      "title": "Repayments are 9% of your pay over £29,385, about £2,058 a year now, while interest adds about £2,280."
+      "title": "Repayments are 9% of your pay over £29,385, about £2,058 a year now, while interest adds about £2,280.",
+      "rows": [
+       {
+        "lead": "Your repayments",
+        "figure": "£2,058",
+        "tone": "repay",
+        "size": "xl",
+        "note": "a year: 9% of your salary over the £29,385 threshold"
+       },
+       {
+        "lead": "Interest adds",
+        "figure": "£2,280",
+        "tone": "cost",
+        "size": "l",
+        "note": "a year, at 6%"
+       }
+      ]
      },
      {
       "label": "What you could do",

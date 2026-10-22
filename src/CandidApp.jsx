@@ -5,7 +5,7 @@ import { topRate } from "./lib/savingsRates.js";
 import { calcMetrics } from "./lib/metrics.js";
 import { MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, calcCandidScore, baselinePatch } from "./lib/moduleStatus.js";
 import { ALL_STEP_DEFS, getActiveSteps, capField } from "./lib/onboarding.js";
-import { G, WHITE, FONT_SIZE } from "./design-tokens.js";
+import { G, WHITE, MUT, FONT_SIZE } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
@@ -21,6 +21,8 @@ import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx"
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
+import StudentLoanQuickStart from "./mobile/studentLoan/StudentLoanQuickStart.jsx";
+import { estimateLine } from "./lib/studentLoanQuick.js";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import InviteFriends from "./mobile/InviteFriends.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
@@ -804,32 +806,36 @@ export default function AppShell() {
     // walk-through. Then the module joins selectedModules, so its own screen,
     // the answer, takes over, and its answers are saved to the user's row.
     if (moduleGuideStarts(mobileActiveModule, d)) {
+      const finishGuide = (how, at) => {
+        const selected = d.selectedModules || [];
+        if (!selected.includes(mobileActiveModule)) set("selectedModules", [...selected, mobileActiveModule]);
+        if (how === "finished" && Array.isArray(d.answeredModules)) set("answeredModules", withAnswered(d, mobileActiveModule).answeredModules);
+        posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at });
+        posthog.capture("module_answer_shown", { module: mobileActiveModule });
+        // The first module finished unlocks by itself (unlock.js).
+        const firstFree = how === "finished" ? firstUnlockPatch(d, mobileActiveModule) : null;
+        if (firstFree) {
+          Object.entries(firstFree).forEach(([k, v]) => set(k, v));
+          posthog.capture("module_unlocked", { module: mobileActiveModule, via: "first_free" });
+          setUnlockSaveTick(t => t + 1);
+        }
+        // A walk-through, finished, goes on to the answer step by
+        // step (MODULE_REVEALS), when there's one to give.
+        if (how === "finished" && (firstFree || !isLocked(d, mobileActiveModule)) && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
+          setRevealModule(mobileActiveModule);
+          posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
+        }
+        setRowSaveTick(t => t + 1);
+        scrollToTop();
+      };
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
-          <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set}
-            onDone={(how, at) => {
-              const selected = d.selectedModules || [];
-              if (!selected.includes(mobileActiveModule)) set("selectedModules", [...selected, mobileActiveModule]);
-              if (how === "finished" && Array.isArray(d.answeredModules)) set("answeredModules", withAnswered(d, mobileActiveModule).answeredModules);
-              posthog.capture(how === "finished" ? "guide_finished" : "guide_skipped", { module: mobileActiveModule, at });
-              posthog.capture("module_answer_shown", { module: mobileActiveModule });
-              // The first module finished unlocks by itself (unlock.js).
-              const firstFree = how === "finished" ? firstUnlockPatch(d, mobileActiveModule) : null;
-              if (firstFree) {
-                Object.entries(firstFree).forEach(([k, v]) => set(k, v));
-                posthog.capture("module_unlocked", { module: mobileActiveModule, via: "first_free" });
-                setUnlockSaveTick(t => t + 1);
-              }
-              // A walk-through, finished, goes on to the answer step by
-              // step (MODULE_REVEALS), when there's one to give.
-              if (how === "finished" && (firstFree || !isLocked(d, mobileActiveModule)) && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
-                setRevealModule(mobileActiveModule);
-                posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
-              }
-              setRowSaveTick(t => t + 1);
-              scrollToTop();
-            }}/>
+          {/* Student loan opens on what's at stake, then one-tap questions in
+              bands, for a first answer before any exact figures. */}
+          {mobileActiveModule === "studentLoan"
+            ? <StudentLoanQuickStart d={d} onPatch={patch => Object.entries(patch).forEach(([k, v]) => set(k, v))} onDone={finishGuide}/>
+            : <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} onDone={finishGuide}/>}
         </MobileLayout>
       );
     }
@@ -863,7 +869,7 @@ export default function AppShell() {
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
-          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={moduleLimits(mobileActiveModule, d, m)}
+          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={moduleLimits(mobileActiveModule, d, m)} large={mobileActiveModule === "studentLoan"}
             footer={<InviteFriends d={d} source="reveal" moduleKey={mobileActiveModule}/>}
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
@@ -877,6 +883,13 @@ export default function AppShell() {
       <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={editInputsFor(mobileActiveModule)}>
         {/* Keyed by module, so each module page opens fresh, every tile collapsed,
             however it's reached. */}
+        {/* Figures from the quick start's bands, until they're changed. */}
+        {mobileActiveModule === "studentLoan" && estimateLine(d) && (
+          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
+            {estimateLine(d)}{" "}
+            <button type="button" onClick={() => openInputs("studentLoan")} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Use your exact figures</button>
+          </p>
+        )}
         <MobileModuleDeepDive key={mobileActiveModule} moduleKey={mobileActiveModule}
           onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set}
           isComplete={completedModules.includes(mobileActiveModule)}
