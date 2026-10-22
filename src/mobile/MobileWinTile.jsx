@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../design-tokens.js";
 import MobileReminderAction from "./MobileReminderAction.jsx";
+import NewBadge from "./NewBadge.jsx";
 
 // Compact, tap-to-expand "Win" tile for mobile module deep-dive pages —
 // numbered, at mobile density, and reuses the same expand pattern already established in
@@ -14,7 +15,9 @@ import MobileReminderAction from "./MobileReminderAction.jsx";
 // transparent border, so the provider border adds no height).
 // `open` and `onOpenChange`, together, let the page open it (a link
 // elsewhere on the page that leads to it).
-export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, provider = false, open: openProp, onOpenChange, children }) {
+// `badge` ({ count, label }): a red count bubble on its top right corner for
+// something new in it (NewBadge.jsx).
+export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, provider = false, open: openProp, onOpenChange, badge, children }) {
   const [openState, setOpenState] = useState(defaultOpen);
   const open = openProp ?? openState;
   const setOpen = f => onOpenChange ? onOpenChange(f(open)) : setOpenState(f);
@@ -22,7 +25,8 @@ export default function MobileWinTile({ number, title, headline, tagLabel, tagCo
     ? { background:PROVIDER_TILE_BG, border:PROVIDER_TILE_BORDER, boxShadow:PROVIDER_TILE_SHADOW }
     : { background:WHITE, border:"1px solid transparent", boxShadow:"0 2px 10px rgba(22,47,36,0.06)" };
   return (
-    <div style={{...surface,borderRadius:RADIUS_CARD,marginBottom:"12px",overflow:"hidden"}}>
+    <div style={{position:"relative",marginBottom:"12px"}}>
+    <div style={{...surface,borderRadius:RADIUS_CARD,overflow:"hidden"}}>
       <div onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"flex-start",gap:"12px",padding:"16px 16px 13px",cursor:"pointer"}}>
         {number != null && (
           <div style={{width:"24px",height:"24px",borderRadius:"50%",background:G,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
@@ -48,6 +52,8 @@ export default function MobileWinTile({ number, title, headline, tagLabel, tagCo
           {reminder && <MobileReminderAction id={reminder.id} title={reminder.title} description={reminder.description} email={reminder.email}/>}
         </div>
       )}
+    </div>
+    {badge && <NewBadge count={badge.count} label={badge.label}/>}
     </div>
   );
 }

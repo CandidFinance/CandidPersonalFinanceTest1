@@ -10,6 +10,8 @@ import { notStarted, dormantModules, MODULE_PITCH } from "../../lib/appEntry.js"
 import { taxTrap } from "../../lib/taxTrap.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import BankConfirm from "../BankConfirm.jsx";
+import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
+import { useCashNews } from "../visitNews.js";
 import { moduleEstimate } from "../../lib/crossModule.js";
 import { isLocked } from "../../lib/unlock.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
@@ -117,6 +119,10 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   // celebrating, not a per-tile state array, since only one can be reviewed
   // at a time from a tap.
   const [celebratingKey, setCelebratingKey] = useState(null);
+  // Best rates moved for them since the last visit: a red badge on the Cash
+  // tile until they open Cash (visitNews.js).
+  const news = useCashNews();
+  const cashBadge = news && !news.opened ? news.count : 0;
   const { moduleList, modulesWithRec, needActionCount, totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, insights, sortMode);
   // Property waits with the rest until its questions are done, then joins
   // the live modules (no £ yet: no rent vs buy engine, so not ranked).
@@ -170,7 +176,8 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
               const isOpen = expandedKey === mm.key;
               const insights = isOpen ? moduleInsights(mm, d, m) : [];
               return (
-                <div key={mm.key} style={INNER}>
+                <div key={mm.key} style={{position:"relative"}}>
+                <div style={INNER}>
                   <div onClick={() => setExpandedKey(k => k===mm.key ? null : mm.key)} style={{display:"flex",alignItems:"flex-start",gap:"14px",padding:"16px 14px 13px 16px",cursor:"pointer"}}>
                     <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
                       {mm.icon && <mm.icon size={18} color={G}/>}
@@ -233,6 +240,8 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
                       )}
                     </div>
                   )}
+                </div>
+                {mm.key === "cash" && <NewBadge count={cashBadge} label={rateUpdatesLabel(cashBadge)}/>}
                 </div>
               );
             })}

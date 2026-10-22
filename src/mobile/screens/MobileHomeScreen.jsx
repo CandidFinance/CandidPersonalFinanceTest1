@@ -19,6 +19,9 @@ import ConfidenceCard from "./ConfidenceCard.jsx";
 import PayCheckCard from "./PayCheckCard.jsx";
 import GainedFromChanges from "../GainedFromChanges.jsx";
 import SinceLastVisit from "../SinceLastVisit.jsx";
+import OutsideEvent from "../OutsideEvent.jsx";
+import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
+import { useCashNews } from "../visitNews.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
@@ -59,12 +62,16 @@ let lastShownScore = null;
 // to start with (MobileStartHome). Everything here is worked out by the
 // code: no AI report (docs/score-without-ai-plan.md). `onGoalsDone(how, goals)`
 // records the goals card being answered or dismissed.
-export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, onGoalsDone, set, savingsRates = null }) {
+export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, onGoalsDone, set, savingsRates = null, approvedEvents = null }) {
   const navigate = useNavigate();
   // The score tile opens in place to show what to do first.
   const [scoreOpen, setScoreOpen] = useState(false);
   const reduceMotion = useReducedMotion();
   const [netWorthOpen, setNetWorthOpen] = useState(false);
+  // Best rates moved for them since the last visit: a red badge on the Cash
+  // row (and on the list while it's closed) until they open Cash.
+  const news = useCashNews();
+  const cashBadge = news && !news.opened ? news.count : 0;
 
   // Computed live from `statuses` (see calcCandidScore) rather than read from
   // insights.score — reacts instantly and for free to any change in `d`, from
@@ -142,6 +149,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         {mobileGreeting(d)}
       </h1>
 
+      {/* A Bank Rate decision or a Budget, coming up or just announced. */}
+      <OutsideEvent d={d} m={m} approved={approvedEvents}/>
+
       {/* What's changed since they were last here, when anything has. */}
       <SinceLastVisit d={d} m={m} rows={savingsRates} onOpenCash={() => onStartModule("cash")}/>
 
@@ -183,7 +193,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
           <span style={{fontSize:"13.5px",fontWeight:700}}>
             {plan.length > 0 ? <>Money left on the table <span style={{fontWeight:500,color:MUT}}>· {stepsDone} of {plan.length} reviewed</span></> : "Your modules"}
           </span>
-          <ChevronDown size={16} color={MUT} style={{transform:scoreOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
+          <span style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            {!scoreOpen && cashBadge > 0 && <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/>}
+            <ChevronDown size={16} color={MUT} style={{transform:scoreOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
+          </span>
         </button>
         {scoreOpen && (
           <div style={{marginTop:"4px"}}>
@@ -198,7 +211,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
                       {p.done && <Check size={12} strokeWidth={3}/>}
                     </span>
                     <span style={{flex:1,minWidth:0}}>
-                      <span style={{display:"block",fontSize:"14px",fontWeight:700,color:TEXT}}>{p.title}</span>
+                      <span style={{display:"flex",alignItems:"center",gap:"8px",fontSize:"14px",fontWeight:700,color:TEXT}}>
+                        {p.title}
+                        {p.key === "cash" && cashBadge > 0 && <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/>}
+                      </span>
                       {isLocked(d, p.key)
                         ? <span style={{display:"flex",alignItems:"center",gap:"5px",fontSize:"12.5px",color:MUT,lineHeight:1.5,marginTop:"2px"}}><Lock size={12}/>{fmt(p.amount)}{p.amountIsLumpSum ? " by 18" : " a year"}. Unlock to see how</span>
                         : p.line && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>{p.line}</span>}

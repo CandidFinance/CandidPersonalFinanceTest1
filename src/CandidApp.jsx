@@ -19,6 +19,7 @@ import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import { checkAccessOnLoad, accessInfo, saveStateSoon, identifySubscriber } from "./lib/entitlement.js";
+import { recordVisit } from "./mobile/visitNews.js";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
@@ -366,6 +367,16 @@ export default function AppShell() {
     return () => { cancelled = true; };
   }, []);
 
+  // ── What Bank Rate decisions and Budgets announced, from their approved
+  // emails (api/events.js), for Home's outside event. null until in, or if
+  // it fails: Home then only says what's coming up.
+  const [approvedEvents, setApprovedEvents] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/events").then(r => r.ok ? r.json() : null).then(j => { if (!cancelled && Array.isArray(j?.events)) setApprovedEvents(j.events); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   // ── Regional rent and house price growth (Property's rent vs buy) — from
   // property_regional_rates, updated by hand with each ONS release. null
   // while loading or if it fails; src/lib/regionalRates.js then falls back
@@ -438,6 +449,10 @@ export default function AppShell() {
     };
   }, [savingsRates]);
   const m = useMemo(() => calcMetrics(d, marketRates), [d, marketRates]);
+  // This visit, recorded once the rates are in, for the next to compare
+  // with; and any best-rate changes since the last, for Cash's badges
+  // (src/mobile/visitNews.js).
+  useEffect(() => { recordVisit(d, m, savingsRates); }, [savingsRates]); // eslint-disable-line react-hooks/exhaustive-deps
   const statuses = useMemo(() => computeModuleStatuses(d, m, marketRates), [d, m, marketRates]);
   // The user's row in Supabase: its id, inserting it and PATCHing it.
   const { currentRowId, insertReportRow, saveRow, rowInputFields, rowReportFields } = useReportRow(d, m, statuses);
@@ -746,7 +761,7 @@ export default function AppShell() {
 
   if (pathname === "/app/home") return (
     <MobileLayout assist={assistNode} activeTab="home" headerRight={editInputsButton}>
-      <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules} savingsRates={savingsRates}
+      <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules} savingsRates={savingsRates} approvedEvents={approvedEvents}
         onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}
         onGoalsDone={(how, goals) => {
           set("goalsAsked", true);

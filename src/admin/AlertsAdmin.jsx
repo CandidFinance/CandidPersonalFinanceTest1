@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavBar } from "../NavBar.jsx";
 import { G, CREAM, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS, ERROR_TEXT } from "../design-tokens.js";
 import WeeklyEditor from "./WeeklyEditor.jsx";
+import EventEditor from "./EventEditor.jsx";
 
 // Internal page for Candid's emails (api/alerts.js): what would go out on
 // any date, worked out on everyone's figures today, and one of them sent to
@@ -9,11 +10,12 @@ import WeeklyEditor from "./WeeklyEditor.jsx";
 // pages; nothing is remembered across reloads. Whether the daily run really
 // sends is the VITE_ALERTS_LIVE setting in Vercel, shown at the top. The
 // Sunday email's issue for each week is written and approved here too
-// (WeeklyEditor).
+// (WeeklyEditor), and Bank Rate and Budget emails, drafted by Claude,
+// checked and approved (EventEditor, api/events.js).
 
 const button = primary => ({ padding: "8px 14px", borderRadius: "8px", border: primary ? "none" : "1.5px solid rgba(22,47,36,0.2)", background: primary ? G : WHITE, color: primary ? WHITE : G, fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: SANS });
 const input = { padding: "9px 12px", border: "1.5px solid rgba(22,47,36,0.18)", borderRadius: "8px", fontSize: "14px", fontFamily: SANS, boxSizing: "border-box" };
-const KIND_LABEL = { taxYearEnd: "Before 5 April", bonus: "Bonus", newTaxYear: "New tax year", rates: "Better rate", welcome: "Welcome", confirmed: "Welcome (free)", confirmReminder: "Confirm reminder", weekly: "Sunday email" };
+const KIND_LABEL = { taxYearEnd: "Before 5 April", bonus: "Bonus", newTaxYear: "New tax year", rates: "Better rate", welcome: "Welcome", confirmed: "Welcome (free)", confirmReminder: "Confirm reminder", weekly: "Sunday email", event: "Bank Rate or Budget", monthly: "Monthly check-in" };
 
 export default function AlertsAdmin() {
   const [password, setPassword] = useState("");
@@ -25,10 +27,10 @@ export default function AlertsAdmin() {
   const [testTo, setTestTo] = useState("");
   const [testDone, setTestDone] = useState(null);
 
-  async function call(body, label) {
+  async function call(body, label, url = "/api/alerts") {
     setBusy(label); setError("");
     try {
-      const res = await fetch("/api/alerts", {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "x-admin-password": password, "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -74,6 +76,7 @@ export default function AlertsAdmin() {
           {data.live ? "Sending is on: the daily run (04:00 UTC, 5am UK time in summer and 4am in winter) sends these." : "Dry run: nothing is sent. VITE_ALERTS_LIVE=1 in Vercel turns sending on."}
         </div>
         <WeeklyEditor call={call} busy={busy} onPreview={week => { setDate(week); preview(week); }}/>
+        <EventEditor call={call} busy={busy} onPreview={on => { setDate(on); preview(on); }}/>
         <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginTop: "22px" }}>
           <label style={{ fontSize: "13px", color: MUT }}>As if today were</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} style={input}/>

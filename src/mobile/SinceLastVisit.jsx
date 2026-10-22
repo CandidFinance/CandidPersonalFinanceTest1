@@ -2,38 +2,31 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import posthog from "posthog-js";
 import { X, ChevronRight } from "lucide-react";
-import { visitSnapshot, sinceLastVisit } from "../lib/sinceLastVisit.js";
-import { reportStorageFailure } from "../lib/storage.js";
+import { sinceLastVisit } from "../lib/sinceLastVisit.js";
+import { lastVisit, sinceClosed, closeSince } from "./visitNews.js";
 import { WHITE, TEXT, RADIUS_CARD, CTA_BLUE } from "../design-tokens.js";
 
 // Home's "Since your last visit" (src/lib/sinceLastVisit.js): what's changed
-// since they were last here, top of Home, or nothing when nothing has. The
-// last visit's snapshot is read once a session, so the strip stays put as
-// they move around the app, until they close it (for the rest of the
-// session); this visit's is recorded once the rates are in, so the next
-// visit only shows what's changed since. Kept on this device
-// (candid_last_visit), cleared on signing out. In the CTA blue, so it
-// stands out from the green tiles under it as something new.
-const KEY = "candid_last_visit";
-let sessionPrev;
-let recorded = false;
+// since they were last here, top of Home, or nothing when nothing has. It
+// compares with the last visit's snapshot for the whole session
+// (visitNews.js), so the strip stays put as they move around the app,
+// until they close it (for the rest of the session). In the CTA blue, so
+// it stands out from the green tiles under it as something new.
 let reported = false;
-let closed = false;
+
+// Closing a tile at the top of Home: it fades and lifts a little while the
+// space it took closes up, so the tiles under it slide up rather than
+// jump. Just a fade for anyone who has asked for less motion.
+export const closingTile = reduceMotion => reduceMotion
+  ? { opacity: 0, transition: { duration: 0.2 } }
+  : { opacity: 0, y: -6, scale: 0.98, height: 0, marginBottom: 0,
+      transition: { opacity: { duration: 0.18 }, y: { duration: 0.2 }, scale: { duration: 0.2 },
+        height: { duration: 0.32, delay: 0.06, ease: [0.4, 0, 0.2, 1] }, marginBottom: { duration: 0.32, delay: 0.06, ease: [0.4, 0, 0.2, 1] } } };
 
 export default function SinceLastVisit({ d, m, rows, onOpenCash }) {
-  const [hidden, setHidden] = useState(closed);
+  const [hidden, setHidden] = useState(sinceClosed);
   const reduceMotion = useReducedMotion();
-  if (sessionPrev === undefined) {
-    try { sessionPrev = JSON.parse(localStorage.getItem(KEY)) || null; }
-    catch (e) { reportStorageFailure("read_last_visit", e); sessionPrev = null; }
-  }
-  useEffect(() => {
-    if (recorded || !rows) return;
-    recorded = true;
-    try { localStorage.setItem(KEY, JSON.stringify(visitSnapshot(d, m, rows))); }
-    catch (e) { reportStorageFailure("save_last_visit", e); }
-  }, [rows]); // eslint-disable-line react-hooks/exhaustive-deps
-  const since = useMemo(() => sinceLastVisit(sessionPrev, d, m, rows), [d, m, rows]);
+  const since = useMemo(() => sinceLastVisit(lastVisit(), d, m, rows), [d, m, rows]);
   useEffect(() => {
     if (!since || reported || !rows) return;
     reported = true;
@@ -41,24 +34,15 @@ export default function SinceLastVisit({ d, m, rows, onOpenCash }) {
   }, [since, rows]);
   if (!since) return null;
   const close = () => {
-    closed = true;
+    closeSince();
     setHidden(true);
     posthog.capture("since_last_visit_closed");
   };
 
-  // Closing: the tile fades and lifts a little while the space it took
-  // closes up, so the tiles under it slide up rather than jump. Just a
-  // fade for anyone who has asked for less motion.
-  const exit = reduceMotion
-    ? { opacity: 0, transition: { duration: 0.2 } }
-    : { opacity: 0, y: -6, scale: 0.98, height: 0, marginBottom: 0,
-        transition: { opacity: { duration: 0.18 }, y: { duration: 0.2 }, scale: { duration: 0.2 },
-          height: { duration: 0.32, delay: 0.06, ease: [0.4, 0, 0.2, 1] }, marginBottom: { duration: 0.32, delay: 0.06, ease: [0.4, 0, 0.2, 1] } } };
-
   return (
     <AnimatePresence initial={false}>
       {!hidden && (
-        <motion.div key="since" exit={exit} style={{marginBottom:"16px",transformOrigin:"top center"}}>
+        <motion.div key="since" exit={closingTile(reduceMotion)} style={{marginBottom:"16px",transformOrigin:"top center"}}>
           <div style={{background:"rgba(0,113,227,0.06)",border:`1.5px solid ${CTA_BLUE}`,borderRadius:RADIUS_CARD,boxShadow:"0 4px 16px rgba(0,113,227,0.12)",padding:"14px 14px 16px 18px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
               <span style={{flex:1,minWidth:0}}>

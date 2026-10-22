@@ -121,6 +121,7 @@ export async function signOut() {
   if (pendingSave) { const p = pendingSave; pendingSave = null; await call("save", p).catch(() => {}); }
   try {
     for (const k of Object.keys(localStorage)) if (k.startsWith("candid_") && !KEEP_ON_SIGN_OUT.includes(k)) localStorage.removeItem(k);
+    for (const k of Object.keys(sessionStorage)) if (k.startsWith("candid_")) sessionStorage.removeItem(k);
   } catch (e) { reportStorageFailure("sign_out", e); }
   write(null);
 }

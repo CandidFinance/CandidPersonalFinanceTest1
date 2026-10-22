@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { calcCashOptimisation } from "../../lib/cash.js";
 import { cashOpportunity, accountName } from "../../lib/assist.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -7,6 +7,8 @@ import { getModuleProducts } from "../moduleProducts.js";
 import MobileWinTile from "../MobileWinTile.jsx";
 import MobileProductListTile from "../MobileProductListTile.jsx";
 import InfoButton from "../InfoButton.jsx";
+import { rateUpdatesLabel } from "../NewBadge.jsx";
+import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
 import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, SUCCESS, CDARK, CRITICAL } from "../../design-tokens.js";
@@ -40,6 +42,13 @@ function AccountLines({ lines, rowStyle }) {
 
 export default function MobileCashDeepDive({ d, m, savingsRates }) {
   const [openInfo, setOpenInfo] = useState(null); // "step1" | "step2" | null
+  // Best rates moved for them since the last visit (visitNews.js): opening
+  // Cash clears the badges outside it; the savings tile keeps its own until
+  // it's opened.
+  const news = useCashNews();
+  useEffect(() => { if (news && !news.opened) markCashOpened(); }, [news]);
+  const [savingsOpen, setSavingsOpen] = useState(false);
+  const openSavings = open => { setSavingsOpen(open); if (open) markCashSeen(); };
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const stepLabelRow = { display:"flex", alignItems:"center", gap:"6px", marginTop:"8px", marginBottom:"2px" };
   const stepLabel = { fontSize:"10px", fontWeight:700, color:GOLD, letterSpacing:"0.05em", textTransform:"uppercase" };
@@ -135,7 +144,8 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
 
       <MobileWinTile number={optimiseWinNumber} title="Earn more on your savings"
         headline={totalPot<=0 ? "Add your cash details to see this" : gain>50 ? `Your savings lose ${fmt(gain)}/yr to low rates${opp ? ", after tax" : ""}` : "Your savings are already on good rates."}
-        tagLabel="Today"
+        tagLabel="Today" open={savingsOpen} onOpenChange={openSavings}
+        badge={news ? { count: news.count, label: rateUpdatesLabel(news.count) } : null}
         reminder={gain > 50 ? {
           id: "cash-move-surplus",
           title: buildReminderSubject(`${fmt(gain)}/yr`, "Higher rates for your savings"),

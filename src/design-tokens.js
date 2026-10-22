@@ -31,6 +31,7 @@ export const SUCCESS  = "#2d6b4a"; // "on track" / positive state
 export const WARNING  = "#d9822b"; // scoreBand's 4th tier only — sits between GOLD and CRITICAL
 export const CRITICAL = "#c0392b"; // "action needed" / error state
 export const ERROR_TEXT = "#b3261e"; // error messages under forms and buttons
+export const NOTIFY_RED = "#FF3B30"; // the "something new" badge only (NewBadge.jsx), bright like a phone's
 
 // Forecast-chart-only accents. Named (rather than left inline) because the
 // Surplus chart and the Net Worth breakdown both need to use the same hex

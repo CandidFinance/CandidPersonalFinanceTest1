@@ -3,6 +3,8 @@ import { alertsDue, alertEmail, inputsFromRow, isFounding, FREE_RATES_DELAY_DAYS
 import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS, REFERRAL_MONTHS } from "../src/lib/weekly.js";
 import { confirmedWelcomeEmail, confirmReminderEmail } from "../src/lib/accountEmails.js";
 import { monthlyCheckIn, monthlyEmail, MONTHLY_NEW_DAYS } from "../src/lib/monthly.js";
+import { eventEmail, eventEmailDue, eventName } from "../src/lib/eventEmails.js";
+import { EVENTS } from "../src/lib/outsideEvents.js";
 import { confirmUrl, LINK_DAYS } from "../server/confirmLink.js";
 import { unsubscribeUrl, optInUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from "../server/alertMail.js";
 import { referralLink } from "../server/referrals.js";
@@ -28,6 +30,10 @@ import { referralLink } from "../server/referrals.js";
 //    the 1st (or the few days after), from their second week: where their
 //    figures stand, and how net worth has moved since the last one
 //    (alert_sends key "monthly:YYYY-MM", its figures in `detail`).
+//  - An outside event's email (src/lib/eventEmails.js): a Bank Rate
+//    decision or a Budget, drafted by Claude (api/events.js) and approved
+//    on /admin/alerts, to each subscriber once (alert_sends key
+//    "event:<id>"), up to a few days after the event.
 //  - A free user's welcome goes the day after they confirm their email
 //    (alert_sends key "confirmed"): rate alerts to turn on, free for
 //    founding users, and their invite link (confirmedWelcomes).
@@ -209,7 +215,9 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
   const notes = [];
   const since = new Date(today - SENT_LOOKBACK_DAYS * 86400000).toISOString();
   const week = weeklyWeek(today);
-  const [people, optouts, verifications, sent, rates, issues, codes] = await Promise.all([
+  // Outside events whose email can still go today (eventEmails.js).
+  const eventsDue = EVENTS.filter(e => eventEmailDue(e, ukDay(today)));
+  const [people, optouts, verifications, sent, rates, issues, codes, eventRows] = await Promise.all([
     recipients(notes),
     optional("alert_optouts?select=email", notes, "alert_optouts"),
     optional("email_verifications?select=email,verified_at,created_at", notes, "email_verifications"),
@@ -217,6 +225,7 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
     db(`savings_rates?select=${RATE_COLUMNS}&order=rate_aer.desc`),
     week ? optional(`weekly_issues?select=week,subject,intro,items,approved_at&week=eq.${week}`, notes, "weekly_issues") : [],
     optional("referral_codes?select=email,code", notes, "referral_codes"),
+    eventsDue.length ? optional(`event_emails?select=event_id,subject,intro,items,approved_at&event_id=in.(${eventsDue.map(e => encodeURIComponent(e.id)).join(",")})`, notes, "event_emails") : [],
   ]);
   const verified = verifications && verifications.filter(v => v.verified_at);
   const pending = verifications && verifications.filter(v => !v.verified_at);
@@ -225,6 +234,12 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
   // This week's Sunday email: approved, or for the preview, a draft.
   const issue = issues?.[0] && (issues[0].approved_at || drafts) ? issues[0] : null;
   if (issues?.[0] && !issues[0].approved_at) notes.push(`The issue for ${week} isn't approved${drafts ? ": shown here, but it won't go out" : ", so it won't go out"}`);
+  // Their emails: approved, or for the preview, a draft.
+  const eventIssues = eventsDue.map(e => ({ event: e, issue: (eventRows || []).find(r => r.event_id === e.id) }))
+    .filter(({ event, issue }) => {
+      if (issue && !issue.approved_at) notes.push(`The ${eventName(event)} email (${event.date}) isn't approved${drafts ? ": shown here, but it won't go out" : ", so it won't go out"}`);
+      return issue && (issue.approved_at || drafts);
+    });
   const out = new Set((optouts || []).map(o => cleanEmail(o.email)));
   const verifiedAt = new Map((verified || []).map(v => [cleanEmail(v.email), v.verified_at]));
   const sentBy = new Map();
@@ -248,6 +263,13 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
         const mail = weeklyEmail(issue, p.d, { today, rows: rates || [], unsubscribeUrl: unsubscribe });
         emails.push({ to: p.email, who: p.who, kind: "weekly", key: `weekly:${issue.week}`, detail: null, ...mail });
       } catch (e) { notes.push(`couldn't write the Sunday email for one subscriber: ${e.message}`); }
+    }
+    for (const { event, issue } of p.who === "subscriber" ? eventIssues : []) {
+      if (done.has(`event:${event.id}`)) continue;
+      try {
+        const mail = eventEmail(issue, event, p.d, { today, unsubscribeUrl: unsubscribe });
+        emails.push({ to: p.email, who: p.who, kind: "event", key: `event:${event.id}`, detail: null, ...mail });
+      } catch (e) { notes.push(`couldn't write the ${eventName(event)} email for one subscriber: ${e.message}`); }
     }
     // The monthly check-in (monthly.js): subscribers only, and not in their
     // first week (the welcome has only just gone).

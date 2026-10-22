@@ -1,5 +1,7 @@
 import { Home, Target, LayoutGrid, LineChart, MessageCircle } from "lucide-react";
 import { G, MUT, WHITE } from "../design-tokens.js";
+import NewBadge, { rateUpdatesLabel } from "./NewBadge.jsx";
+import { useCashNews } from "./visitNews.js";
 
 // Single source of truth for the app's bottom nav.
 export const MOBILE_NAV_ITEMS = [
@@ -11,6 +13,10 @@ export const MOBILE_NAV_ITEMS = [
 ];
 
 export default function MobileTabBar({ active, onNavigate }) {
+  // Best rates moved for them since the last visit: a red badge on Modules
+  // until they open Cash (visitNews.js).
+  const news = useCashNews();
+  const badge = news && !news.opened ? news.count : 0;
   return (
     // No border: the bar's top edge is fully transparent, not opaque CREAM,
     // so it melts into whatever is scrolled underneath it (the page's own
@@ -34,7 +40,10 @@ export default function MobileTabBar({ active, onNavigate }) {
               flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"4px",
               background:"transparent", border:"none", padding:"10px 4px 8px", cursor:"pointer",
             }}>
-              <item.icon size={20} color={isActive ? G : MUT} strokeWidth={isActive ? 2.4 : 2}/>
+              <span style={{position:"relative",display:"flex"}}>
+                <item.icon size={20} color={isActive ? G : MUT} strokeWidth={isActive ? 2.4 : 2}/>
+                {item.key === "modules" && <NewBadge count={badge} label={rateUpdatesLabel(badge)} style={{top:"-7px",right:"-12px",minWidth:"18px",height:"18px",lineHeight:"18px",fontSize:"10.5px",padding:"0 5px"}}/>}
+              </span>
               <span style={{fontSize:"10px",fontWeight:isActive?700:500,color:isActive ? G : MUT}}>{item.label}</span>
             </button>
           );

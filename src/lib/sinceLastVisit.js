@@ -54,18 +54,18 @@ export function agoLabel(at, today = new Date()) {
 }
 
 // The changes since `prev` (a visitSnapshot), or null when there are none.
-// { ago, lines: [{ label, text }], rates } (`rates`: a line is about their
-// cash and the rates).
+// { ago, lines: [{ label, text }], rates, rateCount } (`rateCount`: the lines
+// about their cash and the rates, which also badge Cash: visitNews.js).
 export function sinceLastVisit(prev, d, m, rows, today = new Date()) {
   if (!prev?.at) return null;
   const now = visitSnapshot(d, m, rows, today);
   const lines = [];
-  let rates = false;
+  let rateCount = 0;
 
   for (const item of rows?.length ? accountItems(d, rows, today) : []) {
     if ((prev.seen || []).includes(item.signature)) continue;
     const name = accountName(item.account);
-    rates = true;
+    rateCount++;
     if (item.kind === "cut") {
       lines.push({ label: "Rate cut", text: `${name} now pays ${item.toRate}%, down from ${item.fromRate}%${item.loss ? `: ${fmt(Math.round(item.loss))} a year less on your ${fmt(item.account.amount)}` : ""}.` });
     } else {
@@ -74,11 +74,11 @@ export function sinceLastVisit(prev, d, m, rows, today = new Date()) {
   }
 
   if (now.gain != null && prev.gain != null && Math.abs(now.gain - prev.gain) >= RATES_MOVE_MIN) {
-    rates = true;
+    rateCount++;
     lines.push({ label: "Rates", text: `today's best rates would add ${fmt(now.gain)} a year to your cash, ${now.gain > prev.gain ? "up" : "down"} from ${fmt(prev.gain)}.` });
   } else if (now.top && prev.top && now.top !== prev.top && now.gain >= MIN_ASSIST_GAIN) {
     const [provider, product, rate] = now.top.split("|");
-    rates = true;
+    rateCount++;
     lines.push({ label: "Rates", text: `a new highest rate for you: ${provider}${product ? ` ${product}` : ""} at ${rate}%.` });
   }
 
@@ -91,5 +91,5 @@ export function sinceLastVisit(prev, d, m, rows, today = new Date()) {
 
   if (!lines.length) return null;
   for (const text of comingUp(d, m, today)) lines.push({ label: "Coming up", text });
-  return { ago: agoLabel(prev.at, today), lines, rates };
+  return { ago: agoLabel(prev.at, today), lines, rates: rateCount > 0, rateCount };
 }
