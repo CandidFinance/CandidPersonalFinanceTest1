@@ -636,7 +636,7 @@ function BonusTile({ hasStatedBonus, win4Num, bonusSacrifice, d, sacrificePct, s
             ? "Your pension allowance has no room left this year — sacrificing your bonus could trigger a tax charge"
             : bonusSacrifice.standaloneSacrifice < bonusSacrifice.bonus
               ? `Your allowance has room for ${fmt(bonusSacrifice.standaloneSacrifice)} of your ${fmt(bonusSacrifice.bonus)} bonus — saving up to ${fmt(bonusPotential)} in tax`
-              : `Sacrificing your ${fmt(+d.bonusAmount)} bonus could save up to ${fmt(bonusPotential)} in tax`}
+              : `Up to ${fmt(bonusPotential)} of tax on your ${fmt(+d.bonusAmount)} bonus is avoidable through sacrifice`}
           tagLabel="Today"
           reminder={bonusPotential > 0 ? {
             id: "pension-bonus-sacrifice",
@@ -644,7 +644,7 @@ function BonusTile({ hasStatedBonus, win4Num, bonusSacrifice, d, sacrificePct, s
             // Informational, not directive — states the figures and the action
             // needed (an email to HR/Payroll) rather than instructing the
             // person to sacrifice their bonus, avoiding reading as advice.
-            description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check whether you can sacrifice your bonus into your pension before it's paid. Based on your bonus (${fmt(+d.bonusAmount)}), sacrificing it could save up to ${fmt(bonusPotential)} in tax and National Insurance.\n\nDrop HR or Payroll an email to ask about bonus sacrifice - this needs actioning before your bonus is paid, as it usually can't be done retrospectively.`,
+            description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check whether you can sacrifice your bonus into your pension before it's paid. Based on your bonus (${fmt(+d.bonusAmount)}), up to ${fmt(bonusPotential)} of tax and National Insurance on it is avoidable by sacrificing it.\n\nDrop HR or Payroll an email to ask about bonus sacrifice - this needs actioning before your bonus is paid, as it usually can't be done retrospectively.`,
             email: bonusSacrificeDraft({ name: d.name }),
           } : null}>
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"14px"}}>

@@ -116,7 +116,7 @@ export default function TheProblemPage() {
             Millions of higher and additional rate taxpayers are uniquely exposed to a financial minefield.
           </h1>
           <p style={{ fontSize: "clamp(15px,2vw,17px)", color: MUT, lineHeight: 1.75, maxWidth: "580px", margin: "0 auto" }}>
-            Not because they've made mistakes – because personal finance has become overly complex, time-consuming, and frustratingly opaque. The result? Thousands of pounds leaking from your net worth every year.
+            Not because they've made mistakes – because personal finance has become overly complex, time-consuming, and frustratingly opaque. The result? Thousands of pounds left on the table every year.
           </p>
         </motion.div>
       </div>

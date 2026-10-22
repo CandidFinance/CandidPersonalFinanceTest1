@@ -245,7 +245,7 @@ export default function LandingPage() {
             fontFamily: SERIF, fontSize: "clamp(36px,5vw,54px)", fontWeight: 700,
             color: G, lineHeight: 1.12, letterSpacing: "-0.01em", marginBottom: "24px",
           }}>
-            Stop leaking wealth to tax traps and idle cash.
+            Your money left on the table, in tax traps and idle cash.
           </motion.h1>
           <motion.p variants={heroItem} style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, maxWidth: "520px", margin: "0 0 24px" }}>
             Answer a few questions and see, in pounds, where tax and idle cash are costing you, and what each option is worth.
@@ -293,7 +293,7 @@ export default function LandingPage() {
               boxShadow: "0 30px 60px rgba(22,47,36,0.22)",
             }}>
               <img
-                src="/hero-answer.png" alt="The Candid app on an iPhone, showing £2.8k of tax that could be saved in the Pension module"
+                src="/hero-answer.png" alt="The Candid app on an iPhone, showing £2.8k of avoidable tax in the Pension module"
                 style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block", borderRadius: "34px" }}
               />
             </div>
@@ -363,7 +363,7 @@ export default function LandingPage() {
             {[
               { icon: ClipboardList, title: "Where you stand and where you're headed", body: "Share your current setup and targets, from salary and savings to buying a home or growing your investments. Rough estimates are fine, we'll do the maths." },
               { icon: Scale, title: "Your full financial picture, analysed", body: "We test your setup against UK tax traps, debt mechanics, and personal goals. Then your Candid score, and every option worked out in pounds." },
-              { icon: Search, title: "See the £ value of every decision", body: "See what each option could add to your net worth, calculated from your own figures. Candid does the maths; the decisions are yours." },
+              { icon: Search, title: "See the £ value of every decision", body: "See what's left on the table and what each option gets back, from your own figures. Candid does the maths; the decisions are yours." },
               { icon: Compass, title: "Guidance that grows with you", body: "Life isn't static. Whether you get a pay rise, buy a home, or start a family – update a figure and every module's answer moves with it." },
             ].map((step, i) => (
               <Tile key={step.title} ref={teaserRef(i)} {...pullTogether(i, 4, reduceMotion)} {...tileHover} style={{ borderTop: `4px solid ${GOLD}` }}>

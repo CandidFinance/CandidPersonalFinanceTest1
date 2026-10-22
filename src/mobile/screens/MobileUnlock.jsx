@@ -31,7 +31,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
   const amount = mod?.amount > 0 ? mod.amount : 0;
 
   // What's behind the frost, named, so it's clear what unlocking gets them.
-  const hidden = amount > 0 ? ["Where it's leaking", "Your options, and what each one stops"] : PREVIEW_LINES[moduleKey] || ["Where you stand", "What to keep an eye on"];
+  const hidden = amount > 0 ? ["What's left on the table", "Your options, and what each one gets back"] : PREVIEW_LINES[moduleKey] || ["Where you stand", "What to keep an eye on"];
   const cta = amount > 0 ? "Show me where it's going" : "Show me";
 
   const label = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
@@ -320,7 +320,7 @@ const COMING_SOON = [
   ["Open Banking integration", "Connect your accounts for a live, unified view of your net worth."],
   ["More live updates", "Student loan repayment terms and mortgage deals, when they change."],
   ["Savings and goal planner", "Dynamic reviews of how much you could save and invest."],
-  ["Tax trap and leakage alerts", "Warnings for stealth tax bands, policy shifts and missed yield."],
+  ["Tax trap and low-rate alerts", "Warnings for stealth tax bands, policy shifts and missed yield."],
   ["New expansion modules", "Household finances, children's accounts, property and mortgages, and inheritance."],
 ];
 const listHead = { fontSize:"10.5px", fontWeight:700, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };

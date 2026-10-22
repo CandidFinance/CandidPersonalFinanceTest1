@@ -152,10 +152,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
             beside it shows how far along they are. */}
         <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Estimated leakage/yr</div>
+            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Left on the table/yr</div>
             <div style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:G,lineHeight:1.1,marginTop:"6px"}}>{fmt(totalOpp)}</div>
             <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
-              {totalOpp > 0 ? "What's leaking from your money each year, across what you've answered."
+              {totalOpp > 0 ? "Your money left on the table each year, across what you've answered."
                 : unchecked > 0 ? `Nothing left on the table in what you've checked so far. ${unchecked} more ${unchecked === 1 ? "area" : "areas"} to check below.`
                 : "Nothing left on the table in what you've answered."}
             </p>
@@ -177,7 +177,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         <button type="button" onClick={() => setScoreOpen(o => !o)}
           style={{marginTop:"16px",width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"12px 0 0",color:TEXT,fontFamily:"inherit",cursor:"pointer"}}>
           <span style={{fontSize:"13.5px",fontWeight:700}}>
-            {plan.length > 0 ? <>Where money is leaking <span style={{fontWeight:500,color:MUT}}>· {stepsDone} of {plan.length} reviewed</span></> : "Your modules"}
+            {plan.length > 0 ? <>Money left on the table <span style={{fontWeight:500,color:MUT}}>· {stepsDone} of {plan.length} reviewed</span></> : "Your modules"}
           </span>
           <ChevronDown size={16} color={MUT} style={{transform:scoreOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
         </button>

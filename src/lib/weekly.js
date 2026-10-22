@@ -141,7 +141,7 @@ function comingUp(d, m, today) {
     const toBonus = Math.round((Date.UTC(y, month - 1, 1) - day) / DAY_MS);
     if (toBonus >= 0 && toBonus <= SOON_DAYS) {
       const saving = Math.round(calcBonusSacrificePotential(d, m).standalone || 0);
-      out.push(`your bonus is usually paid in ${MONTHS[month - 1]}.${saving > 0 ? ` Paid into your pension, it could save up to ${fmt(saving)} in tax, if arranged with payroll before it's paid.` : ""}`);
+      out.push(`your bonus is usually paid in ${MONTHS[month - 1]}.${saving > 0 ? ` Up to ${fmt(saving)} of tax on it is avoidable if it's paid into your pension, arranged with payroll before it's paid.` : ""}`);
     }
   }
   return out;

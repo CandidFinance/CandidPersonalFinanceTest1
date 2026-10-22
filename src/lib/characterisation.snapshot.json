@@ -100,7 +100,7 @@
     "pension": {
      "status": "critical",
      "impact": 3440,
-     "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+     "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "potentialAmount": 2000
     },
@@ -167,9 +167,9 @@
      "icon": "<element undefined>",
      "title": "Pension",
      "status": "critical",
-     "summary": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+     "summary": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
      "impact": 3440,
-     "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+     "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -242,9 +242,9 @@
       "icon": "<element undefined>",
       "title": "Pension",
       "status": "critical",
-      "summary": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+      "summary": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
       "impact": 3440,
-      "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+      "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
       "amount": 1440,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -340,7 +340,7 @@
      {
       "label": "Your position",
       "figure": "£1,440 a year",
-      "title": "of salary left on the table: employer match you're not getting."
+      "title": "of employer match left on the table."
      },
      {
       "label": "Why",
@@ -1350,7 +1350,7 @@
       "title": "Pension",
       "amount": 1440,
       "amountIsLumpSum": false,
-      "line": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus"
+      "line": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus"
      },
      {
       "key": "cash",
@@ -3000,7 +3000,7 @@
     "pension": {
      "status": "critical",
      "impact": 3440,
-     "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+     "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "potentialAmount": 2000
     },
@@ -3067,9 +3067,9 @@
      "icon": "<element undefined>",
      "title": "Pension",
      "status": "critical",
-     "summary": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+     "summary": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
      "impact": 3440,
-     "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+     "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -3142,9 +3142,9 @@
       "icon": "<element undefined>",
       "title": "Pension",
       "status": "critical",
-      "summary": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+      "summary": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
       "impact": 3440,
-      "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
+      "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
       "amount": 1440,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -3240,7 +3240,7 @@
      {
       "label": "Your position",
       "figure": "£1,440 a year",
-      "title": "of salary left on the table: employer match you're not getting."
+      "title": "of employer match left on the table."
      },
      {
       "label": "Why",
@@ -4055,7 +4055,7 @@
       "title": "Pension",
       "amount": 1440,
       "amountIsLumpSum": false,
-      "line": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus"
+      "line": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus"
      },
      {
       "key": "cash",
@@ -18802,7 +18802,7 @@
      },
      {
       "label": "What you could do",
-      "title": "Paying your £15,000 bonus into your pension could save up to £9,000 in tax.",
+      "title": "Up to £9,000 of tax on your £15,000 bonus is avoidable, if it's paid into your pension.",
       "body": "It has to be arranged with HR or payroll before the bonus is paid."
      }
     ],
@@ -21540,7 +21540,7 @@
      },
      {
       "label": "What you could do",
-      "title": "Paying your £15,000 bonus into your pension could save up to £9,000 in tax.",
+      "title": "Up to £9,000 of tax on your £15,000 bonus is avoidable, if it's paid into your pension.",
       "body": "It has to be arranged with HR or payroll before the bonus is paid."
      }
     ],

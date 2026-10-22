@@ -252,7 +252,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     nonEarnerRelief ? `${fmt(NON_EARNER_PENSION_RELIEF)}/yr of tax relief open to you, with no earnings` : null,
     notPayingIn
       ? `${d.hasPension === "yes" ? "Nothing paid in" : "No pension"}: ${fmt(pensionPrimaryAmount)}/yr of tax relief missed`
-      : contributing && m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of unclaimed match: salary left on the table` : null,
+      : contributing && m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of employer match left on the table` : null,
     pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr lost to the 60% tax band above £100k` : null,
     retirementGap > 0 ? `${fmt(retirementGap)}/yr short of the retirement income you'd like` : null,
     pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} of avoidable tax on your bonus` : null,

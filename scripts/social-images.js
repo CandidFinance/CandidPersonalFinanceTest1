@@ -10,7 +10,7 @@ import { chromium } from "playwright";
 const outDir = join(dirname(fileURLToPath(import.meta.url)), "..", "public", "og");
 
 const IMAGES = [
-  { file: "home", kicker: "Personal finance, in pounds", title: "Stop leaking wealth to tax traps and idle cash." },
+  { file: "home", kicker: "Personal finance, in pounds", title: "Your money left on the table, in tax traps and idle cash." },
   { file: "student-loan-calculator", kicker: "Free calculator", title: "Should you pay off your student loan early?" },
   { file: "100k-tax-trap-calculator", kicker: "Free calculator", title: "The £100,000 tax trap and childcare cliff." },
   { file: "mortgage-vs-savings-calculator", kicker: "Free calculator", title: "Overpay the mortgage, or save the cash?" },

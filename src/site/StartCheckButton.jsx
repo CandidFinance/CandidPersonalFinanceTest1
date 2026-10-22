@@ -23,7 +23,7 @@ export function appEntryPath() {
 // The CTA's label, shared with the site header so every "start" button reads
 // the same. It says what you get, not "Beta" (testers didn't read the old
 // "Beta - Optimise my money" as the way into the product).
-export const CTA_LABEL = "See what I could save";
+export const CTA_LABEL = "See what I'm missing";
 
 // Main marketing CTA: one click straight into the app, no sign-up. `source`
 // tags which section of the site it was clicked from in analytics. `size`

@@ -77,7 +77,7 @@ const USED_FOR = {
 export function inviteMessage(code, d = {}, moduleKey = null) {
   const key = USED_FOR[moduleKey] ? moduleKey : [...(d.unlockedModules || [])].reverse().find(k => USED_FOR[k]);
   const usedFor = USED_FOR[key] || "see where I could be keeping more of my money";
-  return `I've been using Candid to ${usedFor}. It's a tool that helps people like us work out if we're leaking money. Start with my link and your second module is unlocked for free:\n${inviteUrl(code)}`;
+  return `I've been using Candid to ${usedFor}. It's a tool that helps people like us work out if we're leaving money on the table. Start with my link and your second module is unlocked for free:\n${inviteUrl(code)}`;
 }
 
 // A phone's own share sheet (email, WhatsApp, recent apps and the rest) on

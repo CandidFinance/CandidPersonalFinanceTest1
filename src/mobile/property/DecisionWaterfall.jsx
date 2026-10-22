@@ -106,7 +106,7 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
           {c.people.map(p => p.state === "missing"
             ? (p.who === "partner" && <p key={p.who} style={line}>Add your partner's pension figures above to check theirs.</p>)
             : <p key={p.who} style={line}>{matchLine(p)}</p>)}
-          {c.state === "attention" && <p style={why}>Matched contributions are a 100% return, so this is a real wealth leakage.</p>}
+          {c.state === "attention" && <p style={why}>Matched contributions are a 100% return, so any unclaimed is salary left on the table.</p>}
           {askMatch && (
             <>
               {c.people[0].state === "missing" && <p style={line}>Add your workplace pension to check this.</p>}
@@ -150,7 +150,7 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Leaks to check before a deposit</div>
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Left on the table, before a deposit</div>
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
         {checks.map(c => {
           const { Icon, color } = stateIcon(c.state);

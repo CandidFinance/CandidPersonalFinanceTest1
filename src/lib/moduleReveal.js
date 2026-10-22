@@ -134,7 +134,7 @@ function pensionSteps(d, m) {
   if (m.missedMatch > 0) {
     const netCost = Math.round((empPct - myPct) / 100 * m.salary * (1 - m.tr));
     return [
-      { label: ANSWER, figure: `${fmt(m.missedMatch)} a year`, title: "of salary left on the table: employer match you're not getting." },
+      { label: ANSWER, figure: `${fmt(m.missedMatch)} a year`, title: "of employer match left on the table." },
       { label: WHY, title: `Your employer matches up to ${empPct}% of your salary. You pay ${myPct}%.` },
       { label: ACTION, title: `Raising your payments to ${empPct}% would get the full match.`,
         body: `It would cost you about ${fmt(netCost)} a year after tax relief. ${HR}` },
@@ -177,7 +177,7 @@ function pensionSteps(d, m) {
     { label: WHY, title: `You pay ${myPct}%${empPct > 0 && !selfEmployed(d) ? (d.employerContributionType === "fixed" ? ` and your employer pays ${empPct}%` : ` and get your employer's full ${empPct}% match`) : ""}, so you're not leaving money on the table.`,
       body: "In today's money: growth of 6% a year, less 2% inflation." },
     bonus.standalone > 0
-      ? { label: ACTION, title: `Paying your ${fmt(+d.bonusAmount)} bonus into your pension could save up to ${fmt(bonus.standalone)} in tax.`, body: "It has to be arranged with HR or payroll before the bonus is paid." }
+      ? { label: ACTION, title: `Up to ${fmt(bonus.standalone)} of tax on your ${fmt(+d.bonusAmount)} bonus is avoidable, if it's paid into your pension.`, body: "It has to be arranged with HR or payroll before the bonus is paid." }
       : { label: ACTION, title: "Nothing to change right now.", body: checkedLine(d, m, adequacy) },
   ];
 }

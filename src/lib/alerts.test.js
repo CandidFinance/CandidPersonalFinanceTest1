@@ -42,7 +42,7 @@ test("bonus: the month before it's paid, February when the month isn't known", (
   const unknown = { ...d, bonusMonth: "" };
   const feb = alertsDue(unknown, { today: day("2027-02-10") });
   assert.deepEqual(kinds(feb), ["bonus:2027-3"]);
-  assert.match(feb[0].items[0], /^Paying your £20,000 bonus into your pension could save up to £[\d,]+ in tax\./);
+  assert.match(feb[0].items[0], /^Up to £[\d,]+ of tax on your £20,000 bonus is avoidable, if it's paid into your pension\./);
   // January's bonus: reminded in December, for the next year's January.
   assert.deepEqual(kinds(alertsDue({ ...d, bonusMonth: "1" }, { today: day("2026-12-05") })), ["bonus:2027-1"]);
 });

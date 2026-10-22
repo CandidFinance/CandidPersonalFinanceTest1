@@ -142,7 +142,7 @@ function bonus(d, m, today) {
     key: `bonus:${year}-${paid}`, kind: "bonus",
     subject: `Your bonus: up to ${fmt(Math.round(saving))} of avoidable tax`,
     intro: known ? `Your bonus is usually paid in ${MONTHS[paid - 1]}.` : "Many bonuses are paid in March.",
-    items: [`Paying your ${fmt(+d.bonusAmount)} bonus into your pension could save up to ${fmt(Math.round(saving))} in tax. It has to be arranged with HR or payroll before the bonus is paid.${bonusChildcare(d, m)}`],
+    items: [`Up to ${fmt(Math.round(saving))} of tax on your ${fmt(+d.bonusAmount)} bonus is avoidable, if it's paid into your pension. It has to be arranged with HR or payroll before the bonus is paid.${bonusChildcare(d, m)}`],
     link: `${SITE}/app/module/pension`,
   };
 }
