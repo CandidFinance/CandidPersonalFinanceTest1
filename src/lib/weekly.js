@@ -129,7 +129,7 @@ export function yourWeek(d, m, today, rows) {
   return lines;
 }
 
-function comingUp(d, m, today) {
+export function comingUp(d, m, today) {
   const out = [];
   const day = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
   const yearEnd = Date.UTC(today.getUTCMonth() > 3 || (today.getUTCMonth() === 3 && today.getUTCDate() > 5) ? today.getUTCFullYear() + 1 : today.getUTCFullYear(), 3, 5);

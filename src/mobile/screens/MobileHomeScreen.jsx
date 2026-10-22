@@ -18,6 +18,7 @@ import GoalsCard from "./GoalsCard.jsx";
 import ConfidenceCard from "./ConfidenceCard.jsx";
 import PayCheckCard from "./PayCheckCard.jsx";
 import GainedFromChanges from "../GainedFromChanges.jsx";
+import SinceLastVisit from "../SinceLastVisit.jsx";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
 // Mobile Home screen — matches the "Claude Design" mockup's Overview tab
@@ -58,7 +59,7 @@ let lastShownScore = null;
 // to start with (MobileStartHome). Everything here is worked out by the
 // code: no AI report (docs/score-without-ai-plan.md). `onGoalsDone(how, goals)`
 // records the goals card being answered or dismissed.
-export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, onGoalsDone, set }) {
+export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, onGoalsDone, set, savingsRates = null }) {
   const navigate = useNavigate();
   // The score tile opens in place to show what to do first.
   const [scoreOpen, setScoreOpen] = useState(false);
@@ -140,6 +141,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginBottom:"16px",lineHeight:1.2}}>
         {mobileGreeting(d)}
       </h1>
+
+      {/* What's changed since they were last here, when anything has. */}
+      <SinceLastVisit d={d} m={m} rows={savingsRates} onOpenCash={() => onStartModule("cash")}/>
 
       {/* The hero: the score, in a pale iridescent wash (HERO_TILE_BG) that
           only it and "Gains" wear, so they read as the

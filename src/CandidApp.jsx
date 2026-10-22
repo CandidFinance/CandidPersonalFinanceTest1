@@ -746,7 +746,7 @@ export default function AppShell() {
 
   if (pathname === "/app/home") return (
     <MobileLayout assist={assistNode} activeTab="home" headerRight={editInputsButton}>
-      <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules}
+      <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules} savingsRates={savingsRates}
         onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}
         onGoalsDone={(how, goals) => {
           set("goalsAsked", true);
