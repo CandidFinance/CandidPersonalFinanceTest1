@@ -1,6 +1,7 @@
+import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, ArrowUpRight, Check } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SERIF, SANS } from "../../design-tokens.js";
-import { fmt } from "../../lib/format.js";
+import { G, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS } from "../../design-tokens.js";
+import { fmt, fmtCompact } from "../../lib/format.js";
 import { accountName, resolveAccount, MIN_SPLIT_GAIN } from "../../lib/assist.js";
 import { devicePlatform, appLinkFor } from "../../lib/appLinks.js";
 import { FSCS_DEPOSIT_LIMIT } from "../../lib/cashAllocation.js";
@@ -33,6 +34,16 @@ export function Mark({ on, round = false }) {
   );
 }
 
+// "£4k/£7.5k": what an account would take of what it could. In £k unless
+// rounding would make a part-fill look full (then exact figures); green and
+// bold when it takes all of it.
+function TakeOf({ o }) {
+  const of = Math.max(o.amount, o.wanted ?? 0);
+  const full = o.amount >= of;
+  const f = !full && fmtCompact(o.amount) === fmtCompact(of) ? fmt : fmtCompact;
+  return <span style={full ? { color: SUCCESS, fontWeight: 700 } : undefined}>{f(o.amount)}/{f(of)}</span>;
+}
+
 // One section's providers: tap to pick, tap again to unpick. `absolute`:
 // show what each would earn in a year, for when there's no current rate to
 // compare against.
@@ -47,9 +58,7 @@ export function OptionList({ options, picked, onPick, absolute = false }) {
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontSize: "14.5px", fontWeight: 700, color: TEXT }}>{accountName(o)}</span>
           <span style={{ display: "block", fontSize: "12.5px", color: MUT, marginTop: "2px", lineHeight: 1.45 }}>
-            {o.pb
-              ? `${pct(o.ratePct)} prize fund rate (an average) · would take ${fmt(o.amount)}`
-              : `${pct(o.ratePct)} · would take ${fmt(o.amount)}${o.cap != null ? ` (pays this on up to ${fmt(o.cap)})` : ""}`}{bondsIn(o) ? ` · ${fmt(bondsIn(o))} of it from your Premium Bonds` : ""}{o.appOnly ? " · app only" : ""}
+            {pct(o.ratePct)}{o.pb ? " prize fund rate (an average)" : ""} · <TakeOf o={o}/>{bondsIn(o) ? ` · ${fmtCompact(bondsIn(o))} of it from your Premium Bonds` : ""}{o.appOnly ? " · app only" : ""}
           </span>
         </span>
         <span style={{ fontFamily: SERIF, fontSize: "15px", fontWeight: 700, color: G, whiteSpace: "nowrap" }}>{absolute ? `${fmt(o.gain)}/yr` : `+${fmt(o.gain)}`}</span>
@@ -100,16 +109,24 @@ export function ProviderLinks({ o }) {
 
 // After a capped pick, the rest of the money: an optional second account,
 // and how the two together compare with one account that could take it all.
-export function SecondChoice({ section, onPick }) {
-  if (!section.pick || !section.secondOptions.length) return null;
+// `autoScroll`: centre the list when a pick opens it, not on reopening.
+export function SecondChoice({ section, onPick, autoScroll = false }) {
+  const ref = useRef(null);
+  const shown = !!(section.pick && section.secondOptions.length);
+  useEffect(() => {
+    if (!shown || !autoScroll) return;
+    const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    ref.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+  }, [shown, section.pick?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!shown) return null;
   const { pick, split } = section;
   return (
-    <div style={{ margin: "2px 0 12px 10px", paddingLeft: "12px", borderLeft: "2px solid rgba(22,47,36,0.12)" }}>
-      <div style={{ fontSize: "13.5px", fontWeight: 700, color: TEXT }}>The other {fmt(section.leftover)}</div>
+    <div ref={ref} style={{ margin: "2px 0 12px 10px", paddingLeft: "12px", borderLeft: "2px solid rgba(22,47,36,0.12)" }}>
+      <div style={{ fontSize: "13.5px", fontWeight: 700, color: TEXT }}>The other {fmtCompact(section.leftover)}</div>
       <p style={{ fontSize: "12.5px", color: MUT, margin: "2px 0 8px", lineHeight: 1.5 }}>
         {pick.fscsLimited
-          ? `FSCS protects up to ${fmt(FSCS_DEPOSIT_LIMIT)} with each bank, so ${fmt(pick.amount)} goes into ${accountName(pick)}.`
-          : `${accountName(pick)} pays ${pct(pick.ratePct)} on up to ${fmt(pick.cap)}.`} If you like, the rest can go into a second account.
+          ? `FSCS protects up to ${fmt(FSCS_DEPOSIT_LIMIT)} with each bank, so ${fmtCompact(pick.amount)} goes into ${accountName(pick)}.`
+          : `${accountName(pick)} pays ${pct(pick.ratePct)} on up to ${fmtCompact(pick.cap)}.`} If you like, the rest can go into a second account.
       </p>
       <OptionList options={section.secondOptions} picked={section.second} onPick={onPick}/>
       {split && (

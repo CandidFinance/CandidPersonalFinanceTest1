@@ -3,7 +3,7 @@ import { reportStorageFailure } from "../../lib/storage.js";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
 import { Sparkles, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER } from "../../design-tokens.js";
-import { fmt } from "../../lib/format.js";
+import { fmt, fmtCompact } from "../../lib/format.js";
 import { isLocked } from "../../lib/unlock.js";
 import { assistItems, assistHasNews, itemsForPage, cashPlan, applyCashMove, accountName, MIN_ASSIST_GAIN, PB_MAX } from "../../lib/assist.js";
 import { ISA_ALLOWANCE, PSA_BY_BAND } from "../../lib/tax.js";
@@ -45,6 +45,9 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
   const scrollRef = useRef(null);
   // Each step opens at its top, not where the last one was scrolled to.
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, [state.step]);
+  // Set once a Cash ISA or savings account is tapped, so a list it opens
+  // scrolls into view then, and not when the panel reopens on old picks.
+  const tapped = useRef(false);
   const [wide, setWide] = useState(() => typeof window !== "undefined" && window.innerWidth >= WIDE);
   useEffect(() => {
     const onResize = () => setWide(window.innerWidth >= WIDE);
@@ -233,7 +236,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           {picks.length ? `+${fmt(plan.chosenGain)} a year` : `Up to +${fmt(plan.upTo)} a year`}
         </div>
         <p style={{ fontSize: "14px", color: TEXT, lineHeight: 1.6, marginTop: "8px" }}>
-          Your {fmt(plan.cash)} in savings earns about {fmt(plan.currentKept)} a year after tax. Pick from any of the options below to see what moving would earn. Every figure is after tax.
+          Your {fmtCompact(plan.cash)} earns ~{fmtCompact(plan.currentKept)}/yr after tax. The options below would earn more.
         </p>
         {item.isaNote && !skipIsa && <p style={{ fontSize: "13px", color: "#8a6a24", background: "rgba(196,150,58,0.12)", borderRadius: "10px", padding: "9px 12px", marginTop: "10px" }}>{item.isaNote}</p>}
 
@@ -246,13 +249,13 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           )}
         </div>
         {skipIsa ? (
-          <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 0", lineHeight: 1.5 }}>Keeping your ISA allowance free for investing, so it isn't used here.</p>
+          <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 0", lineHeight: 1.5 }}>Kept for investing.</p>
         ) : plan.isaLeft <= 0 ? (
           <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 0", lineHeight: 1.5 }}>Your {isaWord} allowance for this tax year is used. It resets on 6 April.</p>
         ) : (
           <>
             <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 10px", lineHeight: 1.5 }}>
-              Interest is tax-free. {fmt(plan.isaLeft)} of your {fmt(plan.isaLimit)} {isaWord} allowance is left this tax year.
+              {fmtCompact(plan.isaLeft)}/{fmtCompact(plan.isaLimit)} {isaWord} allowance remaining. Interest is tax-free.
             </p>
             {otherIsaUnknown && (
               <div style={{ ...card, padding: "12px 14px", marginBottom: "10px", background: "rgba(196,150,58,0.07)", borderColor: "rgba(196,150,58,0.3)" }}>
@@ -269,22 +272,22 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
               </div>
             )}
             {plan.isa.options.length
-              ? <OptionList options={plan.isa.options} picked={plan.isa.pick} onPick={id => update({ isaChoice: id, isaChoice2: null })}/>
+              ? <OptionList options={plan.isa.options} picked={plan.isa.pick} onPick={id => { tapped.current = true; update({ isaChoice: id, isaChoice2: null }); }}/>
               : <p style={{ fontSize: "12.5px", color: MUT }}>No easy-access Cash ISA Candid tracks beats what your savings earn now.</p>}
-            <SecondChoice section={plan.isa} onPick={id => update({ isaChoice2: id })}/>
+            <SecondChoice section={plan.isa} autoScroll={tapped.current} onPick={id => update({ isaChoice2: id })}/>
           </>
         )}
 
         <div style={{ fontSize: "16px", fontWeight: 700, color: TEXT, marginTop: "22px" }}>Savings account</div>
         <p style={{ fontSize: "12.5px", color: MUT, margin: "4px 0 10px", lineHeight: 1.5 }}>
-          {psa ? `Interest over ${fmt(psa)} a year (your Personal Savings Allowance) is taxed.` : "Interest is taxed at your income tax rate."}
+          {psa ? `Annual interest above ${fmt(psa)} is taxed.` : "Interest is taxed at your income tax rate."}
           {!skipIsa && plan.isa.options.length ? " Amounts allow for the Cash ISA taking its share first." : ""}
           {plan.pb.options.length ? " Where Premium Bonds would pay more after tax, an account's amount stops at your allowance." : ""}
         </p>
         {plan.savings.options.length
-          ? <OptionList options={plan.savings.options} picked={plan.savings.pick} onPick={id => update({ savingsChoice: id, savingsChoice2: null })}/>
+          ? <OptionList options={plan.savings.options} picked={plan.savings.pick} onPick={id => { tapped.current = true; update({ savingsChoice: id, savingsChoice2: null }); }}/>
           : <p style={{ fontSize: "12.5px", color: MUT }}>No easy-access savings account Candid tracks beats what your savings earn now.</p>}
-        <SecondChoice section={plan.savings} onPick={id => update({ savingsChoice2: id })}/>
+        <SecondChoice section={plan.savings} autoScroll={tapped.current} onPick={id => update({ savingsChoice2: id })}/>
 
         {(plan.pb.options.length > 0 || (skipPb && plan.pb.rate != null)) && (
           <>
