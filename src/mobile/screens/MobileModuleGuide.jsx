@@ -39,7 +39,7 @@ export default function MobileModuleGuide({ moduleKey, d, m, set, onDone, questi
           <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>{subtitle || "A few questions first"}</div>
         </div>
       </div>
-      <GuidedFlow key={moduleKey} questions={asked} d={d} m={m} set={set}
+      <GuidedFlow key={moduleKey} questions={asked} d={d} m={m} set={set} track={{ flow: questions ? "brief" : "module", module: moduleKey }}
         renderers={RENDERERS} onDone={onDone} {...(skipLabel ? { skipLabel } : {})}
         result={<EmptyResultCard text={emptyText || guide.emptyText}/>}/>
     </div>

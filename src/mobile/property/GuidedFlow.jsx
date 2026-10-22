@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import posthog from "posthog-js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
@@ -37,6 +38,11 @@ const SHIFT_PX = 30;
 // rest) and "text" (a typed answer such as a name). "info" tells the user
 // something worked out from their answers (e.g. their student loan plan),
 // with just Continue.
+// `track` ({ flow, module, ... }) records the walk-through in PostHog:
+// "questions_started" once, then "question_answered" for each answer, with
+// the question's id and position, so drop-off can be seen question by
+// question. Named `question` and `position`, not `at` or `step`: PostHog has
+// those typed as numbers from other events, which hides text ids.
 // `showProgress` hides "1 of N" for a single question asked on its own (the
 // confidence check). `animateFirst` has the first question rise in too, for
 // a flow arrived at from another page of questions (the entry, after the
@@ -44,7 +50,7 @@ const SHIFT_PX = 30;
 // A "custom" question or follow-up (e.g. the list of savings accounts) is
 // drawn by `renderers[render]({ d, set })`, with answered(ctx) saying
 // whether Continue can be pressed.
-export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered, skipLabel = "Skip to the full view", showProgress = true, animateFirst = false, renderers = {} }) {
+export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered, track = null, skipLabel = "Skip to the full view", showProgress = true, animateFirst = false, renderers = {} }) {
   const ctx = { d, m, regionalRows };
   // Which questions with `ifMissing` to ask is decided once, at the start.
   const [needed] = useState(() => neededAtStart(questions, ctx));
@@ -53,6 +59,9 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   const [direction, setDirection] = useState(1);
   const [answered, setAnswered] = useState(() => new Set());
   const reduceMotion = useReducedMotion();
+  useEffect(() => {
+    if (track && visible.length) posthog.capture("questions_started", { ...track, question: visible[0].id, of: visible.length });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const textLink = { background:"none", border:"none", padding:"6px 0", color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
   const primary = {
@@ -89,6 +98,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   // next question is chosen as if it already had.
   const next = patch => {
     setAnswered(a => new Set(a).add(q.id));
+    if (track) posthog.capture("question_answered", { ...track, question: q.id, position, of: visible.length });
     // Follow-ups asked once: remembered with the question's own field.
     const onceFields = (q.follow || []).filter(f => f.once && (!f.showIf || f.showIf(ctx))).map(f => f.field)
       .filter(f => !(d.askedFields || []).includes(f));

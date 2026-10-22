@@ -47,7 +47,7 @@ export default function MobileEntryScreen({ d, m, set, onDone, catchUp = false, 
           <div style={{fontSize:"13px",fontWeight:600,color:G,lineHeight:1.45,marginBottom:"14px"}}>A friend invited you: your second module is unlocked for free.</div>
         )}
         {part === "questions" && (
-          <GuidedFlow questions={catchUp ? CATCH_UP_QUESTIONS : ENTRY_QUESTIONS} d={d} m={m} set={save} skipLabel={null} animateFirst onDone={() => setPart("toHand")}/>
+          <GuidedFlow questions={catchUp ? CATCH_UP_QUESTIONS : ENTRY_QUESTIONS} d={d} m={m} set={save} skipLabel={null} animateFirst track={{ flow: catchUp ? "catch_up" : "entry" }} onDone={() => setPart("toHand")}/>
         )}
         {part === "toHand" && <ToHand d={d} onBack={() => setPart("questions")} onContinue={() => setPart("chat")}/>}
       </div>

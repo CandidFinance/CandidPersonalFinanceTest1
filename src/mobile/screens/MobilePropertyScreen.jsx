@@ -92,7 +92,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
   };
   const answered = id => { if (id === holdUntil) setGuide(g => ({ ...g, revealed: true })); };
   const guideFlow = guiding && (
-    <GuidedFlow key={step} questions={STEP_GUIDES[step].questions} d={d} m={m} set={set} regionalRows={regionalRows} onDone={endGuide} onAnswered={answered}
+    <GuidedFlow key={step} questions={STEP_GUIDES[step].questions} d={d} m={m} set={set} regionalRows={regionalRows} onDone={endGuide} onAnswered={answered} track={{ flow: "property", module: "property", property_step: step }}
       result={step === "readiness" ? <LoanTile d={d} m={m} emptyText="Answer a few questions below to see what you could borrow."/> : null}/>
   );
 
