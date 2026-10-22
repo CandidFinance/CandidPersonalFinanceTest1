@@ -120,9 +120,11 @@ function pensionSteps(d, m) {
   if (!isPensionContributing(d)) {
     const relief = missedPensionRelief(d, m);
     return [
-      { label: ANSWER, figure: `${fmt(relief)} a year`, title: "of tax relief you're not getting, with no pension payments." },
+      { label: ANSWER, figure: `${fmt(relief)} a year`, title: "of tax relief you're not getting, with no pension payments.",
+        rows: [{ figure: `${fmt(relief)}/yr`, tone: "cost", size: "xl", note: "of tax relief left unclaimed, with no pension payments." }] },
       { label: WHY, title: `Every £${100 - trPct} you pay in becomes £100 in your pension, because of ${trPct}% tax relief.`,
-        body: empPct > 0 ? `Your employer would also add up to ${empPct}% of your salary.` : undefined },
+        body: empPct > 0 ? `Your employer would also add up to ${empPct}% of your salary.` : undefined,
+        rows: [{ lead: `Every £${100 - trPct} you pay in`, figure: "£100", tone: "repay", size: "xl", note: `in your pension, because of ${trPct}% tax relief.` }] },
       selfEmployed(d)
         ? { label: ACTION, title: "Paying in 5% of your earnings would start it.", body: SELF_EMPLOYED_PENSION }
         : (+d.dividendIncome || 0) > (m.salary || 0)
@@ -134,8 +136,14 @@ function pensionSteps(d, m) {
   if (m.missedMatch > 0) {
     const netCost = Math.round((empPct - myPct) / 100 * m.salary * (1 - m.tr));
     return [
-      { label: ANSWER, figure: `${fmt(m.missedMatch)} a year`, title: "of employer match left on the table." },
-      { label: WHY, title: `Your employer matches up to ${empPct}% of your salary. You pay ${myPct}%.` },
+      { label: ANSWER, figure: `${fmt(m.missedMatch)} a year`, title: "of employer match left on the table.",
+        rows: [{ figure: `${fmt(m.missedMatch)}/yr`, tone: "cost", size: "xl", note: "of employer match left on the table." }] },
+      { label: WHY, title: `Your employer matches up to ${empPct}% of your salary. You pay ${myPct}%.`,
+        rows: [
+          { lead: "You pay", figure: `${myPct}%`, tone: "cost", size: "xl" },
+          { lead: "Your employer pays up to", figure: `${empPct}%`, tone: "repay", size: "xl" },
+          { figure: `${fmt(m.missedMatch)}/yr`, tone: "cost", size: "l", note: "left on the table by not matching." },
+        ] },
       { label: ACTION, title: `Raising your payments to ${empPct}% would get the full match.`,
         body: `It would cost you about ${fmt(netCost)} a year after tax relief. ${HR}` },
     ];
@@ -173,26 +181,46 @@ function pensionSteps(d, m) {
   // On track: where it's heading, and the bonus if there's one to use.
   const bonus = calcBonusSacrificePotential(d, m);
   return [
-    { label: ANSWER, figure: fmt(Math.round(m.projectedPot)), title: `projected in your pension by ${retirementAgeFor(d)}.` },
+    { label: ANSWER, figure: fmt(Math.round(m.projectedPot)), title: `projected in your pension by ${retirementAgeFor(d)}.`,
+      rows: [{ lead: "Your pension is projected to reach", figure: fmt(Math.round(m.projectedPot)), tone: "repay", size: "xl", note: `by ${retirementAgeFor(d)}, in today's money.` }] },
     { label: WHY, title: `You pay ${myPct}%${empPct > 0 && !selfEmployed(d) ? (d.employerContributionType === "fixed" ? ` and your employer pays ${empPct}%` : ` and get your employer's full ${empPct}% match`) : ""}, so you're not leaving money on the table.`,
-      body: "In today's money: growth of 6% a year, less 2% inflation." },
+      rows: onTrackRows(d, myPct, empPct) },
     bonus.standalone > 0
       ? { label: ACTION, title: `Up to ${fmt(bonus.standalone)} of tax on your ${fmt(+d.bonusAmount)} bonus is avoidable, if it's paid into your pension.`, body: "It has to be arranged with HR or payroll before the bonus is paid." }
-      : { label: ACTION, title: "Nothing to change right now.", body: checkedLine(d, m, adequacy) },
+      : { label: ACTION, title: "Nothing to change right now.", body: checkedLine(d, m, adequacy),
+          ...(checkedItems(d, m, adequacy).length ? { checks: checkedItems(d, m, adequacy).map(c => c.short), checksNote: "Worth checking again when your pay or job changes." } : {}) },
   ];
 }
 
 // What was checked and found fine, so "nothing to change" reassures rather
 // than dismisses.
-function checkedLine(d, m, adequacy) {
+// `long` reads in a sentence, `short` as a bullet.
+function checkedItems(d, m, adequacy) {
   const ok = [];
   const empPct = +d.employerMatch || 0;
-  if (empPct > 0 && !selfEmployed(d)) ok.push(d.employerContributionType === "fixed" ? `your employer's ${empPct}% goes in` : "you get your employer's full match");
-  if ((m.adjustedNetIncome || 0) < 100000) ok.push("you're under the £100,000 tax trap");
-  if (adequacy && adequacy.gap === 0) ok.push(`you're on course for about ${fmt(adequacy.net)} a year, above your ${fmt(adequacy.target)}`);
+  if (empPct > 0 && !selfEmployed(d)) ok.push(d.employerContributionType === "fixed"
+    ? { long: `your employer's ${empPct}% goes in`, short: `Employer pays in ${empPct}%` }
+    : { long: "you get your employer's full match", short: "Full employer match" });
+  if ((m.adjustedNetIncome || 0) < 100000) ok.push({ long: "you're under the £100,000 tax trap", short: "Under the £100k tax trap" });
+  if (adequacy && adequacy.gap === 0) ok.push({ long: `you're on course for about ${fmt(adequacy.net)} a year, above your ${fmt(adequacy.target)}`, short: `On course for about ${fmt(adequacy.net)} a year, above your ${fmt(adequacy.target)}` });
   const outlook = calcTaxFreeCash(d);
-  if (!outlook.capped) ok.push("your pot isn't near the limit on tax-free cash");
+  if (!outlook.capped) ok.push({ long: "your pot isn't near the limit on tax-free cash", short: "Not approaching the tax-free cash limit" });
+  return ok;
+}
+function checkedLine(d, m, adequacy) {
+  const ok = checkedItems(d, m, adequacy).map(c => c.long);
   return ok.length ? `Checked: ${ok.length > 1 ? ok.slice(0, -1).join(", ") + " and " + ok[ok.length - 1] : ok[0]}. Worth checking again when your pay or job changes.` : "Worth checking again when your pay or job changes.";
+}
+// Page 2 when nothing is being missed: what they pay and what the employer
+// pays, in green for a match (they pay at least what it matches), and £-
+// left on the table.
+function onTrackRows(d, myPct, empPct) {
+  const matched = empPct > 0 && !selfEmployed(d) && d.employerContributionType !== "fixed";
+  const fixed = empPct > 0 && !selfEmployed(d) && d.employerContributionType === "fixed";
+  const rows = [{ lead: "You pay", figure: `${myPct}%`, tone: matched ? "repay" : undefined, size: "xl" }];
+  if (matched) rows.push({ lead: "Your employer pays up to", figure: `${empPct}%`, tone: "repay", size: "xl" }, { figure: "£-", tone: "repay", size: "l", note: "left on the table, good job." });
+  else if (fixed) rows.push({ lead: "Your employer pays", figure: `${empPct}%`, tone: "repay", size: "xl" });
+  return rows;
 }
 
 // No earnings, and not retired: the pot keeps its investments, and up to
@@ -374,8 +402,9 @@ export function studentLoanReveal(d, m) {
 // below (MobileModuleReveal's large layout): `tone` "repay" or "cost"
 // colours the figure, `size` "xl", "l" or "m" sizes it, `prefix` goes before
 // it ("vs") and `alert` flags something under the note. A step's `aside` is
-// a separate point, set apart under the body. The title and body stay, for
-// the usual layout.
+// a separate point, set apart under the body, and `checks` (with
+// `checksNote`) are brief ticked bullets in place of its body. The title and
+// body stay, for the usual layout.
 function studentLoanSteps(d, m) {
   const sl = calcStudentLoanScenario(d, m);
   const ratePct = Math.round(resolveSlRate(d, m.salary || 0) * 1000) / 10;

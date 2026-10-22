@@ -60,3 +60,42 @@ test("student loan: the engine asks the same questions as before", () => {
   assert.deepEqual(order(STUDENT_LOAN_QUICK, { studentLoan: "none" }), ["plan", "salary", "balance", "finish"]);
   assert.deepEqual(order(STUDENT_LOAN_QUICK, { studentLoan: "none" }, { plan: "unsure" }), ["plan", "helper", "salary", "balance", "finish"]);
 });
+
+const direct = (d, a = {}) => questionOrder(PENSION_QUICK, { d, m: calcMetrics(d), a, direct: true });
+
+test("pension opened directly: asks work, pay and age first, then what's in the pot", () => {
+  assert.deepEqual(direct({}), ["employment", "salary", "age", "payIn", "type", "mine", "employer", "pot"]);
+  assert.deepEqual(direct({}, { employment: "self_employed" }), ["employment", "salary", "age", "payIn", "mine", "pot"]);
+  assert.deepEqual(direct({}, { employment: "not_working" }), ["employment", "notWorking", "age", "pot"]);
+  assert.deepEqual(direct({}, { employment: "employed", payIn: "db" }), ["employment", "salary", "age", "payIn"], "a final salary scheme has no pot to size");
+});
+
+test("pension opened directly asks only what's missing", () => {
+  const d = { employmentStatus: "employed", employmentAsked: true, salary: "52000", age: "41", askedFields: ["pensionStatus"] };
+  assert.deepEqual(direct(d), ["pot"]);
+  assert.deepEqual(questionOrder(PENSION_QUICK, { d: { ...d, askedFields: [] }, m: {}, a: {}, direct: false }), ["payIn", "type", "mine", "employer"], "from Student loan: only what its verdict uses");
+});
+
+test("pension opened directly writes everything its answer reads, and says what's estimated", () => {
+  const a = { employment: "employed", salary: "45-60", age: "35-44", payIn: "yes", type: "match", mine: "3", employer: "5", pot: "10-25" };
+  const p = PENSION_QUICK.patch({}, {}, a);
+  assert.equal(p.employmentStatus, "employed");
+  assert.equal(p.salary, "52500");
+  assert.equal(p.age, "40");
+  assert.equal(p.myContribution, "3");
+  assert.equal(p.employerMatch, "5");
+  assert.equal(p.potValue, "17500");
+  assert.equal(estimateLineFor(p, "pension"), "Based on estimates: £45k to £60k salary, aged 35 to 44, £10k to £25k in your pension.");
+  const m = calcMetrics({ ...p, selectedModules: ["pension"] });
+  assert.ok(m.missedMatch > 0, "paying 3% against a 5% match leaves some unclaimed");
+});
+
+test("pension: a pot 'not sure' is estimated from age and pay, and not working means nothing paid in", () => {
+  const p = PENSION_QUICK.patch({}, {}, { employment: "employed", salary: "45-60", age: "45-54", payIn: "yes", type: "match", mine: "5", employer: "5", pot: "unsure" });
+  assert.ok(+p.potValue > 0);
+  assert.match(estimateLineFor(p, "pension"), /estimated from your age and pay/);
+  const n = PENSION_QUICK.patch({}, {}, { employment: "not_working", notWorking: "break", age: "35-44", pot: "none" });
+  assert.equal(n.pensionStatus, "no");
+  assert.equal(n.hasPensionPot, "no");
+  assert.equal(n.notWorkingReason, "break");
+});

@@ -340,11 +340,39 @@
      {
       "label": "Your position",
       "figure": "£1,440 a year",
-      "title": "of employer match left on the table."
+      "title": "of employer match left on the table.",
+      "rows": [
+       {
+        "figure": "£1,440/yr",
+        "tone": "cost",
+        "size": "xl",
+        "note": "of employer match left on the table."
+       }
+      ]
      },
      {
       "label": "Why",
-      "title": "Your employer matches up to 5% of your salary. You pay 3%."
+      "title": "Your employer matches up to 5% of your salary. You pay 3%.",
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "3%",
+        "tone": "cost",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£1,440/yr",
+        "tone": "cost",
+        "size": "l",
+        "note": "left on the table by not matching."
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -3277,11 +3305,39 @@
      {
       "label": "Your position",
       "figure": "£1,440 a year",
-      "title": "of employer match left on the table."
+      "title": "of employer match left on the table.",
+      "rows": [
+       {
+        "figure": "£1,440/yr",
+        "tone": "cost",
+        "size": "xl",
+        "note": "of employer match left on the table."
+       }
+      ]
      },
      {
       "label": "Why",
-      "title": "Your employer matches up to 5% of your salary. You pay 3%."
+      "title": "Your employer matches up to 5% of your salary. You pay 3%.",
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "3%",
+        "tone": "cost",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£1,440/yr",
+        "tone": "cost",
+        "size": "l",
+        "note": "left on the table by not matching."
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -5943,17 +5999,51 @@
      {
       "label": "Your position",
       "figure": "£454,551",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£454,551",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -8507,17 +8597,51 @@
      {
       "label": "Your position",
       "figure": "£454,551",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£454,551",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -10902,17 +11026,51 @@
      {
       "label": "Your position",
       "figure": "£661,372",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£661,372",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 6% and get your employer's full 6% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "6%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "6%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -13515,17 +13673,51 @@
      {
       "label": "Your position",
       "figure": "£661,372",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£661,372",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 6% and get your employer's full 6% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "6%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "6%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -15871,12 +16063,29 @@
      {
       "label": "Your position",
       "figure": "£260 a year",
-      "title": "of tax relief you're not getting, with no pension payments."
+      "title": "of tax relief you're not getting, with no pension payments.",
+      "rows": [
+       {
+        "figure": "£260/yr",
+        "tone": "cost",
+        "size": "xl",
+        "note": "of tax relief left unclaimed, with no pension payments."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "Every £80 you pay in becomes £100 in your pension, because of 20% tax relief.",
-      "body": "<undefined>"
+      "body": "<undefined>",
+      "rows": [
+       {
+        "lead": "Every £80 you pay in",
+        "figure": "£100",
+        "tone": "repay",
+        "size": "xl",
+        "note": "in your pension, because of 20% tax relief."
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -17417,12 +17626,29 @@
      {
       "label": "Your position",
       "figure": "£260 a year",
-      "title": "of tax relief you're not getting, with no pension payments."
+      "title": "of tax relief you're not getting, with no pension payments.",
+      "rows": [
+       {
+        "figure": "£260/yr",
+        "tone": "cost",
+        "size": "xl",
+        "note": "of tax relief left unclaimed, with no pension payments."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "Every £80 you pay in becomes £100 in your pension, because of 20% tax relief.",
-      "body": "<undefined>"
+      "body": "<undefined>",
+      "rows": [
+       {
+        "lead": "Every £80 you pay in",
+        "figure": "£100",
+        "tone": "repay",
+        "size": "xl",
+        "note": "in your pension, because of 20% tax relief."
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -18867,12 +19093,40 @@
      {
       "label": "Your position",
       "figure": "£661,214",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£661,214",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 4% and get your employer's full 4% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "4%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "4%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -21629,12 +21883,40 @@
      {
       "label": "Your position",
       "figure": "£661,214",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£661,214",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 4% and get your employer's full 4% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "4%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "4%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
@@ -29233,17 +29515,38 @@
      {
       "label": "Your position",
       "figure": "£355,756",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£355,756",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 8%, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "8%",
+        "tone": "<undefined>",
+        "size": "xl"
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -31865,17 +32168,38 @@
      {
       "label": "Your position",
       "figure": "£355,756",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£355,756",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 8%, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "8%",
+        "tone": "<undefined>",
+        "size": "xl"
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -34274,17 +34598,51 @@
      {
       "label": "Your position",
       "figure": "£459,852",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£459,852",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -37545,17 +37903,51 @@
      {
       "label": "Your position",
       "figure": "£459,852",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£459,852",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -40647,17 +41039,51 @@
      {
       "label": "Your position",
       "figure": "£329,837",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£329,837",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -44299,17 +44725,51 @@
      {
       "label": "Your position",
       "figure": "£329,837",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£329,837",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -47790,17 +48250,51 @@
      {
       "label": "Your position",
       "figure": "£501,374",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£501,374",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -50649,17 +51143,51 @@
      {
       "label": "Your position",
       "figure": "£501,374",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£501,374",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -53319,17 +53847,51 @@
      {
       "label": "Your position",
       "figure": "£561,162",
-      "title": "projected in your pension by 62."
+      "title": "projected in your pension by 62.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£561,162",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 62, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -55985,17 +56547,51 @@
      {
       "label": "Your position",
       "figure": "£561,162",
-      "title": "projected in your pension by 62."
+      "title": "projected in your pension by 62.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£561,162",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 62, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -58436,17 +59032,51 @@
      {
       "label": "Your position",
       "figure": "£312,000",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£312,000",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -61047,17 +61677,51 @@
      {
       "label": "Your position",
       "figure": "£312,000",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£312,000",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -63392,17 +64056,51 @@
      {
       "label": "Your position",
       "figure": "£473,604",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£473,604",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -66005,17 +66703,51 @@
      {
       "label": "Your position",
       "figure": "£473,604",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£473,604",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -71276,17 +72008,51 @@
      {
       "label": "Your position",
       "figure": "£473,604",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£473,604",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -74306,17 +75072,51 @@
      {
       "label": "Your position",
       "figure": "£473,604",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£473,604",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -77165,17 +77965,51 @@
      {
       "label": "Your position",
       "figure": "£473,604",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£473,604",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -80643,17 +81477,51 @@
      {
       "label": "Your position",
       "figure": "£473,604",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£473,604",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -83843,17 +84711,51 @@
      {
       "label": "Your position",
       "figure": "£473,604",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£473,604",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [
@@ -86359,17 +87261,51 @@
      {
       "label": "Your position",
       "figure": "£473,604",
-      "title": "projected in your pension by 65."
+      "title": "projected in your pension by 65.",
+      "rows": [
+       {
+        "lead": "Your pension is projected to reach",
+        "figure": "£473,604",
+        "tone": "repay",
+        "size": "xl",
+        "note": "by 65, in today's money."
+       }
+      ]
      },
      {
       "label": "Why",
       "title": "You pay 5% and get your employer's full 5% match, so you're not leaving money on the table.",
-      "body": "In today's money: growth of 6% a year, less 2% inflation."
+      "rows": [
+       {
+        "lead": "You pay",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "lead": "Your employer pays up to",
+        "figure": "5%",
+        "tone": "repay",
+        "size": "xl"
+       },
+       {
+        "figure": "£-",
+        "tone": "repay",
+        "size": "l",
+        "note": "left on the table, good job."
+       }
+      ]
      },
      {
       "label": "What you could do",
       "title": "Nothing to change right now.",
-      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes."
+      "body": "Checked: you get your employer's full match, you're under the £100,000 tax trap and your pot isn't near the limit on tax-free cash. Worth checking again when your pay or job changes.",
+      "checks": [
+       "Full employer match",
+       "Under the £100k tax trap",
+       "Not approaching the tax-free cash limit"
+      ],
+      "checksNote": "Worth checking again when your pay or job changes."
      }
     ],
     "cash": [

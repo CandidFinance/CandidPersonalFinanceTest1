@@ -25,7 +25,7 @@ import QuickStart from "./mobile/QuickStart.jsx";
 import { STUDENT_LOAN_QUICK, estimatePhrases } from "./lib/studentLoanQuick.js";
 import { CASH_QUICK } from "./lib/cashQuick.js";
 import { PENSION_QUICK } from "./lib/pensionQuick.js";
-import { questionOrder, estimateItems } from "./lib/quickStart.js";
+import { questionOrder, estimateItems, estimateLineFor } from "./lib/quickStart.js";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import InviteFriends from "./mobile/InviteFriends.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
@@ -174,6 +174,8 @@ function loadCompletedModules() {
 // Screens open at their top, not where the last one was scrolled to.
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: "instant" });
 
+// The modules that open on a quick start.
+const QUICK_STARTS = { studentLoan: STUDENT_LOAN_QUICK, pension: PENSION_QUICK };
 // The quick starts used on the short route from Student loan.
 const QUICK_SETUPS = { cash: CASH_QUICK, pension: PENSION_QUICK };
 // The next module Student loan's verdict still needs (appEntry.js
@@ -194,6 +196,9 @@ function loanEstimateLine(d) {
   const parts = [...estimatePhrases(d), ...used];
   return parts.length ? `Based on estimates: ${parts.join(", ")}.` : null;
 }
+
+// The line under a quick-started module's answer saying what's estimated.
+const quickEstimateLine = (key, d) => key === "studentLoan" ? loanEstimateLine(d) : key === "pension" ? estimateLineFor(d, "pension") : null;
 
 export default function AppShell() {
   const navigate = useNavigate();
@@ -882,8 +887,8 @@ export default function AppShell() {
           headerRight={modulesBackButton}>
           {/* Student loan opens on what's at stake, then one-tap questions in
               bands, for a first answer before any exact figures. */}
-          {mobileActiveModule === "studentLoan"
-            ? <QuickStart setup={STUDENT_LOAN_QUICK} d={d} m={m} onPatch={patch => Object.entries(patch).forEach(([k, v]) => set(k, v))} onDone={finishGuide}/>
+          {QUICK_STARTS[mobileActiveModule]
+            ? <QuickStart setup={QUICK_STARTS[mobileActiveModule]} d={d} m={m} onPatch={patch => Object.entries(patch).forEach(([k, v]) => set(k, v))} onDone={finishGuide}/>
             : <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} onDone={finishGuide}/>}
         </MobileLayout>
       );
@@ -918,8 +923,8 @@ export default function AppShell() {
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
-          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={mobileActiveModule === "studentLoan" ? null : moduleLimits(mobileActiveModule, d, m)} large={mobileActiveModule === "studentLoan"}
-            doneLabel={mobileActiveModule === "studentLoan" ? "Explore student loans" : "See everything"}
+          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={mobileActiveModule === "studentLoan" || mobileActiveModule === "pension" ? null : moduleLimits(mobileActiveModule, d, m)} large={mobileActiveModule === "studentLoan" || mobileActiveModule === "pension"}
+            doneLabel={mobileActiveModule === "studentLoan" ? "Explore student loans" : mobileActiveModule === "pension" ? "Explore your pension" : "See everything"}
             lastAction={mobileActiveModule === "studentLoan" && loanDetailNext(d) ? {
               label: `Detailed view · up to ${loanDetailCount(d, m)} more questions`,
               onClick: () => {
@@ -943,10 +948,10 @@ export default function AppShell() {
         {/* Keyed by module, so each module page opens fresh, every tile collapsed,
             however it's reached. */}
         {/* Figures from the quick start's bands, until they're changed. */}
-        {mobileActiveModule === "studentLoan" && loanEstimateLine(d) && (
+        {quickEstimateLine(mobileActiveModule, d) && (
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
-            {loanEstimateLine(d)}{" "}
-            <button type="button" onClick={() => openInputs("studentLoan")} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Use your exact figures</button>
+            {quickEstimateLine(mobileActiveModule, d)}{" "}
+            <button type="button" onClick={() => openInputs(mobileActiveModule)} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Use your exact figures</button>
           </p>
         )}
         <MobileModuleDeepDive key={mobileActiveModule} moduleKey={mobileActiveModule}

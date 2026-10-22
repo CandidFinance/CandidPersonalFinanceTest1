@@ -9,6 +9,7 @@
 // them, so the answer page can say which figures are estimates, and stops
 // saying so for any the user has since changed (estimatedNow).
 import { studentLoanPlanFrom, slFinishYearRange } from "./studentLoan.js";
+import { SALARY_BANDS } from "./quickStart.js";
 
 export const PLAN_CHOICES = [
   { value:"plan1", label:"Plan 1" },
@@ -34,17 +35,6 @@ export const helperChoicePlan = value => {
   return c ? studentLoanPlanFrom({ country: c.answers.slCountry, course: c.answers.slCourse, start: c.answers.slStart }) : null;
 };
 
-// Each band's figure is roughly its middle; the top band a step above its
-// floor.
-export const SALARY_BANDS = [
-  { value:"u25", label:"Under £25k", figure:21000 },
-  { value:"25-35", label:"£25k to £35k", figure:30000 },
-  { value:"35-45", label:"£35k to £45k", figure:40000 },
-  { value:"45-60", label:"£45k to £60k", figure:52500 },
-  { value:"60-80", label:"£60k to £80k", figure:70000 },
-  { value:"80-100", label:"£80k to £100k", figure:90000 },
-  { value:"100+", label:"£100k or more", figure:120000 },
-];
 export const BALANCE_BANDS = [
   { value:"u10", label:"Under £10k", figure:6000 },
   { value:"10-20", label:"£10k to £20k", figure:15000 },

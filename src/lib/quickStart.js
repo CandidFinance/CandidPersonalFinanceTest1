@@ -14,7 +14,8 @@
 //               number as text: `ask` a
 //               string or worked out from ctx; `when` says
 //               whether it's asked, from ctx = { d, m, a } (a: the answers
-//               so far; d and m don't change until the last answer)
+//               so far; d and m don't change until the last answer;
+//               direct: opened on its own, not from another module's answer)
 //   patch(d, m, a)    every field the answers write
 //   estimateLine(d)   the line under the answer naming what's estimated
 //
@@ -43,3 +44,15 @@ export function withEstimates(d, module, items) {
   return { quickEstimates: { ...(d.quickEstimates || {}), [module]: { items } } };
 }
 export const addAsked = (d, fields) => ({ askedFields: [...new Set([...(d.askedFields || []), ...fields])] });
+
+// Each band's figure is roughly its middle; the top band a step above its
+// floor.
+export const SALARY_BANDS = [
+  { value:"u25", label:"Under £25k", figure:21000 },
+  { value:"25-35", label:"£25k to £35k", figure:30000 },
+  { value:"35-45", label:"£35k to £45k", figure:40000 },
+  { value:"45-60", label:"£45k to £60k", figure:52500 },
+  { value:"60-80", label:"£60k to £80k", figure:70000 },
+  { value:"80-100", label:"£80k to £100k", figure:90000 },
+  { value:"100+", label:"£100k or more", figure:120000 },
+];

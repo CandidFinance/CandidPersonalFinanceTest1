@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft, CircleAlert } from "lucide-react";
+import { ChevronLeft, CircleAlert, Check } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 
@@ -124,7 +124,18 @@ function LargeStep({ step }) {
       )) : (
         <p style={{fontFamily:SERIF,fontSize:"clamp(26px, 7.5vw, 32px)",fontWeight:700,color:G,lineHeight:1.2,margin:0}}>{step.title}</p>
       )}
-      {step.body && <p style={{fontSize:"16px",color:MUT,lineHeight:1.5,margin:"20px 0 0",whiteSpace:"pre-line"}}>{step.body}</p>}
+      {step.checks && (
+        <ul style={{listStyle:"none",margin:"22px 0 0",padding:0,display:"flex",flexDirection:"column",gap:"14px"}}>
+          {step.checks.map(c => (
+            <li key={c} style={{display:"flex",alignItems:"center",gap:"12px",fontSize:"18px",fontWeight:600,color:TEXT,lineHeight:1.3}}>
+              <span aria-hidden="true" style={{width:"26px",height:"26px",borderRadius:"50%",background:SUCCESS,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Check size={16} color={WHITE} strokeWidth={3}/></span>
+              {c}
+            </li>
+          ))}
+        </ul>
+      )}
+      {step.checks && step.checksNote && <p style={{fontSize:"15px",color:MUT,lineHeight:1.5,margin:"20px 0 0"}}>{step.checksNote}</p>}
+      {step.body && !step.checks && <p style={{fontSize:"16px",color:MUT,lineHeight:1.5,margin:"20px 0 0",whiteSpace:"pre-line"}}>{step.body}</p>}
       {step.aside && (
         <div style={{display:"flex",alignItems:"flex-start",gap:"10px",margin:"20px 0 0",padding:"2px 0 2px 12px",borderLeft:`3px solid ${G}`,fontSize:"15px",color:TEXT,lineHeight:1.45}}>
           <CircleAlert size={18} color={G} style={{flexShrink:0,marginTop:"1px"}} aria-hidden="true"/>{step.aside}

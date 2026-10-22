@@ -31,7 +31,10 @@ export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true,
   doneRef.current = onDone;
   useEffect(() => { if (written && d.quickAt?.[setup.module] === written) doneRef.current("finished"); }, [written, d.quickAt, setup.module]);
 
-  const order = questionOrder(setup, { d, m, a: answers });
+  // Opened on its own (with its intro), not from another module's answer:
+  // the questions that module's answer doesn't use are asked too.
+  const direct = intro && !!setup.intro;
+  const order = questionOrder(setup, { d, m, a: answers, direct });
   const current = history[history.length - 1] ?? order[0];
   const position = order.indexOf(current) + 1;
 
@@ -62,7 +65,7 @@ export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true,
     setTimeout(() => {
       setAnswers(all);
       setPicked(null);
-      const nextOrder = questionOrder(setup, { d, m, a: all });
+      const nextOrder = questionOrder(setup, { d, m, a: all, direct });
       const next = nextOrder[nextOrder.indexOf(current) + 1];
       if (!next) { finish(all); return; }
       setDirection(1);
@@ -84,7 +87,7 @@ export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true,
   if (!current) return null;
 
   const q = setup.questions[current];
-  const ctx = { d, m, a: answers };
+  const ctx = { d, m, a: answers, direct };
   return (
     <div style={screen}>
       {kicker && <div style={{ fontSize: "13px", fontWeight: 700, color: MUT, marginBottom: "6px" }}>{kicker}</div>}
