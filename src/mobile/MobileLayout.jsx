@@ -9,7 +9,7 @@ import { SignInGate } from "./SignInSetup.jsx";
 // specific action on the right — see NavBar's `light` mode) and a scrollable
 // content area above the fixed mobile tab bar. `pageLabel` is set on every
 // screen below the tabs (a module, Property, Your inputs) and left unset on
-// the 4 tab screens themselves, where the tab bar already says where you are.
+// the tab screens themselves, where the tab bar already says where you are.
 export default function MobileLayout({ pageLabel, activeTab, headerRight, assist = null, children }) {
   const navigate = useNavigate();
   return (

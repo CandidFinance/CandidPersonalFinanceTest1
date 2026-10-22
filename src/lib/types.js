@@ -229,8 +229,21 @@
  */
 
 /**
+ * The Progress tab's own answers (progressTracker.js). £ figures as typed,
+ * "" when not set.
+ * @typedef {Object} ProgressInputs
+ * @property {string} pensionTarget The user's pension target this tax year, theirs and their employer's; "" is the Annual Allowance.
+ * @property {string} studentLoanOverpayTarget
+ * @property {string} studentLoanOverpaidThisYear Cleared on 6 April (rollTaxYear); a lower balance typed in Student loan adds to it.
+ * @property {string} mortgageOverpayTarget
+ * @property {string} mortgageOverpaidThisYear Cleared on 6 April (rollTaxYear).
+ * @property {{id: string, name?: string, target?: string, saved?: string, date?: string, removed?: boolean}[]} goalVaults
+ *   Goal pots: date is "YYYY-MM" or "". A pot from a goal (id "home", "purchase") saved here replaces it; `removed` hides it.
+ */
+
+/**
  * The user's answers (`d`), kept in localStorage as `candid_inputs`.
- * @typedef {EntryInputs & IncomeInputs & CashInputs & InvestmentInputs & PensionInputs & StudentLoanInputs & PropertyInputs & OtherModuleInputs & AssistInputs} Inputs
+ * @typedef {EntryInputs & IncomeInputs & CashInputs & InvestmentInputs & PensionInputs & StudentLoanInputs & PropertyInputs & OtherModuleInputs & AssistInputs & ProgressInputs} Inputs
  */
 
 /**

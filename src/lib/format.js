@@ -12,7 +12,14 @@ export function fmtK(n) {
 
 // One-decimal compact £X.Xk form for mobile headline figures (e.g. "£2.5k/yr") —
 // distinct from fmtK's whole-number rounding, which desktop chart axes/tables
-// depend on unchanged.
+// depend on unchanged. In full below £1,000; £X.XXm from a million.
+export function fmtK1(n) {
+  const abs = Math.abs(n || 0);
+  if (abs < 1000) return fmt(n);
+  const k = Math.round(abs / 100) / 10;
+  return k >= 1000 ? `£${(abs / 1e6).toFixed(2)}m` : `£${k.toFixed(1)}k`;
+}
+
 // Comma-grouped digits with no currency symbol or decimals — for live-typing
 // inputs that render their own £ prefix separately (e.g. mobile pill inputs).
 export function formatThousands(raw) {

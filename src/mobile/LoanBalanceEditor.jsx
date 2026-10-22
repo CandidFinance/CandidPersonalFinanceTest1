@@ -4,6 +4,7 @@ import { calcStudentLoanScenario } from "../lib/studentLoan.js";
 import { overpaymentSources, takeFromSources, todayIso } from "../lib/loanBalance.js";
 import { premiumBondsRow } from "../lib/savingsRates.js";
 import { bankChange } from "../lib/moduleStatus.js";
+import { loanOverpaidAfter } from "../lib/progressTracker.js";
 import PillMoneyInput from "./PillMoneyInput.jsx";
 import { G, WHITE, MUT, TEXT, CDARK } from "../design-tokens.js";
 
@@ -13,7 +14,8 @@ import { G, WHITE, MUT, TEXT, CDARK } from "../design-tokens.js";
 // taken from the lowest rate first (loanBalance.js takeFromSources). The new
 // figure is the starting point the monthly updates run from, and the
 // overpayment's yearly interest saving, at the loan's rate, counts towards
-// "Gains" on Home (moduleStatus.js bankChange).
+// "Gains" on Home (moduleStatus.js bankChange). The overpayment itself counts
+// towards this tax year's on Progress (progressTracker.js loanOverpaidAfter).
 // `initial`: the figure to start from (the page suggests today's balance
 // less any lump sum being modelled).
 export default function LoanBalanceEditor({ d, m, set, savingsRates, initial = null, onClose }) {
@@ -32,6 +34,7 @@ export default function LoanBalanceEditor({ d, m, set, savingsRates, initial = n
       Object.entries(takeFromSources(d, delta, picks, pbRate)).forEach(([k, v]) => set(k, v));
       const perYear = delta * calcStudentLoanScenario(d, m).lifeRatePct / 100;
       if (perYear > 0) set("moduleBaselines", bankChange(d, "studentLoan", perYear));
+      set("studentLoanOverpaidThisYear", loanOverpaidAfter(d, delta));
     }
     set("loanBalance", value);
     set("loanBalanceSet", value);

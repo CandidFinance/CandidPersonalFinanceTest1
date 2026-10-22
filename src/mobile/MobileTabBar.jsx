@@ -1,9 +1,10 @@
-import { Home, LayoutGrid, LineChart, MessageCircle } from "lucide-react";
+import { Home, Target, LayoutGrid, LineChart, MessageCircle } from "lucide-react";
 import { G, MUT, WHITE } from "../design-tokens.js";
 
 // Single source of truth for the app's bottom nav.
 export const MOBILE_NAV_ITEMS = [
   { key:"home", label:"Home", path:"/app/home", icon:Home },
+  { key:"progress", label:"Progress", path:"/app/progress", icon:Target },
   { key:"modules", label:"Modules", path:"/app/modules", icon:LayoutGrid },
   { key:"forecast", label:"Forecast", path:"/app/forecast", icon:LineChart },
   { key:"chat", label:"Chat", path:"/app/chat", icon:MessageCircle },

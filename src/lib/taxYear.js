@@ -60,5 +60,9 @@ export function rollTaxYear(d, now = new Date(), fallbackDate = null) {
   if (+d.salary > 0) next.payCheckDue = true;
   next.realisedCgtGains = "";
   next.hasSoldAssetsOutsideWrapper = "no";
+  // Overpayments recorded on Progress count towards one tax year's target;
+  // the targets themselves carry on.
+  next.studentLoanOverpaidThisYear = "";
+  next.mortgageOverpaidThisYear = "";
   return next;
 }

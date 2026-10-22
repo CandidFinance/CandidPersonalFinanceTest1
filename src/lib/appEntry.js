@@ -111,7 +111,7 @@ export const ENTRY_QUESTIONS = [
 // to having skipped it, and the topics they'd like help with already set to
 // the one they came for. Not for anyone with an old report.
 export const needsCatchUp = (d, insights) => !insights && !!d.appEntered && !(typeof d.name === "string" && d.name.trim());
-export const CATCH_UP_PATHS = ["/app/home", "/app/modules", "/app/forecast", "/app/chat"];
+export const CATCH_UP_PATHS = ["/app/home", "/app/progress", "/app/modules", "/app/forecast", "/app/chat"];
 export const CATCH_UP_QUESTIONS = ENTRY_QUESTIONS.map(q => q.id === "name"
   ? { ...q, ask: () => "We didn't catch your name", why: () => "Before you look around: what should we call you? It's only used to talk to you in the app." }
   : { ...q, ask: () => "What else would you like help with?", why: () => "We'll set up your modules around these. You can add the rest any time." });

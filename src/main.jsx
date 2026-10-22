@@ -319,6 +319,7 @@ function AppRoutes() {
             URL internally. */}
         <Route element={<CandidAppLayout key={devReloadKey} />}>
           <Route path="/app/home" />
+          <Route path="/app/progress" />
           <Route path="/app/modules" />
           <Route path="/app/forecast" />
           <Route path="/app/inputs" />

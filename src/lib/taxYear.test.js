@@ -38,6 +38,16 @@ test("a new tax year resets gains realised against last year's CGT allowance", (
   assert.equal(calcMetrics(after).remainingCgtAllowance, 3000);
 });
 
+test("a new tax year clears the overpayments recorded against last year's targets, keeping the targets", () => {
+  const d = { ...lastYearsInputs, studentLoanOverpayTarget: "2000", studentLoanOverpaidThisYear: "1500",
+    mortgageOverpayTarget: "6000", mortgageOverpaidThisYear: "6000" };
+  const after = rollTaxYear(d, oct2026);
+  assert.equal(after.studentLoanOverpaidThisYear, "");
+  assert.equal(after.mortgageOverpaidThisYear, "");
+  assert.equal(after.studentLoanOverpayTarget, "2000");
+  assert.equal(after.mortgageOverpayTarget, "6000");
+});
+
 test("inputs from the current tax year are left alone", () => {
   const d = { ...lastYearsInputs, inputsTaxYear: 2026 };
   assert.equal(rollTaxYear(d, oct2026), d);

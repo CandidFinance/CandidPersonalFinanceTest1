@@ -8,6 +8,8 @@ import { ALL_STEP_DEFS, getActiveSteps, capField } from "./lib/onboarding.js";
 import { G, WHITE, MUT, FONT_SIZE } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
+import ProgressTrackerDashboard from "./components/dashboard/ProgressTrackerDashboard.jsx";
+import { loanOverpaidAfter } from "./lib/progressTracker.js";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
 import MobileForecastScreen from "./mobile/screens/MobileForecastScreen.jsx";
 import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
@@ -68,6 +70,14 @@ const BLANK_DATA = {
   financialGoals:[],
   houseTargetAmount:"", houseTimeframe:"",
   bigPurchaseTargetAmount:"", bigPurchaseTimeframe:"",
+  // The Progress tab's own answers (src/lib/progressTracker.js): a pension
+  // target for the tax year (blank: the Annual Allowance), overpayment
+  // targets with what's been overpaid this tax year (cleared on 6 April by
+  // rollTaxYear), and goal pots.
+  pensionTarget:"",
+  studentLoanOverpayTarget:"", studentLoanOverpaidThisYear:"",
+  mortgageOverpayTarget:"", mortgageOverpaidThisYear:"",
+  goalVaults:[],
   age:"", salary:"", otherIncome:"", dividendIncome:"", bonusAmount:"", salaryTrajectory:"stable",
   // "employed" | "self_employed" | "not_working" — collected so commentary
   // that only makes sense for a PAYE employee (e.g. employer NI savings on a
@@ -292,6 +302,7 @@ export default function AppShell() {
       if (delta > 0) {
         Object.assign(next, takeFromSources(p, delta, sources, pbRate));
         if (perYear > 0) next.moduleBaselines = bankChange(p, "studentLoan", perYear);
+        next.studentLoanOverpaidThisYear = loanOverpaidAfter(p, delta);
       }
       return next;
     });
@@ -625,7 +636,7 @@ export default function AppShell() {
   // Deep-link guard: the app's screens open once the user has been through
   // its entry (appUnlocked). Before that, a stale bookmark, shared link or
   // bare reload goes home rather than to a broken or empty page.
-  const APP_PATHS = ["/app/home", "/app/modules", "/app/forecast", "/app/inputs", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
+  const APP_PATHS = ["/app/home", "/app/progress", "/app/modules", "/app/forecast", "/app/inputs", "/app/chat", "/app/property", "/app/property/mortgage", "/app/property/rent-vs-buy"];
   if ((APP_PATHS.includes(pathname) || pathname.startsWith("/app/module/")) && !appUnlocked(d, insights)) {
     // A Property or module link is let in (the effect above); blank for that moment.
     if (linkedModule) return null;
@@ -643,7 +654,7 @@ export default function AppShell() {
   if (pathname === "/app/start") {
     const then = location.state?.catchUp;
     if (then && appUnlocked(d, insights)) {
-      const label = { "/app/home": "Go to Home", "/app/modules": "See my modules", "/app/forecast": "See my forecast", "/app/chat": "Open the chat" }[then] || "Carry on";
+      const label = { "/app/home": "Go to Home", "/app/progress": "See my progress", "/app/modules": "See my modules", "/app/forecast": "See my forecast", "/app/chat": "Open the chat" }[then] || "Carry on";
       return (
         <MobileEntryScreen catchUp doneLabel={label} d={d} m={m} set={set} onDone={() => {
           posthog.capture("entry_caught_up", { to: then, interests: (d.interests || []).join(",") });
@@ -740,6 +751,13 @@ export default function AppShell() {
           posthog.capture(how === "answered" ? "goals_answered" : "goals_dismissed", { goals: (goals || []).join(",") });
           if (how === "answered") setRowSaveTick(t => t + 1);
         }}/>
+    </MobileLayout>
+  );
+
+  if (pathname === "/app/progress") return (
+    <MobileLayout assist={assistNode} activeTab="progress" headerRight={editInputsButton}>
+      <ProgressTrackerDashboard d={d} m={m} statuses={statuses} set={set}
+        onOpenModule={key => navigate(`/app/module/${key}`)}/>
     </MobileLayout>
   );
 

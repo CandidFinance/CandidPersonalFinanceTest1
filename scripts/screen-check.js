@@ -79,7 +79,7 @@ export const PROFILES = {
 // off, Student loan alone on its short route, and the cash-rich saver.
 const KEY_PROFILES = ["rich", "loanWorthOverpaying", "loanOnly", "cashRichSaver"];
 const RUN = process.argv.includes("--key") ? Object.fromEntries(KEY_PROFILES.map(k => [k, PROFILES[k]])) : PROFILES;
-const ROUTES = ["/app/home", "/app/modules", "/app/forecast", "/app/chat", "/app/inputs", "/app/property", ...all.map(k => `/app/module/${k}`)];
+const ROUTES = ["/app/home", "/app/progress", "/app/modules", "/app/forecast", "/app/chat", "/app/inputs", "/app/property", ...all.map(k => `/app/module/${k}`)];
 const BLOCK = /supabase\.co|posthog|stripe\.com|truelayer|resend\.com/;
 
 const server = await preview({ preview: { port: 0, strictPort: false, open: false }, logLevel: "silent" });
