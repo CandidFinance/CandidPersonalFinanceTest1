@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { Share2, Copy, Check, Mail, MessageCircle } from "lucide-react";
-import { G, MUT, TEXT, WHITE, ERROR_TEXT } from "../design-tokens.js";
+import { G, MUT, TEXT, WHITE, ERROR_TEXT, CTA_BLUE } from "../design-tokens.js";
 import { validEmailShape, requestEmailCheck } from "../lib/emailCheck.js";
 import { fetchReferralLink, inviteMessage, nativeShare, shareInvite, copyInvite, inviteMailto, inviteWhatsApp, REFERRAL_CAP } from "../lib/referral.js";
 
@@ -10,10 +10,10 @@ import { fetchReferralLink, inviteMessage, nativeShare, shareInvite, copyInvite,
 // up to REFERRAL_CAP; the friend's second module is unlocked for free. The
 // link is for a confirmed email only, so until theirs is, this offers its
 // confirmation link instead. Nothing without an email.
-// Sharing, on a phone: Share (its own share sheet), Email (subject filled
-// in) and a copy icon. On a computer: "Share your link", which shows Email
-// and WhatsApp under it, and a copy button beside it. Copying takes the
-// message with its link, to paste anywhere. The message says what they've used Candid for
+// Kept short: one line, then one blue button, "Share your Candid link",
+// with a copy icon beside it. On a phone the button opens its share sheet;
+// on a computer (or if the sheet fails) it shows Email and WhatsApp under
+// it. Copying takes the message with its link, to paste anywhere. The message says what they've used Candid for
 // (`moduleKey`, the answer just seen, else their last one unlocked).
 // `source` is where it's shown, for PostHog. `bare`: no card of its own,
 // inside one already (the paywall).
@@ -67,40 +67,18 @@ export default function InviteFriends({ d, source, moduleKey = null, bare = fals
   return (
     <div style={wrap}>
       <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Give a friend a free module, get a free month</div>
-      <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>
-        When a friend joins on your link and completes their first module, you get a month of Candid free, up to {REFERRAL_CAP}. Their second module is unlocked for free. <a href="/terms.html#referrals" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>
+      <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>
+        Once they finish their first module. Up to {REFERRAL_CAP} months. <a href="/terms.html#referrals" target="_blank" rel="noreferrer" style={{color:MUT}}>Terms</a>
       </p>
-      {link.confirmed && phone ? (
+      {link.confirmed ? (
         <>
-          {/* A phone: its share sheet, an email with the subject filled in
-              (a share sheet's mail app may drop it), and a plain copy icon. */}
           <div style={{display:"flex",alignItems:"center",gap:"8px",marginTop:"12px"}}>
-            <button type="button" onClick={share} style={{...pill,flex:1,background:G,color:WHITE}}>
-              <Share2 size={16}/>Share
+            <button type="button" onClick={share} aria-expanded={phone ? undefined : choices} style={{...pill,flex:1,background:CTA_BLUE,color:WHITE}}>
+              <Share2 size={16}/>Share your Candid link
             </button>
-            <a href={inviteMailto(text)} onClick={() => shared("email")} style={{...choice,padding:"12px"}}>
-              <Mail size={16}/>Email
-            </a>
             <button type="button" onClick={copy} aria-label="Copy your invite" title="Copy your invite"
               style={{background:"none",border:"none",padding:"10px",color:G,cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
               {copied === true ? <Check size={20}/> : <Copy size={20}/>}
-            </button>
-          </div>
-          {copied && (
-            <div role="status" style={{fontSize:"12.5px",color:copied === true ? TEXT : ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>
-              {copied === true ? "Copied. Paste it into a message to a friend." : "Couldn't copy it. Use Share instead."}
-            </div>
-          )}
-        </>
-      ) : link.confirmed ? (
-        <>
-          <div style={{display:"flex",gap:"8px",marginTop:"12px"}}>
-            <button type="button" onClick={share} aria-expanded={nativeShare() ? undefined : choices} style={{...pill,flex:4,background:G,color:WHITE}}>
-              <Share2 size={15}/>Share your link
-            </button>
-            <button type="button" onClick={copy} aria-label="Copy your invite" title="Copy your invite"
-              style={{...pill,flex:1,background:WHITE,color:G,border:`1.5px solid ${G}`}}>
-              {copied === true ? <Check size={17}/> : <Copy size={17}/>}
             </button>
           </div>
           {choices && (
@@ -111,7 +89,7 @@ export default function InviteFriends({ d, source, moduleKey = null, bare = fals
           )}
           {copied && (
             <div role="status" style={{fontSize:"12.5px",color:copied === true ? TEXT : ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>
-              {copied === true ? "Copied. Paste it into a message to a friend." : "Couldn't copy it. Use Share your link instead."}
+              {copied === true ? "Copied. Paste it into a message to a friend." : "Couldn't copy it. Use Share your Candid link instead."}
             </div>
           )}
         </>

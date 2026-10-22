@@ -7,7 +7,7 @@ import { G, GOLD, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT, CTA_BLUE } from ".
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
-import { useEmailCheck, DidYouMean } from "../emailCheckForm.jsx";
+import { useEmailCheck, DidYouMean, EMAIL_WHY } from "../emailCheckForm.jsx";
 import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../lib/entitlement.js";
 import { referralCode, invitedHere } from "../../lib/referral.js";
 import InviteFriends from "../InviteFriends.jsx";
@@ -110,13 +110,14 @@ function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
   };
   return (
     <form onSubmit={submit}>
-      <div style={{fontSize:"15px",color:TEXT,fontWeight:600,lineHeight:1.4,marginBottom:"10px"}}>Add your email to see your answer.</div>
+      <div style={{fontSize:"15px",color:TEXT,fontWeight:600,lineHeight:1.4}}>Add your email to see your answer.</div>
+      <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"4px 0 10px"}}>{EMAIL_WHY}</div>
       {invitedHere() && <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"-4px 0 10px"}}>Invited by a friend: your second module is unlocked for free.</div>}
       <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
         style={{width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       <label style={{display:"flex",alignItems:"flex-start",gap:"10px",margin:"12px 2px 16px",fontSize:"13px",color:TEXT,lineHeight:1.45,cursor:"pointer"}}>
         <input type="checkbox" checked={alerts} onChange={e => setAlerts(e.target.checked)} style={{marginTop:"2px",accentColor:G}}/>
-        Email me when I could be keeping more: a better rate, or an allowance about to go unused.
+        Yes, email me when something changes: a better rate, a Budget change, or an allowance about to go unused.
       </label>
       <button type="submit" disabled={check.busy} style={primary(check.busy)}>{check.busy ? "Checking…" : cta}</button>
       {check.error && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}
@@ -302,9 +303,12 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
 // once they're being sent, the same setting that turns sending on; and
 // sign-in on other devices (SignInSetup.jsx), which is for subscribers.
 const ALERTS_LIVE = import.meta.env.VITE_ALERTS_LIVE === "1";
+// The alerts are what api/alerts.js sends (rates, tax-year end, bonus, new
+// tax year) and the Sunday email's policy changes (weekly.js); student loan
+// and mortgage changes stay in COMING_SOON until they're sent.
 const INCLUDED = [
+  ALERTS_LIVE ? ["Live updates when things change", "An email when something changes that's worth another look: a better savings rate, Budget changes that affect you, allowances about to go unused as the tax year ends, and what a bonus could mean before it lands."] : null,
   ["Kept up to date", "Your savings checked against each day's best rates, and every figure worked out again whenever you update your pay or savings."],
-  ALERTS_LIVE ? ["Alerts when something changes", "An email when a better savings rate appears, before your bonus lands, or as tax-year deadlines approach."] : null,
   ["Your options in every module", "Why each figure is what it is, and what each option is worth, across Pension, Cash, Investments, Student Loan and Kids & family."],
   ["Candid Assist", "Questions about your own numbers, answered inside every module."],
   ["On all your devices", "Sign in with Face ID, a fingerprint or a password."],
@@ -314,6 +318,7 @@ const INCLUDED = [
 const COMING_SOON = [
   ["Automated account switching", "Hands-free admin for opening and moving ISAs and savings accounts."],
   ["Open Banking integration", "Connect your accounts for a live, unified view of your net worth."],
+  ["More live updates", "Student loan repayment terms and mortgage deals, when they change."],
   ["Savings and goal planner", "Dynamic reviews of how much you could save and invest."],
   ["Tax trap and leakage alerts", "Warnings for stealth tax bands, policy shifts and missed yield."],
   ["New expansion modules", "Household finances, children's accounts, property and mortgages, and inheritance."],

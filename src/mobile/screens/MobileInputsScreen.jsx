@@ -7,7 +7,7 @@ import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
-import { useEmailCheck, DidYouMean } from "../emailCheckForm.jsx";
+import { useEmailCheck, DidYouMean, EMAIL_WHY } from "../emailCheckForm.jsx";
 import { requestEmailStatus, validEmailShape } from "../../lib/emailCheck.js";
 import { SCORED_MODULES, scoredInView, loanSavingsIn, loanPensionChecked } from "../../lib/appEntry.js";
 
@@ -191,6 +191,7 @@ function EmailField({ d, onEmailChange }) {
   return (
     <div style={{marginTop:"18px"}}>
       <label htmlFor="inputs-email" style={fieldLabel}>Email</label>
+      <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"-2px 0 8px"}}>{EMAIL_WHY}</p>
       <input id="inputs-email" type="email" autoComplete="email" value={draft} placeholder="your@email.com"
         onChange={e => { setDraft(e.target.value); setLink(null); check.clear(); }}
         style={{width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"100px",padding:"13px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>

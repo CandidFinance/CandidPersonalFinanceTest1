@@ -3,6 +3,10 @@ import posthog from "posthog-js";
 import { G, TEXT } from "../design-tokens.js";
 import { checkEmail, requestEmailCheck, EMAIL_PROBLEMS } from "../lib/emailCheck.js";
 
+// Why Candid asks for an email, said wherever it asks (the unlock form,
+// Edit inputs). The emails themselves still need their box ticked.
+export const EMAIL_WHY = "So we can tell you when something changes that makes your answer worth another look, before it costs you.";
+
 // The checks an email gets before it's taken (src/lib/emailCheck.js): its
 // shape and domain here, a likely typo offered once (submitting again as
 // typed goes ahead), then the server's, which also emails the link that
