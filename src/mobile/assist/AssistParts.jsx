@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, ArrowUpRight, Check } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SERIF, SANS, SUCCESS, CRITICAL } from "../../design-tokens.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { accountName, resolveAccount, MIN_SPLIT_GAIN } from "../../lib/assist.js";
 import { devicePlatform, appLinkFor } from "../../lib/appLinks.js";
@@ -36,12 +36,14 @@ export function Mark({ on, round = false }) {
 
 // "£4k/£7.5k": what an account would take of what it could. In £k unless
 // rounding would make a part-fill look full (then exact figures); green and
-// bold when it takes all of it.
+// bold when it takes all of it, and when it can take only part, that part
+// red and bold.
 function TakeOf({ o }) {
   const of = Math.max(o.amount, o.wanted ?? 0);
   const full = o.amount >= of;
   const f = !full && fmtCompact(o.amount) === fmtCompact(of) ? fmt : fmtCompact;
-  return <span style={full ? { color: SUCCESS, fontWeight: 700 } : undefined}>{f(o.amount)}/{f(of)}</span>;
+  if (full) return <span style={{ color: SUCCESS, fontWeight: 700 }}>{f(o.amount)}/{f(of)}</span>;
+  return <span><span style={{ color: CRITICAL, fontWeight: 700 }}>{f(o.amount)}</span>/{f(of)}</span>;
 }
 
 // One section's providers: tap to pick, tap again to unpick. `absolute`:
