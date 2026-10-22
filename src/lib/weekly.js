@@ -113,7 +113,7 @@ export const IMPACTS = {
 };
 
 // ── Your week ────────────────────────────────────────────────────────────────
-function yourWeek(d, m, today, rows) {
+export function yourWeek(d, m, today, rows) {
   const lines = [];
   const opp = rows?.length ? cashOpportunity(d, m, rows) : null;
   if (opp && opp.gain >= RATES_LINE_MIN) {

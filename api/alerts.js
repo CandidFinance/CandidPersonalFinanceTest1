@@ -2,6 +2,7 @@ import { isAllowedOrigin, clientIp, safeEqual, rateLimiter, checkAdminPassword }
 import { alertsDue, alertEmail, inputsFromRow, isFounding, FREE_RATES_DELAY_DAYS } from "../src/lib/alerts.js";
 import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS, REFERRAL_MONTHS } from "../src/lib/weekly.js";
 import { confirmedWelcomeEmail, confirmReminderEmail } from "../src/lib/accountEmails.js";
+import { monthlyCheckIn, monthlyEmail, MONTHLY_NEW_DAYS } from "../src/lib/monthly.js";
 import { confirmUrl, LINK_DAYS } from "../server/confirmLink.js";
 import { unsubscribeUrl, optInUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from "../server/alertMail.js";
 import { referralLink } from "../server/referrals.js";
@@ -23,6 +24,10 @@ import { referralLink } from "../server/referrals.js";
 //  - The welcome goes to each paid subscriber once (alert_sends key
 //    "welcome"): from api/billing.js as they subscribe, and from the daily
 //    run for anyone that missed it.
+//  - The monthly check-in (src/lib/monthly.js) goes to each subscriber on
+//    the 1st (or the few days after), from their second week: where their
+//    figures stand, and how net worth has moved since the last one
+//    (alert_sends key "monthly:YYYY-MM", its figures in `detail`).
 //  - A free user's welcome goes the day after they confirm their email
 //    (alert_sends key "confirmed"): rate alerts to turn on, free for
 //    founding users, and their invite link (confirmedWelcomes).
@@ -243,6 +248,14 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
         const mail = weeklyEmail(issue, p.d, { today, rows: rates || [], unsubscribeUrl: unsubscribe });
         emails.push({ to: p.email, who: p.who, kind: "weekly", key: `weekly:${issue.week}`, detail: null, ...mail });
       } catch (e) { notes.push(`couldn't write the Sunday email for one subscriber: ${e.message}`); }
+    }
+    // The monthly check-in (monthly.js): subscribers only, and not in their
+    // first week (the welcome has only just gone).
+    if (p.who === "subscriber" && new Date(p.sub.created_at) < new Date(today - MONTHLY_NEW_DAYS * DAY_MS)) {
+      try {
+        const checkIn = monthlyCheckIn(p.d, { today, rows: rates || [], sent: sentBy.get(p.email) || [] });
+        if (checkIn) emails.push({ to: p.email, who: p.who, kind: "monthly", key: checkIn.key, detail: checkIn.detail, ...monthlyEmail(checkIn, { name: p.d.name, unsubscribeUrl: unsubscribe }) });
+      } catch (e) { notes.push(`couldn't write the monthly check-in for one subscriber: ${e.message}`); }
     }
     // A free user's better rates: founding users only, from a few days
     // after they confirm, so the first never lands with their welcome.
