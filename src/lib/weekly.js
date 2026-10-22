@@ -118,7 +118,7 @@ function yourWeek(d, m, today, rows) {
   const opp = rows?.length ? cashOpportunity(d, m, rows) : null;
   if (opp && opp.gain >= RATES_LINE_MIN) {
     const top = opp.lines[0]?.option;
-    lines.push({ label: "Rates", text: `at today's best rates, your cash could earn about ${fmt(Math.round(opp.gain))} a year more after tax${top ? `. Highest for you: ${top.provider}${top.product ? ` ${top.product}` : ""} at ${top.ratePct}%` : ""}.` });
+    lines.push({ label: "Rates", text: `against today's best rates, your cash is losing about ${fmt(Math.round(opp.gain))} a year after tax${top ? `. Highest for you: ${top.provider}${top.product ? ` ${top.product}` : ""} at ${top.ratePct}%` : ""}.` });
   } else if (m.cash > 0 && opp) {
     lines.push({ label: "Rates", text: "your savings are within £50 a year of today's best rates." });
   }

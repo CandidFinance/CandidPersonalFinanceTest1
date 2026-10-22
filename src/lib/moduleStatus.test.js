@@ -62,7 +62,7 @@ test("investments: unused ISA allowance isn't flagged with nothing to fill it", 
 test("investments: unused ISA allowance is flagged when investments outside an ISA could fill it", () => {
   const s = statusesFor({ selectedModules: ["investments"], salary: "30000", monthlyExpenses: "2500", hasInvestments: "yes", unwrappedValue: "5000" });
   assert.equal(s.investments.status, "attention");
-  assert.equal(s.investments.impactLabel, "£20,000 of this year's ISA allowance unused");
+  assert.equal(s.investments.impactLabel, "£20,000 of this year's ISA allowance unused, lost on 5 April");
 });
 
 test("score: not knowing your pension costs points, but less than a critical gap", () => {

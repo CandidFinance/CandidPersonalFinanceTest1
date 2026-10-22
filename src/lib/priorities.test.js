@@ -16,18 +16,18 @@ test("what to do first: modules with money to act on, largest first, each with i
   assert.ok(list.length > 0);
   for (let i = 1; i < list.length; i++) assert.ok(list[i - 1].amount >= list[i].amount);
   for (const p of list) assert.equal(p.line, getModuleSummary(MODULE_META.find(mm => mm.key === p.key), d, m, statuses, null).summary);
-  assert.ok(list.some(p => p.key === "pension" && /employer match unclaimed/.test(p.line)));
+  assert.ok(list.some(p => p.key === "pension" && /unclaimed match/.test(p.line)));
 });
 
 test("cash's £ figure comes with its own explanation, an access concern after it", () => {
   // £14,000 at 1% against the default six-month emergency fund (£12,000):
   // enough, not too much, but it could earn more.
   const { statuses } = run({ ...profile, cashTiers: [{ amount: "14000", rate: "1" }], cashAccessType: "partial" });
-  assert.match(statuses.cash.impactLabel, /^£[\d,]+\/yr more your savings could earn\. Some of your savings may not be reachable quickly$/);
+  assert.match(statuses.cash.impactLabel, /^£[\d,]+\/yr lost to low savings rates. Some of your savings may not be reachable quickly$/);
 });
 
 test("the headline names the biggest win, or says all is on track", () => {
-  assert.equal(scoreHeadline([{ title: "Pension", amount: 900 }]), "Your biggest win: Pension, £900 a year.");
+  assert.equal(scoreHeadline([{ title: "Pension", amount: 900 }]), "Your biggest leak: Pension, £900 a year.");
   assert.equal(scoreHeadline([]), "You're on track across the modules you've answered.");
 });
 

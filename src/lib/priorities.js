@@ -20,7 +20,7 @@ export function whatToDoFirst(d, m, statuses, max = MAX_PRIORITIES) {
 export function scoreHeadline(priorities) {
   const top = priorities[0];
   if (!top) return "You're on track across the modules you've answered.";
-  return `Your biggest win: ${top.title}, ${fmt(top.amount)}${top.amountIsLumpSum ? " by 18" : " a year"}.`;
+  return `Your biggest leak: ${top.title}, ${fmt(top.amount)}${top.amountIsLumpSum ? " by 18" : " a year"}.`;
 }
 
 // Answered modules with nothing to act on.

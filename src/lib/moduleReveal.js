@@ -134,7 +134,7 @@ function pensionSteps(d, m) {
   if (m.missedMatch > 0) {
     const netCost = Math.round((empPct - myPct) / 100 * m.salary * (1 - m.tr));
     return [
-      { label: ANSWER, figure: `${fmt(m.missedMatch)} a year`, title: "of your employer's money you're not getting." },
+      { label: ANSWER, figure: `${fmt(m.missedMatch)} a year`, title: "of salary left on the table: employer match you're not getting." },
       { label: WHY, title: `Your employer matches up to ${empPct}% of your salary. You pay ${myPct}%.` },
       { label: ACTION, title: `Raising your payments to ${empPct}% would get the full match.`,
         body: `It would cost you about ${fmt(netCost)} a year after tax relief. ${HR}` },
@@ -255,7 +255,7 @@ export function cashReveal(d, m, ctx = {}) {
 
 function cashSteps(d, m, { marketRates = {} } = {}) {
   const opp = cashOpportunity(d, m, marketRates.rows);
-  const rateLine = opp && opp.gain > 50 ? `Higher rates today could add about ${fmt(opp.gain)} a year after tax.` : null;
+  const rateLine = opp && opp.gain > 50 ? `Against today's top rates, your savings lose about ${fmt(opp.gain)} a year after tax.` : null;
   // Retired, a pension pays the way, so this is for someone between jobs.
   if (m.noEarnings && !inRetirement(d) && m.expenses > 0 && m.totalLiquid > 0 && m.monthlyShortfall > 0) {
     const months = m.totalLiquid / m.monthlyShortfall;
@@ -299,7 +299,7 @@ function cashSteps(d, m, { marketRates = {} } = {}) {
   if (opp && opp.gain > 50) {
     const best = opp.lines.map(l => `${l.section === "Premium Bonds" ? "Premium Bonds" : `a ${l.section}`} at ${pct(l.option.ratePct)}`);
     return [
-      { label: ANSWER, figure: `${fmt(opp.gain)} a year`, title: "more your savings could earn, after tax." },
+      { label: ANSWER, figure: `${fmt(opp.gain)} a year`, title: "lost each year to below-top savings rates, after tax." },
       withBody({ label: WHY, title: `Your ${fmt(opp.cash)} in savings earns about ${fmt(opp.currentKept)} a year after tax. The highest-rate options today include ${best.length > 1 ? `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}` : best[0]}.` },
         m.expensesUnknown ? "Add your monthly spending in Edit inputs to see how much to keep as an emergency fund." : null),
       { label: ACTION, title: "Candid Assist lays out the options in each and how to move, whichever you choose.",
@@ -309,7 +309,7 @@ function cashSteps(d, m, { marketRates = {} } = {}) {
   const opt = calcCashOptimisation(m, marketRates.isaRate ?? null, marketRates.nonIsaRate ?? null, marketRates.rows);
   if (!opp && opt.optimisationGain > 50) {
     return [
-      { label: ANSWER, figure: `${fmt(opt.optimisationGain)} a year`, title: "more your savings could earn." },
+      { label: ANSWER, figure: `${fmt(opt.optimisationGain)} a year`, title: "lost each year to below-top savings rates." },
       { label: WHY, title: `Your savings earn about ${pct(opt.todayBlendedRate * 100)} on average. The highest rates today are ${opt.isaRateDisplay} in a Cash ISA and ${opt.nonIsaRateDisplay} in a savings account.` },
       { label: ACTION, title: opt.step1Isa > 0
           ? `Moving ${fmt(opt.step1Isa)} into a Cash ISA, and the rest to the highest savings rate, would earn it.`
@@ -331,7 +331,7 @@ export function investmentsReveal(d, m) {
   if (m.crystallisable > 0) {
     const gains = +d.unrealisedGains || 0;
     return [
-      { label: ANSWER, figure: fmt(Math.round(m.cgtSaving)), title: "of capital gains tax you could avoid this tax year." },
+      { label: ANSWER, figure: fmt(Math.round(m.cgtSaving)), title: "of avoidable capital gains tax: this year's tax-free allowance ends 5 April." },
       { label: WHY, title: `Each tax year, the first ${fmt(CGT_ALLOWANCE)} of profit you take is tax-free. You have ${fmt(m.remainingCgtAllowance)} of it left, and about ${fmt(gains)} of profit outside an ISA or pension.` },
       { label: ACTION, title: `Taking ${fmt(m.crystallisable)} of that profit before 5 April would use this year's allowance.`,
         body: "Your platform or an adviser can tell you how for your holdings. Some people buy back inside an ISA ('Bed and ISA') to stay invested; prices can move in between." },
@@ -396,7 +396,7 @@ function studentLoanSteps(d, m) {
   }
   if (sl.worthOverpaying && verdict) {
     return [
-      { label: ANSWER, figure: fmt(sl.overpayTotalBenefit), title: `ahead by paying your loan off now, rather than letting it clear in ${years(sl.clearYr)}.`, ...turning },
+      { label: ANSWER, figure: fmt(sl.overpayTotalBenefit), title: `lost to interest by letting it run ${years(sl.clearYr)}, against paying it off now.`, ...turning },
       withBody({ label: WHY, title: `Paying it off avoids about ${fmt(sl.interestAvoided)} of interest. In savings at ${sl.cashRate}%, the same money would earn about ${fmt(sl.savingsForgone)} meanwhile.` },
         join(m.missedMatch > 0 ? `Separately, your employer would add ${fmt(m.missedMatch)} a year to your pension if you paid in up to its match (see Pension).` : null, pensionCaveat(sl))),
       { label: ACTION, title: `It would use ${fmt(Math.round(m.loanBal))} of cash. The page shows how your buffer, ISA allowance and pension match stand.`,
@@ -417,8 +417,8 @@ function studentLoanSteps(d, m) {
       lump
         ? { label: ACTION, title: `Paying ${fmt(lump.amount)} now would clear it in ${years(lump.clearYr)}, and cost about ${fmt(lump.saving)} less in all, counting what the money would earn in savings.`,
             body: "Smaller sums would mostly shrink what's written off. The page shows how your cash buffer, ISA allowance and pension match stand." }
-        : verdict ? { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "On these assumptions, savings or a pension may earn more than overpaying." }
-        : { label: ACTION, title: "Overpaying would mostly shrink what's written off, not what you pay.", body: "Adding a few more details on the page shows what the money could do instead." },
+        : verdict ? { label: ACTION, title: "Overpaying would mostly go on debt that's written off anyway.", body: "On these assumptions, savings or a pension may earn more than overpaying." }
+        : { label: ACTION, title: "Overpaying would mostly go on debt that's written off anyway.", body: "Adding a few more details on the page shows what the money could do instead." },
     ];
   }
   // Clears by itself: what it'll cost in all, against what's owed today.
@@ -558,7 +558,7 @@ export function taxTrapReveal(d, m) {
     const how = t.aboveTaper ? "Over £125,140 your tax-free allowance has gone completely" : "Over £100k you lose £1 of tax-free allowance for every £2 earned";
     const pension = t.options.find(o => o.key === "pension");
     return [
-      withBody({ label: ANSWER, figure: `${fmt(t.amount)} a year`, title: "is what the £100k trap costs you." },
+      withBody({ label: ANSWER, figure: `${fmt(t.amount)} a year`, title: "lost each year to the £100k tax trap." },
         `${fmt(t.allowance.tax)} of extra tax on the tax-free allowance you've lost${t.childcareLost > 0 ? `, and ${fmt(t.childcareLost)} of ${support}` : ""}.`),
       { label: WHY, title: `${how}, so your marginal tax rate is ${pctOf(t.rate.rate)}: for every extra £1 you earn, ${penceOf(t.rate.rate)} is lost to ${lostTo(t.rate)} (${rateParts(t.rate)}).` },
       t.fits

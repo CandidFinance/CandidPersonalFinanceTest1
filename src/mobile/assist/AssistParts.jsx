@@ -203,7 +203,7 @@ export function AccountFlow({ item, state, update, d, set, backToList }) {
 }
 
 // An item's one-line title and the detail beneath it, for lists.
-export const itemTitle = i => i.id === "cash" ? "Your cash could earn more" : i.kind === "bonus" ? `${i.account.name}: its rate is ending` : `${i.account.name}: rate cut`;
+export const itemTitle = i => i.id === "cash" ? "Your cash is losing out to low rates" : i.kind === "bonus" ? `${i.account.name}: its rate is ending` : `${i.account.name}: rate cut`;
 export const itemDetail = i => i.id === "cash" ? `Up to ${fmt(i.gain)} a year more`
   : i.kind === "bonus" ? `${pct(i.fromRate)} ends on ${fmtDate(i.date)}${i.toRate != null ? `, then ${pct(i.toRate)}` : ""}`
   : `${pct(i.fromRate)} is now ${pct(i.toRate)}`;

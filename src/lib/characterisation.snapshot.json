@@ -88,26 +88,26 @@
     "cash": {
      "status": "attention",
      "impact": 618,
-     "impactLabel": "£618/yr more your savings could earn",
+     "impactLabel": "£618/yr lost to low savings rates",
      "amount": 618
     },
     "investments": {
      "status": "attention",
      "impact": 792,
-     "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+     "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
      "amount": 432
     },
     "pension": {
      "status": "critical",
      "impact": 3440,
-     "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+     "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "potentialAmount": 2000
     },
     "studentLoan": {
      "status": "attention",
      "impact": 73,
-     "impactLabel": "£73/yr ahead by paying your loan off now",
+     "impactLabel": "£73/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
      "amount": 73
     },
@@ -143,9 +143,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "attention",
-     "summary": "£618/yr more your savings could earn",
+     "summary": "£618/yr lost to low savings rates",
      "impact": 618,
-     "impactLabel": "£618/yr more your savings could earn",
+     "impactLabel": "£618/yr lost to low savings rates",
      "amount": 618,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -155,9 +155,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+     "summary": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
      "impact": 792,
-     "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+     "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
      "amount": 432,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -167,9 +167,9 @@
      "icon": "<element undefined>",
      "title": "Pension",
      "status": "critical",
-     "summary": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+     "summary": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
      "impact": 3440,
-     "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+     "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -179,9 +179,9 @@
      "icon": "<element undefined>",
      "title": "Student loan",
      "status": "attention",
-     "summary": "£73/yr ahead by paying your loan off now",
+     "summary": "£73/yr lost to loan interest above what savings pay",
      "impact": 73,
-     "impactLabel": "£73/yr ahead by paying your loan off now",
+     "impactLabel": "£73/yr lost to loan interest above what savings pay",
      "amount": 73,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -242,9 +242,9 @@
       "icon": "<element undefined>",
       "title": "Pension",
       "status": "critical",
-      "summary": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+      "summary": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
       "impact": 3440,
-      "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+      "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
       "amount": 1440,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -256,9 +256,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "attention",
-      "summary": "£618/yr more your savings could earn",
+      "summary": "£618/yr lost to low savings rates",
       "impact": 618,
-      "impactLabel": "£618/yr more your savings could earn",
+      "impactLabel": "£618/yr lost to low savings rates",
       "amount": 618,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -270,9 +270,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+      "summary": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
       "impact": 792,
-      "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+      "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
       "amount": 432,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -284,9 +284,9 @@
       "icon": "<element undefined>",
       "title": "Student loan",
       "status": "attention",
-      "summary": "£73/yr ahead by paying your loan off now",
+      "summary": "£73/yr lost to loan interest above what savings pay",
       "impact": 73,
-      "impactLabel": "£73/yr ahead by paying your loan off now",
+      "impactLabel": "£73/yr lost to loan interest above what savings pay",
       "amount": 73,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -340,7 +340,7 @@
      {
       "label": "Your position",
       "figure": "£1,440 a year",
-      "title": "of your employer's money you're not getting."
+      "title": "of salary left on the table: employer match you're not getting."
      },
      {
       "label": "Why",
@@ -356,7 +356,7 @@
      {
       "label": "Your position",
       "figure": "£618 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -372,7 +372,7 @@
      {
       "label": "Your position",
       "figure": "£432",
-      "title": "of capital gains tax you could avoid this tax year."
+      "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
       "label": "Why",
@@ -388,7 +388,7 @@
      {
       "label": "Your position",
       "figure": "£438",
-      "title": "ahead by paying your loan off now, rather than letting it clear in 6 years."
+      "title": "lost to interest by letting it run 6 years, against paying it off now."
      },
      {
       "label": "Why",
@@ -1350,28 +1350,28 @@
       "title": "Pension",
       "amount": 1440,
       "amountIsLumpSum": false,
-      "line": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension"
+      "line": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus"
      },
      {
       "key": "cash",
       "title": "Cash & savings",
       "amount": 618,
       "amountIsLumpSum": false,
-      "line": "£618/yr more your savings could earn"
+      "line": "£618/yr lost to low savings rates"
      },
      {
       "key": "investments",
       "title": "Investments",
       "amount": 432,
       "amountIsLumpSum": false,
-      "line": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused"
+      "line": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused"
      },
      {
       "key": "studentLoan",
       "title": "Student loan",
       "amount": 73,
       "amountIsLumpSum": false,
-      "line": "£73/yr ahead by paying your loan off now"
+      "line": "£73/yr lost to loan interest above what savings pay"
      }
     ],
     "onTrack": []
@@ -2988,26 +2988,26 @@
     "cash": {
      "status": "attention",
      "impact": 623,
-     "impactLabel": "£623/yr more your savings could earn",
+     "impactLabel": "£623/yr lost to low savings rates",
      "amount": 623
     },
     "investments": {
      "status": "attention",
      "impact": 792,
-     "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+     "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
      "amount": 432
     },
     "pension": {
      "status": "critical",
      "impact": 3440,
-     "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+     "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "potentialAmount": 2000
     },
     "studentLoan": {
      "status": "attention",
      "impact": 24,
-     "impactLabel": "£24/yr ahead by paying your loan off now",
+     "impactLabel": "£24/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
      "amount": 24
     },
@@ -3043,9 +3043,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "attention",
-     "summary": "£623/yr more your savings could earn",
+     "summary": "£623/yr lost to low savings rates",
      "impact": 623,
-     "impactLabel": "£623/yr more your savings could earn",
+     "impactLabel": "£623/yr lost to low savings rates",
      "amount": 623,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -3055,9 +3055,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+     "summary": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
      "impact": 792,
-     "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+     "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
      "amount": 432,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -3067,9 +3067,9 @@
      "icon": "<element undefined>",
      "title": "Pension",
      "status": "critical",
-     "summary": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+     "summary": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
      "impact": 3440,
-     "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+     "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -3079,9 +3079,9 @@
      "icon": "<element undefined>",
      "title": "Student loan",
      "status": "attention",
-     "summary": "£24/yr ahead by paying your loan off now",
+     "summary": "£24/yr lost to loan interest above what savings pay",
      "impact": 24,
-     "impactLabel": "£24/yr ahead by paying your loan off now",
+     "impactLabel": "£24/yr lost to loan interest above what savings pay",
      "amount": 24,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -3142,9 +3142,9 @@
       "icon": "<element undefined>",
       "title": "Pension",
       "status": "critical",
-      "summary": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+      "summary": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
       "impact": 3440,
-      "impactLabel": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension",
+      "impactLabel": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus",
       "amount": 1440,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -3156,9 +3156,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "attention",
-      "summary": "£623/yr more your savings could earn",
+      "summary": "£623/yr lost to low savings rates",
       "impact": 623,
-      "impactLabel": "£623/yr more your savings could earn",
+      "impactLabel": "£623/yr lost to low savings rates",
       "amount": 623,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -3170,9 +3170,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+      "summary": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
       "impact": 792,
-      "impactLabel": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused",
+      "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
       "amount": 432,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -3184,9 +3184,9 @@
       "icon": "<element undefined>",
       "title": "Student loan",
       "status": "attention",
-      "summary": "£24/yr ahead by paying your loan off now",
+      "summary": "£24/yr lost to loan interest above what savings pay",
       "impact": 24,
-      "impactLabel": "£24/yr ahead by paying your loan off now",
+      "impactLabel": "£24/yr lost to loan interest above what savings pay",
       "amount": 24,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -3240,7 +3240,7 @@
      {
       "label": "Your position",
       "figure": "£1,440 a year",
-      "title": "of your employer's money you're not getting."
+      "title": "of salary left on the table: employer match you're not getting."
      },
      {
       "label": "Why",
@@ -3256,7 +3256,7 @@
      {
       "label": "Your position",
       "figure": "£608 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -3272,7 +3272,7 @@
      {
       "label": "Your position",
       "figure": "£432",
-      "title": "of capital gains tax you could avoid this tax year."
+      "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
       "label": "Why",
@@ -3288,7 +3288,7 @@
      {
       "label": "Your position",
       "figure": "£142",
-      "title": "ahead by paying your loan off now, rather than letting it clear in 6 years."
+      "title": "lost to interest by letting it run 6 years, against paying it off now."
      },
      {
       "label": "Why",
@@ -4055,28 +4055,28 @@
       "title": "Pension",
       "amount": 1440,
       "amountIsLumpSum": false,
-      "line": "£1,440/yr of employer match unclaimed + up to £2,000 saved by paying your bonus into your pension"
+      "line": "£1,440/yr of unclaimed match: salary left on the table + up to £2,000 of avoidable tax on your bonus"
      },
      {
       "key": "cash",
       "title": "Cash & savings",
       "amount": 623,
       "amountIsLumpSum": false,
-      "line": "£623/yr more your savings could earn"
+      "line": "£623/yr lost to low savings rates"
      },
      {
       "key": "investments",
       "title": "Investments",
       "amount": 432,
       "amountIsLumpSum": false,
-      "line": "£432 less capital gains tax, and £15,000 of this year's ISA allowance unused"
+      "line": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused"
      },
      {
       "key": "studentLoan",
       "title": "Student loan",
       "amount": 24,
       "amountIsLumpSum": false,
-      "line": "£24/yr ahead by paying your loan off now"
+      "line": "£24/yr lost to loan interest above what savings pay"
      }
     ],
     "onTrack": []
@@ -5636,13 +5636,13 @@
     "cash": {
      "status": "attention",
      "impact": 204,
-     "impactLabel": "£204/yr more your savings could earn",
+     "impactLabel": "£204/yr lost to low savings rates",
      "amount": 204
     },
     "investments": {
      "status": "attention",
      "impact": 144,
-     "impactLabel": "£144 less capital gains tax available",
+     "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 144
     },
     "pension": {
@@ -5691,9 +5691,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "attention",
-     "summary": "£204/yr more your savings could earn",
+     "summary": "£204/yr lost to low savings rates",
      "impact": 204,
-     "impactLabel": "£204/yr more your savings could earn",
+     "impactLabel": "£204/yr lost to low savings rates",
      "amount": 204,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -5703,9 +5703,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£144 less capital gains tax available",
+     "summary": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
      "impact": 144,
-     "impactLabel": "£144 less capital gains tax available",
+     "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 144,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -5790,9 +5790,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "attention",
-      "summary": "£204/yr more your savings could earn",
+      "summary": "£204/yr lost to low savings rates",
       "impact": 204,
-      "impactLabel": "£204/yr more your savings could earn",
+      "impactLabel": "£204/yr lost to low savings rates",
       "amount": 204,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -5804,9 +5804,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£144 less capital gains tax available",
+      "summary": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
       "impact": 144,
-      "impactLabel": "£144 less capital gains tax available",
+      "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
       "amount": 144,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -5886,7 +5886,7 @@
      {
       "label": "Your position",
       "figure": "£204 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -5902,7 +5902,7 @@
      {
       "label": "Your position",
       "figure": "£144",
-      "title": "of capital gains tax you could avoid this tax year."
+      "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
       "label": "Why",
@@ -6749,14 +6749,14 @@
       "title": "Cash & savings",
       "amount": 204,
       "amountIsLumpSum": false,
-      "line": "£204/yr more your savings could earn"
+      "line": "£204/yr lost to low savings rates"
      },
      {
       "key": "investments",
       "title": "Investments",
       "amount": 144,
       "amountIsLumpSum": false,
-      "line": "£144 less capital gains tax available"
+      "line": "£144 of avoidable capital gains tax; this year's allowance ends 5 April"
      }
     ],
     "onTrack": [
@@ -8200,13 +8200,13 @@
     "cash": {
      "status": "attention",
      "impact": 204,
-     "impactLabel": "£204/yr more your savings could earn",
+     "impactLabel": "£204/yr lost to low savings rates",
      "amount": 204
     },
     "investments": {
      "status": "attention",
      "impact": 144,
-     "impactLabel": "£144 less capital gains tax available",
+     "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 144
     },
     "pension": {
@@ -8255,9 +8255,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "attention",
-     "summary": "£204/yr more your savings could earn",
+     "summary": "£204/yr lost to low savings rates",
      "impact": 204,
-     "impactLabel": "£204/yr more your savings could earn",
+     "impactLabel": "£204/yr lost to low savings rates",
      "amount": 204,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -8267,9 +8267,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£144 less capital gains tax available",
+     "summary": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
      "impact": 144,
-     "impactLabel": "£144 less capital gains tax available",
+     "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 144,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -8354,9 +8354,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "attention",
-      "summary": "£204/yr more your savings could earn",
+      "summary": "£204/yr lost to low savings rates",
       "impact": 204,
-      "impactLabel": "£204/yr more your savings could earn",
+      "impactLabel": "£204/yr lost to low savings rates",
       "amount": 204,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -8368,9 +8368,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£144 less capital gains tax available",
+      "summary": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
       "impact": 144,
-      "impactLabel": "£144 less capital gains tax available",
+      "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
       "amount": 144,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -8450,7 +8450,7 @@
      {
       "label": "Your position",
       "figure": "£204 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -8466,7 +8466,7 @@
      {
       "label": "Your position",
       "figure": "£144",
-      "title": "of capital gains tax you could avoid this tax year."
+      "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
       "label": "Why",
@@ -9186,14 +9186,14 @@
       "title": "Cash & savings",
       "amount": 204,
       "amountIsLumpSum": false,
-      "line": "£204/yr more your savings could earn"
+      "line": "£204/yr lost to low savings rates"
      },
      {
       "key": "investments",
       "title": "Investments",
       "amount": 144,
       "amountIsLumpSum": false,
-      "line": "£144 less capital gains tax available"
+      "line": "£144 of avoidable capital gains tax; this year's allowance ends 5 April"
      }
     ],
     "onTrack": [
@@ -10595,13 +10595,13 @@
     "cash": {
      "status": "critical",
      "impact": 1070,
-     "impactLabel": "£1,070/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+     "impactLabel": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "amount": 1070
     },
     "investments": {
      "status": "attention",
      "impact": 1128,
-     "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+     "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
      "amount": 720
     },
     "pension": {
@@ -10650,9 +10650,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£1,070/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+     "summary": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "impact": 1070,
-     "impactLabel": "£1,070/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+     "impactLabel": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "amount": 1070,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -10662,9 +10662,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+     "summary": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
      "impact": 1128,
-     "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+     "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
      "amount": 720,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -10749,9 +10749,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£1,070/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+      "summary": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
       "impact": 1070,
-      "impactLabel": "£1,070/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+      "impactLabel": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
       "amount": 1070,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -10763,9 +10763,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+      "summary": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
       "impact": 1128,
-      "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+      "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
       "amount": 720,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -10845,7 +10845,7 @@
      {
       "label": "Your position",
       "figure": "£1,070 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -10861,7 +10861,7 @@
      {
       "label": "Your position",
       "figure": "£720",
-      "title": "of capital gains tax you could avoid this tax year."
+      "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
       "label": "Why",
@@ -11743,14 +11743,14 @@
       "title": "Cash & savings",
       "amount": 1070,
       "amountIsLumpSum": false,
-      "line": "£1,070/yr more your savings could earn, with £43,400 more than your emergency fund needs"
+      "line": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs"
      },
      {
       "key": "investments",
       "title": "Investments",
       "amount": 720,
       "amountIsLumpSum": false,
-      "line": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused"
+      "line": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused"
      }
     ],
     "onTrack": [
@@ -13208,13 +13208,13 @@
     "cash": {
      "status": "critical",
      "impact": 1185,
-     "impactLabel": "£1,185/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+     "impactLabel": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "amount": 1185
     },
     "investments": {
      "status": "attention",
      "impact": 1128,
-     "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+     "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
      "amount": 720
     },
     "pension": {
@@ -13263,9 +13263,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£1,185/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+     "summary": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "impact": 1185,
-     "impactLabel": "£1,185/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+     "impactLabel": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "amount": 1185,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -13275,9 +13275,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+     "summary": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
      "impact": 1128,
-     "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+     "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
      "amount": 720,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -13362,9 +13362,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£1,185/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+      "summary": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
       "impact": 1185,
-      "impactLabel": "£1,185/yr more your savings could earn, with £43,400 more than your emergency fund needs",
+      "impactLabel": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
       "amount": 1185,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -13376,9 +13376,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+      "summary": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
       "impact": 1128,
-      "impactLabel": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused",
+      "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
       "amount": 720,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -13458,7 +13458,7 @@
      {
       "label": "Your position",
       "figure": "£1,168 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -13474,7 +13474,7 @@
      {
       "label": "Your position",
       "figure": "£720",
-      "title": "of capital gains tax you could avoid this tax year."
+      "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
       "label": "Why",
@@ -14199,14 +14199,14 @@
       "title": "Cash & savings",
       "amount": 1185,
       "amountIsLumpSum": false,
-      "line": "£1,185/yr more your savings could earn, with £43,400 more than your emergency fund needs"
+      "line": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs"
      },
      {
       "key": "investments",
       "title": "Investments",
       "amount": 720,
       "amountIsLumpSum": false,
-      "line": "£720 less capital gains tax, and £17,000 of this year's ISA allowance unused"
+      "line": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused"
      }
     ],
     "onTrack": [
@@ -18540,13 +18540,13 @@
     "cash": {
      "status": "critical",
      "impact": 1084,
-     "impactLabel": "£1,084/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+     "impactLabel": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "amount": 1084
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -18595,9 +18595,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£1,084/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+     "summary": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "impact": 1084,
-     "impactLabel": "£1,084/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+     "impactLabel": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "amount": 1084,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -18607,9 +18607,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -18694,9 +18694,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£1,084/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+      "summary": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
       "impact": 1084,
-      "impactLabel": "£1,084/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+      "impactLabel": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
       "amount": 1084,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -18708,9 +18708,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -18810,7 +18810,7 @@
      {
       "label": "Your position",
       "figure": "£1,084 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -18860,7 +18860,7 @@
      {
       "label": "Your position",
       "figure": "£4,504 a year",
-      "title": "is what the £100k trap costs you.",
+      "title": "lost each year to the £100k tax trap.",
       "body": "£4,504 of extra tax on the tax-free allowance you've lost."
      },
      {
@@ -19789,7 +19789,7 @@
       "title": "Cash & savings",
       "amount": 1084,
       "amountIsLumpSum": false,
-      "line": "£1,084/yr more your savings could earn, with £39,000 more than your emergency fund needs"
+      "line": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -21278,13 +21278,13 @@
     "cash": {
      "status": "critical",
      "impact": 984,
-     "impactLabel": "£984/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+     "impactLabel": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "amount": 984
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -21333,9 +21333,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£984/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+     "summary": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "impact": 984,
-     "impactLabel": "£984/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+     "impactLabel": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "amount": 984,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -21345,9 +21345,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -21432,9 +21432,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£984/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+      "summary": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
       "impact": 984,
-      "impactLabel": "£984/yr more your savings could earn, with £39,000 more than your emergency fund needs",
+      "impactLabel": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
       "amount": 984,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -21446,9 +21446,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -21548,7 +21548,7 @@
      {
       "label": "Your position",
       "figure": "£969 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -21598,7 +21598,7 @@
      {
       "label": "Your position",
       "figure": "£4,504 a year",
-      "title": "is what the £100k trap costs you.",
+      "title": "lost each year to the £100k tax trap.",
       "body": "£4,504 of extra tax on the tax-free allowance you've lost."
      },
      {
@@ -22358,7 +22358,7 @@
       "title": "Cash & savings",
       "amount": 984,
       "amountIsLumpSum": false,
-      "line": "£984/yr more your savings could earn, with £39,000 more than your emergency fund needs"
+      "line": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -23791,13 +23791,13 @@
     "cash": {
      "status": "critical",
      "impact": 975,
-     "impactLabel": "£975/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+     "impactLabel": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "amount": 975
     },
     "investments": {
      "status": "attention",
      "impact": 720,
-     "impactLabel": "£720 less capital gains tax available",
+     "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 720
     },
     "pension": {
@@ -23846,9 +23846,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£975/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+     "summary": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "impact": 975,
-     "impactLabel": "£975/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+     "impactLabel": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "amount": 975,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -23858,9 +23858,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£720 less capital gains tax available",
+     "summary": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
      "impact": 720,
-     "impactLabel": "£720 less capital gains tax available",
+     "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 720,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -23945,9 +23945,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£975/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+      "summary": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
       "impact": 975,
-      "impactLabel": "£975/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+      "impactLabel": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
       "amount": 975,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -23959,9 +23959,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£720 less capital gains tax available",
+      "summary": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
       "impact": 720,
-      "impactLabel": "£720 less capital gains tax available",
+      "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
       "amount": 720,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -24041,7 +24041,7 @@
      {
       "label": "Your position",
       "figure": "£975 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -24058,7 +24058,7 @@
      {
       "label": "Your position",
       "figure": "£720",
-      "title": "of capital gains tax you could avoid this tax year."
+      "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
       "label": "Why",
@@ -24076,7 +24076,7 @@
      {
       "label": "Your position",
       "figure": "£5,028 a year",
-      "title": "is what the £100k trap costs you.",
+      "title": "lost each year to the £100k tax trap.",
       "body": "£5,028 of extra tax on the tax-free allowance you've lost."
      },
      {
@@ -24898,14 +24898,14 @@
       "title": "Cash & savings",
       "amount": 975,
       "amountIsLumpSum": false,
-      "line": "£975/yr more your savings could earn, with £114,000 more than your emergency fund needs"
+      "line": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs"
      },
      {
       "key": "investments",
       "title": "Investments",
       "amount": 720,
       "amountIsLumpSum": false,
-      "line": "£720 less capital gains tax available"
+      "line": "£720 of avoidable capital gains tax; this year's allowance ends 5 April"
      }
     ],
     "onTrack": []
@@ -26397,13 +26397,13 @@
     "cash": {
      "status": "critical",
      "impact": 675,
-     "impactLabel": "£675/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+     "impactLabel": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "amount": 675
     },
     "investments": {
      "status": "attention",
      "impact": 720,
-     "impactLabel": "£720 less capital gains tax available",
+     "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 720
     },
     "pension": {
@@ -26452,9 +26452,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£675/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+     "summary": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "impact": 675,
-     "impactLabel": "£675/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+     "impactLabel": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "amount": 675,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -26464,9 +26464,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£720 less capital gains tax available",
+     "summary": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
      "impact": 720,
-     "impactLabel": "£720 less capital gains tax available",
+     "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 720,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -26551,9 +26551,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£720 less capital gains tax available",
+      "summary": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
       "impact": 720,
-      "impactLabel": "£720 less capital gains tax available",
+      "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
       "amount": 720,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -26565,9 +26565,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£675/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+      "summary": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
       "impact": 675,
-      "impactLabel": "£675/yr more your savings could earn, with £114,000 more than your emergency fund needs",
+      "impactLabel": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
       "amount": 675,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -26647,7 +26647,7 @@
      {
       "label": "Your position",
       "figure": "£675 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -26664,7 +26664,7 @@
      {
       "label": "Your position",
       "figure": "£720",
-      "title": "of capital gains tax you could avoid this tax year."
+      "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
       "label": "Why",
@@ -26682,7 +26682,7 @@
      {
       "label": "Your position",
       "figure": "£5,028 a year",
-      "title": "is what the £100k trap costs you.",
+      "title": "lost each year to the £100k tax trap.",
       "body": "£5,028 of extra tax on the tax-free allowance you've lost."
      },
      {
@@ -27408,14 +27408,14 @@
       "title": "Investments",
       "amount": 720,
       "amountIsLumpSum": false,
-      "line": "£720 less capital gains tax available"
+      "line": "£720 of avoidable capital gains tax; this year's allowance ends 5 April"
      },
      {
       "key": "cash",
       "title": "Cash & savings",
       "amount": 675,
       "amountIsLumpSum": false,
-      "line": "£675/yr more your savings could earn, with £114,000 more than your emergency fund needs"
+      "line": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs"
      }
     ],
     "onTrack": []
@@ -28878,13 +28878,13 @@
     "cash": {
      "status": "critical",
      "impact": 908,
-     "impactLabel": "£908/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+     "impactLabel": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "amount": 908
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -28933,9 +28933,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£908/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+     "summary": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "impact": 908,
-     "impactLabel": "£908/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+     "impactLabel": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "amount": 908,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -28945,9 +28945,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -29032,9 +29032,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£908/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+      "summary": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
       "impact": 908,
-      "impactLabel": "£908/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+      "impactLabel": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
       "amount": 908,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -29046,9 +29046,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -29128,7 +29128,7 @@
      {
       "label": "Your position",
       "figure": "£908 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -30052,7 +30052,7 @@
       "title": "Cash & savings",
       "amount": 908,
       "amountIsLumpSum": false,
-      "line": "£908/yr more your savings could earn, with £14,200 more than your emergency fund needs"
+      "line": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -31510,13 +31510,13 @@
     "cash": {
      "status": "critical",
      "impact": 950,
-     "impactLabel": "£950/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+     "impactLabel": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "amount": 950
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -31565,9 +31565,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£950/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+     "summary": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "impact": 950,
-     "impactLabel": "£950/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+     "impactLabel": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "amount": 950,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -31577,9 +31577,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -31664,9 +31664,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£950/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+      "summary": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
       "impact": 950,
-      "impactLabel": "£950/yr more your savings could earn, with £14,200 more than your emergency fund needs",
+      "impactLabel": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
       "amount": 950,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -31678,9 +31678,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -31760,7 +31760,7 @@
      {
       "label": "Your position",
       "figure": "£935 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -32496,7 +32496,7 @@
       "title": "Cash & savings",
       "amount": 950,
       "amountIsLumpSum": false,
-      "line": "£950/yr more your savings could earn, with £14,200 more than your emergency fund needs"
+      "line": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -33905,7 +33905,7 @@
     "investments": {
      "status": "attention",
      "impact": 35,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -33966,9 +33966,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 35,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -34067,9 +34067,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 35,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -34210,7 +34210,7 @@
      },
      {
       "label": "What you could do",
-      "title": "Overpaying would mostly shrink what's written off, not what you pay.",
+      "title": "Overpaying would mostly go on debt that's written off anyway.",
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
@@ -37152,7 +37152,7 @@
     "investments": {
      "status": "attention",
      "impact": 35,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -37213,9 +37213,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 35,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -37314,9 +37314,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 35,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -37457,7 +37457,7 @@
      },
      {
       "label": "What you could do",
-      "title": "Overpaying would mostly shrink what's written off, not what you pay.",
+      "title": "Overpaying would mostly go on debt that's written off anyway.",
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
@@ -40535,7 +40535,7 @@
      },
      {
       "label": "What you could do",
-      "title": "Overpaying would mostly shrink what's written off, not what you pay.",
+      "title": "Overpaying would mostly go on debt that's written off anyway.",
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
@@ -44163,7 +44163,7 @@
      },
      {
       "label": "What you could do",
-      "title": "Overpaying would mostly shrink what's written off, not what you pay.",
+      "title": "Overpaying would mostly go on debt that's written off anyway.",
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
@@ -47325,7 +47325,7 @@
     "investments": {
      "status": "attention",
      "impact": 83,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -47338,7 +47338,7 @@
     "studentLoan": {
      "status": "attention",
      "impact": 37,
-     "impactLabel": "£37/yr ahead by paying your loan off now",
+     "impactLabel": "£37/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
      "amount": 37
     },
@@ -47386,9 +47386,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 83,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -47410,9 +47410,9 @@
      "icon": "<element undefined>",
      "title": "Student loan",
      "status": "attention",
-     "summary": "£37/yr ahead by paying your loan off now",
+     "summary": "£37/yr lost to loan interest above what savings pay",
      "impact": 37,
-     "impactLabel": "£37/yr ahead by paying your loan off now",
+     "impactLabel": "£37/yr lost to loan interest above what savings pay",
      "amount": 37,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -47487,9 +47487,9 @@
       "icon": "<element undefined>",
       "title": "Student loan",
       "status": "attention",
-      "summary": "£37/yr ahead by paying your loan off now",
+      "summary": "£37/yr lost to loan interest above what savings pay",
       "impact": 37,
-      "impactLabel": "£37/yr ahead by paying your loan off now",
+      "impactLabel": "£37/yr lost to loan interest above what savings pay",
       "amount": 37,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -47501,9 +47501,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 83,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -47621,7 +47621,7 @@
      {
       "label": "Your position",
       "figure": "£369",
-      "title": "ahead by paying your loan off now, rather than letting it clear in 10 years."
+      "title": "lost to interest by letting it run 10 years, against paying it off now."
      },
      {
       "label": "Why",
@@ -48517,7 +48517,7 @@
       "title": "Student loan",
       "amount": 37,
       "amountIsLumpSum": false,
-      "line": "£37/yr ahead by paying your loan off now"
+      "line": "£37/yr lost to loan interest above what savings pay"
      }
     ],
     "onTrack": [
@@ -50147,7 +50147,7 @@
     "investments": {
      "status": "attention",
      "impact": 83,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -50160,7 +50160,7 @@
     "studentLoan": {
      "status": "attention",
      "impact": 6,
-     "impactLabel": "£6/yr ahead by paying your loan off now",
+     "impactLabel": "£6/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
      "amount": 6
     },
@@ -50208,9 +50208,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 83,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -50232,9 +50232,9 @@
      "icon": "<element undefined>",
      "title": "Student loan",
      "status": "attention",
-     "summary": "£6/yr ahead by paying your loan off now",
+     "summary": "£6/yr lost to loan interest above what savings pay",
      "impact": 6,
-     "impactLabel": "£6/yr ahead by paying your loan off now",
+     "impactLabel": "£6/yr lost to loan interest above what savings pay",
      "amount": 6,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -50309,9 +50309,9 @@
       "icon": "<element undefined>",
       "title": "Student loan",
       "status": "attention",
-      "summary": "£6/yr ahead by paying your loan off now",
+      "summary": "£6/yr lost to loan interest above what savings pay",
       "impact": 6,
-      "impactLabel": "£6/yr ahead by paying your loan off now",
+      "impactLabel": "£6/yr lost to loan interest above what savings pay",
       "amount": 6,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -50323,9 +50323,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 83,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -50443,7 +50443,7 @@
      {
       "label": "Your position",
       "figure": "£59",
-      "title": "ahead by paying your loan off now, rather than letting it clear in 10 years."
+      "title": "lost to interest by letting it run 10 years, against paying it off now."
      },
      {
       "label": "Why",
@@ -51212,7 +51212,7 @@
       "title": "Student loan",
       "amount": 6,
       "amountIsLumpSum": false,
-      "line": "£6/yr ahead by paying your loan off now"
+      "line": "£6/yr lost to loan interest above what savings pay"
      }
     ],
     "onTrack": [
@@ -52794,13 +52794,13 @@
     "cash": {
      "status": "critical",
      "impact": 312,
-     "impactLabel": "£312/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+     "impactLabel": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "amount": 312
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -52849,9 +52849,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£312/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+     "summary": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "impact": 312,
-     "impactLabel": "£312/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+     "impactLabel": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "amount": 312,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -52861,9 +52861,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -52948,9 +52948,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£312/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+      "summary": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
       "impact": 312,
-      "impactLabel": "£312/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+      "impactLabel": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
       "amount": 312,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -52962,9 +52962,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -53044,7 +53044,7 @@
      {
       "label": "Your position",
       "figure": "£312 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -53938,7 +53938,7 @@
       "title": "Cash & savings",
       "amount": 312,
       "amountIsLumpSum": false,
-      "line": "£312/yr more your savings could earn, with £119,200 more than your emergency fund needs"
+      "line": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -55460,13 +55460,13 @@
     "cash": {
      "status": "critical",
      "impact": 44,
-     "impactLabel": "£44/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+     "impactLabel": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "amount": 44
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -55515,9 +55515,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£44/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+     "summary": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "impact": 44,
-     "impactLabel": "£44/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+     "impactLabel": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "amount": 44,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -55527,9 +55527,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -55614,9 +55614,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£44/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+      "summary": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
       "impact": 44,
-      "impactLabel": "£44/yr more your savings could earn, with £119,200 more than your emergency fund needs",
+      "impactLabel": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
       "amount": 44,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -55628,9 +55628,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -56446,7 +56446,7 @@
       "title": "Cash & savings",
       "amount": 44,
       "amountIsLumpSum": false,
-      "line": "£44/yr more your savings could earn, with £119,200 more than your emergency fund needs"
+      "line": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -57911,13 +57911,13 @@
     "cash": {
      "status": "critical",
      "impact": 1008,
-     "impactLabel": "£1,008/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+     "impactLabel": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "amount": 1008
     },
     "investments": {
      "status": "attention",
      "impact": 180,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -57966,9 +57966,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£1,008/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+     "summary": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "impact": 1008,
-     "impactLabel": "£1,008/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+     "impactLabel": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "amount": 1008,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -57978,9 +57978,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 180,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -58065,9 +58065,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£1,008/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+      "summary": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
       "impact": 1008,
-      "impactLabel": "£1,008/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+      "impactLabel": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
       "amount": 1008,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -58079,9 +58079,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 180,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -58161,7 +58161,7 @@
      {
       "label": "Your position",
       "figure": "£1,008 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -59073,7 +59073,7 @@
       "title": "Cash & savings",
       "amount": 1008,
       "amountIsLumpSum": false,
-      "line": "£1,008/yr more your savings could earn, with £29,200 more than your emergency fund needs"
+      "line": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -60522,13 +60522,13 @@
     "cash": {
      "status": "critical",
      "impact": 1071,
-     "impactLabel": "£1,071/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+     "impactLabel": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "amount": 1071
     },
     "investments": {
      "status": "attention",
      "impact": 180,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -60577,9 +60577,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£1,071/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+     "summary": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "impact": 1071,
-     "impactLabel": "£1,071/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+     "impactLabel": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "amount": 1071,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -60589,9 +60589,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 180,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -60676,9 +60676,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£1,071/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+      "summary": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
       "impact": 1071,
-      "impactLabel": "£1,071/yr more your savings could earn, with £29,200 more than your emergency fund needs",
+      "impactLabel": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
       "amount": 1071,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -60690,9 +60690,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 180,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -60772,7 +60772,7 @@
      {
       "label": "Your position",
       "figure": "£1,056 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -61496,7 +61496,7 @@
       "title": "Cash & savings",
       "amount": 1071,
       "amountIsLumpSum": false,
-      "line": "£1,071/yr more your savings could earn, with £29,200 more than your emergency fund needs"
+      "line": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -62888,13 +62888,13 @@
     "cash": {
      "status": "attention",
      "impact": 759,
-     "impactLabel": "£759/yr more your savings could earn",
+     "impactLabel": "£759/yr lost to low savings rates",
      "amount": 759
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -62942,9 +62942,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "attention",
-     "summary": "£759/yr more your savings could earn",
+     "summary": "£759/yr lost to low savings rates",
      "impact": 759,
-     "impactLabel": "£759/yr more your savings could earn",
+     "impactLabel": "£759/yr lost to low savings rates",
      "amount": 759,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -62954,9 +62954,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -63041,9 +63041,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "attention",
-      "summary": "£759/yr more your savings could earn",
+      "summary": "£759/yr lost to low savings rates",
       "impact": 759,
-      "impactLabel": "£759/yr more your savings could earn",
+      "impactLabel": "£759/yr lost to low savings rates",
       "amount": 759,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -63055,9 +63055,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -63117,7 +63117,7 @@
      {
       "label": "Your position",
       "figure": "£759 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -64046,7 +64046,7 @@
       "title": "Cash & savings",
       "amount": 759,
       "amountIsLumpSum": false,
-      "line": "£759/yr more your savings could earn"
+      "line": "£759/yr lost to low savings rates"
      }
     ],
     "onTrack": []
@@ -65501,13 +65501,13 @@
     "cash": {
      "status": "critical",
      "impact": 801,
-     "impactLabel": "£801/yr more your savings could earn",
+     "impactLabel": "£801/yr lost to low savings rates",
      "amount": 801
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -65555,9 +65555,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£801/yr more your savings could earn",
+     "summary": "£801/yr lost to low savings rates",
      "impact": 801,
-     "impactLabel": "£801/yr more your savings could earn",
+     "impactLabel": "£801/yr lost to low savings rates",
      "amount": 801,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -65567,9 +65567,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -65654,9 +65654,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£801/yr more your savings could earn",
+      "summary": "£801/yr lost to low savings rates",
       "impact": 801,
-      "impactLabel": "£801/yr more your savings could earn",
+      "impactLabel": "£801/yr lost to low savings rates",
       "amount": 801,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -65668,9 +65668,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -65730,7 +65730,7 @@
      {
       "label": "Your position",
       "figure": "£786 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -66471,7 +66471,7 @@
       "title": "Cash & savings",
       "amount": 801,
       "amountIsLumpSum": false,
-      "line": "£801/yr more your savings could earn"
+      "line": "£801/yr lost to low savings rates"
      }
     ],
     "onTrack": []
@@ -70771,7 +70771,7 @@
     "cash": {
      "status": "critical",
      "impact": 508,
-     "impactLabel": "£508/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+     "impactLabel": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "amount": 508
     },
     "investments": {
@@ -70826,9 +70826,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£508/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+     "summary": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "impact": 508,
-     "impactLabel": "£508/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+     "impactLabel": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "amount": 508,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -70925,9 +70925,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£508/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+      "summary": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
       "impact": 508,
-      "impactLabel": "£508/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+      "impactLabel": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
       "amount": 508,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -71001,7 +71001,7 @@
      {
       "label": "Your position",
       "figure": "£508 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -72344,7 +72344,7 @@
       "title": "Cash & savings",
       "amount": 508,
       "amountIsLumpSum": false,
-      "line": "£508/yr more your savings could earn, with £34,200 more than your emergency fund needs"
+      "line": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -73801,7 +73801,7 @@
     "cash": {
      "status": "critical",
      "impact": 272,
-     "impactLabel": "£272/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+     "impactLabel": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "amount": 272
     },
     "investments": {
@@ -73856,9 +73856,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£272/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+     "summary": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "impact": 272,
-     "impactLabel": "£272/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+     "impactLabel": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "amount": 272,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -73955,9 +73955,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£272/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+      "summary": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
       "impact": 272,
-      "impactLabel": "£272/yr more your savings could earn, with £34,200 more than your emergency fund needs",
+      "impactLabel": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
       "amount": 272,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -74031,7 +74031,7 @@
      {
       "label": "Your position",
       "figure": "£257 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -75217,7 +75217,7 @@
       "title": "Cash & savings",
       "amount": 272,
       "amountIsLumpSum": false,
-      "line": "£272/yr more your savings could earn, with £34,200 more than your emergency fund needs"
+      "line": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -76620,13 +76620,13 @@
     "cash": {
      "status": "critical",
      "impact": 1161,
-     "impactLabel": "£1,161/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+     "impactLabel": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "amount": 1161
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -76675,9 +76675,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£1,161/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+     "summary": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "impact": 1161,
-     "impactLabel": "£1,161/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+     "impactLabel": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "amount": 1161,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -76687,9 +76687,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -76774,9 +76774,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£1,161/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+      "summary": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
       "impact": 1161,
-      "impactLabel": "£1,161/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+      "impactLabel": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
       "amount": 1161,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -76788,9 +76788,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -76890,7 +76890,7 @@
      {
       "label": "Your position",
       "figure": "£1,161 a year",
-      "title": "more your savings could earn, after tax."
+      "title": "lost each year to below-top savings rates, after tax."
      },
      {
       "label": "Why",
@@ -76931,7 +76931,7 @@
      },
      {
       "label": "What you could do",
-      "title": "Overpaying would mostly shrink what's written off, not what you pay.",
+      "title": "Overpaying would mostly go on debt that's written off anyway.",
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
@@ -78148,7 +78148,7 @@
       "title": "Cash & savings",
       "amount": 1161,
       "amountIsLumpSum": false,
-      "line": "£1,161/yr more your savings could earn, with £59,200 more than your emergency fund needs"
+      "line": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [
@@ -80074,13 +80074,13 @@
     "cash": {
      "status": "critical",
      "impact": 989,
-     "impactLabel": "£989/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+     "impactLabel": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "amount": 989
     },
     "investments": {
      "status": "attention",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0
     },
     "pension": {
@@ -80129,9 +80129,9 @@
      "icon": "<element undefined>",
      "title": "Cash & savings",
      "status": "critical",
-     "summary": "£989/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+     "summary": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "impact": 989,
-     "impactLabel": "£989/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+     "impactLabel": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "amount": 989,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -80141,9 +80141,9 @@
      "icon": "<element undefined>",
      "title": "Investments",
      "status": "attention",
-     "summary": "£15,000 of this year's ISA allowance unused",
+     "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "impact": 360,
-     "impactLabel": "£15,000 of this year's ISA allowance unused",
+     "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
      "elsewhere": null
@@ -80228,9 +80228,9 @@
       "icon": "<element undefined>",
       "title": "Cash & savings",
       "status": "critical",
-      "summary": "£989/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+      "summary": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
       "impact": 989,
-      "impactLabel": "£989/yr more your savings could earn, with £59,200 more than your emergency fund needs",
+      "impactLabel": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
       "amount": 989,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -80242,9 +80242,9 @@
       "icon": "<element undefined>",
       "title": "Investments",
       "status": "attention",
-      "summary": "£15,000 of this year's ISA allowance unused",
+      "summary": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "impact": 360,
-      "impactLabel": "£15,000 of this year's ISA allowance unused",
+      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
       "elsewhere": null,
@@ -80344,7 +80344,7 @@
      {
       "label": "Your position",
       "figure": "£974 a year",
-      "title": "more your savings could earn."
+      "title": "lost each year to below-top savings rates."
      },
      {
       "label": "Why",
@@ -80385,7 +80385,7 @@
      },
      {
       "label": "What you could do",
-      "title": "Overpaying would mostly shrink what's written off, not what you pay.",
+      "title": "Overpaying would mostly go on debt that's written off anyway.",
       "body": "On these assumptions, savings or a pension may earn more than overpaying."
      }
     ],
@@ -81445,7 +81445,7 @@
       "title": "Cash & savings",
       "amount": 989,
       "amountIsLumpSum": false,
-      "line": "£989/yr more your savings could earn, with £59,200 more than your emergency fund needs"
+      "line": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs"
      }
     ],
     "onTrack": [

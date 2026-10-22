@@ -72,7 +72,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
 
   const opportunityCols = [];
   if (showEmergencyWin) opportunityCols.push({ label:"Short of your emergency fund", value: fmtCompact(m.emergencyShortfall) });
-  if (gain > 50) opportunityCols.push({ label: opp ? "More your savings could earn, after tax" : "More your savings could earn", value: `${fmtCompact(gain)}/yr` });
+  if (gain > 50) opportunityCols.push({ label: opp ? "Lost to low rates, after tax" : "Lost to low rates", value: `${fmtCompact(gain)}/yr` });
 
   const runwayTarget = m.emergencyBuffer;
   const runwayCurrent = m.totalLiquid;
@@ -134,7 +134,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
       )}
 
       <MobileWinTile number={optimiseWinNumber} title="Earn more on your savings"
-        headline={totalPot<=0 ? "Add your cash details to see this" : gain>50 ? `Your savings could earn ${fmt(gain)}/yr more${opp ? ", after tax" : ""}` : "Your savings are already on good rates."}
+        headline={totalPot<=0 ? "Add your cash details to see this" : gain>50 ? `Your savings lose ${fmt(gain)}/yr to low rates${opp ? ", after tax" : ""}` : "Your savings are already on good rates."}
         tagLabel="Today"
         reminder={gain > 50 ? {
           id: "cash-move-surplus",

@@ -118,7 +118,7 @@ function taxYearEnd(d, m, today) {
   const when = final ? `${daysTo5April(today)} days to 5 April` : "Before 5 April";
   return {
     key: `taxYearEnd:${ty}:${final ? "final" : "early"}`, kind: "taxYearEnd",
-    subject: tax > 0 ? `${when}: ${fmt(tax)} of tax you could save` : `${when}: ${fmt(m.isaHeadroom)} of ISA allowance left`,
+    subject: tax > 0 ? `${when}: ${fmt(tax)} of avoidable tax` : `${when}: ${fmt(m.isaHeadroom)} of ISA allowance left`,
     intro: "The tax year ends on 5 April. On your figures, these could still be used this tax year:",
     items: items.map(i => i.line), link: `${SITE}/app/home`,
   };
@@ -140,7 +140,7 @@ function bonus(d, m, today) {
   const known = d.bonusMonth && +d.bonusMonth === paid;
   return {
     key: `bonus:${year}-${paid}`, kind: "bonus",
-    subject: `Your bonus: up to ${fmt(Math.round(saving))} of tax you could save`,
+    subject: `Your bonus: up to ${fmt(Math.round(saving))} of avoidable tax`,
     intro: known ? `Your bonus is usually paid in ${MONTHS[paid - 1]}.` : "Many bonuses are paid in March.",
     items: [`Paying your ${fmt(+d.bonusAmount)} bonus into your pension could save up to ${fmt(Math.round(saving))} in tax. It has to be arranged with HR or payroll before the bonus is paid.${bonusChildcare(d, m)}`],
     link: `${SITE}/app/module/pension`,
@@ -191,8 +191,8 @@ function rates(d, m, today, { rows, sent, free, ratesFrom }) {
   const iso = today.toISOString().slice(0, 10);
   return {
     key: `rates:${iso}`, kind: "rates",
-    subject: `Your savings could earn about ${fmt(gain)} a year more`,
-    intro: `At today's best rates, your cash could earn about ${fmt(gain)} a year more after tax than where it is now.`,
+    subject: `Your savings are losing about ${fmt(gain)} a year to low rates`,
+    intro: `Against today's best rates, your cash is losing about ${fmt(gain)} a year after tax where it is now.`,
     items: opp.lines.map(({ section, option: o }) => `${o.provider}${o.product ? ` ${o.product}` : ""}: ${o.ratePct}%${section === "Cash ISA" ? ", tax-free" : section === "Premium Bonds" ? " prize fund rate, tax-free" : ""}`),
     link: `${SITE}/app/module/cash`,
     detail: { gain, top: topId },

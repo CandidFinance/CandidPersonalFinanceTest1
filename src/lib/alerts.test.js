@@ -16,7 +16,7 @@ const ROWS = [
 test("before 5 April: early March, then a final reminder from 26 March, each sent once", () => {
   const early = alertsDue(trap, { today: day("2027-03-02") });
   assert.deepEqual(kinds(early), ["taxYearEnd:2026:early"]);
-  assert.match(early[0].subject, /^Before 5 April: £[\d,]+ of tax you could save$/);
+  assert.match(early[0].subject, /^Before 5 April: £[\d,]+ of avoidable tax$/);
   assert.match(early[0].items[0], /a pension payment of £4,500 \(including the tax relief added\) before 5 April would bring your income back to £100,000/);
   // ISA allowance comes after the tax figures.
   assert.match(early[0].items[early[0].items.length - 1], /ISA allowance left/);

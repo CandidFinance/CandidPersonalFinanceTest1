@@ -33,7 +33,7 @@ test("The Sunday email is due on the Sunday and the two days after, for that Sun
 test("The Sunday email: their week on their figures, then the news, each with what it means for them", () => {
   const { subject, text } = weeklyEmail(issue, saver, { today: day("2026-10-25"), rows: ROWS, unsubscribeUrl: "https://u" });
   assert.equal(subject, "This week: Cash ISA limit to fall");
-  assert.match(text, /^Hi Alex,\n\nA quiet week, bar the Budget talk\.\n\nYOUR WEEK\n- Rates: at today's best rates/);
+  assert.match(text, /^Hi Alex,\n\nA quiet week, bar the Budget talk\.\n\nYOUR WEEK\n- Rates: against today's best rates/);
   assert.match(text, /Cash ISA limit to fall \(Confirmed\)\nThe limit for cash in an ISA falls to £12,000 a year\.\nFor you: You've put £7,000 into a cash ISA this tax year, within a £12,000 limit from April 2027\.\nSource: GOV\.UK \(https:\/\/www\.gov\.uk\/x\)/);
   // £65,000 × 6% = £3,900 sacrificed; NI at 2% on the £1,900 over the cap.
   assert.match(text, /For you: You sacrifice about £3,900 a year\. Under a £2,000 cap from April 2029, National Insurance would be due on £1,900 of it: about £38 a year\./);

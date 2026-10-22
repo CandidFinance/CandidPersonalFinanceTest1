@@ -52,7 +52,7 @@ export function confirmReminderEmail({ name, url, days, founding, unsubscribeUrl
     greeting: hi(name),
     blocks: [
       { p: "You left this email address on Candid, but it isn't confirmed yet." },
-      ...(founding ? [{ p: "Confirm it and you're a founding user, with rate alerts free: an email when a better savings rate could earn you £100+ a year more on your figures - at most once a month." }] : []),
+      ...(founding ? [{ p: "Confirm it and you're a founding user, with rate alerts free: an email when a low rate is costing you £100+ a year on your figures - at most once a month." }] : []),
       { button: { label: "Confirm my email", href: url } },
       { small: `The link works for ${days} days. If you didn't enter this address on Candid, ignore this email and nothing more will be sent.` },
     ],
@@ -76,8 +76,8 @@ export function confirmedWelcomeEmail({ name, founding, optedIn, optInUrl, invit
       ...(founding ? [
         { h: "Rate alerts, free for founding users" },
         optedIn
-          ? { p: "You're signed up. When a better savings rate could earn you £100+ a year more on your figures, we'll email you - at most once a month." }
-          : { p: "Turn them on and we'll email you when a better savings rate could earn you £100+ a year more on your figures - at most once a month. They're free for founding users only, so don't miss out." },
+          ? { p: "You're signed up. When a low rate is costing you £100+ a year on your figures, we'll email you - at most once a month." }
+          : { p: "Turn them on and we'll email you when a low rate is costing you £100+ a year on your figures - at most once a month. They're free for founding users only, so don't miss out." },
         ...(optedIn ? [] : [{ button: { label: "Turn on rate alerts", href: optInUrl } }]),
       ] : []),
       { h: "Share Candid" },

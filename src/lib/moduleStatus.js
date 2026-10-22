@@ -140,7 +140,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   if (spendingGap) {
     cashImpactLabel = `${fmt(Math.round(m.monthlyShortfall))} a month more going out than coming in`;
   } else if (livingOffSavings) {
-    cashImpactLabel = `${cashImpact > 0 ? `${fmt(cashImpact)}/yr more your savings could earn; they'd` : "Your savings would"} cover ${runwayText} of spending`;
+    cashImpactLabel = `${cashImpact > 0 ? `${fmt(cashImpact)}/yr lost to low savings rates; they'd` : "Your savings would"} cover ${runwayText} of spending`;
   } else if (m.expensesUnknown && !(cashImpact > 0)) {
     cashImpactLabel = "Add your monthly spending to size your emergency fund";
   } else if (tooMuchCash) {
@@ -149,14 +149,14 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     // benefit is the same optimisation-gain figure used below, just called out
     // alongside the excess for context.
     cashImpactLabel = cashImpact > 0
-      ? `${fmt(cashImpact)}/yr more your savings could earn, with ${fmt(Math.round(m.emergencyExcess))} more than your emergency fund needs`
-      : `${fmt(Math.round(m.emergencyExcess))} more than your emergency fund needs, earning less than it could`;
+      ? `${fmt(cashImpact)}/yr lost to low savings rates, with ${fmt(Math.round(m.emergencyExcess))} more than your emergency fund needs`
+      : `${fmt(Math.round(m.emergencyExcess))} more than your emergency fund needs, losing out at a low rate`;
   } else if (emergencyShort) {
     cashImpactLabel = `${fmt(Math.round(m.emergencyShortfall))} short of your ${m.bufferMonths}-month emergency fund`;
   } else if (cashImpact > 0) {
     // The £ figure's own explanation comes first, since that's the figure
     // shown beside it (cash's `amount`); an access concern follows it.
-    cashImpactLabel = `${fmt(cashImpact)}/yr more your savings could earn${accessLabel ? `. ${accessLabel}` : ""}`;
+    cashImpactLabel = `${fmt(cashImpact)}/yr lost to low savings rates${accessLabel ? `. ${accessLabel}` : ""}`;
   } else if (accessLabel) {
     cashImpactLabel = accessLabel;
   } else {
@@ -196,11 +196,11 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
           : isaGap || m.cgtSaving > 0 ? "attention" : "ok",
     impact: isaSortWeight + m.cgtSaving,
     impactLabel: m.cgtSaving > 0 && isaGap
-      ? `${fmt(m.cgtSaving)} less capital gains tax, and ${fmt(m.isaHeadroom)} of this year's ISA allowance unused`
+      ? `${fmt(m.cgtSaving)} of avoidable capital gains tax, and ${fmt(m.isaHeadroom)} of ISA allowance unused`
       : m.cgtSaving > 0
-        ? `${fmt(m.cgtSaving)} less capital gains tax available`
+        ? `${fmt(m.cgtSaving)} of avoidable capital gains tax; this year's allowance ends 5 April`
         : isaGap
-          ? `${fmt(m.isaHeadroom)} of this year's ISA allowance unused`
+          ? `${fmt(m.isaHeadroom)} of this year's ISA allowance unused, lost on 5 April`
           : null,
     amount: m.cgtSaving > 0 ? m.cgtSaving : 0,
   };
@@ -252,10 +252,10 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     nonEarnerRelief ? `${fmt(NON_EARNER_PENSION_RELIEF)}/yr of tax relief open to you, with no earnings` : null,
     notPayingIn
       ? `${d.hasPension === "yes" ? "Nothing paid in" : "No pension"}: ${fmt(pensionPrimaryAmount)}/yr of tax relief missed`
-      : contributing && m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of employer match unclaimed` : null,
-    pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr of tax-free allowance you could win back` : null,
+      : contributing && m.missedMatch > 0 ? `${fmt(m.missedMatch)}/yr of unclaimed match: salary left on the table` : null,
+    pensionTaperAmount > 0 ? `${fmt(pensionTaperAmount)}/yr lost to the 60% tax band above £100k` : null,
     retirementGap > 0 ? `${fmt(retirementGap)}/yr short of the retirement income you'd like` : null,
-    pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} saved by paying your bonus into your pension` : null,
+    pensionPotentialAmount > 0 ? `up to ${fmt(pensionPotentialAmount)} of avoidable tax on your bonus` : null,
     aaRoom.excess > 0 ? `Payments in may go over your reduced ${fmt(aaRoom.approxAA)} pension annual allowance` : null,
   ].filter(Boolean);
   if (pensionLabelParts.length === 0 && d.hasPension === "yes" && taxFreeCash.pot > 0) {
@@ -311,7 +311,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
     impactLabel: sl.belowThreshold
       ? (m.noEarnings ? "Nothing is repaid while you're not earning" : "You earn below the repayment threshold, so nothing comes off your pay")
       : verdict && sl.worthOverpaying
-        ? `${fmt(sl.overpayAnnualBenefit)}/yr ahead by paying your loan off now`
+        ? `${fmt(sl.overpayAnnualBenefit)}/yr lost to loan interest above what savings pay`
         : sl.balanceGrowing && !sl.willClear
           ? `Balance growing by ${fmt(Math.round(sl.netAnnualChange))}/yr, but it'll be written off before you clear it`
           : null,

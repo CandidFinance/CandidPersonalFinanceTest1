@@ -21,7 +21,7 @@ export const MODULE_PITCH_SELF_EMPLOYED = { pension: "See the tax relief on what
 export const pitchFor = (key, d) => (d?.employmentStatus === "self_employed" && MODULE_PITCH_SELF_EMPLOYED[key]) || MODULE_PITCH[key];
 export const MODULE_PITCH = {
   pension:     "Check you're getting all the money your employer will add.",
-  cash:        "See how long your savings would last, and what they could earn.",
+  cash:        "See how long your savings would last, and what low rates cost you.",
   investments: "Make the most of your tax-free allowances.",
   studentLoan: "Find out whether paying it off early is worth it.",
   kids:        "See the childcare help you could get, and what £100,000 costs a parent.",

@@ -150,7 +150,7 @@ export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule
 
   return (
     <div>
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Before a deposit</div>
+      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Leaks to check before a deposit</div>
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
         {checks.map(c => {
           const { Icon, color } = stateIcon(c.state);

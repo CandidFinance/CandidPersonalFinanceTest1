@@ -31,8 +31,8 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
   const amount = mod?.amount > 0 ? mod.amount : 0;
 
   // What's behind the frost, named, so it's clear what unlocking gets them.
-  const hidden = amount > 0 ? ["Why it's happening", "Your options, and what each is worth"] : PREVIEW_LINES[moduleKey] || ["Where you stand", "What to keep an eye on"];
-  const cta = amount > 0 ? "Show me my options" : "Show me";
+  const hidden = amount > 0 ? ["Where it's leaking", "Your options, and what each one stops"] : PREVIEW_LINES[moduleKey] || ["Where you stand", "What to keep an eye on"];
+  const cta = amount > 0 ? "Show me where it's going" : "Show me";
 
   const label = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
   const primary = disabled => ({ width:"100%", background:disabled ? "rgba(22,47,36,0.2)" : G, color:WHITE, border:"none", borderRadius:"100px", padding:"15px", fontSize:"15.5px", fontWeight:700, fontFamily:"inherit", cursor:disabled ? "not-allowed" : "pointer" });
@@ -50,7 +50,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
       {amount > 0 ? (
         <div style={{margin:"22px 0 4px"}}>
           <div style={{fontFamily:SERIF,fontSize:"64px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em"}}>{fmt(amount)}</div>
-          <div style={{fontSize:"16px",color:TEXT,fontWeight:600,marginTop:"10px"}}>{mod.amountIsLumpSum ? "by the time they're 18, our estimate" : "a year, our estimate on your figures"}</div>
+          <div style={{fontSize:"16px",color:TEXT,fontWeight:600,marginTop:"10px"}}>{mod.amountIsLumpSum ? "by the time they're 18, our estimate" : "a year at stake, our estimate on your figures"}</div>
         </div>
       ) : (
         <div style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,lineHeight:1.2,margin:"22px 0 4px"}}>Your position is ready</div>
@@ -218,7 +218,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
         ))}
       </div>
       <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:CTA_BLUE,opacity:busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
-        {busy && !panel ? "Opening checkout…" : "Subscribe and see your options"}
+        {busy && !panel ? "Opening checkout…" : "Subscribe and see where it's going"}
       </button>
       {error && !panel && <div style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
       {/* The other way in: a free month for inviting a friend

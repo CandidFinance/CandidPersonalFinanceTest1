@@ -32,7 +32,7 @@ export default function GainedFromChanges({ d }) {
 
   if (!gained.count) return (
     <div style={{marginTop:"22px"}}>
-      <div style={kicker}>Gains</div>
+      <div style={kicker}>Reclaimed</div>
       <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
         When you make a change and update your figures in a module, what it's worth adds up here.
       </p>
@@ -50,7 +50,7 @@ export default function GainedFromChanges({ d }) {
 
   return (
     <div style={{marginTop:"16px",background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px 18px 16px",boxShadow:"0 4px 18px rgba(22,47,36,0.07)"}}>
-      <div style={kicker}>Gains</div>
+      <div style={kicker}>Reclaimed</div>
       <div style={{display:"flex",alignItems:"baseline",gap:"6px",marginTop:"6px"}}>
         <span style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:SUCCESS,lineHeight:1.1}}>{fmt(gained.perYear)}</span>
         <span style={{fontSize:"15px",fontWeight:600,color:TEXT}}>a year</span>
@@ -142,7 +142,7 @@ function GainChart({ d, keys, from, soFar }) {
     <div ref={ref} style={{position:"relative",marginTop:"14px",touchAction:"pan-y"}}
       onPointerMove={move} onPointerDown={move} onPointerLeave={() => setHover(null)}>
       <svg width={width} height={H} role="img" style={{display:"block",overflow:"visible"}}
-        aria-label={`${fmt(soFar)} gained so far this tax year. Figures by module below.`}>
+        aria-label={`${fmt(soFar)} reclaimed so far this tax year. Figures by module below.`}>
         <line x1={0} x2={width} y1={base} y2={base} stroke="rgba(22,47,36,0.15)" strokeWidth={1}/>
         {/* A 2px line in the tile's colour round each band keeps
             neighbouring bands apart. */}
