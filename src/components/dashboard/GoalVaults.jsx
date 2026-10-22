@@ -4,8 +4,8 @@ import { fmt } from "../../lib/format.js";
 import { VAULT_NAMES, newVaultId, poundsInput, withVault, withoutVault } from "../../lib/progressTracker.js";
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import PillSelect from "../../mobile/property/PillSelect.jsx";
-import { G, WHITE, MUT, TEXT, MODULE_CHART_COLOR } from "../../design-tokens.js";
-import { BarTile, AddTile, ProgressBar, Figure, Details, TextButton, EditorCard, TextPill, helpText } from "./ProgressParts.jsx";
+import { G, WHITE, MUT, TEXT, CUSTOM_GOAL_COLOR } from "../../design-tokens.js";
+import { BarTile, AddTile, Tag, ProgressBar, Figure, Details, TextButton, EditorCard, TextPill, helpText } from "./ProgressParts.jsx";
 
 // Goal pots (progressTracker.js goalVaults), in the Goals tile: an "Add a
 // goal" tile at the top, then each pot as a goal tile, newest first. A home
@@ -15,9 +15,11 @@ import { BarTile, AddTile, ProgressBar, Figure, Details, TextButton, EditorCard,
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   .map((label, i) => ({ value: String(i + 1).padStart(2, "0"), label }));
 
-// What's saved in a pot is cash, so its bar is Cash's colour in the net
-// worth ring.
-const VAULT_COLOR = MODULE_CHART_COLOR.cash;
+// A pot is a custom goal, the user's own rather than one of the standard
+// goals every user has: tagged "Custom", with a bar colour of its own that
+// no module uses (CUSTOM_GOAL_COLOR). Buying a home, from Property, counts:
+// it's theirs to change or remove like any pot.
+const VAULT_COLOR = CUSTOM_GOAL_COLOR;
 
 export function saveVault(d, set, vault, { added, fromGoal }) {
   set("goalVaults", withVault(d.goalVaults, vault));
@@ -50,7 +52,7 @@ export function AddGoalTile({ names, open, onToggle, onSave }) {
 
 export function VaultTile({ vault: v, names, open, onToggle, editing, onEdit, onCancel, onSave, onRemove }) {
   return (
-    <BarTile title={v.name} open={open} onToggle={onToggle}
+    <BarTile title={v.name} tag={<Tag color={VAULT_COLOR}>Custom</Tag>} open={open} onToggle={onToggle}
       bar={v.target > 0 ? <ProgressBar pct={v.pct} color={VAULT_COLOR} label={v.name}/> : <span style={{fontSize:"12px",color:MUT}}>No target set</span>}
       figure={<Figure current={v.saved} target={v.target}/>}>
       <Details text={vaultNote(v)} action={!editing && <TextButton onClick={onEdit}>Edit</TextButton>}/>

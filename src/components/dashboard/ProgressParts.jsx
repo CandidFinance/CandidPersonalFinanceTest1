@@ -55,20 +55,35 @@ export function Figure({ current, target = 0 }) {
 // on the left (small, over two lines where it needs them), the bar, and its
 // figures, the name and figures in columns of fixed width so every goal's
 // bar is the same length. A tap opens the details below it: the figures in
-// full, and what can be changed. `locked` greys it out.
-export function BarTile({ title, bar, figure = null, locked = false, open, onToggle, children }) {
+// full, and what can be changed. `locked` greys it out; `tag` sits under
+// the name, saying what kind of goal it is (a custom one's).
+export function BarTile({ title, tag = null, bar, figure = null, locked = false, open, onToggle, children }) {
   const faded = { opacity: locked ? 0.4 : 1 };
   return (
     <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"12px",boxShadow:"0 2px 10px rgba(22,47,36,0.07)"}}>
       <button type="button" aria-expanded={open} onClick={onToggle}
         style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",minHeight:"50px",background:"none",border:"none",padding:"9px 12px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
         {/* 70px: room for "Emergency", the longest single word, on one line. */}
-        <span style={{flex:"0 0 70px",minWidth:0,fontSize:"12px",fontWeight:700,color:TEXT,lineHeight:1.25,overflowWrap:"break-word",...faded}}>{title}</span>
+        <span style={{flex:"0 0 70px",minWidth:0,...faded}}>
+          <span style={{display:"block",fontSize:"12px",fontWeight:700,color:TEXT,lineHeight:1.25,overflowWrap:"break-word"}}>{title}</span>
+          {tag}
+        </span>
         <span style={{flex:1,minWidth:0,...faded}}>{bar}</span>
         <span style={{flex:"0 0 84px",textAlign:"right",whiteSpace:"nowrap"}}>{figure}</span>
       </button>
       {open && <div style={{padding:"0 12px 12px"}}>{children}</div>}
     </div>
+  );
+}
+
+// A small label under a goal's name saying what kind it is ("Custom"), on
+// a pale step of the goal's colour, the text itself in muted ink.
+export function Tag({ children, color }) {
+  return (
+    <span style={{display:"inline-block",marginTop:"4px",padding:"2px 6px",borderRadius:"100px",background:`${color}1f`,
+      fontSize:"9px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",color:MUT,lineHeight:1.3}}>
+      {children}
+    </span>
   );
 }
 

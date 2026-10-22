@@ -59,6 +59,13 @@ export const MODULE_CHART_COLOR = {
   personalLoan: "#e87ba4",   // and Forecast's "Debts"
 };
 
+// The Progress tab's custom goals (goal pots): a deep ultramarine no module
+// uses. Checked with the dataviz validator against every colour above and
+// SUCCESS: at least ΔE 18.9 for normal vision and 10.9 for red-green colour
+// blindness, and 11:1 on white. Darker than the module colours' band on
+// purpose, as it stands on its own rather than in a set.
+export const CUSTOM_GOAL_COLOR = "#381ea7";
+
 export const SC = { ok: SUCCESS, attention: GOLD, critical: CRITICAL, na: MUT, unknown: MUT };
 
 // Candid score → colour + label. Five discrete bands, not a continuous
