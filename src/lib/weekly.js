@@ -158,7 +158,7 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
   const items = (issue.items || []).filter(i => i && i.title && i.body);
   const mine = yourWeek(d, m, today, rows);
   const subject = (issue.subject || "").trim() || `This week: ${items[0]?.title?.trim() || "your money"}`;
-  return renderEmail({
+  return renderEmail({ campaign: "weekly",
     subject, preheader: issue.intro || items.map(i => i.title).join(" · "),
     greeting: first ? `Hi ${first},` : "Hi,",
     blocks: [
@@ -184,7 +184,7 @@ export function welcomeEmail({ name = "", plan, amountPence, periodEnd, inviteCo
   const price = amountPence > 0 ? `£${(amountPence / 100).toFixed(2)} a ${plan === "yearly" ? "year" : "month"}` : null;
   const renews = periodEnd && !isNaN(new Date(periodEnd)) ? new Date(periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" }) : null;
   const invite = inviteCode ? `${SITE}/app/start?ref=${inviteCode}` : null;
-  return renderEmail({
+  return renderEmail({ campaign: "welcome",
     subject: "Welcome to Candid", preheader: "Every module is now open to you.",
     greeting: first ? `Hi ${first},` : "Hi,",
     blocks: [

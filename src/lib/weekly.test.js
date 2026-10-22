@@ -63,7 +63,7 @@ test("The welcome says what they get, how to sign in elsewhere and what they pay
   const { subject, text } = welcomeEmail({ name: "Alex Jones", plan: "monthly", amountPence: 299, periodEnd: "2026-11-20T17:59:52Z", inviteCode: "abcd2345", unsubscribeUrl: "https://u" });
   assert.equal(subject, "Welcome to Candid");
   assert.match(text, /^Hi Alex,/);
-  assert.match(text, /sign in \(https:\/\/www\.candid-finance\.co\.uk\/signin\) with this email address\./);
+  assert.match(text, /sign in \(https:\/\/www\.candid-finance\.co\.uk\/signin\?utm_source=candid-email&utm_medium=email&utm_campaign=welcome\) with this email address\./);
   assert.match(text, /Your plan: £2\.99 a month, renewing on 20 November 2026\n\nTo manage your subscription, go to Edit inputs/);
   assert.match(text, /up to 12 months\.\n\nYour invite link: https:\/\/www\.candid-finance\.co\.uk\/app\/start\?ref=abcd2345/);
   assert.doesNotMatch(text, /cancel/i);

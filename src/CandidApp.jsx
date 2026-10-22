@@ -18,7 +18,7 @@ import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
-import { checkAccessOnLoad, accessInfo, saveStateSoon } from "./lib/entitlement.js";
+import { checkAccessOnLoad, accessInfo, saveStateSoon, identifySubscriber } from "./lib/entitlement.js";
 import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
@@ -532,6 +532,8 @@ export default function AppShell() {
     const redraw = () => setAccessTick(t => t + 1);
     window.addEventListener("candid-access", redraw);
     checkAccessOnLoad().then(outcome => {
+      // A subscriber, with analytics cookies accepted, joined up in PostHog.
+      identifySubscriber();
       if (outcome === "paid" || outcome === "restored") {
         posthog.capture(outcome === "paid" ? "checkout_completed" : "access_restored", { plan: accessInfo()?.plan ?? null });
         const email = accessInfo()?.email;

@@ -188,6 +188,8 @@ function CreateSignIn({ email, onDone }) {
 // account stays in memory to be saved again.
 export async function switchAccount(from) {
   posthog.capture("signed_out", { from });
+  // The next account on this device starts as a new person in PostHog.
+  posthog.reset();
   await signOut();
   window.location.replace("/signin");
 }

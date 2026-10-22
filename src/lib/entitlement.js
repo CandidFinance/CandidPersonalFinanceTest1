@@ -2,6 +2,7 @@ import posthog from "posthog-js";
 import { mergeAnswers, mergeCompleted } from "./mergeAnswers.js";
 import { startAuthentication, startRegistration, browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, WebAuthnAbortService } from "@simplewebauthn/browser";
 import { reportStorageFailure } from "./storage.js";
+import { getConsent } from "./consent.js";
 
 // Whether this browser has a Candid subscription (api/billing.js). Kept in
 // localStorage, never in the user's inputs (`d`, which is synced to their
@@ -87,6 +88,26 @@ export function saveStateSoon(state) {
   clearTimeout(saveTimer);
   pendingSave = { token, state };
   saveTimer = setTimeout(() => { pendingSave = null; call("save", { token, state }).catch(() => {}); }, 3000);
+}
+
+// A subscriber's visits linked up in PostHog on every device they sign in
+// on, under a pseudonymous id: a salted SHA-256 hash of their email, never
+// the email itself. Only with analytics cookies accepted ("granted"), since
+// linking needs PostHog to keep its id on the device. Called on opening the
+// app, on accepting cookies and after paying; signing out resets PostHog
+// (SignInSetup switchAccount), so the next account isn't joined to this one.
+export async function analyticsIdFor(email) {
+  const bytes = new TextEncoder().encode(`candid-analytics:${String(email).trim().toLowerCase()}`);
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return `sub_${[...digest.slice(0, 16)].map(b => b.toString(16).padStart(2, "0")).join("")}`;
+}
+export async function identifySubscriber() {
+  try {
+    const info = read();
+    if (!posthog.__loaded || getConsent() !== "granted" || !info?.active || !info.email) return;
+    const id = await analyticsIdFor(info.email);
+    if (posthog.get_distinct_id() !== id) posthog.identify(id);
+  } catch { /* analytics never gets in the way of the app */ }
 }
 
 // Signing out, to sign in as someone else: any change not yet saved goes to

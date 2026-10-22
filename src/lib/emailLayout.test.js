@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderEmail } from "./emailLayout.js";
+import { renderEmail, withUtm, SITE } from "./emailLayout.js";
 import { confirmEmail, signInEmail, referralRewardEmail, confirmedWelcomeEmail, confirmReminderEmail } from "./accountEmails.js";
 import { welcomeEmail } from "./weekly.js";
 
@@ -69,4 +69,29 @@ test("The reminder to confirm: a fresh link on a CTA-blue button, and the foundi
   assert.match(r.text, /isn't confirmed yet/);
   assert.match(r.text, /founding user, with rate alerts free/);
   assert.doesNotMatch(confirmReminderEmail({ name: "Jo", url: "https://c", days: 14, founding: false, unsubscribeUrl: "https://u" }).text, /founding/);
+});
+
+test("links to the site carry the email's campaign; /api/ links, other sites and plain-text labels are left alone", () => {
+  assert.equal(withUtm(`${SITE}/app/home`, "rates"), `${SITE}/app/home?utm_source=candid-email&utm_medium=email&utm_campaign=rates`);
+  assert.equal(withUtm(`${SITE}/signin?restore=abc#top`, "signIn"), `${SITE}/signin?restore=abc&utm_source=candid-email&utm_medium=email&utm_campaign=signIn#top`);
+  assert.equal(withUtm(`${SITE}/api/alerts?action=unsubscribe&t=x`, "rates"), `${SITE}/api/alerts?action=unsubscribe&t=x`);
+  assert.equal(withUtm("https://www.gov.uk/", "weekly"), "https://www.gov.uk/");
+  // An invite link is passed on to friends: their visits aren't the email's.
+  assert.equal(withUtm(`${SITE}/app/start?ref=abcd2345`, "welcome"), `${SITE}/app/start?ref=abcd2345`);
+  assert.equal(withUtm(`${SITE}/app/home`, null), `${SITE}/app/home`);
+
+  const { html, text } = renderEmail({
+    subject: "S", campaign: "rates",
+    blocks: [
+      { p: ["See ", { a: "candid-finance.co.uk/app/home", href: `${SITE}/app/home` }] },
+      { button: { label: "See it in Candid", href: `${SITE}/app/module/cash` } },
+    ],
+    unsubscribeUrl: `${SITE}/api/alerts?action=unsubscribe&t=x`,
+  });
+  assert.match(html, /app\/module\/cash\?utm_source=candid-email&amp;utm_medium=email&amp;utm_campaign=rates/);
+  assert.match(html, /href="https:\/\/www\.candid-finance\.co\.uk\?utm_source=candid-email/);
+  assert.match(text, /See it in Candid: https:\/\/www\.candid-finance\.co\.uk\/app\/module\/cash\?utm_source=candid-email/);
+  // A label that is the link itself still shows as just the link.
+  assert.match(text, /See https:\/\/www\.candid-finance\.co\.uk\/app\/home\?utm_source=candid-email&utm_medium=email&utm_campaign=rates\n/);
+  assert.match(text, /Stop these emails: https:\/\/www\.candid-finance\.co\.uk\/api\/alerts\?action=unsubscribe&t=x\n/);
 });

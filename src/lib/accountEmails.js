@@ -17,7 +17,7 @@ const hi = name => {
 
 // `title`: the module they answered, `figure`: its £ a year (or null).
 export function confirmEmail({ name, title = null, figure = null, url, days }) {
-  return renderEmail({
+  return renderEmail({ campaign: "confirm",
     subject: "Confirm your email for Candid", preheader: "One tap to confirm it's you.",
     greeting: hi(name),
     blocks: [
@@ -31,7 +31,7 @@ export function confirmEmail({ name, title = null, figure = null, url, days }) {
 }
 
 export function signInEmail({ url }) {
-  return renderEmail({
+  return renderEmail({ campaign: "signIn",
     subject: "Your Candid sign-in link", preheader: "It works for 20 minutes.",
     blocks: [
       { p: "Open this link on the device you want to use Candid on. It works for 20 minutes." },
@@ -46,7 +46,7 @@ export function signInEmail({ url }) {
 // still not confirmed. `url`: a fresh link, good for `days`. `founding`:
 // confirming now makes them a founding user.
 export function confirmReminderEmail({ name, url, days, founding, unsubscribeUrl }) {
-  return renderEmail({
+  return renderEmail({ campaign: "confirmReminder",
     subject: "Confirm your email for Candid",
     preheader: founding ? "Confirm it and rate alerts are free for you." : "One tap to confirm it's you.",
     greeting: hi(name),
@@ -66,7 +66,7 @@ export function confirmReminderEmail({ name, url, days, founding, unsubscribeUrl
 export function confirmedWelcomeEmail({ name, founding, optedIn, optInUrl, inviteCode = null, cap, unsubscribeUrl }) {
   const invite = inviteCode ? `${SITE}/app/start?ref=${inviteCode}` : null;
   const offer = founding && !optedIn;
-  return renderEmail({
+  return renderEmail({ campaign: "confirmed",
     subject: "Thanks for confirming - welcome to Candid",
     preheader: offer ? "Rate alerts are free for founding users." : "Your invite link, and how to keep your answers.",
     greeting: hi(name),
@@ -96,7 +96,7 @@ export function referralRewardEmail({ kind, until = null, url = null, cap, credi
   const where = `You can earn up to ${cap} months this way. Your link is in Candid, under Edit inputs.`;
   if (kind === "stripe_credit") {
     const off = creditPence > 0 ? `£${(creditPence / 100).toFixed(2)}` : "A month of Candid";
-    return renderEmail({
+    return renderEmail({ campaign: "referral",
       subject: "A friend joined Candid: a month off your bill", preheader: `${off} comes off your next bill.`,
       blocks: [
         { p: `A friend you invited has joined Candid and completed their first module, so ${creditPence > 0 ? `${off}, a month of Candid,` : "a month of Candid"} comes off your next bill.` },
@@ -105,7 +105,7 @@ export function referralRewardEmail({ kind, until = null, url = null, cap, credi
     });
   }
   const date = until ? new Date(until).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" }) : null;
-  return renderEmail({
+  return renderEmail({ campaign: "referral",
     subject: "A friend joined Candid: you've got a free month", preheader: "Every module, free for a month.",
     blocks: [
       { p: `A friend you invited has joined Candid and completed their first module, so you've got a free month: every module's answer, Candid Assist, and Candid on your other devices${date ? `, until ${date}` : ""}.` },

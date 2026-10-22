@@ -219,7 +219,7 @@ export function alertsDue(rawD, { who = "subscriber", today = new Date(), sent =
 // server (a signed link).
 export function alertEmail(alert, { name = "", free = false, asOf = null, unsubscribeUrl }) {
   const first = (name || "").trim().split(/\s+/)[0];
-  return renderEmail({
+  return renderEmail({ campaign: alert.kind,
     subject: alert.subject, preheader: alert.intro,
     greeting: first ? `Hi ${first},` : "Hi,",
     blocks: [

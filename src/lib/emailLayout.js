@@ -38,8 +38,30 @@ const STATUS = {
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const pieces = t => Array.isArray(t) ? t : [t];
 
+// Links to the site's own pages say which email they came from, so a visit
+// one brings shows in PostHog as that email (utm_campaign: its kind) rather
+// than as "Direct". Links to /api/ (confirm, unsubscribe), to other sites,
+// and invite links (?ref=, passed on to friends, whose visits aren't the
+// email's) are left as they are.
+const UTM = /[?&]utm_source=candid-email&utm_medium=email&utm_campaign=[^&#]*/;
+export function withUtm(href, campaign) {
+  if (!campaign || typeof href !== "string" || !href.startsWith(SITE) || href.startsWith(`${SITE}/api/`) || /[?&]ref=/.test(href)) return href;
+  const [base, hash] = href.split("#");
+  const tag = `utm_source=candid-email&utm_medium=email&utm_campaign=${encodeURIComponent(campaign)}`;
+  return `${base}${base.includes("?") ? "&" : "?"}${tag}${hash !== undefined ? `#${hash}` : ""}`;
+}
+const tagText = (t, c) => Array.isArray(t) ? t.map(x => x && x.href ? { ...x, href: withUtm(x.href, c) } : x) : t;
+function tagBlock(b, c) {
+  if (b.button) return { ...b, button: { ...b.button, href: withUtm(b.button.href, c) } };
+  if (b.p !== undefined) return { ...b, p: tagText(b.p, c) };
+  if (b.small !== undefined) return { ...b, small: tagText(b.small, c) };
+  if (b.list) return { ...b, list: b.list.map(i => tagText(i, c)) };
+  if (b.panel) return { ...b, panel: { ...b.panel, text: tagText(b.panel.text, c) } };
+  return b;
+}
+
 // ── Plain text ───────────────────────────────────────────────────────────────
-const plain = t => pieces(t).map(x => typeof x === "string" ? x : x.href ? (x.href.endsWith(x.a) ? x.href : `${x.a} (${x.href})`) : x.b ?? "").join("");
+const plain = t => pieces(t).map(x => typeof x === "string" ? x : x.href ? (x.href.replace(UTM, "").endsWith(x.a) ? x.href : `${x.a} (${x.href})`) : x.b ?? "").join("");
 
 function textOf(b) {
   if (b.p !== undefined) return [plain(b.p), ""];
@@ -96,8 +118,10 @@ function htmlOf(b) {
 // One email. `greeting`: "Hi Lizzie," or "Hi,". `preheader`: the line a
 // mail app shows after the subject. `signoff`: "The Candid team" under it
 // (false for a short link email). `unsubscribeUrl`: for emails people can
-// stop; `note`: a line of small print above it.
-export function renderEmail({ subject, preheader = "", greeting = "Hi,", blocks = [], signoff = true, note = null, unsubscribeUrl = null }) {
+// stop; `note`: a line of small print above it. `campaign`: the email's
+// kind, tagged on its links to the site (withUtm).
+export function renderEmail({ subject, preheader = "", greeting = "Hi,", blocks: rawBlocks = [], signoff = true, note = null, unsubscribeUrl = null, campaign = null }) {
+  const blocks = campaign ? rawBlocks.map(b => tagBlock(b, campaign)) : rawBlocks;
   const text = [
     greeting, "",
     ...blocks.flatMap(textOf),
@@ -114,7 +138,7 @@ export function renderEmail({ subject, preheader = "", greeting = "Hi,", blocks 
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${C.cream};">${esc(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.cream};"><tr><td align="center" style="padding:28px 12px 36px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border:1px solid ${C.line};border-radius:18px;">
-<tr><td style="padding:30px 32px 0;"><a href="${SITE}" style="text-decoration:none;"><img src="${SITE}/email/candid-logo.png" width="118" height="37" alt="Candid." style="display:block;border:0;outline:none;font-family:${SERIF};font-size:28px;font-weight:700;color:${C.green};"></a></td></tr>
+<tr><td style="padding:30px 32px 0;"><a href="${esc(withUtm(SITE, campaign))}" style="text-decoration:none;"><img src="${SITE}/email/candid-logo.png" width="118" height="37" alt="Candid." style="display:block;border:0;outline:none;font-family:${SERIF};font-size:28px;font-weight:700;color:${C.green};"></a></td></tr>
 <tr><td style="padding:16px 32px 0;"><div style="width:44px;height:2px;background:${C.gold};font-size:0;line-height:0;">&nbsp;</div></td></tr>
 <tr><td style="padding:24px 32px 30px;">
 <p style="margin:0 0 16px;font-family:${SERIF};font-size:22px;line-height:1.3;font-weight:700;color:${C.green};">${esc(greeting)}</p>

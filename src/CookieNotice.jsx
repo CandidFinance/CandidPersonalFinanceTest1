@@ -12,7 +12,13 @@ export default function CookieNotice() {
     return () => window.removeEventListener(CONSENT_RESET_EVENT, ask);
   }, []);
   if (!open) return null;
-  const choose = choice => { setConsent(choice); setOpen(false); };
+  // Accepting links a signed-in subscriber up in PostHog (entitlement.js
+  // identifySubscriber), loaded only then to keep it off every page.
+  const choose = choice => {
+    setConsent(choice);
+    setOpen(false);
+    if (choice === "granted") import("./lib/entitlement.js").then(m => m.identifySubscriber()).catch(() => {});
+  };
   // Both buttons look the same, so neither answer is nudged.
   const button = {
     flex: 1, minWidth: "120px", padding: "10px 14px", borderRadius: "100px", fontSize: "13.5px", fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
