@@ -61,8 +61,6 @@ function expensesMissing({ d, m }) {
 
 export const GROUP_LEADS = {
   checks: "Before you put money into a deposit",
-  // The figures several modules share (src/lib/sharedQuestions.js).
-  you: "First, a bit about you",
 };
 
 export const READINESS_QUESTIONS = [

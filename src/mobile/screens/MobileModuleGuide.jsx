@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { G, TEXT, MUT, SERIF } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import { MODULE_GUIDES } from "../../lib/moduleGuide.js";
@@ -29,8 +30,8 @@ export default function MobileModuleGuide({ moduleKey, d, m, set, onDone, questi
   if (nothingToAsk) return null;
 
   return (
-    <div>
-      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px"}}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.35, ease: "easeOut" } }}>
+      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"14px"}}>
         <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {meta?.icon && <meta.icon size={18} color={G}/>}
         </div>
@@ -41,7 +42,7 @@ export default function MobileModuleGuide({ moduleKey, d, m, set, onDone, questi
       </div>
       <GuidedFlow key={moduleKey} questions={asked} d={d} m={m} set={set} track={{ flow: questions ? "brief" : "module", module: moduleKey }}
         renderers={RENDERERS} onDone={onDone} {...(skipLabel ? { skipLabel } : {})}
-        result={<EmptyResultCard text={emptyText || guide.emptyText}/>}/>
-    </div>
+        result={<EmptyResultCard compact text={emptyText || guide.emptyText}/>} resultGap="4px"/>
+    </motion.div>
   );
 }

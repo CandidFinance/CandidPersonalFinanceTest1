@@ -50,7 +50,7 @@ const SHIFT_PX = 30;
 // A "custom" question or follow-up (e.g. the list of savings accounts) is
 // drawn by `renderers[render]({ d, set })`, with answered(ctx) saying
 // whether Continue can be pressed.
-export default function GuidedFlow({ questions, d, m, set, regionalRows, result, onDone, onAnswered, track = null, skipLabel = "Skip to the full view", showProgress = true, animateFirst = false, renderers = {} }) {
+export default function GuidedFlow({ questions, d, m, set, regionalRows, result, resultGap = "22px", onDone, onAnswered, track = null, skipLabel = "Skip to the full view", showProgress = true, animateFirst = false, renderers = {} }) {
   const ctx = { d, m, regionalRows };
   // Which questions with `ifMissing` to ask is decided once, at the start.
   const [needed] = useState(() => neededAtStart(questions, ctx));
@@ -255,7 +255,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
       {/* "x of y" only once the total can't change with answers still to come. */}
       <ShellTopRow onBack={history.length > 1 ? back : null}
         position={showProgress && countSettled(questions, ctx, needed, q.id) ? position : null} total={visible.length}
-        style={{marginTop:result ? "22px" : 0}}/>
+        style={{marginTop:result ? resultGap : 0}}/>
 
       <AnimatePresence mode="wait" custom={direction} initial={animateFirst} onExitComplete={keepQuestionInView}>
         <motion.div key={q.id} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" style={{marginTop:"12px"}}>

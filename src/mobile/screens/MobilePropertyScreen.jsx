@@ -14,6 +14,7 @@ import AssumptionsHeading from "../property/AssumptionsHeading.jsx";
 import { STEP_GUIDES, guideStarts } from "../../lib/propertyGuide.js";
 import { PROPERTY_REVEALS } from "../../lib/propertyReveal.js";
 import MobileModuleReveal from "./MobileModuleReveal.jsx";
+import { workingChecks } from "../../lib/workingChecks.js";
 import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
 
 // Property module, split into two steps so neither is one long page:
@@ -70,8 +71,12 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
   const revealSteps = PROPERTY_REVEALS[step](d, m, revealCtx);
   const [revealStep, setRevealStep] = useState(null);
   const showReveal = revealStep === step && !!revealSteps;
+  // Straight from the walk-through, Rent vs Buy's answer opens on the rules
+  // run on the user's figures (workingChecks.js); not when replayed.
+  const [revealFresh, setRevealFresh] = useState(false);
   const explain = revealSteps && !guiding ? () => {
     setRevealStep(step);
+    setRevealFresh(false);
     posthog.capture("reveal_shown", { module: "property", step, from: "replay" });
     window.scrollTo({ top: 0 });
   } : null;
@@ -81,6 +86,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
     posthog.capture(how === "finished" ? "property_guide_finished" : "property_guide_skipped", { step, at });
     if (how === "finished" && guide.firstRun && PROPERTY_REVEALS[step](d, m, revealCtx)) {
       setRevealStep(step);
+      setRevealFresh(true);
       posthog.capture("reveal_shown", { module: "property", step, from: "walkthrough" });
     }
     window.scrollTo({ top: 0 });
@@ -114,6 +120,7 @@ export default function MobilePropertyScreen({ step, d, m, set, regionalRows, ma
       {showReveal ? (
         <div style={{marginTop:"20px"}}>
           <MobileModuleReveal moduleKey="property" header={false} steps={revealSteps}
+            checks={revealFresh && step === "rentVsBuy" ? workingChecks("rentVsBuy", d, m, revealCtx) : null}
             onDone={(how, n) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: "property", step, at: n });
               setRevealStep(null);

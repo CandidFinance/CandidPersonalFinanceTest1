@@ -373,6 +373,8 @@
      {
       "label": "Your position",
       "figure": "£618 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -381,14 +383,16 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
      {
       "label": "Your position",
       "figure": "£432",
+      "tone": "cost",
       "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
@@ -3327,6 +3331,8 @@
      {
       "label": "Your position",
       "figure": "£608 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -3343,6 +3349,7 @@
      {
       "label": "Your position",
       "figure": "£432",
+      "tone": "cost",
       "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
@@ -6018,6 +6025,8 @@
      {
       "label": "Your position",
       "figure": "£204 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -6026,14 +6035,16 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
      {
       "label": "Your position",
       "figure": "£144",
+      "tone": "cost",
       "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
@@ -8606,6 +8617,8 @@
      {
       "label": "Your position",
       "figure": "£204 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -8622,6 +8635,7 @@
      {
       "label": "Your position",
       "figure": "£144",
+      "tone": "cost",
       "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
@@ -11025,6 +11039,8 @@
      {
       "label": "Your position",
       "figure": "£1,070 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -11033,14 +11049,16 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
      {
       "label": "Your position",
       "figure": "£720",
+      "tone": "cost",
       "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
@@ -13662,6 +13680,8 @@
      {
       "label": "Your position",
       "figure": "£1,168 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -13678,6 +13698,7 @@
      {
       "label": "Your position",
       "figure": "£720",
+      "tone": "cost",
       "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
@@ -16027,6 +16048,7 @@
      {
       "label": "Your position",
       "figure": "£6,700",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -17582,6 +17604,7 @@
      {
       "label": "Your position",
       "figure": "£6,700",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -19049,6 +19072,8 @@
      {
       "label": "Your position",
       "figure": "£1,084 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -19057,8 +19082,9 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
@@ -19123,6 +19149,7 @@
      {
       "label": "Your position",
       "figure": "£4,504 a year",
+      "tone": "cost",
       "title": "lost each year to the £100k tax trap.",
       "body": "£4,504 of extra tax on the tax-free allowance you've lost."
      },
@@ -21828,6 +21855,8 @@
      {
       "label": "Your position",
       "figure": "£969 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -21902,6 +21931,7 @@
      {
       "label": "Your position",
       "figure": "£4,504 a year",
+      "tone": "cost",
       "title": "lost each year to the £100k tax trap.",
       "body": "£4,504 of extra tax on the tax-free allowance you've lost."
      },
@@ -24317,6 +24347,7 @@
      {
       "label": "Your position",
       "figure": "£5,200 a year",
+      "tone": "cost",
       "title": "paid into your pension above your £38,000 annual allowance."
      },
      {
@@ -24334,6 +24365,8 @@
      {
       "label": "Your position",
       "figure": "£975 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -24343,14 +24376,16 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
      {
       "label": "Your position",
       "figure": "£720",
+      "tone": "cost",
       "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
@@ -24369,6 +24404,7 @@
      {
       "label": "Your position",
       "figure": "£5,028 a year",
+      "tone": "cost",
       "title": "lost each year to the £100k tax trap.",
       "body": "£5,028 of extra tax on the tax-free allowance you've lost."
      },
@@ -26912,6 +26948,7 @@
      {
       "label": "Your position",
       "figure": "£5,200 a year",
+      "tone": "cost",
       "title": "paid into your pension above your £38,000 annual allowance."
      },
      {
@@ -26929,6 +26966,8 @@
      {
       "label": "Your position",
       "figure": "£675 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -26946,6 +26985,7 @@
      {
       "label": "Your position",
       "figure": "£720",
+      "tone": "cost",
       "title": "of avoidable capital gains tax: this year's tax-free allowance ends 5 April."
      },
      {
@@ -26964,6 +27004,7 @@
      {
       "label": "Your position",
       "figure": "£5,028 a year",
+      "tone": "cost",
       "title": "lost each year to the £100k tax trap.",
       "body": "£5,028 of extra tax on the tax-free allowance you've lost."
      },
@@ -29421,6 +29462,8 @@
      {
       "label": "Your position",
       "figure": "£908 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -29429,8 +29472,9 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
@@ -32064,6 +32108,8 @@
      {
       "label": "Your position",
       "figure": "£935 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -34496,6 +34542,7 @@
      {
       "label": "Your position",
       "figure": "£800",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -37790,6 +37837,7 @@
      {
       "label": "Your position",
       "figure": "£800",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -40915,6 +40963,7 @@
      {
       "label": "Your position",
       "figure": "£5,400",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -44590,6 +44639,7 @@
      {
       "label": "Your position",
       "figure": "£5,400",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -48104,6 +48154,7 @@
      {
       "label": "Your position",
       "figure": "£800",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -50986,6 +51037,7 @@
      {
       "label": "Your position",
       "figure": "£800",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -53679,6 +53731,8 @@
      {
       "label": "Your position",
       "figure": "£312 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -53687,8 +53741,9 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
@@ -58843,6 +58898,8 @@
      {
       "label": "Your position",
       "figure": "£1,008 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -58851,8 +58908,9 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
@@ -61478,6 +61536,8 @@
      {
       "label": "Your position",
       "figure": "£1,056 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -63848,6 +63908,8 @@
      {
       "label": "Your position",
       "figure": "£759 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -63856,8 +63918,9 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
@@ -66486,6 +66549,8 @@
      {
       "label": "Your position",
       "figure": "£786 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -68826,6 +68891,7 @@
      {
       "label": "Your position",
       "figure": "£800",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -70353,6 +70419,7 @@
      {
       "label": "Your position",
       "figure": "£800",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -71766,6 +71833,8 @@
      {
       "label": "Your position",
       "figure": "£508 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -71774,8 +71843,9 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
@@ -74821,6 +74891,8 @@
      {
       "label": "Your position",
       "figure": "£257 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -77703,6 +77775,8 @@
      {
       "label": "Your position",
       "figure": "£1,161 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates, after tax."
      },
      {
@@ -77711,8 +77785,9 @@
      },
      {
       "label": "What you could do",
-      "title": "Candid Assist lays out the options in each and how to move, whichever you choose.",
-      "body": "Open it from the button at the bottom right of the screen."
+      "icon": "assist",
+      "title": "Candid Assist can help you save more.",
+      "body": "Candid Assist lays out the options in each and how to move, whichever you choose."
      }
     ],
     "investments": [
@@ -81204,6 +81279,8 @@
      {
       "label": "Your position",
       "figure": "£974 a year",
+      "tone": "cost",
+      "hook": "rate",
       "title": "lost each year to below-top savings rates."
      },
      {
@@ -84430,6 +84507,7 @@
      {
       "label": "Your position",
       "figure": "£800",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {
@@ -86972,6 +87050,7 @@
      {
       "label": "Your position",
       "figure": "£800",
+      "tone": "cost",
       "title": "short of your 6-month emergency fund."
      },
      {

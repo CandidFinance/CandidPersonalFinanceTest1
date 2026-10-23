@@ -4,7 +4,10 @@
 // two always agree. Phrased as information, not instruction: Candid is
 // guidance, not advice. Pure, unit tested in moduleReveal.test.js.
 //
-// A step is { label, figure?, title, body? }. Each function takes (d, m,
+// A step is { label, figure?, title, body?, tone? }: tone "cost" shows the
+// figure in red, as a loss or a gap; `hook` "rate" marks Cash's rate loss,
+// which the email offer under the answer names; `icon` "assist" puts Candid
+// Assist's icon beside the title. Each function takes (d, m,
 // ctx), ctx being { marketRates } (the live best rates, as the screens use),
 // and returns three steps, or null when there's nothing to explain (no
 // student loan, say), in which case no reveal or "Explain this" is offered.
@@ -155,7 +158,7 @@ function pensionSteps(d, m) {
   if (aa.excess > 0) {
     const charge = Math.round(aa.excess * (m.tr || 0));
     return [
-      { label: ANSWER, figure: `${fmt(aa.excess)} a year`, title: `paid into your pension above your ${fmt(aa.approxAA)} annual allowance.` },
+      { label: ANSWER, figure: `${fmt(aa.excess)} a year`, tone: "cost", title: `paid into your pension above your ${fmt(aa.approxAA)} annual allowance.` },
       { label: WHY, title: aa.mpaa
           ? `Having taken an income from a pension, ${fmt(aa.approxAA)} a year can go in with tax relief. Payments over it are taxed at your top rate: about ${fmt(charge)} a year here.`
           : `Above £260,000 of income, the £60,000 annual allowance shrinks, to £10,000 at the lowest. Payments over it are taxed at your top rate: about ${fmt(charge)} a year here.`,
@@ -171,7 +174,7 @@ function pensionSteps(d, m) {
   const adequacy = retirementAdequacy(d, m);
   if (adequacy && adequacy.gap > adequacy.target * 0.05) {
     return [
-      { label: ANSWER, figure: `${fmt(adequacy.gap)} a year`, title: `short of the ${fmt(adequacy.target)} a year you'd like in retirement.` },
+      { label: ANSWER, figure: `${fmt(adequacy.gap)} a year`, tone: "cost", title: `short of the ${fmt(adequacy.target)} a year you'd like in retirement.` },
       { label: WHY, title: `On your figures you'd have about ${fmt(adequacy.net)} a year after tax, from your pension and a full State Pension, in today's money.` },
       { label: ACTION, title: adequacy.extraPct ? `Paying in about ${adequacy.extraPct}% more of your salary would close it.` : "Paying in more, or retiring later, would close some of it.",
         body: "Each extra payment gets tax relief too. The Retirement age and contribution steppers on this screen show the effect." },
@@ -266,6 +269,10 @@ const pct = n => `${Math.round(n * 100) / 100}%`;
 // Someone not working lives off their savings, so how long they'd last comes
 // first; someone earning but spending more than they take home sees the gap.
 export const FSCS_LIMIT = 120000;
+// What the user could do when better rates are there: Candid Assist, shown
+// with its own icon (`icon` "assist") so it's recognised as the button on
+// the screen.
+const ASSIST_STEP = { label: ACTION, icon: "assist", title: "Candid Assist can help you save more.", body: "Candid Assist lays out the options in each and how to move, whichever you choose." };
 function fscsLine(m) {
   const over = Math.round((m.largestCashHolding || 0) - FSCS_LIMIT);
   return over > 0 ? `The FSCS protects ${fmt(FSCS_LIMIT)} per person at each banking licence; ${fmt(over)} of yours is above that at one bank.` : null;
@@ -291,14 +298,14 @@ function cashSteps(d, m, { marketRates = {} } = {}) {
       { label: ANSWER, figure: months >= 120 ? "10 years or more" : `${months < 10 ? months.toFixed(1) : Math.round(months)} months`, title: m.monthlyTakeHome > 0 ? "your savings would cover, at what you spend beyond your income." : "your savings would cover, with no earnings coming in." },
       withBody({ label: WHY, title: `You have ${fmt(m.totalLiquid)} in savings, and about ${fmt(Math.round(m.monthlyShortfall))} a month more going out than coming in.` }, rateLine),
       opp && opp.gain > 50
-        ? { label: ACTION, title: "Candid Assist lays out the options in each and how to move, whichever you choose.", body: "Open it from the button at the bottom right of the screen." }
+        ? ASSIST_STEP
         : { label: ACTION, title: "Nothing stands out right now.", body: "Worth checking rates every few months: the top ones move." },
     ];
   }
   if (!m.noEarnings && m.monthlyShortfall > 0) {
     const months = m.totalLiquid > 0 ? m.totalLiquid / m.monthlyShortfall : 0;
     return [
-      { label: ANSWER, figure: `${fmt(Math.round(m.monthlyShortfall))} a month`, title: "more going out than comes in, after tax." },
+      { label: ANSWER, figure: `${fmt(Math.round(m.monthlyShortfall))} a month`, tone: "cost", title: "more going out than comes in, after tax." },
       { label: WHY, title: `Your take-home pay is about ${fmt(Math.round(m.monthlyTakeHome))} a month, and your essential spending ${fmt(m.expenses)}.` },
       { label: ACTION, title: months >= 120 ? "At that rate your savings would cover the gap for 10 years or more." : months > 0 ? `At that rate your savings would cover the gap for about ${months < 10 ? months.toFixed(1) : Math.round(months)} months.` : "There are no savings to cover the gap.",
         body: "The spending figure is for essentials only: rent or mortgage, bills, food and getting around. Worth checking it's right." },
@@ -314,7 +321,7 @@ function cashSteps(d, m, { marketRates = {} } = {}) {
   if (m.emergencyShortfall > 0) {
     const months = m.monthlySurplus > 0 ? Math.ceil(m.emergencyShortfall / m.monthlySurplus) : null;
     return [
-      { label: ANSWER, figure: fmt(m.emergencyShortfall), title: `short of your ${m.bufferMonths}-month emergency fund.` },
+      { label: ANSWER, figure: fmt(m.emergencyShortfall), tone: "cost", title: `short of your ${m.bufferMonths}-month emergency fund.` },
       { label: WHY, title: `You have ${fmt(m.totalLiquid)} in savings. ${m.bufferMonths} months of essential spending is ${fmt(m.emergencyBuffer)}.` },
       { label: ACTION, title: months
           ? `Putting aside your spare ${fmt(Math.round(m.monthlySurplus))} a month would close the gap in about ${months} month${months === 1 ? "" : "s"}.`
@@ -327,17 +334,16 @@ function cashSteps(d, m, { marketRates = {} } = {}) {
   if (opp && opp.gain > 50) {
     const best = opp.lines.map(l => `${l.section === "Premium Bonds" ? "Premium Bonds" : `a ${l.section}`} at ${pct(l.option.ratePct)}`);
     return [
-      { label: ANSWER, figure: `${fmt(opp.gain)} a year`, title: "lost each year to below-top savings rates, after tax." },
+      { label: ANSWER, figure: `${fmt(opp.gain)} a year`, tone: "cost", hook: "rate", title: "lost each year to below-top savings rates, after tax." },
       withBody({ label: WHY, title: `Your ${fmt(opp.cash)} in savings earns about ${fmt(opp.currentKept)} a year after tax. The highest-rate options today include ${best.length > 1 ? `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}` : best[0]}.` },
         m.expensesUnknown ? "Add your monthly spending in Edit inputs to see how much to keep as an emergency fund." : null),
-      { label: ACTION, title: "Candid Assist lays out the options in each and how to move, whichever you choose.",
-        body: "Open it from the button at the bottom right of the screen." },
+      ASSIST_STEP,
     ];
   }
   const opt = calcCashOptimisation(m, marketRates.isaRate ?? null, marketRates.nonIsaRate ?? null, marketRates.rows);
   if (!opp && opt.optimisationGain > 50) {
     return [
-      { label: ANSWER, figure: `${fmt(opt.optimisationGain)} a year`, title: "lost each year to below-top savings rates." },
+      { label: ANSWER, figure: `${fmt(opt.optimisationGain)} a year`, tone: "cost", hook: "rate", title: "lost each year to below-top savings rates." },
       { label: WHY, title: `Your savings earn about ${pct(opt.todayBlendedRate * 100)} on average. The highest rates today are ${opt.isaRateDisplay} in a Cash ISA and ${opt.nonIsaRateDisplay} in a savings account.` },
       { label: ACTION, title: opt.step1Isa > 0
           ? `Moving ${fmt(opt.step1Isa)} into a Cash ISA, and the rest to the highest savings rate, would earn it.`
@@ -359,7 +365,7 @@ export function investmentsReveal(d, m) {
   if (m.crystallisable > 0) {
     const gains = +d.unrealisedGains || 0;
     return [
-      { label: ANSWER, figure: fmt(Math.round(m.cgtSaving)), title: "of avoidable capital gains tax: this year's tax-free allowance ends 5 April." },
+      { label: ANSWER, figure: fmt(Math.round(m.cgtSaving)), tone: "cost", title: "of avoidable capital gains tax: this year's tax-free allowance ends 5 April." },
       { label: WHY, title: `Each tax year, the first ${fmt(CGT_ALLOWANCE)} of profit you take is tax-free. You have ${fmt(m.remainingCgtAllowance)} of it left, and about ${fmt(gains)} of profit outside an ISA or pension.` },
       { label: ACTION, title: `Taking ${fmt(m.crystallisable)} of that profit before 5 April would use this year's allowance.`,
         body: "Your platform or an adviser can tell you how for your holdings. Some people buy back inside an ISA ('Bed and ISA') to stay invested; prices can move in between." },
@@ -537,7 +543,7 @@ export function kidsReveal(d, m) {
   }
   if (cc?.unclaimed > 0 && !cc.planning) {
     return [
-      { label: ANSWER, figure: `${fmt(cc.unclaimed)} a year`, title: "of Tax-Free Childcare you could claim." },
+      { label: ANSWER, figure: `${fmt(cc.unclaimed)} a year`, tone: "cost", title: "of Tax-Free Childcare you could claim." },
       { label: WHY, title: "The government adds £2 for every £8 you pay for childcare, up to £2,000 a child a year." },
       { label: ACTION, title: "Applying on GOV.UK opens an account you pay your provider through.", body: "Eligibility is reconfirmed every three months." },
     ];
@@ -546,7 +552,7 @@ export function kidsReveal(d, m) {
   // that brings income to £60,000.
   if (cb && cb.charge > 0 && cb.payInNeeded <= aa.room) {
     return [
-      { label: ANSWER, figure: `${fmt(cb.charge)} a year`, title: "of Child Benefit you're paying back in tax." },
+      { label: ANSWER, figure: `${fmt(cb.charge)} a year`, tone: "cost", title: "of Child Benefit you're paying back in tax." },
       { label: WHY, title: `Above ${fmt(HICBC_START)} of income, 1% of your Child Benefit is clawed back for every £200, all of it by £80,000.` },
       selfEmployed(d)
         ? { label: ACTION, title: `Paying ${fmt(cb.payInNeeded)} more into a pension (including the tax relief added) would bring your income to £60,000 and keep it all.`, body: SELF_EMPLOYED_PENSION }
@@ -577,7 +583,7 @@ export function kidsReveal(d, m) {
   }
   if (cc?.state === "lost") {
     return [
-      { label: ANSWER, figure: `${fmt(cc.atStake)} a year`, title: "of childcare support you're not getting." },
+      { label: ANSWER, figure: `${fmt(cc.atStake)} a year`, tone: "cost", title: "of childcare support you're not getting." },
       withBody({ label: WHY, title: `${support} stop once either parent's income is over £100,000. Yours is ${fmt(Math.round(cc.ani))}.` }, nationNote),
       { label: ACTION, title: `Getting back to £100,000 would take a pension payment of ${fmt(cc.payInNeeded)}, more than this year's pension allowance.` },
     ];
@@ -625,7 +631,7 @@ export function taxTrapReveal(d, m) {
     const how = t.aboveTaper ? "Over £125,140 your tax-free allowance has gone completely" : "Over £100k you lose £1 of tax-free allowance for every £2 earned";
     const pension = t.options.find(o => o.key === "pension");
     return [
-      withBody({ label: ANSWER, figure: `${fmt(t.amount)} a year`, title: "lost each year to the £100k tax trap." },
+      withBody({ label: ANSWER, figure: `${fmt(t.amount)} a year`, tone: "cost", title: "lost each year to the £100k tax trap." },
         `${fmt(t.allowance.tax)} of extra tax on the tax-free allowance you've lost${t.childcareLost > 0 ? `, and ${fmt(t.childcareLost)} of ${support}` : ""}.`),
       { label: WHY, title: `${how}, so your marginal tax rate is ${pctOf(t.rate.rate)}: for every extra £1 you earn, ${penceOf(t.rate.rate)} is lost to ${lostTo(t.rate)} (${rateParts(t.rate)}).` },
       t.fits

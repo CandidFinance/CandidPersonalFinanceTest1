@@ -32,9 +32,9 @@ import { questionOrder, estimateItems, estimateLineFor } from "./lib/quickStart.
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import InviteFriends from "./mobile/InviteFriends.jsx";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
+import { workingChecks } from "./lib/workingChecks.js";
 import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
 import { bankChange } from "./lib/moduleStatus.js";
-import { moduleLimits } from "./lib/moduleLimits.js";
 import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, loanSavingsIn, loanPensionChecked, hasEmployerMatch, loanVerdictReady } from "./lib/appEntry.js";
 import { moduleGuideStarts, briefQuestions } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
@@ -484,6 +484,12 @@ export default function AppShell() {
   // The module whose answer is being shown step by step (MODULE_REVEALS):
   // after its first walk-through, or replayed from its screen.
   const [revealModule, setRevealModule] = useState(null);
+  // The module replayed ("Explain this"): its answer opens straight away,
+  // without the working screen (workingChecks.js) shown on the way in.
+  const [revealReplay, setRevealReplay] = useState(null);
+  // The entry's hand-off to the first module is showing: the user is
+  // recorded as entered, but /app/start stays up until it's done.
+  const [entryHandoff, setEntryHandoff] = useState(false);
   // An unlock's answers, saved a render later so they're in `d`. The email
   // goes with the inputs; the unlock columns on their own, so a missing
   // column grant can't stop the email saving.
@@ -504,7 +510,7 @@ export default function AppShell() {
         const email = accessInfo()?.email;
         if (email && !d.email) { set("email", email); setUnlockSaveTick(t => t + 1); }
         const onModule = window.location.pathname.match(/^\/app\/module\/([a-zA-Z]+)/);
-        if (outcome === "paid" && onModule) setRevealModule(onModule[1]);
+        if (outcome === "paid" && onModule) { setRevealModule(onModule[1]); setRevealReplay(null); }
       } else if (outcome === "cancelled") posthog.capture("checkout_cancelled");
     });
     return () => window.removeEventListener("candid-access", redraw);
@@ -598,9 +604,10 @@ export default function AppShell() {
   }
   // The entry. Anyone the app is already open to goes home.
   if (pathname === "/app/start") {
-    if (appUnlocked(d, insights)) return <Navigate to="/app/home" replace />;
+    if (appUnlocked(d, insights) && !entryHandoff) return <Navigate to="/app/home" replace />;
     return (
-      <MobileEntryScreen d={d} m={m} set={set} onDone={() => {
+      <MobileEntryScreen d={d} m={m} set={set} onEntered={() => {
+        setEntryHandoff(true);
         set("appEntered", true);
         // Which modules are answered, not just opened, is tracked from here.
         set("answeredModules", []);
@@ -610,7 +617,9 @@ export default function AppShell() {
         // The user's row from the start (their interests), not only once a
         // report exists. The report still adds its own row when it's made.
         insertReportRow(null);
-        // Straight into the first module they picked; Cash for "Just exploring".
+      }} onDone={() => {
+        // Into the first module they picked; Cash for "Just exploring".
+        setEntryHandoff(false);
         navigate(modulePath(firstPick(d)));
       }}/>
     );
@@ -749,7 +758,7 @@ export default function AppShell() {
                 const next = detail && how === "finished" ? loanDetailNext(d) : null;
                 if (next) navigate(`/app/module/${next}?from=studentLoan&detail=1`, { replace: true });
                 else {
-                  if (detail && loanVerdictReady(d)) setRevealModule(returnTo);
+                  if (detail && loanVerdictReady(d)) { setRevealModule(returnTo); setRevealReplay(null); }
                   navigate(`/app/module/${returnTo}`, { replace: true });
                 }
                 scrollToTop();
@@ -793,6 +802,7 @@ export default function AppShell() {
         // step (MODULE_REVEALS), when there's one to give.
         if (how === "finished" && (firstFree || !isLocked(d, mobileActiveModule)) && MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates })) {
           setRevealModule(mobileActiveModule);
+          setRevealReplay(null);
           posthog.capture("reveal_shown", { module: mobileActiveModule, from: "walkthrough" });
         }
         setRowSaveTick(t => t + 1);
@@ -830,7 +840,7 @@ export default function AppShell() {
               posthog.capture("module_unlocked", { module: mobileActiveModule, via: ask.invite ? "invite" : ask.kind, question: ask.question?.id ?? null, answer: ask.kind === "question" ? answer : null, call_ok: ask.kind === "email" ? !!answer.callOk : null });
               if (ask.kind === "email") { posthog.capture("email_captured", { source: "unlock", call_ok: !!answer.callOk }); if (answer.callOk) set("alertsOptIn", true); }
               setUnlockSaveTick(t => t + 1);
-              if (revealSteps) setRevealModule(mobileActiveModule);
+              if (revealSteps) { setRevealModule(mobileActiveModule); setRevealReplay(null); }
             }}/>
         </MobileLayout>
       );
@@ -839,7 +849,8 @@ export default function AppShell() {
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
-          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} limits={mobileActiveModule === "studentLoan" || mobileActiveModule === "pension" ? null : moduleLimits(mobileActiveModule, d, m)} large={mobileActiveModule === "studentLoan" || mobileActiveModule === "pension"}
+          <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} large={mobileActiveModule === "studentLoan" || mobileActiveModule === "pension"}
+            checks={revealReplay === mobileActiveModule ? null : workingChecks(mobileActiveModule, d, m, { marketRates })}
             doneLabel={mobileActiveModule === "studentLoan" ? "Explore student loans" : mobileActiveModule === "pension" ? "Explore your pension" : "See everything"}
             lastAction={mobileActiveModule === "studentLoan" && loanDetailNext(d) ? {
               label: `Detailed view · up to ${loanDetailCount(d, m)} more questions`,
@@ -852,7 +863,8 @@ export default function AppShell() {
             } : null}
             footer={<>
               {/* The email, asked for now the answer's theirs (unlock.js). */}
-              <SaveFiguresOffer d={d} moduleKey={mobileActiveModule} onEmail={(email, name) => {
+              <SaveFiguresOffer d={d} moduleKey={mobileActiveModule}
+                rateCost={revealSteps[0]?.hook === "rate" ? revealSteps[0].figure : null} onEmail={(email, name) => {
                 set("email", email); set("alertsOptIn", true);
                 set("name", name);
                 posthog.capture("email_captured", { source: "after_answer", module: mobileActiveModule });
@@ -863,6 +875,7 @@ export default function AppShell() {
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
               setRevealModule(null);
+              setRevealReplay(null);
               scrollToTop();
             }}/>
         </MobileLayout>
@@ -880,7 +893,7 @@ export default function AppShell() {
           </p>
         )}
         <MobileModuleDeepDive key={mobileActiveModule} moduleKey={mobileActiveModule}
-          onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set}
+          onShowReveal={revealSteps ? () => { setRevealModule(mobileActiveModule); setRevealReplay(mobileActiveModule); posthog.capture("reveal_shown", { module: mobileActiveModule, from: "replay" }); } : null} d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set}
           isComplete={completedModules.includes(mobileActiveModule)}
           onMarkReviewed={() => markModuleComplete(mobileActiveModule)}
           onBack={() => navigate(returnTo ? `/app/module/${returnTo}` : "/app/modules")}

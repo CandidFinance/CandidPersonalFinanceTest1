@@ -14,11 +14,11 @@ const ids = (key, d, needAt = d) => {
 };
 const aboutYou = ["employment", "salary", "nation", "extraIncome"];
 
-test("the first module asks about you first, led by one line", () => {
+test("the first module asks about you first, with no lead line over it", () => {
   const ctx = ctxFor(fresh);
   const qs = visibleQuestions(MODULE_GUIDES.pension.questions, ctx, neededAtStart(MODULE_GUIDES.pension.questions, ctx));
   assert.deepEqual(qs.slice(0, 5).map(q => q.id), [...aboutYou, "age"]);
-  assert.deepEqual(qs.filter(q => q.lead).map(q => q.id), ["employment"]);
+  assert.deepEqual(qs.filter(q => q.lead).map(q => q.id), []);
 });
 
 test("a later module doesn't ask about you again", () => {
