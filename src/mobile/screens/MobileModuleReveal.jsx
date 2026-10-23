@@ -195,6 +195,8 @@ function LargeStep({ step }) {
       )}
       {step.checks && step.checksNote && <p style={{fontSize:"15px",color:MUT,lineHeight:1.5,margin:"20px 0 0"}}>{step.checksNote}</p>}
       {step.body && !step.checks && <p style={{fontSize:"16px",color:MUT,lineHeight:1.5,margin:"20px 0 0",whiteSpace:"pre-line"}}>{step.body}</p>}
+      {/* A national figure, plain, so it doesn't read as a point about them. */}
+      {step.context && <p style={{fontSize:"14px",color:MUT,lineHeight:1.5,margin:"20px 0 0"}}>{step.context}</p>}
       {step.aside && (
         <div style={{display:"flex",alignItems:"flex-start",gap:"10px",margin:"20px 0 0",padding:"2px 0 2px 12px",borderLeft:`3px solid ${G}`,fontSize:"15px",color:TEXT,lineHeight:1.45}}>
           <CircleAlert size={18} color={G} style={{flexShrink:0,marginTop:"1px"}} aria-hidden="true"/>{step.aside}

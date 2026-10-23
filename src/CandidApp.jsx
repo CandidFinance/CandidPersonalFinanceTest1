@@ -19,7 +19,7 @@ import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import SaveFiguresOffer from "./mobile/SaveFiguresOffer.jsx";
 import CashTour from "./mobile/onboarding/CashTour.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
-import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
+import { isLocked, unlockPatch, firstUnlockPatch, onTrackReward, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import { checkAccessOnLoad, accessInfo, saveStateSoon, identifySubscriber } from "./lib/entitlement.js";
 import { recordVisit } from "./mobile/visitNews.js";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
@@ -32,6 +32,8 @@ import { PENSION_QUICK } from "./lib/pensionQuick.js";
 import { questionOrder, estimateItems, estimateLineFor } from "./lib/quickStart.js";
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import InviteFriends from "./mobile/InviteFriends.jsx";
+import OnTrackReward from "./mobile/OnTrackReward.jsx";
+import { hasReferralBonus } from "./lib/referral.js";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
 import { workingChecks } from "./lib/workingChecks.js";
 import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
@@ -500,6 +502,16 @@ export default function AppShell() {
   // goes with the inputs; the unlock columns on their own, so a missing
   // column grant can't stop the email saving.
   const [unlockSaveTick, setUnlockSaveTick] = useState(0);
+  // A module answered with nothing to improve earns one more answer free
+  // (unlock.js onTrackReward), whether or not its answer is watched to the
+  // end.
+  useEffect(() => {
+    const key = params.moduleKey;
+    if (!key || d.onTrackBonus || onTrackReward(d, key, statuses[key]) !== "bonus") return;
+    set("onTrackBonus", key);
+    posthog.capture("on_track_bonus_earned", { module: key });
+    setRowSaveTick(t => t + 1);
+  }, [params.moduleKey, statuses]); // eslint-disable-line react-hooks/exhaustive-deps
   // A subscription (src/lib/entitlement.js): checked with the server on
   // opening, including back from checkout or a sign-in link. A change
   // redraws, since what's locked reads it. Back from paying on a module's
@@ -853,7 +865,7 @@ export default function AppShell() {
             onUnlock={(ask, answer) => {
               const patch = unlockPatch(d, mobileActiveModule, ask, answer);
               Object.entries(patch).forEach(([k, v]) => set(k, v));
-              posthog.capture("module_unlocked", { module: mobileActiveModule, via: ask.invite ? "invite" : ask.kind, question: ask.question?.id ?? null, answer: ask.kind === "question" ? answer : null, call_ok: ask.kind === "email" ? !!answer.callOk : null });
+              posthog.capture("module_unlocked", { module: mobileActiveModule, via: ask.invite ? "invite" : ask.bonus ? "on_track_bonus" : ask.kind, question: ask.question?.id ?? null, answer: ask.kind === "question" ? answer : null, call_ok: ask.kind === "email" ? !!answer.callOk : null });
               if (ask.kind === "email") { posthog.capture("email_captured", { source: "unlock", call_ok: !!answer.callOk }); if (answer.callOk) set("alertsOptIn", true); }
               setUnlockSaveTick(t => t + 1);
               if (revealSteps) { setRevealModule(mobileActiveModule); setRevealReplay(null); }
@@ -862,6 +874,7 @@ export default function AppShell() {
       );
     }
     if (revealModule === mobileActiveModule && revealSteps) {
+      const onTrackKind = onTrackReward(d, mobileActiveModule, statuses[mobileActiveModule]);
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
@@ -878,6 +891,14 @@ export default function AppShell() {
               },
             } : null}
             footer={<>
+              {/* Nothing to improve: one more answer free, or a national
+                  figure (OnTrackReward.jsx). */}
+              {onTrackKind && (
+                <OnTrackReward moduleKey={mobileActiveModule} kind={onTrackKind}
+                  unlocked={(d.unlockedModules || []).length + (hasReferralBonus() ? 1 : 0)}
+                  celebrate={revealReplay !== mobileActiveModule}
+                  onChoose={() => { setRevealModule(null); setRevealReplay(null); navigate("/app/modules"); scrollToTop(); }}/>
+              )}
               {/* The email, asked for now the answer's theirs (unlock.js).
                   Cash asks at the end of its tour instead. */}
               {mobileActiveModule !== "cash" && (

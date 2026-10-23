@@ -78,6 +78,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
       {ask.kind === "free" && (
         <>
           {ask.invite && <div style={{fontSize:"14px",color:TEXT,fontWeight:600,marginBottom:"10px"}}>Unlocked for free with your friend's invite.</div>}
+          {ask.bonus && <div style={{fontSize:"14px",color:TEXT,fontWeight:600,marginBottom:"10px"}}>Free: nothing needed changing in {MODULE_META.find(mm => mm.key === ask.bonus)?.title || "your last module"}.</div>}
           <button type="button" style={primary(false)} onClick={() => onUnlock(ask, null)}>{cta}</button>
         </>
       )}

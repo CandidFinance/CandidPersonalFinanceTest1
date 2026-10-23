@@ -1,8 +1,9 @@
+import posthog from "posthog-js";
 import { hasAccess, accessInfo, openBillingPortal, PLANS } from "../../lib/entitlement.js";
 import SignInSetup, { switchAccount } from "../SignInSetup.jsx";
 import InviteFriends from "../InviteFriends.jsx";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, User } from "lucide-react";
+import { ChevronDown, ChevronRight, Mail, User } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import AboutYouFields from "../onboarding/AboutYouFields.jsx";
@@ -142,6 +143,33 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
 
       <Subscription/>
       <InviteFriends d={d} source="edit_inputs"/>
+      <ContactSupport/>
+    </div>
+  );
+}
+
+// An email to the address in the terms and privacy policy (api/billing.js
+// MAIL_REPLY_TO), started with the browser and the time it's tapped so a
+// fault can be traced.
+const SUPPORT_EMAIL = "admin@candid-finance.co.uk";
+function supportHref() {
+  const body = `What happened:
+
+
+---
+Sent from the Candid app, ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC
+${navigator.userAgent}`;
+  return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Candid support")}&body=${encodeURIComponent(body)}`;
+}
+function ContactSupport() {
+  return (
+    <div style={{marginTop:"28px",paddingTop:"16px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
+      <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>Something not working?</div>
+      <div style={{fontSize:"12.5px",color:MUT,marginTop:"3px"}}>Email {SUPPORT_EMAIL} and we'll reply.</div>
+      <a href={`mailto:${SUPPORT_EMAIL}`} onClick={e => { e.currentTarget.href = supportHref(); posthog.capture("support_contact_clicked", { from: "edit_inputs" }); }}
+        style={{display:"inline-flex",alignItems:"center",gap:"6px",padding:"8px 0 0",color:G,fontSize:"13px",fontWeight:700,textDecoration:"none"}}>
+        <Mail size={15} color={G} aria-hidden="true"/>Contact support
+      </a>
     </div>
   );
 }

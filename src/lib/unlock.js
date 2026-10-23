@@ -15,7 +15,7 @@
 // UNLOCK_GATE_ON switches it off for everyone. `paid` is for tests; in the
 // app it's this browser's subscription.
 
-import { SCORED_MODULES } from "./appEntry.js";
+import { SCORED_MODULES, moduleAnswered, loanVerdictReady } from "./appEntry.js";
 import { hasAccess } from "./entitlement.js";
 import { validEmailShape } from "./emailCheck.js";
 import { hasReferralBonus } from "./referral.js";
@@ -81,12 +81,14 @@ export function firstUnlockPatch(d, key, paid = hasAccess()) {
 // subscription ("pay"). The feedback questions (UNLOCK_QUESTIONS) are no
 // longer asked here; unlockPatch still records an answer to one.
 // Arriving on a friend's invite (referral.js) makes the second answer free
-// too ({ kind: "free", invite: true }).
+// too ({ kind: "free", invite: true }), and a module found on track makes
+// one more free ({ kind: "free", bonus: <that module> }, onTrackReward).
 export function unlockAsk(d, paid = hasAccess(), invited = hasReferralBonus()) {
   if (paid) return { kind: "free" };
   const unlocked = (d.unlockedModules || []).length;
   if (!unlocked) return FIRST_ANSWER_FREE || validEmail(d.email) ? { kind: "free" } : { kind: "email" };
   if (invited && unlocked === 1) return { kind: "free", invite: true };
+  if (d.onTrackBonus && !d.onTrackBonusUsed) return { kind: "free", bonus: d.onTrackBonus };
   return { kind: "pay" };
 }
 
@@ -95,5 +97,23 @@ export function unlockPatch(d, key, ask, answer) {
   const unlockedModules = [...new Set([...(d.unlockedModules || []), key])];
   if (ask.kind === "email") return { unlockedModules, email: answer.email.trim(), unlockEmailGiven: true, unlockCallOk: !!answer.callOk };
   if (ask.kind === "question") return { unlockedModules, unlockFeedback: { ...(d.unlockFeedback || {}), [ask.question.id]: answer } };
+  if (ask.bonus) return { unlockedModules, onTrackBonusUsed: true };
   return { unlockedModules };
+}
+
+// A module answered, unlocked and with nothing to improve earns one more
+// answer free, once per user, so landing on a module that's already in
+// order isn't a wasted answer. `st` is its status (moduleStatus.js): "ok",
+// and not one whose figure is counted elsewhere (Kids & family's childcare
+// under the £100k tax trap), nor Student loan before its verdict is ready.
+// `onTrackBonus` is the module that earned it; unlockAsk then makes the
+// next unlock free, and `onTrackBonusUsed` closes it. "bonus" while it's
+// there to earn or use; "stat" (a national figure instead, OnTrackReward.jsx)
+// for subscribers, once it's used, or with nothing left locked; null when
+// there's something to improve.
+export function onTrackReward(d, key, st, paid = hasAccess()) {
+  if (st?.status !== "ok" || st.elsewhere || !moduleAnswered(key, d) || isLocked(d, key, paid)) return null;
+  if (key === "studentLoan" && !loanVerdictReady(d)) return null;
+  if (paid || d.onTrackBonusUsed) return "stat";
+  return SCORED_MODULES.some(k => k !== key && isLocked(d, k, paid)) ? "bonus" : "stat";
 }

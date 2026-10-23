@@ -7,7 +7,8 @@
 // A step is { label, figure?, title, body?, tone? }: tone "cost" shows the
 // figure in red, as a loss or a gap; `hook` "rate" marks Cash's rate loss,
 // which the email offer under the answer names; `icon` "assist" puts Candid
-// Assist's icon beside the title. Each function takes (d, m,
+// Assist's icon beside the title; `context`, a national figure shown plainly
+// under the step (large layout only, nationalStats.js). Each function takes (d, m,
 // ctx), ctx being { marketRates } (the live best rates, as the screens use),
 // and returns three steps, or null when there's nothing to explain (no
 // student loan, say), in which case no reveal or "Explain this" is offered.
@@ -22,6 +23,7 @@ import { childcareSupport, kidsSituation } from "./childcare.js";
 import { taxTrap, trapInView, lostTo } from "./taxTrap.js";
 import { loanVerdictReady } from "./appEntry.js";
 import { calcCashOptimisation } from "./cash.js";
+import { NATIONAL_STATS } from "./nationalStats.js";
 import { cashOpportunity } from "./assist.js";
 import { calcStudentLoanScenario, pgScenario, bestLumpSum, SL_REPAYMENT_RATES, resolveSlRate } from "./studentLoan.js";
 import { CGT_ALLOWANCE } from "./rentVsBuy.js";
@@ -146,7 +148,9 @@ function pensionSteps(d, m) {
           { lead: "You pay", figure: `${myPct}%`, tone: "cost", size: "xl" },
           { lead: "Your employer pays up to", figure: `${empPct}%`, tone: "repay", size: "xl" },
           { figure: `${fmt(m.missedMatch)}/yr`, tone: "cost", size: "l", note: "left on the table by not matching." },
-        ] },
+        ],
+        // The country's figure, as context under theirs (nationalStats.js).
+        context: NATIONAL_STATS.pension.context },
       { label: ACTION, title: `Raising your payments to ${empPct}% would get the full match.`,
         body: `It would cost you about ${fmt(netCost)} a year after tax relief. ${HR}` },
     ];

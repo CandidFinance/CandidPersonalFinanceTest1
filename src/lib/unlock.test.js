@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isLocked, unlockAsk, unlockPatch, firstUnlockPatch, validEmail, UNLOCK_QUESTIONS } from "./unlock.js";
+import { isLocked, unlockAsk, unlockPatch, firstUnlockPatch, onTrackReward, validEmail, UNLOCK_QUESTIONS } from "./unlock.js";
 
 test("only gated users, and only scored modules, are locked", () => {
   assert.equal(isLocked({}, "cash"), false);
@@ -48,4 +48,29 @@ test("arriving on a friend's invite makes the second answer free, and only the s
   assert.equal(unlockAsk({ ...one, unlockedModules: ["cash", "pension"] }, false, true).kind, "pay");
   // The first answer is free either way.
   assert.equal(unlockAsk({ unlockGate: true }, false, true).kind, "free");
+});
+
+test("a module found on track earns one more answer free, once", () => {
+  const ok = { status: "ok" };
+  const one = { unlockGate: true, unlockedModules: ["pension"], selectedModules: ["pension"] };
+  assert.equal(onTrackReward(one, "pension", ok, false), "bonus");
+  assert.equal(onTrackReward(one, "pension", { status: "critical" }, false), null);
+  assert.equal(onTrackReward(one, "pension", ok, true), "stat");
+  // Not yet answered, or still locked: nothing yet.
+  assert.equal(onTrackReward({ ...one, selectedModules: [] }, "pension", ok, false), null);
+  assert.equal(onTrackReward({ ...one, selectedModules: ["pension", "cash"] }, "cash", ok, false), null);
+  // A figure counted under another module isn't "nothing to improve".
+  const kids = { ...one, unlockedModules: ["kids"], selectedModules: ["kids"] };
+  assert.equal(onTrackReward(kids, "kids", { status: "ok", elsewhere: "taxTrap" }, false), null);
+  const earned = { ...one, onTrackBonus: "pension" };
+  assert.deepEqual(unlockAsk(earned, false, false), { kind: "free", bonus: "pension" });
+  const patch = unlockPatch(earned, "cash", unlockAsk(earned, false, false), null);
+  assert.deepEqual(patch, { unlockedModules: ["pension", "cash"], onTrackBonusUsed: true });
+  const used = { ...earned, ...patch, selectedModules: ["pension", "cash"] };
+  assert.equal(unlockAsk(used, false, false).kind, "pay");
+  assert.equal(onTrackReward(used, "cash", ok, false), "stat");
+  // A friend's invite comes first; the bonus waits for the unlock after it.
+  assert.deepEqual(unlockAsk(earned, false, true), { kind: "free", invite: true });
+  // Not gated (in before the paywall): nothing left to unlock, so a figure.
+  assert.equal(onTrackReward({ selectedModules: ["pension"] }, "pension", ok, false), "stat");
 });
