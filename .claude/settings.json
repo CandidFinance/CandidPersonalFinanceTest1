@@ -176,5 +176,31 @@
     "additionalDirectories": [
       "\\tmp"
     ]
+  },
+  "autoCompactWindow": 400000,
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/context-guard.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/test-guard.mjs\"",
+            "timeout": 120,
+            "statusMessage": "Running engine tests"
+          }
+        ]
+      }
+    ]
   }
 }

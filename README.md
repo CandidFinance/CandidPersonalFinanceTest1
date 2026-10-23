@@ -48,4 +48,4 @@ CHARACTERISATION_UPDATE=1 npm test
 
 ## Deploying
 
-Vercel deploys `main` to production. Day-to-day work happens on `feature/mobile-app`.
+Vercel deploys `main` to production. Day-to-day work happens on `main`.

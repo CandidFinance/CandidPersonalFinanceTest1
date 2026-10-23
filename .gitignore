@@ -21,3 +21,7 @@ verify-report*.pdf
 # Account-opening agent: your personal details, never committed
 scripts/assist-agent/profile.local.json
 scripts/assist-agent/runs/
+
+# Claude Code: hook cache and session handoff notes
+.claude/.cache/
+.claude/handoff.md
