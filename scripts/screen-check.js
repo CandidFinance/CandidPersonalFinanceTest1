@@ -116,7 +116,18 @@ try {
     for (const r of ROUTES) {
       await page.goto(base + r);
       await page.waitForTimeout(1200);
-      const broken = await check(r);
+      let broken = await check(r);
+      // Cash's tour, the first time it opens (CashTour.jsx): each stop,
+      // past the estimates and the email.
+      const tour = page.locator('[role="dialog"][aria-modal="true"]');
+      if (!broken && r === "/app/module/cash") {
+        for (let i = 0; i < 9 && await tour.count(); i++) {
+          await tour.getByRole("button", { name: /^(Next|Not now)$/ }).first().click();
+          await page.waitForTimeout(400);
+        }
+        if (await tour.count()) problems.push(`${name} ${r}: the tour didn't close`);
+        broken = await check(`${r} (tour)`);
+      }
       // The module's answer, step by step, to its last step.
       if (!broken && r.startsWith("/app/module/")) {
         const explain = page.getByText("Explain this", { exact: true });

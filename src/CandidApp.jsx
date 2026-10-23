@@ -17,6 +17,7 @@ import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import SaveFiguresOffer from "./mobile/SaveFiguresOffer.jsx";
+import CashTour from "./mobile/onboarding/CashTour.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import { checkAccessOnLoad, accessInfo, saveStateSoon, identifySubscriber } from "./lib/entitlement.js";
@@ -58,6 +59,11 @@ const BLANK_DATA = {
   // `scoreShown`: the Candid score has appeared (src/lib/appEntry.js
   // scoreUnlocked), so its first appearance is recorded once.
   goalPicks:[], goalsAsked:false, scoreShown:false,
+  // `cashTourDone`: the Cash page's tour (CashTour.jsx) finished or skipped.
+  // `emailTileDismissed`: the email tile at the top of the Cash page closed.
+  // `emergencyCardDismissed`: Cash's emergency fund card closed while the
+  // fund is at its target (cleared once it falls below).
+  cashTourDone:false, emailTileDismissed:false, emergencyCardDismissed:false,
   // Which of the active modules (cash, investments, pension, studentLoan, kids —
   // matching MODULE_META keys) the user has picked. Drives which modules
   // computeModuleStatuses treats as applicable.
@@ -823,6 +829,15 @@ export default function AppShell() {
     // The module's answer in three steps, or null when there's nothing to
     // explain (no student loan, say): then no reveal and no "Explain this".
     const revealSteps = MODULE_REVEALS[mobileActiveModule]?.(d, m, { marketRates }) ?? null;
+    // Cash's rate loss ("£598 a year"), which its email ask names.
+    const rateCost = revealSteps?.find(s => s.hook === "rate")?.figure ?? null;
+    // The email, from the reveal, the Cash tour or the tile on the Cash page.
+    const saveEmail = source => (email, name) => {
+      set("email", email); set("alertsOptIn", true);
+      set("name", name);
+      posthog.capture("email_captured", { source, module: mobileActiveModule });
+      setUnlockSaveTick(t => t + 1);
+    };
     // Answered but locked: what it's worth, and the way to unlock it, which
     // then goes straight on to the answer.
     if (isLocked(d, mobileActiveModule)) {
@@ -863,14 +878,11 @@ export default function AppShell() {
               },
             } : null}
             footer={<>
-              {/* The email, asked for now the answer's theirs (unlock.js). */}
-              <SaveFiguresOffer d={d} moduleKey={mobileActiveModule}
-                rateCost={revealSteps.find(s => s.hook === "rate")?.figure ?? null} onEmail={(email, name) => {
-                set("email", email); set("alertsOptIn", true);
-                set("name", name);
-                posthog.capture("email_captured", { source: "after_answer", module: mobileActiveModule });
-                setUnlockSaveTick(t => t + 1);
-              }}/>
+              {/* The email, asked for now the answer's theirs (unlock.js).
+                  Cash asks at the end of its tour instead. */}
+              {mobileActiveModule !== "cash" && (
+                <SaveFiguresOffer d={d} moduleKey={mobileActiveModule} rateCost={rateCost} onEmail={saveEmail("after_answer")}/>
+              )}
               <InviteFriends d={d} source="reveal" moduleKey={mobileActiveModule}/>
             </>}
             onDone={(how, step) => {
@@ -886,6 +898,12 @@ export default function AppShell() {
       <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={editInputsFor(mobileActiveModule)}>
         {/* Keyed by module, so each module page opens fresh, every tile collapsed,
             however it's reached. */}
+        {/* Cash: the email, until it's given or the tile's closed, once
+            the tour is over. */}
+        {mobileActiveModule === "cash" && d.cashTourDone && !d.emailTileDismissed && (
+          <SaveFiguresOffer d={d} moduleKey="cash" rateCost={rateCost} source="cash_tile" onEmail={saveEmail("cash_tile")} style={{marginTop:0,marginBottom:"16px"}}
+            onDismiss={() => { set("emailTileDismissed", true); posthog.capture("email_tile_dismissed", { module: "cash" }); }}/>
+        )}
         {/* Figures from the quick start's bands, until they're changed. */}
         {quickEstimateLine(mobileActiveModule, d) && (
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
@@ -901,6 +919,11 @@ export default function AppShell() {
           backLabel={returnTo ? `Back to ${MODULE_META.find(mm => mm.key === returnTo)?.title}` : null}
           onRecordLoanOverpayment={recordLoanOverpayment}
           onRecordCrystallisedGain={recordCrystallisedGain}/>
+        {/* Once, the first time Cash opens unlocked. */}
+        {mobileActiveModule === "cash" && !d.cashTourDone && (
+          <CashTour d={d} m={m} set={set} rateCost={rateCost} estimates={estimateItems(d, "cash").map(i => i.phrase)}
+            onExactFigures={() => openInputs("cash")} onEmail={saveEmail("tour")}/>
+        )}
       </MobileLayout>
     );
   }

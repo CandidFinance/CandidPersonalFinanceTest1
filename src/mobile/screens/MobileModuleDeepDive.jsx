@@ -55,7 +55,8 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
 
   return (
     <div>
-      <GuidanceIntro key={moduleKey}/>
+      {/* Cash opens on its tour (CashTour.jsx) instead. */}
+      {moduleKey !== "cash" && <GuidanceIntro key={moduleKey}/>}
       <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px"}}>
         <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {meta?.icon && <meta.icon size={18} color={G}/>}

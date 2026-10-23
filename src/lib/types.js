@@ -20,6 +20,9 @@
  * @property {string[]} goalPicks
  * @property {boolean} goalsAsked
  * @property {boolean} scoreShown The Candid score has appeared (recorded once).
+ * @property {boolean} [cashTourDone] The Cash page's tour finished or skipped.
+ * @property {boolean} [emailTileDismissed] The email tile on the Cash page closed.
+ * @property {boolean} [emergencyCardDismissed] Cash's emergency fund card closed while at its target.
  * @property {string[]} financialGoals
  * @property {string} houseTargetAmount
  * @property {string} houseTimeframe

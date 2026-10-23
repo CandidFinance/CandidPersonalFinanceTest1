@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { X } from "lucide-react";
 import { calcCashOptimisation } from "../../lib/cash.js";
 import { cashOpportunity, accountName } from "../../lib/assist.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -40,7 +41,7 @@ function AccountLines({ lines, rowStyle }) {
   });
 }
 
-export default function MobileCashDeepDive({ d, m, savingsRates }) {
+export default function MobileCashDeepDive({ d, m, savingsRates, set }) {
   const [openInfo, setOpenInfo] = useState(null); // "step1" | "step2" | null
   // Best rates moved for them since the last visit (visitNews.js): opening
   // Cash clears the badges outside it; the savings tile keeps its own until
@@ -77,8 +78,10 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
   const optimiseWinNumber = ++winCounter;
   const hasIsaList = !!products.products?.length, hasSavingsList = !!products.nonIsaProducts?.length;
 
+  // The Opportunity tile is the yearly loss alone; the emergency fund, a gap
+  // closed once rather than lost each year, is shown as progress in its own
+  // card below.
   const opportunityCols = [];
-  if (showEmergencyWin) opportunityCols.push({ label:"Short of your emergency fund", value: fmtCompact(m.emergencyShortfall) });
   if (gain > 50) opportunityCols.push({ label: opp ? "Lost to low rates, after tax" : "Lost to low rates", value: `${fmtCompact(gain)}/yr` });
 
   const runwayTarget = m.emergencyBuffer;
@@ -87,11 +90,17 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
   const runwayTierColor = runwayPctRaw >= 100 ? SUCCESS : runwayPctRaw >= 33 ? GOLD : CRITICAL;
   const runwayLabel = runwayPctRaw >= 150 ? "More than sufficient" : runwayPctRaw >= 100 ? "Sufficient" : runwayPctRaw >= 33 ? "Borderline" : "Insufficient";
   const runwayMarkerPct = runwayTarget > 0 ? Math.min(100, (runwayPctRaw / 200) * 100) : 0;
+  // A fund at its target can be closed; it comes back, and can be closed
+  // again, once savings fall below the target (`emergencyCardDismissed`).
+  const funded = runwayTarget > 0 && runwayPctRaw >= 100;
+  const fundHidden = funded && !!d.emergencyCardDismissed;
+  const belowTarget = runwayTarget > 0 && runwayPctRaw < 100;
+  useEffect(() => { if (belowTarget && d.emergencyCardDismissed && set) set("emergencyCardDismissed", false); }, [belowTarget, d.emergencyCardDismissed]);
 
   return (
     <div>
       {opportunityCols.length > 0 && (
-        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+        <div data-tour="figure" style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
             <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
           </div>
@@ -106,14 +115,27 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
         </div>
       )}
 
-      {/* The cash buffer, above the numbered tiles. */}
-      <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px",flexWrap:"wrap",gap:"6px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
-            <span style={{width:"8px",height:"8px",borderRadius:"50%",background:runwayTierColor,display:"inline-block"}}/>
-            <span style={{fontSize:"13px",fontWeight:600,color:G}}>Months of spending covered — {runwayLabel}</span>
+      {/* The emergency fund, above the numbered tiles: £ held of the
+          target, and months of spending covered. `data-tour`: lit up by the
+          Cash tour (CashTour.jsx), as are the tiles either side. */}
+      {!fundHidden && (
+      <div data-tour="fund" style={{position:"relative",background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"6px",paddingRight:funded && set ? "26px" : 0}}>
+          <span style={{fontSize:"10px",fontWeight:800,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>Emergency fund</span>
+          <span style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",fontWeight:600,color:G}}>
+            <span style={{width:"8px",height:"8px",borderRadius:"50%",background:runwayTierColor,display:"inline-block"}}/>{runwayLabel}
+          </span>
+        </div>
+        {funded && set && (
+          <button type="button" aria-label="Close" onClick={() => set("emergencyCardDismissed", true)}
+            style={{position:"absolute",top:"8px",right:"8px",background:"none",border:"none",padding:"6px",color:MUT,cursor:"pointer",display:"flex"}}><X size={18}/></button>
+        )}
+        <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:"10px",flexWrap:"wrap",margin:"8px 0 10px"}}>
+          <div style={{fontFamily:SERIF,fontWeight:700,color:TEXT,lineHeight:1.15}}>
+            <span style={{fontSize:"26px"}}>{fmt(runwayCurrent)}</span>
+            {runwayTarget > 0 && <span style={{fontSize:"17px",color:MUT}}> of {fmt(runwayTarget)}</span>}
           </div>
-          <span style={{fontSize:"12.5px",color:MUT}}>{m.runwayMonths.toFixed(1)} mo</span>
+          <span style={{fontSize:"12.5px",color:MUT}}>{m.runwayMonths.toFixed(1)} of {m.bufferMonths} mo</span>
         </div>
         <div style={{position:"relative",width:"100%",height:"12px",borderRadius:"6px",background:`linear-gradient(90deg,${CRITICAL} 0%,${GOLD} 33%,${SUCCESS} 60%,#1e4d35 100%)`}}>
           <div style={{position:"absolute",left:`${runwayMarkerPct}%`,top:"-3px",bottom:"-3px",width:"3px",borderRadius:"2px",background:WHITE,boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",transform:"translateX(-1.5px)"}}/>
@@ -124,22 +146,21 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
           <span style={{fontSize:"10px",color:MUT}}>{m.bufferMonths*2}mo+</span>
         </div>
       </div>
+      )}
 
       {showEmergencyWin && (
         <MobileWinTile number={emergencyWinNumber} title="Build your emergency fund"
-          headline={`${fmt(m.emergencyShortfall)} more needed to reach your ${m.bufferMonths}-month target`}
+          headline={monthsToCloseGap
+            ? `Your spare ${fmt(Math.round(m.monthlySurplus))} a month would close the gap in about ${monthsToCloseGap} month${monthsToCloseGap===1?"":"s"}`
+            : `A ${fmt(m.emergencyShortfall)} gap to your ${m.bufferMonths}-month target`}
           tagLabel="Priority" tagColor={CRITICAL}>
-          <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:monthsToCloseGap?"10px":0}}>
-            You hold {fmt(m.totalLiquid)} against a {fmt(m.emergencyBuffer)} target — a {fmt(m.emergencyShortfall)} gap. Sort this before any tax optimisation below.
+          <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,margin:0}}>
+            You hold {fmt(m.totalLiquid)} against a {fmt(m.emergencyBuffer)} target — a {fmt(m.emergencyShortfall)} gap.
           </p>
-          {monthsToCloseGap && (
-            <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.28)",borderRadius:"10px",padding:"10px 12px",fontSize:"12.5px",color:TEXT,lineHeight:1.5}}>
-              At your surplus of ~{fmt(Math.round(m.monthlySurplus))}/mo, putting it all aside closes this gap in ~{monthsToCloseGap} month{monthsToCloseGap===1?"":"s"}.
-            </div>
-          )}
         </MobileWinTile>
       )}
 
+      <div data-tour="working">
       <MobileWinTile number={optimiseWinNumber} title="Earn more on your savings"
         headline={totalPot<=0 ? "Add your cash details to see this" : gain>50 ? `Your savings lose ${fmt(gain)}/yr to low rates${opp ? ", after tax" : ""}` : "Your savings are already on good rates."}
         tagLabel="Today" open={savingsOpen} onOpenChange={openSavings}
@@ -242,6 +263,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
           <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>Add your cash savings and any Premium Bonds in your onboarding details to see a personalised allocation.</p>
         )}
       </MobileWinTile>
+      </div>
 
       {/* The provider lists, together and unnumbered: places to look, not
           steps. */}

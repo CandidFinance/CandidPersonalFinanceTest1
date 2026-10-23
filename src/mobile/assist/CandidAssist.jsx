@@ -332,7 +332,7 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
   return (
     <>
       {!state.open && (
-        <button type="button" onClick={() => update({ open: true, ...(state.step === "finished" && items.length ? { step: "overview" } : {}) })}
+        <button type="button" data-tour="assist" onClick={() => update({ open: true, ...(state.step === "finished" && items.length ? { step: "overview" } : {}) })}
           aria-label={`Open Candid Assist${news ? ", something new" : ""}`}
           style={{
             position: "fixed", zIndex: 4500, bottom: "calc(84px + env(safe-area-inset-bottom, 0px))", right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
