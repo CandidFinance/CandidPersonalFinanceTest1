@@ -13,6 +13,7 @@
 - Send broad investigation ("where is X used", "how does Y work") to a subagent, so the file dumps stay out of the main context.
 - Read files in line ranges, not whole. For UI checks, screenshot the component or viewport you changed, not the full page.
 - Report diagnosis before fixing a bug, unless told "just fix it". Don't touch code outside the task. Ask before installing tools or dependencies.
+- Stop every dev or preview server you start once the check that needed it is done. Old ones pile up and slow the machine.
 - When compacting, keep: the task goal, the files changed, what's been verified, and decisions Harvey made.
 
 ## Deploys and data (production)
@@ -24,7 +25,7 @@
 ## Product rules
 
 - Candid is a calculator, not an adviser. No directive copy ("start with X", numbered steps, "what to do first"). List opportunities neutrally, largest £ first. Never tie shares to the user's profile ("people like you"). Avoid "advice", "tailored plan", "action plan", "roadmap".
-- Never name the founder or their background on the site, including in JSON-LD. Say "a team". Company details go in the footer.
+- Never name the founder or their background (employers, qualifications) on the site, including in meta descriptions and JSON-LD. Describe the people behind Candid as a team who built it to solve their own problem. Company details go in the footer.
 
 ## Design Language & UI Rules
 
