@@ -1,9 +1,8 @@
 import { motion } from "framer-motion";
 import { G, WHITE, MUT, TEXT, SANS } from "../../design-tokens.js";
 
-// The pieces of Candid's conversations (the entry's "How Candid works", the
-// Chat tab's windfall check): message bubbles, the typing dots, and reply
-// buttons. Messages arrive as in WhatsApp or iMessage.
+// The pieces of Candid's conversations (the Chat tab's windfall check):
+// message bubbles, the typing dots, and reply buttons. Messages arrive as in WhatsApp or iMessage.
 
 // Grows from its tail corner (bottom left for Candid, bottom right for the
 // user). Its corners are set one by one so framer-motion keeps them round

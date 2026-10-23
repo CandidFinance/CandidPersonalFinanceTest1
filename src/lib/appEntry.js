@@ -29,11 +29,11 @@ export const MODULE_PITCH = {
   property:    "See what you could borrow, and whether buying beats renting.",
 };
 
-// Suggested first for "Just exploring": the module most people open first.
-// PostHog module_opened, first module per person, 90 days to 5 Oct 2026:
-// Pension 20, Cash 19, Investments 12, Student loan 7. Close enough that
-// this is one setting, to change as more data comes in.
-export const DEFAULT_FIRST_MODULE = "pension";
+// Where "Just exploring" goes, and what leads Home with no picks: Cash &
+// savings, the module the onboarding tour is built around (Harvey, 23 Oct
+// 2026). Before that it was Pension, the module most people opened first
+// (PostHog, 90 days to 5 Oct 2026: Pension 20, Cash 19).
+export const DEFAULT_FIRST_MODULE = "cash";
 
 // E1's answers. `goal` is the financialGoals entry the pick also sets.
 export const ENTRY_CHOICES = [
@@ -63,11 +63,6 @@ export function entryGoals(interests) {
   return ENTRY_CHOICES.filter(c => c.goal && (interests || []).includes(c.value)).map(c => c.goal);
 }
 
-// The entry's questions, run by the same walk-through as the modules
-// (GuidedFlow; question fields as in src/lib/propertyGuide.js): name first,
-// so the rest can use it. `also` gives the other saved inputs an answer sets
-// alongside its own field. What's good to have to hand and how Candid works
-// follow, on screens of their own (MobileEntryScreen).
 const firstName = d => (d.name || "").trim();
 
 // Saved to localStorage (candid_confidence_score) and onto the user's row:
@@ -85,12 +80,11 @@ export const CONFIDENCE_QUESTION = {
   ],
 };
 
+// The entry's one question, run by the same walk-through as the modules
+// (GuidedFlow; question fields as in src/lib/propertyGuide.js). `also` gives
+// the other saved inputs an answer sets alongside its own field. The first
+// name is asked with the email (SaveFiguresOffer), not here.
 export const ENTRY_QUESTIONS = [
-  {
-    id:"name", field:"name", kind:"text", label:"First name", required:true,
-    ask: () => "What should we call you?",
-    why: () => "Only used to talk to you in the app.",
-  },
   // How confident they feel is asked on Home once their first answer is in
   // (ConfidenceCard), not before anything's been shown.
   {
@@ -105,99 +99,23 @@ export const ENTRY_QUESTIONS = [
   },
 ];
 
-// Someone who came in on a link straight to a module (or Property) skips
-// the entry, so the app opens without their name. Before Home, Modules,
-// Forecast or Chat, they're taken through it, the first question owning up
-// to having skipped it, and the topics they'd like help with already set to
-// the one they came for. Not for anyone with an old report.
-export const needsCatchUp = (d, insights) => !insights && !!d.appEntered && !(typeof d.name === "string" && d.name.trim());
-export const CATCH_UP_PATHS = ["/app/home", "/app/progress", "/app/modules", "/app/forecast", "/app/chat"];
-export const CATCH_UP_QUESTIONS = ENTRY_QUESTIONS.map(q => q.id === "name"
-  ? { ...q, ask: () => "We didn't catch your name", why: () => "Before you look around: what should we call you? It's only used to talk to you in the app." }
-  : { ...q, ask: () => "What else would you like help with?", why: () => "We'll set up your modules around these. You can add the rest any time." });
-
-// The modules' names as the entry's messages say them.
-export const MODULE_NAMES = { pension:"Pension", cash:"Cash & savings", investments:"Investments", studentLoan:"Student loan", kids:"Kids & family", taxTrap:"£100k tax trap", property:"Buying a home" };
 // The first module picked at the entry, which the app opens straight after
-// it, and where it lives; null for "Just exploring".
-export const firstPick = d => pickedModules(d.interests)[0] || null;
+// it, and where it lives; DEFAULT_FIRST_MODULE for "Just exploring".
+export const firstPick = d => pickedModules(d.interests)[0] || DEFAULT_FIRST_MODULE;
 export const modulePath = key => key === "property" ? "/app/property" : `/app/module/${key}`;
-const listOf = names => names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-
-// "How Candid works": the messages Candid sends at the end of the entry,
-// in the first person, like talking to an adviser, and the replies the user
-// can give between them. The opener and the check-in vary (`variant`, picked
-// at random per visit) so it reads like a person, not a script.
-const OPENERS = [
-  n => `Good good${n ? `, ${n}` : ""}. Quick word on how I work.`,
-  n => `Right${n ? ` ${n}` : ""}, now that's out of the way, let's crack on.`,
-  n => `Final quick one from me${n ? `, ${n}` : ""}, before we dive in.`,
-];
-const CHECK_INS = ["All good?", "All clear?", "Comprende?", "Make sense?"];
-export const CHAT_VARIANTS = { openers: OPENERS.length, checkIns: CHECK_INS.length };
-
-export function entryChat(d, variant = { opener: 0, checkIn: 0 }) {
-  const name = firstName(d);
-  const picked = pickedModules(d.interests);
-  const modules = picked.length
-    ? [`Based on what you told me, I've set up modules for ${listOf(picked.map(k => MODULE_NAMES[k]))}.`, "They're where you're most likely to be losing money."]
-    : [`I've set up modules where people most often lose money, starting with ${MODULE_NAMES[DEFAULT_FIRST_MODULE]}.`];
-  return {
-    intro: [
-      OPENERS[variant.opener % OPENERS.length](name),
-      "I find where you're losing money because your setup isn't optimised.",
-      "I run your figures through UK tax rules and allowances, and work out what each option is worth in pounds.",
-      "I'm a calculator, not an adviser: I've no stake in what you choose, and the choice is always yours.",
-      "For most people, that's hundreds to thousands of pounds a year.",
-      CHECK_INS[variant.checkIn % CHECK_INS.length],
-    ],
-    understood: [{ value:"yes", label:"Yes, all good" }, { value:"no", label:"Not quite" }],
-    // Only after "Not quite": the same point, more plainly.
-    plainer: [
-      "No worries. Put simply, most people's money could be working harder for them.",
-      "I'll show you where, what it's worth each year, and what you could change. The choices are always yours.",
-    ],
-    how: [
-      ...modules,
-      "Open each one and give me a few basic figures.",
-      "I'll do the sums and show you the options as you go.",
-    ],
-    ready: { value:"ready", label:"All clear, ready to explore" },
-    last: "Lovely. Over to you.",
-  };
-}
 
 // How long a message takes to read, so the next one doesn't arrive before
-// it's been read: 330 words a minute (quicker than the 240 average for
-// silent reading, which felt slow in testing; up 10% from 300), plus a
-// moment to look. The messages are kept short so the whole intro takes
-// about 15 seconds.
+// it's been read (WindfallChat): 330 words a minute (quicker than the 240
+// average for silent reading, which felt slow in testing), plus a moment
+// to look.
 export const READING_WPM = 330;
 export function readingMs(text) {
   const words = String(text).trim().split(/\s+/).filter(Boolean).length;
   return 300 + Math.round(words * 60000 / READING_WPM);
 }
 
-// What's good to have to hand: salary always; then each picked topic's
-// figures, rough is fine. Savings and investments share one line (where
-// the money sits). "Just exploring" gets the pension and the money lines.
-const TO_HAND = {
-  pension:     [{ what:"An idea of your pension", where:"What you pay in, what your employer pays in, and what the pot's worth." }],
-  money:       [{ what:"An idea of where your money sits", where:"Savings accounts, ISAs, investments, Premium Bonds, or cash under the mattress." }],
-  studentLoan: [{ what:"Your student loan plan and balance", where:"Not sure? We can work it out with you." }],
-  kids:        [{ what:"What you pay for childcare a month", where:"Nursery, childminder, clubs and holiday care." }],
-  property:    [{ what:"What you've saved towards a deposit" },
-                { what:"Roughly what you'd like to spend on a home" }],
-};
-const TO_HAND_TOPIC = { pension:"pension", cash:"money", investments:"money", studentLoan:"studentLoan", kids:"kids", property:"property" };
-export function toHandFor(interests) {
-  const exploring = (interests || []).includes("exploring") || !(interests || []).length;
-  const topics = exploring ? ["pension", "money"] : [...new Set(pickedModules(interests).map(k => TO_HAND_TOPIC[k]))];
-  return [{ what:"Your salary" }, ...topics.flatMap(t => TO_HAND[t] || [])];
-}
-
 // Whether the app is open to this user: they've had a report (everyone who
-// used Candid before the two-question entry) or they've been through it.
+// used Candid before the entry) or they've been through it.
 export function appUnlocked(d, insights) {
   return !!insights || !!d.appEntered;
 }

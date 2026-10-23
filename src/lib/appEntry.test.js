@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { entryGoals, toHandFor, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION, entryChat, readingMs,
-  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, needsCatchUp, CATCH_UP_QUESTIONS, modulesInView, dormantModules, isNewModule, worthALookShown } from "./appEntry.js";
+import { entryGoals, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION, readingMs,
+  doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, modulesInView, dormantModules, isNewModule, worthALookShown } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["cash", "pension", "property"]), ["emergency_fund", "buy_house"]);
@@ -9,24 +9,18 @@ test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["exploring"]), ["exploring"]);
 });
 
-test("the entry asks name, then interests, each with a short reason (confidence comes after the first answer)", () => {
-  assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["name", "interests"]);
+test("the entry asks one question, interests, with a short reason (name comes with the email, confidence after the first answer)", () => {
+  assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["interests"]);
   for (const q of ENTRY_QUESTIONS) assert.ok(q.why().split(/\s+/).length <= 15, q.id);
-  assert.deepEqual(ENTRY_QUESTIONS[1].also(["property"]), { financialGoals: ["buy_house"] });
+  assert.deepEqual(ENTRY_QUESTIONS[0].also(["property"]), { financialGoals: ["buy_house"] });
   assert.equal(firstPick({ interests: ["cash", "retirement"] }), "pension");
-  assert.equal(firstPick({ interests: ["exploring"] }), null);
+  // Just exploring goes to Cash & savings, the tour module.
+  assert.equal(firstPick({ interests: ["exploring"] }), "cash");
   assert.equal(modulePath("property"), "/app/property");
   assert.equal(CONFIDENCE_QUESTION.ask({ d: { name: " Sam " } }), "How confident do you feel about your finances, Sam?");
 });
 
-test("how Candid works names the modules picked, or the default for just exploring", () => {
-  assert.match(entryChat({ interests: ["cash", "retirement", "property"] }).how[0], /modules for Pension, Cash & savings and Buying a home\./);
-  assert.match(entryChat({ interests: ["exploring"] }).how[0], /starting with Pension\./);
-  assert.match(entryChat({ name: "Sam" }, { opener: 1, checkIn: 2 }).intro[0], /^Right Sam, now that's out of the way/);
-  assert.equal(entryChat({}, { opener: 0, checkIn: 2 }).intro.at(-1), "Comprende?");
-});
-
-test("each message waits for the one before to be read, at 300 words a minute", () => {
+test("each message waits for the one before to be read, at 330 words a minute", () => {
   assert.equal(readingMs("one two three four five six seven eight nine ten"), 300 + 1818);
 });
 
@@ -69,7 +63,7 @@ test("the confidence check keeps the 1 to 5 scale its saved scores use", () => {
   assert.ok(CONFIDENCE_QUESTION.why().split(/\s+/).length <= 15);
 });
 
-test("the app opens with a report, or after the two-question entry", () => {
+test("the app opens with a report, or after the entry", () => {
   assert.equal(appUnlocked({}, null), false);
   assert.equal(appUnlocked({}, { score: 60 }), true);
   assert.equal(appUnlocked({ appEntered: true }, null), true);
@@ -88,9 +82,10 @@ test("picks come first in the order offered, then the rest", () => {
     ["cash", "studentLoan", "pension", "investments", "kids", "property"]);
 });
 
-test("just exploring leads with the module most people start with", () => {
+test("just exploring leads with Cash & savings", () => {
   const order = moduleOrder({ interests: ["exploring"] });
   assert.equal(order[0], DEFAULT_FIRST_MODULE);
+  assert.equal(DEFAULT_FIRST_MODULE, "cash");
   // The £100k tax trap only near or over £100,000.
   assert.deepEqual([...order].sort(), START_MODULES.filter(k => k !== "taxTrap").sort());
 });
@@ -129,27 +124,8 @@ test("Property never locks the score: picked at the entry, or set by a shared Pr
   assert.deepEqual(unfinishedPicks({ interests: ["pension", "cash", "property"], selectedModules: ["pension", "cash"] }), ["property"]);
 });
 
-test("good to have to hand: salary, then each picked topic, savings and investments as one line", () => {
-  const whats = interests => toHandFor(interests).map(i => i.what);
-  assert.deepEqual(whats(["studentLoan"]), ["Your salary", "Your student loan plan and balance"]);
-  assert.deepEqual(whats(["cash", "investments"]), ["Your salary", "An idea of where your money sits"]);
-  assert.deepEqual(whats(["exploring"]), ["Your salary", "An idea of your pension", "An idea of where your money sits"]);
-  assert.deepEqual(whats(["retirement"]), ["Your salary", "An idea of your pension"]);
-});
-
 test("retirement planning leads to the Pension module", () => {
   assert.deepEqual(pickedModules(["retirement", "cash"]), ["pension", "cash"]);
   assert.equal(moduleOrder({ interests: ["retirement"] })[0], "pension");
   assert.deepEqual(entryGoals(["retirement"]), ["retirement"]);
-});
-
-test("in on a module link without a name: caught up before the main pages, not anyone else", () => {
-  assert.equal(needsCatchUp({ appEntered: true, name: "" }, null), true);
-  assert.equal(needsCatchUp({ appEntered: true, name: "  " }, null), true);
-  assert.equal(needsCatchUp({ appEntered: true, name: "Sam" }, null), false);
-  // Not in the app yet (the entry itself handles them), or an old report.
-  assert.equal(needsCatchUp({ appEntered: false, name: "" }, null), false);
-  assert.equal(needsCatchUp({ appEntered: true, name: "" }, { score: 70 }), false);
-  assert.deepEqual(CATCH_UP_QUESTIONS.map(q => q.id), ["name", "interests"]);
-  assert.equal(CATCH_UP_QUESTIONS[0].ask(), "We didn't catch your name");
 });

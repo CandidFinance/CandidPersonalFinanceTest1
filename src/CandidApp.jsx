@@ -35,7 +35,7 @@ import { MODULE_REVEALS } from "./lib/moduleReveal.js";
 import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
 import { bankChange } from "./lib/moduleStatus.js";
 import { moduleLimits } from "./lib/moduleLimits.js";
-import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, needsCatchUp, CATCH_UP_PATHS, loanSavingsIn, loanPensionChecked, hasEmployerMatch, loanVerdictReady } from "./lib/appEntry.js";
+import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, loanSavingsIn, loanPensionChecked, hasEmployerMatch, loanVerdictReady } from "./lib/appEntry.js";
 import { moduleGuideStarts, briefQuestions } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
 import { readinessMissing } from "./lib/propertyReadiness.js";
@@ -596,28 +596,8 @@ export default function AppShell() {
     if (linkedModule) return null;
     return <Navigate to="/" replace />;
   }
-  // In on a module link, so past the entry without a name: the entry, before
-  // Home, Modules, Forecast or Chat (appEntry.js needsCatchUp), then on to
-  // where they were heading. The catch-up is carried in the history entry's
-  // state, so answering the name partway through doesn't end it.
-  if (CATCH_UP_PATHS.includes(pathname) && needsCatchUp(d, insights)) {
-    return <Navigate to="/app/start" replace state={{ catchUp: pathname }}/>;
-  }
-
   // The entry. Anyone the app is already open to goes home.
   if (pathname === "/app/start") {
-    const then = location.state?.catchUp;
-    if (then && appUnlocked(d, insights)) {
-      const label = { "/app/home": "Go to Home", "/app/progress": "See my progress", "/app/modules": "See my modules", "/app/forecast": "See my forecast", "/app/chat": "Open the chat" }[then] || "Carry on";
-      return (
-        <MobileEntryScreen catchUp doneLabel={label} d={d} m={m} set={set} onDone={() => {
-          posthog.capture("entry_caught_up", { to: then, interests: (d.interests || []).join(",") });
-          // Their name and picks onto the row made when the link let them in.
-          setRowSaveTick(t => t + 1);
-          navigate(then, { replace: true });
-        }}/>
-      );
-    }
     if (appUnlocked(d, insights)) return <Navigate to="/app/home" replace />;
     return (
       <MobileEntryScreen d={d} m={m} set={set} onDone={() => {
@@ -627,12 +607,11 @@ export default function AppShell() {
         // New users unlock each module's answer (src/lib/unlock.js).
         if (UNLOCK_GATE_ON) set("unlockGate", true);
         posthog.capture("app_entered", { interests: (d.interests || []).join(",") });
-        // The user's row from the start (name and interests), not only once
-        // a report exists. The report still adds its own row when it's made.
+        // The user's row from the start (their interests), not only once a
+        // report exists. The report still adds its own row when it's made.
         insertReportRow(null);
-        // Straight into the first module they picked; Home for "Just exploring".
-        const pick = firstPick(d);
-        navigate(pick ? modulePath(pick) : "/app/home");
+        // Straight into the first module they picked; Cash for "Just exploring".
+        navigate(modulePath(firstPick(d)));
       }}/>
     );
   }
@@ -873,8 +852,9 @@ export default function AppShell() {
             } : null}
             footer={<>
               {/* The email, asked for now the answer's theirs (unlock.js). */}
-              <SaveFiguresOffer d={d} moduleKey={mobileActiveModule} onEmail={email => {
+              <SaveFiguresOffer d={d} moduleKey={mobileActiveModule} onEmail={(email, name) => {
                 set("email", email); set("alertsOptIn", true);
+                set("name", name);
                 posthog.capture("email_captured", { source: "after_answer", module: mobileActiveModule });
                 setUnlockSaveTick(t => t + 1);
               }}/>
