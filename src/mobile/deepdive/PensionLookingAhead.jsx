@@ -6,7 +6,7 @@ import { taxYearFor } from "../../lib/taxYear.js";
 import { AlertTriangle, PiggyBank, Users, CalendarClock, ChevronRight, ChevronDown } from "lucide-react";
 import { LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "../../lib/pension.js";
 import { fmt, fmtBig } from "../../lib/format.js";
-import { G, MUT, TEXT, SERIF, SUCCESS } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, SUCCESS, ERROR_TEXT } from "../../design-tokens.js";
 import MobileWinTile from "../MobileWinTile.jsx";
 import { ADVISER_LINK } from "../GuidanceNote.jsx";
 
@@ -59,20 +59,22 @@ function AmountBar({ label, value, color, scale, size = 17, pounds = fmt }) {
 // The cliff edge: the pot passing the tax-free cash limit, with what £100
 // paid in becomes before and after it, against an ISA (crossModule.js
 // cliffEdge). Leads on to Looking ahead for what it means and the options.
+// In red, not amber: it's the most serious flag on the screen, and amber
+// was lost against the cream. Amber stays for Looking ahead's figures.
 const AMBER = "#b7791f";
 export function CliffEdge({ cliff, onSeeMore }) {
   const [open, setOpen] = useState(false);
   const bars = [
     { label: "In your pension, before the limit", value: cliff.before, color: SUCCESS },
-    { label: "In your pension, after the limit", value: cliff.after, color: AMBER },
+    { label: "In your pension, after the limit", value: cliff.after, color: ERROR_TEXT },
     { label: "In an ISA", value: cliff.isa, color: G },
   ];
   const scale = Math.max(...bars.map(b => b.value));
   return (
-    <div style={{background:"#fdf6ea",border:"1.5px solid rgba(183,121,31,0.35)",borderRadius:"12px",padding:"12px 14px",marginTop:"16px"}}>
+    <div style={{background:"#fdecea",border:"1.5px solid rgba(179,38,30,0.45)",borderRadius:"12px",padding:"12px 14px",marginTop:"16px"}}>
       <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
         style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
-        <AlertTriangle size={18} color={AMBER} style={{flexShrink:0}}/>
+        <AlertTriangle size={18} color={ERROR_TEXT} style={{flexShrink:0}}/>
         <span style={{flex:1,fontSize:"14px",fontWeight:700,color:TEXT,lineHeight:1.35}}>
           {cliff.already ? "Your pot is past the tax-free cash limit" : `Your pot could reach the tax-free cash limit around age ${cliff.age}`}
         </span>

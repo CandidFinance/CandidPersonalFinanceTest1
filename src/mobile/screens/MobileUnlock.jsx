@@ -190,7 +190,9 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
     setBusy(false);
   };
 
-  const card = on => ({ flex:1, textAlign:"left", background:WHITE, border:`2px solid ${on ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"14px", padding:"12px 14px", cursor:"pointer", fontFamily:"inherit" });
+  // Each plan's name and price at the top, level across both cards (a
+  // button centres its content, and the yearly card is taller).
+  const card = on => ({ flex:1, display:"flex", flexDirection:"column", justifyContent:"flex-start", textAlign:"left", background:WHITE, border:`2px solid ${on ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"14px", padding:"12px 14px", cursor:"pointer", fontFamily:"inherit" });
   const link = { background:"none", border:"none", padding:0, color:G, fontSize:"12.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
   const fine = { color:MUT, textDecoration:"underline", whiteSpace:"nowrap" };
   return (

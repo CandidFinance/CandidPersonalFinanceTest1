@@ -9,16 +9,15 @@ test("only gated users, and only scored modules, are locked", () => {
   assert.equal(isLocked({ unlockGate: true, unlockedModules: ["cash"] }, "cash"), false);
 });
 
-test("the first answer is theirs for their email; with it already known, it unlocks by itself", () => {
+test("the first answer is free, with no email asked; it unlocks by itself", () => {
   const d = { unlockGate: true };
-  assert.equal(firstUnlockPatch(d, "studentLoan"), null);
-  assert.equal(unlockAsk(d).kind, "email");
+  assert.deepEqual(firstUnlockPatch(d, "studentLoan"), { unlockedModules: ["studentLoan"] });
+  assert.equal(unlockAsk(d).kind, "free");
   const known = { ...d, email: "sam@example.com" };
   assert.deepEqual(firstUnlockPatch(known, "studentLoan"), { unlockedModules: ["studentLoan"] });
-  assert.equal(unlockAsk(known).kind, "free");
   assert.equal(firstUnlockPatch({ ...known, unlockedModules: ["cash"] }, "pension"), null);
   assert.equal(firstUnlockPatch({}, "cash"), null);
-  // Giving the email unlocks it and keeps the email.
+  // An email given to unlock (FIRST_ANSWER_FREE off) unlocks it and keeps the email.
   assert.deepEqual(unlockPatch(d, "cash", { kind: "email" }, { email: " sam@example.com ", callOk: true }),
     { unlockedModules: ["cash"], email: "sam@example.com", unlockEmailGiven: true, unlockCallOk: true });
 });
@@ -47,6 +46,6 @@ test("arriving on a friend's invite makes the second answer free, and only the s
   assert.deepEqual(unlockAsk(one, false, true), { kind: "free", invite: true });
   assert.equal(unlockAsk(one, false, false).kind, "pay");
   assert.equal(unlockAsk({ ...one, unlockedModules: ["cash", "pension"] }, false, true).kind, "pay");
-  // The first answer still asks for their email.
-  assert.equal(unlockAsk({ unlockGate: true }, false, true).kind, "email");
+  // The first answer is free either way.
+  assert.equal(unlockAsk({ unlockGate: true }, false, true).kind, "free");
 });

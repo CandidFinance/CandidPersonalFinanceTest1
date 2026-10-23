@@ -16,6 +16,7 @@ import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
 import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
+import SaveFiguresOffer from "./mobile/SaveFiguresOffer.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import { checkAccessOnLoad, accessInfo, saveStateSoon, identifySubscriber } from "./lib/entitlement.js";
@@ -969,7 +970,15 @@ export default function AppShell() {
                 scrollToTop();
               },
             } : null}
-            footer={<InviteFriends d={d} source="reveal" moduleKey={mobileActiveModule}/>}
+            footer={<>
+              {/* The email, asked for now the answer's theirs (unlock.js). */}
+              <SaveFiguresOffer d={d} moduleKey={mobileActiveModule} onEmail={email => {
+                set("email", email); set("alertsOptIn", true);
+                posthog.capture("email_captured", { source: "after_answer", module: mobileActiveModule });
+                setUnlockSaveTick(t => t + 1);
+              }}/>
+              <InviteFriends d={d} source="reveal" moduleKey={mobileActiveModule}/>
+            </>}
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
               setRevealModule(null);

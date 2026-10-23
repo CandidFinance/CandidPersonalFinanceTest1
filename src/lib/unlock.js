@@ -1,6 +1,7 @@
 // Unlocking module answers. Each module's answer (its reveal, its page, and
 // what Assist says about it) stays hidden until it's unlocked. The first
-// module's answer is theirs for their email; every one after that needs a
+// module's answer is free, with no email asked first (FIRST_ANSWER_FREE; the
+// email is offered after the answer, SaveFiguresOffer.jsx); every one after that needs a
 // subscription (src/lib/entitlement.js, api/billing.js), which unlocks them
 // all. Every module's questions can be answered free, and its £ figure is
 // shown (it adds to their total); what's behind the paywall is why, and
@@ -20,6 +21,11 @@ import { validEmailShape } from "./emailCheck.js";
 import { hasReferralBonus } from "./referral.js";
 
 export const UNLOCK_GATE_ON = true;
+
+// From 23 Oct 2026 the first answer is free outright: asking for an email
+// before it felt like being locked out of their own answer. false puts the
+// email back in front of it.
+export const FIRST_ANSWER_FREE = true;
 
 // The local dev server (`npm run dev`) skips the gate, so every module and
 // Assist can be worked on without paying. Production builds and the tests
@@ -60,17 +66,18 @@ export const UNLOCK_QUESTIONS = [
   ] },
 ];
 
-// The first module finished unlocks by itself only when Candid already has
-// their email (a subscriber signing in, say): the patch to apply when a
+// The first module finished unlocks by itself (with FIRST_ANSWER_FREE off,
+// only when Candid already has their email): the patch to apply when a
 // gated user with nothing unlocked yet finishes `key`, or null, in which
 // case its answer asks for their email (unlockAsk).
 export function firstUnlockPatch(d, key, paid = hasAccess()) {
-  if (!isLocked(d, key, paid) || (d.unlockedModules || []).length || !validEmail(d.email)) return null;
+  if (!isLocked(d, key, paid) || (d.unlockedModules || []).length || !(FIRST_ANSWER_FREE || validEmail(d.email))) return null;
   return { unlockedModules: [key] };
 }
 
-// What unlocking the next module asks for: the first answer, their email
-// ({ kind: "email" }; nothing if Candid has it already), then a
+// What unlocking the next module asks for: the first answer, nothing
+// (with FIRST_ANSWER_FREE off, their email, { kind: "email" }, unless
+// Candid has it already), then a
 // subscription ("pay"). The feedback questions (UNLOCK_QUESTIONS) are no
 // longer asked here; unlockPatch still records an answer to one.
 // Arriving on a friend's invite (referral.js) makes the second answer free
@@ -78,7 +85,7 @@ export function firstUnlockPatch(d, key, paid = hasAccess()) {
 export function unlockAsk(d, paid = hasAccess(), invited = hasReferralBonus()) {
   if (paid) return { kind: "free" };
   const unlocked = (d.unlockedModules || []).length;
-  if (!unlocked) return validEmail(d.email) ? { kind: "free" } : { kind: "email" };
+  if (!unlocked) return FIRST_ANSWER_FREE || validEmail(d.email) ? { kind: "free" } : { kind: "email" };
   if (invited && unlocked === 1) return { kind: "free", invite: true };
   return { kind: "pay" };
 }
