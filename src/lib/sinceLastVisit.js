@@ -83,7 +83,7 @@ export function sinceLastVisit(prev, d, m, rows, today = new Date()) {
   }
 
   const captured = now.captured - (prev.captured || 0);
-  if (captured >= 1) lines.push({ label: "Captured", text: `${fmt(captured)} more from the changes you've made.` });
+  if (captured >= 1) lines.push({ label: "Saved", text: `${fmt(captured)} more from the changes you've made.` });
 
   if (prev.taxYear && m.taxYear > prev.taxYear) {
     lines.push({ label: "New tax year", text: `it started on 6 April, with a fresh ${fmt(ISA_ALLOWANCE)} ISA allowance.` });

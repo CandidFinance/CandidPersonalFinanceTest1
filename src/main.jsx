@@ -194,7 +194,7 @@ function WelcomeBack({ name, insightsDate, onViewReport, onUpdateInputs, onStart
 }
 
 // The old report flow (questions at /assessment, an AI-written report at
-// /dashboard, the desktop modules) is switched off: each old address goes
+// /dashboard, the desktop modules) is switched off, and the questions are gone: each old address goes
 // to the app's own page for it (advice-vs-guidance review, fix 5).
 function LegacyRedirect({ to }) {
   const params = useParams();
@@ -207,15 +207,15 @@ function LegacyRedirect({ to }) {
 // redirect always land here (never inside the app — the API callback
 // redirects to the site root, and the hosted payment page redirects straight
 // to return_uri with no server hop), so this checks for those params first
-// and forwards into the wizard's Cash & savings step (route 5 — it shares
-// ALL_STEP_DEFS' step numbering, and already has its own TrueLayer connect
-// UI) with the query string intact, instead of ever rendering the marketing
-// page.
+// and forwards to Edit inputs, open on Cash & savings, with the query string
+// intact (CandidApp reads it on mount), instead of ever rendering the
+// marketing page. Not the module page: for someone not in the app yet, that
+// counts as arriving on a shared module link.
 function RootRoute() {
   const search = new URLSearchParams(window.location.search);
   const isTrueLayerBounce = search.get('truelayer') || search.get('truelayer_payment');
   if (isTrueLayerBounce) {
-    return <Navigate to={`/app/assessment/5${window.location.search}`} replace />;
+    return <Navigate to={`/app/inputs?open=cash&${window.location.search.slice(1)}`} replace />;
   }
   return <Suspense fallback={<Prerendered />}><LandingPage /></Suspense>;
 }
@@ -243,8 +243,7 @@ function WelcomeBackRoute() {
       insightsDate={(() => { try { return localStorage.getItem('candid_insights_date'); } catch(e) { reportStorageFailure("welcome_back_insights_date", e); return null; } })()}
       onViewReport={() => { navigate("/app/home"); window.scrollTo({ top:0, behavior:"instant" }); }}
       onUpdateInputs={() => {
-        try { localStorage.removeItem('candid_insights'); localStorage.removeItem('candid_insights_date'); } catch(e) { reportStorageFailure("update_inputs_clear", e); }
-        navigate("/app/assessment/1");
+        navigate("/app/inputs");
         window.scrollTo({ top:0, behavior:"instant" });
       }}
       onStartFresh={() => {
@@ -307,7 +306,8 @@ function AppRoutes() {
         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
         <Route path="/admin/rates" element={<Suspense fallback={null}><RatesAdmin /></Suspense>} />
         <Route path="/admin/alerts" element={<Suspense fallback={null}><AlertsAdmin /></Suspense>} />
-        <Route path="/assessment/:step" element={<LegacyRedirect to={p => `/app/assessment/${p.step}`} />} />
+        <Route path="/assessment/:step" element={<LegacyRedirect to={() => "/app/home"} />} />
+        <Route path="/app/assessment/:step" element={<LegacyRedirect to={() => "/app/home"} />} />
         <Route path="/dashboard" element={<LegacyRedirect to={() => "/app/home"} />} />
         <Route path="/modules" element={<LegacyRedirect to={() => "/app/modules"} />} />
         <Route path="/forecast" element={<LegacyRedirect to={() => "/app/forecast"} />} />
@@ -328,7 +328,6 @@ function AppRoutes() {
           <Route path="/app/property" />
           <Route path="/app/property/mortgage" />
           <Route path="/app/property/rent-vs-buy" />
-          <Route path="/app/assessment/:step" />
           <Route path="/app/start" />
         </Route>
         {/* The server answers unknown addresses with 404.html (vercel.json);

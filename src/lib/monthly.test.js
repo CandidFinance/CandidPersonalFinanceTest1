@@ -29,7 +29,7 @@ test("their figures: net worth, what's been captured, this year's goals, the ISA
   assert.equal(c.subject, "Your November check-in");
   const byLabel = Object.fromEntries(c.figures.map(f => [f.label, f.text]));
   assert.match(byLabel["Net worth"], /^£\d/);
-  assert.match(byLabel.Captured, /so far this tax year, from changes worth £240 a year\./);
+  assert.match(byLabel.Saved, /so far this tax year, from changes worth £240 a year\./);
   assert.match(byLabel["This year's goals"], /% of the way, \d of \d reached\./);
   assert.match(byLabel.ISA, /^£10,000 of the £20,000 allowance used, with 155 days to 5 April\.$/);
   assert.equal(byLabel.Holiday, "£1,200 of £3,000.");

@@ -80,7 +80,7 @@ export function monthlyCheckIn(rawD, { today = new Date(), rows = [], sent = [] 
   const figures = [];
   figures.push({ label: "Net worth", text: `${netWorth < 0 ? "−" : ""}${fmt(netWorth)}${change ? `, ${change}` : ""}.` });
   if (gained.count > 0) {
-    figures.push({ label: "Captured", text: `${fmt(gained.total)} so far this tax year, from changes worth ${fmt(gained.perYear)} a year.` });
+    figures.push({ label: "Saved", text: `${fmt(gained.total)} so far this tax year, from changes worth ${fmt(gained.perYear)} a year.` });
   }
   if (snap.annual.total > 0) {
     figures.push({ label: "This year's goals", text: `${snap.annual.pct}% of the way, ${snap.annual.hits} of ${snap.annual.total} reached.` });

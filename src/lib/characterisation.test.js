@@ -28,7 +28,6 @@ import { calcDrawdown, bestDrawdown } from "./drawdown.js";
 import { calcStudentLoanScenario, calcOverpaymentScenarios } from "./studentLoan.js";
 import { calcCashOptimisation } from "./cash.js";
 import { calcAnnualAllowanceRoom, calcBonusSacrificePotential, calcPensionGrowthTrajectory } from "./pension.js";
-import { getActiveSteps } from "./onboarding.js";
 import { rollTaxYear } from "./taxYear.js";
 import { getModuleProducts } from "../mobile/moduleProducts.js";
 import { rowInputFields, rowReportFields, propertyRowFields } from "./reportRow.js";
@@ -159,7 +158,6 @@ function runProfile(raw, market) {
   const rvbIn = rentVsBuyInputs(d, m, REGIONAL, "moderate", market);
   const sl = calcStudentLoanScenario(d, m);
   return {
-    activeSteps: attempt(() => getActiveSteps(d).map(s => s.id)),
     metrics: plain(m),
     statuses: plain(statuses),
     score: calcCandidScore(statuses),

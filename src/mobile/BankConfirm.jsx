@@ -21,7 +21,7 @@ export default function BankConfirm({ d, set, moduleKey, title, amount, compact 
   return (
     <div onClick={e => e.stopPropagation()} style={{background:"rgba(45,107,74,0.07)",border:"1px solid rgba(45,107,74,0.2)",borderRadius:"12px",padding:compact ? "10px 12px" : "14px 16px",margin:compact ? "0 18px 14px" : "0 0 16px"}}>
       <div style={{fontSize:compact ? "13px" : "14px",fontWeight:700,color:TEXT,lineHeight:1.4}}>{title} is down {fmt(pending)} a year</div>
-      <p style={{fontSize:compact ? "12px" : "13px",color:MUT,lineHeight:1.5,margin:"3px 0 10px"}}>Did you make a change, or correct a figure? Only changes you've made count as banked.</p>
+      <p style={{fontSize:compact ? "12px" : "13px",color:MUT,lineHeight:1.5,margin:"3px 0 10px"}}>Did you make a change, or correct a figure? Only changes you've made count as saved.</p>
       <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
         <button type="button" onClick={() => answer(true)} style={button(true)}>I made the change</button>
         <button type="button" onClick={() => answer(false)} style={button(false)}>Just correcting</button>

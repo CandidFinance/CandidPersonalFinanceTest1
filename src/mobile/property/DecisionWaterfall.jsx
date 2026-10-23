@@ -83,9 +83,9 @@ function linkedModule(key, selected) {
   return null;
 }
 
-// `onAddInputs(stepId)` opens an existing onboarding step ("cash",
-// "investments", "about") so a missing figure is entered where it normally
-// lives, never asked twice. `onOpenModule(key)` opens a module deep dive.
+// `onAddInputs(stepId)` opens where a missing figure ("cash", "investments",
+// "about") is normally entered: the module's walk-through, or its tile on
+// Edit inputs, so it's never asked twice. `onOpenModule(key)` opens a module deep dive.
 export default function DecisionWaterfall({ d, m, set, onAddInputs, onOpenModule }) {
   const selected = new Set(d.selectedModules || []);
   const line = { fontSize:"13.5px", color:TEXT, lineHeight:1.5, margin:0 };

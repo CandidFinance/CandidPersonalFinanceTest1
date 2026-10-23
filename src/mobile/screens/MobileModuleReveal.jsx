@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft, CircleAlert, Check } from "lucide-react";
+import { CircleAlert, Check } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
+import { ShellTopRow, PrimaryButton, SkipLink } from "../onboarding/OnboardingShell.jsx";
 
 // A module's answer in three steps (src/lib/moduleReveal.js): the answer,
 // why, and what the user could do, one at a time with the same movement as
@@ -51,10 +52,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
         </div>
       </div>}
 
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{index + 1} of {steps.length}</span>
-        <button type="button" onClick={() => onDone("skipped", index + 1)} style={textLink}>Skip to everything</button>
-      </div>
+      <ShellTopRow onBack={index > 0 ? () => go(-1) : null} position={index + 1} total={steps.length}/>
 
       {/* The step itself sits in a card, like the result card it replaces. */}
       <AnimatePresence mode="wait" custom={direction} initial={true}>
@@ -78,23 +76,16 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
       </AnimatePresence>
       {last && limits && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"12px 2px 0"}}>{limits}</p>}
 
-      <button type="button" onClick={() => last ? (lastAction ? lastAction.onClick() : onDone("finished", steps.length)) : go(1)} style={{
-        width:"100%", marginTop:"18px", background:G, color:WHITE, border:"none", borderRadius:"100px", padding:"13px",
-        fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
-      }}>
+      <PrimaryButton onClick={() => last ? (lastAction ? lastAction.onClick() : onDone("finished", steps.length)) : go(1)} style={{marginTop:"18px"}}>
         {last ? (lastAction ? lastAction.label : doneLabel) : "Next"}
-      </button>
+      </PrimaryButton>
       {last && lastAction && (
         <div style={{textAlign:"center",marginTop:"8px"}}>
           <button type="button" onClick={() => onDone("finished", steps.length)} style={{...textLink,fontSize:"13.5px"}}>{doneLabel}</button>
         </div>
       )}
       {last && footer}
-      {index > 0 && (
-        <button type="button" onClick={() => go(-1)} style={{...textLink,color:MUT,display:"inline-flex",alignItems:"center",gap:"2px",marginTop:"14px",fontSize:"13px"}}>
-          <ChevronLeft size={15}/>Back
-        </button>
-      )}
+      {!last && <SkipLink label="Skip to everything" onClick={() => onDone("skipped", index + 1)}/>}
     </div>
   );
 }

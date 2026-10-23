@@ -1,17 +1,6 @@
 {
  "full": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 72000,
     "expenses": 2200,
@@ -2966,17 +2955,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 72000,
     "expenses": 2200,
@@ -5680,16 +5658,6 @@
  },
  "maxedIsa": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension"
-   ],
    "metrics": {
     "salary": 48000,
     "expenses": 1800,
@@ -8278,16 +8246,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension"
-   ],
    "metrics": {
     "salary": 48000,
     "expenses": 1800,
@@ -10707,16 +10665,6 @@
  },
  "largeSurplus": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension"
-   ],
    "metrics": {
     "salary": 95000,
     "expenses": 1600,
@@ -13354,16 +13302,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension"
-   ],
    "metrics": {
     "salary": 95000,
     "expenses": 1600,
@@ -15788,14 +15726,6 @@
  },
  "freshMinimal": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash"
-   ],
    "metrics": {
     "salary": 26000,
     "expenses": 1200,
@@ -17351,14 +17281,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash"
-   ],
    "metrics": {
     "salary": 26000,
     "expenses": 1200,
@@ -18753,17 +18675,6 @@
  },
  "taper110k": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 112000,
     "expenses": 3500,
@@ -21543,17 +21454,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 112000,
     "expenses": 3500,
@@ -24108,17 +24008,6 @@
  },
  "veryHigh": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 240000,
     "expenses": 6000,
@@ -26714,17 +26603,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 240000,
     "expenses": 6000,
@@ -29196,16 +29074,6 @@
  },
  "selfEmployed": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension"
-   ],
    "metrics": {
     "salary": 60000,
     "expenses": 1800,
@@ -31849,16 +31717,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension"
-   ],
    "metrics": {
     "salary": 60000,
     "expenses": 1800,
@@ -34258,17 +34116,6 @@
  },
  "plan4": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 38000,
     "expenses": 1800,
@@ -37563,17 +37410,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 38000,
     "expenses": 1800,
@@ -40699,17 +40535,6 @@
  },
  "plan5": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 29000,
     "expenses": 1400,
@@ -44385,17 +44210,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 29000,
     "expenses": 1400,
@@ -47910,17 +47724,6 @@
  },
  "postgrad": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 52000,
     "expenses": 1800,
@@ -50803,17 +50606,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 52000,
     "expenses": 1800,
@@ -53527,17 +53319,6 @@
  },
  "nearRetirement": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 68000,
     "expenses": 1800,
@@ -56227,17 +56008,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 68000,
     "expenses": 1800,
@@ -58713,16 +58483,6 @@
  },
  "pastRetirement": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension"
-   ],
    "metrics": {
     "salary": 0,
     "expenses": 1800,
@@ -61358,16 +61118,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension"
-   ],
    "metrics": {
     "salary": 0,
     "expenses": 1800,
@@ -63759,15 +63509,6 @@
  },
  "flatCashOnly": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,
@@ -66406,15 +66147,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,
@@ -68809,14 +68541,6 @@
  },
  "pensionUnknown": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "pension"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,
@@ -70344,14 +70068,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "pension"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,
@@ -71710,15 +71426,6 @@
  },
  "buyerAlone": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "pension"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,
@@ -74774,15 +74481,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "pension"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,
@@ -77625,17 +77323,6 @@
  },
  "buyersTogether": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,
@@ -81137,17 +80824,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash",
-    "investments",
-    "pension",
-    "studentLoan"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,
@@ -84436,14 +84112,6 @@
  },
  "hiddenModules": {
   "withRates": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,
@@ -86986,14 +86654,6 @@
    }
   },
   "ratesLoading": {
-   "activeSteps": [
-    "modules",
-    "goals",
-    "name",
-    "email",
-    "about",
-    "cash"
-   ],
    "metrics": {
     "salary": 55000,
     "expenses": 1800,

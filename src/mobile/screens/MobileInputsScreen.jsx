@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, User } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
-import MobileOnboardingStep from "../onboarding/MobileOnboardingStep.jsx";
+import AboutYouFields from "../onboarding/AboutYouFields.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
 import { useEmailCheck, DidYouMean, EMAIL_WHY } from "../emailCheckForm.jsx";
 import { requestEmailStatus, validEmailShape } from "../../lib/emailCheck.js";
@@ -97,7 +97,7 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
                   <div style={{paddingTop:"14px"}}>
                     {isModule
                       ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set} brief={isPartly}/>
-                      : <><MobileOnboardingStep stepId="about" d={d} set={set} bare/><EmailField d={d} onEmailChange={onEmailChange}/></>}
+                      : <><AboutYouFields d={d} set={set}/><EmailField d={d} onEmailChange={onEmailChange}/></>}
                   </div>
                   {isModule && (
                     <>

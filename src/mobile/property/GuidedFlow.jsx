@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import posthog from "posthog-js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, ChevronLeft } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
+import { G, MUT, TEXT, WHITE, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
+import { ShellTopRow, QuestionHeading, AnswerGroup, AnswerTile, PrimaryButton, SkipLink, tileLayout } from "../onboarding/OnboardingShell.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { neededAtStart, visibleQuestions, countSettled } from "../../lib/propertyGuide.js";
 import PillMoneyInput, { pillFieldStyle } from "../PillMoneyInput.jsx";
@@ -64,10 +64,6 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const textLink = { background:"none", border:"none", padding:"6px 0", color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
-  const primary = {
-    width:"100%", background:G, color:WHITE, border:"none", borderRadius:"100px", padding:"13px",
-    fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer",
-  };
 
   const currentId = history[history.length - 1];
   const q = visible.find(x => x.id === currentId) || visible[0];
@@ -172,12 +168,15 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   const notSure = [q.notSure ? q.notSure(ctx) : null].flat().filter(Boolean);
   const takeNotSure = o => next(o.value !== undefined ? write(q.field, o.value) : {});
   const picked = Array.isArray(d[q.field]) ? d[q.field] : [];
+  // Picking an `exclusive` option ("None of these") is the whole answer, so
+  // it moves on as a single choice does, unless it opens follow-ups.
   const toggle = o => {
     const on = picked.includes(o.value);
     const exclusive = q.options(ctx).filter(x => x.exclusive).map(x => x.value);
-    write(q.field, on ? picked.filter(v => v !== o.value)
+    const patch = write(q.field, on ? picked.filter(v => v !== o.value)
       : o.exclusive ? [o.value]
       : [...picked.filter(v => !exclusive.includes(v)), o.value]);
+    if (o.exclusive && !on && !followsFor(patch).length) next(patch);
   };
 
   const raw = d[q.field];
@@ -191,12 +190,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   const mainReady = q.follow && q.kind === "choice" ? chosen.has(q.id) || (raw !== "" && raw != null) : (hasAnswer || !q.required);
   const followsReady = (hasAnswer || (q.follow && q.kind === "choice" && mainReady)) ? follows.every(f => (!f.required || followAnswered(f)) && !followWrong(f)) : true;
   const canGo = mainReady && followsReady;
-  const continueButton = (
-    <button type="submit" disabled={!canGo} style={{
-      ...primary, marginTop:"16px",
-      background:!canGo ? "rgba(22,47,36,0.2)" : G, cursor:!canGo ? "not-allowed" : "pointer",
-    }}>Continue</button>
-  );
+  const continueButton = <PrimaryButton type="submit" disabled={!canGo} style={{marginTop:"18px"}}>Continue</PrimaryButton>;
   const submit = e => { e.preventDefault(); if (canGo) next({}); };
   // Shown once the question above them has an answer.
   const showFollows = q.follow && (q.kind === "choice" ? mainReady : hasAnswer);
@@ -247,46 +241,35 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
     center: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
     exit: dir => ({ opacity: 0, y: -dir * shift, transition: { duration: 0.15, ease: "easeIn" } }),
   };
-  const answerButton = selected => ({
-    display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px", textAlign:"left", width:"100%",
-    background:selected ? "rgba(22,47,36,0.06)" : WHITE, border:`1.5px solid ${selected ? G : "rgba(22,47,36,0.15)"}`,
-    borderRadius:"14px", padding:"13px 16px", fontSize:"14.5px", fontWeight:600, color:TEXT, fontFamily:"inherit", cursor:"pointer",
-  });
+  // The question's answers, and whether they sit two to a row.
+  const opts = q.options ? q.options(ctx) : [];
+  const layout = q.columns ? "grid" : tileLayout(opts);
+  const noteLine = note && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>{note}</p>;
 
   return (
     <div>
       {result}
 
-      {/* The question area: the progress line and the question itself. */}
+      {/* The question area: Back, the progress line and the question itself. */}
       <div ref={areaRef}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:result ? "22px" : 0}}>
-        {/* Only once the total can't change with answers still to come. */}
-        <span style={{fontSize:"11.5px",fontWeight:600,color:MUT}}>{showProgress && countSettled(questions, ctx, needed, q.id) ? `${position} of ${visible.length}` : ""}</span>
-        {skipLabel && <button type="button" onClick={() => onDone("skipped", q.id)} style={{...textLink,fontSize:"12.5px"}}>{skipLabel}</button>}
-      </div>
+      {/* "x of y" only once the total can't change with answers still to come. */}
+      <ShellTopRow onBack={history.length > 1 ? back : null}
+        position={showProgress && countSettled(questions, ctx, needed, q.id) ? position : null} total={visible.length}
+        style={{marginTop:result ? "22px" : 0}}/>
 
       <AnimatePresence mode="wait" custom={direction} initial={animateFirst} onExitComplete={keepQuestionInView}>
-        <motion.div key={q.id} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" style={{marginTop:"10px"}}>
-          {q.lead && (
-            <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"8px"}}>{q.lead}</div>
-          )}
-          <h2 style={{fontFamily:SERIF,fontSize:"21px",fontWeight:700,color:TEXT,lineHeight:1.3,margin:0}}>{q.ask(ctx)}</h2>
-          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"8px 0 18px"}}>{q.why(ctx)}</p>
+        <motion.div key={q.id} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" style={{marginTop:"12px"}}>
+          <QuestionHeading lead={q.lead} ask={q.ask(ctx)} why={q.why(ctx)} compact={!!result}/>
 
           {q.kind === "choice" && q.follow ? (
             <form onSubmit={submit}>
-              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-                {q.options(ctx).map(o => {
-                  const selected = mainReady && raw === o.value;
-                  return (
-                    <button key={o.value} type="button" onClick={() => pick(o.value)} style={answerButton(selected)}>
-                      {o.label}
-                      {selected && <Check size={16} color={G}/>}
-                    </button>
-                  );
-                })}
-                {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>{note}</p>}
-              </div>
+              <AnswerGroup layout={layout} label={q.ask(ctx)}>
+                {opts.map(o => (
+                  <AnswerTile key={o.value} label={o.label} sub={o.sub} layout={layout}
+                    on={mainReady && raw === o.value} onPick={() => pick(o.value)}/>
+                ))}
+              </AnswerGroup>
+              {noteLine}
               {followBlock}
               {continueButton}
             </form>
@@ -300,33 +283,24 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
             </form>
           ) : q.kind === "choice" ? (
             // `columns`: short answers in a grid across the width.
-            <div style={q.columns ? {display:"grid",gridTemplateColumns:`repeat(${q.columns}, 1fr)`,gap:"8px"} : {display:"flex",flexDirection:"column",gap:"8px"}}>
-              {q.options(ctx).map(o => {
-                const selected = answered.has(q.id) && d[q.field] === o.value;
-                return (
-                  <button key={o.value} type="button" onClick={() => choose(o.value)}
-                    style={q.columns ? {...answerButton(selected),justifyContent:"center",textAlign:"center",padding:"13px 6px"} : answerButton(selected)}>
-                    {o.label}
-                    {selected && !q.columns && <Check size={16} color={G}/>}
-                  </button>
-                );
-              })}
-              {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0",gridColumn:"1 / -1"}}>{note}</p>}
+            <div>
+              <AnswerGroup layout={layout} columns={q.columns || 2} label={q.ask(ctx)}>
+                {opts.map(o => (
+                  <AnswerTile key={o.value} label={o.label} sub={o.sub} layout={layout}
+                    on={answered.has(q.id) && d[q.field] === o.value} onPick={() => choose(o.value)}/>
+                ))}
+              </AnswerGroup>
+              {noteLine}
             </div>
           ) : q.kind === "multi" ? (
             <form onSubmit={submit}>
-              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-                {q.options(ctx).map(o => {
-                  const selected = picked.includes(o.value);
-                  return (
-                    <button key={o.value} type="button" aria-pressed={selected} onClick={() => toggle(o)} style={answerButton(selected)}>
-                      {o.label}
-                      {selected && <Check size={16} color={G}/>}
-                    </button>
-                  );
-                })}
-                {note && <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"2px 0 0"}}>{note}</p>}
-              </div>
+              <AnswerGroup layout={layout} label={q.ask(ctx)} multi>
+                {opts.map(o => (
+                  <AnswerTile key={o.value} label={o.label} sub={o.sub} layout={layout} multi check
+                    on={picked.includes(o.value)} onPick={() => toggle(o)}/>
+                ))}
+              </AnswerGroup>
+              {noteLine}
               {followBlock}
               {continueButton}
             </form>
@@ -384,11 +358,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
       </AnimatePresence>
       </div>
 
-      {history.length > 1 && (
-        <button type="button" onClick={back} style={{...textLink,color:MUT,display:"inline-flex",alignItems:"center",gap:"2px",marginTop:"14px"}}>
-          <ChevronLeft size={15}/>Back
-        </button>
-      )}
+      {skipLabel && <SkipLink label={skipLabel} onClick={() => onDone("skipped", q.id)}/>}
     </div>
   );
 }

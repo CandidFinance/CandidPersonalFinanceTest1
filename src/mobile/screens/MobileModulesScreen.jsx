@@ -145,13 +145,13 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
               <div style={TILE_TITLE}>Live modules</div>
               <div style={TILE_SUB}>{live} {live === 1 ? "module" : "modules"} · {needActionCount} need action</div>
             </div>
-            {/* Banked: what's come off the £ at stake since each module was
+            {/* Saved: what's come off the £ at stake since each module was
                 first answered (moduleStatus.js bankedFor). At stake: what's
                 still available, the sum of the tiles below. */}
             <div style={{display:"flex",gap:"16px",flexShrink:0,paddingRight:"4px"}}>
               {totalBanked > 0 && (
                 <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>Banked</div>
+                  <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>Saved</div>
                   <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:SUCCESS,lineHeight:1.15}}>{fmtCompact(totalBanked)}/yr</div>
                 </div>
               )}
@@ -192,7 +192,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
                       <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
                         <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
                         <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel(mm, reviewed)}</span>
-                        {mm.banked > 0 && <span style={{fontSize:"12.5px",color:SUCCESS,fontWeight:700}}>· {fmtCompact(mm.banked)}/yr banked</span>}
+                        {mm.banked > 0 && <span style={{fontSize:"12.5px",color:SUCCESS,fontWeight:700}}>· {fmtCompact(mm.banked)}/yr saved</span>}
                       </div>
                     </div>
                     <ChevronRight size={14} color={MUT} style={{flexShrink:0,marginTop:"6px",transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>

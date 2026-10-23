@@ -4,7 +4,7 @@ import posthog from "posthog-js";
 import { topRate } from "./lib/savingsRates.js";
 import { calcMetrics } from "./lib/metrics.js";
 import { MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, calcCandidScore, baselinePatch } from "./lib/moduleStatus.js";
-import { ALL_STEP_DEFS, getActiveSteps, capField } from "./lib/onboarding.js";
+import { capField } from "./lib/onboarding.js";
 import { G, WHITE, MUT, FONT_SIZE } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
@@ -21,7 +21,6 @@ import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, firstUnlockPatch, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import { checkAccessOnLoad, accessInfo, saveStateSoon, identifySubscriber } from "./lib/entitlement.js";
 import { recordVisit } from "./mobile/visitNews.js";
-import MobileOnboardingScreen from "./mobile/screens/MobileOnboardingScreen.jsx";
 import MobilePropertyScreen from "./mobile/screens/MobilePropertyScreen.jsx";
 import MobileEntryScreen from "./mobile/screens/MobileEntryScreen.jsx";
 import MobileModuleGuide from "./mobile/screens/MobileModuleGuide.jsx";
@@ -60,8 +59,7 @@ const BLANK_DATA = {
   // scoreUnlocked), so its first appearance is recorded once.
   goalPicks:[], goalsAsked:false, scoreShown:false,
   // Which of the active modules (cash, investments, pension, studentLoan, kids —
-  // matching MODULE_META keys) the user picked on the "Focus" onboarding step.
-  // Drives which subsequent steps are shown (getActiveSteps) and which modules
+  // matching MODULE_META keys) the user has picked. Drives which modules
   // computeModuleStatuses treats as applicable.
   selectedModules:[],
   // Multi-select goals from the "Your goals" onboarding step, right after
@@ -217,7 +215,6 @@ export default function AppShell() {
   const location = useLocation();
   const params = useParams();
   const pathname = location.pathname;
-  const assessmentStepNum = pathname.startsWith("/app/assessment/") ? parseInt(params.step, 10) : null;
 
   // rawD is the true persisted state — never mutated by the MVP hide, so any
   // mortgage/personal-loan/kids answers a user already saved before the MVP
@@ -228,15 +225,6 @@ export default function AppShell() {
   const d = useMemo(() => sanitizeForMvp(rawD), [rawD]);
   const [insights]                              = useState(loadSavedInsights);
   const [completedModules, setCompletedModules] = useState(loadCompletedModules);
-  // Where a mobile edit started from a screen other than Home (e.g. the
-  // Property screen's "Add Cash & savings", see openMobileStep) returns to
-  // once the user regenerates or goes back to their report. Cleared if they
-  // leave the assessment any other way, so a stale path can't hijack a later
-  // edit started from Home.
-  const assessmentReturnPath = useRef(null);
-  useEffect(() => {
-    if (!pathname.startsWith("/app/assessment/")) assessmentReturnPath.current = null;
-  }, [pathname]);
   // Edit inputs (/app/inputs): where it was opened from, to go back to,
   // and the user's row saved when they leave it, however they leave.
   const inputsReturnPath = useRef(null);
@@ -246,45 +234,6 @@ export default function AppShell() {
     if (wasOnInputs.current && !onInputs) setRowSaveTick(t => t + 1);
     wasOnInputs.current = onInputs;
   }, [pathname]);
-
-  // ── assessment_abandoned — fires on real tab/page close mid-assessment ──────
-  // Refs (not state) because the pagehide listener is registered once and reads
-  // whatever the latest values were at unload time, not whatever they were when
-  // the listener was attached.
-  const pathnameRef = useRef(pathname);
-  const assessmentStepRef = useRef(assessmentStepNum);
-  const assessmentStepLabelRef = useRef(null);
-  const assessmentCompletedRef = useRef(false);
-  pathnameRef.current = pathname;
-  assessmentStepRef.current = assessmentStepNum;
-  // getActiveSteps(d) is selection-dependent, so — unlike the old fixed STEPS
-  // array — the label for a given step number can only be resolved per-render,
-  // not read directly inside the pagehide handler below (which runs outside
-  // React's render cycle via a stale closure).
-  assessmentStepLabelRef.current = Number.isInteger(assessmentStepNum)
-    ? getActiveSteps(d)[assessmentStepNum - 1]?.label ?? null
-    : null;
-  useEffect(() => {
-    function handlePageHide() {
-      if (pathnameRef.current?.startsWith("/app/assessment/") && !assessmentCompletedRef.current) {
-        const stepN = assessmentStepRef.current;
-        // sendBeacon transport — same one PostHog's own $pageleave uses — so this
-        // has a real chance of actually reaching the server as the page unloads.
-        posthog.capture("assessment_abandoned", {
-          step: Number.isInteger(stepN) ? stepN : null,
-          step_name: assessmentStepLabelRef.current,
-          reason: "page_unload",
-        }, { transport: "sendBeacon" });
-      }
-    }
-    // capture: true — runs before PostHog's own pagehide listener (registered in
-    // the default bubble phase during posthog.init()), so this fires and queues
-    // its sendBeacon call before PostHog's internal unload handler tears down/
-    // flushes its request queue. Registered afterwards (bubble phase), this event
-    // was landing too late and silently never reaching PostHog — confirmed live.
-    window.addEventListener("pagehide", handlePageHide, { capture: true });
-    return () => window.removeEventListener("pagehide", handlePageHide, { capture: true });
-  }, []);
 
   const set = (k, v) => setRawD(p => ({...p, [k]:v}));
 
@@ -412,8 +361,8 @@ export default function AppShell() {
             cashTiers: parsed.cashTiers?.length ? parsed.cashTiers : p.cashTiers,
             monthlyExpenses: parsed.monthlyExpenses != null ? String(parsed.monthlyExpenses) : p.monthlyExpenses,
           }));
-          // Home already forwarded this mount to /assessment/5 (Cash & savings)
-          // before CandidApp/AppShell ever rendered — no navigation needed here.
+          // The site root already forwarded this mount to Edit inputs, open
+          // on Cash (main.jsx RootRoute) — no navigation needed here.
           posthog.capture("truelayer_connected", { accounts: parsed.accountsConnected ?? null });
         })
         .catch(e => { if (import.meta.env.DEV) console.warn("[Candid] Failed to fetch TrueLayer session data:", e); });
@@ -616,10 +565,9 @@ export default function AppShell() {
     saveRow({ ...rowInputFields(), ...rowReportFields(calcCandidScore(statuses)) });
   }, [scoreShowing]);
 
-  // Opens one onboarding step by id ("cash",
-  // "investments", "about"...), first adding its module to the user's
-  // selection if they skipped it. Used by the Property screen to send a
-  // missing figure to the step that normally asks for it.
+  // Opens where a figure is normally entered ("cash", "investments",
+  // "about"...), first adding its module to the user's selection if they
+  // skipped it. Used by the Property screen to send a missing figure there.
   function openMobileStep(stepId) {
     // A module not answered yet opens on its walk-through, which ends on the
     // module's own screen, rather than the old step, which ends by making a
@@ -627,29 +575,17 @@ export default function AppShell() {
     if (moduleGuideStarts(stepId, d)) { navigate(`/app/module/${stepId}`); return; }
     // Answered already: the field is on Edit inputs, in that module's tile.
     if (stepId === "about" || (d.selectedModules || []).includes(stepId)) { openInputs(stepId === "about" ? null : stepId); return; }
-    const def = ALL_STEP_DEFS.find(s => s.id === stepId);
-    let selected = d.selectedModules || [];
-    if (def?.moduleKey && !selected.includes(def.moduleKey)) {
-      selected = [...selected, def.moduleKey];
-      set("selectedModules", selected);
-    }
-    const idx = getActiveSteps({ selectedModules: selected }).findIndex(s => s.id === stepId);
-    if (idx >= 0) {
-      assessmentReturnPath.current = pathname;
-      navigate(`/app/assessment/${idx + 1}`);
-    }
+    // A module not picked yet: added to the selection, then its tile on
+    // Edit inputs. Anything else: Edit inputs as it opens.
+    if (!MODULE_META.some(mm => mm.key === stepId)) { openInputs(); return; }
+    set("selectedModules", [...(d.selectedModules || []), stepId]);
+    openInputs(stepId);
   }
   function openInputs(moduleKey = null) {
     inputsReturnPath.current = pathname;
     posthog.capture("edit_inputs_opened", { from: pathname, module: moduleKey });
     navigate(moduleKey ? `/app/inputs?open=${moduleKey}` : "/app/inputs");
   }
-  function takeAssessmentReturnPath() {
-    const path = assessmentReturnPath.current || "/app/home";
-    assessmentReturnPath.current = null;
-    return path;
-  }
-
   // ── Router ──
   // Deep-link guard: the app's screens open once the user has been through
   // its entry (appUnlocked). Before that, a stale bookmark, shared link or
@@ -698,41 +634,6 @@ export default function AppShell() {
         const pick = firstPick(d);
         navigate(pick ? modulePath(pick) : "/app/home");
       }}/>
-    );
-  }
-
-  if (pathname.startsWith("/app/assessment/")) {
-    // getActiveSteps(d) reflects the CURRENT d.selectedModules, so forward/back
-    // navigation always lines up with the steps active for this user right now.
-    const activeSteps = getActiveSteps(d);
-    const stepNum = parseInt(params.step, 10);
-    if (!Number.isInteger(stepNum) || stepNum < 1 || stepNum > activeSteps.length) {
-      return <Navigate to="/app/assessment/1" replace />;
-    }
-    const step = stepNum - 1;
-    return (
-      <MobileOnboardingScreen step={step} steps={activeSteps} d={d} set={set} insights={insights}
-        onBack={() => {
-          if (step > 0) { navigate(`/app/assessment/${step}`); return; }
-          posthog.capture("assessment_abandoned", { step: step + 1, step_name: activeSteps[step].label, reason: "back_to_welcome" });
-          navigate("/welcome");
-        }}
-        onBackToDashboard={() => navigate(takeAssessmentReturnPath())}
-        onContinue={() => {
-          posthog.capture("assessment_question_completed", { step: step + 1, step_name: activeSteps[step].label });
-          if (step < activeSteps.length - 1) { navigate(`/app/assessment/${step+2}`); return; }
-          // Saves and goes back, with no AI report: the score and "what to
-          // do first" are worked out by the code (docs/score-without-ai-plan.md).
-          // appEntered keeps the app open for someone whose old report was
-          // cleared ("Update my inputs" on the welcome-back screen).
-          assessmentCompletedRef.current = true;
-          posthog.capture("assessment_completed");
-          set("appEntered", true);
-          setRowSaveTick(t => t + 1);
-          navigate(takeAssessmentReturnPath());
-          scrollToTop();
-        }}
-      />
     );
   }
 

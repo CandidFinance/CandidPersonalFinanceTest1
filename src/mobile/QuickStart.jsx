@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft, Minus, Plus } from "lucide-react";
-import { G, MUT, TEXT, SERIF, SANS, WHITE } from "../design-tokens.js";
+import { Minus, Plus } from "lucide-react";
+import { G, MUT, TEXT, SERIF, WHITE } from "../design-tokens.js";
 import { questionOrder, askFor } from "../lib/quickStart.js";
+import { shellScreen, ShellTopRow, QuestionHeading, AnswerGroup, AnswerTile, PrimaryButton, SkipLink, TextLink } from "./onboarding/OnboardingShell.jsx";
 
 // A module's quick start (src/lib/quickStart.js): what's at stake (the
 // setup's intro, when `intro`), then a question per screen, each answered
@@ -80,42 +81,34 @@ export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true,
   };
 
   const shift = reduceMotion ? 0 : 36;
-  const screen = { minHeight: "calc(100dvh - 150px)", display: "flex", flexDirection: "column", boxSizing: "border-box", padding: "8px 0 24px" };
-  const link = { background: "none", border: "none", padding: "6px 0", color: G, fontSize: "14px", fontWeight: 700, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "2px" };
 
-  if (!started) return <Intro intro={setup.intro} onBegin={begin} screen={screen}/>;
+  if (!started) return <Intro intro={setup.intro} onBegin={begin}/>;
   if (!current) return null;
 
   const q = setup.questions[current];
   const ctx = { d, m, a: answers, direct };
   return (
-    <div style={screen}>
+    <div style={shellScreen}>
       {kicker && <div style={{ fontSize: "13px", fontWeight: 700, color: MUT, marginBottom: "6px" }}>{kicker}</div>}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
-        <button type="button" onClick={back} style={link}><ChevronLeft size={18}/>Back</button>
-        <span style={{ fontSize: "13px", color: MUT, fontWeight: 600 }}>{position} of {order.length}</span>
-      </div>
+      <ShellTopRow onBack={back} position={position} total={order.length} style={{ marginBottom: "18px" }}/>
       <AnimatePresence mode="wait" initial={false} custom={direction}>
         <motion.div key={current} custom={direction}
           initial={{ opacity: 0, x: direction * shift }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -direction * shift }}
           transition={{ duration: reduceMotion ? 0.1 : 0.22, ease: "easeOut" }}
           style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(28px, 7.5vw, 36px)", fontWeight: 700, color: G, lineHeight: 1.15, margin: 0 }}>{askFor(q, ctx)}</h1>
-          <p style={{ fontSize: "15px", color: MUT, lineHeight: 1.5, margin: "10px 0 24px" }}>{q.why}</p>
+          <QuestionHeading ask={askFor(q, ctx)} why={q.why}/>
           {q.kind === "slider"
             ? <SliderAnswer q={q} ctx={ctx} label={askFor(q, ctx)} onAnswer={value => choose(value, 0)}/>
             : (
-              <div role="radiogroup" aria-label={askFor(q, ctx)} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <AnswerGroup layout="grid" label={askFor(q, ctx)}>
                 {q.options(ctx).map((o, i, all) => (
-                  <Tile key={o.value} option={o} compact={all.length > 6} on={picked === o.value} dim={!!picked && picked !== o.value} onPick={() => choose(o.value)} reduceMotion={reduceMotion}/>
+                  <AnswerTile key={o.value} label={o.label} sub={o.sub} compact={all.length > 6} on={picked === o.value} dim={!!picked && picked !== o.value} onPick={() => choose(o.value)}/>
                 ))}
-              </div>
+              </AnswerGroup>
             )}
         </motion.div>
       </AnimatePresence>
-      <div style={{ textAlign: "center", marginTop: "22px" }}>
-        <button type="button" onClick={() => onDone("skipped", current)} style={{ ...link, fontSize: "13px", color: MUT, fontWeight: 600 }}>Skip to the full view</button>
-      </div>
+      <SkipLink label="Skip to the full view" onClick={() => onDone("skipped", current)}/>
     </div>
   );
 }
@@ -139,39 +132,21 @@ function SliderAnswer({ q, ctx, label, onAnswer }) {
           style={{ flex: 1, accentColor: G, height: "32px", cursor: "pointer" }}/>
         <button type="button" aria-label="More" onClick={() => setValue(v => clamp(v + 1))} style={step}><Plus size={20}/></button>
       </div>
-      <button type="button" onClick={() => onAnswer(String(value))} style={{ width: "100%", marginTop: "26px", background: G, color: WHITE, border: "none", borderRadius: "100px", padding: "17px", fontSize: "17px", fontWeight: 700, fontFamily: SANS, cursor: "pointer" }}>Continue</button>
-      <button type="button" onClick={() => onAnswer("unsure")} style={{ background: "none", border: "none", padding: "12px", color: G, fontSize: "15px", fontWeight: 700, fontFamily: SANS, cursor: "pointer" }}>Not sure</button>
+      <PrimaryButton onClick={() => onAnswer(String(value))} style={{ marginTop: "26px" }}>Continue</PrimaryButton>
+      <TextLink onClick={() => onAnswer("unsure")}>Not sure</TextLink>
     </div>
   );
 }
 
-// One answer: a near-square tile, two to a row, that fills green when
-// tapped. `compact`: shorter, for a question with more than six answers, so
-// they fit on a phone's screen.
-function Tile({ option, compact, on, dim, onPick, reduceMotion }) {
-  return (
-    <motion.button type="button" role="radio" aria-checked={on} onClick={onPick}
-      animate={{ backgroundColor: on ? G : WHITE, color: on ? WHITE : TEXT, borderColor: on ? G : "rgba(22,47,36,0.16)", opacity: dim ? 0.55 : 1, scale: on && !reduceMotion ? [1, 0.96, 1] : 1 }}
-      whileTap={reduceMotion ? undefined : { scale: 0.97 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      style={{ minHeight: compact ? "70px" : "92px", borderRadius: "20px", border: "1.5px solid", padding: "14px 12px", fontFamily: SANS, fontSize: "18px", fontWeight: 650, lineHeight: 1.2, textAlign: "center", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px" }}>
-      <span>{option.label}</span>
-      {option.sub && <span style={{ fontSize: "13px", fontWeight: 500, opacity: 0.75 }}>{option.sub}</span>}
-    </motion.button>
-  );
-}
-
 // Before any questions: the topic, why it matters, the question it answers.
-function Intro({ intro, onBegin, screen }) {
+function Intro({ intro, onBegin }) {
   return (
-    <div style={screen}>
+    <div style={shellScreen}>
       <h1 style={{ fontFamily: SERIF, fontSize: "clamp(44px, 13vw, 60px)", fontWeight: 700, color: G, lineHeight: 1.02, margin: "12px 0 0" }}>{intro.title}</h1>
       <p style={{ fontFamily: SERIF, fontSize: "clamp(22px, 6vw, 27px)", fontWeight: 500, color: TEXT, lineHeight: 1.25, margin: "16px 0 0" }}>{intro.subtitle}</p>
       <div style={{ marginTop: "auto", paddingTop: "32px" }}>
         <p style={{ fontSize: "19px", fontWeight: 600, color: TEXT, lineHeight: 1.35, margin: "0 0 18px" }}>{intro.question}</p>
-        <button type="button" onClick={onBegin} style={{ width: "100%", background: G, color: WHITE, border: "none", borderRadius: "100px", padding: "18px", fontSize: "17px", fontWeight: 700, fontFamily: SANS, cursor: "pointer" }}>
-          Let's begin
-        </button>
+        <PrimaryButton onClick={onBegin}>Let's begin</PrimaryButton>
       </div>
     </div>
   );

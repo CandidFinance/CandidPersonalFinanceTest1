@@ -56,7 +56,7 @@ test("what changes have captured since, and a new tax year", () => {
   const mb = calcMetrics(banked);
   const prev = visitSnapshot(banked, mb, rows, daysBefore(4));
   const s = sinceLastVisit(prev, banked, mb, rows, today);
-  assert.deepEqual(s.lines.map(l => l.label), ["Captured"]);
+  assert.deepEqual(s.lines.map(l => l.label), ["Saved"]);
   assert.equal(s.lines[0].text, "£4 more from the changes you've made.");
   const lastYear = { ...visitSnapshot(d, m, rows, daysBefore(200)), taxYear: 2025 };
   const ny = sinceLastVisit(lastYear, d, m, rows, today);

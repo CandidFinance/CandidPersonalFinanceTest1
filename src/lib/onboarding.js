@@ -1,25 +1,6 @@
-import { isaUsedThisYear } from "./isa.js";
-// Shared onboarding step definitions and field caps — pure logic, no
-// CandidApp.jsx imports, so the wizard (MobileOnboardingScreen), Edit inputs
-// and the app shell read from a single source of truth and can never
-// disagree on which steps exist or what a field's hard cap is.
-
-export const ALL_STEP_DEFS = [
-  { id:"modules",     label:"Focus",           shortLabel:"Focus",       mobileLabel:"Focus", always:true },
-  { id:"goals",       label:"Your goals",      shortLabel:"Goals",       mobileLabel:"Goals", always:true },
-  { id:"name",        label:"Name",            shortLabel:"Name",        mobileLabel:"Name",  always:true },
-  { id:"email",       label:"Email",           shortLabel:"Email",       mobileLabel:"Email", always:true },
-  { id:"about",       label:"About you",       shortLabel:"Income",      mobileLabel:"Inc.",  always:true },
-  { id:"cash",        label:"Cash & savings",  shortLabel:"Savings",     mobileLabel:"Sav.",  moduleKey:"cash" },
-  { id:"investments", label:"Investments",     shortLabel:"Invest.",     mobileLabel:"Inv.",  moduleKey:"investments" },
-  { id:"pension",     label:"Pension",         shortLabel:"Pension",     mobileLabel:"Pension", moduleKey:"pension" },
-  { id:"studentLoan", label:"Student loan",    shortLabel:"Student loan", mobileLabel:"Loan", moduleKey:"studentLoan" },
-];
-
-export function getActiveSteps(d) {
-  const selected = new Set(d.selectedModules || []);
-  return ALL_STEP_DEFS.filter(s => s.always || selected.has(s.moduleKey));
-}
+// Field caps — pure logic, no CandidApp.jsx imports, so Edit inputs, the
+// question flows and the app shell read one source of truth and can never
+// disagree on a field's hard cap.
 
 // Hard caps — silently clamp value, no message shown
 export const FIELD_CAPS = {
@@ -43,11 +24,4 @@ export function capField(field, raw) {
   const cap = FIELD_CAPS[field];
   if (cap !== undefined && v > cap) return String(cap);
   return raw;
-}
-
-// The £20,000 annual ISA allowance is one shared pot across Cash ISA (asked
-// in the Cash & Savings step) and S&S/LISA/Other (asked in Investments) — so
-// both steps need the same combined total to warn consistently.
-export function isaThisYearTotal(d) {
-  return isaUsedThisYear(d);
 }
