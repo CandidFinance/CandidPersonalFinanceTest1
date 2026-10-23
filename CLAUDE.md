@@ -19,6 +19,7 @@
 ## Deploys and data (production)
 
 - `main` deploys to production on Vercel. Work happens on `main`; `feature/mobile-app` is stale.
+- Don't point system redirects (OAuth or payment returns, legacy routes) at `/app/module/*` or `/app/property*`. For anyone not yet in the app, those count as a shared link: CandidApp's `linkedModule` effect sets `appEntered`, fires `app_entered` and inserts a report row. Use `/app/home` or `/app/inputs` instead.
 - Push straight away for logic fixes. For copy or UI the user sees, leave it uncommitted and wait for Harvey's go-ahead after he checks localhost.
 - The single Supabase project `dcprmqujnzoeiqhwxgpf` is production, and its `test` table is the real report table. `anon` has column-level grants only: a client insert must request `?select=id`, a new client-updated column needs a GRANT (hand Harvey the SQL; auto mode blocks it), and a PATCH that matches no row still returns success. Verify writes by querying the rows.
 
