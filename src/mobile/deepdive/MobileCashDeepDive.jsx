@@ -75,9 +75,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
   let winCounter = 0;
   const emergencyWinNumber = showEmergencyWin ? ++winCounter : null;
   const optimiseWinNumber = ++winCounter;
-  // The provider lists: numbered tiles like the others, closed like the others.
-  const isaListNumber = products.products?.length ? ++winCounter : null;
-  const savingsListNumber = products.nonIsaProducts?.length ? ++winCounter : null;
+  const hasIsaList = !!products.products?.length, hasSavingsList = !!products.nonIsaProducts?.length;
 
   const opportunityCols = [];
   if (showEmergencyWin) opportunityCols.push({ label:"Short of your emergency fund", value: fmtCompact(m.emergencyShortfall) });
@@ -245,18 +243,22 @@ export default function MobileCashDeepDive({ d, m, savingsRates }) {
         )}
       </MobileWinTile>
 
-      <div>
-        {isaListNumber && (
-          <MobileWinTile provider number={isaListNumber} title={products.heading} headline={mobileIsaSubheading(m)} tagLabel="Providers">
-            <MobileProductListTile embedded products={products.products} disclaimer={products.disclaimer}/>
-          </MobileWinTile>
-        )}
-        {savingsListNumber && (
-          <MobileWinTile provider number={savingsListNumber} title={products.nonIsaHeading} headline={mobilePsaSubheading()} tagLabel="Providers">
-            <MobileProductListTile embedded products={products.nonIsaProducts} disclaimer={products.disclaimer}/>
-          </MobileWinTile>
-        )}
-      </div>
+      {/* The provider lists, together and unnumbered: places to look, not
+          steps. */}
+      {(hasIsaList || hasSavingsList) && (
+        <MobileWinTile provider title="Explore providers" headline="Today's highest rates, Cash ISAs and savings accounts" tagLabel="Providers">
+          {hasIsaList && (
+            <MobileWinTile title={products.heading} headline={mobileIsaSubheading(m)}>
+              <MobileProductListTile embedded products={products.products} disclaimer={products.disclaimer}/>
+            </MobileWinTile>
+          )}
+          {hasSavingsList && (
+            <MobileWinTile title={products.nonIsaHeading} headline={mobilePsaSubheading()}>
+              <MobileProductListTile embedded products={products.nonIsaProducts} disclaimer={products.disclaimer}/>
+            </MobileWinTile>
+          )}
+        </MobileWinTile>
+      )}
     </div>
   );
 }

@@ -101,8 +101,9 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
         <motion.div key={index} custom={direction} variants={variants} initial="enter" animate="center" exit="exit"
           style={{marginTop:"10px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"22px 20px"}}>
           <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>{step.label}</div>
+          {step.lead && <div style={{fontSize:"15px",fontWeight:600,color:TEXT,lineHeight:1.4,marginTop:"10px"}}>{step.lead}</div>}
           {step.figure && (
-            <div style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:step.tone === "cost" ? CRITICAL : TEXT,lineHeight:1.15,marginTop:"10px"}}>{step.figure}</div>
+            <div style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:TONE[step.tone] || TEXT,lineHeight:1.15,marginTop:step.lead ? "2px" : "10px"}}>{step.figure}</div>
           )}
           <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:step.figure ? "4px" : "10px"}}>
             {/* Candid Assist's icon, as on its button at the bottom right. */}
@@ -159,7 +160,7 @@ function Working({ checks, shown, ticked, reduceMotion }) {
 
 // One step in the large layout: its rows as big figures, a line above each
 // and a note below; a step without rows as a large statement.
-const TONE = { repay: SUCCESS, cost: CRITICAL };
+const TONE = { repay: SUCCESS, good: SUCCESS, warn: WARNING, cost: CRITICAL };
 const SIZE = { xl: "clamp(56px, 17vw, 78px)", l: "clamp(40px, 12vw, 54px)", m: "clamp(28px, 8vw, 36px)" };
 function LargeStep({ step }) {
   const rows = step.rows || (step.figure ? [{ figure: step.figure, size: "xl", note: step.title, tone: step.tone }] : null);

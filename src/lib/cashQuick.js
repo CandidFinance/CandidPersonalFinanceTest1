@@ -1,9 +1,10 @@
 // Cash & savings' quick start (quickStart.js): how much, roughly what it
-// earns, monthly costs, and a Cash ISA this tax year only where interest
+// earns, monthly costs, the emergency fund target, and a Cash ISA this tax year only where interest
 // could go over the Personal Savings Allowance. Unit tested in
 // quickStart.test.js.
 import { PSA_BY_BAND } from "./tax.js";
 import { withEstimates, addAsked } from "./quickStart.js";
+import { EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT } from "./metrics.js";
 
 // For "Not sure" of the rate: the UK average easy-access rate, about 2.5%
 // through 2026 (Moneyfacts monthly averages). Not the rate feed's average,
@@ -60,7 +61,7 @@ const band = (list, value) => list.find(b => b.value === value);
 export const CASH_QUICK = {
   module: "cash",
   intro: { title: "Cash & savings", subtitle: "Money left in a low-rate account loses value every year.", question: "How much is yours losing?" },
-  order: ["savings", "rate", "costs", "isa"],
+  order: ["savings", "rate", "costs", "buffer", "isa"],
   questions: {
     savings: {
       ask: "Roughly how much do you have in savings?", why: "Not counting Premium Bonds. Cash ISAs included.",
@@ -76,6 +77,12 @@ export const CASH_QUICK = {
       ask: "Roughly what are your monthly costs?", why: "Rent or mortgage, bills, food and travel.",
       options: () => COST_BANDS,
       when: ({ d }) => !(+d.monthlyExpenses > 0),
+    },
+    // Their own target, not an estimate: it isn't on the estimates line.
+    buffer: {
+      ask: "How many months of costs would you want as an emergency fund?", why: "Your savings are measured against it.",
+      options: () => EMERGENCY_MONTHS_OPTIONS.map(o => ({ ...o, sub: EMERGENCY_MONTHS_HINT[o.value] })),
+      when: ({ d }) => !d.emergencyMonths && !(d.askedFields || []).includes("emergencyMonths"),
     },
     isa: {
       ask: "Paid into a Cash ISA since 6 April?", why: "Interest in an ISA is tax-free, so it changes what you keep.",
@@ -98,6 +105,10 @@ export const CASH_QUICK = {
     if (costs) {
       patch.monthlyExpenses = String(costs.figure);
       items.push({ phrase: `${costs.label} a month in costs`, field: "monthlyExpenses", value: patch.monthlyExpenses });
+    }
+    if (EMERGENCY_MONTHS_OPTIONS.some(o => o.value === a.buffer)) {
+      patch.emergencyMonths = a.buffer;
+      asked.push("emergencyMonths");
     }
     const isa = band(ISA_BANDS, a.isa);
     if (isa) {

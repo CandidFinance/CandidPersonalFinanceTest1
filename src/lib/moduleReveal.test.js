@@ -131,6 +131,19 @@ test("cash: an emergency fund short of target comes first, with the shortfall th
   assert.match(steps[0].title, /^short of your 6-month emergency fund\.$/);
 });
 
+test("cash with pay not known (the quick start): months of costs covered, nothing said about income", () => {
+  const d = { selectedModules: ["cash"], monthlyExpenses: "2500", cashTiers: [{ amount: "7500", rate: "2.5" }] };
+  const { steps } = run(d, cashReveal);
+  assert.equal(steps[0].figure, "3.0 months");
+  assert.equal(steps[0].tone, "good");
+  assert.match(steps[0].title, /^of your monthly costs your savings would cover\.$/);
+  assert.doesNotMatch(steps[1].title, /going out/);
+  assert.equal(run({ ...d, cashTiers: [{ amount: "5000", rate: "2.5" }] }, cashReveal).steps[0].tone, "warn");
+  assert.equal(run({ ...d, cashTiers: [{ amount: "1000", rate: "2.5" }] }, cashReveal).steps[0].tone, "cost");
+  // Not working: the gap after any other income, as before.
+  assert.match(run({ ...d, employmentStatus: "not_working" }, cashReveal).steps[1].title, /a month more going out than coming in/);
+});
+
 test("cash: better rates, with the same gain as the screen's own calculation", () => {
   const { steps, m } = run({ ...cashBase, cashTiers: [{ amount: "20000", rate: "1" }] }, cashReveal);
   const opt = calcCashOptimisation(m, rates.isaRate, rates.nonIsaRate);

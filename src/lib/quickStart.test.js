@@ -10,9 +10,19 @@ import { calcMetrics } from "./metrics.js";
 const order = (setup, d, a = {}) => questionOrder(setup, { d, m: calcMetrics(d), a });
 
 test("cash: the rate follows the amount, and costs are asked once", () => {
-  assert.deepEqual(order(CASH_QUICK, {}), ["savings", "rate", "costs"]);
-  assert.deepEqual(order(CASH_QUICK, {}, { savings: "5-10" }), ["savings", "rate", "costs"]);
-  assert.deepEqual(order(CASH_QUICK, { monthlyExpenses: "1800" }, { savings: "5-10" }), ["savings", "rate"]);
+  assert.deepEqual(order(CASH_QUICK, {}), ["savings", "rate", "costs", "buffer"]);
+  assert.deepEqual(order(CASH_QUICK, {}, { savings: "5-10" }), ["savings", "rate", "costs", "buffer"]);
+  assert.deepEqual(order(CASH_QUICK, { monthlyExpenses: "1800" }, { savings: "5-10" }), ["savings", "rate", "buffer"]);
+});
+
+test("cash: the emergency fund target is asked once, and saved as the user's own", () => {
+  assert.ok(!order(CASH_QUICK, { emergencyMonths: "3" }).includes("buffer"));
+  assert.ok(!order(CASH_QUICK, { askedFields: ["emergencyMonths"] }).includes("buffer"));
+  const d = {};
+  const p = CASH_QUICK.patch(d, calcMetrics(d), { savings: "5-10", rate: "2-3", costs: "1.5-2", buffer: "9" });
+  assert.equal(p.emergencyMonths, "9");
+  assert.ok(p.askedFields.includes("emergencyMonths"));
+  assert.ok(!p.quickEstimates.cash.items.some(i => i.field === "emergencyMonths"), "not an estimate");
 });
 
 test("cash: a Cash ISA is asked only where interest could pass the Personal Savings Allowance", () => {
@@ -22,7 +32,7 @@ test("cash: a Cash ISA is asked only where interest could pass the Personal Savi
   assert.ok(!order(CASH_QUICK, { salary: "40000" }, { savings: "10-20" }).includes("isa"), "basic rate, £10k to £20k");
   assert.ok(order(CASH_QUICK, { salary: "40000" }, { savings: "20-50" }).includes("isa"), "basic rate, £20k to £50k");
   assert.ok(order(CASH_QUICK, { salary: "70000" }, { savings: "10-20" }).includes("isa"), "higher rate, £10k to £20k");
-  assert.deepEqual(order(CASH_QUICK, {}, { savings: "x" }), ["savings", "rate", "costs"], "an unknown band asks no ISA question");
+  assert.deepEqual(order(CASH_QUICK, {}, { savings: "x" }), ["savings", "rate", "costs", "buffer"], "an unknown band asks no ISA question");
 });
 
 test("cash: answers write the fields Student loan's verdict reads, and say what's estimated", () => {

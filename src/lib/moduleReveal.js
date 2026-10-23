@@ -272,7 +272,7 @@ export const FSCS_LIMIT = 120000;
 // What the user could do when better rates are there: Candid Assist, shown
 // with its own icon (`icon` "assist") so it's recognised as the button on
 // the screen.
-const ASSIST_STEP = { label: ACTION, icon: "assist", title: "Candid Assist can help you save more.", body: "Candid Assist lays out the options in each and how to move, whichever you choose." };
+const ASSIST_STEP = { label: ACTION, icon: "assist", title: "Candid Assist can help you save more.", body: "Candid Assist lists the highest-paying Cash ISAs and savings accounts for your money, and the steps to open one and move your savings across, ISA transfers included." };
 function fscsLine(m) {
   const over = Math.round((m.largestCashHolding || 0) - FSCS_LIMIT);
   return over > 0 ? `The FSCS protects ${fmt(FSCS_LIMIT)} per person at each banking licence; ${fmt(over)} of yours is above that at one bank.` : null;
@@ -280,6 +280,9 @@ function fscsLine(m) {
 const join = (...parts) => parts.filter(Boolean).join(" ") || undefined;
 // A step's body only when there's one, so an empty one isn't carried.
 const withBody = (step, body) => body ? { ...step, body } : step;
+
+// Months of costs covered: 3 or more green, 1 to 3 amber, under 1 red.
+const runwayTone = months => months >= 3 ? "good" : months >= 1 ? "warn" : "cost";
 
 export function cashReveal(d, m, ctx = {}) {
   const steps = cashSteps(d, m, ctx);
@@ -291,12 +294,20 @@ export function cashReveal(d, m, ctx = {}) {
 function cashSteps(d, m, { marketRates = {} } = {}) {
   const opp = cashOpportunity(d, m, marketRates.rows);
   const rateLine = opp && opp.gain > 50 ? `Against today's top rates, your savings lose about ${fmt(opp.gain)} a year after tax.` : null;
-  // Retired, a pension pays the way, so this is for someone between jobs.
+  // Retired, a pension pays the way, so this is for someone between jobs,
+  // or for someone whose pay isn't known yet (Cash's quick start doesn't ask
+  // it): then months of their costs, and nothing said about income.
   if (m.noEarnings && !inRetirement(d) && m.expenses > 0 && m.totalLiquid > 0 && m.monthlyShortfall > 0) {
-    const months = m.totalLiquid / m.monthlyShortfall;
+    const notWorking = d.employmentStatus === "not_working";
+    const months = m.totalLiquid / (notWorking ? m.monthlyShortfall : m.expenses);
+    const gapLine = `You have ${fmt(m.totalLiquid)} in savings, and about ${fmt(Math.round(m.monthlyShortfall))} a month more going out than coming in.`;
     return [
-      { label: ANSWER, figure: months >= 120 ? "10 years or more" : `${months < 10 ? months.toFixed(1) : Math.round(months)} months`, title: m.monthlyTakeHome > 0 ? "your savings would cover, at what you spend beyond your income." : "your savings would cover, with no earnings coming in." },
-      withBody({ label: WHY, title: `You have ${fmt(m.totalLiquid)} in savings, and about ${fmt(Math.round(m.monthlyShortfall))} a month more going out than coming in.` }, rateLine),
+      { label: ANSWER, figure: months >= 120 ? "10 years or more" : `${months < 10 ? months.toFixed(1) : Math.round(months)} months`, tone: runwayTone(months),
+        title: !notWorking ? "of your monthly costs your savings would cover." : m.monthlyTakeHome > 0 ? "your savings would cover, at what you spend beyond your income." : "your savings would cover, with no earnings coming in." },
+      // The rate loss, as a figure of its own.
+      opp && opp.gain > 50
+        ? withBody({ label: WHY, lead: "You're losing", figure: `${fmt(opp.gain)}/yr`, tone: "cost", hook: "rate", title: "against today's top rates on your savings, after tax." }, notWorking ? gapLine : null)
+        : { label: WHY, title: notWorking ? gapLine : `You have ${fmt(m.totalLiquid)} in savings, and monthly costs of about ${fmt(m.expenses)}.` },
       opp && opp.gain > 50
         ? ASSIST_STEP
         : { label: ACTION, title: "Nothing stands out right now.", body: "Worth checking rates every few months: the top ones move." },

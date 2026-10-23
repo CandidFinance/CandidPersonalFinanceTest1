@@ -125,7 +125,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // less than one month of essential costs covered is critical.
   const emergencyShort = m.emergencyShortfall > 0;
   const emergencyCritical = m.expenses > 0 && m.emergencyFund < m.expenses;
-  const accessType = d.cashAccessType || "partial";
+  // Unanswered (Cash's quick start doesn't ask it), no access warning.
+  const accessType = d.cashAccessType;
   const accessOk = m.emergencyFund >= m.emergencyBuffer;
   // Emergency access warnings — only critical when truly no cash at all
   let accessLabel = null;

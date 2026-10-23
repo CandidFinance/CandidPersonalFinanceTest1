@@ -185,7 +185,7 @@ function loadCompletedModules() {
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: "instant" });
 
 // The modules that open on a quick start.
-const QUICK_STARTS = { studentLoan: STUDENT_LOAN_QUICK, pension: PENSION_QUICK };
+const QUICK_STARTS = { studentLoan: STUDENT_LOAN_QUICK, cash: CASH_QUICK, pension: PENSION_QUICK };
 // The quick starts used on the short route from Student loan.
 const QUICK_SETUPS = { cash: CASH_QUICK, pension: PENSION_QUICK };
 // The next module Student loan's verdict still needs (appEntry.js
@@ -208,7 +208,7 @@ function loanEstimateLine(d) {
 }
 
 // The line under a quick-started module's answer saying what's estimated.
-const quickEstimateLine = (key, d) => key === "studentLoan" ? loanEstimateLine(d) : key === "pension" ? estimateLineFor(d, "pension") : null;
+const quickEstimateLine = (key, d) => key === "studentLoan" ? loanEstimateLine(d) : key === "cash" || key === "pension" ? estimateLineFor(d, key) : null;
 
 export default function AppShell() {
   const navigate = useNavigate();
@@ -811,8 +811,9 @@ export default function AppShell() {
       return (
         <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
-          {/* Student loan opens on what's at stake, then one-tap questions in
-              bands, for a first answer before any exact figures. */}
+          {/* Student loan, Cash and Pension open on what's at stake, then
+              one-tap questions in bands, for a first answer before any exact
+              figures. */}
           {QUICK_STARTS[mobileActiveModule]
             ? <QuickStart setup={QUICK_STARTS[mobileActiveModule]} d={d} m={m} onPatch={patch => Object.entries(patch).forEach(([k, v]) => set(k, v))} onDone={finishGuide}/>
             : <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} onDone={finishGuide}/>}
@@ -864,7 +865,7 @@ export default function AppShell() {
             footer={<>
               {/* The email, asked for now the answer's theirs (unlock.js). */}
               <SaveFiguresOffer d={d} moduleKey={mobileActiveModule}
-                rateCost={revealSteps[0]?.hook === "rate" ? revealSteps[0].figure : null} onEmail={(email, name) => {
+                rateCost={revealSteps.find(s => s.hook === "rate")?.figure ?? null} onEmail={(email, name) => {
                 set("email", email); set("alertsOptIn", true);
                 set("name", name);
                 posthog.capture("email_captured", { source: "after_answer", module: mobileActiveModule });
