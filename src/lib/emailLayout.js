@@ -7,7 +7,7 @@
 // the wordmark (public/email/candid-logo.png) and a short gold rule, Playfair Display for the greeting, headings and sign-off (Georgia
 // where a mail app won't load web fonts), DM Sans for the rest, gold-dot
 // bullets (a character, as some mail apps drop drawn dots) and pill buttons in the site's CTA blue (CTA_BLUE, Apple's
-// button blue); the small print under a rule.
+// button blue), coloured on the cell and the link both, as some apps strip one; the small print under a rule.
 // Email-safe: tables and inline styles only, light scheme only.
 //
 // Text within a block: a string, or a list of pieces, each a string,
@@ -98,7 +98,7 @@ function htmlOf(b) {
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">${rows}</table>`;
   }
   if (b.button) {
-    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px;"><tr><td style="border-radius:100px;background:${C.blue};"><a href="${esc(b.button.href)}" style="display:inline-block;padding:13px 26px;border-radius:100px;font-family:${SANS};font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">${esc(b.button.label)}</a></td></tr></table>`;
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px;"><tr><td bgcolor="${C.blue}" style="border-radius:100px;background:${C.blue};"><a href="${esc(b.button.href)}" style="display:inline-block;padding:12px 25px;border:1px solid ${C.blue};border-radius:100px;background-color:${C.blue};font-family:${SANS};font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">${esc(b.button.label)}</a></td></tr></table>`;
   }
   if (b.panel) {
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px;"><tr><td style="padding:14px 16px;background:${C.cream};border:1px solid ${C.line};border-radius:12px;">`

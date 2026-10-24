@@ -239,7 +239,7 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
     blocks: [
       ...introBlocks(issue.intro),
       ...(mine.length ? [{ h: "Your week on Candid" }, { list: mine.map(l => [{ b: l.label }, `: ${shortMoney(l.text)}`]) }, { button: { label: "Fix with Candid", href: `${SITE}/app/home` } }] : []),
-      ...(items.length ? [{ h: "What's happening this week" }] : []),
+      ...(items.length ? [{ h: "What's happening this week that affects you" }] : []),
       ...items.map(i => {
         const impact = i.impact && IMPACTS[i.impact.kind];
         const forYou = impact ? impact.line(d, m, i.impact, today) : null;

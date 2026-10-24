@@ -88,7 +88,7 @@ test("the Sunday email: confirmed first, then news, then rumours, and a button u
   const at = t => text.indexOf(`] ${t}\n`);
   assert.ok(at("C1") < at("N1") && at("N1") < at("N2") && at("N2") < at("R1"));
   assert.match(text, /\[Confirmed\] C1\n/);
-  assert.ok(text.indexOf("Fix with Candid:") > text.indexOf("YOUR WEEK ON CANDID") && text.indexOf("Fix with Candid:") < text.indexOf("WHAT'S HAPPENING THIS WEEK"));
+  assert.ok(text.indexOf("Fix with Candid:") > text.indexOf("YOUR WEEK ON CANDID") && text.indexOf("Fix with Candid:") < text.indexOf("WHAT'S HAPPENING THIS WEEK THAT AFFECTS YOU"));
 });
 
 test("inflation and Bank Rate lines: real terms on their cash, and their mortgage or its fix", () => {
