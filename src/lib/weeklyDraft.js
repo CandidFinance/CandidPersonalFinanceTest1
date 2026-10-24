@@ -61,10 +61,11 @@ What belongs in it:
 How Candid writes:
 ${HOW_CANDID_WRITES}
 - Each item's status: "news" for what happened this week, "confirmed" for something announced that hasn't taken effect yet, "rumour" for a report of what may be announced. A rumour names who reported it, and is only included when a reputable outlet has.
-- Items: up to five, most important first. A quiet week can have one or two; never pad it.
+- Items: up to five, most important first (the email shows confirmed items first, then news, then rumours). A quiet week can have one or two; never pad it.
 - The intro: one or two sentences on what the week was about. The subject: under 70 characters, about the week's biggest item.
 - Give an item an impact when one of these fits, with its fields filled in as plain numbers or short dates; otherwise kind "none":
 ${impactKinds()}
+- An inflation figure gets impact inflation, with rate. Bank Rate news, a decision or what's expected of the next one, gets impact bankRate, with the change (the expected change, for a rumour): its line covers both savings and mortgages.
 - Every item has a source, and a link to it where there is one.
 - Anything you're unsure of, and the sources to check, goes in the note, not the email.`;
 }
@@ -76,8 +77,11 @@ export function weeklyDraftPrompt(week, ukToday, events = []) {
   const next = events.filter(e => ago(e) <= 0 && -ago(e) <= EVENTS_AHEAD_DAYS);
   return [
     `Today is ${ukToday}. Draft the Sunday email for ${longDate(week)}, covering the news since ${longDate(new Date(dayNum(week) - 7 * DAY_MS).toISOString().slice(0, 10))}.`,
-    ...(past.length ? [`Subscribers had a separate email about ${past.map(e => `the ${eventName(e)} on ${longDate(e.date)}`).join(" and ")}, so keep that to one short item at most.`] : []),
+    ...past.map(e => e.kind === "budget"
+      ? `This issue is the Budget recap: the Budget was on ${longDate(e.date)}. Lead with what it announced that touches people's own money, one item per change, status "confirmed" (or "news" for anything already in effect), with an impact wherever one fits, then the week's other news. Subscribers had a short email on the day, so go further: what each change means and when it starts. Up to eight items this week.`
+      : `Subscribers had a separate email about the ${eventName(e)} on ${longDate(e.date)}, so keep that to one short item at most.`),
     ...(next.length ? [`Coming up: ${next.map(e => `the ${eventName(e)} on ${longDate(e.date)}`).join(", ")}. Reports of what to expect from it can go in as rumours.`] : []),
+    ...(next.some(e => e.kind === "budget" && -ago(e) <= 7) ? ["End the intro by saying next Sunday's email will recap the Budget and what it means on each reader's own figures."] : []),
   ].join(" ");
 }
 

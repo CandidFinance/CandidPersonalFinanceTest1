@@ -33,8 +33,8 @@ test("The Sunday email is due on the Sunday and the two days after, for that Sun
 test("The Sunday email: their week on their figures, then the news, each with what it means for them", () => {
   const { subject, text } = weeklyEmail(issue, saver, { today: day("2026-10-25"), rows: ROWS, unsubscribeUrl: "https://u" });
   assert.equal(subject, "This week: Cash ISA limit to fall");
-  assert.match(text, /^Hi Alex,\n\nA quiet week, bar the Budget talk\.\n\nYOUR WEEK\n- Rates: against today's best rates/);
-  assert.match(text, /Cash ISA limit to fall \(Confirmed\)\nThe limit for cash in an ISA falls to £12,000 a year\.\nFor you: You've put £7,000 into a cash ISA this tax year, within a £12,000 limit from April 2027\.\nSource: GOV\.UK \(https:\/\/www\.gov\.uk\/x\)/);
+  assert.match(text, /^Hi Alex,\n\nA quiet week, bar the Budget talk\.\n\nYOUR WEEK ON CANDID\n- Rates: against today's best rates/);
+  assert.match(text, /\[Confirmed\] Cash ISA limit to fall\nThe limit for cash in an ISA falls to £12,000 a year\.\nFor you: You've put £7,000 into a cash ISA this tax year, within a £12,000 limit from April 2027\.\nSource: GOV\.UK \(https:\/\/www\.gov\.uk\/x\)/);
   // £65,000 × 6% = £3,900 sacrificed; NI at 2% on the £1,900 over the cap.
   assert.match(text, /For you: You sacrifice about £3,900 a year\. Under a £2,000 cap from April 2029, National Insurance would be due on £1,900 of it: about £38 a year\./);
   assert.match(text, /Stop these emails: https:\/\/u/);
@@ -76,4 +76,34 @@ test("An issue from the editor keeps only known fields, and a safe link", () => 
   assert.deepEqual(clean, { subject: "Hi", intro: "", items: [{ title: "T", status: "news", body: "B", source: "", url: "", impact: null }] });
   assert.deepEqual(cleanIssue({ items: [{ title: "T", body: "B", impact: { kind: "cashIsaLimit", limit: 12000, from: "April 2027", extra: "x" } }] }).items[0].impact,
     { kind: "cashIsaLimit", limit: "12000", from: "April 2027" });
+});
+
+test("the Sunday email: confirmed first, then news, then rumours, and a button under their week", () => {
+  const issue = { items: [
+    { title: "R1", status: "rumour", body: "b" }, { title: "N1", status: "news", body: "b" },
+    { title: "C1", status: "confirmed", body: "b" }, { title: "N2", status: "news", body: "b" },
+  ] };
+  const d = { name: "Sam", salary: "48000", monthlyExpenses: "2000", cashTiers: [{ amount: "30000", rate: "1.0" }], inputsTaxYear: 2026 };
+  const { text } = weeklyEmail(issue, d, { today: new Date("2026-10-25T04:00:00Z"), rows: [], unsubscribeUrl: "u" });
+  const at = t => text.indexOf(`] ${t}\n`);
+  assert.ok(at("C1") < at("N1") && at("N1") < at("N2") && at("N2") < at("R1"));
+  assert.match(text, /\[Confirmed\] C1\n/);
+  assert.ok(text.indexOf("Fix with Candid:") > text.indexOf("YOUR WEEK ON CANDID") && text.indexOf("Fix with Candid:") < text.indexOf("WHAT'S HAPPENING THIS WEEK"));
+});
+
+test("inflation and Bank Rate lines: real terms on their cash, and their mortgage or its fix", () => {
+  const today = new Date("2026-10-25T04:00:00Z");
+  const d = { salary: "60000", cashTiers: [{ amount: "30000", rate: "3.0" }], hasMortgage: "yes", mortgageBalance: "180000", mortgageRate: "4.5", inputsTaxYear: 2026 };
+  const m = calcMetrics(d);
+  assert.equal(IMPACTS.inflation.line(d, m, { rate: "3.5" }), "Your cash earns about 3% on average, below 3.5% inflation, so it's losing spending power: about £150 a year in real terms on your £30,000, before tax.");
+  assert.match(IMPACTS.inflation.line({ ...d, cashTiers: [{ amount: "30000", rate: "4.5" }] }, calcMetrics({ ...d, cashTiers: [{ amount: "30000", rate: "4.5" }] }), { rate: "3.5" }), /above 3\.5% inflation, so it's growing in real terms/);
+  assert.equal(IMPACTS.inflation.line({}, calcMetrics({}), { rate: "3.5" }), null);
+  const line = IMPACTS.bankRate.line(d, m, { change: "0.25" }, today);
+  assert.match(line, /On your £30,000 in cash, a 0\.25 point rise would mean about £75 a year more interest/);
+  assert.match(line, /On your £180,000 mortgage, if your rate followed it, that would mean about £38 a month more in interest\./);
+  const fixed = { ...d, fixExpiryMonth: "3", fixExpiryYear: "2027" };
+  assert.match(IMPACTS.bankRate.line(fixed, calcMetrics(fixed), { change: "0.25" }, today), /Your mortgage is fixed until March 2027, so its payments wouldn't change before then\./);
+  const { text } = weeklyEmail({ items: [] }, fixed, { today, rows: [], unsubscribeUrl: "u" });
+  assert.match(text, /Coming up: your mortgage fix ends in March 2027\./);
+  assert.doesNotMatch(weeklyEmail({ items: [] }, { ...fixed, fixExpiryYear: "2028" }, { today, rows: [], unsubscribeUrl: "u" }).text, /mortgage fix ends/);
 });

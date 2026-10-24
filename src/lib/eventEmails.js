@@ -106,7 +106,7 @@ ${HOW_CANDID_WRITES}
 - Items: the one to five changes most likely to touch a UK saver or earner's own money (savings rates, ISAs, pensions, income tax and National Insurance, student loans, tax on savings and dividends, capital gains). Leave out business and spending measures.
 - Give an item an impact when one of these fits, with its fields filled in as plain numbers or short dates; otherwise kind "none":
 ${impactKinds()}
-- For a Bank Rate decision: new_bank_rate is the new rate, and the decision is the first item, status "news", with impact savingsRate and change = new rate minus old rate in percentage points (e.g. -0.25; 0 for a hold).
+- For a Bank Rate decision: new_bank_rate is the new rate, and the decision is the first item, status "news", with impact bankRate (its line covers savings and mortgages) and change = new rate minus old rate in percentage points (e.g. -0.25; 0 for a hold).
 
 If the announcement can't be found yet, call the tool with found=false, empty fields, and say what you found in the note.`;
 }
@@ -159,7 +159,7 @@ export function eventEmail(issue, event, rawD, { today = new Date(), unsubscribe
       ...(issue.intro ? [{ p: issue.intro.trim() }] : []),
       ...items.map(i => {
         const impact = i.impact && IMPACTS[i.impact.kind];
-        return { news: { title: i.title.trim(), status: i.status, body: i.body.trim(), forYou: impact ? impact.line(d, m, i.impact) : null, source: i.source?.trim() || null, url: i.url?.trim() || null } };
+        return { news: { title: i.title.trim(), status: i.status, body: i.body.trim(), forYou: impact ? impact.line(d, m, i.impact, today) : null, source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
       { button: { label: "Open Candid", href: `${SITE}/app/home` } },
     ],

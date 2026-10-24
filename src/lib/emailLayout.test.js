@@ -11,7 +11,9 @@ test("One email, as HTML and plain text: the same words in each", () => {
   });
   assert.equal(e.text, "Hi Jo,\n\nHello there, sign in (https://x/signin)\n\nWHAT YOU'LL GET\n- One\n- Two\n\nOpen Candid: https://x\n\nThe Candid team\n\nGuidance, not advice.\nStop these emails: https://u\nCandid Personal Finance Ltd · Company no. 17383565 · 66 Paul Street, London, EC2A 4NA");
   assert.match(e.html, /<img src="https:\/\/www\.candid-finance\.co\.uk\/email\/candid-logo\.png"[^>]*alt="Candid\."/);
-  assert.match(e.html, /background:#faf7f0/);
+  // A plain white page with no card, so a phone gets a full line of words.
+  assert.match(e.html, /<body style="margin:0;padding:0;background:#ffffff;">/);
+  assert.doesNotMatch(e.html, /border-radius:18px/);
   assert.match(e.html, /<strong[^>]*>there<\/strong>/);
   assert.match(e.html, /<h2[^>]*>What you&#39;ll get<\/h2>|<h2[^>]*>What you'll get<\/h2>/);
   // The gold rule under the logo, and a gold dot for each bullet.

@@ -49,6 +49,14 @@ test("the prompt names the week, the event just past and the one coming, not tho
   assert.match(prompt, /separate email about the Bank Rate decision on Thursday 22 October/);
   assert.match(prompt, /Coming up: the Budget on Wednesday 28 October/);
   assert.doesNotMatch(prompt, /17 September|17 December/);
+  assert.match(prompt, /next Sunday's email will recap the Budget/);
+});
+
+test("the Sunday after a Budget is its recap", () => {
+  const prompt = weeklyDraftPrompt("2026-11-01", "2026-10-31", events);
+  assert.match(prompt, /This issue is the Budget recap: the Budget was on Wednesday 28 October/);
+  assert.doesNotMatch(prompt, /separate email about the Budget/);
+  assert.doesNotMatch(prompt, /will recap the Budget/);
 });
 
 test("Claude's tool input becomes a clean issue, with an impact only where one fits", () => {

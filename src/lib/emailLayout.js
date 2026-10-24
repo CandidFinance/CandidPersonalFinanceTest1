@@ -2,12 +2,12 @@
 // a designed HTML email and as plain text (the fallback a mail app shows
 // when it won't show HTML). Pure, unit tested in emailLayout.test.js.
 //
-// The look, from the app's tokens (design-tokens.js): a cream page, a white
-// card with the wordmark (public/email/candid-logo.png) and a short gold
-// rule, Playfair Display for the greeting, headings and sign-off (Georgia
+// The look, from the app's tokens (design-tokens.js): a plain white page,
+// no card, with narrow side margins so a phone gets a full line of words;
+// the wordmark (public/email/candid-logo.png) and a short gold rule, Playfair Display for the greeting, headings and sign-off (Georgia
 // where a mail app won't load web fonts), DM Sans for the rest, gold-dot
 // bullets and pill buttons in the site's CTA blue (CTA_BLUE, Apple's
-// button blue); the small print under the card.
+// button blue); the small print under a rule.
 // Email-safe: tables and inline styles only, light scheme only.
 //
 // Text within a block: a string, or a list of pieces, each a string,
@@ -25,6 +25,8 @@
 export const SITE = "https://www.candid-finance.co.uk";
 const COMPANY = "Candid Personal Finance Ltd · Company no. 17383565 · 66 Paul Street, London, EC2A 4NA";
 
+// Side margin: the text column on a phone runs nearly edge to edge.
+const SIDE = "18px";
 const C = { blue: "#0071E3", green: "#162f24", gold: "#c4963a", cream: "#faf7f0", line: "#ece6d9", text: "#1a1a1a", muted: "#6b6b6b", success: "#2d6b4a" };
 const SANS = "'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const SERIF = "'Playfair Display',Georgia,'Times New Roman',serif";
@@ -73,7 +75,7 @@ function textOf(b) {
   if (b.news) {
     const n = b.news;
     return [
-      `${n.title}${STATUS[n.status] ? ` (${STATUS[n.status].label})` : ""}`, n.body,
+      `${STATUS[n.status] ? `[${STATUS[n.status].label}] ` : ""}${n.title}`, n.body,
       ...(n.forYou ? [`For you: ${n.forYou}`] : []),
       ...(n.source ? [`Source: ${n.source}${n.url ? ` (${n.url})` : ""}`] : []),
       "",
@@ -89,7 +91,7 @@ const P = `margin:0 0 16px;font-family:${SANS};font-size:15px;line-height:1.6;co
 
 function htmlOf(b) {
   if (b.p !== undefined) return `<p style="${P}">${inline(b.p)}</p>`;
-  if (b.h !== undefined) return `<h2 style="margin:26px 0 12px;font-family:${SERIF};font-size:19px;line-height:1.3;font-weight:700;color:${C.green};">${esc(b.h)}</h2>`;
+  if (b.h !== undefined) return `<h2 style="margin:26px 0 12px;font-family:${SERIF};font-size:22px;line-height:1.25;font-weight:700;color:${C.green};">${esc(b.h)}</h2>`;
   if (b.small !== undefined) return `<p style="margin:0 0 14px;font-family:${SANS};font-size:13px;line-height:1.55;color:${C.muted};">${inline(b.small)}</p>`;
   if (b.list) {
     const rows = b.list.map(i => `<tr><td valign="top" width="22" style="width:22px;padding:0 0 12px;"><div style="width:7px;height:7px;margin-top:9px;border-radius:50%;background:${C.gold};font-size:0;line-height:0;">&nbsp;</div></td><td valign="top" style="padding:0 0 12px;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.text};">${inline(i)}</td></tr>`).join("");
@@ -106,7 +108,8 @@ function htmlOf(b) {
   if (b.news) {
     const n = b.news, s = STATUS[n.status];
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr><td style="padding:18px 0 0;border-top:1px solid ${C.line};">`
-      + `<div style="font-family:${SANS};font-size:16px;line-height:1.4;font-weight:700;color:${C.text};">${esc(n.title)}${s ? ` <span style="display:inline-block;margin-left:6px;padding:2px 9px;border-radius:100px;background:${s.bg};color:${s.fg};font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;vertical-align:2px;">${s.label}</span>` : ""}</div>`
+      + (s ? `<div style="margin:0 0 7px;"><span style="display:inline-block;padding:2px 9px;border-radius:100px;background:${s.bg};color:${s.fg};font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;">${s.label}</span></div>` : "")
+      + `<div style="font-family:${SANS};font-size:19px;line-height:1.3;font-weight:700;color:${C.text};">${esc(n.title)}</div>`
       + `<p style="margin:8px 0 12px;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.text};">${esc(n.body)}</p>`
       + (n.forYou ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;"><tr><td style="padding:12px 14px;background:#f1f6f2;border-left:3px solid ${C.success};border-radius:8px;"><div style="font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.success};">For you</div><div style="margin-top:3px;font-family:${SANS};font-size:14.5px;line-height:1.55;color:${C.text};">${esc(n.forYou)}</div></td></tr></table>` : "")
       + (n.source ? `<div style="font-family:${SANS};font-size:12.5px;color:${C.muted};">Source: ${n.url ? `<a href="${esc(n.url)}" style="color:${C.muted};text-decoration:underline;">${esc(n.source)}</a>` : esc(n.source)}</div>` : "")
@@ -134,18 +137,18 @@ export function renderEmail({ subject, preheader = "", greeting = "Hi,", blocks:
   const small = `font-family:${SANS};font-size:12px;line-height:1.6;color:${C.muted};`;
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${esc(subject)}</title><link href="${FONTS}" rel="stylesheet"></head>
-<body style="margin:0;padding:0;background:${C.cream};">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${C.cream};">${esc(preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.cream};"><tr><td align="center" style="padding:28px 12px 36px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border:1px solid ${C.line};border-radius:18px;">
-<tr><td style="padding:30px 32px 0;"><a href="${esc(withUtm(SITE, campaign))}" style="text-decoration:none;"><img src="${SITE}/email/candid-logo.png" width="118" height="37" alt="Candid." style="display:block;border:0;outline:none;font-family:${SERIF};font-size:28px;font-weight:700;color:${C.green};"></a></td></tr>
-<tr><td style="padding:16px 32px 0;"><div style="width:44px;height:2px;background:${C.gold};font-size:0;line-height:0;">&nbsp;</div></td></tr>
-<tr><td style="padding:24px 32px 30px;">
+<body style="margin:0;padding:0;background:#ffffff;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#ffffff;">${esc(preheader)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;"><tr><td align="center" style="padding:20px 0 32px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+<tr><td style="padding:8px ${SIDE} 0;"><a href="${esc(withUtm(SITE, campaign))}" style="text-decoration:none;"><img src="${SITE}/email/candid-logo.png" width="118" height="37" alt="Candid." style="display:block;border:0;outline:none;font-family:${SERIF};font-size:28px;font-weight:700;color:${C.green};"></a></td></tr>
+<tr><td style="padding:16px ${SIDE} 0;"><div style="width:44px;height:2px;background:${C.gold};font-size:0;line-height:0;">&nbsp;</div></td></tr>
+<tr><td style="padding:22px ${SIDE} 26px;">
 <p style="margin:0 0 16px;font-family:${SERIF};font-size:22px;line-height:1.3;font-weight:700;color:${C.green};">${esc(greeting)}</p>
 ${blocks.map(htmlOf).join("\n")}
 ${signoff ? `<p style="margin:26px 0 0;font-family:${SERIF};font-size:22px;line-height:1.3;font-weight:700;color:${C.green};">The Candid team</p>` : ""}
 </td></tr></table>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;"><tr><td align="center" style="padding:20px 24px 0;${small}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;"><tr><td align="center" style="padding:18px ${SIDE} 0;border-top:1px solid ${C.line};${small}">
 ${note ? `${esc(note)}<br>` : ""}${unsubscribeUrl ? `<a href="${esc(unsubscribeUrl)}" style="color:${C.muted};text-decoration:underline;">Stop these emails</a><br>` : ""}${esc(COMPANY)}
 </td></tr></table>
 </td></tr></table>

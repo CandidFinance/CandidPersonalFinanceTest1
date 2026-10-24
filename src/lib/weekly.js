@@ -36,12 +36,18 @@ export const WEEKLY_GRACE_DAYS = 2;
 const SOON_DAYS = 42;
 // Better rates are only worth a line from this much a year.
 const RATES_LINE_MIN = 50;
+// A mortgage fix ending within this many days makes "Your week": long
+// enough to arrange the next deal.
+const FIX_SOON_DAYS = 183;
 // Above this, National Insurance on pay is 2%; below, 8% (2026/27).
 const NI_UPPER = 50270;
 export const PAID_PLANS = ["monthly", "yearly"];
 // The most free months invites can earn (server/referrals.js REFERRAL_CAP).
 export const REFERRAL_MONTHS = 12;
 export const STATUSES = { rumour: "Rumour", confirmed: "Confirmed", news: "News" };
+// "This week" shows what's settled first: confirmed, then news, then
+// rumours; within each, the issue's own order.
+const STATUS_ORDER = { confirmed: 0, news: 1, rumour: 2 };
 
 const firstName = name => (name || "").trim().split(/\s+/)[0] || "";
 const iso = date => date.toISOString().slice(0, 10);
@@ -60,9 +66,22 @@ export function nextSunday(today = new Date()) {
   return iso(new Date(+day + ((7 - day.getUTCDay()) % 7) * DAY_MS));
 }
 
+// A Bank Rate move on their mortgage: the monthly interest if their rate
+// followed it, or that their fix holds it off. Null without a mortgage.
+function mortgageLine(d, c, today) {
+  const bal = +d.mortgageBalance || 0;
+  if (d.hasMortgage !== "yes" || !(bal > 0) || !c) return null;
+  const fixEnd = +d.fixExpiryYear && +d.fixExpiryMonth >= 1 ? Date.UTC(+d.fixExpiryYear, +d.fixExpiryMonth - 1, 1) : null;
+  if (fixEnd && fixEnd > +today) return `Your mortgage is fixed until ${MONTHS[+d.fixExpiryMonth - 1]} ${d.fixExpiryYear}, so its payments wouldn't change before then.`;
+  const month = Math.round(bal * Math.abs(c) / 100 / 12);
+  if (month < 1) return null;
+  return `On your ${fmt(bal)} mortgage, if your rate followed it, that would mean about ${fmt(month)} a month ${c < 0 ? "less" : "more"} in interest.`;
+}
+
 // ── What a change would mean on their figures ────────────────────────────────
-// Each takes the item's figures and returns a line, or null when it doesn't
-// apply to them. `label` and `fields` drive the editor on /admin/alerts.
+// Each takes the item's figures (and the day) and returns a line, or null
+// when it doesn't apply to them. `label` and `fields` drive the editor on
+// /admin/alerts.
 export const IMPACTS = {
   savingsRate: {
     label: "Savings rates move",
@@ -73,6 +92,26 @@ export const IMPACTS = {
       const year = Math.round(m.cash * Math.abs(c) / 100);
       if (year < 1) return null;
       return `On your ${fmt(m.cash)} in cash, a ${Math.abs(c)} point ${c < 0 ? "fall" : "rise"} would mean about ${fmt(year)} a year ${c < 0 ? "less" : "more"} interest, if your accounts follow it.`;
+    },
+  },
+  bankRate: {
+    label: "Bank Rate moves (savings and mortgage)",
+    fields: [{ key: "change", label: "Change, in percentage points (e.g. 0.25)" }],
+    line: (d, m, { change }, today = new Date()) => {
+      const lines = [IMPACTS.savingsRate.line(d, m, { change }), mortgageLine(d, +change, today)].filter(Boolean);
+      return lines.length ? lines.join(" ") : null;
+    },
+  },
+  inflation: {
+    label: "Inflation figure",
+    fields: [{ key: "rate", label: "Inflation, % a year (e.g. 3.5)" }],
+    line: (d, m, { rate }) => {
+      const cpi = +rate;
+      if (!(cpi > 0) || !(m.cash > 0)) return null;
+      const earns = Math.round(m.effectiveSavingsRate * 100) / 100;
+      if (earns >= cpi) return `Your cash earns about ${earns}% on average, above ${cpi}% inflation, so it's growing in real terms, before tax.`;
+      const lost = Math.round(m.cash * (cpi - earns) / 100);
+      return `Your cash earns about ${earns}% on average, below ${cpi}% inflation, so it's losing spending power: about ${fmt(lost)} a year in real terms on your ${fmt(m.cash)}, before tax.`;
     },
   },
   cashIsaLimit: {
@@ -126,6 +165,12 @@ export function yourWeek(d, m, today, rows) {
     lines.push({ label: "ISA", text: `${fmt(m.isaHeadroom)} of this year's allowance left, until 5 April.` });
   }
   for (const text of comingUp(d, m, today)) lines.push({ label: "Coming up", text });
+  const fixMonth = +d.fixExpiryMonth, fixYear = +d.fixExpiryYear;
+  if (d.hasMortgage === "yes" && fixMonth >= 1 && fixMonth <= 12 && fixYear) {
+    const day = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    const toFix = Math.round((Date.UTC(fixYear, fixMonth - 1, 1) - day) / DAY_MS);
+    if (toFix >= 0 && toFix <= FIX_SOON_DAYS) lines.push({ label: "Coming up", text: `your mortgage fix ends in ${MONTHS[fixMonth - 1]} ${fixYear}.` });
+  }
   return lines;
 }
 
@@ -155,7 +200,8 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
   const d = rollTaxYear(rawD || {}, today);
   const m = calcMetrics(d);
   const first = firstName(d.name);
-  const items = (issue.items || []).filter(i => i && i.title && i.body);
+  const items = (issue.items || []).filter(i => i && i.title && i.body)
+    .map((i, n) => ({ i, n })).sort((a, b) => (STATUS_ORDER[a.i.status] ?? 1) - (STATUS_ORDER[b.i.status] ?? 1) || a.n - b.n).map(x => x.i);
   const mine = yourWeek(d, m, today, rows);
   const subject = (issue.subject || "").trim() || `This week: ${items[0]?.title?.trim() || "your money"}`;
   return renderEmail({ campaign: "weekly",
@@ -163,11 +209,11 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
     greeting: first ? `Hi ${first},` : "Hi,",
     blocks: [
       ...(issue.intro ? [{ p: issue.intro.trim() }] : []),
-      ...(mine.length ? [{ h: "Your week" }, { list: mine.map(l => [{ b: l.label }, `: ${l.text}`]) }] : []),
-      ...(items.length ? [{ h: "This week" }] : []),
+      ...(mine.length ? [{ h: "Your week on Candid" }, { list: mine.map(l => [{ b: l.label }, `: ${l.text}`]) }, { button: { label: "Fix with Candid", href: `${SITE}/app/home` } }] : []),
+      ...(items.length ? [{ h: "What's happening this week" }] : []),
       ...items.map(i => {
         const impact = i.impact && IMPACTS[i.impact.kind];
-        return { news: { title: i.title.trim(), status: i.status, body: i.body.trim(), forYou: impact ? impact.line(d, m, i.impact) : null, source: i.source?.trim() || null, url: i.url?.trim() || null } };
+        return { news: { title: i.title.trim(), status: i.status, body: i.body.trim(), forYou: impact ? impact.line(d, m, i.impact, today) : null, source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
       { button: { label: "Open Candid", href: `${SITE}/app/home` } },
     ],
