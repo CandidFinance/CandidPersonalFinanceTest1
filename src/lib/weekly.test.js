@@ -38,6 +38,7 @@ test("The Sunday email: their week on their figures, then the news, each with wh
   // £65,000 × 6% = £3,900 sacrificed; NI at 2% on the £1,900 over the cap.
   assert.match(text, /For you: You sacrifice about £3\.9k a year\. Under a £2k cap from April 2029, National Insurance would be due on £1\.9k of it: about £38 a year\./);
   assert.match(text, /Stop these emails: https:\/\/u/);
+  assert.match(text, /The Candid team\n\nOpen Candid: https:\/\/www\.candid-finance\.co\.uk\/app\/home/);
   assert.doesNotMatch(text, /you should/i);
 });
 

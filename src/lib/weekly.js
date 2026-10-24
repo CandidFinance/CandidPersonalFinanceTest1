@@ -245,8 +245,8 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
         const forYou = impact ? impact.line(d, m, i.impact, today) : null;
         return { news: { title: shortMoney(unbold(i.title).trim()), status: i.status, body: shortMoney(unbold(i.body).trim()), forYou: forYou && shortMoney(forYou), source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
-      { button: { label: "Open Candid", href: `${SITE}/app/home` } },
     ],
+    after: [{ button: { label: "Open Candid", href: `${SITE}/app/home` } }],
     note: "Rumours are just that: nothing changes until it's announced. Candid works out what each change would mean on the figures you've given it, with no stake in what you choose. It's guidance, not advice.",
     unsubscribeUrl,
   });

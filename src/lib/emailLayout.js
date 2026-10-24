@@ -120,15 +120,18 @@ function htmlOf(b) {
 
 // One email. `greeting`: "Hi Lizzie," or "Hi,". `preheader`: the line a
 // mail app shows after the subject. `signoff`: "The Candid team" under it
-// (false for a short link email). `unsubscribeUrl`: for emails people can
+// (false for a short link email); `after`: blocks under the sign-off.
+// `unsubscribeUrl`: for emails people can
 // stop; `note`: a line of small print above it. `campaign`: the email's
 // kind, tagged on its links to the site (withUtm).
-export function renderEmail({ subject, preheader = "", greeting = "Hi,", blocks: rawBlocks = [], signoff = true, note = null, unsubscribeUrl = null, campaign = null }) {
+export function renderEmail({ subject, preheader = "", greeting = "Hi,", blocks: rawBlocks = [], after: rawAfter = [], signoff = true, note = null, unsubscribeUrl = null, campaign = null }) {
   const blocks = campaign ? rawBlocks.map(b => tagBlock(b, campaign)) : rawBlocks;
+  const after = campaign ? rawAfter.map(b => tagBlock(b, campaign)) : rawAfter;
   const text = [
     greeting, "",
     ...blocks.flatMap(textOf),
     ...(signoff ? ["The Candid team", ""] : []),
+    ...after.flatMap(textOf),
     ...(note ? [note] : []),
     ...(unsubscribeUrl ? [`Stop these emails: ${unsubscribeUrl}`] : []),
     COMPANY,
@@ -147,6 +150,7 @@ export function renderEmail({ subject, preheader = "", greeting = "Hi,", blocks:
 <p style="margin:0 0 16px;font-family:${SERIF};font-size:22px;line-height:1.3;font-weight:700;color:${C.green};">${esc(greeting)}</p>
 ${blocks.map(htmlOf).join("\n")}
 ${signoff ? `<p style="margin:26px 0 0;font-family:${SERIF};font-size:22px;line-height:1.3;font-weight:700;color:${C.green};">The Candid team</p>` : ""}
+${after.length ? `<div style="height:18px;line-height:18px;font-size:0;">&nbsp;</div>${after.map(htmlOf).join("\n")}` : ""}
 </td></tr></table>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;"><tr><td align="center" style="padding:18px ${SIDE} 0;border-top:1px solid ${C.line};${small}">
 ${note ? `${esc(note)}<br>` : ""}${unsubscribeUrl ? `<a href="${esc(unsubscribeUrl)}" style="color:${C.muted};text-decoration:underline;">Stop these emails</a><br>` : ""}${esc(COMPANY)}
