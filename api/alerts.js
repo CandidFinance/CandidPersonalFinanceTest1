@@ -1,6 +1,6 @@
 import { isAllowedOrigin, clientIp, safeEqual, rateLimiter, checkAdminPassword } from "../server/http.js";
 import { alertsDue, alertEmail, inputsFromRow, isFounding, FREE_RATES_DELAY_DAYS } from "../src/lib/alerts.js";
-import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS, REFERRAL_MONTHS } from "../src/lib/weekly.js";
+import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS, REFERRAL_MONTHS, FREE_WEEKLY_ISSUES } from "../src/lib/weekly.js";
 import { confirmedWelcomeEmail, confirmReminderEmail } from "../src/lib/accountEmails.js";
 import { monthlyCheckIn, monthlyEmail, MONTHLY_NEW_DAYS } from "../src/lib/monthly.js";
 import { eventEmail, eventEmailDue, eventName } from "../src/lib/eventEmails.js";
@@ -46,8 +46,11 @@ import { referralLink } from "../server/referrals.js";
 //    alerts for that address.
 //
 // A free user gets emails only once they've confirmed their address (its
-// link, api/email.js, sets `email_verifications.verified_at`). Subscribers
-// gave theirs to Stripe and sign in with it, so theirs needs no link.
+// link, api/email.js, sets `email_verifications.verified_at`) and asked for
+// them. Subscribers gave theirs to Stripe and sign in with it, so theirs
+// needs no link. The exception: every free address, confirmed or not, gets
+// its first FREE_WEEKLY_ISSUES Sunday emails, with a "Confirm my email"
+// button while it isn't confirmed.
 // Before that table is there, no free user is emailed; subscribers still are.
 //
 // Sending is off until VITE_ALERTS_LIVE=1 (the same setting shows the emails
@@ -122,20 +125,21 @@ async function rowsFor(email, columns) {
 }
 
 // ── Who can get emails, and what's due for each ──────────────────────────────
-// Subscribers, on their saved answers; free users who asked for emails, on
-// their latest row. Anyone who has unsubscribed is left out. `notes` says
+// Subscribers, on their saved answers; free users, on their latest row
+// (`optedIn` if any of their rows asked for emails). Anyone who has unsubscribed is left out. `notes` says
 // what couldn't be read (a missing table, before the SQL is run): in a live
 // run that stops everything, so no one who unsubscribed is ever emailed.
 async function recipients(notes) {
   const subs = await all(`subscriptions?select=email,status,plan,amount_pence,current_period_end,created_at,saved_state&status=in.(${ACTIVE.join(",")})`);
   let rows;
   try {
-    rows = await all(`test?select=${ROW_COLUMNS}&or=(unlock_call_ok.is.true,alerts_opt_in.is.true)&email=not.is.null&order=id.desc`);
+    rows = await all(`test?select=${ROW_COLUMNS},unlock_call_ok,alerts_opt_in&email=not.is.null&order=id.desc`);
   } catch (e) {
     // alerts_opt_in not added yet: the unlock tick box only.
     notes.push("test.alerts_opt_in is missing, so only the unlock tick box counts");
-    rows = await all(`test?select=${ROW_COLUMNS}&unlock_call_ok=is.true&email=not.is.null&order=id.desc`);
+    rows = await all(`test?select=${ROW_COLUMNS},unlock_call_ok&email=not.is.null&order=id.desc`);
   }
+  const optedIn = new Set(rows.filter(r => r.unlock_call_ok || r.alerts_opt_in).map(r => cleanEmail(r.email)));
   const people = new Map();
   for (const s of subs) {
     const email = cleanEmail(s.email);
@@ -147,7 +151,7 @@ async function recipients(notes) {
   // Newest row first, so the first one seen for an email is their latest.
   for (const r of rows) {
     const email = cleanEmail(r.email);
-    if (email && !people.has(email)) people.set(email, { email, who: "free", d: inputsFromRow(r), asOf: r.created_at ? new Date(r.created_at) : null });
+    if (email && !people.has(email)) people.set(email, { email, who: "free", optedIn: optedIn.has(email), d: inputsFromRow(r), asOf: r.created_at ? new Date(r.created_at) : null });
   }
   return [...people.values()];
 }
@@ -250,9 +254,20 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
   }
   const emails = [];
   for (const p of people) {
-    if (out.has(p.email) || (p.who === "free" && !verifiedAt.has(p.email))) continue;
+    if (out.has(p.email)) continue;
     const done = new Set((sentBy.get(p.email) || []).map(s => s.alert_key));
     const unsubscribe = unsubscribeUrl(p.email);
+    // A free address's first few Sunday emails, confirmed or not.
+    const freeIssuesSent = [...done].filter(k => k.startsWith("weekly:")).length;
+    if (issue && p.who === "free" && p.d && !done.has(`weekly:${issue.week}`) && freeIssuesSent < FREE_WEEKLY_ISSUES) {
+      try {
+        const free = { left: FREE_WEEKLY_ISSUES - freeIssuesSent - 1, confirmUrl: verifiedAt.has(p.email) ? null : confirmUrl(p.email) };
+        const mail = weeklyEmail(issue, p.d, { today, rows: rates || [], unsubscribeUrl: unsubscribe, free });
+        emails.push({ to: p.email, who: p.who, kind: "weekly", key: `weekly:${issue.week}`, detail: null, ...mail });
+      } catch (e) { notes.push(`couldn't write the Sunday email for one free user: ${e.message}`); }
+    }
+    // Everything else: a free user only once confirmed and opted in.
+    if (p.who === "free" && !(p.optedIn && verifiedAt.has(p.email))) continue;
     if (p.who === "subscriber" && PAID_PLANS.includes(p.sub.plan) && !done.has("welcome") && new Date(p.sub.created_at) > new Date(since)) {
       const mail = welcomeEmail({ name: p.d?.name, plan: p.sub.plan, amountPence: p.sub.amount_pence, periodEnd: p.sub.current_period_end, inviteCode: codeOf.get(p.email) || null, unsubscribeUrl: unsubscribe });
       emails.push({ to: p.email, who: p.who, kind: "welcome", key: "welcome", detail: null, ...mail });

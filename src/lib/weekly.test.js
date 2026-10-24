@@ -42,6 +42,16 @@ test("The Sunday email: their week on their figures, then the news, each with wh
   assert.doesNotMatch(text, /you should/i);
 });
 
+test("A free address's Sunday email: how many free are left, and a confirm button while it isn't confirmed", () => {
+  const opts = { today: day("2026-10-25"), rows: ROWS, unsubscribeUrl: "https://u" };
+  const first = weeklyEmail(issue, saver, { ...opts, free: { left: 2, confirmUrl: "https://c" } });
+  assert.match(first.text, /The Candid team\n\nYou're getting this because you gave Candid your email\. 2 more free, then the Sunday email is for subscribers\. Your email isn't confirmed yet: this button confirms it's yours\.\n\nConfirm my email: https:\/\/c\n/);
+  assert.doesNotMatch(first.text, /Open Candid/);
+  const last = weeklyEmail(issue, saver, { ...opts, free: { left: 0, confirmUrl: null } });
+  assert.match(last.text, /This is the last free one: after this, the Sunday email is for subscribers\.\n\nOpen Candid: /);
+  assert.doesNotMatch(weeklyEmail(issue, saver, opts).text, /getting this because/);
+});
+
 test("An impact that doesn't apply to them leaves the item without a 'For you' line", () => {
   const noSacrifice = { ...saver, pensionType: "relief" };
   const { text } = weeklyEmail(issue, noSacrifice, { today: day("2026-10-25"), rows: ROWS, unsubscribeUrl: "https://u" });

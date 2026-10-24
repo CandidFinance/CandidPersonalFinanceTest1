@@ -37,7 +37,8 @@ export function emailFromToken(t, purpose = "unsubscribe") {
   return email && safeEqual(sig, sign(email, purpose)) ? email : null;
 }
 
-export async function sendMail(to, subject, text, unsubscribe, html = null) {
+// Resend allows a few requests a second: a 429 waits a second and tries again.
+export async function sendMail(to, subject, text, unsubscribe, html = null, tries = 3) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
@@ -46,6 +47,10 @@ export async function sendMail(to, subject, text, unsubscribe, html = null) {
       ...(unsubscribe ? { headers: { "List-Unsubscribe": `<${unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } } : {}),
     }),
   });
+  if (res.status === 429 && tries > 1) {
+    await new Promise(r => setTimeout(r, 1000));
+    return sendMail(to, subject, text, unsubscribe, html, tries - 1);
+  }
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
 }
 

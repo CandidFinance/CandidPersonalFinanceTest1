@@ -44,6 +44,9 @@ const NI_UPPER = 50270;
 export const PAID_PLANS = ["monthly", "yearly"];
 // The most free months invites can earn (server/referrals.js REFERRAL_CAP).
 export const REFERRAL_MONTHS = 12;
+// Free addresses get this many Sunday emails, from the first after they
+// gave it; then it's for subscribers.
+export const FREE_WEEKLY_ISSUES = 3;
 export const STATUSES = { rumour: "Rumour", confirmed: "Confirmed", news: "News" };
 // "This week" shows what's settled first: confirmed, then news, then
 // rumours; within each, the issue's own order.
@@ -224,8 +227,10 @@ export function comingUp(d, m, today) {
 // ── The emails ──────────────────────────────────────────────────────────────
 // Each as HTML and plain text (emailLayout.js).
 
-// The Sunday email for one subscriber. `rows`: savings_rates.
-export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubscribeUrl }) {
+// The Sunday email for one subscriber. `rows`: savings_rates. `free`: for a
+// free address, { left } (free issues after this one) and `confirmUrl` while
+// it isn't confirmed, whose button then replaces "Open Candid".
+export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubscribeUrl, free = null }) {
   const d = rollTaxYear(rawD || {}, today);
   const m = calcMetrics(d);
   const first = firstName(d.name);
@@ -246,7 +251,10 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
         return { news: { title: shortMoney(unbold(i.title).trim()), status: i.status, body: shortMoney(unbold(i.body).trim()), forYou: forYou && shortMoney(forYou), source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
     ],
-    after: [{ button: { label: "Open Candid", href: `${SITE}/app/home` } }],
+    after: [
+      ...(free ? [{ small: `You're getting this because you gave Candid your email. ${free.left > 0 ? `${free.left} more free, then the Sunday email is for subscribers.` : "This is the last free one: after this, the Sunday email is for subscribers."}${free.confirmUrl ? " Your email isn't confirmed yet: this button confirms it's yours." : ""}` }] : []),
+      free?.confirmUrl ? { button: { label: "Confirm my email", href: free.confirmUrl } } : { button: { label: "Open Candid", href: `${SITE}/app/home` } },
+    ],
     note: "Rumours are just that: nothing changes until it's announced. Candid works out what each change would mean on the figures you've given it, with no stake in what you choose. It's guidance, not advice.",
     unsubscribeUrl,
   });
