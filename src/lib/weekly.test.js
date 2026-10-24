@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { weeklyWeek, nextSunday, weeklyEmail, welcomeEmail, cleanIssue, IMPACTS } from "./weekly.js";
+import { weeklyWeek, nextSunday, weeklyEmail, welcomeEmail, cleanIssue, IMPACTS, shortMoney } from "./weekly.js";
 import { calcMetrics } from "./metrics.js";
 
 const day = s => new Date(`${s}T08:00:00Z`);
@@ -34,9 +34,9 @@ test("The Sunday email: their week on their figures, then the news, each with wh
   const { subject, text } = weeklyEmail(issue, saver, { today: day("2026-10-25"), rows: ROWS, unsubscribeUrl: "https://u" });
   assert.equal(subject, "This week: Cash ISA limit to fall");
   assert.match(text, /^Hi Alex,\n\nA quiet week, bar the Budget talk\.\n\nYOUR WEEK ON CANDID\n- Rates: against today's best rates/);
-  assert.match(text, /\[Confirmed\] Cash ISA limit to fall\nThe limit for cash in an ISA falls to £12,000 a year\.\nFor you: You've put £7,000 into a cash ISA this tax year, within a £12,000 limit from April 2027\.\nSource: GOV\.UK \(https:\/\/www\.gov\.uk\/x\)/);
+  assert.match(text, /\[Confirmed\] Cash ISA limit to fall\nThe limit for cash in an ISA falls to £12k a year\.\nFor you: You've put £7k into a cash ISA this tax year, within a £12k limit from April 2027\.\nSource: GOV\.UK \(https:\/\/www\.gov\.uk\/x\)/);
   // £65,000 × 6% = £3,900 sacrificed; NI at 2% on the £1,900 over the cap.
-  assert.match(text, /For you: You sacrifice about £3,900 a year\. Under a £2,000 cap from April 2029, National Insurance would be due on £1,900 of it: about £38 a year\./);
+  assert.match(text, /For you: You sacrifice about £3\.9k a year\. Under a £2k cap from April 2029, National Insurance would be due on £1\.9k of it: about £38 a year\./);
   assert.match(text, /Stop these emails: https:\/\/u/);
   assert.doesNotMatch(text, /you should/i);
 });
@@ -106,4 +106,14 @@ test("inflation and Bank Rate lines: real terms on their cash, and their mortgag
   const { text } = weeklyEmail({ items: [] }, fixed, { today, rows: [], unsubscribeUrl: "u" });
   assert.match(text, /Coming up: your mortgage fix ends in March 2027\./);
   assert.doesNotMatch(weeklyEmail({ items: [] }, { ...fixed, fixExpiryYear: "2028" }, { today, rows: [], unsubscribeUrl: "u" }).text, /mortgage fix ends/);
+});
+
+test("skimmable: £k figures, a bold-led summary list, and a subject with their name", () => {
+  assert.equal(shortMoney("£30,000, £180,000, £2,400, £621, £1,250,000 and £8.4bn."), "£30k, £180k, £2.4k, £621, £1.3m and £8.4bn.");
+  const { subject, text, html } = weeklyEmail({ subject: "Cuppa and a yap, {first}?", intro: "- **Inflation rose to 3.5%** (ONS).\n- **Budget** on Wednesday.", items: [] },
+    { name: "Sam Smith", cashTiers: [{ amount: "30000", rate: "1.0" }], inputsTaxYear: 2026 }, { today: new Date("2026-10-25T04:00:00Z"), rows: [], unsubscribeUrl: "u" });
+  assert.equal(subject, "Cuppa and a yap, Sam?");
+  assert.match(text, /^Hi Sam,\n\n- Inflation rose to 3\.5% \(ONS\)\.\n- Budget on Wednesday\./);
+  assert.match(html, /<strong[^>]*>Inflation rose to 3\.5%<\/strong> \(ONS\)\./);
+  assert.equal(weeklyEmail({ subject: "Cuppa and a yap, {first}?", items: [] }, {}, { today: new Date("2026-10-25T04:00:00Z"), rows: [], unsubscribeUrl: "u" }).subject, "Cuppa and a yap?");
 });

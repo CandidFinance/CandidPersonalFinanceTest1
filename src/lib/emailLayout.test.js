@@ -17,7 +17,9 @@ test("One email, as HTML and plain text: the same words in each", () => {
   assert.match(e.html, /<strong[^>]*>there<\/strong>/);
   assert.match(e.html, /<h2[^>]*>What you&#39;ll get<\/h2>|<h2[^>]*>What you'll get<\/h2>/);
   // The gold rule under the logo, and a gold dot for each bullet.
-  assert.equal((e.html.match(/background:#c4963a;font-size:0/g) || []).length, 3);
+  // The rule under the logo, then a gold bullet character per list item.
+  assert.equal((e.html.match(/background:#c4963a;font-size:0/g) || []).length, 1);
+  assert.equal((e.html.match(/color:#c4963a;">&bull;</g) || []).length, 2);
   assert.match(e.html, /color:#162f24;">The Candid team<\/p>/);
   assert.match(e.html, /<a href="https:\/\/u"[^>]*>Stop these emails<\/a>/);
 });

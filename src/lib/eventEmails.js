@@ -20,7 +20,7 @@
 
 import { calcMetrics } from "./metrics.js";
 import { rollTaxYear } from "./taxYear.js";
-import { IMPACTS, STATUSES, cleanIssue } from "./weekly.js";
+import { IMPACTS, STATUSES, cleanIssue, shortMoney } from "./weekly.js";
 import { renderEmail, SITE } from "./emailLayout.js";
 
 export const EVENT_EMAIL_DAYS = 3;
@@ -159,7 +159,8 @@ export function eventEmail(issue, event, rawD, { today = new Date(), unsubscribe
       ...(issue.intro ? [{ p: issue.intro.trim() }] : []),
       ...items.map(i => {
         const impact = i.impact && IMPACTS[i.impact.kind];
-        return { news: { title: i.title.trim(), status: i.status, body: i.body.trim(), forYou: impact ? impact.line(d, m, i.impact, today) : null, source: i.source?.trim() || null, url: i.url?.trim() || null } };
+        const forYou = impact ? impact.line(d, m, i.impact, today) : null;
+        return { news: { title: shortMoney(i.title.trim()), status: i.status, body: shortMoney(i.body.trim()), forYou: forYou && shortMoney(forYou), source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
       { button: { label: "Open Candid", href: `${SITE}/app/home` } },
     ],

@@ -52,6 +52,35 @@ const STATUS_ORDER = { confirmed: 0, news: 1, rumour: 2 };
 const firstName = name => (name || "").trim().split(/\s+/)[0] || "";
 const iso = date => date.toISOString().slice(0, 10);
 
+// Pounds in the emails as £30k, £2.4k, £1.2m: quicker to read on a phone.
+// Under £1,000 stays as it is.
+export function shortMoney(s) {
+  return String(s ?? "").replace(/£(\d{1,3}(?:,\d{3})+|\d{4,})(?!\d|\.\d)/g, (all, num) => {
+    const n = +num.replace(/,/g, "");
+    const one = x => String(Math.round(x * 10) / 10);
+    if (n >= 1e6) return `£${one(n / 1e6)}m`;
+    const k = n / 1000;
+    return `£${k >= 100 ? Math.round(k) : one(k)}k`;
+  });
+}
+// **bold** in a line, as the layout's inline pieces.
+export const boldPieces = s => String(s).split(/\*\*(.+?)\*\*/g).map((x, i) => i % 2 ? { b: x } : x).filter(x => x !== "");
+const unbold = s => String(s || "").replace(/\*\*/g, "");
+// An intro as blocks: lines starting "- " make a list (the skimmable
+// summary), other lines paragraphs; **bold** either way.
+export function introBlocks(intro) {
+  const blocks = [];
+  for (const line of String(intro || "").split(/\n+/).map(l => l.trim()).filter(Boolean)) {
+    const bullet = /^[-•]\s+/.test(line);
+    const pieces = boldPieces(shortMoney(line.replace(/^[-•]\s+/, "")));
+    if (bullet && blocks.at(-1)?.list) blocks.at(-1).list.push(pieces);
+    else blocks.push(bullet ? { list: [pieces] } : { p: pieces });
+  }
+  return blocks;
+}
+// A subject's {first}: their first name, or dropped with its comma.
+export const personalSubject = (subject, first) => subject.replace(/,?\s*\{first\}/g, m => first ? m.replace("{first}", first) : "").trim();
+
 // The Sunday this week's email belongs to, when it's due on `today`: on
 // the Sunday or up to WEEKLY_GRACE_DAYS after. Null on other days.
 export function weeklyWeek(today = new Date()) {
@@ -203,17 +232,18 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
   const items = (issue.items || []).filter(i => i && i.title && i.body)
     .map((i, n) => ({ i, n })).sort((a, b) => (STATUS_ORDER[a.i.status] ?? 1) - (STATUS_ORDER[b.i.status] ?? 1) || a.n - b.n).map(x => x.i);
   const mine = yourWeek(d, m, today, rows);
-  const subject = (issue.subject || "").trim() || `This week: ${items[0]?.title?.trim() || "your money"}`;
+  const subject = personalSubject(shortMoney((issue.subject || "").trim() || `This week: ${items[0]?.title?.trim() || "your money"}`), first);
   return renderEmail({ campaign: "weekly",
-    subject, preheader: issue.intro || items.map(i => i.title).join(" · "),
+    subject, preheader: shortMoney(unbold(issue.intro).replace(/^[-•]\s+/gm, "").replace(/\n+/g, " ")) || items.map(i => i.title).join(" · "),
     greeting: first ? `Hi ${first},` : "Hi,",
     blocks: [
-      ...(issue.intro ? [{ p: issue.intro.trim() }] : []),
-      ...(mine.length ? [{ h: "Your week on Candid" }, { list: mine.map(l => [{ b: l.label }, `: ${l.text}`]) }, { button: { label: "Fix with Candid", href: `${SITE}/app/home` } }] : []),
+      ...introBlocks(issue.intro),
+      ...(mine.length ? [{ h: "Your week on Candid" }, { list: mine.map(l => [{ b: l.label }, `: ${shortMoney(l.text)}`]) }, { button: { label: "Fix with Candid", href: `${SITE}/app/home` } }] : []),
       ...(items.length ? [{ h: "What's happening this week" }] : []),
       ...items.map(i => {
         const impact = i.impact && IMPACTS[i.impact.kind];
-        return { news: { title: i.title.trim(), status: i.status, body: i.body.trim(), forYou: impact ? impact.line(d, m, i.impact, today) : null, source: i.source?.trim() || null, url: i.url?.trim() || null } };
+        const forYou = impact ? impact.line(d, m, i.impact, today) : null;
+        return { news: { title: shortMoney(unbold(i.title).trim()), status: i.status, body: shortMoney(unbold(i.body).trim()), forYou: forYou && shortMoney(forYou), source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
       { button: { label: "Open Candid", href: `${SITE}/app/home` } },
     ],

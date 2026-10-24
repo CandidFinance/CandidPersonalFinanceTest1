@@ -61,8 +61,10 @@ What belongs in it:
 How Candid writes:
 ${HOW_CANDID_WRITES}
 - Each item's status: "news" for what happened this week, "confirmed" for something announced that hasn't taken effect yet, "rumour" for a report of what may be announced. A rumour names who reported it, and is only included when a reputable outlet has.
-- Items: up to five, most important first (the email shows confirmed items first, then news, then rumours). A quiet week can have one or two; never pad it.
-- The intro: one or two sentences on what the week was about. The subject: under 70 characters, about the week's biggest item.
+- Sharp and short, so people actually read it. Point first. Numerals and £ figures, with the source beside the number in brackets, e.g. "3.5% (ONS)". Common abbreviations (CPI, NI, ISA). No filler, no repeating a point.
+- Items: up to five, most important first (the email shows confirmed items first, then news, then rumours). A quiet week can have one or two; never pad it. Titles: short and declarative, the news itself ("Inflation hits 3.5%"). Bodies: two or three short sentences.
+- The intro: two to four lines, each starting "- ", one per main story, its key fact in **double asterisks**, e.g. "- **Inflation rose to 3.5%**, its highest since October 2025 (ONS)." Readers skim these, so they carry the week on their own.
+- The subject: a hook in a friend's voice, not a headline, under 60 characters, e.g. "Cuppa and a yap, {first}? Budget's Wednesday" or "Lazy Sunday money catch-up". {first} becomes the reader's first name. No clickbait, no emoji, no exclamation marks.
 - Give an item an impact when one of these fits, with its fields filled in as plain numbers or short dates; otherwise kind "none":
 ${impactKinds()}
 - An inflation figure gets impact inflation, with rate. Bank Rate news, a decision or what's expected of the next one, gets impact bankRate, with the change (the expected change, for a rumour): its line covers both savings and mortgages.

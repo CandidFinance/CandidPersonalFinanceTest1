@@ -6,7 +6,7 @@
 // no card, with narrow side margins so a phone gets a full line of words;
 // the wordmark (public/email/candid-logo.png) and a short gold rule, Playfair Display for the greeting, headings and sign-off (Georgia
 // where a mail app won't load web fonts), DM Sans for the rest, gold-dot
-// bullets and pill buttons in the site's CTA blue (CTA_BLUE, Apple's
+// bullets (a character, as some mail apps drop drawn dots) and pill buttons in the site's CTA blue (CTA_BLUE, Apple's
 // button blue); the small print under a rule.
 // Email-safe: tables and inline styles only, light scheme only.
 //
@@ -26,7 +26,7 @@ export const SITE = "https://www.candid-finance.co.uk";
 const COMPANY = "Candid Personal Finance Ltd · Company no. 17383565 · 66 Paul Street, London, EC2A 4NA";
 
 // Side margin: the text column on a phone runs nearly edge to edge.
-const SIDE = "18px";
+const SIDE = "10px";
 const C = { blue: "#0071E3", green: "#162f24", gold: "#c4963a", cream: "#faf7f0", line: "#ece6d9", text: "#1a1a1a", muted: "#6b6b6b", success: "#2d6b4a" };
 const SANS = "'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const SERIF = "'Playfair Display',Georgia,'Times New Roman',serif";
@@ -94,7 +94,7 @@ function htmlOf(b) {
   if (b.h !== undefined) return `<h2 style="margin:26px 0 12px;font-family:${SERIF};font-size:22px;line-height:1.25;font-weight:700;color:${C.green};">${esc(b.h)}</h2>`;
   if (b.small !== undefined) return `<p style="margin:0 0 14px;font-family:${SANS};font-size:13px;line-height:1.55;color:${C.muted};">${inline(b.small)}</p>`;
   if (b.list) {
-    const rows = b.list.map(i => `<tr><td valign="top" width="22" style="width:22px;padding:0 0 12px;"><div style="width:7px;height:7px;margin-top:9px;border-radius:50%;background:${C.gold};font-size:0;line-height:0;">&nbsp;</div></td><td valign="top" style="padding:0 0 12px;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.text};">${inline(i)}</td></tr>`).join("");
+    const rows = b.list.map(i => `<tr><td valign="top" width="18" style="width:18px;padding:0 0 12px;font-family:${SANS};font-size:18px;line-height:1.35;font-weight:700;color:${C.gold};">&bull;</td><td valign="top" style="padding:0 0 12px;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.text};">${inline(i)}</td></tr>`).join("");
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">${rows}</table>`;
   }
   if (b.button) {
