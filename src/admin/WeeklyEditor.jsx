@@ -1,13 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { G, WHITE, MUT, TEXT, SERIF, SUCCESS, ERROR_TEXT } from "../design-tokens.js";
 import { nextSunday, cleanIssue } from "../lib/weekly.js";
 import IssueFields, { button, input, label } from "./IssueFields.jsx";
 
 // The Sunday email's issue for a week (src/lib/weekly.js), on
 // /admin/alerts: written here or pasted in as a draft, saved, previewed
-// for every subscriber, then approved. Only an approved issue goes out, at
+// for every subscriber, then approved. Claude drafts it on Saturday
+// afternoons (api/events.js), or here on request, through /api/events.
+// Only an approved issue goes out, at
 // the 04:00 UTC run that Sunday (before 6am UK time); saving it again needs approving again.
-// `call(body, label)` is the page's own request to /api/alerts; `onPreview`
+// `call(body, label, url)` is the page's own request, to /api/alerts unless
+// `url` says otherwise; `onPreview`
 // shows what would go out on that Sunday, draft included.
 
 const EMPTY = { subject: "", intro: "", items: [] };
@@ -18,15 +21,30 @@ export default function WeeklyEditor({ call, busy, onPreview }) {
   const [saved, setSaved] = useState(null);
   const [paste, setPaste] = useState("");
   const [pasteError, setPasteError] = useState("");
+  // Claude's last draft from here: its note, or why it couldn't.
+  const [claude, setClaude] = useState(null);
+  // The week on screen, for a draft that returns after it's changed.
+  const shown = useRef(week);
+  shown.current = week;
 
   const load = async () => {
     const json = await call({ action: "weekly-load", week }, "weekly");
     if (json) { setSaved(json.issue); setIssue(json.issue ? cleanIssue(json.issue) : EMPTY); }
   };
-  useEffect(() => { load(); }, [week]);
+  useEffect(() => { load(); setClaude(null); }, [week]);
 
   const save = async () => { const json = await call({ action: "weekly-save", week, issue: cleanIssue(issue) }, "weekly"); if (json) setSaved(json.issue); };
   const approve = async approved => { const json = await call({ action: "weekly-approve", week, approved }, "weekly"); if (json) setSaved(json.issue); };
+  const askClaude = async () => {
+    const replaces = saved || unsaved;
+    if (replaces && !window.confirm(`Ask Claude for a new draft? It replaces what's here${saved?.approved_at ? " and withdraws the approval" : ""}, and takes a minute or two.`)) return;
+    const forWeek = week;
+    const json = await call({ action: "weekly-draft", week: forWeek }, "weekly-draft", "/api/events");
+    if (!json || shown.current !== forWeek) return;
+    // Couldn't draft: what's on screen stays.
+    if (!json.draftError) { setSaved(json.issue); setIssue(json.issue ? cleanIssue(json.issue) : EMPTY); }
+    setClaude(json.draftError || json.draftNote ? { error: json.draftError || "", note: json.draftNote || "" } : null);
+  };
   const fromPaste = () => {
     try { setIssue(cleanIssue(JSON.parse(paste))); setPaste(""); setPasteError(""); }
     catch { setPasteError("That isn't a draft Candid can read. Paste the whole block, from { to }."); }
@@ -45,6 +63,10 @@ export default function WeeklyEditor({ call, busy, onPreview }) {
         </span>
       </div>
 
+      {claude && <div style={{ color: claude.error ? ERROR_TEXT : TEXT, fontSize: "13px", marginTop: "10px", lineHeight: 1.5 }}>
+        {claude.error ? `Claude couldn't draft it: ${claude.error}` : "Claude's note (not sent):"}{claude.note ? ` ${claude.note}` : ""}
+      </div>}
+
       <label style={label}>Paste a draft</label>
       <textarea value={paste} onChange={e => setPaste(e.target.value)} rows={3} placeholder='{ "subject": "...", "intro": "...", "items": [...] }' style={{ ...input, fontFamily: "monospace", fontSize: "12px" }}/>
       <button type="button" style={{ ...button(false), marginTop: "6px" }} disabled={!paste.trim()} onClick={fromPaste}>Fill the form from it</button>
@@ -54,6 +76,9 @@ export default function WeeklyEditor({ call, busy, onPreview }) {
 
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "16px", paddingTop: "14px", borderTop: "1px solid rgba(22,47,36,0.08)" }}>
         <button type="button" style={button(true)} disabled={!!busy || !unsaved} onClick={save}>{busy === "weekly" ? "Saving..." : "Save draft"}</button>
+        <button type="button" style={button(false)} disabled={!!busy} onClick={askClaude}>
+          {busy === "weekly-draft" ? "Claude is drafting..." : saved ? "Ask Claude to draft again" : "Ask Claude to draft it now"}
+        </button>
         <button type="button" style={button(false)} disabled={!!busy || !saved || unsaved} onClick={() => onPreview(week)}>Preview for every subscriber</button>
         {approved
           ? <button type="button" style={button(false)} disabled={!!busy} onClick={() => approve(false)}>Withdraw approval</button>

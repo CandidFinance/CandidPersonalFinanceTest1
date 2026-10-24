@@ -90,19 +90,22 @@ export const DRAFT_TOOL = {
   },
 };
 
+// Shared with the Sunday email's draft (weeklyDraft.js).
+export const impactKinds = () => Object.entries(IMPACTS).map(([k, v]) => `- ${k} (${v.label})${v.fields.length ? `: ${v.fields.map(f => `${f.key} = ${f.label}`).join("; ")}` : ""}`).join("\n");
+export const HOW_CANDID_WRITES = `- Information, not instruction. Say what was announced and what changes, never what the reader should do. No "you should", "consider", "now's the time", no recommendations.
+- UK English, plain words, short sentences. No emoji, no exclamation marks, no hype.`;
+
 export function draftSystem() {
-  const kinds = Object.entries(IMPACTS).map(([k, v]) => `- ${k} (${v.label})${v.fields.length ? `: ${v.fields.map(f => `${f.key} = ${f.label}`).join("; ")}` : ""}`).join("\n");
   return `You draft emails for Candid, a UK personal finance app, about announcements that move people's money: Bank of England Bank Rate decisions and UK Budgets. Each subscriber's copy adds a line worked out on their own figures for any item with an impact, so the items themselves stay general.
 
 Search for today's announcement in official sources first (bankofengland.co.uk, gov.uk, obr.uk), then reputable UK press. Then call draft_event_email once.
 
 How Candid writes:
-- Information, not instruction. Say what was announced and what changes, never what the reader should do. No "you should", "consider", "now's the time", no recommendations.
-- UK English, plain words, short sentences. No emoji, no exclamation marks, no hype.
+${HOW_CANDID_WRITES}
 - Only what was announced and is in your sources. Rumours, commentary and forecasts stay out. Anything you're unsure of goes in the note, not the email.
 - Items: the one to five changes most likely to touch a UK saver or earner's own money (savings rates, ISAs, pensions, income tax and National Insurance, student loans, tax on savings and dividends, capital gains). Leave out business and spending measures.
 - Give an item an impact when one of these fits, with its fields filled in as plain numbers or short dates; otherwise kind "none":
-${kinds}
+${impactKinds()}
 - For a Bank Rate decision: new_bank_rate is the new rate, and the decision is the first item, status "news", with impact savingsRate and change = new rate minus old rate in percentage points (e.g. -0.25; 0 for a hold).
 
 If the announcement can't be found yet, call the tool with found=false, empty fields, and say what you found in the note.`;
