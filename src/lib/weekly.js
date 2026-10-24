@@ -228,8 +228,8 @@ export function comingUp(d, m, today) {
 // Each as HTML and plain text (emailLayout.js).
 
 // The Sunday email for one subscriber. `rows`: savings_rates. `free`: for a
-// free address, { left } (free issues after this one) and `confirmUrl` while
-// it isn't confirmed, whose button then replaces "Open Candid".
+// free address, { n, of } (this is free issue n of `of`) and `confirmUrl`
+// while it isn't confirmed, whose button then replaces "Open Candid".
 export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubscribeUrl, free = null }) {
   const d = rollTaxYear(rawD || {}, today);
   const m = calcMetrics(d);
@@ -242,6 +242,7 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
     subject, preheader: shortMoney(unbold(issue.intro).replace(/^[-•]\s+/gm, "").replace(/\n+/g, " ")) || items.map(i => i.title).join(" · "),
     greeting: first ? `Hi ${first},` : "Hi,",
     blocks: [
+      ...(free ? [{ small: "You're getting this because you gave us your email, and we thought you might like a little support." }] : []),
       ...introBlocks(issue.intro),
       ...(mine.length ? [{ h: "Your week on Candid" }, { list: mine.map(l => [{ b: l.label }, `: ${shortMoney(l.text)}`]) }, { button: { label: "Fix with Candid", href: `${SITE}/app/home` } }] : []),
       ...(items.length ? [{ h: "What's happening this week that affects you" }] : []),
@@ -252,8 +253,9 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
       }),
     ],
     after: [
-      ...(free ? [{ small: `You're getting this because you gave Candid your email. ${free.left > 0 ? `${free.left} more free, then the Sunday email is for subscribers.` : "This is the last free one: after this, the Sunday email is for subscribers."}${free.confirmUrl ? " Your email isn't confirmed yet: this button confirms it's yours." : ""}` }] : []),
+      ...(free?.confirmUrl ? [{ small: "Your email isn't confirmed yet: this button confirms it's yours." }] : []),
       free?.confirmUrl ? { button: { label: "Confirm my email", href: free.confirmUrl } } : { button: { label: "Open Candid", href: `${SITE}/app/home` } },
+      ...(free ? [{ small: `${free.n} of ${free.of} free emails, then the Candid chat email is for subscribers.` }] : []),
     ],
     note: "Rumours are just that: nothing changes until it's announced. Candid works out what each change would mean on the figures you've given it, with no stake in what you choose. It's guidance, not advice.",
     unsubscribeUrl,

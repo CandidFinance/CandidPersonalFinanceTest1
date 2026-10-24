@@ -261,7 +261,7 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
     const freeIssuesSent = [...done].filter(k => k.startsWith("weekly:")).length;
     if (issue && p.who === "free" && p.d && !done.has(`weekly:${issue.week}`) && freeIssuesSent < FREE_WEEKLY_ISSUES) {
       try {
-        const free = { left: FREE_WEEKLY_ISSUES - freeIssuesSent - 1, confirmUrl: verifiedAt.has(p.email) ? null : confirmUrl(p.email) };
+        const free = { n: freeIssuesSent + 1, of: FREE_WEEKLY_ISSUES, confirmUrl: verifiedAt.has(p.email) ? null : confirmUrl(p.email) };
         const mail = weeklyEmail(issue, p.d, { today, rows: rates || [], unsubscribeUrl: unsubscribe, free });
         emails.push({ to: p.email, who: p.who, kind: "weekly", key: `weekly:${issue.week}`, detail: null, ...mail });
       } catch (e) { notes.push(`couldn't write the Sunday email for one free user: ${e.message}`); }

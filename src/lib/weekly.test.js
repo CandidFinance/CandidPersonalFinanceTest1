@@ -44,11 +44,12 @@ test("The Sunday email: their week on their figures, then the news, each with wh
 
 test("A free address's Sunday email: how many free are left, and a confirm button while it isn't confirmed", () => {
   const opts = { today: day("2026-10-25"), rows: ROWS, unsubscribeUrl: "https://u" };
-  const first = weeklyEmail(issue, saver, { ...opts, free: { left: 2, confirmUrl: "https://c" } });
-  assert.match(first.text, /The Candid team\n\nYou're getting this because you gave Candid your email\. 2 more free, then the Sunday email is for subscribers\. Your email isn't confirmed yet: this button confirms it's yours\.\n\nConfirm my email: https:\/\/c\n/);
+  const first = weeklyEmail(issue, saver, { ...opts, free: { n: 1, of: 3, confirmUrl: "https://c" } });
+  assert.match(first.text, /^Hi Alex,\n\nYou're getting this because you gave us your email, and we thought you might like a little support\.\n\nA quiet week/);
+  assert.match(first.text, /The Candid team\n\nYour email isn't confirmed yet: this button confirms it's yours\.\n\nConfirm my email: https:\/\/c\n\n1 of 3 free emails, then the Candid chat email is for subscribers\.\n/);
   assert.doesNotMatch(first.text, /Open Candid/);
-  const last = weeklyEmail(issue, saver, { ...opts, free: { left: 0, confirmUrl: null } });
-  assert.match(last.text, /This is the last free one: after this, the Sunday email is for subscribers\.\n\nOpen Candid: /);
+  const last = weeklyEmail(issue, saver, { ...opts, free: { n: 3, of: 3, confirmUrl: null } });
+  assert.match(last.text, /Open Candid: [^\n]+\n\n3 of 3 free emails, then the Candid chat email is for subscribers\./);
   assert.doesNotMatch(weeklyEmail(issue, saver, opts).text, /getting this because/);
 });
 
