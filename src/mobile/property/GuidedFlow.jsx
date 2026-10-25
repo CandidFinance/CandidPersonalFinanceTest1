@@ -243,7 +243,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
   };
   // The question's answers, and whether they sit two to a row.
   const opts = q.options ? q.options(ctx) : [];
-  const layout = q.columns ? "grid" : tileLayout(opts);
+  const layout = q.layout || (q.columns ? "grid" : tileLayout(opts));
   const noteLine = note && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0"}}>{note}</p>;
 
   return (
@@ -296,7 +296,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
             <form onSubmit={submit}>
               <AnswerGroup layout={layout} label={q.ask(ctx)} multi>
                 {opts.map(o => (
-                  <AnswerTile key={o.value} label={o.label} sub={o.sub} layout={layout} multi check
+                  <AnswerTile key={o.value} label={o.lines || o.label} sub={o.sub} layout={layout} multi check tint={o.tint} ink={o.ink}
                     on={picked.includes(o.value)} onPick={() => toggle(o)}/>
                 ))}
               </AnswerGroup>

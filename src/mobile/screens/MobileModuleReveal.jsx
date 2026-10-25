@@ -5,6 +5,8 @@ import { CircleAlert, Check, LoaderCircle, Sparkles } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import { ShellTopRow, PrimaryButton, SkipLink } from "../onboarding/OnboardingShell.jsx";
+import CountUpFigure from "../CountUpFigure.jsx";
+import { tap } from "../haptics.js";
 
 // A module's answer in three steps (src/lib/moduleReveal.js): the answer,
 // why, and what the user could do, one at a time with the same movement as
@@ -28,8 +30,9 @@ const LINE_MS = 1300, SPIN_MS = 1000, HOLD_MS = 600, STILL_MS = 3000;
 // "See everything", which becomes a link under it (Student loan's detailed
 // view). `doneLabel`: what that link, or the last button, says.
 // `checks` (workingChecks.js): the rules run on the user's figures, checked
-// off one by one before the first step, which then follows by itself. Only
-// on the way in from the questions, not when the answer is replayed.
+// off one by one before the first step, which then follows by itself, its
+// £ figure counting up. Only on the way in from the questions, not when the
+// answer is replayed.
 export default function MobileModuleReveal({ moduleKey, steps, onDone, header = true, footer = null, large = false, lastAction = null, doneLabel = "See everything", checks = null }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, []);
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
@@ -46,10 +49,13 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
     const n = checks.length;
     const timers = reduceMotion
       ? [setTimeout(() => { setShown(n); setTicked(n); }, 0), setTimeout(() => setWorking(false), STILL_MS)]
-      : [...checks.flatMap((_, i) => [setTimeout(() => setShown(i + 1), i * LINE_MS), setTimeout(() => setTicked(i + 1), i * LINE_MS + SPIN_MS)]),
+      : [...checks.flatMap((_, i) => [setTimeout(() => setShown(i + 1), i * LINE_MS), setTimeout(() => { setTicked(i + 1); tap(); }, i * LINE_MS + SPIN_MS)]),
          setTimeout(() => setWorking(false), (n - 1) * LINE_MS + SPIN_MS + HOLD_MS)];
     return () => timers.forEach(clearTimeout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // The first step's figure counts up on the way in only, not on coming back to it.
+  const [countIn] = useState(() => !!checks?.length);
+  const counting = countIn && index === 0 && direction === 1;
   const step = steps[index];
   const last = index === steps.length - 1;
   const shift = reduceMotion ? 0 : SHIFT_PX;
@@ -77,7 +83,10 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
   const actionsInCard = last && !large;
 
   return (
-    <div>
+    <div className="reveal">
+      {/* Larger on a desktop screen, where the phone sizes leave the card
+          lost in white space; the phone sizes are the fallbacks. */}
+      <style>{`@media (min-width: 1000px) { .reveal { --rv-label: 12px; --rv-lead: 19px; --rv-figure: 52px; --rv-title: 20px; --rv-body: 16px; --rv-pad: 34px 32px; --rv-check: 19px; } }`}</style>
       {header && <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px"}}>
         <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {meta?.icon && <meta.icon size={18} color={G}/>}
@@ -88,22 +97,28 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
         </div>
       </div>}
 
-      {working ? <Working checks={checks} shown={shown} ticked={ticked} reduceMotion={reduceMotion}/> : <>
+      {/* The working screen lifts away before the answer comes in. */}
+      <AnimatePresence mode="wait" initial={false}>
+      {working ? (
+        <motion.div key="working" exit={{ opacity: 0, y: reduceMotion ? 0 : -14, transition: { duration: 0.3, ease: "easeIn" } }}>
+          <Working checks={checks} shown={shown} ticked={ticked} reduceMotion={reduceMotion}/>
+        </motion.div>
+      ) : <motion.div key="answer">
       <ShellTopRow onBack={index > 0 ? () => go(-1) : null} position={index + 1} total={steps.length}/>
 
       {/* The step itself sits in a card, like the result card it replaces. */}
       <AnimatePresence mode="wait" custom={direction} initial={true}>
         {large ? (
           <motion.div key={index} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" style={{marginTop:"22px"}}>
-            <LargeStep step={step}/>
+            <LargeStep step={step} counting={counting}/>
           </motion.div>
         ) : (
         <motion.div key={index} custom={direction} variants={variants} initial="enter" animate="center" exit="exit"
-          style={{marginTop:"10px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"22px 20px"}}>
-          <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>{step.label}</div>
-          {step.lead && <div style={{fontSize:"15px",fontWeight:600,color:TEXT,lineHeight:1.4,marginTop:"10px"}}>{step.lead}</div>}
+          style={{marginTop:"10px",background:WHITE,borderRadius:"16px",boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"var(--rv-pad, 22px 20px)"}}>
+          <div style={{fontSize:"var(--rv-label, 10.5px)",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>{step.label}</div>
+          {step.lead && <div style={{fontSize:"var(--rv-lead, 15px)",fontWeight:600,color:TEXT,lineHeight:1.4,marginTop:"10px"}}>{step.lead}</div>}
           {step.figure && (
-            <div style={{fontFamily:SERIF,fontSize:"34px",fontWeight:700,color:TONE[step.tone] || TEXT,lineHeight:1.15,marginTop:step.lead ? "2px" : "10px"}}>{step.figure}</div>
+            <div style={{fontFamily:SERIF,fontSize:"var(--rv-figure, 34px)",fontWeight:700,color:TONE[step.tone] || TEXT,lineHeight:1.15,marginTop:step.lead ? "2px" : "10px"}}><CountUpFigure text={step.figure} run={counting}/></div>
           )}
           <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:step.figure ? "4px" : "10px"}}>
             {/* Candid Assist's icon, as on its button at the bottom right. */}
@@ -112,11 +127,11 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
                 <Sparkles size={20} color={G}/>
               </span>
             )}
-            <p style={{fontFamily:step.figure ? "inherit" : SERIF,fontSize:step.figure ? "15px" : "19px",fontWeight:step.figure ? 600 : 700,color:TEXT,lineHeight:1.4,margin:0}}>
+            <p style={{fontFamily:step.figure ? "inherit" : SERIF,fontSize:step.figure ? "var(--rv-title, 15px)" : "var(--rv-lead, 19px)",fontWeight:step.figure ? 600 : 700,color:TEXT,lineHeight:1.4,margin:0}}>
               {step.title}
             </p>
           </div>
-          {step.body && <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:"10px 0 0"}}>{step.body}</p>}
+          {step.body && <p style={{fontSize:"var(--rv-body, 13px)",color:MUT,lineHeight:1.55,margin:"10px 0 0"}}>{step.body}</p>}
           {actionsInCard && actions}
         </motion.div>
         )}
@@ -125,7 +140,8 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
       {!actionsInCard && actions}
       {last && footer}
       {!last && <SkipLink label="Skip to everything" onClick={() => onDone("skipped", index + 1)}/>}
-      </>}
+      </motion.div>}
+      </AnimatePresence>
     </div>
   );
 }
@@ -141,9 +157,14 @@ function Working({ checks, shown, ticked, reduceMotion }) {
           const done = i < ticked;
           return (
             <motion.li key={c} initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}
-              style={{display:"flex",alignItems:"flex-start",gap:"12px",fontSize:"16px",fontWeight:600,color:done ? TEXT : MUT,lineHeight:1.4,transition:"color 0.25s"}}>
+              style={{display:"flex",alignItems:"flex-start",gap:"12px",fontSize:"var(--rv-check, 16px)",fontWeight:600,color:done ? TEXT : MUT,lineHeight:1.4,transition:"color 0.25s"}}>
               <span aria-hidden="true" style={{width:"24px",height:"24px",borderRadius:"50%",flexShrink:0,marginTop:"-1px",display:"flex",alignItems:"center",justifyContent:"center",background:done ? SUCCESS : "transparent",transition:"background 0.25s"}}>
-                {done ? <Check size={15} color={WHITE} strokeWidth={3}/> : (
+                {done ? (
+                  // The tick lands with a small pop.
+                  <motion.span initial={reduceMotion ? false : { scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 15 }} style={{display:"flex"}}>
+                    <Check size={15} color={WHITE} strokeWidth={3}/>
+                  </motion.span>
+                ) : (
                   <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.9, ease: "linear" }} style={{display:"flex"}}>
                     <LoaderCircle size={22} color={G} strokeWidth={2.25}/>
                   </motion.span>
@@ -162,7 +183,7 @@ function Working({ checks, shown, ticked, reduceMotion }) {
 // and a note below; a step without rows as a large statement.
 const TONE = { repay: SUCCESS, good: SUCCESS, warn: WARNING, cost: CRITICAL };
 const SIZE = { xl: "clamp(56px, 17vw, 78px)", l: "clamp(40px, 12vw, 54px)", m: "clamp(28px, 8vw, 36px)" };
-function LargeStep({ step }) {
+function LargeStep({ step, counting = false }) {
   const rows = step.rows || (step.figure ? [{ figure: step.figure, size: "xl", note: step.title, tone: step.tone }] : null);
   return (
     <div>
@@ -171,7 +192,7 @@ function LargeStep({ step }) {
           {r.lead && <div style={{fontSize:"19px",fontWeight:600,color:TEXT,lineHeight:1.3}}>{r.lead}</div>}
           <div style={{fontFamily:SERIF,fontSize:SIZE[r.size] || SIZE.l,fontWeight:700,color:TONE[r.tone] || G,lineHeight:1.05,margin:"6px 0 6px",letterSpacing:"-0.01em"}}>
             {r.prefix && <span style={{fontFamily:"inherit",fontSize:"0.45em",fontWeight:600,color:MUT,marginRight:"8px"}}>{r.prefix}</span>}
-            {r.figure}
+            <CountUpFigure text={r.figure} run={counting && i === 0}/>
           </div>
           {r.note && <div style={{fontSize:"16px",color:MUT,lineHeight:1.45}}>{r.note}</div>}
           {r.alert && (

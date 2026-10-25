@@ -28,6 +28,7 @@ export const INPUT_BG_DARK = "#0f2018";
 // near-identical third green used in only 2 places that read as an
 // unintentional one-off rather than a deliberate distinct colour.
 export const SUCCESS  = "#2d6b4a"; // "on track" / positive state
+export const PROGRESS_GREEN = "#2f9461"; // the progress line's fill: a mid green, lighter than G
 export const WARNING  = "#d9822b"; // scoreBand's 4th tier only — sits between GOLD and CRITICAL
 export const CRITICAL = "#c0392b"; // "action needed" / error state
 export const ERROR_TEXT = "#b3261e"; // error messages under forms and buttons

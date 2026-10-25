@@ -9,7 +9,7 @@
 // them, so the answer page can say which figures are estimates, and stops
 // saying so for any the user has since changed (estimatedNow).
 import { studentLoanPlanFrom, slFinishYearRange } from "./studentLoan.js";
-import { SALARY_BANDS } from "./quickStart.js";
+import { SALARY_BANDS, SALARY_DEFAULT, MEDIAN_BANDS } from "./quickStart.js";
 
 export const PLAN_CHOICES = [
   { value:"plan1", label:"Plan 1" },
@@ -144,10 +144,10 @@ export const STUDENT_LOAN_QUICK = {
   intro: { title: "Student loan", subtitle: "After a home, it's likely the biggest thing you'll ever buy.", question: "Is paying it off early worth it for you?" },
   order: ["plan", "helper", "salary", "balance", "finish"],
   questions: {
-    plan:    { ask: "Which student loan plan are you on?", why: "Your Student Loans Company account shows it.", options: () => PLAN_CHOICES, when: ({ d }) => quickQuestions(d).includes("plan") },
+    plan:    { ask: "Which student loan plan are you on?", why: "Your Student Loans Company account shows it.", options: () => PLAN_CHOICES, default: () => MEDIAN_BANDS.slPlan, when: ({ d }) => quickQuestions(d).includes("plan") },
     helper:  { ask: "When did your course start?", why: "That decides your plan, by GOV.UK's rules.", options: () => PLAN_HELPER_CHOICES, when: ({ a }) => a.plan === "unsure" },
-    salary:  { ask: "Roughly what do you earn a year, before tax?", why: "Repayments are a share of your pay over a threshold.", options: () => SALARY_BANDS, when: ({ d }) => quickQuestions(d).includes("salary") },
-    balance: { ask: "Roughly how much do you still owe?", why: "Your Student Loans Company account shows it. A band is fine.", options: () => BALANCE_BANDS, when: ({ d }) => quickQuestions(d).includes("balance") },
+    salary:  { ask: "Roughly what do you earn a year, before tax?", why: "Repayments are a share of your pay over a threshold.", options: () => SALARY_BANDS, default: () => SALARY_DEFAULT, when: ({ d }) => quickQuestions(d).includes("salary") },
+    balance: { ask: "Roughly how much do you still owe?", why: "Your Student Loans Company account shows it. A band is fine.", options: () => BALANCE_BANDS, default: () => MEDIAN_BANDS.slBalance, when: ({ d }) => quickQuestions(d).includes("balance") },
     finish:  { ask: "When did you finish your course?", why: "Whatever's left is written off a set number of years after.", options: ctx => finishBands(planFrom(ctx)), when: ({ d }) => quickQuestions(d).includes("finish") },
   },
   patch: (d, m, a) => quickPatch(d, a),

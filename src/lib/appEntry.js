@@ -36,18 +36,21 @@ export const MODULE_PITCH = {
 export const DEFAULT_FIRST_MODULE = "cash";
 
 // E1's answers. `goal` is the financialGoals entry the pick also sets.
+// `tint`: the tile's fill once picked, each its own colour from the theme
+// (Harvey's six, plus dusty blue and terracotta); `ink`, its text there.
+// `lines`: the label as the tile shows it, two words or more over two lines.
 export const ENTRY_CHOICES = [
-  { value:"cash",        label:"Savings and emergency cash", goal:"emergency_fund" },
-  { value:"investments", label:"Investing and ISAs" },
-  { value:"pension",     label:"Pension" },
-  { value:"retirement",  label:"Retirement planning", goal:"retirement" },
-  { value:"studentLoan", label:"Student loan" },
-  { value:"kids",        label:"Childcare and family" },
-  { value:"property",    label:"Buying a home", goal:"buy_house" },
-  { value:"exploring",   label:"Just exploring", exclusive:true },
+  { value:"cash",        label:"Cash & Savings", lines:"Cash &\nSavings", goal:"emergency_fund", tint:"#A9BF95", ink:"#162f24" },
+  { value:"investments", label:"Investing", tint:"#7A8A5E", ink:"#ffffff" },
+  { value:"pension",     label:"Pension", tint:"#D9C2A7", ink:"#162f24" },
+  { value:"retirement",  label:"Retirement", goal:"retirement", tint:"#7A5235", ink:"#ffffff" },
+  { value:"studentLoan", label:"Student loan", lines:"Student\nloan", tint:"#A7BCCB", ink:"#162f24" },
+  { value:"kids",        label:"Family finances", lines:"Family\nfinances", tint:"#EDB9B2", ink:"#162f24" },
+  { value:"property",    label:"Buying a home", lines:"Buying\na home", goal:"buy_house", tint:"#D49A7A", ink:"#162f24" },
+  { value:"exploring",   label:"Just exploring", lines:"Just\nexploring", exclusive:true, tint:"#F3DC8C", ink:"#162f24" },
 ];
 
-// The modules the entry's picks lead to. "Retirement planning" is the
+// The modules the entry's picks lead to. "Retirement" is the
 // Pension module, which covers retirement income as well as saving.
 const PICK_MODULE = { retirement: "pension" };
 export function pickedModules(interests) {
@@ -91,9 +94,9 @@ export const ENTRY_QUESTIONS = [
     // The picks set which modules Home offers first, and which the score
     // waits for (scorePicks).
     id:"interests", field:"interests", kind:"multi", required:true,
-    ask: () => "What would you like help with?",
-    why: () => "We'll set up your modules around these. You can add the rest any time.",
-    options: () => ENTRY_CHOICES,
+    ask: () => "Where might you be losing money?",
+    why: () => "We'll set you up based on this. Add more later.",
+    options: () => ENTRY_CHOICES, layout: "wrap",
     note: () => "Pick as many as you like.",
     also: value => ({ financialGoals: entryGoals(value) }),
   },

@@ -1,9 +1,9 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
-import { G, MUT, TEXT, SERIF, SANS, WHITE } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, SANS, WHITE, PROGRESS_GREEN } from "../../design-tokens.js";
 
 // The pieces every question flow shares (QuickStart, GuidedFlow, the answer
-// reveal), so they all look alike: Back and "x of y" across the top, the
+// reveal), so they all look alike: Back and a progress line across the top, the
 // question large in the serif, answers as tiles that fill green when picked,
 // one full-width green button, and the way out ("Skip ...") centred at the
 // bottom. The motion between questions stays with each flow.
@@ -14,12 +14,27 @@ const link = { background: "none", border: "none", padding: "6px 0", color: G, f
 // and tab bar, so the Skip link sits at the bottom.
 export const shellScreen = { minHeight: "calc(100dvh - 150px)", display: "flex", flexDirection: "column", boxSizing: "border-box", padding: "8px 0 24px" };
 
-// Back on the left, "x of y" on the right; either left out when not given.
+// How far through, as a thin green line: no "x of y", the line says it.
+// Screen readers still get the count. `from`: the position it grows from
+// when it first shows (a card that's new for each step).
+export function ProgressLine({ position, total, from = null, style }) {
+  const reduceMotion = useReducedMotion();
+  const share = n => `${Math.max(0, Math.min(1, n / total)) * 100}%`;
+  return (
+    <div role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={position} aria-label={`${position} of ${total}`}
+      style={{ height: "6px", borderRadius: "100px", background: "rgba(22,47,36,0.10)", overflow: "hidden", ...style }}>
+      <motion.div initial={from == null ? false : { width: share(from) }} animate={{ width: share(position) }} transition={{ duration: reduceMotion ? 0 : 0.6, ease: [0.4, 0, 0.2, 1] }}
+        style={{ height: "100%", borderRadius: "100px", background: PROGRESS_GREEN }}/>
+    </div>
+  );
+}
+
+// Back on the left, the progress line beside it; either left out when not given.
 export function ShellTopRow({ onBack, position, total, style }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: "32px", ...style }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "32px", ...style }}>
       {onBack ? <button type="button" onClick={onBack} style={link}><ChevronLeft size={18}/>Back</button> : <span/>}
-      {position != null && total ? <span style={{ fontSize: "13px", color: MUT, fontWeight: 600 }}>{position} of {total}</span> : <span/>}
+      {position != null && total ? <ProgressLine position={position} total={total} style={{ flex: 1 }}/> : <span/>}
     </div>
   );
 }
@@ -44,11 +59,16 @@ export const tileLayout = options =>
   options.length <= 6 && options.every(o => String(o.label).length <= SHORT_LABEL) ? "grid" : "row";
 
 // The answers' container. `layout` from tileLayout, or "grid" to force it;
-// `columns` for a grid other than two across.
+// `columns` for a grid other than two across. "wrap": three to a row, every
+// tile the same size, a short last row centred.
 export function AnswerGroup({ layout, label, multi = false, columns = 2, children }) {
   return (
-    <div role={multi ? "group" : "radiogroup"} aria-label={label}
-      style={layout === "grid" ? { display: "grid", gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: "10px" } : { display: "flex", flexDirection: "column", gap: "10px" }}>
+    <div role={multi ? "group" : "radiogroup"} aria-label={label} className={layout === "wrap" ? "tiles-wrap" : undefined}
+      style={layout === "grid" ? { display: "grid", gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: "10px" }
+        : layout === "wrap" ? { display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px" }
+        : { display: "flex", flexDirection: "column", gap: "10px" }}>
+      {/* Larger tiles on a desktop screen; the phone sizes are the fallbacks. */}
+      {layout === "wrap" && <style>{`@media (min-width: 1000px) { .tiles-wrap { --tile-font: 20px; --tile-height: 104px; } }`}</style>}
       {children}
     </div>
   );
@@ -57,26 +77,31 @@ export function AnswerGroup({ layout, label, multi = false, columns = 2, childre
 // One answer. "grid": a near-square tile; `compact` shorter, for more than
 // six answers. "row": full width, text on the left. Fills green when picked;
 // `dim` fades the others while the screen moves on. `check` (several answers
-// at once) adds a tick to the picked ones.
-export function AnswerTile({ label, sub, on, dim = false, onPick, layout = "grid", compact = false, multi = false, check = false }) {
+// at once) adds a tick to the picked ones. `suggested`: the answer offered
+// first, outlined in green until one is picked. `tint`/`ink`: its own fill
+// and text once picked, in place of green and white.
+export function AnswerTile({ label, sub, on, dim = false, onPick, layout = "grid", compact = false, multi = false, check = false, suggested = false, tint = null, ink = null }) {
   const reduceMotion = useReducedMotion();
-  const grid = layout === "grid";
+  const wrap = layout === "wrap";
+  const grid = layout === "grid" || wrap;
+  const fill = tint || G;
   return (
     <motion.button type="button" role={multi ? undefined : "radio"} aria-checked={multi ? undefined : on} aria-pressed={multi ? on : undefined} onClick={onPick}
-      animate={{ backgroundColor: on ? G : WHITE, color: on ? WHITE : TEXT, borderColor: on ? G : "rgba(22,47,36,0.16)", opacity: dim ? 0.55 : 1, scale: on && !multi && !reduceMotion ? [1, 0.96, 1] : 1 }}
+      animate={{ backgroundColor: on ? fill : WHITE, color: on ? (ink || WHITE) : suggested ? G : TEXT, borderColor: on ? fill : suggested ? G : "rgba(22,47,36,0.16)", boxShadow: suggested && !on ? `inset 0 0 0 1px ${G}` : "inset 0 0 0 0px rgba(0,0,0,0)", opacity: dim ? 0.55 : 1, scale: on && !multi && !reduceMotion ? [1, 0.96, 1] : 1 }}
       whileTap={reduceMotion ? undefined : { scale: 0.97 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       style={{
-        minHeight: grid ? (compact ? "70px" : "92px") : "60px", borderRadius: "20px", border: "1.5px solid",
-        padding: grid ? "14px 12px" : "14px 18px", fontFamily: SANS, fontSize: grid ? "18px" : "17px", fontWeight: 650, lineHeight: 1.2,
+        ...(wrap ? { flex: "0 0 calc((100% - 20px) / 3)", height: "var(--tile-height, 84px)", position: "relative" } : { minHeight: grid ? (compact ? "70px" : "92px") : "60px" }),
+        borderRadius: "20px", border: "1.5px solid",
+        padding: wrap ? "10px 8px" : grid ? "14px 12px" : "14px 18px", fontFamily: SANS, fontSize: wrap ? "var(--tile-font, 15.5px)" : grid ? "18px" : "17px", fontWeight: 650, lineHeight: 1.2,
         textAlign: grid ? "center" : "left", cursor: "pointer", width: "100%",
         display: "flex", flexDirection: grid ? "column" : "row", alignItems: "center", justifyContent: grid ? "center" : "space-between", gap: grid ? "4px" : "10px",
       }}>
       <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-        <span>{label}</span>
+        <span style={wrap ? { whiteSpace: "pre-line" } : undefined}>{label}</span>
         {sub && <span style={{ fontSize: "13px", fontWeight: 500, opacity: 0.75 }}>{sub}</span>}
       </span>
-      {check && on && <Check size={18} style={{ flexShrink: 0 }}/>}
+      {check && on && <Check size={wrap ? 14 : 18} style={wrap ? { position: "absolute", top: "8px", right: "8px" } : { flexShrink: 0 }}/>}
     </motion.button>
   );
 }

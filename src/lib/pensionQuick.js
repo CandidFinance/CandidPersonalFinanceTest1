@@ -6,7 +6,7 @@
 // percentages. "Not sure" of a percentage takes the legal minimum (5% from
 // them, 3% from the employer), as the module does already, and says so.
 // Unit tested in quickStart.test.js.
-import { withEstimates, addAsked, SALARY_BANDS } from "./quickStart.js";
+import { withEstimates, addAsked, SALARY_BANDS, SALARY_DEFAULT, MEDIAN_BANDS } from "./quickStart.js";
 import { estimatePensionPot } from "./pension.js";
 import { fmt } from "./format.js";
 
@@ -73,11 +73,13 @@ export const PENSION_QUICK = {
     salary: {
       ask: "Roughly what do you earn a year, before tax?", why: "Employer contributions and tax relief are a share of your pay.",
       options: () => SALARY_BANDS,
+      default: () => SALARY_DEFAULT,
       when: ctx => ctx.direct && earns(ctx) && !(+ctx.d.salary > 0),
     },
     age: {
       ask: "How old are you?", why: "Sets how long your money has to grow.",
       options: () => AGE_BANDS,
+      default: () => MEDIAN_BANDS.age,
       when: ({ d, direct }) => direct && !(+d.age > 0),
     },
     payIn: {
@@ -121,6 +123,7 @@ export const PENSION_QUICK = {
       ask: ({ d, a }) => (a.payIn || d.pensionStatus) === "yes" ? "Roughly how much is in your pension now?" : "Roughly how much is in your pensions altogether?",
       why: "Sets where your retirement income starts from.",
       options: () => POT_BANDS,
+      default: () => MEDIAN_BANDS.pensionPot,
       when: ctx => ctx.direct && potAsked(ctx),
     },
   },

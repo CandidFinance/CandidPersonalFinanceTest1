@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, Check, Lock } from "lucide-react";
 import { isLocked } from "../../lib/unlock.js";
 import ScoreDonut from "../ScoreDonut.jsx";
-import { HERO_TILE_BG, scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD, CRITICAL } from "../../design-tokens.js";
+import { HERO_TILE_BG, scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../design-tokens.js";
 import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
@@ -14,10 +14,10 @@ import { moduleEstimate } from "../../lib/crossModule.js";
 import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import WorthALookTile from "../WorthALookTile.jsx";
-import GoalsCard from "./GoalsCard.jsx";
 import ConfidenceCard from "./ConfidenceCard.jsx";
 import PayCheckCard from "./PayCheckCard.jsx";
 import GainedFromChanges from "../GainedFromChanges.jsx";
+import GettingToKnow from "../GettingToKnow.jsx";
 import SinceLastVisit from "../SinceLastVisit.jsx";
 import OutsideEvent from "../OutsideEvent.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
@@ -32,25 +32,6 @@ import { readinessMissing } from "../../lib/propertyReadiness.js";
 // stay lucide-react (CLAUDE.md rule 2) rather than the mockup's hand-drawn
 // SVGs.
 
-// Flat asset/liability list for the expandable Net Worth card — a simpler
-// grouping (ISA/unwrapped combined into one "Investments" line) to match
-// the mockup's information density.
-function netWorthBreakdown(d, m) {
-  const isaPrev = (+d.isaPrevCash||0) + (+d.isaPrevSS||0) + (+d.isaPrevLISA||0) + (+d.isaPrevOther||0) || (+d.isaPreviousBalance||0);
-  const assets = [
-    { label: "Cash & savings", value: m.cash + m.bonds },
-    { label: "Investments", value: m.isaUsedThisYear + isaPrev + (+d.unwrappedValue||0) },
-    { label: "Pension", value: (+d.potValue||0) + (+d.potValue2||0) },
-    { label: "Property equity", value: m.propertyEquity || 0 },
-  ].filter(a => a.value > 0);
-  const liabilities = [
-    { label: "Student loan", value: m.loanBal || 0 },
-    { label: "Mortgage", value: d.hasMortgage === "yes" ? (+d.mortgageBalance||0) : 0 },
-    { label: "Personal loan", value: d.hasPersonalLoan === "yes" ? (+d.personalLoanBalance||0) : 0 },
-  ].filter(l => l.value > 0);
-  return { assets, liabilities };
-}
-
 // The score last shown on Home this session. Home unmounts whenever you open
 // a module, so this is what lets it animate from the old score to the new one
 // when you come back after reviewing a module. Not persisted: a fresh page
@@ -60,14 +41,13 @@ let lastShownScore = null;
 // The score shows once every module picked at the entry is answered
 // (scoreUnlocked), or for a user with an old report; until then, the modules
 // to start with (MobileStartHome). Everything here is worked out by the
-// code: no AI report (docs/score-without-ai-plan.md). `onGoalsDone(how, goals)`
-// records the goals card being answered or dismissed.
-export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, onGoalsDone, set, savingsRates = null, approvedEvents = null }) {
+// code: no AI report (docs/score-without-ai-plan.md). No goals question and
+// no net worth here: Goals and Forecast hold those.
+export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, set, savingsRates = null, approvedEvents = null }) {
   const navigate = useNavigate();
   // The score tile opens in place to show what to do first.
   const [scoreOpen, setScoreOpen] = useState(false);
   const reduceMotion = useReducedMotion();
-  const [netWorthOpen, setNetWorthOpen] = useState(false);
   // Best rates moved for them since the last visit: a red badge on the Cash
   // row (and on the list while it's closed) until they open Cash.
   const news = useCashNews();
@@ -134,8 +114,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   const plan = priorities.map(p => ({ ...p, done: (completedModules || []).includes(p.key) }));
   const stepsDone = plan.filter(p => p.done).length;
   const { totalOpp } = getModuleBreakdown(d, m, statuses, null, "amount");
-  const { assets, liabilities } = netWorthBreakdown(d, m);
-  const netWorthPositive = m.netWorth >= 0;
   // How much of the picture the score covers: a high score from one module
   // answered mustn't read as everything being fine.
   // The £100k tax trap counts only for someone near or over £100,000.
@@ -148,6 +126,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginBottom:"16px",lineHeight:1.2}}>
         {mobileGreeting(d)}
       </h1>
+
+      {/* What the app can do, ticked off as it's done (Phase 6). */}
+      <GettingToKnow d={d} set={set} answered={doneModules(d, propertyDone).length}/>
 
       {/* A Bank Rate decision or a Budget, coming up or just announced. */}
       <OutsideEvent d={d} m={m} approved={approvedEvents}/>
@@ -246,9 +227,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       {/* A new tax year: is their pay still the same? */}
       {d.payCheckDue && +d.salary > 0 && <PayCheckCard d={d} set={set}/>}
 
-      {/* Asked once, after the score appears; never blocks anything. */}
-      {!d.goalsAsked && <GoalsCard d={d} set={set} onDone={onGoalsDone}/>}
-
       {/* How confident they feel: asked once their first answer is in, never
           for anyone who answered it at the entry before. */}
       {(d.unlockedModules || []).length > 0 && !d.confidenceAsked && !d.confidence && <ConfidenceCard d={d} set={set}/>}
@@ -261,50 +239,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
           </div>
         </div>
       )}
-
-      {/* Net worth — a tile; tap anywhere on it to expand the assets/liabilities
-          breakdown in place (same white card treatment as "Your biggest win"). */}
-      <div onClick={() => setNetWorthOpen(v => !v)} style={{marginTop:"16px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)",cursor:"pointer"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Net worth</span>
-          <ChevronDown size={14} color={MUT} style={{transform:netWorthOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
-        </div>
-        <div style={{display:"flex",alignItems:"baseline",gap:"8px",marginTop:"6px"}}>
-          <span style={{fontFamily:SERIF,fontWeight:700,fontSize:"30px",color:netWorthPositive?TEXT:CRITICAL}}>{fmt(Math.abs(m.netWorth))}</span>
-        </div>
-        <div style={{display:"flex",gap:"20px",marginTop:"10px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:SUCCESS,display:"inline-block"}}/>
-            <span style={{fontSize:"12.5px",color:MUT}}>Assets <b style={{color:TEXT}}>{fmt(m.totalAssets)}</b></span>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-            <span style={{width:"7px",height:"7px",borderRadius:"50%",background:CRITICAL,display:"inline-block"}}/>
-            <span style={{fontSize:"12.5px",color:MUT}}>Liabilities <b style={{color:TEXT}}>{fmt(m.totalLiabilities)}</b></span>
-          </div>
-        </div>
-        {netWorthOpen && (assets.length > 0 || liabilities.length > 0) && (
-          <div style={{marginTop:"16px",paddingTop:"14px",borderTop:`1px solid rgba(22,47,36,0.08)`,display:"flex",flexDirection:"column",gap:"10px"}}>
-            {assets.length > 0 && (
-              <div style={{fontSize:"10.5px",fontWeight:700,color:SUCCESS,letterSpacing:"0.08em",textTransform:"uppercase"}}>Assets</div>
-            )}
-            {assets.map((a,i) => (
-              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <span style={{fontSize:"13px",color:TEXT}}>{a.label}</span>
-                <span style={{fontSize:"13px",fontWeight:600,color:TEXT}}>{fmt(a.value)}</span>
-              </div>
-            ))}
-            {liabilities.length > 0 && (
-              <div style={{fontSize:"10.5px",fontWeight:700,color:CRITICAL,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"6px"}}>Liabilities</div>
-            )}
-            {liabilities.map((l,i) => (
-              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <span style={{fontSize:"13px",color:TEXT}}>{l.label}</span>
-                <span style={{fontSize:"13px",fontWeight:600,color:TEXT}}>{fmt(l.value)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Dismissed with its X or a swipe, until a module it didn't hold
           appears (appEntry.js worthALookShown). */}

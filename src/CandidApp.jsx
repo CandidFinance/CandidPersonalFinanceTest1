@@ -17,6 +17,7 @@ import CandidAssist from "./mobile/assist/CandidAssist.jsx";
 import MobileModuleDeepDive from "./mobile/screens/MobileModuleDeepDive.jsx";
 import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import SaveFiguresOffer from "./mobile/SaveFiguresOffer.jsx";
+import CheckedCard from "./mobile/CheckedCard.jsx";
 import CashTour from "./mobile/onboarding/CashTour.jsx";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, firstUnlockPatch, onTrackReward, UNLOCK_GATE_ON } from "./lib/unlock.js";
@@ -495,6 +496,12 @@ export default function AppShell() {
   // The module replayed ("Explain this"): its answer opens straight away,
   // without the working screen (workingChecks.js) shown on the way in.
   const [revealReplay, setRevealReplay] = useState(null);
+  // A module's "checked" card, after its first answer (CheckedCard.jsx); and
+  // the Cash tour, kept on screen once it's marked done until it closes.
+  const [checkedCard, setCheckedCard] = useState(null);
+  const [tourShowing, setTourShowing] = useState(false);
+  // Gone once the page changes, however it's left.
+  useEffect(() => { setCheckedCard(null); }, [location.pathname]);
   // The entry's hand-off to the first module is showing: the user is
   // recorded as entered, but /app/start stays up until it's done.
   const [entryHandoff, setEntryHandoff] = useState(false);
@@ -670,12 +677,7 @@ export default function AppShell() {
   if (pathname === "/app/home") return (
     <MobileLayout assist={assistNode} activeTab="home" headerRight={editInputsButton}>
       <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules} savingsRates={savingsRates} approvedEvents={approvedEvents}
-        onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}
-        onGoalsDone={(how, goals) => {
-          set("goalsAsked", true);
-          posthog.capture(how === "answered" ? "goals_answered" : "goals_dismissed", { goals: (goals || []).join(",") });
-          if (how === "answered") setRowSaveTick(t => t + 1);
-        }}/>
+        onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}/>
     </MobileLayout>
   );
 
@@ -729,7 +731,7 @@ export default function AppShell() {
         <MobileInputsScreen key={open || "all"} d={d} m={m} set={set} open={open}
           onStartModule={key => navigate(`/app/module/${key}`)}
           onOpenModule={key => { inputsReturnPath.current = null; navigate(`/app/module/${key}`); scrollToTop(); }}
-          onEmailChange={email => { set("email", email); posthog.capture("email_captured", { source: "inputs" }); setUnlockSaveTick(t => t + 1); }}/>
+          onEmailChange={(email, alerts = false) => { set("email", email); if (alerts) set("alertsOptIn", true); posthog.capture("email_captured", { source: alerts ? "inputs_alerts" : "inputs" }); setUnlockSaveTick(t => t + 1); }}/>
       </MobileLayout>
     );
   }
@@ -766,7 +768,7 @@ export default function AppShell() {
       if (quick) {
         const detail = new URLSearchParams(location.search).get("detail") === "1";
         return (
-          <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
+          <MobileLayout activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
             <QuickStart key={mobileActiveModule} setup={quick} d={d} m={m} intro={false} flow={detail ? "detail" : "brief"}
               kicker={`${moduleLabel}, for your ${backTo.toLowerCase()} answer`}
               onPatch={patch => Object.entries(patch).forEach(([k, v]) => set(k, v))}
@@ -785,7 +787,7 @@ export default function AppShell() {
         );
       }
       return (
-        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
+        <MobileLayout activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
           <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} questions={brief}
             subtitle={`A few questions for your ${backTo.toLowerCase()} answer`}
             emptyText={mobileActiveModule === "pension" ? "Answer these to see whether your employer's pension match comes before paying off your loan." : "Answer these to see whether paying off your loan early is worth it."}
@@ -827,8 +829,10 @@ export default function AppShell() {
         scrollToTop();
       };
       return (
-        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
+        <MobileLayout activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
+          {/* No Candid Assist on the questions or the answer's walk-through:
+              it waits for the module's page. */}
           {/* Student loan, Cash and Pension open on what's at stake, then
               one-tap questions in bands, for a first answer before any exact
               figures. */}
@@ -876,7 +880,7 @@ export default function AppShell() {
     if (revealModule === mobileActiveModule && revealSteps) {
       const onTrackKind = onTrackReward(d, mobileActiveModule, statuses[mobileActiveModule]);
       return (
-        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
+        <MobileLayout activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
           <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} large={mobileActiveModule === "studentLoan" || mobileActiveModule === "pension"}
             checks={revealReplay === mobileActiveModule ? null : workingChecks(mobileActiveModule, d, m, { marketRates })}
@@ -908,6 +912,12 @@ export default function AppShell() {
             </>}
             onDone={(how, step) => {
               posthog.capture(how === "finished" ? "reveal_finished" : "reveal_skipped", { module: mobileActiveModule, step });
+              // Cash ends on the same card at the end of its tour.
+              // Once per module (`d.checkedShown`), however often its answer is walked through again.
+              if (how === "finished" && revealReplay !== mobileActiveModule && mobileActiveModule !== "cash" && !(d.checkedShown || []).includes(mobileActiveModule)) {
+                set("checkedShown", [...(d.checkedShown || []), mobileActiveModule]);
+                setCheckedCard(mobileActiveModule);
+              }
               setRevealModule(null);
               setRevealReplay(null);
               scrollToTop();
@@ -921,7 +931,7 @@ export default function AppShell() {
             however it's reached. */}
         {/* Cash: the email, until it's given or the tile's closed, once
             the tour is over. */}
-        {mobileActiveModule === "cash" && d.cashTourDone && !d.emailTileDismissed && (
+        {mobileActiveModule === "cash" && d.cashTourDone && !tourShowing && !d.emailTileDismissed && (
           <SaveFiguresOffer d={d} moduleKey="cash" rateCost={rateCost} source="cash_tile" onEmail={saveEmail("cash_tile")} style={{marginTop:0,marginBottom:"16px"}}
             onDismiss={() => { set("emailTileDismissed", true); posthog.capture("email_tile_dismissed", { module: "cash" }); }}/>
         )}
@@ -941,10 +951,12 @@ export default function AppShell() {
           onRecordLoanOverpayment={recordLoanOverpayment}
           onRecordCrystallisedGain={recordCrystallisedGain}/>
         {/* Once, the first time Cash opens unlocked. */}
-        {mobileActiveModule === "cash" && !d.cashTourDone && (
+        {mobileActiveModule === "cash" && (!d.cashTourDone || tourShowing) && (
           <CashTour d={d} m={m} set={set} rateCost={rateCost} estimates={estimateItems(d, "cash").map(i => i.phrase)}
-            onExactFigures={() => openInputs("cash")} onEmail={saveEmail("tour")}/>
+            onExactFigures={() => openInputs("cash")} onEmail={saveEmail("tour")}
+            onStart={() => setTourShowing(true)} onClose={() => setTourShowing(false)}/>
         )}
+        {checkedCard === mobileActiveModule && <CheckedCard moduleKey={checkedCard} onClose={() => setCheckedCard(null)}/>}
       </MobileLayout>
     );
   }

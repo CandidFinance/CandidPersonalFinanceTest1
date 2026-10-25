@@ -15,7 +15,10 @@
 //               string or worked out from ctx; `when` says
 //               whether it's asked, from ctx = { d, m, a } (a: the answers
 //               so far; d and m don't change until the last answer;
-//               direct: opened on its own, not from another module's answer)
+//               direct: opened on its own, not from another module's answer);
+//               `default(ctx)`, optional, the value of the tile offered
+//               first (picked out, one tap on Continue), left out where the
+//               answer is the user's own choice
 //   patch(d, m, a)    every field the answers write
 //   estimateLine(d)   the line under the answer naming what's estimated
 //
@@ -56,3 +59,17 @@ export const SALARY_BANDS = [
   { value:"80-100", label:"£80k to £100k", figure:90000 },
   { value:"100+", label:"£100k or more", figure:120000 },
 ];
+// The tiles offered first (a question's `default`): the band holding the
+// median answer in Candid's own report table (Supabase `test`, 25 Oct 2026;
+// the median and how many gave it alongside). Refreshed by hand. Only where
+// enough people answered: cash savings and rates have almost no rows, so
+// they offer nothing. Never shown as what others answered, just picked out.
+export const MEDIAN_BANDS = {
+  salary: "60-80",      // £75,000, 442 people
+  slPlan: "plan2",      // 219 of 240
+  slBalance: "40-60",   // £45,000, 227 people
+  age: "25-34",         // 31, 124 people
+  pensionPot: "25-50",  // £45,000, 73 people
+  costs: "1.5-2",       // £2,000 a month, 242 people
+};
+export const SALARY_DEFAULT = MEDIAN_BANDS.salary;

@@ -8,7 +8,8 @@ import { shellScreen, ShellTopRow, QuestionHeading, AnswerGroup, AnswerTile, Pri
 
 // A module's quick start (src/lib/quickStart.js): what's at stake (the
 // setup's intro, when `intro`), then a question per screen, each answered
-// with one tap on a tile. The last answer writes the figures (`onPatch`) and
+// with one tap on a tile, or Continue on the tile offered first (a
+// question's `default`). The last answer writes the figures (`onPatch`) and
 // hands over: `onDone("finished")` once they've landed in `d`, so the answer
 // is worked out from them; `onDone("skipped", questionId)` to leave early.
 // `kicker` names the module above the questions when there's no intro (the
@@ -65,7 +66,8 @@ export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true,
     if (picked) return;
     setPicked(value);
     const all = { ...answers, [current]: value };
-    posthog.capture("question_answered", { ...track, question: current, position, of: order.length });
+    const offered = suggestedFor(setup.questions[current], { d, m, a: answers, direct });
+    posthog.capture("question_answered", { ...track, question: current, position, of: order.length, ...(offered && { defaulted: value === offered }) });
     setTimeout(() => {
       setAnswers(all);
       setPicked(null);
@@ -85,13 +87,27 @@ export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true,
 
   const shift = reduceMotion ? 0 : 36;
 
-  if (!started) return <Intro intro={setup.intro} onBegin={begin}/>;
-  if (!current) return null;
+  // The intro lifts away, then the first question rises in.
+  const ease = [0.4, 0, 0.2, 1];
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {!started ? (
+        <motion.div key="intro" exit={{ opacity: 0, y: reduceMotion ? 0 : -28, transition: { duration: 0.35, ease } }}>
+          <Intro intro={setup.intro} onBegin={begin}/>
+        </motion.div>
+      ) : current ? questionsView() : null}
+    </AnimatePresence>
+  );
 
+  // The question on screen (a function declaration, so it's hoisted above
+  // the return).
+  function questionsView() {
   const q = setup.questions[current];
   const ctx = { d, m, a: answers, direct };
+  const suggested = suggestedFor(q, ctx);
   return (
-    <div style={shellScreen}>
+    <motion.div key="questions" style={shellScreen} initial={{ opacity: 0, y: reduceMotion ? 0 : 18 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease }}>
       {kicker && <div style={{ fontSize: "13px", fontWeight: 700, color: MUT, marginBottom: "6px" }}>{kicker}</div>}
       <ShellTopRow onBack={back} position={position} total={order.length} style={{ marginBottom: "18px" }}/>
       <AnimatePresence mode="wait" initial={false} custom={direction}>
@@ -100,20 +116,31 @@ export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true,
           transition={{ duration: reduceMotion ? 0.1 : 0.22, ease: "easeOut" }}
           style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <QuestionHeading ask={askFor(q, ctx)} why={q.why}/>
+          {suggested && <p style={{ fontSize: "13.5px", color: MUT, lineHeight: 1.45, margin: "-12px 0 16px" }}>One is picked out to get you started. Tap yours if it's different.</p>}
           {q.kind === "slider"
             ? <SliderAnswer q={q} ctx={ctx} label={askFor(q, ctx)} onAnswer={value => choose(value, 0)}/>
             : (
               <AnswerGroup layout="grid" label={askFor(q, ctx)}>
                 {q.options(ctx).map((o, i, all) => (
-                  <AnswerTile key={o.value} label={o.label} sub={o.sub} compact={all.length > 6} on={picked === o.value} dim={!!picked && picked !== o.value} onPick={() => choose(o.value)}/>
+                  <AnswerTile key={o.value} label={o.label} sub={o.sub} compact={all.length > 6} on={picked === o.value} dim={!!picked && picked !== o.value}
+                    suggested={!picked && suggested === o.value} onPick={() => choose(o.value)}/>
                 ))}
               </AnswerGroup>
             )}
+          {suggested && <PrimaryButton onClick={() => choose(suggested)} style={{ marginTop: "18px" }}>Continue</PrimaryButton>}
         </motion.div>
       </AnimatePresence>
       <SkipLink label="Skip to the full view" onClick={() => onDone("skipped", current)}/>
-    </div>
+    </motion.div>
   );
+  }
+}
+
+// The tile a question offers first, if it has one and it's among its answers.
+function suggestedFor(q, ctx) {
+  if (!q?.default || q.kind === "slider") return null;
+  const value = q.default(ctx);
+  return q.options(ctx).some(o => o.value === value) ? value : null;
 }
 
 // A percentage on a slider: the figure large, what it comes to in £ under

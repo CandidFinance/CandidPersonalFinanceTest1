@@ -2,8 +2,8 @@
 // earns, monthly costs, the emergency fund target, and a Cash ISA this tax year only where interest
 // could go over the Personal Savings Allowance. Unit tested in
 // quickStart.test.js.
-import { PSA_BY_BAND } from "./tax.js";
-import { withEstimates, addAsked } from "./quickStart.js";
+import { PSA_BY_BAND, calcIncomeTax, calcNI } from "./tax.js";
+import { withEstimates, addAsked, MEDIAN_BANDS } from "./quickStart.js";
 import { EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT } from "./metrics.js";
 
 // For "Not sure" of the rate: the UK average easy-access rate, about 2.5%
@@ -30,13 +30,22 @@ export const RATE_BANDS = [
   { value:"unsure", label:"Not sure", figure:TYPICAL_EASY_ACCESS_PCT },
 ];
 export const COST_BANDS = [
-  { value:"u1", label:"Under £1k", figure:800 },
-  { value:"1-1.5", label:"£1k to £1.5k", figure:1250 },
-  { value:"1.5-2", label:"£1.5k to £2k", figure:1750 },
-  { value:"2-3", label:"£2k to £3k", figure:2500 },
-  { value:"3-4", label:"£3k to £4k", figure:3500 },
-  { value:"4+", label:"£4k or more", figure:4750 },
+  { value:"u1", label:"Under £1k", floor:0, figure:800 },
+  { value:"1-1.5", label:"£1k to £1.5k", floor:1000, figure:1250 },
+  { value:"1.5-2", label:"£1.5k to £2k", floor:1500, figure:1750 },
+  { value:"2-3", label:"£2k to £3k", floor:2000, figure:2500 },
+  { value:"3-4", label:"£3k to £4k", floor:3000, figure:3500 },
+  { value:"4+", label:"£4k or more", floor:4000, figure:4750 },
 ];
+// The costs tile offered first: with their pay known, this share of their
+// take-home pay (Harvey's figure, 25 Oct 2026); otherwise the median band.
+export const COSTS_SHARE_OF_NET_PAY = 0.45;
+export function costsDefault(salary) {
+  if (!(salary > 0)) return MEDIAN_BANDS.costs;
+  const monthly = (salary - calcIncomeTax(salary) - calcNI(salary)) / 12 * COSTS_SHARE_OF_NET_PAY;
+  // The band it falls in, not the nearest middle.
+  return COST_BANDS.findLast(b => monthly >= b.floor).value;
+}
 export const ISA_BANDS = [
   { value:"none", label:"No", figure:0 },
   { value:"u5", label:"Under £5k", figure:2500 },
@@ -76,6 +85,7 @@ export const CASH_QUICK = {
     costs: {
       ask: "Roughly what are your monthly costs?", why: "Rent or mortgage, bills, food and travel.",
       options: () => COST_BANDS,
+      default: ({ d }) => costsDefault(+d.salary),
       when: ({ d }) => !(+d.monthlyExpenses > 0),
     },
     // Their own target, not an estimate: it isn't on the estimates line.

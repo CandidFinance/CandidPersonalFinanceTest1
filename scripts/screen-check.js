@@ -118,11 +118,11 @@ try {
       await page.waitForTimeout(1200);
       let broken = await check(r);
       // Cash's tour, the first time it opens (CashTour.jsx): each stop,
-      // past the estimates and the email.
+      // past the estimates and the email, to the closing card.
       const tour = page.locator('[role="dialog"][aria-modal="true"]');
       if (!broken && r === "/app/module/cash") {
         for (let i = 0; i < 9 && await tour.count(); i++) {
-          await tour.getByRole("button", { name: /^(Next|Not now)$/ }).first().click();
+          await tour.getByRole("button", { name: /^(Next|Not now|Done)$/ }).first().click();
           await page.waitForTimeout(400);
         }
         if (await tour.count()) problems.push(`${name} ${r}: the tour didn't close`);

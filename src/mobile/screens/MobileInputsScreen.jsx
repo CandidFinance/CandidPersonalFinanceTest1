@@ -4,7 +4,7 @@ import SignInSetup, { switchAccount } from "../SignInSetup.jsx";
 import InviteFriends from "../InviteFriends.jsx";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Mail, User } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SERIF, ERROR_TEXT, CTA_BLUE } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import AboutYouFields from "../onboarding/AboutYouFields.jsx";
 import ModuleInputsForm from "./ModuleInputsForm.jsx";
@@ -20,7 +20,8 @@ import { SCORED_MODULES, scoredInView, loanSavingsIn, loanPensionChecked } from 
 // page's Edit inputs); otherwise About you starts open. A module not
 // answered yet starts its questions instead (`onStartModule`).
 // `onOpenModule(key)` goes back to a module's page. `onEmailChange(email)`
-// saves a new email, once it's passed its checks (EmailField).
+// saves a new email, once it's passed its checks (EmailField); `alerts`
+// true from the "Email alerts" panel, which turns them on.
 // Tapping empty space in an open tile closes it, as on a phone, so its
 // header doesn't need scrolling back to. Not a tap on anything that responds
 // to one (a field, a pill, a slider, a link), nor one that started on such a
@@ -43,7 +44,10 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
   const partly = SCORED_MODULES.filter(k => !answered.includes(k) && ((k === "cash" && loanSavingsIn(d)) || (k === "pension" && loanPensionChecked(d))));
   const notYet = scoredInView(d).filter(k => !answered.includes(k) && !partly.includes(k));
   const shown = [...answered, ...partly];
-  const [openKey, setOpenKey] = useState([...answered, "cash", "pension"].includes(open) ? open : "about");
+  // From Home's checklist (`open` "email"): the email on its own at the top,
+  // picked out in blue, every tile closed under it.
+  const emailFirst = open === "email";
+  const [openKey, setOpenKey] = useState([...answered, "cash", "pension"].includes(open) ? open : emailFirst ? null : "about");
   const refs = useRef({});
 
   useEffect(() => {
@@ -69,6 +73,7 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
     <div>
       <h1 style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your inputs</h1>
       <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"0 0 20px"}}>Change anything here and your figures update straight away.</p>
+      {emailFirst && <EmailField d={d} onEmailChange={onEmailChange} spotlight/>}
 
       <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
         {["about", ...shown].map(key => {
@@ -98,7 +103,7 @@ export default function MobileInputsScreen({ d, m, set, open, onStartModule, onO
                   <div style={{paddingTop:"14px"}}>
                     {isModule
                       ? <ModuleInputsForm moduleKey={key} d={d} m={m} set={set} brief={isPartly}/>
-                      : <><AboutYouFields d={d} set={set}/><EmailField d={d} onEmailChange={onEmailChange}/></>}
+                      : <><AboutYouFields d={d} set={set}/>{!emailFirst && <EmailField d={d} onEmailChange={onEmailChange}/>}</>}
                   </div>
                   {isModule && (
                     <>
@@ -180,8 +185,11 @@ function ContactSupport() {
 // says what happened to the link, in place of the button. The email they
 // have already, if it isn't confirmed, gets a button to send its link;
 // that's looked up again on coming back to the page, so a link used in
-// another tab shows here.
-function EmailField({ d, onEmailChange }) {
+// another tab shows here. `spotlight`: on its own at the top of the page,
+// filled light blue with a heading, the field ready to type in.
+function EmailField({ d, onEmailChange, spotlight = false }) {
+  const inputRef = useRef(null);
+  useEffect(() => { if (spotlight) inputRef.current?.focus({ preventScroll: true }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [draft, setDraft] = useState(d.email || "");
   const [link, setLink] = useState(null); // { email, sent }
   const [confirmed, setConfirmed] = useState(null); // d.email's: true, false, or null (not known)
@@ -211,24 +219,26 @@ function EmailField({ d, onEmailChange }) {
     if (check.busy) return;
     const ok = await check.run(draft, { name: d.name || null });
     if (!ok) return;
-    if (!same(ok.email, d.email)) onEmailChange?.(ok.email);
+    if (!same(ok.email, d.email) || (spotlight && !d.alertsOptIn)) onEmailChange?.(ok.email, spotlight);
     setDraft(ok.email);
     setLink(ok);
   };
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
+  const accent = spotlight ? CTA_BLUE : G;
   return (
-    <div style={{marginTop:"18px"}}>
+    <div style={spotlight ? {background:"#EAF3FE",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"16px",padding:"18px",marginBottom:"20px"} : {marginTop:"18px"}}>
+      {spotlight && <h2 style={{fontFamily:SERIF,fontSize:"21px",color:G,fontWeight:700,margin:"0 0 6px",lineHeight:1.25}}>Email alerts</h2>}
       <label htmlFor="inputs-email" style={fieldLabel}>Email</label>
       <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"-2px 0 8px"}}>{EMAIL_WHY}</p>
-      <input id="inputs-email" type="email" autoComplete="email" value={draft} placeholder="your@email.com"
+      <input ref={inputRef} id="inputs-email" type="email" autoComplete="email" value={draft} placeholder="your@email.com"
         onChange={e => { setDraft(e.target.value); setLink(null); check.clear(); }}
-        style={{width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"100px",padding:"13px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+        style={{width:"100%",boxSizing:"border-box",border:spotlight ? `1.5px solid ${CTA_BLUE}` : "1.5px solid rgba(22,47,36,0.18)",borderRadius:"100px",padding:"13px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       {link && !changed && <p role="status" style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>{outcome}</p>}
       {unconfirmed && <p role="status" style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5,margin:"8px 0 0"}}>This email isn't confirmed yet.</p>}
       {(changed || unsent || unconfirmed) && (
         <>
           <button type="button" onClick={confirm} disabled={check.busy}
-            style={{marginTop:"10px",width:"100%",background:check.busy ? "rgba(22,47,36,0.4)" : G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:check.busy ? "default" : "pointer"}}>
+            style={{marginTop:"10px",width:"100%",background:accent,opacity:check.busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:check.busy ? "default" : "pointer"}}>
             {check.busy ? "Checking…" : changed ? "Confirm this email" : unsent ? "Send the link again" : "Send a confirmation link"}
           </button>
           {changed && !check.error && !check.suggestion && <p style={{fontSize:"12px",color:MUT,lineHeight:1.5,margin:"6px 0 0",textAlign:"center"}}>We'll send a link to confirm it's yours.</p>}

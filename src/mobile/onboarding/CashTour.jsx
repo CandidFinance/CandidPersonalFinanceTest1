@@ -6,14 +6,19 @@ import { EMERGENCY_MONTHS_OPTIONS, EMERGENCY_MONTHS_HINT } from "../../lib/metri
 import { validEmailShape } from "../../lib/emailCheck.js";
 import { PillSlider } from "../PillSlider.jsx";
 import SaveFiguresOffer from "../SaveFiguresOffer.jsx";
+import { CheckedCardBody } from "../CheckedCard.jsx";
+import { ProgressLine } from "./OnboardingShell.jsx";
 
 // The Cash page's tour, once, the first time the page opens unlocked: five
 // stops, each lighting up one part of the page (marked `data-tour="..."`)
 // with a card beside it, then the estimates behind the answer, then the
-// email. In place of the page's GuidanceIntro (the page's footer still
+// email, then a closing card, so it ends on what's been done rather than
+// on an ask. In place of the page's GuidanceIntro (the page's footer still
 // says it's guidance). Describes what's on the page; never says what to do with it.
 // A stop whose part isn't on the page (no Opportunity tile with nothing at
-// stake, say) is left out. `d.cashTourDone` once it's finished or skipped.
+// stake, say) is left out. `d.cashTourDone` as soon as it starts, so it's
+// never shown twice, even if left part-way; the parent keeps it on screen
+// until `onClose`.
 
 const STOPS = [
   { id: "figure", target: "figure", title: "What you're losing",
@@ -37,8 +42,9 @@ const targetOf = id => document.querySelector(`[data-tour="${id}"]`);
 // `rateCost`: Cash's rate loss, for the email ask. `estimates`: the phrases
 // the answer is estimated from (quickStart.js estimateItems), each an exact
 // figure to give. `onExactFigures` opens Edit inputs at Cash; `onEmail(email,
-// name)` records the email as the reveal's ask does.
-export default function CashTour({ d, m, set, rateCost, estimates, onExactFigures, onEmail }) {
+// name)` records the email as the reveal's ask does. `onStart` once it's
+// begun, `onClose` once it's off the screen.
+export default function CashTour({ d, m, set, rateCost, estimates, onExactFigures, onEmail, onStart, onClose }) {
   const reduce = useReducedMotion();
   const [steps, setSteps] = useState(null);
   const [at, setAt] = useState(0);
@@ -57,25 +63,41 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
         ...stops.map((s, i) => ({ ...s, position: i + 1, of: stops.length })),
         ...(estimates.length ? [{ id: "exact" }] : []),
         ...(!validEmailShape(d.email) ? [{ id: "email" }] : []),
+        { id: "done" },
       ]);
+      set("cashTourDone", true);
+      onStart?.();
     }, 400);
     return () => clearTimeout(t);
   }, []);
 
-  const step = steps?.[at] || null;
+  // Left mid-way (another page): counted as skipped, and off the screen for good.
+  const leftAt = useRef(null);
+  useEffect(() => () => {
+    if (!ended.current) { ended.current = true; posthog.capture("tour_skipped", { tour: "cash", at: leftAt.current, via: "left" }); }
+    onClose?.();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const end = (how, extra = {}) => {
+  const step = steps?.[at] || null;
+  leftAt.current = step?.id;
+
+  // `record` once, however it ends; `close` takes the tour off the page.
+  const record = (how, extra = {}) => {
     if (ended.current) return;
     ended.current = true;
-    set("cashTourDone", true);
     posthog.capture(how === "skipped" ? "tour_skipped" : "tour_finished", { tour: "cash", at: step?.id, ...extra });
   };
-  const next = () => (at + 1 < steps.length ? setAt(at + 1) : end("finished", { via: "end" }));
+  const close = () => onClose?.();
+  const end = (how, extra) => { record(how, extra); close(); };
+  // Finished: on to the closing card.
+  const finish = extra => { record("finished", extra); setAt(steps.length - 1); };
+  const next = () => (steps[at + 1]?.id === "done" ? finish({ via: "end" }) : setAt(at + 1));
 
   // Into view, then measured; measured again as the page scrolls or resizes.
   useLayoutEffect(() => {
     if (!step) return;
     posthog.capture("tour_step", { tour: "cash", step: step.id, position: at + 1 });
+    if (step.id === "done") posthog.capture("tour_done_shown", { tour: "cash" });
     const el = step.target ? targetOf(step.target) : null;
     // Gone since the tour began (the rates moved the figure, say): on.
     if (step.target && !el) { next(); return; }
@@ -102,7 +124,7 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
 
   useEffect(() => {
     if (!step) return;
-    const onKey = e => { if (e.key === "Escape") end("skipped"); };
+    const onKey = e => { if (e.key === "Escape") (step.id === "done" ? close() : end("skipped")); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [step]);
@@ -110,17 +132,28 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
   if (!step) return null;
 
   // Below the lit part where the card fits, above it where it fits there,
-  // otherwise at the foot of the screen (a short screen); centred with
-  // nothing lit.
+  // otherwise at the foot of the screen (a short screen). With nothing lit
+  // (the last stop, the estimates, the email, the closing card), all at the
+  // same top line, so one flows into the next.
   const room = window.innerHeight - tabBar();
   const below = rect && rect.bottom + GAP + cardHeight <= room;
   const above = rect && rect.top - GAP - cardHeight >= 12;
-  const cardPlace = !rect ? { top: "50%", transform: "translateY(-50%)" }
-    : below ? { top: `${rect.bottom + GAP}px` }
-    : above ? { bottom: `${window.innerHeight - rect.top + GAP}px` }
-    : { bottom: "12px" };
+  const placed = !rect ? Math.round(window.innerHeight * 0.18)
+    : below ? rect.bottom + GAP
+    : above ? rect.top - GAP - cardHeight
+    : room - 12 - cardHeight;
+  // Always wholly on screen, however tall the card or short the phone.
+  const cardTop = Math.max(12, Math.min(placed, window.innerHeight - 12 - cardHeight));
+  // The spotlight: round the lit part, or with nothing lit, closed to a
+  // point mid-screen, its shadow dimming the whole page. A spring, so it
+  // glides from part to part and follows the page as it scrolls.
+  const hole = rect
+    ? { top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12, borderRadius: step.round ? (rect.width + 12) / 2 : 18 }
+    : { top: window.innerHeight / 2, left: window.innerWidth / 2, width: 0, height: 0, borderRadius: 0 };
+  const glide = reduce ? { duration: 0 } : { type: "spring", stiffness: 140, damping: 24, mass: 1 };
 
-  const card = { background: WHITE, borderRadius: "18px", padding: "18px 18px 14px", boxShadow: "0 10px 30px rgba(22,47,36,0.25)", fontFamily: SANS };
+  const frame = { background: WHITE, border: "1.5px solid rgba(22,47,36,0.12)", borderRadius: "18px", boxShadow: "0 10px 30px rgba(22,47,36,0.25)" };
+  const card = { ...frame, padding: "18px 18px 14px", fontFamily: SANS };
   const quiet = { background: "none", border: "none", padding: "8px 0", color: MUT, fontSize: "13px", fontWeight: 600, fontFamily: SANS, cursor: "pointer" };
   const main = { background: G, color: WHITE, border: "none", borderRadius: "100px", padding: "11px 22px", fontSize: "14.5px", fontWeight: 700, fontFamily: SANS, cursor: "pointer" };
 
@@ -138,19 +171,19 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
   } else if (step.id === "email") {
     content = (
       <div>
-        <SaveFiguresOffer d={d} moduleKey="cash" rateCost={rateCost} source="tour" style={{ marginTop: 0, boxShadow: "0 10px 30px rgba(22,47,36,0.25)" }}
-          onEmail={(email, name) => { onEmail(email, name); end("finished", { via: "email" }); }}>
-          <div style={{ textAlign: "center", marginTop: "2px" }}><button ref={nextRef} type="button" style={quiet} onClick={() => end("finished", { via: "email_declined" })}>Not now</button></div>
+        <SaveFiguresOffer d={d} moduleKey="cash" rateCost={rateCost} source="tour" style={{ ...frame, marginTop: 0 }}
+          onEmail={(email, name) => { onEmail(email, name); finish({ via: "email" }); }}>
+          <div style={{ textAlign: "center", marginTop: "2px" }}><button ref={nextRef} type="button" style={quiet} onClick={() => finish({ via: "email_declined" })}>Not now</button></div>
         </SaveFiguresOffer>
       </div>
     );
+  } else if (step.id === "done") {
+    content = <CheckedCardBody moduleKey="cash" onDone={close} buttonRef={nextRef}/>;
   } else {
     content = (
       <div style={card}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "12px" }}>
-          <h2 id="tour-title" style={{ fontFamily: SERIF, fontSize: "20px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>{step.title}</h2>
-          <span style={{ fontSize: "13px", color: MUT, fontWeight: 600, whiteSpace: "nowrap" }}>{step.position} of {step.of}</span>
-        </div>
+        <ProgressLine position={step.position} total={step.of} from={step.position - 1} style={{ marginBottom: "14px" }}/>
+        <h2 id="tour-title" style={{ fontFamily: SERIF, fontSize: "20px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>{step.title}</h2>
         <p style={{ fontSize: "14.5px", color: TEXT, lineHeight: 1.55, margin: "8px 0 0" }}>{step.body}</p>
         {step.id === "fund" && (
           <div style={{ marginTop: "12px" }}>
@@ -179,18 +212,17 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
   return (
     // Over the page, the tab bar and Assist's button; the page can't be
     // tapped while it's open.
-    <div role="dialog" aria-modal="true" aria-labelledby={step.id === "email" ? undefined : "tour-title"} aria-label={step.id === "email" ? "Email" : undefined}
+    <div role="dialog" aria-modal="true" aria-labelledby={step.id === "email" ? undefined : step.id === "done" ? "checked-title" : "tour-title"} aria-label={step.id === "email" ? "Email" : undefined}
       onClick={e => e.stopPropagation()}
-      style={{ position: "fixed", inset: 0, zIndex: 4700, background: rect ? "transparent" : DIM }}>
-      {rect && (
-        <div aria-hidden="true" style={{ position: "fixed", top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12,
-          borderRadius: step.round ? "50%" : "18px", boxShadow: `0 0 0 9999px ${DIM}`, pointerEvents: "none", transition: reduce ? "none" : "top 0.25s, left 0.25s, width 0.25s, height 0.25s" }}/>
-      )}
-      <div ref={cardRef} style={{ position: "fixed", left: "16px", right: "16px", maxWidth: "548px", margin: "0 auto", maxHeight: "calc(100dvh - 24px)", overflowY: "auto", ...cardPlace }}>
-        <motion.div key={step.id} initial={reduce ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+      style={{ position: "fixed", inset: 0, zIndex: 4700 }}>
+      <motion.div aria-hidden="true" initial={false} animate={hole} transition={glide}
+        style={{ position: "fixed", boxShadow: `0 0 0 9999px ${DIM}`, pointerEvents: "none" }}/>
+      <motion.div ref={cardRef} initial={false} animate={{ top: cardTop }} transition={glide}
+        style={{ position: "fixed", left: "16px", right: "16px", maxWidth: "548px", margin: "0 auto", maxHeight: "calc(100dvh - 24px)", overflowY: "auto" }}>
+        <motion.div key={step.id} initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}>
           {content}
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

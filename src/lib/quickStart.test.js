@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { questionOrder, estimateLineFor, estimateItems } from "./quickStart.js";
-import { CASH_QUICK, isaAskedFrom, TYPICAL_EASY_ACCESS_PCT } from "./cashQuick.js";
+import { questionOrder, estimateLineFor, estimateItems, SALARY_DEFAULT, MEDIAN_BANDS } from "./quickStart.js";
+import { CASH_QUICK, isaAskedFrom, TYPICAL_EASY_ACCESS_PCT, costsDefault } from "./cashQuick.js";
 import { PENSION_QUICK, LEGAL_MIN_YOU, LEGAL_MIN_EMPLOYER } from "./pensionQuick.js";
 import { STUDENT_LOAN_QUICK } from "./studentLoanQuick.js";
 import { loanSavingsIn, loanPensionChecked } from "./appEntry.js";
@@ -108,4 +108,23 @@ test("pension: a pot 'not sure' is estimated from age and pay, and not working m
   assert.equal(n.pensionStatus, "no");
   assert.equal(n.hasPensionPot, "no");
   assert.equal(n.notWorkingReason, "break");
+});
+
+test("defaults: costs offered from take-home pay, the default band's with no pay known", () => {
+  assert.equal(costsDefault(30000), "u1");
+  assert.equal(costsDefault(70000), "1.5-2");
+  assert.equal(costsDefault(130000), "3-4");
+  assert.equal(costsDefault(75000), "2-3"); // £2,027 a month: in £2k to £3k, though nearer £1,750
+  assert.equal(costsDefault(0), MEDIAN_BANDS.costs);
+  assert.equal(CASH_QUICK.questions.costs.default({ d: { salary: "130000" } }), "3-4");
+});
+
+test("defaults: the median bands, each one of its question's answers; none without enough data or for the user's own choice", () => {
+  const offered = (setup, id) => setup.questions[id].options({ d: {}, a: {} }).some(o => o.value === setup.questions[id].default({ d: {}, a: {} }));
+  for (const id of ["salary", "plan", "balance"]) assert.ok(offered(STUDENT_LOAN_QUICK, id), id);
+  for (const id of ["salary", "age", "pot"]) assert.ok(offered(PENSION_QUICK, id), id);
+  assert.ok(offered(CASH_QUICK, "costs"));
+  assert.equal(STUDENT_LOAN_QUICK.questions.salary.default(), SALARY_DEFAULT);
+  for (const id of ["savings", "rate", "buffer", "isa"]) assert.equal(CASH_QUICK.questions[id].default, undefined, id);
+  assert.equal(STUDENT_LOAN_QUICK.questions.finish.default, undefined);
 });
