@@ -194,9 +194,18 @@ export async function signInWithPasskey({ autofill = false } = {}) {
 export async function signInWithPassword(email, password) {
   return holdSignIn(await call("password-login", { email, password }));
 }
+// "Continue with Google" (src/lib/google.js): open to anyone, so it also
+// gives the email of someone not subscribed. Returns { outcome, email, name }:
+// outcome as for a link, or "none" when that Google address has never
+// subscribed. Nothing held is dropped when it isn't subscribed.
+export async function signInWithGoogle(credential, ref = null) {
+  const r = await call("google", { credential, ref });
+  const outcome = r.active ? await holdSignIn(r) : r.plan ? "ended" : "none";
+  return { outcome, email: r.email, name: r.name || "" };
+}
 
-// Signed in already: what's set up ({ passkeys, password }), adding a
-// passkey on this device, and setting a password.
+// Signed in already: what's set up ({ passkeys, password, google }), adding
+// a passkey on this device, adding Google, and setting a password.
 export async function accountSignIns() { return call("account", { token: read()?.token }); }
 export async function addPasskey() {
   const token = read()?.token;
@@ -207,6 +216,7 @@ export async function addPasskey() {
   await call("passkey-enrol", { token, challengeToken, response });
   markPasskeyHere();
 }
+export async function linkGoogle(credential) { await call("google-link", { token: read()?.token, credential }); }
 export async function setPassword(password) { await call("password-set", { token: read()?.token, password }); }
 
 async function holdSignIn(r) {

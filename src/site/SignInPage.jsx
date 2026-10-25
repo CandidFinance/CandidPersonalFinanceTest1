@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { G, MUT, TEXT, SERIF, WHITE, ERROR_TEXT } from "../design-tokens.js";
-import { requestRestore, signInWithLink, signInWithPasskey, signInWithPassword, passkeysSupported, passkeyAutofillSupported, stopPasskeyRequest, passkeyHere, passkeyName } from "../lib/entitlement.js";
+import { requestRestore, signInWithLink, signInWithPasskey, signInWithPassword, signInWithGoogle, passkeysSupported, passkeyAutofillSupported, stopPasskeyRequest, passkeyHere, passkeyName } from "../lib/entitlement.js";
 import { reportStorageFailure } from "../lib/storage.js";
 import { validEmail } from "../lib/unlock.js";
 import SiteLayout from "./SiteLayout.jsx";
+import GoogleButton from "../mobile/GoogleButton.jsx";
+import { googleSignInAvailable } from "../lib/google.js";
 
 // Signing in on a new device. An account comes with a subscription, and a
 // passkey (Face ID, a fingerprint, the screen lock) or password is set up
@@ -15,7 +17,9 @@ import SiteLayout from "./SiteLayout.jsx";
 // keyboard's suggestions, only if it holds one (synced from the user's other
 // devices), so nobody is sent to a QR code by surprise. The emailed
 // link (api/billing.js restore, back here as /signin?restore=) is for a
-// forgotten password or a device without a passkey. Each way holds the
+// forgotten password or a device without a passkey. "Continue with Google"
+// signs in a subscriber whose Google address is the one they subscribed
+// with (src/lib/google.js). Each way holds the
 // subscription in this browser and brings back their saved answers, then
 // opens the app where they left it.
 export default function SignInPage() {
@@ -77,6 +81,11 @@ export default function SignInPage() {
     try { finish(await signInWithPassword(email.trim(), password), "password"); }
     catch (err) { setError(err.message); setBusy(null); }
   };
+  const withGoogle = async credential => {
+    const g = await signInWithGoogle(credential);
+    if (g.outcome === "none") throw new Error(`${g.email} doesn't have a Candid subscription. Sign in with the email you subscribed with.`);
+    finish(g.outcome, "google");
+  };
   const sendLink = async e => {
     e.preventDefault();
     if (!validEmail(email)) { setError("Enter a valid email address"); return; }
@@ -115,9 +124,11 @@ export default function SignInPage() {
             {stage === "ended" && <p style={{...p,color:TEXT}}>That subscription has ended. <Link to="/app/start" style={link}>Start a new check</Link>, or sign in with a different account.</p>}
             {stage === "form" && <p style={p}>For Candid subscribers. Your answers and subscription come with you to this device.</p>}
 
+            <GoogleButton source="signin" onCredential={withGoogle} divider style={{marginTop:"24px"}}/>
+
             {passkeyButton && (
               <>
-                <button type="button" onClick={withPasskey} disabled={!!busy} style={{...button(true, busy === "passkey"),marginTop:"24px"}}>
+                <button type="button" onClick={withPasskey} disabled={!!busy} style={{...button(true, busy === "passkey"),marginTop:googleSignInAvailable() ? 0 : "24px"}}>
                   <ScanFace size={19}/>{busy === "passkey" ? "Waiting for your device…" : `Sign in with ${unlock}`}
                 </button>
                 <div style={{display:"flex",alignItems:"center",gap:"12px",margin:"22px 0 4px"}}>
@@ -128,7 +139,7 @@ export default function SignInPage() {
               </>
             )}
 
-            <form onSubmit={withPassword} style={{marginTop:passkeyButton ? "14px" : "24px",display:"flex",flexDirection:"column",gap:"10px"}}>
+            <form onSubmit={withPassword} style={{marginTop:passkeyButton || googleSignInAvailable() ? "14px" : "24px",display:"flex",flexDirection:"column",gap:"10px"}}>
               <input type="email" name="username" autoComplete="username webauthn" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email" style={input}/>
               <input type="password" name="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" aria-label="Password" style={input}/>
               <button type="submit" disabled={!!busy} style={button(!passkeyButton, busy === "password")}>

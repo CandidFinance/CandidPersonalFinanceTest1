@@ -844,10 +844,10 @@ export default function AppShell() {
     // Cash's rate loss ("£598 a year"), which its email ask names.
     const rateCost = revealSteps?.find(s => s.hook === "rate")?.figure ?? null;
     // The email, from the reveal, the Cash tour or the tile on the Cash page.
-    const saveEmail = source => (email, name) => {
+    const saveEmail = source => (email, name, how = "typed") => {
       set("email", email); set("alertsOptIn", true);
       set("name", name);
-      posthog.capture("email_captured", { source, module: mobileActiveModule });
+      posthog.capture("email_captured", { source, module: mobileActiveModule, how });
       setUnlockSaveTick(t => t + 1);
     };
     // Answered but locked: what it's worth, and the way to unlock it, which

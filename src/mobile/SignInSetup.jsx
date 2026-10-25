@@ -3,14 +3,16 @@ import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
 import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM } from "../design-tokens.js";
-import { accessInfo, accountSignIns, addPasskey, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
+import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
+import { googleSignInAvailable } from "../lib/google.js";
+import GoogleButton from "./GoogleButton.jsx";
 
 // A subscriber's ways to sign in on another device (src/site/SignInPage.jsx):
-// a passkey on this device (Face ID, Touch ID, a phone's screen lock) and a
-// password. Set up on a required screen once subscribed (SignInGate), and
+// a passkey on this device (Face ID, Touch ID, a phone's screen lock), a
+// password, and Google (when its address is the one they subscribed with). Set up on a required screen once subscribed (SignInGate), and
 // added to or changed in Edit inputs' subscription section.
 
-// What's set up ({ passkeys, password }), from the server; null until known
+// What's set up ({ passkeys, password, google }), from the server; null until known
 // or without a subscription.
 function useSignIns() {
   const [signIns, setSignIns] = useState(null);
@@ -116,7 +118,7 @@ export function SignInGate() {
     window.addEventListener("candid-access", load);
     return () => window.removeEventListener("candid-access", load);
   }, []);
-  if (!email || !signIns || signIns.passkeys || signIns.password) return null;
+  if (!email || !signIns || signIns.passkeys || signIns.password || signIns.google) return null;
   const done = (how, s) => {
     posthog.capture("sign_in_created", { how });
     known = { email, signIns: s };
@@ -153,9 +155,13 @@ function CreateSignIn({ email, onDone }) {
         <h1 id="create-sign-in-title" style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,margin:0,lineHeight:1.2}}>Create your sign-in</h1>
         <p style={{fontSize:"15px",color:MUT,lineHeight:1.6,margin:"12px 0 0"}}>So you can open Candid on another device and pick up where you left off. Your account is {email}.</p>
 
+        {/* Google, when its address is the one they subscribed with. */}
+        <GoogleButton source="sign_in_gate" divider style={{marginTop:"28px"}}
+          onCredential={async c => { await linkGoogle(c); onDone("google", await accountSignIns()); }}/>
+
         {canPasskey && (
           <>
-            <button type="button" disabled={!!busy} onClick={() => run("passkey", addPasskey)} style={{...button(true),marginTop:"28px"}}>
+            <button type="button" disabled={!!busy} onClick={() => run("passkey", addPasskey)} style={{...button(true),marginTop:googleSignInAvailable() ? 0 : "28px"}}>
               <ScanFace size={19}/>{busy === "passkey" ? "Waiting for your device…" : `Use ${passkeyName() === "passkey" ? "a passkey" : passkeyName()}`}
             </button>
             <div style={{display:"flex",alignItems:"center",gap:"12px",margin:"22px 0 14px"}}>

@@ -8,7 +8,8 @@ import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
 import { useEmailCheck, DidYouMean, EMAIL_WHY } from "../emailCheckForm.jsx";
-import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore } from "../../lib/entitlement.js";
+import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore, signInWithGoogle } from "../../lib/entitlement.js";
+import GoogleButton from "../GoogleButton.jsx";
 import { referralCode, invitedHere } from "../../lib/referral.js";
 import InviteFriends from "../InviteFriends.jsx";
 
@@ -154,8 +155,8 @@ function PaywallSheet({ children, returnTo = null }) {
 }
 
 // Subscribing: the two plans, then Stripe's own checkout page. Below, a way
-// back in for someone already subscribed (an emailed link), and a way to
-// hear about rate changes without subscribing.
+// back in for someone already subscribed (Google or an emailed link), and a
+// way to hear about rate changes without subscribing (Google or an email).
 function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnTo = null }) {
   const navigate = useNavigate();
   const backTitle = returnTo ? MODULE_META.find(mm => mm.key === returnTo)?.title : null;
@@ -189,6 +190,16 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
     try { await requestRestore(email.trim()); posthog.capture("restore_requested"); setDone("restore"); }
     catch (err) { setError(err.message); }
     setBusy(false);
+  };
+
+  // Google: signs a subscriber in here, reloading so the app opens with
+  // their saved answers; or, for alerts, gives the email, already confirmed.
+  const withGoogle = async credential => {
+    const g = await signInWithGoogle(credential, panel === "alerts" ? referralCode() : null);
+    if (panel === "alerts") { onLeaveEmail?.(g.email); setDone("alerts-google"); return; }
+    posthog.capture("signed_in", { how: "google", outcome: g.outcome, from: "paywall" });
+    if (g.outcome === "signed-in") { window.location.reload(); return; }
+    throw new Error(g.outcome === "ended" ? `The subscription for ${g.email} has ended.` : `${g.email} doesn't have a Candid subscription.`);
   };
 
   // Each plan's name and price at the top, level across both cards (a
@@ -274,10 +285,11 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
       {panel && panel !== "invite" && (
         done ? (
           <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"14px 0 0",textAlign:"center"}}>
-            {done === "restore" ? "If that email has a subscription, a sign-in link is on its way. Open it on this device." : "Thanks. Use the link we've just emailed to confirm it's you, and we'll email you when you could be keeping more."}
+            {done === "restore" ? "If that email has a subscription, a sign-in link is on its way. Open it on this device." : done === "alerts-google" ? "Thanks. We'll email you when you could be keeping more." : "Thanks. Use the link we've just emailed to confirm it's you, and we'll email you when you could be keeping more."}
           </p>
         ) : (
           <form onSubmit={submitEmail} style={{marginTop:"14px"}}>
+            <GoogleButton source={panel === "restore" ? "paywall_restore" : "paywall_alerts"} onCredential={withGoogle} divider/>
             <div style={{fontSize:"13px",color:TEXT,marginBottom:"8px"}}>
               {panel === "restore" ? "Enter the email you subscribed with, and we'll send you a sign-in link." : "We'll email you when you could be keeping more: a better rate, or an allowance going unused."}
             </div>

@@ -7,6 +7,7 @@ import { referralLink, codeIsValid } from "../server/referrals.js";
 import { sendOnce, unsubscribeUrl, mailReady } from "../server/alertMail.js";
 import { welcomeEmail, PAID_PLANS } from "../src/lib/weekly.js";
 import { signInEmail } from "../src/lib/accountEmails.js";
+import { googleIdentity, markConfirmed } from "../server/google.js";
 
 // Subscriptions: the first module's answer is free, every one after it needs
 // a subscription (src/lib/unlock.js). One function for all of it, routed by
@@ -23,6 +24,11 @@ import { signInEmail } from "../src/lib/accountEmails.js";
 //   passkey-login-options / passkey-login  -> signs in with a passkey
 //   password-set   POST {token, password}  -> sets or changes the password
 //   password-login POST {email, password}  -> signs in with them
+//   google    POST {credential, ref?}      -> signs in with Google's ID token
+//                                             (server/google.js); for anyone,
+//                                             subscribed or not
+//   google-link POST {token, credential}  -> adds Google as a subscriber's
+//                                             way to sign in (SignInGate)
 //   referral-link  POST {email}            -> { confirmed, code, earned, cap }:
 //                                             their invite link's code
 //   referral-check POST {code}             -> { valid }: a ?ref= code is real
@@ -374,7 +380,7 @@ async function account(body, res) {
   const email = await subscriberFrom(body.token);
   if (!email) return res.status(401).json({ error: "Not signed in" });
   const [row, keys] = await Promise.all([rowFor(email), passkeys("GET", `?email=eq.${enc(email)}&select=id`)]);
-  return res.status(200).json({ passkeys: keys.length, password: !!row?.password_hash });
+  return res.status(200).json({ passkeys: keys.length, password: !!row?.password_hash, google: !!row?.google_sub });
 }
 
 async function passkeyEnrolOptions(body, res, origin) {
@@ -457,6 +463,40 @@ async function passwordLogin(req, body, res) {
   return signedIn(email, res);
 }
 
+// "Continue with Google", from the email ask or a sign-in screen. Google has
+// verified the address, so it's recorded as confirmed (no link emailed),
+// and the answer is a sign-in's, with the email and first name always
+// there, so someone not subscribed has given their email by it.
+async function googleLogin(body, res) {
+  const who = await googleIdentity(body.credential);
+  if (!who) return res.status(401).json({ error: "Google sign-in didn't work. Please try again, or use your email." });
+  await markConfirmed(who.email, body.ref);
+  const row = await rowFor(who.email);
+  const access = accessFor(row);
+  // Signing in with Google counts as having set it up (account, SignInGate).
+  if (access.active && row.google_sub !== who.sub) {
+    await supa("PATCH", `?email=eq.${enc(who.email)}`, { google_sub: who.sub, google_linked_at: new Date().toISOString() })
+      .catch(e => console.error("google_sub not saved", e.message));
+  }
+  return res.status(200).json({
+    ...access, email: who.email, name: who.name || null,
+    token: access.active ? makeToken(who.email, "access", ACCESS_TTL_MS) : null,
+    ...(access.active ? { state: row.saved_state || null } : {}),
+  });
+}
+
+// Signed in already: Google as their way to sign in, when the Google
+// account's address is the one they subscribed with.
+async function googleLink(body, res) {
+  const email = await subscriberFrom(body.token);
+  if (!email) return res.status(401).json({ error: "Not signed in" });
+  const who = await googleIdentity(body.credential);
+  if (!who) return res.status(401).json({ error: "Google sign-in didn't work. Please try again." });
+  if (who.email !== email) return res.status(400).json({ error: `That Google account is ${who.email}. Use the one for ${email}, or create a passkey or password.` });
+  await supa("PATCH", `?email=eq.${enc(email)}`, { google_sub: who.sub, google_linked_at: new Date().toISOString() });
+  return res.status(200).json({ ok: true });
+}
+
 async function portal(body, res, origin) {
   const email = readToken(body.token, "access");
   const row = email && await rowFor(email);
@@ -501,6 +541,8 @@ export default async function handler(req, res) {
     if (action === "passkey-login") return await passkeyLogin(body, res, returnTo);
     if (action === "password-set") return await passwordSet(body, res);
     if (action === "password-login") return await passwordLogin(req, body, res);
+    if (action === "google") return await googleLogin(body, res);
+    if (action === "google-link") return await googleLink(body, res);
     if (action === "referral-link") return res.status(200).json(await referralLink(body.email));
     if (action === "referral-check") return res.status(200).json({ valid: await codeIsValid(body.code) });
     return res.status(404).json({ error: "Unknown action" });
