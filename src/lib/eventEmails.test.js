@@ -50,7 +50,7 @@ test("each subscriber's email: the news, a line on their own cash, tagged as the
   const { subject, text, html } = eventEmail(draftFromTool(toolInput), boe, d, { today: new Date("2026-11-06T04:00:00Z"), unsubscribeUrl: "https://www.candid-finance.co.uk/api/alerts?action=unsubscribe&t=x" });
   assert.equal(subject, "Bank Rate cut to 3.5%");
   assert.match(text, /^Hi Sam,/);
-  assert.match(text, /On your £30,000 in cash, a 0\.25 point fall would mean about £75 a year less interest, if your accounts follow it\./);
+  assert.match(text, /On your £30k in cash, a 0\.25 point fall would mean about £75 a year less interest, if your accounts follow it\./);
   assert.match(html, /utm_campaign=event/);
   assert.doesNotMatch(text, /\byou should\b|\brecommend/i);
 });
