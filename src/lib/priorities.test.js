@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { whatToDoFirst, scoreHeadline, onTrackModules } from "./priorities.js";
 import { calcMetrics } from "./metrics.js";
-import { computeModuleStatuses, getModuleSummary, MODULE_META, ON_TRACK_LINE } from "./moduleStatus.js";
+import { computeModuleStatuses, getModuleSummary, isOnTrack, MODULE_META, ON_TRACK_LINE } from "./moduleStatus.js";
 
 const profile = {
   selectedModules: ["cash", "pension"], salary: "45000", monthlyExpenses: "2000",
@@ -46,4 +46,13 @@ test("modules with nothing to act on read as on track", () => {
   assert.equal(pension.status, "ok");
   assert.equal(pension.summary, ON_TRACK_LINE);
   assert.ok(onTrackModules(d, m, statuses).includes("Pension"));
+});
+
+test("a change confirmed made puts a module on track, even with something still to act on", () => {
+  const { d, m, statuses } = run(profile);
+  assert.ok(!onTrackModules(d, m, statuses).includes("Pension"));
+  const acted = { ...d, moduleBaselines: { pension: { amount: 900, answers: "", banked: 300 } } };
+  assert.ok(onTrackModules(acted, m, statuses).includes("Pension"));
+  assert.equal(isOnTrack({ status: "attention" }, 0), false);
+  assert.equal(isOnTrack({ status: "attention", elsewhere: "taxTrap" }, 300), false);
 });

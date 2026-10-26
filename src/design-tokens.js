@@ -29,6 +29,8 @@ export const INPUT_BG_DARK = "#0f2018";
 // unintentional one-off rather than a deliberate distinct colour.
 export const SUCCESS  = "#2d6b4a"; // "on track" / positive state
 export const PROGRESS_GREEN = "#2f9461"; // the progress line's fill: a mid green, lighter than G
+export const ON_TRACK_FILL = "#edf6f1"; // a very pale PROGRESS_GREEN: the fill of an on-track module tile
+export const REVIEWED_FILL = "#f4f2ec"; // muted: a reviewed module tile with something still to act on
 export const WARNING  = "#d9822b"; // scoreBand's 4th tier only — sits between GOLD and CRITICAL
 export const CRITICAL = "#c0392b"; // "action needed" / error state
 export const ERROR_TEXT = "#b3261e"; // error messages under forms and buttons

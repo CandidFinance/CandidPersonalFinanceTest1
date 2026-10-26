@@ -17,8 +17,9 @@ export default function MobileLayout({ pageLabel, activeTab, headerRight, assist
       {/* Keyframes for the "reviewed" coins and Home score gain. Desktop gets
           the same ones from PageWrap's stylesheet, which this layout doesn't use. */}
       <style>{`
-        @keyframes coinFloat{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-40px) scale(1.3);}}
-        @keyframes btnGoldTint{0%{background:transparent;}40%{background:rgba(196,150,58,0.35);}100%{background:transparent;}}
+        @keyframes coinFloat{0%{opacity:0;transform:translateY(4px) scale(0.85);}18%{opacity:1;transform:translateY(-6px) scale(1);}65%{opacity:1;transform:translateY(-34px) scale(1.15);}100%{opacity:0;transform:translateY(-54px) scale(1.25);}}
+        @keyframes btnGoldTint{0%{background:transparent;}35%{background:rgba(196,150,58,0.3);}60%{background:rgba(196,150,58,0.3);}100%{background:transparent;}}
+        @keyframes reviewedIn{0%{opacity:0;transform:translateY(3px);}100%{opacity:1;transform:translateY(0);}}
         @keyframes badgeFadeUp{0%{opacity:0;transform:translateY(8px);}20%{opacity:1;transform:translateY(0);}70%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-6px);}}
       `}</style>
       {/* From 1000px wide (a desktop browser): the tabs move under the

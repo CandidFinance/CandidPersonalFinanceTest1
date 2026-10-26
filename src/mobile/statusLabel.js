@@ -4,11 +4,13 @@
 // `elsewhere`: what would be "On track" is another module's to show (Kids &
 // family's childcare, stopped by income over £100k, is the £100k tax
 // trap's), so it says where (ELSEWHERE), with a neutral dot.
+// Reviewed isn't a label here: it's its own mark, a tick by the module's
+// name (ReviewedMark.jsx), so the label always says where the module stands.
+// `mm.onTrack` (moduleStatus.js isOnTrack) covers a change confirmed made.
 export const ELSEWHERE = { taxTrap: { figure: "Childcare stops", label: "See the £100k tax trap" } };
-export function statusLabel(mm, reviewed) {
-  if (reviewed) return "Reviewed";
+export function statusLabel(mm) {
   if (mm.elsewhere && ELSEWHERE[mm.elsewhere]) return ELSEWHERE[mm.elsewhere].label;
-  if (mm.status === "ok") return "On track";
+  if (mm.onTrack || mm.status === "ok") return "On track";
   if (mm.status === "na") return "Not applicable";
   if (mm.status === "unknown") return "Find out";
   return "Action needed";

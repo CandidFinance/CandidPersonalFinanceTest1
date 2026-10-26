@@ -3,8 +3,10 @@ import BankConfirm from "../BankConfirm.jsx";
 import { GuidanceIntro, GuidanceFooter } from "../GuidanceNote.jsx";
 import { useState } from "react";
 import { Check, Coins } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, SUCCESS } from "../../design-tokens.js";
-import { MODULE_META } from "../../lib/moduleStatus.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, SUCCESS, PROGRESS_GREEN } from "../../design-tokens.js";
+import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
+import { MODULE_META, isOnTrack, bankedFor } from "../../lib/moduleStatus.js";
+import ReviewedMark from "../ReviewedMark.jsx";
 import { moduleLimits } from "../../lib/moduleLimits.js";
 import { statusLabel } from "../statusLabel.js";
 import MobileCashDeepDive from "../deepdive/MobileCashDeepDive.jsx";
@@ -36,36 +38,42 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
   // Status has exactly one visual indicator here — the dot below. The
   // header icon (module identity, not module status) stays neutral.
   const elsewhere = statuses[moduleKey]?.elsewhere || null;
-  const statusColor = isComplete || elsewhere ? MUT : (SC[status] || MUT);
+  const onTrack = isOnTrack({ status, elsewhere }, bankedFor(d, moduleKey));
+  const statusColor = onTrack ? PROGRESS_GREEN : isComplete || elsewhere ? MUT : (SC[status] || MUT);
   const Content = CONTENT_BY_KEY[moduleKey];
-  // Same celebration as desktop's "Mark as reviewed": two floating coins and
-  // a brief gold flash on the button — only when marking complete (not when
-  // un-marking). No "+N pts" any more: reviewing a module doesn't move your
+  // Same celebration as the Modules list (reviewCelebration.js): coins and a
+  // gold warmth on the button, then "Reviewed" — only when marking complete
+  // (not when un-marking). No "+N pts": reviewing a module doesn't move your
   // actual Candid score, so nothing here should imply it does.
-  const [showCoins, setShowCoins] = useState(false);
-  const [flashing, setFlashing] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
   const handleReviewed = () => {
+    if (celebrating) return;
     if (!isComplete) {
-      setShowCoins(true); setFlashing(true);
-      setTimeout(() => setShowCoins(false), 900);
-      setTimeout(() => setFlashing(false), 400);
-    }
-    onMarkReviewed();
+      setCelebrating(true);
+      setTimeout(() => onMarkReviewed(), REVIEW_SWAP_MS);
+      setTimeout(() => setCelebrating(false), REVIEW_CELEBRATE_MS);
+    } else onMarkReviewed();
   };
+  // Cash's first open is its tour (CashTour.jsx) instead; every open after
+  // that starts on the intro like the other modules. Read as the page opens
+  // (it's keyed by module), since the tour sets cashTourDone as it starts.
+  const [introShown] = useState(() => moduleKey !== "cash" || !!d.cashTourDone);
 
   return (
     <div>
-      {/* Cash opens on its tour (CashTour.jsx) instead. */}
-      {moduleKey !== "cash" && <GuidanceIntro key={moduleKey}/>}
+      {introShown && <GuidanceIntro key={moduleKey}/>}
       <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px"}}>
         <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {meta?.icon && <meta.icon size={18} color={G}/>}
         </div>
         <div style={{flex:1,minWidth:0}}>
-          <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            <h1 style={{fontFamily:SERIF,fontSize:"20px",color:TEXT,fontWeight:700,margin:0,lineHeight:1.2}}>{meta?.title || moduleKey}</h1>
+            {isComplete && <span style={{display:"inline-flex",animation:celebrating ? "reviewedIn 0.6s ease-out" : "none"}}><ReviewedMark/></span>}
+          </div>
           <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"3px"}}>
             <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
-            <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel({status, elsewhere}, isComplete)}</span>
+            <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel({status, elsewhere, onTrack})}</span>
           </div>
         </div>
         {/* The answer step by step, beside the module's name on every
@@ -82,19 +90,20 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
 
       <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"20px"}}>
         <div style={{position:"relative"}}>
-          {showCoins && (
+          {celebrating && (
             <div style={{position:"relative",pointerEvents:"none",height:0}}>
-              <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={20} color={GOLD}/></span>
-              <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={20} color={GOLD}/></span>
+              <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:`coinFloat ${REVIEW_COIN_S}s ease-in-out forwards`}}><Coins size={20} color={GOLD}/></span>
+              <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:`coinFloat ${REVIEW_COIN_S}s ease-in-out ${REVIEW_COIN_STAGGER_S}s forwards`}}><Coins size={20} color={GOLD}/></span>
             </div>
           )}
           <button onClick={handleReviewed} style={{
             width:"100%",background:"transparent",border:`1.3px solid ${isComplete?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
             color:isComplete?SUCCESS:G,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,cursor:"pointer",
             display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",
-            animation: flashing ? "btnGoldTint 0.4s ease-out" : "none",
+            transition:"border-color 0.6s ease, color 0.6s ease",
+            animation: celebrating ? `btnGoldTint ${REVIEW_TINT_S}s ease-in-out` : "none",
           }}>
-            {isComplete ? <><Check size={14}/> Reviewed</> : "Mark as reviewed"}
+            {isComplete ? <span style={{display:"inline-flex",alignItems:"center",gap:"6px",animation:celebrating ? "reviewedIn 0.6s ease-out" : "none"}}><Check size={14}/> Reviewed</span> : "Mark as reviewed"}
           </button>
         </div>
         <button onClick={onBack} style={{width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:600,cursor:"pointer"}}>

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { childcareSupport } from "../../lib/childcare.js";
 import { Check, Users, Coins, ChevronRight, Home } from "lucide-react";
-import { SUCCESS, G, GOLD, WHITE, MUT, TEXT, SERIF, SC, CDARK, RADIUS_CARD } from "../../design-tokens.js";
+import ReviewedMark from "../ReviewedMark.jsx";
+import { SUCCESS, PROGRESS_GREEN, ON_TRACK_FILL, REVIEWED_FILL, G, GOLD, WHITE, MUT, TEXT, SERIF, SC, CDARK, RADIUS_CARD } from "../../design-tokens.js";
+import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
 import { getModuleBreakdown, MODULE_META } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -78,6 +80,11 @@ const TILE = { background:WHITE, borderRadius:RADIUS_CARD, boxShadow:"0 2px 10px
 const TILE_TITLE = { fontSize:"15px", fontWeight:700, color:TEXT, padding:"0 4px" };
 const TILE_SUB = { fontSize:"12.5px", color:MUT, marginTop:"2px", padding:"0 4px" };
 const INNER = { background:WHITE, borderRadius:"16px", border:"1px solid rgba(22,47,36,0.06)", boxShadow:"0 2px 10px rgba(22,47,36,0.06)", overflow:"hidden" };
+// Nothing left to act on: the progress line's mid green, as a pale fill and a border.
+const INNER_ON_TRACK = { ...INNER, background:ON_TRACK_FILL, border:`1px solid ${PROGRESS_GREEN}` };
+// Reviewed, with something still to act on: muted, so it sits back from the
+// tiles not yet looked at.
+const INNER_REVIEWED = { ...INNER, background:REVIEWED_FILL, boxShadow:"none" };
 const SUBHEAD = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", margin:"18px 4px 10px" };
 
 // The sort, as a slider: the thumb moves to the one picked.
@@ -123,7 +130,10 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   // tile until they open Cash (visitNews.js).
   const news = useCashNews();
   const cashBadge = news && !news.opened ? news.count : 0;
-  const { moduleList, modulesWithRec, needActionCount, totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, insights, sortMode);
+  const { moduleList, modulesWithRec, totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, insights, sortMode);
+  // Counted from the tiles' own labels, so "N need action" always tallies
+  // with the tiles reading "Action needed".
+  const needActionCount = moduleList.filter(mm => statusLabel(mm) === "Action needed").length;
   // Property waits with the rest until its questions are done, then joins
   // the live modules (no £ yet: no rent vs buy engine, so not ranked).
   const propertyDone = readinessMissing(d, m).length === 0;
@@ -169,29 +179,40 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
             {moduleList.map(mm => {
               const reviewed = completedModules.includes(mm.key);
               const hasRec = mm.amount > 0;
+              // On track (moduleStatus.js isOnTrack): nothing left to act on,
+              // or a change confirmed made. A module with something to look at
+              // but no £ figure (a pension short of its retirement income, say)
+              // reads "Action needed", never "On track". On track tiles turn
+              // pale green; reviewed ones still needing action go muted.
+              const onTrack = mm.onTrack;
+              const actionable = hasRec || mm.status === "attention" || mm.status === "critical";
               // Priority reads through the headline figure and status dot, both
               // coloured by statusColor. The module icon stays neutral (module
-              // identity, not urgency), and the tile itself stays flat white.
-              const statusColor = reviewed || mm.elsewhere ? MUT : (SC[mm.status] || MUT);
+              // identity, not urgency).
+              const statusColor = onTrack ? PROGRESS_GREEN : reviewed || mm.elsewhere ? MUT : (SC[mm.status] || MUT);
+              const tileStyle = onTrack ? INNER_ON_TRACK : reviewed ? INNER_REVIEWED : INNER;
               const isOpen = expandedKey === mm.key;
               const insights = isOpen ? moduleInsights(mm, d, m) : [];
               return (
                 <div key={mm.key} style={{position:"relative"}}>
-                <div style={INNER}>
+                <div style={tileStyle}>
                   <div onClick={() => setExpandedKey(k => k===mm.key ? null : mm.key)} style={{display:"flex",alignItems:"flex-start",gap:"14px",padding:"16px 14px 13px 16px",cursor:"pointer"}}>
                     <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
                       {mm.icon && <mm.icon size={18} color={G}/>}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-                        <div style={{fontSize:"16px",fontWeight:600,color:TEXT,whiteSpace:"nowrap"}}>{mm.title}</div>
+                        <div style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0}}>
+                          <div style={{fontSize:"16px",fontWeight:600,color:TEXT,whiteSpace:"nowrap"}}>{mm.title}</div>
+                          {reviewed && <span style={{display:"inline-flex",animation:celebratingKey === mm.key ? "reviewedIn 0.6s ease-out" : "none"}}><ReviewedMark/></span>}
+                        </div>
                         <div style={{fontFamily:SERIF,fontWeight:700,fontSize:"16px",color:statusColor,flexShrink:0}}>
-                          {hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : "On track"}
+                          {hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : onTrack ? "On track" : null}
                         </div>
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
                         <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
-                        <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel(mm, reviewed)}</span>
+                        <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel(mm)}</span>
                         {mm.banked > 0 && <span style={{fontSize:"12.5px",color:SUCCESS,fontWeight:700}}>· {fmtCompact(mm.banked)}/yr saved</span>}
                       </div>
                     </div>
@@ -215,26 +236,31 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
                       <button onClick={() => onOpenModule(mm.key)} style={{width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:700,cursor:"pointer"}}>
                         Deep dive · {mm.title}
                       </button>
-                      {hasRec && (
+                      {actionable && (
                         <div style={{position:"relative"}}>
                           {celebratingKey === mm.key && (
                             <div style={{position:"relative",pointerEvents:"none",height:0}}>
-                              <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:"coinFloat 0.9s ease-out forwards"}}><Coins size={18} color={GOLD}/></span>
-                              <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:"coinFloat 0.9s ease-out 0.15s forwards"}}><Coins size={18} color={GOLD}/></span>
+                              <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:`coinFloat ${REVIEW_COIN_S}s ease-in-out forwards`}}><Coins size={18} color={GOLD}/></span>
+                              <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:`coinFloat ${REVIEW_COIN_S}s ease-in-out ${REVIEW_COIN_STAGGER_S}s forwards`}}><Coins size={18} color={GOLD}/></span>
                             </div>
                           )}
+                          {/* Marking: the button warms gold and the coins rise,
+                              then "Reviewed" fades in part-way through. */}
                           <button onClick={() => {
+                            if (celebratingKey === mm.key) return;
                             if (!reviewed) {
                               setCelebratingKey(mm.key);
-                              setTimeout(() => setCelebratingKey(k => k === mm.key ? null : k), 900);
-                            }
-                            onMarkReviewed(mm.key);
+                              setTimeout(() => onMarkReviewed(mm.key), REVIEW_SWAP_MS);
+                              setTimeout(() => setCelebratingKey(k => k === mm.key ? null : k), REVIEW_CELEBRATE_MS);
+                            } else onMarkReviewed(mm.key);
                           }} style={{
                             width:"100%",background:"transparent",border:`1.3px solid ${reviewed?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
                             color:reviewed?SUCCESS:G,borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,cursor:"pointer",
                             display:"flex",alignItems:"center",justifyContent:"center",gap:"5px",
+                            transition:"border-color 0.6s ease, color 0.6s ease",
+                            animation: celebratingKey === mm.key ? `btnGoldTint ${REVIEW_TINT_S}s ease-in-out` : "none",
                           }}>
-                            {reviewed ? <><Check size={13}/> Reviewed</> : "Mark as reviewed"}
+                            {reviewed ? <span style={{display:"inline-flex",alignItems:"center",gap:"5px",animation:celebratingKey === mm.key ? "reviewedIn 0.6s ease-out" : "none"}}><Check size={13}/> Reviewed</span> : "Mark as reviewed"}
                           </button>
                         </div>
                       )}

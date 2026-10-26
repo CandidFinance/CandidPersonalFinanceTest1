@@ -501,6 +501,13 @@ export function bankChange(d, key, perYear, on = new Date().toISOString().slice(
 export function bankedFor(d, key) {
   return Math.round((d.moduleBaselines || {})[key]?.banked || 0);
 }
+// On track: nothing left to act on, or a change the user has confirmed
+// making ("I did this", banked). A module whose status is shown by another
+// (`elsewhere`) never is. One rule for the Modules tiles, the module page
+// and Home's "On track" line.
+export function isOnTrack(s, banked) {
+  return !s.elsewhere && (s.status === "ok" || (banked > 0 && s.status !== "na"));
+}
 export function pendingBank(d, key, amount) {
   const base = (d.moduleBaselines || {})[key];
   if (!base || base.answers === ownAnswers(d, key)) return 0;
@@ -565,7 +572,8 @@ export function baselinePatch(d, statuses) {
 export function getModuleBreakdown(d, m, statuses, insights, sortMode = "amount") {
   const allModules = MODULE_META.map(mm => {
     const s = getModuleSummary(mm, d, m, statuses, insights);
-    return { ...s, banked: s.amountIsLumpSum ? 0 : bankedFor(d, mm.key), pending: s.amountIsLumpSum ? 0 : pendingBank(d, mm.key, s.amount) };
+    const banked = s.amountIsLumpSum ? 0 : bankedFor(d, mm.key);
+    return { ...s, banked, pending: s.amountIsLumpSum ? 0 : pendingBank(d, mm.key, s.amount), onTrack: isOnTrack(s, banked) };
   });
   const activeModules = allModules.filter(mm => mm.status !== "na");
 

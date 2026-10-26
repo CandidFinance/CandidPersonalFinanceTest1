@@ -23,9 +23,10 @@ export function scoreHeadline(priorities) {
   return `Most left on the table: ${top.title}, ${fmt(top.amount)}${top.amountIsLumpSum ? " by 18" : " a year"}.`;
 }
 
-// Answered modules with nothing to act on.
+// Answered modules with nothing to act on, or a change confirmed made
+// (moduleStatus.js isOnTrack).
 export function onTrackModules(d, m, statuses) {
   return getModuleBreakdown(d, m, statuses, null, "amount").moduleList
-    .filter(mm => mm.status === "ok" && !(mm.amount > 0))
+    .filter(mm => mm.onTrack)
     .map(mm => mm.title);
 }

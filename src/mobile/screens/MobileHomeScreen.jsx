@@ -188,7 +188,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
                     style={{display:"flex",alignItems:"flex-start",gap:"12px",textAlign:"left",background:"none",border:"none",borderTop:i ? "1px solid rgba(22,47,36,0.06)" : "none",padding:"10px 0",cursor:"pointer",fontFamily:"inherit",width:"100%"}}>
                     {/* Reviewed: a tick. Not yet: an empty ring. No numbers,
                         so the list doesn't read as an order to follow. */}
-                    <span style={{width:"20px",height:"20px",borderRadius:"50%",border:p.done ? "none" : "1.5px solid rgba(22,47,36,0.25)",background:p.done ? SUCCESS : "transparent",color:WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px",boxSizing:"border-box"}}>
+                    <span style={{width:"20px",height:"20px",borderRadius:"50%",border:p.done ? "none" : "1.5px solid rgba(22,47,36,0.25)",background:p.done ? G : "transparent",color:WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px",boxSizing:"border-box"}}>
                       {p.done && <Check size={12} strokeWidth={3}/>}
                     </span>
                     <span style={{flex:1,minWidth:0}}>
