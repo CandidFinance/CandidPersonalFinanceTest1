@@ -15,6 +15,26 @@ import posthog from "posthog-js";
 // The hex values below are intentionally re-typed rather than imported from
 // design-tokens.js (see above) — they should still match CREAM/G/MUT exactly
 // if those ever change, so update both places together.
+// A tab left open across a deploy still runs the old build, which asks for
+// code files the new deploy has replaced; the browser's error for that
+// (wording differs by browser) is matched here. Reloading picks up the new
+// build. At most once a minute, so a real outage can't loop the page.
+const STALE_BUILD = /dynamically imported module|Importing a module script failed|error loading dynamically imported module|Failed to load module script/i;
+const RELOADED_AT = "candid_stale_reload_at";
+export function isStaleBuildError(error) {
+  return STALE_BUILD.test(String(error?.message || error || ""));
+}
+export function reloadForNewBuild(error) {
+  try {
+    const last = Number(sessionStorage.getItem(RELOADED_AT) || 0);
+    if (Date.now() - last < 60000) return false;
+    sessionStorage.setItem(RELOADED_AT, String(Date.now()));
+  } catch { return false; }
+  try { posthog.capture("stale_build_reload", { error_message: String(error?.message || error || "").slice(0, 200) }); } catch {}
+  window.location.reload();
+  return true;
+}
+
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -25,6 +45,8 @@ export default class ErrorBoundary extends Component {
   }
   componentDidCatch(error, info) {
     if (import.meta.env.DEV) console.error("[Candid] Uncaught render error:", error, info);
+    // An old build's missing file: reload into the new one, not a crash.
+    if (isStaleBuildError(error) && reloadForNewBuild(error)) return;
     try {
       posthog.capture("app_crashed", {
         error_message: error?.message || "unknown",

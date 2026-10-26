@@ -5,7 +5,7 @@ import posthog from "posthog-js"
 import { MotionConfig } from "framer-motion"
 import { NavBar } from "./NavBar.jsx"
 import { G, GOLD, CREAM, MUT, SERIF, SANS } from "./design-tokens.js"
-import ErrorBoundary from "./ErrorBoundary.jsx"
+import ErrorBoundary, { reloadForNewBuild } from "./ErrorBoundary.jsx"
 import FeedbackAdmin from "./admin/FeedbackAdmin.jsx"
 import CookieNotice from "./CookieNotice.jsx"
 import { getConsent, analyticsPersistence } from "./lib/consent.js"
@@ -18,6 +18,9 @@ const AlertsAdmin = lazy(() => import("./admin/AlertsAdmin.jsx"))
 // The app (/app/*) is its own chunk, so the marketing site doesn't download
 // it; it loads the first time an /app page opens.
 const CandidApp = lazy(() => import("./CandidApp.jsx"))
+// A code file that won't load (an old tab after a deploy): Vite reports it
+// here before it reaches the error screen; reload into the new build.
+window.addEventListener("vite:preloadError", e => { if (reloadForNewBuild(e.payload)) e.preventDefault(); })
 
 // ── Acquisition attribution — captured once per browser, ever ─────────────────
 // PostHog's own native first-touch mechanism ($initial_utm_source etc.) never
