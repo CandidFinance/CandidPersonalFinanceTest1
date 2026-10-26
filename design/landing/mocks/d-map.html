@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candid: D, The map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<style>
+/* Layout: an Ordnance Survey sheet fills the hero panel. Each area of money is
+   a place on the map with its £ pinned; the legend box in the middle holds the
+   message and the button, and a dashed route runs from the pins to it. */
+:root {
+  --page: #f3f2ec;
+  --land: #eef0e4;       /* map ground */
+  --contour: #b9a77a;    /* OS brown contours */
+  --grid: rgba(40,90,140,.16);
+  --water: #cfe1ea;
+  --ink: #14231c;
+  --ink-2: #4f5a53;
+  --green: #162f24;
+  --pin: #c4963a;
+  --cta: #0071e3;
+  --sheet: #ffffff;
+  --sans: "Hanken Grotesk", system-ui, sans-serif;
+  --serif: "Source Serif 4", Georgia, serif;
+  --wordmark: Georgia, "Times New Roman", serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--ink); font: 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+
+.nav { display: flex; align-items: center; justify-content: space-between; max-width: 1320px; margin: 0 auto; padding: 18px 32px; }
+.wordmark { font: 700 30px/1 var(--wordmark); color: var(--green); text-decoration: none; }
+.nav-links { display: flex; gap: 30px; font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.nav-links a, .nav-right a { text-decoration: none; }
+.nav-right { display: flex; gap: 18px; align-items: center; font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.btn-dark { background: var(--green); color: #fff !important; padding: 10px 16px; border-radius: 10px; }
+.menu { display: none; width: 24px; height: 16px; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); position: relative; }
+.menu::after { content: ""; position: absolute; left: 0; right: 0; top: 5px; border-top: 2px solid var(--ink); }
+
+.sheet-wrap { padding: 0 16px; }
+.mapsheet { position: relative; max-width: 1320px; margin: 0 auto; height: 700px; border-radius: 28px; overflow: hidden; background: var(--land); border: 1px solid #dcdccf; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.gridref { position: absolute; font: 600 10px/1 var(--sans); color: rgba(40,90,140,.6); letter-spacing: .04em; }
+
+.place { position: absolute; z-index: 2; display: flex; align-items: center; gap: 8px; }
+.place .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--pin); border: 3px solid var(--sheet); box-shadow: 0 0 0 1.5px var(--green); flex: none; }
+.place .tag { background: var(--sheet); border: 1.5px solid var(--green); border-radius: 6px; padding: 6px 9px 7px; line-height: 1.15; box-shadow: 0 8px 18px -12px rgba(20,35,28,.5); }
+.place .name { font: 700 10px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.place .amt { font: 700 20px/1.1 var(--serif); color: var(--green); margin-top: 3px; }
+.place .amt small { font: 500 11px var(--sans); color: var(--ink-2); margin-left: 3px; }
+.place .amt.ok { font: 600 14px/1.3 var(--sans); }
+.p-pension { left: 9%; top: 15%; }
+.p-loan { left: 6%; top: 66%; }
+.p-cash { right: 9%; top: 19%; }
+.p-tax { right: 7%; top: 63%; }
+.p-mortgage { left: 37%; top: 84%; }
+.place-label { position: absolute; z-index: 1; font: italic 600 13px/1 var(--serif); color: rgba(20,35,28,.4); letter-spacing: .02em; }
+
+svg.route { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+
+.legend { position: absolute; z-index: 3; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100% - 48px)); background: var(--sheet); border: 2px solid var(--green); border-radius: 4px; padding: 0; box-shadow: 0 30px 60px -30px rgba(20,35,28,.45); }
+.legend-strip { display: flex; justify-content: space-between; align-items: center; background: var(--green); color: #fff; font: 700 11px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; padding: 9px 16px; }
+.legend-body { padding: 30px 34px 28px; text-align: center; }
+h1 { font: 800 clamp(34px, 4.6vw, 54px)/1.02 var(--sans); letter-spacing: -0.035em; margin: 0 0 16px; text-wrap: balance; }
+.lede { color: var(--ink-2); font-size: 17px; margin: 0 auto 24px; max-width: 420px; text-wrap: pretty; }
+.cta { display: inline-flex; align-items: center; gap: 10px; background: var(--cta); color: #fff; font: 700 17px/1 var(--sans); padding: 17px 28px; border-radius: 12px; text-decoration: none; }
+.cta svg { width: 18px; height: 18px; }
+.reassure { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 16px; margin-top: 16px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.reassure span::before { content: "+"; color: var(--pin); font-weight: 800; margin-right: 6px; }
+.eg-note { position: absolute; z-index: 3; left: 24px; bottom: 18px; font: 600 11px/1.4 var(--sans); color: var(--ink-2); background: rgba(255,255,255,.8); padding: 6px 9px; border-radius: 6px; }
+.scale { position: absolute; z-index: 3; right: 24px; bottom: 20px; font: 600 10px/1 var(--sans); color: var(--ink-2); text-align: right; }
+.scale i { display: block; width: 120px; height: 6px; margin-top: 5px; background: repeating-linear-gradient(90deg, var(--ink) 0 30px, #fff 30px 60px); border: 1px solid var(--ink); }
+
+.key { max-width: 1120px; margin: 0 auto; padding: 80px 32px 120px; }
+.key h2 { font: 800 30px/1.15 var(--sans); letter-spacing: -0.03em; margin: 0 0 6px; }
+.key p.sub { color: var(--ink-2); margin: 0 0 32px; }
+.key-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 48px; border-top: 2px solid var(--green); }
+.key-item { display: grid; grid-template-columns: 26px 1fr; gap: 14px; padding: 18px 0; border-bottom: 1px solid #dcdccf; }
+.key-item .sym { width: 18px; height: 18px; border-radius: 50%; background: var(--pin); border: 3px solid #fff; box-shadow: 0 0 0 1.5px var(--green); margin-top: 3px; }
+.key-item b { display: block; font-weight: 700; }
+.key-item span { font-size: 14px; color: var(--ink-2); }
+
+@media (max-width: 900px) {
+  .nav-links, .nav-right .signin, .nav-right .btn-dark { display: none; }
+  .menu { display: block; }
+  .nav { padding: 16px 20px; }
+  .wordmark { font-size: 26px; }
+  .sheet-wrap { padding: 0 10px; }
+  .mapsheet { height: 760px; border-radius: 22px; }
+  .legend { top: 52%; width: calc(100% - 28px); }
+  .legend-body { padding: 24px 20px 22px; }
+  .lede { font-size: 16px; }
+  .place .tag { padding: 5px 7px; }
+  .place .amt { font-size: 17px; }
+  .place .dot { width: 12px; height: 12px; }
+  .p-pension { left: 5%; top: 4%; }
+  .p-cash { right: 5%; top: 9%; }
+  .p-loan { left: 5%; top: auto; bottom: 9%; }
+  .p-tax { right: 5%; top: auto; bottom: 13%; }
+  .p-mortgage, .place-label, svg.route, .scale { display: none; }
+  .eg-note { left: 14px; bottom: 12px; }
+  .key { padding: 56px 20px 80px; }
+  .key-list { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header class="nav">
+  <a class="wordmark" href="#">Candid.</a>
+  <nav class="nav-links"><a href="#">The problem</a><a href="#">How it works</a><a href="#">About</a></nav>
+  <div class="nav-right"><a class="signin" href="#">Sign in</a><a class="btn-dark" href="#">See what I'm missing</a><span class="menu" aria-label="Menu"></span></div>
+</header>
+
+<div class="sheet-wrap">
+<section class="mapsheet" id="sheet">
+  <canvas id="map" aria-hidden="true"></canvas>
+  <div id="refs" aria-hidden="true"></div>
+
+  <span class="place-label" style="left:12%;top:44%">Salary Sacrifice Fell</span>
+  <span class="place-label" style="right:9%;top:52%">Easy Access Water</span>
+  <span class="place-label" style="left:60%;top:90%">Remortgage Ridge</span>
+
+  <svg class="route" id="route" aria-hidden="true"></svg>
+
+  <div class="place p-pension"><span class="dot"></span><div class="tag"><div class="name">Pension</div><div class="amt">£850<small>a year</small></div></div></div>
+  <div class="place p-cash"><span class="dot"></span><div class="tag"><div class="name">Cash</div><div class="amt">£580<small>a year</small></div></div></div>
+  <div class="place p-loan"><span class="dot"></span><div class="tag"><div class="name">Student loan</div><div class="amt">£1,200<small>a year</small></div></div></div>
+  <div class="place p-tax"><span class="dot"></span><div class="tag"><div class="name">£100k trap</div><div class="amt ok">Not affected</div></div></div>
+  <div class="place p-mortgage"><span class="dot"></span><div class="tag"><div class="name">Mortgage</div><div class="amt ok">Fix ends 2027</div></div></div>
+
+  <div class="legend">
+    <div class="legend-strip"><span>Your finances, mapped</span><span>Sheet 1</span></div>
+    <div class="legend-body">
+      <h1>See where your money is leaking.</h1>
+      <p class="lede">Answer a few questions and Candid maps your pension, cash, loan and tax, with every option worked out in pounds.</p>
+      <a class="cta" id="cta" href="#">See what I'm missing <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <div class="reassure"><span>First module free</span><span>No card needed</span><span>About 3 minutes</span></div>
+    </div>
+  </div>
+
+  <div class="eg-note">Example map: £85k salary, Plan 2 loan, £20k saved</div>
+  <div class="scale">£0 · £500 · £1,000<i></i></div>
+</section>
+</div>
+
+<section class="key">
+  <h2>The legend</h2>
+  <p class="sub">Every area Candid checks, each worked out in pounds from your own answers.</p>
+  <div class="key-list">
+    <div class="key-item"><i class="sym"></i><div><b>Pension</b><span>Tax relief, salary sacrifice, employer match</span></div></div>
+    <div class="key-item"><i class="sym"></i><div><b>Cash savings</b><span>What your cash earns against what's available</span></div></div>
+    <div class="key-item"><i class="sym"></i><div><b>Student loan</b><span>Whether overpaying beats the write-off</span></div></div>
+    <div class="key-item"><i class="sym"></i><div><b>ISA and investments</b><span>Allowances used and left</span></div></div>
+    <div class="key-item"><i class="sym"></i><div><b>£100k tax trap</b><span>The 60% band and the childcare cliff</span></div></div>
+    <div class="key-item"><i class="sym"></i><div><b>Mortgage</b><span>Overpaying against saving when your fix ends</span></div></div>
+  </div>
+</section>
+
+<script>
+// Contours: a smooth height field drawn as iso-lines (marching squares).
+(function () {
+  const sheet = document.getElementById("sheet"), cv = document.getElementById("map"), ctx = cv.getContext("2d");
+  const hills = [[.18,.25,.22,1],[.78,.3,.18,.8],[.3,.78,.2,.7],[.7,.75,.25,.9],[.52,.12,.12,.5],[.92,.85,.15,.6]];
+  function h(x, y) { let v = 0; for (const [cx, cy, r, a] of hills) { const d = ((x-cx)**2 + (y-cy)**2) / (r*r); v += a * Math.exp(-d); } return v + .05*Math.sin(x*9)*Math.cos(y*7); }
+  function draw() {
+    const W = sheet.clientWidth, H = sheet.clientHeight, dpr = devicePixelRatio || 1;
+    cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    const step = 6, cols = Math.ceil(W/step)+1, rows = Math.ceil(H/step)+1, f = [];
+    for (let j=0;j<rows;j++){ f[j]=[]; for(let i=0;i<cols;i++) f[j][i]=h(i*step/W, j*step/H*(H/W)*1.6); }
+    // water: a lake by the Cash pin
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--water");
+    ctx.beginPath(); ctx.ellipse(W*.83, H*.42, W*.09, H*.09, -.4, 0, Math.PI*2); ctx.fill();
+    const contour = getComputedStyle(document.documentElement).getPropertyValue("--contour");
+    for (let k=1;k<26;k++){
+      const lv = k*.045; ctx.strokeStyle = contour; ctx.globalAlpha = k%5===0 ? .75 : .38; ctx.lineWidth = k%5===0 ? 1.4 : .8; ctx.beginPath();
+      for (let j=0;j<rows-1;j++) for (let i=0;i<cols-1;i++){
+        const a=f[j][i],b=f[j][i+1],c=f[j+1][i+1],d=f[j+1][i];
+        const idx=(a>lv?8:0)|(b>lv?4:0)|(c>lv?2:0)|(d>lv?1:0); if(idx===0||idx===15) continue;
+        const x=i*step,y=j*step,t=(p,q)=>(lv-p)/(q-p);
+        const T=[x+t(a,b)*step,y], R=[x+step,y+t(b,c)*step], B=[x+t(d,c)*step,y+step], L=[x,y+t(a,d)*step];
+        const segs={1:[L,B],2:[B,R],3:[L,R],4:[T,R],5:[L,T,B,R],6:[T,B],7:[L,T],8:[L,T],9:[T,B],10:[T,R,L,B],11:[T,R],12:[L,R],13:[B,R],14:[L,B]}[idx];
+        for(let s=0;s<segs.length;s+=2){ ctx.moveTo(...segs[s]); ctx.lineTo(...segs[s+1]); }
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // grid and references
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--grid"); ctx.lineWidth = 1; ctx.beginPath();
+    const g = 110, refs = document.getElementById("refs"); refs.innerHTML = "";
+    for (let x=g, n=31; x<W; x+=g, n++){ ctx.moveTo(x,0); ctx.lineTo(x,H); refs.insertAdjacentHTML("beforeend", `<span class="gridref" style="left:${x+4}px;top:8px">${n}</span>`); }
+    for (let y=g, n=80; y<H; y+=g, n--){ ctx.moveTo(0,y); ctx.lineTo(W,y); refs.insertAdjacentHTML("beforeend", `<span class="gridref" style="left:8px;top:${y+4}px">${n}</span>`); }
+    ctx.stroke();
+    // route: dashed footpath from each pin to the button
+    const svg = document.getElementById("route"), box = sheet.getBoundingClientRect(), lg = sheet.querySelector(".legend").getBoundingClientRect();
+    const L = { l: lg.left - box.left - 8, r: lg.right - box.left + 8, t: lg.top - box.top - 8, b: lg.bottom - box.top + 8 };
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.innerHTML = [...sheet.querySelectorAll(".place .dot")].map(d => {
+      const r = d.getBoundingClientRect(), x = r.left - box.left + r.width/2, y = r.top - box.top + r.height/2;
+      // ends at the nearest point on the legend's edge
+      const to = [Math.min(Math.max(x, L.l + 30), L.r - 30), Math.min(Math.max(y, L.t + 30), L.b - 30)];
+      if (x < L.l) to[0] = L.l; else if (x > L.r) to[0] = L.r; else to[1] = y < L.t ? L.t : L.b;
+      const mx = (x + to[0]) / 2 + (y - to[1]) * .2, my = (y + to[1]) / 2 + (to[0] - x) * .1;
+      return `<path d="M${x} ${y} Q${mx} ${my} ${to[0]} ${to[1]}" fill="none" stroke="#c0392b" stroke-width="2" stroke-dasharray="2 7" stroke-linecap="round" opacity=".75"/>`;
+    }).join("");
+  }
+  draw(); addEventListener("resize", draw); document.fonts && document.fonts.ready.then(draw);
+})();
+</script>
+</body>
+</html>

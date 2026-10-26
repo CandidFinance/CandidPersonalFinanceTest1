@@ -1,0 +1,442 @@
+<title>Candid Statement Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500;700;800&family=Playfair+Display:wght@600;700&family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<style>
+/* Layout: the Candid landing page's Statement direction as a playground.
+   A sticky scene holds the hero; on scroll the receipt rises and each
+   document tile is pulled into its line while the total counts up. Every
+   look is a set of CSS variables the edit panel rewrites live. */
+:root {
+  /* the lab's own chrome (the panel), fixed dark so it never blends into a variant */
+  --ui-bg: #121614; --ui-fg: #eef1ec; --ui-muted: #98a29c; --ui-line: #2b322e; --ui-chip: #20261f; --ui-accent: #cfe3d5;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: #d9d9d3; font: 15px/1.5 "DM Sans", system-ui, sans-serif; }
+
+/* ---------- the mock site (all values come from variables set on .site) ---------- */
+.site {
+  --bg: #f6f5f1; --ink: #14231c; --muted: #5b655f; --accent: #162f24; --hl: #f3dd8a;
+  --paper: #ffffff; --paper-ink: #14231c; --paper-muted: #5b655f; --rule: #d9dbd4;
+  --cta: #0071e3; --cta-ink: #ffffff;
+  --f-head: "DM Sans"; --f-body: "DM Sans"; --f-fig: "Source Serif 4"; --f-mono: "IBM Plex Mono";
+  --head-w: 600; --head-size: 72; --head-case: none; --head-track: -0.035;
+  --tile-scale: 1; --tilt: 5; --receipt-w: 600; --total-size: 56; --cta-size: 17;
+  container-type: inline-size; container-name: site;
+  background: var(--bg); color: var(--ink); font-family: var(--f-body), system-ui, sans-serif;
+  max-width: 100%; margin: 0 auto; transition: max-width .3s ease;
+}
+.frame-phone .site { max-width: 390px; box-shadow: 0 0 0 1px rgba(0,0,0,.12), 0 30px 60px -30px rgba(0,0,0,.35); }
+
+.nav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; max-width: 1240px; margin: 0 auto; padding: 22px 32px; }
+.wordmark { font: 700 30px/1 Georgia, "Times New Roman", serif; color: var(--accent); text-decoration: none; justify-self: start; }
+.nav-links { display: flex; gap: 34px; font-size: 15px; font-weight: 500; color: var(--muted); }
+.nav-links a { color: inherit; text-decoration: none; }
+.nav-right { justify-self: end; display: flex; align-items: center; gap: 18px; font-size: 15px; font-weight: 500; color: var(--muted); }
+.nav-right a { color: inherit; text-decoration: none; }
+.nav-cta { border: 1px solid var(--rule); background: var(--paper); color: var(--paper-ink) !important; padding: 9px 16px; border-radius: 10px; }
+.menu { display: none; width: 24px; height: 16px; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); position: relative; }
+.menu::after { content: ""; position: absolute; left: 0; right: 0; top: 5px; border-top: 2px solid var(--ink); }
+
+/* the scroll scene */
+.scene { position: relative; }
+.stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+.hero { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 680px) minmax(0, 1fr); grid-template-rows: 1fr 1fr; grid-template-areas: "t1 msg t2" "t3 msg t4"; align-items: center; justify-items: center; gap: 12px 24px; padding: 8px 32px 56px; max-width: 1400px; margin: 0 auto; }
+.message { grid-area: msg; text-align: center; will-change: transform, opacity; }
+.kicker { font: 500 12px/1 var(--f-mono), monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 22px; }
+.kicker:empty { display: none; }
+.message h1 { font-family: var(--f-head), system-ui, sans-serif; font-weight: var(--head-w); font-size: calc(var(--head-size) * 1px); line-height: 1.02; letter-spacing: calc(var(--head-track) * 1em); text-transform: var(--head-case); margin: 0 0 22px; text-wrap: balance; }
+.message h1 .quiet { color: var(--muted); }
+mark { background: linear-gradient(transparent 12%, var(--hl) 12%, var(--hl) 92%, transparent 92%); color: inherit; padding: 0 .08em; }
+.lede { font-size: 18px; color: var(--muted); max-width: 520px; margin: 0 auto 28px; text-wrap: pretty; }
+.cta { display: inline-flex; align-items: center; gap: 10px; background: var(--cta); color: var(--cta-ink); font: 600 calc(var(--cta-size) * 1px)/1 var(--f-body), sans-serif; padding: 1.05em 1.75em; border-radius: 12px; text-decoration: none; border: 0; }
+.cta svg { width: 1.05em; height: 1.05em; }
+.reassure { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 18px; margin-top: 16px; font-size: 14px; font-weight: 500; color: var(--muted); }
+.reassure span::before { content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 8px; vertical-align: middle; }
+.quick { margin-top: 10px; font-size: 13.5px; color: var(--muted); }
+.quick a { color: var(--ink); font-weight: 600; }
+.hint { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font: 500 11px/1 var(--f-mono), monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+/* document tiles */
+.tile { position: relative; z-index: 3; width: calc(270px * var(--tile-scale)); background: var(--paper); color: var(--paper-muted); border: 1px solid var(--rule); border-radius: 6px; padding: calc(16px * var(--tile-scale)) calc(18px * var(--tile-scale)); font: calc(12px * var(--tile-scale))/1.5 var(--f-mono), monospace; box-shadow: 0 18px 40px -22px rgba(20,35,28,.35), 0 2px 4px rgba(20,35,28,.05); will-change: transform, opacity; transform: rotate(calc(var(--r) * var(--tilt) * 1deg)); }
+.tile h4 { margin: 0 0 .8em; font: 600 .92em/1 var(--f-mono), monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--paper-ink); display: flex; justify-content: space-between; gap: 1.4em; }
+.tile .row { display: flex; justify-content: space-between; gap: 1.4em; padding: .25em 0; border-top: 1px dashed var(--rule); }
+.tile .row:first-of-type { border-top: 0; }
+.tile b { font-weight: 600; color: var(--paper-ink); }
+.tile .hl, .tile .badge { background: linear-gradient(transparent 14%, var(--hl) 14%, var(--hl) 90%, transparent 90%); padding: 0 3px; margin: 0 -3px; }
+.tile.app { font-family: var(--f-body), sans-serif; border-radius: 18px; }
+.tile.app .bal { font: 600 2.1em/1.1 var(--f-body), sans-serif; color: var(--paper-ink); letter-spacing: -.02em; margin: .1em 0 .4em; }
+.tile.app .badge { display: inline-block; font-weight: 600; padding: .3em .6em; margin: 0; border-radius: 6px; color: var(--paper-ink); }
+.t1 { grid-area: t1; --r: -1; } .t2 { grid-area: t2; --r: .8; } .t3 { grid-area: t3; --r: .6; } .t4 { grid-area: t4; --r: -.8; }
+.t1 { align-self: end; } .t2 { align-self: end; } .t3 { align-self: start; } .t4 { align-self: start; }
+
+/* the receipt */
+.receipt { position: absolute; z-index: 2; left: 50%; top: 50%; width: min(calc(var(--receipt-w) * 1px), calc(100% - 32px)); translate: -50% -50%; background: var(--paper); color: var(--paper-ink); border: 1px solid var(--rule); border-radius: 4px; padding: 34px 40px 30px; box-shadow: 0 40px 80px -40px rgba(20,35,28,.45); will-change: transform; }
+.receipt::before, .receipt::after { content: ""; position: absolute; left: -1px; right: -1px; height: 9px; background: radial-gradient(circle at 9px 9px, transparent 6px, var(--paper) 6.5px) 0 0/18px 9px repeat-x; }
+.receipt::before { top: -9px; transform: scaleY(-1); } .receipt::after { bottom: -9px; }
+.r-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; border-bottom: 2px solid var(--paper-ink); padding-bottom: 12px; }
+.r-head h2 { font: 600 22px/1.2 var(--f-head), sans-serif; letter-spacing: -.02em; text-transform: var(--head-case); margin: 0; }
+.r-head .eg { font: 500 10.5px/1.45 var(--f-mono), monospace; text-transform: uppercase; letter-spacing: .07em; color: var(--paper-muted); text-align: right; }
+.line { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: baseline; padding: 13px 0; border-bottom: 1px dashed var(--rule); transition: opacity .35s ease, transform .35s ease, background-color .6s ease; }
+.line.empty { opacity: .18; }
+.line.empty .what, .line.empty .amt { filter: blur(3px); }
+.line.landed { background: color-mix(in srgb, var(--hl) 45%, transparent); }
+.line .what { font-size: 15.5px; }
+.line .what small { display: block; font: 11.5px/1.5 var(--f-mono), monospace; color: var(--paper-muted); margin-top: 2px; }
+.line .amt { font: 500 17px/1 var(--f-mono), monospace; font-variant-numeric: tabular-nums; }
+.total { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 16px; padding-top: 18px; }
+.total .what { font: 700 12px/1.3 var(--f-mono), monospace; text-transform: uppercase; letter-spacing: .08em; }
+.total .amt { font: 700 calc(var(--total-size) * 1px)/1 var(--f-fig), Georgia, serif; color: var(--accent); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.v2 .total .amt, .v2 .r-head h2 { color: #14231c; }
+.v2 mark { color: #14231c; }
+.total .amt span { font: 500 14px/1 var(--f-body), sans-serif; color: var(--paper-muted); letter-spacing: 0; margin-left: 6px; }
+.r-foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 20px; opacity: 0; transition: opacity .4s ease; }
+.r-foot.show { opacity: 1; }
+.r-foot p { margin: 0; font-size: 12.5px; color: var(--paper-muted); max-width: 300px; }
+
+.after { max-width: 1120px; margin: 0 auto; padding: 72px 32px 110px; }
+.after h2 { font: var(--head-w) 34px/1.1 var(--f-head), sans-serif; letter-spacing: -.03em; text-transform: var(--head-case); margin: 0 0 8px; }
+.after p { color: var(--muted); max-width: 620px; margin: 0; }
+.small-print { margin-top: 40px; font-size: 12px; color: var(--muted); max-width: 520px; }
+
+/* static layout (motion off): everything visible, receipt after the hero */
+.static .scene { height: auto !important; }
+.static .stage { position: relative; height: auto; overflow: visible; }
+.static .hero { height: auto; min-height: 640px; }
+.static .receipt { position: relative; left: auto; top: auto; translate: none; margin: 30px auto 0; transform: none !important; }
+.static .hint { display: none; }
+
+/* phone-sized container */
+@container site (max-width: 700px) {
+  .nav { grid-template-columns: 1fr auto; padding: 16px 20px; }
+  .nav-links, .nav-right .signin, .nav-right .nav-cta { display: none; }
+  .menu { display: block; }
+  .wordmark { font-size: 26px; }
+  .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto auto; grid-template-areas: "t1 t2" "msg msg" "t3 t4"; align-content: center; gap: 14px 10px; padding: 0 16px 40px; }
+  .message h1 { font-size: calc(var(--head-size) * .52px); }
+  .lede { font-size: 15.5px; margin-bottom: 20px; }
+  .kicker { font-size: 10px; letter-spacing: .04em; margin-bottom: 14px; }
+  .quick { display: none; }
+  .reassure { font-size: 12.5px; gap: 4px 12px; margin-top: 12px; }
+  .tile { width: 100%; max-width: calc(170px * var(--tile-scale)); font-size: calc(9.5px * var(--tile-scale)); padding: 9px 10px; }
+  .tile.app .bal { font-size: 1.8em; }
+  .t1, .t2 { align-self: end; } .t3, .t4 { align-self: start; }
+  .receipt { padding: 24px 18px 22px; }
+  .r-head { flex-direction: column; gap: 6px; }
+  .r-head .eg { text-align: left; }
+  .line { padding: 10px 0; gap: 12px; }
+  .line .what { font-size: 14px; }
+  .line .what small { font-size: 10.5px; }
+  .line .amt { font-size: 15px; }
+  .total .amt { font-size: calc(var(--total-size) * .75px); }
+  .after { padding: 56px 20px 80px; }
+  .after h2 { font-size: 26px; }
+}
+
+/* ---------- the edit panel ---------- */
+.panel { position: fixed; z-index: 50; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: 330px; max-height: calc(100vh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; background: var(--ui-bg); color: var(--ui-fg); border-radius: 14px; box-shadow: 0 20px 50px -20px rgba(0,0,0,.6); font: 13px/1.4 "DM Sans", system-ui, sans-serif; }
+.panel.closed .p-body, .panel.closed .p-top > strong, .panel.closed #frame { display: none; }
+.panel.closed { width: auto; left: auto; }
+.panel.closed .p-top { border-bottom: 0; padding: 6px; }
+.p-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--ui-line); }
+.p-top strong { font-size: 14px; white-space: nowrap; }
+.p-body { overflow-y: auto; padding: 4px 14px 14px; }
+.p-group { border-bottom: 1px solid var(--ui-line); padding: 12px 0; }
+.p-group:last-child { border-bottom: 0; }
+.p-group h5 { margin: 0 0 10px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ui-muted); }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.seg button, .btn { font: 600 12.5px/1 "DM Sans", sans-serif; background: var(--ui-chip); color: var(--ui-fg); border: 1px solid var(--ui-line); padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ui-accent); color: #102018; border-color: var(--ui-accent); }
+.btn.primary { background: var(--ui-accent); color: #102018; border-color: var(--ui-accent); }
+.seg button:focus-visible, .btn:focus-visible, .ctl input:focus-visible, .ctl select:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+.ctl { display: grid; grid-template-columns: 110px minmax(0, 1fr) 44px; align-items: center; gap: 8px; margin: 7px 0; }
+.ctl label { color: var(--ui-muted); }
+.ctl input[type=range] { width: 100%; accent-color: var(--ui-accent); }
+.ctl output { text-align: right; font-variant-numeric: tabular-nums; color: var(--ui-fg); font-size: 12px; }
+.ctl select { grid-column: 2 / 4; background: var(--ui-chip); color: var(--ui-fg); border: 1px solid var(--ui-line); border-radius: 6px; padding: 6px; font: inherit; }
+.ctl input[type=color] { grid-column: 2 / 4; width: 100%; height: 28px; border: 1px solid var(--ui-line); background: var(--ui-chip); border-radius: 6px; padding: 2px; }
+.ctl input[type=checkbox] { grid-column: 2 / 4; justify-self: start; accent-color: var(--ui-accent); width: 18px; height: 18px; }
+.p-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.p-note { color: var(--ui-muted); font-size: 12px; margin: 8px 0 0; }
+.p-out { width: 100%; margin-top: 8px; height: 90px; background: var(--ui-chip); color: var(--ui-fg); border: 1px solid var(--ui-line); border-radius: 6px; font: 11px/1.4 "IBM Plex Mono", monospace; padding: 6px; }
+.editing [data-edit] { outline: 1.5px dashed #0a84ff; outline-offset: 3px; cursor: text; }
+@media (max-width: 520px) {
+  .panel { left: max(10px, env(safe-area-inset-left, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); width: auto; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); max-height: 62vh; }
+}
+</style>
+
+<div id="app">
+<div class="site" id="site">
+  <header class="nav">
+    <a class="wordmark" href="#">Candid.</a>
+    <nav class="nav-links"><a href="#">The problem</a><a href="#">How it works</a><a href="#">About</a></nav>
+    <div class="nav-right"><a class="signin" href="#">Sign in</a><a class="nav-cta" href="#">See what I'm missing</a><span class="menu" aria-label="Menu"></span></div>
+  </header>
+
+  <section class="scene" id="scene">
+    <div class="stage" id="stage">
+      <div class="hero">
+        <div class="tile t1" data-line="0" aria-hidden="true">
+          <h4><span>Student loan</span><span>Plan 2</span></h4>
+          <div class="row"><span>Balance</span><b>£48,210</b></div>
+          <div class="row"><span>Overpaying</span><b class="hl">£100 / month</b></div>
+          <div class="row"><span>Written off</span><b>2054</b></div>
+        </div>
+        <div class="tile t2" data-line="1" aria-hidden="true">
+          <h4><span>Payslip</span><span>Oct 2026</span></h4>
+          <div class="row"><span>Basic pay</span><b>£7,083.33</b></div>
+          <div class="row"><span>Income tax</span><b>£1,786.00</b></div>
+          <div class="row"><span>Pension 5%</span><b class="hl">£354.17</b></div>
+        </div>
+        <div class="tile app t3" data-line="2" aria-hidden="true">
+          <div>Easy access saver</div>
+          <div class="bal">£20,000.00</div>
+          <span class="badge">1.50% AER</span>
+        </div>
+        <div class="tile t4" data-line="3" aria-hidden="true">
+          <h4><span>ISA allowance</span><span>2026-27</span></h4>
+          <div class="row"><span>Used</span><b>£0</b></div>
+          <div class="row"><span>Left</span><b class="hl">£20,000</b></div>
+        </div>
+
+        <div class="message" id="message">
+          <div class="kicker" data-edit="kicker">Pension · Cash · Student loan · Tax · Mortgage</div>
+          <h1 id="headline" data-edit="headline">Your money is leaking from five places. <span class="quiet">Candid finds every leak.</span></h1>
+          <p class="lede" data-edit="lede">Unclaimed tax relief, idle cash and loan overpayments cost good earners thousands a year. Answer a few questions and see each leak in pounds.</p>
+          <a class="cta" href="#"><span data-edit="cta">See what I'm missing</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <div class="reassure"><span>First module free</span><span>No card needed</span></div>
+          <div class="quick">Or answer one question in 30 seconds: <a href="#">student loan</a> · <a href="#">£100k tax trap</a></div>
+        </div>
+      </div>
+
+      <div class="receipt" id="receipt">
+        <div class="r-head"><h2 data-edit="rhead">What you could save</h2><div class="eg">Example: £85k salary<br>Plan 2 loan · £20k saved</div></div>
+        <div class="line empty"><div class="what">Overpayments on a loan that will be written off<small>£100 a month on Plan 2, written off in 2054</small></div><div class="amt">£1,200</div></div>
+        <div class="line empty"><div class="what">Higher-rate pension relief not claimed<small>The extra 20% on £4,250, claimed through self assessment</small></div><div class="amt">£850</div></div>
+        <div class="line empty"><div class="what">Cash earning 1.5% when 4.4% is available<small>£20,000 in an easy access saver</small></div><div class="amt">£580</div></div>
+        <div class="line empty"><div class="what">Interest taxed outside an ISA<small>At 4.4%, £380 above the £500 allowance, taxed at 40%</small></div><div class="amt">£152</div></div>
+        <div class="total"><div class="what" data-edit="rtotal">You could save</div><div class="amt"><b id="total" style="font-weight:inherit">£0</b><span>a year</span></div></div>
+        <div class="r-foot" id="rfoot"><p>Example figures. Yours come from your own answers.</p><a class="cta" href="#"><span data-edit="rcta">See what I could save</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+      </div>
+
+      <div class="hint" id="hint">Scroll to add it up</div>
+    </div>
+  </section>
+
+  <section class="after">
+    <h2>Every saving, worked out from your own figures.</h2>
+    <p>Pension, cash, student loan, ISA, the £100k trap and your mortgage, each in pounds a year, largest first. The decisions stay yours.</p>
+    <p class="small-print">Guidance, not advice. Candid is a calculator: it shows the value of each option and does not recommend products.</p>
+  </section>
+</div>
+</div>
+
+<aside class="panel" id="panel" aria-label="Edit the mock-up">
+  <div class="p-top">
+    <strong>Statement lab</strong>
+    <div class="seg" id="frame">
+      <button id="frame-full" data-v="full" aria-pressed="true">Full width</button>
+      <button id="frame-phone" data-v="phone" aria-pressed="false">Phone</button>
+    </div>
+    <button class="btn" id="toggle" aria-expanded="true">Hide</button>
+  </div>
+  <div class="p-body" id="pbody">
+    <div class="p-group"><h5>Version</h5><div class="seg" id="variants"></div></div>
+    <div class="p-group"><h5>Colour</h5><div id="g-colour"></div></div>
+    <div class="p-group"><h5>Type</h5><div id="g-type"></div></div>
+    <div class="p-group"><h5>Size</h5><div id="g-size"></div></div>
+    <div class="p-group"><h5>Animation</h5><div id="g-motion"></div></div>
+    <div class="p-group"><h5>Copy and settings</h5>
+      <div class="p-actions">
+        <button class="btn" id="editText" aria-pressed="false">Edit text on the page</button>
+        <button class="btn" id="reset">Reset this version</button>
+        <button class="btn primary" id="copy">Copy settings</button>
+      </div>
+      <p class="p-note">Changes are kept in this browser for each version. "Copy settings" puts them on your clipboard to paste back to Claude.</p>
+      <textarea class="p-out" id="out" hidden aria-label="Settings" readonly></textarea>
+    </div>
+  </div>
+</aside>
+
+<script>
+(function () {
+  const FONTS_HEAD = ["DM Sans", "Schibsted Grotesk", "Hanken Grotesk", "Fraunces", "Source Serif 4", "Playfair Display", "Instrument Serif", "JetBrains Mono", "Georgia"];
+  const FONTS_BODY = ["DM Sans", "Hanken Grotesk", "Schibsted Grotesk"];
+  const FONTS_FIG = ["Source Serif 4", "Fraunces", "Playfair Display", "Instrument Serif", "Georgia", "IBM Plex Mono"];
+  const FONTS_MONO = ["IBM Plex Mono", "JetBrains Mono"];
+
+  const VARIANTS = {
+    paper: { label: "1 · Paper",
+      vars: { bg: "#f6f5f1", ink: "#14231c", muted: "#5b655f", accent: "#162f24", hl: "#f3dd8a", paper: "#ffffff", "paper-ink": "#14231c", "paper-muted": "#5b655f", rule: "#d9dbd4", cta: "#0071e3", "cta-ink": "#ffffff",
+        "f-head": "DM Sans", "f-body": "DM Sans", "f-fig": "Source Serif 4", "f-mono": "IBM Plex Mono", "head-w": 600, "head-size": 72, "head-case": "none", "head-track": -0.035,
+        "tile-scale": 1, tilt: 5, "receipt-w": 600, "total-size": 56, "cta-size": 17 },
+      motion: { scroll: 320, count: 700, arc: 60, on: true },
+      copy: { kicker: "Pension · Tax · Cash · Student loan · Mortgage", headline: 'Your finances could be costing you thousands. <span class="quiet">See what you could save.</span>', lede: "Unclaimed pension relief, the £100k tax trap, idle cash and student loan overpayments cost good earners thousands a year. Answer a few questions and see, in pounds, what you could save.", cta: "See what I could save", rhead: "What you could save", rtotal: "You could save", rcta: "See what I could save" } },
+    field: { label: "2 · Green field", cls: "v2",
+      vars: { bg: "#1c4a35", ink: "#f6f1e4", muted: "#b8c7bd", accent: "#1c4a35", hl: "#f0c35b", paper: "#fbf8ef", "paper-ink": "#14231c", "paper-muted": "#5b655f", rule: "#ddd7c6", cta: "#0071e3", "cta-ink": "#ffffff",
+        "f-head": "Schibsted Grotesk", "f-body": "Schibsted Grotesk", "f-fig": "Source Serif 4", "f-mono": "IBM Plex Mono", "head-w": 700, "head-size": 74, "head-case": "none", "head-track": -0.04,
+        "tile-scale": 1, tilt: 6, "receipt-w": 600, "total-size": 60, "cta-size": 17 },
+      motion: { scroll: 320, count: 800, arc: 80, on: true },
+      copy: { kicker: "Pension · Tax · Cash · Student loan · Mortgage", headline: 'Stop losing money to <mark>tax traps and idle cash.</mark>', lede: "Unclaimed pension relief, the £100k tax trap, idle cash and student loan overpayments cost good earners thousands a year. Answer a few questions and see, in pounds, what you could save.", cta: "See what I could save", rhead: "What you could save", rtotal: "You could save", rcta: "See what I could save" } },
+    marker: { label: "3 · Highlighter",
+      vars: { bg: "#fbfaf5", ink: "#1a1a17", muted: "#66665e", accent: "#162f24", hl: "#51f5d4", paper: "#ffffff", "paper-ink": "#1a1a17", "paper-muted": "#66665e", rule: "#e2e0d6", cta: "#0071e3", "cta-ink": "#ffffff",
+        "f-head": "Georgia", "f-body": "DM Sans", "f-fig": "Georgia", "f-mono": "IBM Plex Mono", "head-w": 700, "head-size": 80, "head-case": "none", "head-track": -0.025,
+        "tile-scale": 1, tilt: 5, "receipt-w": 620, "total-size": 64, "cta-size": 17 },
+      motion: { scroll: 300, count: 900, arc: 40, on: true },
+      copy: { kicker: "",headline: 'Save the money you\'re <mark>losing</mark>.', lede: "Unclaimed pension relief, the £100k tax trap, idle cash and student loan overpayments cost good earners thousands a year. Answer a few questions and see, in pounds, what Candid could help you save.", cta: "See what I could save", rhead: "What you could save", rtotal: "You could save", rcta: "See what I could save" } },
+    till: { label: "4 · Till receipt",
+      vars: { bg: "#e9e8e3", ink: "#111111", muted: "#5d5d58", accent: "#111111", hl: "#ffd2c2", paper: "#fdfdfb", "paper-ink": "#111111", "paper-muted": "#5d5d58", rule: "#cfcfc8", cta: "#111111", "cta-ink": "#ffffff",
+        "f-head": "JetBrains Mono", "f-body": "DM Sans", "f-fig": "Source Serif 4", "f-mono": "JetBrains Mono", "head-w": 800, "head-size": 64, "head-case": "uppercase", "head-track": -0.04,
+        "tile-scale": 1, tilt: 7, "receipt-w": 470, "total-size": 58, "cta-size": 16 },
+      motion: { scroll: 360, count: 600, arc: 100, on: true },
+      copy: { kicker: "Receipt no. 0001 · Your finances", headline: 'What your finances cost you. <span class="quiet">Itemised.</span>', lede: "Unclaimed pension relief, the £100k tax trap, idle cash and student loan overpayments cost good earners thousands a year. Answer a few questions and get the receipt for what you could save.", cta: "See what I could save", rhead: "What you could save this year", rtotal: "You could save", rcta: "See what I could save" } },
+  };
+
+  const CONTROLS = {
+    colour: [["bg", "Page"], ["ink", "Text"], ["muted", "Quiet text"], ["accent", "Total and logo"], ["hl", "Highlighter"], ["paper", "Paper"], ["rule", "Rules"], ["cta", "Button"], ["cta-ink", "Button text"]],
+    type: [["f-head", "Headline font", FONTS_HEAD], ["f-body", "Body font", FONTS_BODY], ["f-fig", "Total figure font", FONTS_FIG], ["f-mono", "Document font", FONTS_MONO], ["head-w", "Headline weight", [400, 500, 600, 700, 800]], ["head-case", "Headline case", ["none", "uppercase"]]],
+    size: [["head-size", "Headline", 36, 120, 1], ["head-track", "Letter spacing", -0.08, 0.04, 0.005], ["tile-scale", "Tiles", 0.6, 1.4, 0.05], ["tilt", "Tile tilt", 0, 14, 0.5], ["receipt-w", "Receipt width", 380, 780, 10], ["total-size", "Total figure", 30, 110, 1], ["cta-size", "Button", 13, 24, 0.5]],
+    motion: [["on", "Scroll animation"], ["scroll", "Scroll length", 150, 700, 10], ["count", "Count-up (ms)", 0, 2500, 50], ["arc", "Tile swoop", 0, 240, 5]],
+  };
+
+  const site = document.getElementById("site"), app = document.getElementById("app");
+  const KEY = "candid-statement-lab-2";
+  let store = {}; try { store = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} };
+
+  let current = (store._v && VARIANTS[store._v]) ? store._v : "marker";
+  try { const h = location.hash.slice(1); if (VARIANTS[h]) current = h; } catch (e) {}
+  let S; // live settings for the current version
+
+  function settingsFor(v) {
+    const base = VARIANTS[v], o = store[v] || {};
+    return { vars: { ...base.vars, ...(o.vars || {}) }, motion: { ...base.motion, ...(o.motion || {}) }, copy: { ...base.copy, ...(o.copy || {}) } };
+  }
+  function applyVars() {
+    for (const [k, v] of Object.entries(S.vars)) site.style.setProperty("--" + k, /^f-/.test(k) ? `"${v}"` : v);
+    site.className = "site " + (VARIANTS[current].cls || "");
+    app.classList.toggle("static", !S.motion.on || reduced);
+    document.getElementById("scene").style.height = (!S.motion.on || reduced) ? "" : `calc(100svh + ${S.motion.scroll}vh)`;
+  }
+  function applyCopy() { site.querySelectorAll("[data-edit]").forEach(el => { const c = S.copy[el.dataset.edit]; if (c != null) el.innerHTML = c; }); }
+  function remember(group, k, v) { store[current] = store[current] || {}; (store[current][group] = store[current][group] || {})[k] = v; save(); }
+
+  // ----- panel -----
+  const fmt = v => (Math.abs(v) < 1 && v !== 0 ? (+v).toFixed(3).replace(/0+$/, "") : String(+(+v).toFixed(2)));
+  function buildPanel() {
+    const vEl = document.getElementById("variants"); vEl.innerHTML = "";
+    for (const [id, v] of Object.entries(VARIANTS)) {
+      const b = document.createElement("button"); b.id = "v-" + id; b.textContent = v.label; b.setAttribute("aria-pressed", String(id === current));
+      b.onclick = () => { current = id; store._v = id; save(); try { history.replaceState(null, "", "#" + id); } catch (e) {} load(); };
+      vEl.appendChild(b);
+    }
+    const g = (id, html) => document.getElementById(id).innerHTML = html;
+    g("g-colour", CONTROLS.colour.map(([k, l]) => `<div class="ctl"><label for="c-${k}">${l}</label><input type="color" id="c-${k}" data-k="${k}" data-g="vars" value="${S.vars[k]}"></div>`).join(""));
+    g("g-type", CONTROLS.type.map(([k, l, opts]) => `<div class="ctl"><label for="c-${k}">${l}</label><select id="c-${k}" data-k="${k}" data-g="vars">${opts.map(o => `<option${String(o) === String(S.vars[k]) ? " selected" : ""}>${o}</option>`).join("")}</select></div>`).join(""));
+    g("g-size", CONTROLS.size.map(([k, l, mn, mx, st]) => `<div class="ctl"><label for="c-${k}">${l}</label><input type="range" id="c-${k}" data-k="${k}" data-g="vars" min="${mn}" max="${mx}" step="${st}" value="${S.vars[k]}"><output>${fmt(S.vars[k])}</output></div>`).join(""));
+    g("g-motion", CONTROLS.motion.map(([k, l, mn, mx, st]) => k === "on"
+      ? `<div class="ctl"><label for="c-on">${l}</label><input type="checkbox" id="c-on" data-k="on" data-g="motion"${S.motion.on ? " checked" : ""}></div>`
+      : `<div class="ctl"><label for="c-${k}">${l}</label><input type="range" id="c-${k}" data-k="${k}" data-g="motion" min="${mn}" max="${mx}" step="${st}" value="${S.motion[k]}"><output>${fmt(S.motion[k])}</output></div>`).join("")
+      + (reduced ? `<p class="p-note">Your device asks for reduced motion, so the page shows the finished receipt without the animation.</p>` : ""));
+  }
+  document.getElementById("pbody").addEventListener("input", e => {
+    const el = e.target, k = el.dataset.k, grp = el.dataset.g; if (!k) return;
+    const v = el.type === "checkbox" ? el.checked : el.type === "range" ? +el.value : (grp === "vars" && k === "head-w" ? +el.value : el.value);
+    S[grp][k] = v; remember(grp, k, v);
+    if (el.nextElementSibling && el.nextElementSibling.tagName === "OUTPUT") el.nextElementSibling.textContent = fmt(v);
+    applyVars(); measure(); tick();
+  });
+  document.getElementById("toggle").onclick = e => { const p = document.getElementById("panel"); const c = p.classList.toggle("closed"); e.target.textContent = c ? "Edit" : "Hide"; e.target.setAttribute("aria-expanded", String(!c)); };
+  document.getElementById("frame").onclick = e => { const b = e.target.closest("button"); if (!b) return; document.body.classList.toggle("frame-phone", b.dataset.v === "phone"); document.querySelectorAll("#frame button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); requestAnimationFrame(() => { measure(); tick(); }); };
+  const editBtn = document.getElementById("editText");
+  editBtn.onclick = () => {
+    const on = editBtn.getAttribute("aria-pressed") !== "true"; editBtn.setAttribute("aria-pressed", String(on)); editBtn.textContent = on ? "Done editing" : "Edit text on the page";
+    app.classList.toggle("editing", on); site.querySelectorAll("[data-edit]").forEach(el => el.contentEditable = on ? "true" : "false");
+  };
+  site.addEventListener("input", e => { const el = e.target.closest("[data-edit]"); if (!el) return; S.copy[el.dataset.edit] = el.innerHTML; remember("copy", el.dataset.edit, el.innerHTML); });
+  site.addEventListener("click", e => { if (e.target.closest("a")) e.preventDefault(); });
+  document.getElementById("reset").onclick = () => { delete store[current]; save(); load(); };
+  document.getElementById("copy").onclick = async () => {
+    const txt = JSON.stringify({ version: VARIANTS[current].label, changes: store[current] || {}, settings: S }, null, 1), out = document.getElementById("out");
+    out.hidden = false; out.value = txt;
+    try { await navigator.clipboard.writeText(txt); document.getElementById("copy").textContent = "Copied"; setTimeout(() => document.getElementById("copy").textContent = "Copy settings", 1500); }
+    catch (e) { out.focus(); out.select(); document.getElementById("copy").textContent = "Select and copy below"; }
+  };
+
+  // ----- the scroll scene -----
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const scene = document.getElementById("scene"), stage = document.getElementById("stage"), receipt = document.getElementById("receipt"), message = document.getElementById("message"), hint = document.getElementById("hint"), rfoot = document.getElementById("rfoot"), totalEl = document.getElementById("total");
+  const tiles = [...site.querySelectorAll(".tile")].sort((a, b) => a.dataset.line - b.dataset.line);
+  const lines = [...receipt.querySelectorAll(".line")];
+  const amounts = lines.map(l => +l.querySelector(".amt").textContent.replace(/[^0-9]/g, ""));
+  let geo = null, shown = 0, target = 0, from = 0, t0 = 0;
+
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const ease = x => 1 - Math.pow(1 - x, 3);
+  const easeIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  function offset(el) { let x = 0, y = 0; while (el && el !== stage) { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; } return [x, y]; }
+
+  function measure() {
+    receipt.style.scale = "";
+    if (!S.motion.on || reduced) { geo = null; return; }
+    const sH = stage.clientHeight, [rx, ry] = offset(receipt), rw = receipt.offsetWidth, rh = receipt.offsetHeight;
+    // shrink the receipt to fit the screen height, perforations included
+    const fit = Math.min(1, (sH - 48) / (rh + 18));
+    receipt.style.scale = String(fit);
+    // the receipt is centred on (rx, ry) and scaled about that centre
+    geo = {
+      rise: sH - (ry - rh * fit / 2) + 30,
+      tiles: tiles.map((t, i) => {
+        const [tx, ty] = offset(t), cx = tx + t.offsetWidth / 2, cy = ty + t.offsetHeight / 2, l = lines[i];
+        const lx = rx + (l.offsetLeft + l.offsetWidth / 2 - rw / 2) * fit, ly = ry + (l.offsetTop + l.offsetHeight / 2 - rh / 2) * fit;
+        return { dx: lx - cx, dy: ly - cy, scaleTo: Math.min(.5, l.offsetHeight * fit / t.offsetHeight) };
+      }),
+    };
+  }
+
+  function tick() {
+    if (!geo) { // static: everything finished
+      tiles.forEach(t => { t.style.transform = ""; t.style.opacity = ""; });
+      lines.forEach(l => { l.classList.remove("empty"); l.classList.remove("landed"); });
+      receipt.style.transform = ""; message.style.opacity = ""; message.style.transform = ""; rfoot.classList.add("show");
+      target = amounts.reduce((a, b) => a + b, 0); shown = target; totalEl.textContent = "£" + shown.toLocaleString("en-GB"); return;
+    }
+    const r = scene.getBoundingClientRect(), span = scene.offsetHeight - stage.offsetHeight;
+    const p = clamp(-r.top / Math.max(1, span));
+    hint.style.opacity = String(1 - clamp(p / .06));
+    const pr = ease(clamp((p - .04) / .26));
+    receipt.style.transform = `translateY(${(1 - pr) * geo.rise}px)`;
+    message.style.opacity = String(1 - clamp((p - .02) / .2));
+    message.style.transform = `translateY(${-40 * clamp((p - .02) / .2)}px) scale(${1 - .04 * clamp((p - .02) / .2)})`;
+    let landed = 0;
+    tiles.forEach((t, i) => {
+      const s = .32 + i * .14, e = clamp((p - s) / .12), k = easeIO(e), g = geo.tiles[i], rot = t.style.getPropertyValue("--r") || getComputedStyle(t).getPropertyValue("--r");
+      const lift = S.motion.arc * Math.sin(Math.PI * k);
+      const sc = 1 - (1 - g.scaleTo) * k;
+      t.style.transform = `translate(${g.dx * k}px, ${g.dy * k - lift}px) rotate(${(+rot || 0) * S.vars.tilt * (1 - k)}deg) scale(${sc})`;
+      t.style.opacity = String(1 - clamp((k - .7) / .3));
+      const done = e >= 1; lines[i].classList.toggle("empty", !done); lines[i].classList.toggle("landed", done && p < .97);
+      if (done) landed += amounts[i];
+    });
+    rfoot.classList.toggle("show", p > .9);
+    if (landed !== target) { from = shown; target = landed; t0 = performance.now(); requestAnimationFrame(count); }
+  }
+  function count(now) {
+    const d = Math.max(1, S.motion.count), k = clamp((now - t0) / d);
+    shown = Math.round(from + (target - from) * ease(k));
+    totalEl.textContent = "£" + shown.toLocaleString("en-GB");
+    if (k < 1) requestAnimationFrame(count);
+  }
+
+  let raf = 0; const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; tick(); }); };
+  addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", () => { measure(); tick(); });
+
+  function load() { S = settingsFor(current); applyVars(); applyCopy(); buildPanel(); requestAnimationFrame(() => { measure(); tick(); }); }
+  load();
+  document.fonts && document.fonts.ready.then(() => { measure(); tick(); });
+})();
+</script>

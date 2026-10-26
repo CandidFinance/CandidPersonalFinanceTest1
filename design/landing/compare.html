@@ -1,0 +1,125 @@
+<title>Candid Landing Directions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap">
+<style>
+/* Layout: a review board. Family tabs on top, then the current page and the
+   chosen family side by side at the same size, with the notes underneath. */
+:root {
+  --bg: #f4f3ee; --surface: #ffffff; --fg: #17201b; --muted: #5e6862; --line: #dcdcd3;
+  --accent: #162f24; --accent-fg: #ffffff; --chip: #e9e8e0;
+  --sans: "DM Sans", system-ui, sans-serif; --display: Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121614; --surface: #1b201d; --fg: #e9ece7; --muted: #9aa49e; --line: #2c332f;
+  --accent: #cfe3d5; --accent-fg: #102018; --chip: #252b28; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121614; --surface: #1b201d; --fg: #e9ece7; --muted: #9aa49e; --line: #2c332f;
+  --accent: #cfe3d5; --accent-fg: #102018; --chip: #252b28; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1400px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header h1 { font: 700 30px/1.15 var(--display); margin: 0 0 6px; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 680px; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; margin: 24px 0 20px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 10px; z-index: 5; border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.seg { display: inline-flex; background: var(--chip); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg button { font: 600 14px/1 var(--sans); border: 0; background: transparent; color: var(--muted); padding: 9px 14px; border-radius: 8px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.seg button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.pair.phone { grid-template-columns: repeat(2, minmax(0, 390px)); justify-content: center; gap: 32px; }
+figure { margin: 0; min-width: 0; }
+figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-weight: 700; margin-bottom: 8px; }
+figcaption span { font-weight: 500; color: var(--muted); font-size: 13px; }
+.shot { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.shot img { display: block; width: 100%; height: auto; }
+.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--line); }
+.notes h3 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.notes p, .notes ul { margin: 0; max-width: 60ch; }
+.notes ul { padding-left: 18px; }
+.open { display: inline-block; margin-top: 12px; font-weight: 700; color: var(--fg); }
+.foot { margin-top: 40px; color: var(--muted); font-size: 13px; max-width: 760px; }
+@media (max-width: 760px) {
+  .pair, .pair.phone { grid-template-columns: 1fr; }
+  .notes { grid-template-columns: 1fr; gap: 18px; }
+  header h1 { font-size: 24px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Landing page: three directions</h1>
+    <p>The live page on the left, a direction on the right, at the same size. These are static mocks of the first screen and the start of the next section. Nothing has been built into the site.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="View options">
+    <div><span class="label">Direction</span>
+      <div class="seg" id="fam">
+        <button id="fam-b" data-v="b" aria-pressed="true">B · Statement</button>
+        <button id="fam-d" data-v="d" aria-pressed="false">D · Map</button>
+        <button id="fam-e" data-v="e" aria-pressed="false">E · Chart</button>
+      </div></div>
+    <div><span class="label">Size</span>
+      <div class="seg" id="size">
+        <button id="size-phone" data-v="phone" aria-pressed="true">Phone</button>
+        <button id="size-desktop" data-v="desktop" aria-pressed="false">Desktop</button>
+      </div></div>
+    <div><span class="label">Length</span>
+      <div class="seg" id="len">
+        <button id="len-fold" data-v="" aria-pressed="true">First screen</button>
+        <button id="len-full" data-v="-full" aria-pressed="false">Whole mock</button>
+      </div></div>
+  </div>
+
+  <div class="pair phone" id="pair">
+    <figure><figcaption>Current <span>candid-finance.co.uk</span></figcaption><div class="shot"><img id="imgCur" alt="The current Candid landing page"></div></figure>
+    <figure><figcaption id="capNew">B · Statement <span>mock</span></figcaption><div class="shot"><img id="imgNew" alt=""></div></figure>
+  </div>
+
+  <section class="notes" id="notes"></section>
+
+  <p class="foot">All £ figures in the mocks are one worked example (£85k salary, Plan 2 loan, £20k in an easy access saver at 1.5%) and are labelled as an example on the page. The wordmark is Georgia Bold in all three. In the Whole mock view, the current page is cut to the same length as the mock.</p>
+</div>
+
+<script>
+const FAM = {
+  b: { name: "B · Statement", file: "b-statement",
+       idea: "Your money is in five places. Candid adds it up. Real-looking payslip, P60, loan statement and bank balance scattered round the edges; one message in the middle; below, the statement totals them line by line.",
+       from: ["ChronoTask: scattered pieces round the edge, one clear message in the middle, the design shows the problem (consolidation)", "CoreShift and Finix: lots of clean space, small print kept small", "Savium: shows what you get (the statement) straight after the hero"],
+       risk: "Quietest of the three on colour. The edge documents get cropped on a phone, so they hint rather than read." },
+  d: { name: "D · Map", file: "d-map",
+       idea: "Your finances, mapped. An Ordnance Survey-style sheet with each area of money pinned in pounds; the legend box holds the message and the button, and dashed footpaths lead from the pins to it.",
+       from: ["ChronoTask: the pins scattered round one central message", "ProFinance: the hand-drawn route leading to the button", "Kumo: the map works as the one big hero image Candid didn't have"],
+       risk: "The most distinctive and the most work to keep clear. On a phone the routes and place names drop out and it becomes a map texture behind the box." },
+  e: { name: "E · Chart", file: "e-chart",
+       idea: "Small leaks, ten years of them. One saturated green field, a headline, the button, and a single chart of two lines pulling apart with the gap in pounds. The real app screen rises out of the field into the next section.",
+       from: ["ProFinance: one bold colour field and the hand-drawn arrow to the button", "Savium: centred headline, then the product shown underneath", "Finix: a small playful touch (the arrow) on an otherwise clean page"],
+       risk: "Leans on one illustrative ten-year projection. On a phone the chart is small and the £ figure does most of the work." },
+};
+const state = { fam: "b", size: "phone", len: "" };
+try { const h = location.hash.slice(1); if (FAM[h]) state.fam = h; } catch (e) {}
+const $ = id => document.getElementById(id);
+function render() {
+  const f = FAM[state.fam];
+  $("imgCur").src = `current/current-${state.size}${state.len}.png`;
+  $("imgNew").src = `mocks/shots/${f.file}-${state.size}${state.len}.png`;
+  $("imgNew").alt = `${f.name} mock of the Candid landing page`;
+  $("capNew").innerHTML = `${f.name} <span>mock</span>`;
+  $("pair").className = "pair " + state.size;
+  $("notes").innerHTML = `<div><h3>The idea</h3><p>${f.idea}</p><a class="open" href="mocks/${f.file}.html" target="_blank" rel="noopener">Open the live mock</a></div>` +
+    `<div><h3>From your inspiration</h3><ul>${f.from.map(x => `<li>${x}</li>`).join("")}</ul></div>` +
+    `<div><h3>Risk</h3><p>${f.risk}</p></div>`;
+  for (const [g, k] of [["fam", "fam"], ["size", "size"], ["len", "len"]])
+    $(g).querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state[k])));
+}
+// Whole mock: crop the current page's full screenshot to the mock's length so the pair stays comparable.
+$("imgNew").addEventListener("load", () => {
+  const cur = $("imgCur").parentElement, nw = $("imgNew");
+  cur.style.maxHeight = state.len ? nw.getBoundingClientRect().height + "px" : "";
+});
+for (const [g, k] of [["fam", "fam"], ["size", "size"], ["len", "len"]])
+  $(g).addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state[k] = b.dataset.v; if (k === "fam") try { history.replaceState(null, "", "#" + b.dataset.v); } catch (e) {} render(); });
+addEventListener("resize", () => $("imgNew").dispatchEvent(new Event("load")));
+render();
+</script>

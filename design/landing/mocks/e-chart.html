@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candid: E, The one chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<style>
+/* Layout: one saturated green field holds the headline and a single chart:
+   two ten-year lines pulling apart, the gap labelled in pounds, a hand-drawn
+   arrow from the gap to the button. The real app screen rises out of the
+   field into the next section. */
+:root {
+  --page: #f4f3ee;
+  --field: #1c4a35;      /* Candid green, lifted and saturated */
+  --field-2: #173f2d;
+  --cream: #f6f1e4;
+  --cream-2: rgba(246,241,228,.66);
+  --gold: #f0c35b;       /* the brand gold, brightened to read on green */
+  --base: rgba(246,241,228,.5);
+  --ink: #14231c;
+  --ink-2: #4f5a53;
+  --cta: #0071e3;
+  --sans: "Schibsted Grotesk", system-ui, sans-serif;
+  --serif: "Source Serif 4", Georgia, serif;
+  --wordmark: Georgia, "Times New Roman", serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--ink); font: 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+
+.nav { display: flex; align-items: center; justify-content: space-between; max-width: 1320px; margin: 0 auto; padding: 18px 32px; }
+.wordmark { font: 700 30px/1 var(--wordmark); color: var(--field); text-decoration: none; }
+.nav-links { display: flex; gap: 30px; font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.nav-links a, .nav-right a { text-decoration: none; }
+.nav-right { display: flex; gap: 18px; align-items: center; font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.btn-dark { background: var(--ink); color: #fff !important; padding: 10px 16px; border-radius: 10px; }
+.menu { display: none; width: 24px; height: 16px; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); position: relative; }
+.menu::after { content: ""; position: absolute; left: 0; right: 0; top: 5px; border-top: 2px solid var(--ink); }
+
+.field-wrap { padding: 0 16px; }
+.field { position: relative; max-width: 1320px; margin: 0 auto; border-radius: 32px; background: radial-gradient(120% 90% at 50% 0%, var(--field) 0%, var(--field-2) 100%); color: var(--cream); padding: 64px 48px 150px; overflow: hidden; }
+.message { text-align: center; max-width: 760px; margin: 0 auto; position: relative; z-index: 2; }
+h1 { font: 700 clamp(38px, 5.8vw, 72px)/1.0 var(--sans); letter-spacing: -0.04em; margin: 0 0 18px; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--gold); }
+.lede { font-size: clamp(16px, 1.5vw, 19px); color: var(--cream-2); max-width: 520px; margin: 0 auto 28px; text-wrap: pretty; }
+.cta { display: inline-flex; align-items: center; gap: 10px; background: var(--cta); color: #fff; font: 700 17px/1 var(--sans); padding: 18px 30px; border-radius: 12px; text-decoration: none; position: relative; z-index: 3; }
+.cta svg { width: 18px; height: 18px; }
+.reassure { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 18px; margin-top: 16px; font-size: 14px; font-weight: 500; color: var(--cream-2); }
+
+.chart { position: relative; margin: 40px auto 0; max-width: 1100px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--sans); }
+.gap-label { position: absolute; text-align: left; }
+.gap-label .big { font: 700 clamp(30px, 3.6vw, 46px)/1 var(--serif); color: var(--gold); letter-spacing: -0.01em; }
+.gap-label .small { font-size: 13px; color: var(--cream-2); margin-top: 6px; max-width: 220px; }
+.key { display: flex; gap: 20px; justify-content: flex-start; font-size: 13px; color: var(--cream-2); margin-top: 10px; }
+.key i { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.eg { position: absolute; left: 48px; bottom: 24px; font-size: 12px; color: var(--cream-2); max-width: 380px; text-align: left; }
+.hand { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+
+.product { position: relative; z-index: 4; margin: -120px auto 0; width: 270px; aspect-ratio: 390 / 760; border-radius: 42px; border: 9px solid #0f1a14; background: #0f1a14; overflow: hidden; box-shadow: 0 40px 80px -30px rgba(15,26,20,.55); }
+.product img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; border-radius: 33px; }
+.after { text-align: center; padding: 28px 20px 110px; }
+.after p { margin: 0 auto; max-width: 460px; color: var(--ink-2); font-size: 15px; }
+.after b { color: var(--ink); }
+
+@media (max-width: 900px) {
+  .nav-links, .nav-right .signin, .nav-right .btn-dark { display: none; }
+  .menu { display: block; }
+  .nav { padding: 16px 20px; }
+  .wordmark { font-size: 26px; }
+  .field-wrap { padding: 0 10px; }
+  .field { padding: 40px 18px 140px; border-radius: 24px; }
+  .chart { margin-top: 30px; }
+  .gap-label .small { max-width: 150px; font-size: 12px; }
+  .eg { left: 18px; right: 18px; bottom: 16px; }
+  .hand { display: none; }
+  .product { width: 220px; margin-top: -110px; }
+  .eg { position: static; margin-top: 22px; }
+  .reassure span:nth-child(even) { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="nav">
+  <a class="wordmark" href="#">Candid.</a>
+  <nav class="nav-links"><a href="#">The problem</a><a href="#">How it works</a><a href="#">About</a></nav>
+  <div class="nav-right"><a class="signin" href="#">Sign in</a><a class="btn-dark" href="#">See what I'm missing</a><span class="menu" aria-label="Menu"></span></div>
+</header>
+
+<div class="field-wrap">
+<section class="field" id="field">
+  <div class="message">
+    <h1>Small leaks. <em>Ten years</em> of them.</h1>
+    <p class="lede">Tax you don't reclaim and cash on a low rate add up quietly. Answer a few questions and see what yours add up to, in pounds.</p>
+    <a class="cta" id="cta" href="#">See what I'm missing <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <div class="reassure"><span>First module free</span><span>·</span><span>No card needed</span><span>·</span><span>About 3 minutes</span></div>
+  </div>
+
+  <div class="chart" id="chart">
+    <svg id="svg" aria-label="Example: savings and pension over ten years, as they are and with the changes, ending £33,080 apart"></svg>
+    <div class="gap-label" id="gapLabel"><div class="big">£33,080</div><div class="small">more after ten years, from £2,630 a year kept and invested at 5%</div></div>
+  </div>
+  <svg class="hand" id="hand" aria-hidden="true"></svg>
+  <div class="eg">Example: £85k salary, Plan 2 loan, £20k in an easy access saver. Your chart uses your own answers.</div>
+</section>
+</div>
+
+<div class="product"><img src="hero-answer.png" alt="The Candid app showing £2.8k of avoidable tax in the Pension module"></div>
+<div class="after"><p><b>A real answer from the app.</b> Every figure is worked out from what you tell it. Guidance, not advice: the decisions are yours.</p></div>
+
+<script>
+(function () {
+  // Ten years: £60k today, £6k a year saved, 5% growth. "With the changes"
+  // adds £2,630 a year (the example statement's total), also at 5%.
+  const years = 10, r = .05, start = 60000, save = 6000, extra = 2630;
+  const base = [], withC = [];
+  let a = start, b = start;
+  for (let y = 0; y <= years; y++) { base.push(a); withC.push(b); a = a*(1+r) + save; b = b*(1+r) + save + extra; }
+  const gap = Math.round(withC[years] - base[years]);
+  document.querySelector("#gapLabel .big").textContent = "£" + gap.toLocaleString("en-GB");
+
+  const chart = document.getElementById("chart"), svg = document.getElementById("svg"), field = document.getElementById("field");
+  function draw() {
+    const W = chart.clientWidth, narrow = W < 600, H = narrow ? 260 : 330;
+    const padL = narrow ? 8 : 64, padR = narrow ? 120 : 260, padT = 16, padB = 34;
+    const yMax = 220000, yMin = 0;
+    const X = i => padL + (W - padL - padR) * i / years, Y = v => padT + (H - padT - padB) * (1 - (v - yMin) / (yMax - yMin));
+    const line = arr => arr.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(" ");
+    const area = line(withC) + " " + base.map((v, i) => "L" + X(years - i).toFixed(1) + " " + Y(base[years - i]).toFixed(1)).join(" ") + "Z";
+    const ticks = [0, 100000, 200000].map(v => `<line x1="${padL}" x2="${W - padR + 20}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(246,241,228,.12)"/>` + (narrow ? "" : `<text x="${padL - 12}" y="${Y(v) + 4}" text-anchor="end" font-size="12" fill="rgba(246,241,228,.55)">£${v/1000}k</text>`)).join("");
+    const xt = [0, 5, 10].map(i => `<text x="${X(i)}" y="${H - 8}" text-anchor="${i === 0 ? "start" : i === years ? "end" : "middle"}" font-size="12" fill="rgba(246,241,228,.55)">${i === 0 ? "Today" : "Year " + i}</text>`).join("");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H);
+    svg.innerHTML = ticks + xt +
+      `<path d="${area}" fill="rgba(240,195,91,.16)"/>` +
+      `<path d="${line(base)}" fill="none" stroke="rgba(246,241,228,.55)" stroke-width="2.5" stroke-dasharray="6 6"/>` +
+      `<path d="${line(withC)}" fill="none" stroke="#f0c35b" stroke-width="3.5" stroke-linecap="round"/>` +
+      `<circle cx="${X(years)}" cy="${Y(withC[years])}" r="6" fill="#f0c35b"/><circle cx="${X(years)}" cy="${Y(base[years])}" r="5" fill="rgba(246,241,228,.8)"/>` +
+      `<line x1="${X(years) + 14}" x2="${X(years) + 14}" y1="${Y(withC[years])}" y2="${Y(base[years])}" stroke="#f0c35b" stroke-width="1.5"/>` +
+      `<text x="${X(years) - 10}" y="${Y(withC[years]) - 14}" text-anchor="end" font-size="13" font-weight="600" fill="#f0c35b">With the changes</text>` +
+      (narrow ? "" : `<text x="${X(years) - 10}" y="${Y(base[years]) + 38}" text-anchor="end" font-size="13" fill="rgba(246,241,228,.7)">As things are</text>`);
+    const lab = document.getElementById("gapLabel");
+    lab.style.left = (X(years) + 28) + "px"; lab.style.top = ((Y(withC[years]) + Y(base[years])) / 2 - 30) + "px";
+
+    // Hand-drawn arrow from the gap label up to the button.
+    const hand = document.getElementById("hand"), fb = field.getBoundingClientRect(), lb = lab.getBoundingClientRect(), cb = document.getElementById("cta").getBoundingClientRect();
+    const sx = lb.left - fb.left + 30, sy = lb.top - fb.top - 10, ex = cb.right - fb.left + 14, ey = cb.top - fb.top + cb.height / 2;
+    hand.setAttribute("viewBox", `0 0 ${fb.width} ${fb.height}`);
+    hand.innerHTML = `<path d="M${sx} ${sy} C ${sx} ${sy - 170}, ${ex + 140} ${ey}, ${ex} ${ey}" fill="none" stroke="#f6f1e4" stroke-width="2.2" stroke-linecap="round"/>` +
+      `<path d="M${ex + 12} ${ey - 8} L${ex} ${ey} L${ex + 12} ${ey + 8}" fill="none" stroke="#f6f1e4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+  draw(); addEventListener("resize", draw); document.fonts && document.fonts.ready.then(draw);
+})();
+</script>
+</body>
+</html>
