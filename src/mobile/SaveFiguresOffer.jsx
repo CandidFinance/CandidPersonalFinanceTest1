@@ -40,6 +40,10 @@ export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = nul
   };
   const withGoogle = async credential => {
     const g = await signInWithGoogle(credential, referralCode());
+    // A subscriber already: their saved answers are now in this browser
+    // (holdSignIn), so the app reopens with them, before what's in memory
+    // can be saved over them.
+    if (g.outcome === "signed-in") { window.location.reload(); return; }
     onEmail(g.email, name.trim() || g.name, "google");
   };
   const field = {width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"12px 16px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE};

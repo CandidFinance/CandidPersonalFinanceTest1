@@ -470,8 +470,8 @@ async function passwordLogin(req, body, res) {
 async function googleLogin(body, res) {
   const who = await googleIdentity(body.credential);
   if (!who) return res.status(401).json({ error: "Google sign-in didn't work. Please try again, or use your email." });
-  await markConfirmed(who.email, body.ref);
-  const row = await rowFor(who.email);
+  // markConfirmed logs its own failures, so it never holds up the sign-in.
+  const [row] = await Promise.all([rowFor(who.email), markConfirmed(who.email, body.ref)]);
   const access = accessFor(row);
   // Signing in with Google counts as having set it up (account, SignInGate).
   if (access.active && row.google_sub !== who.sub) {

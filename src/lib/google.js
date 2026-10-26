@@ -52,3 +52,7 @@ export async function renderGoogleButton(el, width, handle, onClick = null) {
   // alone; this one is the most recent, so it's the one meant.
   onToken = handle;
 }
+// A button gone: its handler no longer gets tokens.
+export function forgetGoogleButton(handle) {
+  if (onToken === handle) onToken = null;
+}

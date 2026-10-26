@@ -196,9 +196,11 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
   // their saved answers; or, for alerts, gives the email, already confirmed.
   const withGoogle = async credential => {
     const g = await signInWithGoogle(credential, panel === "alerts" ? referralCode() : null);
+    // A subscriber, from either panel: reopened with their saved answers,
+    // before what's in memory can be saved over them.
+    if (g.outcome === "signed-in") { posthog.capture("signed_in", { how: "google", outcome: g.outcome, from: "paywall" }); window.location.reload(); return; }
     if (panel === "alerts") { onLeaveEmail?.(g.email); setDone("alerts-google"); return; }
     posthog.capture("signed_in", { how: "google", outcome: g.outcome, from: "paywall" });
-    if (g.outcome === "signed-in") { window.location.reload(); return; }
     throw new Error(g.outcome === "ended" ? `The subscription for ${g.email} has ended.` : `${g.email} doesn't have a Candid subscription.`);
   };
 

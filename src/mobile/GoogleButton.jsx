@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { MUT, ERROR_TEXT } from "../design-tokens.js";
-import { googleSignInAvailable, renderGoogleButton } from "../lib/google.js";
+import { googleSignInAvailable, renderGoogleButton, forgetGoogleButton } from "../lib/google.js";
 
 // "Continue with Google", beside the email ask (SaveFiguresOffer) and on the
 // sign-in screens (SignInPage, SignInSetup, MobileUnlock). Google draws the
@@ -14,22 +14,28 @@ export default function GoogleButton({ onCredential, source, divider = false, st
   const [shown, setShown] = useState(googleSignInAvailable());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  // The latest props, for Google's callbacks, which are set up once.
+  const where = useRef(source);
+  where.current = source;
   const handle = useRef(null);
   handle.current = async credential => {
     setBusy(true); setError(null);
     try { await onCredential(credential); }
-    catch (e) { setError(e.message); posthog.capture("oauth_failed", { provider: "google", source }); }
+    catch (e) { setError(e.message); posthog.capture("oauth_failed", { provider: "google", source: where.current }); }
     setBusy(false);
   };
 
   useEffect(() => {
     if (!shown || !box.current) return;
     let live = true;
-    renderGoogleButton(box.current, box.current.offsetWidth || 320, c => {
-      posthog.capture("oauth_completed", { provider: "google", source });
+    const onToken = c => {
+      if (!live) return;
+      posthog.capture("oauth_completed", { provider: "google", source: where.current });
       handle.current(c);
-    }, () => posthog.capture("oauth_started", { provider: "google", source })).catch(() => { if (live) setShown(false); });
-    return () => { live = false; };
+    };
+    renderGoogleButton(box.current, box.current.offsetWidth || 320, onToken,
+      () => posthog.capture("oauth_started", { provider: "google", source: where.current })).catch(() => { if (live) setShown(false); });
+    return () => { live = false; forgetGoogleButton(onToken); };
   }, [shown]);
 
   if (!shown) return null;
