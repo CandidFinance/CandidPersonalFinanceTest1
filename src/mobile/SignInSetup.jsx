@@ -2,11 +2,12 @@ import { useEffect, useId, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
-import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM, FIELD_BORDER } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM, FIELD_BORDER, LABEL_CAPS } from "../design-tokens.js";
 import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
 import GoogleButton, { useGoogleButtonShown } from "./GoogleButton.jsx";
 import OrRule from "./OrRule.jsx";
 import useDialogFocus from "./useDialogFocus.js";
+import { primaryButtonStyle } from "./onboarding/OnboardingShell.jsx";
 import { googleSignInAvailable } from "../lib/google.js";
 
 // A subscriber's ways to sign in on another device (src/site/SignInPage.jsx):
@@ -115,7 +116,7 @@ export default function SignInSetup() {
   if (!signIns) return null;
   return (
     <div style={{marginTop:"14px"}}>
-      <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Signing in on another device</div>
+      <div style={LABEL_CAPS}>Signing in on another device</div>
       <SignInMethods signIns={signIns} reload={reload}/>
     </div>
   );
@@ -173,14 +174,13 @@ function CreateSignIn({ email, onDone }) {
     run("password", () => setPassword(pw));
   };
   const button = primary => ({
-    width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
-    background: primary ? G : WHITE, color: primary ? WHITE : G, border: primary ? "none" : `1.5px solid ${G}`,
-    borderRadius:"100px", padding:"15px", fontSize:"15.5px", fontWeight:700, fontFamily:"inherit", cursor: busy ? "default" : "pointer",
+    ...primaryButtonStyle({ size: "regular", outline: !primary }),
+    display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", cursor: busy ? "default" : "pointer",
   });
   return (
     <div ref={boxRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="create-sign-in-title"
       style={{position:"fixed",inset:0,zIndex:6000,background:CREAM,overflowY:"auto"}}>
-      <NavBar light/>
+      <NavBar light center="Sign-in"/>
       <div style={{maxWidth:"420px",margin:"0 auto",padding:"32px 20px 40px"}}>
         <h1 id="create-sign-in-title" style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,color:G,margin:0,lineHeight:1.2}}>Create your sign-in</h1>
         <p style={{fontSize:"15px",color:MUT,lineHeight:1.6,margin:"12px 0 0"}}>So you can open Candid on another device and pick up where you left off. Your account is {email}.</p>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import posthog from "posthog-js";
 import { Check, ChevronDown, Lock, X } from "lucide-react";
-import { G, GOLD, GOLD_TEXT, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT, CTA_BLUE, FIELD_BORDER } from "../../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT, CTA_BLUE, FIELD_BORDER, LABEL_CAPS } from "../../design-tokens.js";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
@@ -13,6 +13,7 @@ import GoogleButton from "../GoogleButton.jsx";
 import { referralCode, invitedHere } from "../../lib/referral.js";
 import InviteFriends from "../InviteFriends.jsx";
 import useDialogFocus from "../useDialogFocus.js";
+import { primaryButtonStyle } from "../onboarding/OnboardingShell.jsx";
 
 // A locked module (src/lib/unlock.js): what it's worth, in £, with the answer
 // itself frosted until it's unlocked. The first module is free; after that,
@@ -36,8 +37,8 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
   const hidden = amount > 0 ? ["What's left on the table", "Your options, and what each one gets back"] : PREVIEW_LINES[moduleKey] || ["Where you stand", "What each option is worth"];
   const cta = amount > 0 ? "Show me where it's going" : "Show me";
 
-  const label = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
-  const primary = disabled => ({ width:"100%", background:disabled ? "rgba(22,47,36,0.2)" : G, color:WHITE, border:"none", borderRadius:"100px", padding:"15px", fontSize:"15.5px", fontWeight:700, fontFamily:"inherit", cursor:disabled ? "not-allowed" : "pointer" });
+  const label = LABEL_CAPS;
+  const primary = disabled => primaryButtonStyle({ size: "regular", disabled });
 
   return (
     <div>
@@ -230,7 +231,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
         {Object.entries(PLANS).map(([key, p]) => (
           <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>
             {key === "yearly" && ANNUAL_SAVING_PCT > 0 && (
-              <span style={{position:"absolute",top:"-9px",right:"10px",background:GOLD_TEXT,color:WHITE,fontSize:"10.5px",fontWeight:800,letterSpacing:"0.03em",borderRadius:"100px",padding:"2px 8px"}}>Save {ANNUAL_SAVING_PCT}%</span>
+              <span style={{position:"absolute",top:"-9px",right:"10px",background:GOLD_TEXT,color:WHITE,fontSize:"10.5px",fontWeight:700,letterSpacing:"0.03em",borderRadius:"100px",padding:"2px 8px"}}>Save {ANNUAL_SAVING_PCT}%</span>
             )}
             <div style={{fontSize:"12px",fontWeight:700,color:MUT}}>{p.label}</div>
             <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginTop:"2px"}}>
@@ -241,7 +242,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
           </button>
         ))}
       </div>
-      <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:CTA_BLUE,opacity:busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
+      <button type="button" disabled={busy} onClick={go} style={{...primaryButtonStyle({ size: "regular", disabled: busy }),background:CTA_BLUE}}>
         {busy && !panel ? "Opening checkout…" : "Subscribe and see where it's going"}
       </button>
       {error && !panel && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
@@ -250,7 +251,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
           filled button. */}
       {validEmail(d.email) && (
         <button type="button" aria-expanded={panel === "invite"} onClick={() => { setPanel(p => p === "invite" ? null : "invite"); setDone(null); setError(null); check.clear(); }}
-          style={{width:"100%",marginTop:"10px",background:WHITE,color:G,border:`1.5px solid ${G}`,borderRadius:"100px",padding:"13.5px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+          style={{...primaryButtonStyle({ size: "regular", outline: true }),marginTop:"10px"}}>
           Invite a friend, get a free month
         </button>
       )}
@@ -350,7 +351,7 @@ const COMING_SOON = [
   ["Tax trap and low-rate alerts", "Warnings for stealth tax bands, policy shifts and missed yield."],
   ["New expansion modules", "Household finances, children's accounts, property and mortgages, and inheritance."],
 ];
-const listHead = { fontSize:"10.5px", fontWeight:700, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
+const listHead = LABEL_CAPS;
 const listStyle = { listStyle:"none", padding:0, margin:"10px 0 0", display:"flex", flexDirection:"column", gap:"8px" };
 const itemStyle = { display:"flex", gap:"8px", alignItems:"flex-start", fontSize:"13.5px", lineHeight:1.35 };
 
@@ -358,7 +359,7 @@ const itemStyle = { display:"flex", gap:"8px", alignItems:"flex-start", fontSize
 // down, so it never overstates; "more than" under 2x. Lump sums (by 18) and
 // small amounts just show the figure; nothing found, just the module.
 function Worth({ title, amount, lumpSum }) {
-  const kicker = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase", paddingRight:"40px" };
+  const kicker = { ...LABEL_CAPS, paddingRight:"40px" };
   if (!(amount > 0)) return <div style={{...kicker,marginTop:"6px"}}>{title}</div>;
   const cost = PLANS.yearly.amount;
   const times = Math.floor(amount / cost);

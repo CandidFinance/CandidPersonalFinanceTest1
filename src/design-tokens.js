@@ -152,6 +152,11 @@ export const FONT_SIZE = {
   HERO:     "28px", // hero £ figures
 };
 
+// The small uppercase label over a section or field ("CANDID SCORE",
+// "EMPLOYMENT STATUS"). Spread it, then override colour or margin if needed.
+// (Not the caption inside a money pill, which is smaller to fit.)
+export const LABEL_CAPS = { fontSize: "11px", fontWeight: 600, color: MUT, letterSpacing: "0.08em", textTransform: "uppercase" };
+
 // ── Header / nav wordmark ────────────────────────────────────────────────
 // The "Candid." wordmark's font/weight/colour-per-background, shared by
 // every header in the app — CandidApp.jsx's in-app `NavBar` and the

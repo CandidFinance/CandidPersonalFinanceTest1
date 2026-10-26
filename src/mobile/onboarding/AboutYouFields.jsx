@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { NATION_OPTIONS, nationAlso } from "../../lib/sharedQuestions.js";
 import { nationOf } from "../../lib/childcare.js";
-import { G, GOLD_TEXT, MUT, MUT_ON_CDARK, TEXT, SERIF, CDARK } from "../../design-tokens.js";
+import { G, GOLD_TEXT, MUT, MUT_ON_CDARK, TEXT, SERIF, CDARK, LABEL_CAPS } from "../../design-tokens.js";
 import { PillSlider } from "../PillSlider.jsx";
 import { capField } from "../../lib/onboarding.js";
 import { scottishRate } from "../../lib/tax.js";
@@ -39,7 +39,7 @@ export default function AboutYouFields({ d, set }) {
   // Each pill group is named by the visible label above it.
   const ids = useId();
   const employmentId = `${ids}-employment`, nationId = `${ids}-nation`, trajectoryId = `${ids}-trajectory`;
-  const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
+  const fieldLabel = { ...LABEL_CAPS, marginBottom:"8px", display:"block" };
   const totalIncome = (+d.salary||0) + (+d.bonusAmount||0) + (+d.otherIncome||0) + (+d.dividendIncome||0);
   // Scottish taxpayers: Scotland's own bands (tax.js scottishRate).
   const taxBand = d.scottishTaxpayer === "yes" ?SCOTTISH_BAND_NAME[scottishRate(totalIncome)]
@@ -85,7 +85,7 @@ export default function AboutYouFields({ d, set }) {
       {totalIncome > 0 && (
         <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"12px 14px",marginBottom:"18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
           <div>
-            <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"3px"}}>Tax band</div>
+            <div style={{...LABEL_CAPS,marginBottom:"3px"}}>Tax band</div>
             <div style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G}}>{taxBand}</div>
           </div>
           <div style={{fontSize:"11px",color:MUT,textAlign:"right",maxWidth:"140px",lineHeight:1.4}}>Based on £{totalIncome.toLocaleString("en-GB")} total income</div>

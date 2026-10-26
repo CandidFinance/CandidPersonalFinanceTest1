@@ -40,6 +40,12 @@
       [tabindex="-1"]:not(button):focus { outline: none; }
       .pill-field:focus-within { outline: 2px solid #162f24; outline-offset: 2px; }
       .pill-field input:focus-visible { outline: none !important; }
+      /* Reduced motion: CSS transitions and smooth scrolling off (framer-motion
+         animations follow MotionConfig reducedMotion="user" in main.jsx). */
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        *, *::before, *::after { transition-duration: 0s !important; }
+      }
     </style>
   </head>
   <body>

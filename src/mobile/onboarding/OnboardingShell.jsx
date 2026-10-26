@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
-import { G, MUT, TEXT, SERIF, SANS, WHITE, PROGRESS_GREEN } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, SANS, WHITE, PROGRESS_GREEN, LABEL_CAPS } from "../../design-tokens.js";
 
 // The pieces every question flow shares (QuickStart, GuidedFlow, the answer
 // reveal), so they all look alike: Back and a progress line across the top, the
@@ -52,7 +52,7 @@ export function QuestionHeading({ ask, why, lead, compact = false, focusOnMount 
   useEffect(() => { if (focusOnMount) ref.current?.focus({ preventScroll: true }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
-      {lead && <div style={{ fontSize: "11px", fontWeight: 700, color: MUT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "8px" }}>{lead}</div>}
+      {lead && <div style={{ ...LABEL_CAPS, marginBottom: "8px" }}>{lead}</div>}
       <H ref={ref} tabIndex={focusOnMount ? -1 : undefined} style={{ fontFamily: SERIF, fontSize: compact ? "clamp(22px, 6vw, 26px)" : "clamp(28px, 7.5vw, 36px)", fontWeight: 700, color: G, lineHeight: 1.15, margin: 0 }}>{ask}</H>
       {why && <p style={{ fontSize: compact ? "14px" : "15px", color: MUT, lineHeight: 1.5, margin: compact ? "8px 0 18px" : "10px 0 24px" }}>{why}</p>}
     </>
@@ -99,7 +99,7 @@ export function AnswerTile({ label, sub, on, dim = false, onPick, layout = "grid
       style={{
         ...(wrap ? { flex: "0 0 calc((100% - 20px) / 3)", height: "var(--tile-height, 84px)", position: "relative" } : { minHeight: grid ? (compact ? "70px" : "92px") : "60px" }),
         borderRadius: "20px", border: "1.5px solid",
-        padding: wrap ? "10px 8px" : grid ? "14px 12px" : "14px 18px", fontFamily: SANS, fontSize: wrap ? "var(--tile-font, 15.5px)" : grid ? "18px" : "17px", fontWeight: 650, lineHeight: 1.2,
+        padding: wrap ? "10px 8px" : grid ? "14px 12px" : "14px 18px", fontFamily: SANS, fontSize: wrap ? "var(--tile-font, 15.5px)" : grid ? "18px" : "17px", fontWeight: 700, lineHeight: 1.2,
         textAlign: grid ? "center" : "left", cursor: "pointer", width: "100%",
         display: "flex", flexDirection: grid ? "column" : "row", alignItems: "center", justifyContent: grid ? "center" : "space-between", gap: grid ? "4px" : "10px",
       }}>
@@ -112,13 +112,23 @@ export function AnswerTile({ label, sub, on, dim = false, onPick, layout = "grid
   );
 }
 
+// The main button's look, shared by every full-width button in the entry,
+// unlock and sign-in screens. `size`: "large" in the question flows,
+// "regular" elsewhere (Start home, the unlock, the paywall, the sign-in
+// gate). `outline`: the second choice beside a filled one, the same height.
+export function primaryButtonStyle({ size = "large", outline = false, disabled = false } = {}) {
+  const pad = size === "large" ? 17 : 15;
+  return {
+    width: "100%", background: outline ? WHITE : G, color: outline ? G : WHITE, border: outline ? `1.5px solid ${G}` : "none",
+    borderRadius: "100px", padding: `${outline ? pad - 1.5 : pad}px`, fontSize: size === "large" ? "17px" : "15.5px", fontWeight: 700, fontFamily: SANS,
+    cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.35 : 1,
+  };
+}
+
 // The one main button: full width, green, a pill.
-export function PrimaryButton({ children, disabled = false, type = "button", onClick, style }) {
+export function PrimaryButton({ children, disabled = false, type = "button", onClick, size, outline, style }) {
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{
-      width: "100%", background: G, color: WHITE, border: "none", borderRadius: "100px", padding: "17px",
-      fontSize: "17px", fontWeight: 700, fontFamily: SANS, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.35 : 1, ...style,
-    }}>{children}</button>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ ...primaryButtonStyle({ size, outline, disabled }), ...style }}>{children}</button>
   );
 }
 
