@@ -4,7 +4,7 @@ import { Check, ChevronLeft } from "lucide-react";
 import { G, MUT, TEXT, SERIF, SANS, WHITE, PROGRESS_GREEN, LABEL_CAPS } from "../../design-tokens.js";
 
 // The pieces every question flow shares (QuickStart, GuidedFlow, the answer
-// reveal), so they all look alike: Back and a progress line across the top, the
+// reveal), so they all look alike: Back and the page dots across the top, the
 // question large in the serif, answers as tiles that fill green when picked,
 // one full-width green button, and the way out ("Skip ...") centred at the
 // bottom. The motion between questions stays with each flow.
@@ -31,12 +31,33 @@ export function ProgressLine({ position, total, from = null, style }) {
   );
 }
 
-// Back on the left, the progress line beside it; either left out when not given.
+// Which page of a flow, as a row of dots: the current one stretches into a
+// green pill, and as the page changes the pill shrinks back and the next dot
+// stretches, so it slides along. Screen readers get the count. `from`: the
+// page it slides from when it first shows (a card that's new for each step).
+const DOT = 6, PILL = 22;
+export function PageDots({ position, total, from = null, style }) {
+  const reduceMotion = useReducedMotion();
+  const look = active => ({ width: active ? PILL : DOT, backgroundColor: active ? PROGRESS_GREEN : "rgba(22,47,36,0.18)" });
+  return (
+    <div role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={position} aria-label={`${position} of ${total}`}
+      style={{ display: "flex", alignItems: "center", gap: "6px", ...style }}>
+      {Array.from({ length: total }, (_, i) => (
+        <motion.span key={i} initial={from == null ? false : look(i + 1 === from)} animate={look(i + 1 === position)}
+          transition={{ duration: reduceMotion ? 0 : 0.4, ease: [0.4, 0, 0.2, 1] }}
+          style={{ display: "block", height: DOT, borderRadius: "100px", flexShrink: 0 }}/>
+      ))}
+    </div>
+  );
+}
+
+// Back on the left, the page dots centred; either left out when not given.
 export function ShellTopRow({ onBack, position, total, style }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "32px", ...style }}>
-      {onBack ? <button type="button" onClick={onBack} style={link}><ChevronLeft size={18}/>Back</button> : <span/>}
-      {position != null && total ? <ProgressLine position={position} total={total} style={{ flex: 1 }}/> : <span/>}
+    <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "16px", minHeight: "32px", ...style }}>
+      {onBack ? <button type="button" onClick={onBack} style={{ ...link, justifySelf: "start" }}><ChevronLeft size={18}/>Back</button> : <span/>}
+      {position != null && total ? <PageDots position={position} total={total}/> : <span/>}
+      <span/>
     </div>
   );
 }

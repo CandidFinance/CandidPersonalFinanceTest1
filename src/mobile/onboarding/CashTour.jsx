@@ -7,7 +7,7 @@ import { validEmailShape } from "../../lib/emailCheck.js";
 import { PillSlider } from "../PillSlider.jsx";
 import SaveFiguresOffer from "../SaveFiguresOffer.jsx";
 import { CheckedCardBody } from "../CheckedCard.jsx";
-import { ProgressLine } from "./OnboardingShell.jsx";
+import { PageDots } from "./OnboardingShell.jsx";
 import useDialogFocus from "../useDialogFocus.js";
 
 // The Cash page's tour, once, the first time the page opens unlocked: five
@@ -192,7 +192,7 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
   } else {
     content = (
       <div style={card}>
-        <ProgressLine position={step.position} total={step.of} from={step.position - 1} style={{ marginBottom: "14px" }}/>
+        <PageDots position={step.position} total={step.of} from={step.position - 1} style={{ marginBottom: "14px" }}/>
         <h2 id="tour-title" style={{ fontFamily: SERIF, fontSize: "20px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>{step.title}</h2>
         <p style={{ fontSize: "14.5px", color: TEXT, lineHeight: 1.55, margin: "8px 0 0" }}>{step.body}</p>
         {step.id === "fund" && (
