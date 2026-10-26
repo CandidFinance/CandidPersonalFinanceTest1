@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
-import { MUT, ERROR_TEXT } from "../design-tokens.js";
+import { ERROR_TEXT } from "../design-tokens.js";
 import { googleSignInAvailable, renderGoogleButton, forgetGoogleButton } from "../lib/google.js";
+import OrRule from "./OrRule.jsx";
 
 // "Continue with Google", beside the email ask (SaveFiguresOffer) and on the
 // sign-in screens (SignInPage, SignInSetup, MobileUnlock). Google draws the
@@ -9,7 +10,9 @@ import { googleSignInAvailable, renderGoogleButton, forgetGoogleButton } from ".
 // message to show when it doesn't work. Nothing at all without a client id
 // (src/lib/google.js), or when Google's script can't load.
 // `source`: where it is, for the events. `divider`: an "or" rule under it.
-export default function GoogleButton({ onCredential, source, divider = false, style = null }) {
+// `onUnavailable`: told when the script doesn't load and the button goes,
+// for the screen to space what's left without it (useGoogleButtonShown).
+export default function GoogleButton({ onCredential, source, divider = false, style = null, onUnavailable = null }) {
   const box = useRef(null);
   const [shown, setShown] = useState(googleSignInAvailable());
   const [busy, setBusy] = useState(false);
@@ -17,6 +20,8 @@ export default function GoogleButton({ onCredential, source, divider = false, st
   // The latest props, for Google's callbacks, which are set up once.
   const where = useRef(source);
   where.current = source;
+  const gone = useRef(onUnavailable);
+  gone.current = onUnavailable;
   const handle = useRef(null);
   handle.current = async credential => {
     setBusy(true); setError(null);
@@ -34,7 +39,7 @@ export default function GoogleButton({ onCredential, source, divider = false, st
       handle.current(c);
     };
     renderGoogleButton(box.current, box.current.offsetWidth || 320, onToken,
-      () => posthog.capture("oauth_started", { provider: "google", source: where.current })).catch(() => { if (live) setShown(false); });
+      () => posthog.capture("oauth_started", { provider: "google", source: where.current })).catch(() => { if (live) { setShown(false); gone.current?.(); } });
     return () => { live = false; forgetGoogleButton(onToken); };
   }, [shown]);
 
@@ -48,12 +53,9 @@ export default function GoogleButton({ onCredential, source, divider = false, st
   );
 }
 
-export function OrRule({ margin = "14px 0 12px" }) {
-  return (
-    <div style={{display:"flex",alignItems:"center",gap:"12px",margin}}>
-      <hr style={{flex:1,border:"none",borderTop:"1px solid rgba(22,47,36,0.12)",margin:0}}/>
-      <span style={{fontSize:"12.5px",color:MUT}}>or</span>
-      <hr style={{flex:1,border:"none",borderTop:"1px solid rgba(22,47,36,0.12)",margin:0}}/>
-    </div>
-  );
+// Whether the Google button is on screen, for spacing the controls under
+// it: pass `hide` as its onUnavailable.
+export function useGoogleButtonShown() {
+  const [shown, setShown] = useState(googleSignInAvailable);
+  return [shown, () => setShown(false)];
 }

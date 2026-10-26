@@ -1,8 +1,8 @@
 import { promises as dns } from "dns";
 import { isAllowedOrigin, clientIp, rateLimiter } from "../server/http.js";
-import { confirmUrl, emailFromConfirmToken, LINK_DAYS } from "../server/confirmLink.js";
+import { confirmUrl, emailFromConfirmToken, recordConfirmed, LINK_DAYS } from "../server/confirmLink.js";
 import { checkEmail } from "../src/lib/emailCheck.js";
-import { recordReferral, rewardReferral } from "../server/referrals.js";
+import { recordReferral } from "../server/referrals.js";
 import { confirmEmail } from "../src/lib/accountEmails.js";
 
 // Checking and confirming the emails people leave for their first answer or
@@ -161,17 +161,7 @@ async function confirmLink(req, res) {
     return res.status(200).send(page("Confirm your email", `<h1>Confirm your email</h1><p>This confirms the address you gave Candid is yours.</p><form method="post" action="${action}"><button type="submit">Confirm my email</button></form>`));
   }
   if (req.method !== "POST") return res.status(405).end();
-  const [row] = await db(`email_verifications?select=verified_at&email=eq.${encodeURIComponent(email)}`) || [];
-  if (!row?.verified_at) {
-    await db("email_verifications?on_conflict=email", {
-      method: "POST", prefer: "resolution=merge-duplicates,return=minimal",
-      body: { email, verified_at: new Date().toISOString() },
-    });
-    // Whoever invited them gets their free month. A failure is logged and
-    // left on the referral to give by hand; the confirmation stands.
-    try { await rewardReferral(email); }
-    catch (e) { console.error("[api/email] referral reward failed:", e.message); }
-  }
+  await recordConfirmed(email);
   return res.status(200).send(page("Email confirmed", `<h1>Email confirmed</h1><p>Thanks. Your figures in Candid are unchanged.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
 }
 

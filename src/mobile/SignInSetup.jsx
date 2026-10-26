@@ -4,8 +4,9 @@ import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
 import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM } from "../design-tokens.js";
 import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
+import GoogleButton, { useGoogleButtonShown } from "./GoogleButton.jsx";
+import OrRule from "./OrRule.jsx";
 import { googleSignInAvailable } from "../lib/google.js";
-import GoogleButton from "./GoogleButton.jsx";
 
 // A subscriber's ways to sign in on another device (src/site/SignInPage.jsx):
 // a passkey on this device (Face ID, Touch ID, a phone's screen lock), a
@@ -26,8 +27,10 @@ export function SignInMethods({ signIns, reload }) {
   const [error, setError] = useState(null);
   const [done, setDone] = useState(null);
   const [editing, setEditing] = useState(false);
+  const [linking, setLinking] = useState(false);
   const [pw, setPw] = useState("");
   const email = accessInfo()?.email || "";
+  const google = googleSignInAvailable();
   if (!signIns) return null;
 
   const run = async (what, fn, message) => {
@@ -48,8 +51,26 @@ export function SignInMethods({ signIns, reload }) {
 
   return (
     <div>
+      {/* Google: linked by signing in with it, or here, when its address is
+          the one they subscribed with (api/billing.js google-link). */}
+      {google && (
+        <>
+          <div style={row}>
+            <div>
+              <div style={name}>Google</div>
+              <div style={note}>{signIns.google ? "Linked" : "Not set up"}</div>
+            </div>
+            {!signIns.google && !linking && <button type="button" disabled={!!busy} onClick={() => { setLinking(true); setDone(null); setError(null); }} style={action}>Set up</button>}
+          </div>
+          {linking && !signIns.google && (
+            <GoogleButton source="inputs" style={{paddingBottom:"10px"}}
+              onUnavailable={() => { setLinking(false); setError("Google sign-in couldn't load. Try again later, or set up a passkey or password."); }}
+              onCredential={async c => { await linkGoogle(c); setLinking(false); setDone("Google linked. Use it on the sign-in page."); await reload(); }}/>
+          )}
+        </>
+      )}
       {passkeysSupported() && (
-        <div style={row}>
+        <div style={{...row,borderTop:google ? "1px solid rgba(22,47,36,0.08)" : "none"}}>
           <div>
             <div style={name}>{passkeyName() === "passkey" ? "Passkey" : passkeyName()[0].toUpperCase() + passkeyName().slice(1)}</div>
             <div style={note}>{signIns.passkeys ? `Set up on ${signIns.passkeys === 1 ? "1 device" : `${signIns.passkeys} devices`}` : "Not set up"}</div>
@@ -60,7 +81,7 @@ export function SignInMethods({ signIns, reload }) {
           </button>
         </div>
       )}
-      <div style={{...row,borderTop:passkeysSupported() ? "1px solid rgba(22,47,36,0.08)" : "none"}}>
+      <div style={{...row,borderTop:passkeysSupported() || google ? "1px solid rgba(22,47,36,0.08)" : "none"}}>
         <div>
           <div style={name}>Password</div>
           <div style={note}>{signIns.password ? "Set" : "Not set up"}</div>
@@ -131,6 +152,7 @@ function CreateSignIn({ email, onDone }) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [pw, setPw] = useState("");
+  const [google, googleGone] = useGoogleButtonShown();
   const canPasskey = passkeysSupported();
   const run = async (how, fn) => {
     setBusy(how); setError(null);
@@ -156,23 +178,19 @@ function CreateSignIn({ email, onDone }) {
         <p style={{fontSize:"15px",color:MUT,lineHeight:1.6,margin:"12px 0 0"}}>So you can open Candid on another device and pick up where you left off. Your account is {email}.</p>
 
         {/* Google, when its address is the one they subscribed with. */}
-        <GoogleButton source="sign_in_gate" divider style={{marginTop:"28px"}}
+        <GoogleButton source="sign_in_gate" divider style={{marginTop:"28px"}} onUnavailable={googleGone}
           onCredential={async c => { await linkGoogle(c); onDone("google", await accountSignIns()); }}/>
 
         {canPasskey && (
           <>
-            <button type="button" disabled={!!busy} onClick={() => run("passkey", addPasskey)} style={{...button(true),marginTop:googleSignInAvailable() ? 0 : "28px"}}>
+            <button type="button" disabled={!!busy} onClick={() => run("passkey", addPasskey)} style={{...button(true),marginTop:google ? 0 : "28px"}}>
               <ScanFace size={19}/>{busy === "passkey" ? "Waiting for your device…" : `Use ${passkeyName() === "passkey" ? "a passkey" : passkeyName()}`}
             </button>
-            <div style={{display:"flex",alignItems:"center",gap:"12px",margin:"22px 0 14px"}}>
-              <hr style={{flex:1,border:"none",borderTop:"1px solid rgba(22,47,36,0.12)",margin:0}}/>
-              <span style={{fontSize:"12.5px",color:MUT}}>or create a password</span>
-              <hr style={{flex:1,border:"none",borderTop:"1px solid rgba(22,47,36,0.12)",margin:0}}/>
-            </div>
+            <OrRule label="or create a password" margin="22px 0 14px"/>
           </>
         )}
 
-        <form onSubmit={withPassword} style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:canPasskey ? 0 : "28px"}}>
+        <form onSubmit={withPassword} style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:canPasskey || google ? 0 : "28px"}}>
           {/* Lets a password manager (iCloud Keychain) save it against the right email. */}
           <input type="email" name="username" autoComplete="username" value={email} readOnly style={{display:"none"}}/>
           <input type="password" name="new-password" autoComplete="new-password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Password, at least 10 characters" aria-label="New password"

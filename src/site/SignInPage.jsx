@@ -7,8 +7,8 @@ import { requestRestore, signInWithLink, signInWithPasskey, signInWithPassword, 
 import { reportStorageFailure } from "../lib/storage.js";
 import { validEmail } from "../lib/unlock.js";
 import SiteLayout from "./SiteLayout.jsx";
-import GoogleButton from "../mobile/GoogleButton.jsx";
-import { googleSignInAvailable } from "../lib/google.js";
+import GoogleButton, { useGoogleButtonShown } from "../mobile/GoogleButton.jsx";
+import OrRule from "../mobile/OrRule.jsx";
 
 // Signing in on a new device. An account comes with a subscription, and a
 // passkey (Face ID, a fingerprint, the screen lock) or password is set up
@@ -30,6 +30,7 @@ export default function SignInPage() {
   const [busy, setBusy] = useState(null); // which button is working: "passkey" | "password" | "link"
   const [error, setError] = useState(null);
   const ran = useRef(false);
+  const [google, googleGone] = useGoogleButtonShown();
   const canPasskey = passkeysSupported();
   const passkeyButton = canPasskey && passkeyHere();
   const unlock = passkeyName() === "passkey" ? "a passkey" : passkeyName();
@@ -124,22 +125,18 @@ export default function SignInPage() {
             {stage === "ended" && <p style={{...p,color:TEXT}}>That subscription has ended. <Link to="/app/start" style={link}>Start a new check</Link>, or sign in with a different account.</p>}
             {stage === "form" && <p style={p}>For Candid subscribers. Your answers and subscription come with you to this device.</p>}
 
-            <GoogleButton source="signin" onCredential={withGoogle} divider style={{marginTop:"24px"}}/>
+            <GoogleButton source="signin" onCredential={withGoogle} divider style={{marginTop:"24px"}} onUnavailable={googleGone}/>
 
             {passkeyButton && (
               <>
-                <button type="button" onClick={withPasskey} disabled={!!busy} style={{...button(true, busy === "passkey"),marginTop:googleSignInAvailable() ? 0 : "24px"}}>
+                <button type="button" onClick={withPasskey} disabled={!!busy} style={{...button(true, busy === "passkey"),marginTop:google ? 0 : "24px"}}>
                   <ScanFace size={19}/>{busy === "passkey" ? "Waiting for your device…" : `Sign in with ${unlock}`}
                 </button>
-                <div style={{display:"flex",alignItems:"center",gap:"12px",margin:"22px 0 4px"}}>
-                  <hr style={{flex:1,border:"none",borderTop:"1px solid rgba(22,47,36,0.12)",margin:0}}/>
-                  <span style={{fontSize:"12.5px",color:MUT}}>or</span>
-                  <hr style={{flex:1,border:"none",borderTop:"1px solid rgba(22,47,36,0.12)",margin:0}}/>
-                </div>
+                <OrRule margin="22px 0 4px"/>
               </>
             )}
 
-            <form onSubmit={withPassword} style={{marginTop:passkeyButton || googleSignInAvailable() ? "14px" : "24px",display:"flex",flexDirection:"column",gap:"10px"}}>
+            <form onSubmit={withPassword} style={{marginTop:passkeyButton || google ? "14px" : "24px",display:"flex",flexDirection:"column",gap:"10px"}}>
               <input type="email" name="username" autoComplete="username webauthn" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email" style={input}/>
               <input type="password" name="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" aria-label="Password" style={input}/>
               <button type="submit" disabled={!!busy} style={button(!passkeyButton, busy === "password")}>
