@@ -4,6 +4,7 @@ import { nationOf } from "../../lib/childcare.js";
 import { G, GOLD_TEXT, MUT, MUT_ON_CDARK, TEXT, SERIF, CDARK } from "../../design-tokens.js";
 import { PillSlider } from "../PillSlider.jsx";
 import { capField } from "../../lib/onboarding.js";
+import { scottishRate } from "../../lib/tax.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 
@@ -19,6 +20,10 @@ const TRAJECTORY_HINT = {
 };
 // Not working: retired, or between jobs (pension.js inRetirement).
 const NOT_WORKING_OPTIONS = [{ value:"retired", label:"Retired" }, { value:"break", label:"Between jobs or a break" }];
+const SCOTTISH_BAND_NAME = {
+  0.19: "Starter rate (19%)", 0.20: "Basic rate (20%)", 0.21: "Intermediate rate (21%)",
+  0.42: "Higher rate (42%)", 0.45: "Advanced rate (45%)", 0.48: "Top rate (48%)",
+};
 const EMPLOYMENT_STATUS_OPTIONS = [
   { value:"employed", label:"Employed" },
   { value:"self_employed", label:"Self-employed" },
@@ -36,7 +41,9 @@ export default function AboutYouFields({ d, set }) {
   const employmentId = `${ids}-employment`, nationId = `${ids}-nation`, trajectoryId = `${ids}-trajectory`;
   const fieldLabel = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"8px", display:"block" };
   const totalIncome = (+d.salary||0) + (+d.bonusAmount||0) + (+d.otherIncome||0) + (+d.dividendIncome||0);
-  const taxBand = totalIncome > 125140 ? "Additional rate (45%)" : totalIncome > 50270 ? "Higher rate (40%)" : "Basic rate (20%)";
+  // Scottish taxpayers: Scotland's own bands (tax.js scottishRate).
+  const taxBand = d.scottishTaxpayer === "yes" ?SCOTTISH_BAND_NAME[scottishRate(totalIncome)]
+    : totalIncome > 125140 ? "Additional rate (45%)" : totalIncome > 50270 ? "Higher rate (40%)" : "Basic rate (20%)";
   return (
     <div>
       <div style={{display:"flex",gap:"10px",marginBottom:"14px"}}>
@@ -89,7 +96,7 @@ export default function AboutYouFields({ d, set }) {
       <PillSlider value={d.salaryTrajectory} onChange={v => { set("salaryTrajectory", v); set("salaryGrowthPct", ""); set("payByYear", []); }} options={TRAJECTORY_OPTIONS} labelledBy={trajectoryId}/>
       <p style={{fontSize:"11.5px",color:MUT,marginTop:"6px",marginBottom:"18px"}}>{TRAJECTORY_HINT[d.salaryTrajectory] || "Used to project your salary over time."}</p>
 
-      <button type="button" onClick={() => setShowAdditionalIncome(v => !v)} aria-expanded={showAdditionalIncome} style={{background:"none",border:"none",color:GOLD_TEXT,fontSize:"13px",fontWeight:600,cursor:"pointer",padding:0,marginBottom:"16px",display:"block"}}>
+      <button type="button" onClick={() => setShowAdditionalIncome(v => !v)} aria-expanded={showAdditionalIncome} style={{background:"none",border:"none",color:GOLD_TEXT,fontSize:"13px",fontWeight:600,cursor:"pointer",padding:0,minHeight:"44px",marginBottom:"4px",display:"block"}}>
         {showAdditionalIncome ? "− Hide additional income" : "+ Add bonus / other income"}
       </button>
       {showAdditionalIncome && (

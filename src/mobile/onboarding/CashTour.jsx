@@ -107,19 +107,24 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
     // Gone since the tour began (the rates moved the figure, say): on.
     if (step.target && !el) { next(); return; }
     if (!el) { setRect(null); return; }
-    const measure = () => setRect(el.getBoundingClientRect());
+    // At most once a frame, however fast the scroll events come.
+    let frame = 0;
+    const measure = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => { frame = 0; setRect(el.getBoundingClientRect()); });
+    };
     const r = el.getBoundingClientRect();
     const fixed = getComputedStyle(el).position === "fixed";
     if (!fixed && (r.top < TOP || r.bottom > window.innerHeight - tabBar() - 200)) {
       window.scrollTo({ top: Math.max(0, r.top + window.scrollY - TOP), behavior: reduce ? "auto" : "smooth" });
     }
-    measure();
+    setRect(el.getBoundingClientRect());
     window.addEventListener("scroll", measure, { passive: true });
     window.addEventListener("resize", measure);
     // The part itself changing size (a new target on the fund stop).
     const resized = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
     resized?.observe(el);
-    return () => { window.removeEventListener("scroll", measure); window.removeEventListener("resize", measure); resized?.disconnect(); };
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", measure); window.removeEventListener("resize", measure); resized?.disconnect(); };
   }, [step]);
 
   useLayoutEffect(() => {
@@ -159,7 +164,7 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
 
   const frame = { background: WHITE, border: "1.5px solid rgba(22,47,36,0.12)", borderRadius: "18px", boxShadow: "0 10px 30px rgba(22,47,36,0.25)" };
   const card = { ...frame, padding: "18px 18px 14px", fontFamily: SANS };
-  const quiet = { background: "none", border: "none", padding: "8px 0", color: MUT, fontSize: "13px", fontWeight: 600, fontFamily: SANS, cursor: "pointer" };
+  const quiet = { background: "none", border: "none", padding: "8px 0", minHeight: "44px", color: MUT, fontSize: "13px", fontWeight: 600, fontFamily: SANS, cursor: "pointer" };
   const main = { background: G, color: WHITE, border: "none", borderRadius: "100px", padding: "11px 22px", fontSize: "14.5px", fontWeight: 700, fontFamily: SANS, cursor: "pointer" };
 
   let content;

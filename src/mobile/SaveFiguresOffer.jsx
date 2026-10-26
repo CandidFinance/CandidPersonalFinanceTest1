@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { X } from "lucide-react";
 import { MUT, TEXT, WHITE, ERROR_TEXT, CTA_BLUE, SERIF, CRITICAL, FIELD_BORDER } from "../design-tokens.js";
 import { validEmailShape } from "../lib/emailCheck.js";
@@ -29,6 +29,7 @@ export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = nul
   const [email, setEmail] = useState("");
   const [name, setName] = useState(d.name || "");
   const check = useEmailCheck(source);
+  const errorId = useId();
   if (validEmailShape(d.email)) return null;
 
   const submit = async e => {
@@ -46,7 +47,7 @@ export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = nul
     if (g.outcome === "signed-in") { window.location.reload(); return; }
     onEmail(g.email, name.trim() || g.name, "google");
   };
-  const field = {width:"100%",boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"12px 16px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE};
+  const field = {width:"100%",boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"12px 16px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE};
   return (
     <form onSubmit={submit} style={{position:"relative",background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginTop:"16px",...style}}>
       {onDismiss && (
@@ -61,13 +62,13 @@ export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = nul
       ) : <>
       <GoogleButton source={source} onCredential={withGoogle} divider/>
       <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
-        style={field}/>
+        aria-invalid={!!check.error} aria-describedby={check.error ? errorId : undefined} style={field}/>
       <input type="text" autoComplete="given-name" maxLength={40} value={name} onChange={e => setName(e.target.value)} placeholder="First name (optional)" aria-label="First name"
         style={{...field,marginTop:"8px"}}/>
       <button type="submit" disabled={check.busy} style={{width:"100%",marginTop:"10px",background:CTA_BLUE,opacity:check.busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:check.busy ? "not-allowed" : "pointer"}}>
         {check.busy ? "Checking…" : "Email me"}
       </button>
-      {check.error && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}
+      {check.error && <div id={errorId} role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}
       <DidYouMean suggestion={check.suggestion} onUse={to => check.use(to, setEmail)}/>
       <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>We'll send a link to confirm. No spam, never shared. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>
       </>}

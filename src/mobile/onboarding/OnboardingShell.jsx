@@ -9,7 +9,8 @@ import { G, MUT, TEXT, SERIF, SANS, WHITE, PROGRESS_GREEN } from "../../design-t
 // one full-width green button, and the way out ("Skip ...") centred at the
 // bottom. The motion between questions stays with each flow.
 
-const link = { background: "none", border: "none", padding: "6px 0", color: G, fontSize: "14px", fontWeight: 700, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "2px" };
+// 44px tall, however small the text, so it's easy to tap.
+const link = { background: "none", border: "none", padding: "6px 0", minHeight: "44px", color: G, fontSize: "14px", fontWeight: 700, fontFamily: SANS, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "2px" };
 
 // A whole screen of questions: at least the phone's height less the header
 // and tab bar, so the Skip link sits at the bottom.

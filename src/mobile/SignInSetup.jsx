@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
@@ -30,6 +30,7 @@ export function SignInMethods({ signIns, reload }) {
   const [editing, setEditing] = useState(false);
   const [linking, setLinking] = useState(false);
   const [pw, setPw] = useState("");
+  const errorId = useId();
   const email = accessInfo()?.email || "";
   const google = googleSignInAvailable();
   if (!signIns) return null;
@@ -48,7 +49,7 @@ export function SignInMethods({ signIns, reload }) {
   const row = { display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px", padding:"10px 0" };
   const name = { fontSize:"13.5px", fontWeight:700, color:TEXT };
   const note = { fontSize:"12px", color:MUT, marginTop:"2px" };
-  const action = { background:"none", border:"none", padding:0, color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer", whiteSpace:"nowrap" };
+  const action = { background:"none", border:"none", padding:0, minHeight:"44px", color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer", whiteSpace:"nowrap" };
 
   return (
     <div>
@@ -94,7 +95,8 @@ export function SignInMethods({ signIns, reload }) {
           {/* Lets a password manager (iCloud Keychain) save it against the right email. */}
           <input type="email" name="username" autoComplete="username" value={email} readOnly style={{display:"none"}}/>
           <input type="password" name="new-password" autoComplete="new-password" value={pw} onChange={e => setPw(e.target.value)} placeholder="At least 10 characters" aria-label="New password" autoFocus
-            style={{boxSizing:"border-box",width:"100%",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"11px 16px",fontSize:"14px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+            aria-invalid={!!error} aria-describedby={error ? errorId : undefined}
+            style={{boxSizing:"border-box",width:"100%",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"11px 16px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
           <div style={{display:"flex",gap:"8px"}}>
             <button type="button" onClick={() => { setEditing(false); setPw(""); setError(null); }} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
             <button type="submit" disabled={!!busy} style={{flex:1,background:G,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:"inherit"}}>{busy === "password" ? "Saving…" : "Save password"}</button>
@@ -102,7 +104,7 @@ export function SignInMethods({ signIns, reload }) {
         </form>
       )}
       {done && <div style={{fontSize:"12px",color:G,fontWeight:600}}>{done}</div>}
-      {error && <div role="alert" style={{fontSize:"12px",color:ERROR_TEXT}}>{error}</div>}
+      {error && <div id={errorId} role="alert" style={{fontSize:"12px",color:ERROR_TEXT}}>{error}</div>}
     </div>
   );
 }
@@ -153,6 +155,7 @@ function CreateSignIn({ email, onDone }) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [pw, setPw] = useState("");
+  const errorId = useId();
   const [google, googleGone] = useGoogleButtonShown();
   const canPasskey = passkeysSupported();
   // Over the whole app: focus moves into it and stays (no way past it, so
@@ -199,9 +202,10 @@ function CreateSignIn({ email, onDone }) {
           {/* Lets a password manager (iCloud Keychain) save it against the right email. */}
           <input type="email" name="username" autoComplete="username" value={email} readOnly style={{display:"none"}}/>
           <input type="password" name="new-password" autoComplete="new-password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Password, at least 10 characters" aria-label="New password"
-            style={{boxSizing:"border-box",width:"100%",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+            aria-invalid={!!error} aria-describedby={error ? errorId : undefined}
+            style={{boxSizing:"border-box",width:"100%",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"14px 18px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
           <button type="submit" disabled={!!busy} style={button(!canPasskey)}>{busy === "password" ? "Saving…" : "Create password"}</button>
-          {error && <div role="alert" style={{fontSize:"13px",color:ERROR_TEXT}}>{error}</div>}
+          {error && <div id={errorId} role="alert" style={{fontSize:"13px",color:ERROR_TEXT}}>{error}</div>}
         </form>
 
         <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6,margin:"28px 0 0"}}>

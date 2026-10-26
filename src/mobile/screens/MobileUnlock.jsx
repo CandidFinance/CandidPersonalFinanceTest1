@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import posthog from "posthog-js";
@@ -33,7 +33,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
   const amount = mod?.amount > 0 ? mod.amount : 0;
 
   // What's behind the frost, named, so it's clear what unlocking gets them.
-  const hidden = amount > 0 ? ["What's left on the table", "Your options, and what each one gets back"] : PREVIEW_LINES[moduleKey] || ["Where you stand", "What to keep an eye on"];
+  const hidden = amount > 0 ? ["What's left on the table", "Your options, and what each one gets back"] : PREVIEW_LINES[moduleKey] || ["Where you stand", "What each option is worth"];
   const cta = amount > 0 ? "Show me where it's going" : "Show me";
 
   const label = { fontSize:"10.5px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
@@ -96,7 +96,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
 const PREVIEW_LINES = {
   studentLoan: ["When your balance starts falling", "What you'll repay in all, and whether any is written off"],
   kids: ["The childcare help you could get", "What crossing £100,000 would cost"],
-  taxTrap: ["What the £100k trap costs you", "How to get back to £100k"],
+  taxTrap: ["What the £100k trap costs you", "What getting back under £100k is worth"],
 };
 
 // The first answer, for their email: one field, and whether they'd like to
@@ -105,6 +105,7 @@ function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
   const [email, setEmail] = useState(d.email || "");
   const [alerts, setAlerts] = useState(false);
   const check = useEmailCheck("unlock");
+  const errorId = useId();
   const submit = async e => {
     e.preventDefault();
     if (check.busy) return;
@@ -117,13 +118,14 @@ function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
       <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"4px 0 10px"}}>{EMAIL_WHY}</div>
       {invitedHere() && <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"-4px 0 10px"}}>Invited by a friend: your second module is unlocked for free.</div>}
       <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
-        style={{width:"100%",boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+        aria-invalid={!!check.error} aria-describedby={check.error ? errorId : undefined}
+        style={{width:"100%",boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"14px 18px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       <label style={{display:"flex",alignItems:"flex-start",gap:"10px",margin:"12px 2px 16px",fontSize:"13px",color:TEXT,lineHeight:1.45,cursor:"pointer"}}>
         <input type="checkbox" checked={alerts} onChange={e => setAlerts(e.target.checked)} style={{marginTop:"2px",accentColor:G}}/>
         Yes, email me when something changes: a better rate, a Budget change, or an allowance about to go unused.
       </label>
       <button type="submit" disabled={check.busy} style={primary(check.busy)}>{check.busy ? "Checking…" : cta}</button>
-      {check.error && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}
+      {check.error && <div id={errorId} role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,marginTop:"8px",textAlign:"center"}}>{check.error}</div>}
       <DidYouMean suggestion={check.suggestion} onUse={to => check.use(to, setEmail)}/>
       <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>We'll email a link to confirm it's yours. No spam, and never shared. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>
     </form>
@@ -173,6 +175,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
   const [done, setDone] = useState(null);
   const [soonOpen, setSoonOpen] = useState(false);
   const check = useEmailCheck("paywall");
+  const errorId = useId();
   useEffect(() => { posthog.capture("paywall_shown", { module: moduleKey }); }, [moduleKey]);
 
   const go = async () => {
@@ -212,7 +215,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
   // Each plan's name and price at the top, level across both cards (a
   // button centres its content, and the yearly card is taller).
   const card = on => ({ flex:1, display:"flex", flexDirection:"column", justifyContent:"flex-start", textAlign:"left", background:WHITE, border:`2px solid ${on ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"14px", padding:"12px 14px", cursor:"pointer", fontFamily:"inherit" });
-  const link = { background:"none", border:"none", padding:0, color:G, fontSize:"12.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
+  const link = { background:"none", border:"none", padding:0, minHeight:"44px", color:G, fontSize:"12.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
   const fine = { color:MUT, textDecoration:"underline", whiteSpace:"nowrap" };
   return (
     <div>
@@ -241,12 +244,13 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
       <button type="button" disabled={busy} onClick={go} style={{width:"100%",background:CTA_BLUE,opacity:busy ? 0.5 : 1,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer"}}>
         {busy && !panel ? "Opening checkout…" : "Subscribe and see where it's going"}
       </button>
-      {error && !panel && <div style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
+      {error && !panel && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
       {/* The other way in: a free month for inviting a friend
-          (InviteFriends.jsx), opened here. */}
+          (InviteFriends.jsx), opened here. Outlined, so Subscribe is the one
+          filled button. */}
       {validEmail(d.email) && (
         <button type="button" aria-expanded={panel === "invite"} onClick={() => { setPanel(p => p === "invite" ? null : "invite"); setDone(null); setError(null); check.clear(); }}
-          style={{width:"100%",marginTop:"10px",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"15px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+          style={{width:"100%",marginTop:"10px",background:WHITE,color:G,border:`1.5px solid ${G}`,borderRadius:"100px",padding:"13.5px",fontSize:"15.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
           Invite a friend, get a free month
         </button>
       )}
@@ -271,7 +275,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
           ))}
         </ul>
         <button type="button" onClick={() => setSoonOpen(o => !o)} aria-expanded={soonOpen}
-          style={{...listHead,background:"none",border:"none",padding:0,margin:"14px 0 0",display:"inline-flex",alignItems:"center",gap:"4px",cursor:"pointer",fontFamily:"inherit"}}>
+          style={{...listHead,background:"none",border:"none",padding:0,minHeight:"44px",margin:"0",display:"inline-flex",alignItems:"center",gap:"4px",cursor:"pointer",fontFamily:"inherit"}}>
           Coming soon<ChevronDown size={13} style={{transform:soonOpen ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
         </button>
         {soonOpen && (
@@ -285,7 +289,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
         )}
       </div>
 
-      <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",columnGap:"18px",rowGap:"6px",marginTop:"16px"}}>
+      <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",columnGap:"18px",rowGap:"0",marginTop:"4px"}}>
         <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); check.clear(); }}>Already subscribed?</button>
         <button type="button" style={link} onClick={() => { setPanel(p => p === "alerts" ? null : "alerts"); setDone(null); setError(null); check.clear(); }}>Get rate alerts</button>
       </div>
@@ -301,13 +305,14 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
               {panel === "restore" ? "Enter the email you subscribed with, and we'll send you a sign-in link." : "We'll email you when you could be keeping more: a better rate, or an allowance going unused."}
             </div>
             <div style={{display:"flex",gap:"8px"}}>
-              <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
-                style={{flex:1,minWidth:0,boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"12px 16px",fontSize:"14px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+              <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
+                aria-invalid={!!(error || check.error)} aria-describedby={error || check.error ? errorId : undefined}
+                style={{flex:1,minWidth:0,boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"12px 16px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
               <button type="submit" disabled={busy || check.busy} style={{background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"0 16px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
                 {panel === "restore" ? "Send link" : "Sign up"}
               </button>
             </div>
-            {(error || check.error) && <div role="alert" style={{fontSize:"12px",color:ERROR_TEXT,margin:"6px 0 0 6px"}}>{error || check.error}</div>}
+            {(error || check.error) && <div id={errorId} role="alert" style={{fontSize:"12px",color:ERROR_TEXT,margin:"6px 0 0 6px"}}>{error || check.error}</div>}
             {panel === "alerts" && <DidYouMean suggestion={check.suggestion} onUse={to => check.use(to, setEmail)}/>}
             {panel === "alerts" && <p style={{fontSize:"11.5px",color:MUT,margin:"8px 0 0"}}>Unsubscribe any time. <a href="/privacy.html" target="_blank" rel="noreferrer" style={{color:MUT}}>Privacy policy</a></p>}
           </form>

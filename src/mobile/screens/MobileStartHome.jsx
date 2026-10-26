@@ -1,9 +1,10 @@
-import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../design-tokens.js";
 import { moduleOrder, moduleDone, scorePicks, pitchFor, SCORED_MODULES } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { mobileGreeting } from "../copy.js";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
 import { moduleEstimate } from "../../lib/crossModule.js";
+import { ProgressLine } from "../onboarding/OnboardingShell.jsx";
 
 // Home before the Candid score appears: the modules to start with, their
 // picks from the entry first. The score waits until every pick is answered
@@ -43,24 +44,19 @@ export default function MobileStartHome({ d, m, set, onStartModule }) {
         {mobileGreeting(d)}
       </h1>
 
-      {/* The score's place, held until every pick is answered. The bar is
-          its one progress indicator. */}
+      {/* The score's place, held until every pick is answered. The progress
+          line is its one indicator (screen readers get the count). */}
       <div style={label}>Candid Score</div>
       <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
         {needsScored
           ? "Your Candid score covers your savings, investments, pension and student loan. Finish one of them to see it."
           : `Finish ${listText(left.map(k => moduleMeta(k).title))} to see your Candid score.`}
       </p>
-      <div style={{display:"flex",alignItems:"center",gap:"10px",marginTop:"10px"}}>
-        <div style={{flex:1,height:"5px",borderRadius:"100px",background:CDARK,overflow:"hidden"}}>
-          <div style={{height:"100%",borderRadius:"100px",background:G,width:`${(reached / target) * 100}%`,transition:"width 0.4s ease"}}/>
-        </div>
-        <span style={{fontSize:"11px",color:MUT,whiteSpace:"nowrap"}}>{reached} of {target} done</span>
-      </div>
+      <ProgressLine position={reached} total={target} style={{marginTop:"10px"}}/>
 
       {startMeta && (
         <div style={{marginTop:"24px"}}>
-          <div style={label}>Start here</div>
+          <div style={label}>Next module</div>
           <div style={{...card,padding:"18px",marginTop:"10px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
               {iconTile(startMeta.icon)}
@@ -75,7 +71,7 @@ export default function MobileStartHome({ d, m, set, onStartModule }) {
       )}
 
       <div style={{marginTop:"24px"}}>
-        <div style={label}>{startMeta ? "Then" : "Your modules"}</div>
+        <div style={label}>{startMeta ? "Your other modules" : "Your modules"}</div>
         <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
           {rest.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} done={done.includes(key)} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
         </div>
