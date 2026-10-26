@@ -3,7 +3,7 @@ import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom"
 import posthog from "posthog-js";
 import { topRate } from "./lib/savingsRates.js";
 import { calcMetrics } from "./lib/metrics.js";
-import { MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, calcCandidScore, baselinePatch } from "./lib/moduleStatus.js";
+import { MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, calcCandidScore, baselinePatch, onTrackKeys, droppedOffTrack } from "./lib/moduleStatus.js";
 import { capField } from "./lib/onboarding.js";
 import { G, WHITE, MUT, FONT_SIZE } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
@@ -421,6 +421,19 @@ export default function AppShell() {
     const next = baselinePatch(d, statuses);
     if (next) set("moduleBaselines", next);
   }, [statuses]);
+  // A reviewed module that's gone from on track back to needing action
+  // (better rates, a new tax year, a changed answer) loses its reviewed
+  // tick, so the new gap reads as not yet looked at. Compared with the
+  // modules on track last time (`d.onTrackLast`, kept with the answers, so a
+  // change while away counts too). Only once the savings rates are in, so
+  // Cash isn't judged without them.
+  useEffect(() => {
+    if (savingsRates === null) return;
+    const now = onTrackKeys(d, m, statuses);
+    const dropped = droppedOffTrack(d.onTrackLast, now);
+    if (dropped.length) setCompletedModules(prev => prev.some(k => dropped.includes(k)) ? prev.filter(k => !dropped.includes(k)) : prev);
+    if ((d.onTrackLast || []).join() !== now.join() || !d.onTrackLast) set("onTrackLast", now);
+  }, [statuses, savingsRates]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Property inputs → the report row. Only edits made on the Property screen
   // are sent (not the values already there when it opens), once they've

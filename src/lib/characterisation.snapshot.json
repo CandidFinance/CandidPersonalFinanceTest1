@@ -98,7 +98,8 @@
      "impact": 73,
      "impactLabel": "£73/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
-     "amount": 73
+     "amount": 73,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -137,6 +138,7 @@
      "impactLabel": "£618/yr lost to low savings rates",
      "amount": 618,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -149,6 +151,7 @@
      "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
      "amount": 432,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -161,6 +164,7 @@
      "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -173,6 +177,7 @@
      "impactLabel": "£73/yr lost to loan interest above what savings pay",
      "amount": 73,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -185,6 +190,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -197,6 +203,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -209,6 +216,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -221,6 +229,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -236,6 +245,7 @@
       "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
       "amount": 1440,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -251,6 +261,7 @@
       "impactLabel": "£618/yr lost to low savings rates",
       "amount": 618,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -266,6 +277,7 @@
       "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
       "amount": 432,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -281,6 +293,7 @@
       "impactLabel": "£73/yr lost to loan interest above what savings pay",
       "amount": 73,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -3061,7 +3074,8 @@
      "impact": 24,
      "impactLabel": "£24/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
-     "amount": 24
+     "amount": 24,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -3100,6 +3114,7 @@
      "impactLabel": "£623/yr lost to low savings rates",
      "amount": 623,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -3112,6 +3127,7 @@
      "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
      "amount": 432,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -3124,6 +3140,7 @@
      "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
      "amount": 1440,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -3136,6 +3153,7 @@
      "impactLabel": "£24/yr lost to loan interest above what savings pay",
      "amount": 24,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -3148,6 +3166,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -3160,6 +3179,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -3172,6 +3192,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -3184,6 +3205,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -3199,6 +3221,7 @@
       "impactLabel": "£1,440/yr of employer match left on the table + up to £2,000 of avoidable tax on your bonus",
       "amount": 1440,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -3214,6 +3237,7 @@
       "impactLabel": "£623/yr lost to low savings rates",
       "amount": 623,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -3229,6 +3253,7 @@
       "impactLabel": "£432 of avoidable capital gains tax, and £15,000 of ISA allowance unused",
       "amount": 432,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -3244,10 +3269,11 @@
       "impactLabel": "£24/yr lost to loan interest above what savings pay",
       "amount": 24,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
-      "onTrack": false
+      "onTrack": true
      }
     ],
     "modulesWithRec": [
@@ -4204,7 +4230,9 @@
       "line": "£24/yr lost to loan interest above what savings pay"
      }
     ],
-    "onTrack": []
+    "onTrack": [
+     "Student loan"
+    ]
    },
    "drawdown": {
     "phased": {
@@ -5811,6 +5839,7 @@
      "impactLabel": "£204/yr lost to low savings rates",
      "amount": 204,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -5823,6 +5852,7 @@
      "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 144,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -5835,6 +5865,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -5847,6 +5878,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -5859,6 +5891,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -5871,6 +5904,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -5883,6 +5917,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -5895,6 +5930,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -5910,6 +5946,7 @@
       "impactLabel": "£204/yr lost to low savings rates",
       "amount": 204,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -5925,6 +5962,7 @@
       "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
       "amount": 144,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -5940,6 +5978,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -8406,6 +8445,7 @@
      "impactLabel": "£204/yr lost to low savings rates",
      "amount": 204,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -8418,6 +8458,7 @@
      "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 144,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -8430,6 +8471,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -8442,6 +8484,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -8454,6 +8497,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -8466,6 +8510,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -8478,6 +8523,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -8490,6 +8536,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -8505,6 +8552,7 @@
       "impactLabel": "£204/yr lost to low savings rates",
       "amount": 204,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -8520,6 +8568,7 @@
       "impactLabel": "£144 of avoidable capital gains tax; this year's allowance ends 5 April",
       "amount": 144,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -8535,6 +8584,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -10831,6 +10881,7 @@
      "impactLabel": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "amount": 1070,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -10843,6 +10894,7 @@
      "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
      "amount": 720,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -10855,6 +10907,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -10867,6 +10920,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -10879,6 +10933,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -10891,6 +10946,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -10903,6 +10959,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -10915,6 +10972,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -10930,6 +10988,7 @@
       "impactLabel": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
       "amount": 1070,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -10945,6 +11004,7 @@
       "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
       "amount": 720,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -10960,6 +11020,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -13475,6 +13536,7 @@
      "impactLabel": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
      "amount": 1185,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -13487,6 +13549,7 @@
      "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
      "amount": 720,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -13499,6 +13562,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -13511,6 +13575,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -13523,6 +13588,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -13535,6 +13601,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -13547,6 +13614,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -13559,6 +13627,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -13574,6 +13643,7 @@
       "impactLabel": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
       "amount": 1185,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -13589,6 +13659,7 @@
       "impactLabel": "£720 of avoidable capital gains tax, and £17,000 of ISA allowance unused",
       "amount": 720,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -13604,6 +13675,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -15904,6 +15976,7 @@
      "impactLabel": "£6,700 short of your 6-month emergency fund",
      "amount": 24,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -15916,6 +15989,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -15928,6 +16002,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -15940,6 +16015,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -15952,6 +16028,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -15964,6 +16041,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -15976,6 +16054,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -15988,6 +16067,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -16003,6 +16083,7 @@
       "impactLabel": "£6,700 short of your 6-month emergency fund",
       "amount": 24,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -17461,6 +17542,7 @@
      "impactLabel": "£6,700 short of your 6-month emergency fund",
      "amount": 25,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -17473,6 +17555,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -17485,6 +17568,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -17497,6 +17581,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -17509,6 +17594,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -17521,6 +17607,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -17533,6 +17620,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -17545,6 +17633,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -17560,6 +17649,7 @@
       "impactLabel": "£6,700 short of your 6-month emergency fund",
       "amount": 25,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -18819,7 +18909,8 @@
      "impact": 0,
      "impactLabel": null,
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -18858,6 +18949,7 @@
      "impactLabel": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "amount": 1084,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -18870,6 +18962,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -18882,6 +18975,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -18894,6 +18988,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -18906,6 +19001,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -18918,6 +19014,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -18930,6 +19027,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -18942,6 +19040,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -18957,6 +19056,7 @@
       "impactLabel": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
       "amount": 1084,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -18972,6 +19072,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -18987,6 +19088,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -19002,6 +19104,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -21606,7 +21709,8 @@
      "impact": 0,
      "impactLabel": null,
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -21645,6 +21749,7 @@
      "impactLabel": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
      "amount": 984,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -21657,6 +21762,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -21669,6 +21775,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -21681,6 +21788,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -21693,6 +21801,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -21705,6 +21814,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -21717,6 +21827,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -21729,6 +21840,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -21744,6 +21856,7 @@
       "impactLabel": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
       "amount": 984,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -21759,6 +21872,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -21774,6 +21888,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -21789,6 +21904,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -24167,7 +24283,8 @@
      "impact": 0,
      "impactLabel": null,
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -24206,6 +24323,7 @@
      "impactLabel": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "amount": 975,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -24218,6 +24336,7 @@
      "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 720,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -24230,6 +24349,7 @@
      "impactLabel": "Payments in may go over your reduced £38,000 pension annual allowance",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -24242,6 +24362,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -24254,6 +24375,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -24266,6 +24388,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -24278,6 +24401,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -24290,6 +24414,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -24305,6 +24430,7 @@
       "impactLabel": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
       "amount": 975,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -24320,6 +24446,7 @@
       "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
       "amount": 720,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -24335,6 +24462,7 @@
       "impactLabel": "Payments in may go over your reduced £38,000 pension annual allowance",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -26771,7 +26899,8 @@
      "impact": 0,
      "impactLabel": null,
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -26810,6 +26939,7 @@
      "impactLabel": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
      "amount": 675,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -26822,6 +26952,7 @@
      "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
      "amount": 720,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -26834,6 +26965,7 @@
      "impactLabel": "Payments in may go over your reduced £38,000 pension annual allowance",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -26846,6 +26978,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -26858,6 +26991,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -26870,6 +27004,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -26882,6 +27017,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -26894,6 +27030,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -26909,6 +27046,7 @@
       "impactLabel": "£720 of avoidable capital gains tax; this year's allowance ends 5 April",
       "amount": 720,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -26924,6 +27062,7 @@
       "impactLabel": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
       "amount": 675,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -26939,6 +27078,7 @@
       "impactLabel": "Payments in may go over your reduced £38,000 pension annual allowance",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -29289,6 +29429,7 @@
      "impactLabel": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "amount": 908,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -29301,6 +29442,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -29313,6 +29455,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -29325,6 +29468,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -29337,6 +29481,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -29349,6 +29494,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -29361,6 +29507,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -29373,6 +29520,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -29388,6 +29536,7 @@
       "impactLabel": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
       "amount": 908,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -29403,6 +29552,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -29418,6 +29568,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -31938,6 +32089,7 @@
      "impactLabel": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
      "amount": 950,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -31950,6 +32102,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -31962,6 +32115,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -31974,6 +32128,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -31986,6 +32141,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -31998,6 +32154,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -32010,6 +32167,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -32022,6 +32180,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -32037,6 +32196,7 @@
       "impactLabel": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
       "amount": 950,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -32052,6 +32212,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -32067,6 +32228,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -34303,7 +34465,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -34342,6 +34505,7 @@
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 222,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -34354,6 +34518,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -34366,6 +34531,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -34378,6 +34544,7 @@
      "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -34390,6 +34557,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -34402,6 +34570,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -34414,6 +34583,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -34426,6 +34596,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -34441,6 +34612,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 222,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -34456,6 +34628,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -34471,6 +34644,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -34486,6 +34660,7 @@
       "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -37602,7 +37777,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -37641,6 +37817,7 @@
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 250,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -37653,6 +37830,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -37665,6 +37843,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -37677,6 +37856,7 @@
      "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -37689,6 +37869,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -37701,6 +37882,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -37713,6 +37895,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -37725,6 +37908,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -37740,6 +37924,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 250,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -37755,6 +37940,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -37770,6 +37956,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -37785,6 +37972,7 @@
       "impactLabel": "Balance growing by £1,064/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -40732,7 +40920,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -40771,6 +40960,7 @@
      "impactLabel": "£5,400 short of your 6-month emergency fund",
      "amount": 37,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -40783,6 +40973,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -40795,6 +40986,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -40807,6 +40999,7 @@
      "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -40819,6 +41012,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -40831,6 +41025,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -40843,6 +41038,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -40855,6 +41051,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -40870,6 +41067,7 @@
       "impactLabel": "£5,400 short of your 6-month emergency fund",
       "amount": 37,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -40885,6 +41083,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -40900,6 +41099,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -40915,6 +41115,7 @@
       "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -44412,7 +44613,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -44451,6 +44653,7 @@
      "impactLabel": "£5,400 short of your 6-month emergency fund",
      "amount": 45,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -44463,6 +44666,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -44475,6 +44679,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -44487,6 +44692,7 @@
      "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -44499,6 +44705,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -44511,6 +44718,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -44523,6 +44731,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -44535,6 +44744,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -44550,6 +44760,7 @@
       "impactLabel": "£5,400 short of your 6-month emergency fund",
       "amount": 45,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -44565,6 +44776,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -44580,6 +44792,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -44595,6 +44808,7 @@
       "impactLabel": "Balance growing by £1,739/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -47931,7 +48145,8 @@
      "impact": 37,
      "impactLabel": "£37/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
-     "amount": 37
+     "amount": 37,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -47970,6 +48185,7 @@
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 222,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -47982,6 +48198,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -47994,6 +48211,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -48006,6 +48224,7 @@
      "impactLabel": "£37/yr lost to loan interest above what savings pay",
      "amount": 37,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -48018,6 +48237,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -48030,6 +48250,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -48042,6 +48263,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -48054,6 +48276,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -48069,6 +48292,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 222,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -48084,10 +48308,11 @@
       "impactLabel": "£37/yr lost to loan interest above what savings pay",
       "amount": 37,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
-      "onTrack": false
+      "onTrack": true
      },
      {
       "key": "investments",
@@ -48099,6 +48324,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -48114,6 +48340,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -49188,6 +49415,7 @@
      }
     ],
     "onTrack": [
+     "Student loan",
      "Pension"
     ]
    },
@@ -50818,7 +51046,8 @@
      "impact": 6,
      "impactLabel": "£6/yr lost to loan interest above what savings pay",
      "belowThreshold": false,
-     "amount": 6
+     "amount": 6,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -50857,6 +51086,7 @@
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 250,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -50869,6 +51099,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -50881,6 +51112,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -50893,6 +51125,7 @@
      "impactLabel": "£6/yr lost to loan interest above what savings pay",
      "amount": 6,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -50905,6 +51138,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -50917,6 +51151,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -50929,6 +51164,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -50941,6 +51177,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -50956,6 +51193,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 250,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -50971,10 +51209,11 @@
       "impactLabel": "£6/yr lost to loan interest above what savings pay",
       "amount": 6,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
-      "onTrack": false
+      "onTrack": true
      },
      {
       "key": "investments",
@@ -50986,6 +51225,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -51001,6 +51241,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -51948,6 +52189,7 @@
      }
     ],
     "onTrack": [
+     "Student loan",
      "Pension"
     ]
    },
@@ -53536,7 +53778,8 @@
      "impact": 0,
      "impactLabel": null,
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -53575,6 +53818,7 @@
      "impactLabel": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "amount": 312,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -53587,6 +53831,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -53599,6 +53844,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -53611,6 +53857,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -53623,6 +53870,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -53635,6 +53883,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -53647,6 +53896,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -53659,6 +53909,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -53674,6 +53925,7 @@
       "impactLabel": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
       "amount": 312,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -53689,6 +53941,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -53704,6 +53957,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -56231,7 +56485,8 @@
      "impact": 0,
      "impactLabel": null,
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -56270,6 +56525,7 @@
      "impactLabel": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
      "amount": 44,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -56282,6 +56538,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -56294,6 +56551,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -56306,6 +56564,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -56318,6 +56577,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -56330,6 +56590,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -56342,6 +56603,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -56354,6 +56616,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -56369,6 +56632,7 @@
       "impactLabel": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
       "amount": 44,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -56384,6 +56648,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -56399,6 +56664,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -58748,6 +59014,7 @@
      "impactLabel": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "amount": 1008,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -58760,6 +59027,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -58772,6 +59040,7 @@
      "impactLabel": "£75,000 could be taken tax-free",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -58784,6 +59053,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -58796,6 +59066,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -58808,6 +59079,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -58820,6 +59092,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -58832,6 +59105,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -58847,6 +59121,7 @@
       "impactLabel": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
       "amount": 1008,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -58862,6 +59137,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -58877,6 +59153,7 @@
       "impactLabel": "£75,000 could be taken tax-free",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -61389,6 +61666,7 @@
      "impactLabel": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
      "amount": 1071,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -61401,6 +61679,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -61413,6 +61692,7 @@
      "impactLabel": "£75,000 could be taken tax-free",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -61425,6 +61705,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -61437,6 +61718,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -61449,6 +61731,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -61461,6 +61744,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -61473,6 +61757,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -61488,6 +61773,7 @@
       "impactLabel": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
       "amount": 1071,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -61503,6 +61789,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -61518,6 +61805,7 @@
       "impactLabel": "£75,000 could be taken tax-free",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -63784,6 +64072,7 @@
      "impactLabel": "£759/yr lost to low savings rates",
      "amount": 759,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -63796,6 +64085,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -63808,6 +64098,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -63820,6 +64111,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -63832,6 +64124,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -63844,6 +64137,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -63856,6 +64150,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -63868,6 +64163,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -63883,6 +64179,7 @@
       "impactLabel": "£759/yr lost to low savings rates",
       "amount": 759,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -63898,6 +64195,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -66427,6 +66725,7 @@
      "impactLabel": "£801/yr lost to low savings rates",
      "amount": 801,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -66439,6 +66738,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -66451,6 +66751,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -66463,6 +66764,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -66475,6 +66777,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -66487,6 +66790,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -66499,6 +66803,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -66511,6 +66816,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -66526,6 +66832,7 @@
       "impactLabel": "£801/yr lost to low savings rates",
       "amount": 801,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -66541,6 +66848,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -68826,6 +69134,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -68838,6 +69147,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -68850,6 +69160,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -68862,6 +69173,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -68874,6 +69186,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -68886,6 +69199,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -68898,6 +69212,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -68910,6 +69225,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -68925,6 +69241,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -70355,6 +70672,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -70367,6 +70685,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -70379,6 +70698,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -70391,6 +70711,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -70403,6 +70724,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -70415,6 +70737,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -70427,6 +70750,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -70439,6 +70763,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -70454,6 +70779,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -71715,6 +72041,7 @@
      "impactLabel": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "amount": 508,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -71727,6 +72054,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -71739,6 +72067,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -71751,6 +72080,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -71763,6 +72093,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -71775,6 +72106,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -71787,6 +72119,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -71799,6 +72132,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -71814,6 +72148,7 @@
       "impactLabel": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
       "amount": 508,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -71829,6 +72164,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -74775,6 +75111,7 @@
      "impactLabel": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
      "amount": 272,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -74787,6 +75124,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -74799,6 +75137,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -74811,6 +75150,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -74823,6 +75163,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -74835,6 +75176,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -74847,6 +75189,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -74859,6 +75202,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -74874,6 +75218,7 @@
       "impactLabel": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
       "amount": 272,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -74889,6 +75234,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -77582,7 +77928,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -77621,6 +77968,7 @@
      "impactLabel": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "amount": 1161,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -77633,6 +77981,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -77645,6 +77994,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -77657,6 +78007,7 @@
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -77669,6 +78020,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -77681,6 +78033,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -77693,6 +78046,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -77705,6 +78059,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -77720,6 +78075,7 @@
       "impactLabel": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
       "amount": 1161,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -77735,6 +78091,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -77750,6 +78107,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -77765,6 +78123,7 @@
       "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -81090,7 +81449,8 @@
      "impact": 0,
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
      "belowThreshold": false,
-     "amount": 0
+     "amount": 0,
+     "amountOnly": true
     },
     "mortgage": {
      "status": "na",
@@ -81129,6 +81489,7 @@
      "impactLabel": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
      "amount": 989,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -81141,6 +81502,7 @@
      "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -81153,6 +81515,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -81165,6 +81528,7 @@
      "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": true,
      "elsewhere": null
     },
     "mortgage": {
@@ -81177,6 +81541,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -81189,6 +81554,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -81201,6 +81567,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -81213,6 +81580,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -81228,6 +81596,7 @@
       "impactLabel": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
       "amount": 989,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -81243,6 +81612,7 @@
       "impactLabel": "£15,000 of this year's ISA allowance unused, lost on 5 April",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -81258,6 +81628,7 @@
       "impactLabel": null,
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -81273,6 +81644,7 @@
       "impactLabel": "Balance growing by £222/yr, but it'll be written off before you clear it",
       "amount": 0,
       "amountIsLumpSum": false,
+      "amountOnly": true,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -84422,6 +84794,7 @@
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 222,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -84434,6 +84807,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -84446,6 +84820,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -84458,6 +84833,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -84470,6 +84846,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -84482,6 +84859,7 @@
      "impactLabel": "£0 interest remaining at 11.9%",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -84494,6 +84872,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -84506,6 +84885,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -84521,6 +84901,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 222,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,
@@ -86966,6 +87347,7 @@
      "impactLabel": "£800 short of your 6-month emergency fund",
      "amount": 250,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "investments": {
@@ -86978,6 +87360,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "pension": {
@@ -86990,6 +87373,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "studentLoan": {
@@ -87002,6 +87386,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "mortgage": {
@@ -87014,6 +87399,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "personalLoan": {
@@ -87026,6 +87412,7 @@
      "impactLabel": "£0 interest remaining at 11.9%",
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "kids": {
@@ -87038,6 +87425,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     },
     "taxTrap": {
@@ -87050,6 +87438,7 @@
      "impactLabel": null,
      "amount": 0,
      "amountIsLumpSum": false,
+     "amountOnly": false,
      "elsewhere": null
     }
    },
@@ -87065,6 +87454,7 @@
       "impactLabel": "£800 short of your 6-month emergency fund",
       "amount": 250,
       "amountIsLumpSum": false,
+      "amountOnly": false,
       "elsewhere": null,
       "banked": 0,
       "pending": 0,

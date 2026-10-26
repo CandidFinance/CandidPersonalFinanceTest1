@@ -189,7 +189,8 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
               // Priority reads through the headline figure and status dot, both
               // coloured by statusColor. The module icon stays neutral (module
               // identity, not urgency).
-              const statusColor = onTrack ? PROGRESS_GREEN : reviewed || mm.elsewhere ? MUT : (SC[mm.status] || MUT);
+              // "ok" but £50+ still on it reads "Action needed", so it's coloured as attention.
+              const statusColor = onTrack ? PROGRESS_GREEN : reviewed || mm.elsewhere ? MUT : (SC[mm.status === "ok" ? "attention" : mm.status] || MUT);
               const tileStyle = onTrack ? INNER_ON_TRACK : reviewed ? INNER_REVIEWED : INNER;
               const isOpen = expandedKey === mm.key;
               const insights = isOpen ? moduleInsights(mm, d, m) : [];

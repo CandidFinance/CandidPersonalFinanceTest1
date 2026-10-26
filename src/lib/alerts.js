@@ -18,7 +18,8 @@
 //    something to use before 5 April: the £100k trap, Child Benefit kept,
 //    capital gains, ISA allowance.
 //  - bonus: the month before a bonus is paid (February if the month isn't
-//    known): what paying it into a pension could save.
+//    known): what paying it into a pension could save. Not once they've
+//    marked it done or not for them this tax year.
 //  - newTaxYear: 10 to 30 April: is your pay still £X?
 //  - rates: today's best rates would earn £100+ a year more after tax than
 //    their accounts. At most every 30 days, and only when the gain has moved
@@ -32,6 +33,7 @@ import { rollTaxYear, taxYearOf } from "./taxYear.js";
 import { calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, childBenefitCharge } from "./pension.js";
 import { cashOpportunity } from "./assist.js";
 import { childcareSupport } from "./childcare.js";
+import { choiceFor, CHOICE_IDS } from "./opportunityChoices.js";
 import { fmt } from "./format.js";
 import { renderEmail } from "./emailLayout.js";
 
@@ -130,6 +132,8 @@ function daysTo5April(today) {
 
 function bonus(d, m, today) {
   if (d.employmentStatus !== "employed" || !(+d.bonusAmount > 0)) return null;
+  // Already done, or set aside, this tax year (opportunityChoices.js).
+  if (choiceFor(d, CHOICE_IDS.bonus, today)) return null;
   const paid = +d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3;
   // The month before it's paid: there's time to arrange it with payroll.
   const before = paid === 1 ? 12 : paid - 1;

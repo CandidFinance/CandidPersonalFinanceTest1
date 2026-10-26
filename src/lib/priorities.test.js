@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { whatToDoFirst, scoreHeadline, onTrackModules } from "./priorities.js";
 import { calcMetrics } from "./metrics.js";
-import { computeModuleStatuses, getModuleSummary, isOnTrack, MODULE_META, ON_TRACK_LINE } from "./moduleStatus.js";
+import { computeModuleStatuses, getModuleSummary, isOnTrack, onTrackKeys, droppedOffTrack, MODULE_META, ON_TRACK_LINE } from "./moduleStatus.js";
 
 const profile = {
   selectedModules: ["cash", "pension"], salary: "45000", monthlyExpenses: "2000",
@@ -48,11 +48,29 @@ test("modules with nothing to act on read as on track", () => {
   assert.ok(onTrackModules(d, m, statuses).includes("Pension"));
 });
 
-test("a change confirmed made puts a module on track, even with something still to act on", () => {
+test("on track only with under £50 a year left, however much has been banked", () => {
   const { d, m, statuses } = run(profile);
-  assert.ok(!onTrackModules(d, m, statuses).includes("Pension"));
+  // Employer match still missed, with a change banked: not on track.
   const acted = { ...d, moduleBaselines: { pension: { amount: 900, answers: "", banked: 300 } } };
-  assert.ok(onTrackModules(acted, m, statuses).includes("Pension"));
-  assert.equal(isOnTrack({ status: "attention" }, 0), false);
-  assert.equal(isOnTrack({ status: "attention", elsewhere: "taxTrap" }, 300), false);
+  assert.ok(!onTrackModules(acted, m, statuses).includes("Pension"));
+  // "ok" with £50+ left isn't on track; under £50 is.
+  assert.equal(isOnTrack({ status: "ok", amount: 150 }), false);
+  assert.equal(isOnTrack({ status: "ok", amount: 49 }), true);
+  // A status from the £ alone (Student loan) is on track under the floor;
+  // one with reasons that carry no £ isn't.
+  assert.equal(isOnTrack({ status: "attention", amount: 30, amountOnly: true }), true);
+  assert.equal(isOnTrack({ status: "attention", amount: 30 }), false);
+  assert.equal(isOnTrack({ status: "attention", amount: 0 }), false);
+  assert.equal(isOnTrack({ status: "ok", amount: 0, elsewhere: "taxTrap" }), false);
+});
+
+test("a module that was on track and isn't now is the one whose reviewed tick goes", () => {
+  const onTrack = run({ ...profile, myContribution: "5" });
+  const short = run(profile);
+  const before = onTrackKeys(onTrack.d, onTrack.m, onTrack.statuses);
+  const after = onTrackKeys(short.d, short.m, short.statuses);
+  assert.ok(before.includes("pension"));
+  assert.deepEqual(droppedOffTrack(before, after), ["pension"]);
+  // Nothing recorded yet: nothing dropped.
+  assert.deepEqual(droppedOffTrack(undefined, after), []);
 });

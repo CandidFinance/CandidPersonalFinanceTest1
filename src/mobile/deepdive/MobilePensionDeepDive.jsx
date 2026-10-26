@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { pensionReveal } from "../../lib/moduleReveal.js";
 import { childcareSupport } from "../../lib/childcare.js";
-import { pensionOutlook, cliffEdge } from "../../lib/crossModule.js";
+import { pensionOutlook, cliffEdge, retirementAdequacy } from "../../lib/crossModule.js";
+import { choiceFor, CHOICE_IDS } from "../../lib/opportunityChoices.js";
+import OpportunityChoice from "../OpportunityChoice.jsx";
 import { AlertTriangle, PartyPopper, Banknote, Check, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -146,6 +148,12 @@ export default function MobilePensionDeepDive({ d, m, set }) {
 
   const hasStatedBonus = (+d.bonusAmount||0) > 0;
   const bonusSacrifice = calcBonusSacrificePotential(d, m);
+  // Done or set aside this tax year (opportunityChoices.js).
+  const bonusChoice = choiceFor(d, CHOICE_IDS.bonus);
+  // Short of the retirement income they'd like: the same 5% margin as the
+  // module's status (computeModuleStatuses).
+  const adequacy = retirementAdequacy(d, m);
+  const showRetirementGap = !!adequacy && adequacy.gap > adequacy.target * 0.05;
 
   const products = getModuleProducts("pension", d, m);
 
@@ -303,7 +311,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
               </div>
             ))}
           </div>
-          {bonusSacrifice.beyondTaper > 0 && (
+          {bonusSacrifice.beyondTaper > 0 && !bonusChoice && (
             <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
               Plus up to {fmt(bonusSacrifice.beyondTaper)} potential from sacrificing your full bonus — see below.
             </div>
@@ -313,6 +321,21 @@ export default function MobilePensionDeepDive({ d, m, set }) {
 
       {/* The hero: how the pot could grow to retirement. */}
       <GrowthChart showExplore={showExplore} d={d} m={m} showTrajInfo={showTrajInfo} setShowTrajInfo={setShowTrajInfo} extraPct={extraPct} setExtraPct={setExtraPct} cliff={cliff} setAheadOpen={setAheadOpen}/>
+
+      {/* Short of the retirement income they'd like, with their own answer
+          to it (OpportunityChoice). */}
+      {showRetirementGap && (
+        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
+          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>Retirement income</div>
+          {set && <OpportunityChoice id={CHOICE_IDS.retirementGap} d={d} set={set}/>}
+          <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0,fontWeight:600}}>
+            About {fmt(adequacy.gap)} a year short of the {fmt(adequacy.target)} a year you'd like.
+          </p>
+          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:"4px 0 0"}}>
+            On your figures you'd have about {fmt(adequacy.net)} a year after tax, from your pension and a full State Pension, in today's money.
+          </p>
+        </div>
+      )}
 
       <EmployerMatchTile showMatchWin={showMatchWin} win1Num={win1Num} m={m} d={d} trPct={trPct} contributing={contributing} rowStyle={rowStyle} set={set} taxFreeCash={taxFreeCash}/>
 
@@ -382,7 +405,7 @@ export default function MobilePensionDeepDive({ d, m, set }) {
 
       <CarryForwardTile cf={cf} win3Num={win3Num} setCfYears={setCfYears} rowStyle={rowStyle} aa={aa}/>
 
-      <BonusTile hasStatedBonus={hasStatedBonus} win4Num={win4Num} bonusSacrifice={bonusSacrifice} d={d} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m}/>
+      <BonusTile hasStatedBonus={hasStatedBonus} win4Num={win4Num} bonusSacrifice={bonusSacrifice} d={d} set={set} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m}/>
 
 
         </MobileWinTile>
@@ -625,9 +648,12 @@ function CarryForwardTile({ cf, win3Num, setCfYears, rowStyle, aa }) {
 
 // "Your bonus and your pension": what sacrificing some of a stated bonus
 // keeps, or, with no bonus stated, how to add one.
-function BonusTile({ hasStatedBonus, win4Num, bonusSacrifice, d, sacrificePct, setSacrificePct, bonusInput, setBonusInput, setShowFVInfo, showFVInfo, m }) {
+function BonusTile({ hasStatedBonus, win4Num, bonusSacrifice, d, set, sacrificePct, setSacrificePct, bonusInput, setBonusInput, setShowFVInfo, showFVInfo, m }) {
   const bonusPotential = bonusSacrifice.standalone;
   const bs = calcBonusSacrifice(d, m, bonusInput, sacrificePct);
+  // What the slider's choice keeps from tax, NI and student loan: what
+  // "I've done this" counts as saved.
+  const sliderSaving = Math.max(0, calcBonusSacrifice(d, m, bonusInput, 0).totalDeducted - bs.totalDeducted);
   return (
     <>
       {hasStatedBonus ? (
@@ -647,6 +673,7 @@ function BonusTile({ hasStatedBonus, win4Num, bonusSacrifice, d, sacrificePct, s
             description: `${firstName(d) ? firstName(d)+", d" : "D"}on't forget to check whether you can sacrifice your bonus into your pension before it's paid. Based on your bonus (${fmt(+d.bonusAmount)}), up to ${fmt(bonusPotential)} of tax and National Insurance on it is avoidable by sacrificing it.\n\nDrop HR or Payroll an email to ask about bonus sacrifice - this needs actioning before your bonus is paid, as it usually can't be done retrospectively.`,
             email: bonusSacrificeDraft({ name: d.name }),
           } : null}>
+          {set && bonusPotential > 0 && <OpportunityChoice id={CHOICE_IDS.bonus} d={d} set={set} bank={{ moduleKey: "pension", perYear: sliderSaving }}/>}
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"14px"}}>
             Sacrifice your bonus before it hits your payslip and you avoid tax, NI{bs.bonusSlRate > 0 ? ", and student loan repayments" : ""} on it entirely. It goes into your pension gross and grows tax-free.
           </p>

@@ -9,6 +9,7 @@ import { calcCashOptimisation } from "./cash.js";
 import { cashOpportunity } from "./assist.js";
 import { isPensionContributing, calcAnnualAllowanceRoom, calcBonusSacrificePotential, missedPensionRelief, calcTaxFreeCash, inRetirement, NON_EARNER_PENSION_RELIEF, PENSION_RELIEF_MAX_AGE, childBenefitCharge } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
+import { choiceFor, CHOICE_IDS } from "./opportunityChoices.js";
 import { isaFillable as isaFillableBy } from "./metrics.js";
 import { calcStudentLoanScenario , pgScenario, bestLumpSum } from "./studentLoan.js";
 import { GROWTH_NOMINAL_PCT } from "./growth.js";
@@ -239,10 +240,12 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   const cbCharge = childBenefitCharge(d, m);
   // Child Benefit is Kids & family's figure now (below), not Pension's.
   const cbAmount = cbCharge && cbCharge.charge > 0 && cbCharge.payInNeeded <= aaRoom.room ? cbCharge.charge : 0;
+  // The bonus and the retirement gap stop counting once the user has said
+  // "done" or "not for me" this tax year (opportunityChoices.js).
   const adequacy = retirementAdequacy(d, m);
-  const retirementGap = adequacy && adequacy.gap > adequacy.target * 0.05 ? adequacy.gap : 0;
+  const retirementGap = adequacy && adequacy.gap > adequacy.target * 0.05 && !choiceFor(d, CHOICE_IDS.retirementGap) ? adequacy.gap : 0;
   const pensionAmount = Math.round(pensionPrimaryAmount + pensionTaperAmount); // definitive only
-  const pensionPotentialAmount = Math.round(bonusSacrifice.beyondTaper); // potential — not in amount
+  const pensionPotentialAmount = choiceFor(d, CHOICE_IDS.bonus) ? 0 : Math.round(bonusSacrifice.beyondTaper); // potential — not in amount
   // Sort priority still weighs the potential upside too, so a large bonus-sacrifice
   // opportunity isn't buried in the module ordering just because it's not "definitive".
   const pensionImpact = (notPayingIn ? pensionAmount + 99999 : pensionAmount) + pensionPotentialAmount;
@@ -318,6 +321,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
           : null,
     belowThreshold: sl.belowThreshold,
     amount: slAmount,
+    // Its status comes from the £ alone (isOnTrack).
+    amountOnly: true,
   };
 
   // Mortgage
@@ -432,7 +437,7 @@ export function getModuleSummary(mm, d, m, statuses, insights) {
     : status === "ok" ? ON_TRACK_LINE
     : `Review your ${mm.title.toLowerCase()} situation.`;
   const impact = local.impact || 0;
-  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum, elsewhere: local.elsewhere || null };
+  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum, amountOnly: !!local.amountOnly, elsewhere: local.elsewhere || null };
 }
 
 // ── Candid score — deterministic, local, free ────────────────────────────────
@@ -498,15 +503,41 @@ export function bankChange(d, key, perYear, on = new Date().toISOString().slice(
   const add = Math.round(perYear);
   return { ...(d.moduleBaselines || {}), [key]: { ...base, banked: (base.banked || 0) + add, changes: [...(base.changes || []), { perYear: add, on }] } };
 }
+// Taking back a change banked by bankChange: the same £ a year, on the same
+// day, off the module's baseline.
+export function unbankChange(d, key, perYear, on) {
+  const base = (d.moduleBaselines || {})[key];
+  if (!base) return d.moduleBaselines || {};
+  const changes = [...(base.changes || [])];
+  const i = changes.findIndex(c => c.perYear === perYear && c.on === on);
+  if (i < 0) return d.moduleBaselines;
+  changes.splice(i, 1);
+  return { ...d.moduleBaselines, [key]: { ...base, banked: Math.max(0, (base.banked || 0) - perYear), changes } };
+}
 export function bankedFor(d, key) {
   return Math.round((d.moduleBaselines || {})[key]?.banked || 0);
 }
-// On track: nothing left to act on, or a change the user has confirmed
-// making ("I did this", banked). A module whose status is shown by another
-// (`elsewhere`) never is. One rule for the Modules tiles, the module page
-// and Home's "On track" line.
-export function isOnTrack(s, banked) {
-  return !s.elsewhere && (s.status === "ok" || (banked > 0 && s.status !== "na"));
+// On track: nothing left to act on, with under ON_TRACK_FLOOR a year left
+// on the module. Changes confirmed made ("I did this") count by bringing the
+// £ down, not by themselves. A module whose status comes from its £ alone
+// (`amountOnly`: Student loan) is on track under the floor whatever its
+// status; one with reasons that carry no £ (Cash's emergency fund, Pension's
+// retirement gap) needs its status "ok" too. A module whose status is shown
+// by another (`elsewhere`) never is. One rule for the Modules tiles, the
+// module page and Home's "On track" line.
+export const ON_TRACK_FLOOR = 50;
+// The modules on track now, as sorted keys, for comparing with the last
+// time (`d.onTrackLast`): one that's dropped off since has its reviewed
+// tick taken away (CandidApp), so a new gap reads as not yet looked at.
+export function onTrackKeys(d, m, statuses) {
+  return getModuleBreakdown(d, m, statuses, null, "amount").moduleList.filter(mm => mm.onTrack).map(mm => mm.key).sort();
+}
+export function droppedOffTrack(last, now) {
+  return (last || []).filter(k => !now.includes(k));
+}
+export function isOnTrack(s) {
+  if (s.elsewhere || s.status === "na" || s.status === "unknown") return false;
+  return (s.amount || 0) < ON_TRACK_FLOOR && (s.status === "ok" || !!s.amountOnly);
 }
 export function pendingBank(d, key, amount) {
   const base = (d.moduleBaselines || {})[key];
@@ -573,7 +604,7 @@ export function getModuleBreakdown(d, m, statuses, insights, sortMode = "amount"
   const allModules = MODULE_META.map(mm => {
     const s = getModuleSummary(mm, d, m, statuses, insights);
     const banked = s.amountIsLumpSum ? 0 : bankedFor(d, mm.key);
-    return { ...s, banked, pending: s.amountIsLumpSum ? 0 : pendingBank(d, mm.key, s.amount), onTrack: isOnTrack(s, banked) };
+    return { ...s, banked, pending: s.amountIsLumpSum ? 0 : pendingBank(d, mm.key, s.amount), onTrack: isOnTrack(s) };
   });
   const activeModules = allModules.filter(mm => mm.status !== "na");
 

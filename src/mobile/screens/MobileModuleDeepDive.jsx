@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Check, Coins } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, SUCCESS, PROGRESS_GREEN } from "../../design-tokens.js";
 import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
-import { MODULE_META, isOnTrack, bankedFor } from "../../lib/moduleStatus.js";
+import { MODULE_META, isOnTrack } from "../../lib/moduleStatus.js";
 import ReviewedMark from "../ReviewedMark.jsx";
 import { moduleLimits } from "../../lib/moduleLimits.js";
 import { statusLabel } from "../statusLabel.js";
@@ -38,8 +38,8 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
   // Status has exactly one visual indicator here — the dot below. The
   // header icon (module identity, not module status) stays neutral.
   const elsewhere = statuses[moduleKey]?.elsewhere || null;
-  const onTrack = isOnTrack({ status, elsewhere }, bankedFor(d, moduleKey));
-  const statusColor = onTrack ? PROGRESS_GREEN : isComplete || elsewhere ? MUT : (SC[status] || MUT);
+  const onTrack = isOnTrack({ ...statuses[moduleKey], status, elsewhere });
+  const statusColor = onTrack ? PROGRESS_GREEN : isComplete || elsewhere ? MUT : (SC[status === "ok" ? "attention" : status] || MUT);
   const Content = CONTENT_BY_KEY[moduleKey];
   // Same celebration as the Modules list (reviewCelebration.js): coins and a
   // gold warmth on the button, then "Reviewed" — only when marking complete

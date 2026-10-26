@@ -31,6 +31,8 @@
  * @property {string} [confidence] The entry's confidence answer.
  * @property {number} [inputsTaxYear] The tax year the "this tax year" figures belong to (rollTaxYear).
  * @property {Object<string, {banked: number}>} [moduleBaselines] Each module's £ when first answered (moduleStatus.js).
+ * @property {string[]} [onTrackLast] The modules on track last time the app worked it out (moduleStatus.js onTrackKeys).
+ * @property {Object<string, {choice: string, taxYear: number, perYear?: number, on?: string, moduleKey?: string}>} [opportunityChoices] "Done" or "not for me" on an opportunity, for a tax year (opportunityChoices.js).
  * @property {boolean} [unlockGate] Came in after the paywall shipped (unlock.js).
  * @property {string[]} [unlockedModules]
  * @property {boolean} [unlockCallOk]
@@ -375,6 +377,7 @@
  * @property {number} [potentialAmount] Pension only.
  * @property {boolean} [belowThreshold] Student loan only: earnings are under the repayment threshold.
  * @property {boolean} [amountIsLumpSum] Kids only: the amount is a one-off, not a year's.
+ * @property {boolean} [amountOnly] Student loan only: its status comes from the £ alone (isOnTrack).
  */
 
 /**
