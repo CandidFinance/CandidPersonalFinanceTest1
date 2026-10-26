@@ -177,7 +177,10 @@ export default function ReceiptScene() {
     if (!animated) return;
     const scene = sceneRef.current, stage = stageRef.current, message = messageRef.current, receipt = receiptRef.current;
     const foot = footRef.current, totalEl = totalRef.current, hint = hintRef.current;
-    const tiles = tileRefs.current, lines = lineRefs.current;
+    // Copies, not the ref arrays themselves: React empties those (each entry
+    // to null) as the page unmounts, before this effect's cleanup runs, and
+    // the cleanup still needs the elements.
+    const tiles = [...tileRefs.current], lines = [...lineRefs.current];
     let geo = null, shown = 0, target = 0, counter = null, alive = true;
     totalEl.textContent = pounds(0);
 
