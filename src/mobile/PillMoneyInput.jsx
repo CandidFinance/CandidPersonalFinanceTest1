@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { formatThousands } from "../lib/format.js";
-import { MUT, TEXT, CDARK, PILL_HEIGHT, FONT_SIZE } from "../design-tokens.js";
+import { MUT_ON_CDARK, TEXT, CDARK, PILL_HEIGHT, FONT_SIZE } from "../design-tokens.js";
 
 // ── Answer text inside a pill: the same as PillSlider's options (body size,
 // 600 weight, the app's sans font), so a typed £ figure and a Yes/No choice
@@ -53,8 +53,8 @@ export default function PillMoneyInput({ label, value, onChange, unit = "£", pl
     // (its padding, the caption, the £/% symbol) focuses the input. Without
     // this the % variant's auto-width input made the tap target only as wide
     // as the digits typed.
-    <label style={{flex:1,minWidth:0,background:CDARK,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",display:"flex",flexDirection:"column",justifyContent:"center",cursor:"text"}}>
-      <span style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>
+    <label className="pill-field" style={{flex:1,minWidth:0,background:CDARK,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",display:"flex",flexDirection:"column",justifyContent:"center",cursor:"text"}}>
+      <span style={{fontSize:"9.5px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>
       <div style={{display:"flex",alignItems:"center"}}>
         {/* The input itself is 16px scaled down (see pillFieldStyle): iOS
             Safari zooms the page in on focusing any input under 16px. */}

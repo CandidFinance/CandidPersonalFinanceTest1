@@ -259,7 +259,7 @@ export default function GuidedFlow({ questions, d, m, set, regionalRows, result,
 
       <AnimatePresence mode="wait" custom={direction} initial={animateFirst} onExitComplete={keepQuestionInView}>
         <motion.div key={q.id} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" style={{marginTop:"12px"}}>
-          <QuestionHeading lead={q.lead} ask={q.ask(ctx)} why={q.why(ctx)} compact={!!result}/>
+          <QuestionHeading lead={q.lead} ask={q.ask(ctx)} why={q.why(ctx)} compact={!!result} focusOnMount={history.length > 1 || answered.size > 0}/>
 
           {q.kind === "choice" && q.follow ? (
             <form onSubmit={submit}>

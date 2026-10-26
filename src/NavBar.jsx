@@ -1,4 +1,4 @@
-import { FONT_SIZE, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT } from "./design-tokens.js";
+import { FONT_SIZE, MUT, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, HEADER_WORDMARK_LIGHT } from "./design-tokens.js";
 
 // The header bar on every page: the Candid. wordmark, an optional page
 // label in the middle and an optional action on the right.
@@ -28,7 +28,7 @@ export function NavBar({ right, center, onLogoClick, light }) {
           <span style={wordmarkStyle}>Candid.</span>
         )}
       </span>
-      {center ? <div style={{color:light?"rgba(22,47,36,0.5)":"rgba(255,255,255,0.5)",fontSize:FONT_SIZE.LABEL,fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
+      {center ? <div style={{color:light?MUT:"rgba(255,255,255,0.5)",fontSize:FONT_SIZE.LABEL,fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
       <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>
     </>
   );

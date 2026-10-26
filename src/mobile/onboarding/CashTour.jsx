@@ -8,6 +8,7 @@ import { PillSlider } from "../PillSlider.jsx";
 import SaveFiguresOffer from "../SaveFiguresOffer.jsx";
 import { CheckedCardBody } from "../CheckedCard.jsx";
 import { ProgressLine } from "./OnboardingShell.jsx";
+import useDialogFocus from "../useDialogFocus.js";
 
 // The Cash page's tour, once, the first time the page opens unlocked: five
 // stops, each lighting up one part of the page (marked `data-tour="..."`)
@@ -53,6 +54,10 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
   const cardRef = useRef(null);
   const nextRef = useRef(null);
   const ended = useRef(false);
+  // Tab stays in the card while the tour is open (it moves focus to each
+  // step's main button itself, and handles Escape below).
+  const boxRef = useRef(null);
+  useDialogFocus(boxRef, { focusOnOpen: false });
 
   // Once the page has laid out: the stops it has room for, then the
   // estimates and the email where they apply.
@@ -187,7 +192,7 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
         <p style={{ fontSize: "14.5px", color: TEXT, lineHeight: 1.55, margin: "8px 0 0" }}>{step.body}</p>
         {step.id === "fund" && (
           <div style={{ marginTop: "12px" }}>
-            <PillSlider compact value={String(m.bufferMonths)} options={EMERGENCY_MONTHS_OPTIONS} onChange={v => {
+            <PillSlider compact label="Emergency fund target" value={String(m.bufferMonths)} options={EMERGENCY_MONTHS_OPTIONS} onChange={v => {
               set("emergencyMonths", v);
               posthog.capture("progress_target_saved", { row: "emergency", months: +v, from: "tour" });
             }}/>
@@ -212,7 +217,7 @@ export default function CashTour({ d, m, set, rateCost, estimates, onExactFigure
   return (
     // Over the page, the tab bar and Assist's button; the page can't be
     // tapped while it's open.
-    <div role="dialog" aria-modal="true" aria-labelledby={step.id === "email" ? undefined : step.id === "done" ? "checked-title" : "tour-title"} aria-label={step.id === "email" ? "Email" : undefined}
+    <div ref={boxRef} role="dialog" aria-modal="true" aria-labelledby={step.id === "email" ? undefined : step.id === "done" ? "checked-title" : "tour-title"} aria-label={step.id === "email" ? "Email" : undefined}
       onClick={e => e.stopPropagation()}
       style={{ position: "fixed", inset: 0, zIndex: 4700 }}>
       <motion.div aria-hidden="true" initial={false} animate={hole} transition={glide}

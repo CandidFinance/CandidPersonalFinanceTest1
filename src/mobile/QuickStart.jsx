@@ -18,8 +18,6 @@ import { shellScreen, ShellTopRow, QuestionHeading, AnswerGroup, AnswerTile, Pri
 
 // Long enough to see the tile change colour before the next question.
 const ADVANCE_MS = 380;
-// The intro moves on by itself after this long, time to read it.
-const INTRO_MS = 3000;
 
 export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true, kicker = null, flow = "quick" }) {
   const reduceMotion = useReducedMotion();
@@ -47,9 +45,8 @@ export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true,
     onPatch({ ...setup.patch(d, m, all), quickAt: { ...(d.quickAt || {}), [setup.module]: stamp } });
     setWritten(stamp);
   };
-  // `auto`: the intro moved on by itself, not tapped.
-  const begin = (auto = false) => {
-    posthog.capture("questions_started", { ...track, question: order[0] ?? null, of: order.length, auto });
+  const begin = () => {
+    posthog.capture("questions_started", { ...track, question: order[0] ?? null, of: order.length });
     if (!order.length) { finish({}); return; }
     setStarted(true);
     setHistory([order[0]]);
@@ -115,7 +112,7 @@ export default function QuickStart({ setup, d, m, onPatch, onDone, intro = true,
           initial={{ opacity: 0, x: direction * shift }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -direction * shift }}
           transition={{ duration: reduceMotion ? 0.1 : 0.22, ease: "easeOut" }}
           style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <QuestionHeading ask={askFor(q, ctx)} why={q.why}/>
+          <QuestionHeading ask={askFor(q, ctx)} why={q.why} focusOnMount/>
           {suggested && <p style={{ fontSize: "13.5px", color: MUT, lineHeight: 1.45, margin: "-12px 0 16px" }}>One is picked out to get you started. Tap yours if it's different.</p>}
           {q.kind === "slider"
             ? <SliderAnswer q={q} ctx={ctx} label={askFor(q, ctx)} onAnswer={value => choose(value, 0)}/>
@@ -168,30 +165,19 @@ function SliderAnswer({ q, ctx, label, onAnswer }) {
   );
 }
 
-// Before any questions: the topic, why it matters, the question it answers.
-// It moves on by itself after INTRO_MS (the bar under the question fills
-// meanwhile); "Let's begin" goes sooner.
+// Before any questions: the topic, why it matters, the question it answers,
+// then "Let's begin". It waits for the tap: it used to move on by itself
+// after 3s, which cut off anyone still reading (WCAG 2.2.1).
 function Intro({ intro, onBegin }) {
-  const reduceMotion = useReducedMotion();
   const begun = useRef(false);
-  const beginRef = useRef(onBegin);
-  beginRef.current = onBegin;
-  const go = auto => { if (begun.current) return; begun.current = true; beginRef.current(auto); };
-  useEffect(() => {
-    const t = setTimeout(() => go(true), INTRO_MS);
-    return () => clearTimeout(t);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const go = () => { if (begun.current) return; begun.current = true; onBegin(); };
   return (
     <div style={shellScreen}>
       <h1 style={{ fontFamily: SERIF, fontSize: "clamp(44px, 13vw, 60px)", fontWeight: 700, color: G, lineHeight: 1.02, margin: "12px 0 0" }}>{intro.title}</h1>
       <p style={{ fontFamily: SERIF, fontSize: "clamp(27px, 7.6vw, 33px)", fontWeight: 500, color: TEXT, lineHeight: 1.22, margin: "18px 0 0" }}>{intro.subtitle}</p>
       <p style={{ fontFamily: SERIF, fontSize: "clamp(27px, 7.6vw, 33px)", fontWeight: 700, color: G, lineHeight: 1.22, margin: "22px 0 0" }}>{intro.question}</p>
-      <div aria-hidden="true" style={{ height: "3px", borderRadius: "2px", background: "rgba(22,47,36,0.1)", marginTop: "26px", overflow: "hidden" }}>
-        <motion.div initial={{ width: reduceMotion ? "100%" : "0%" }} animate={{ width: "100%" }} transition={{ duration: reduceMotion ? 0 : INTRO_MS / 1000, ease: "linear" }}
-          style={{ height: "100%", background: G }}/>
-      </div>
       <div style={{ marginTop: "auto", paddingTop: "32px" }}>
-        <PrimaryButton onClick={() => go(false)}>Let's begin</PrimaryButton>
+        <PrimaryButton onClick={go}>Let's begin</PrimaryButton>
       </div>
     </div>
   );

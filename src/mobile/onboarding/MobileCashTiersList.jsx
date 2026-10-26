@@ -1,5 +1,5 @@
 import { X, Plus } from "lucide-react";
-import { GOLD, MUT, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
+import { GOLD_TEXT, MUT, MUT_ON_CDARK, CDARK, PILL_HEIGHT } from "../../design-tokens.js";
 import PillMoneyInput, { PILL_ANSWER_TEXT, pillFieldStyle } from "../PillMoneyInput.jsx";
 import { capField } from "../../lib/onboarding.js";
 
@@ -28,8 +28,8 @@ export default function MobileCashTiersList({ d, set }) {
     <div>
       {tiers.map((tier, i) => (
         <div key={i} style={{marginBottom:"12px"}}>
-        <label style={{display:"flex",flexDirection:"column",justifyContent:"center",background:CDARK,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",marginBottom:"8px",cursor:"text"}}>
-          <span style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>Account name (optional)</span>
+        <label className="pill-field" style={{display:"flex",flexDirection:"column",justifyContent:"center",background:CDARK,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",marginBottom:"8px",cursor:"text"}}>
+          <span style={{fontSize:"9.5px",fontWeight:600,color:MUT_ON_CDARK,letterSpacing:"0.06em",textTransform:"uppercase"}}>Account name (optional)</span>
           <input type="text" value={tier.name || ""} maxLength={60} placeholder="e.g. Barclays Everyday Saver"
             onChange={e => updateTier(i, { name: e.target.value })}
             style={{...PILL_ANSWER_TEXT,border:"none",background:"none",outline:"none",padding:0,...pillFieldStyle("100%")}}/>
@@ -46,8 +46,8 @@ export default function MobileCashTiersList({ d, set }) {
         </div>
       ))}
       <button type="button" onClick={() => set("cashTiers", [...tiers, BLANK])} style={{
-        display:"flex",alignItems:"center",gap:"6px",background:"none",border:`1px dashed ${GOLD}`,borderRadius:"100px",
-        padding:"7px 14px",color:GOLD,fontSize:"12px",fontWeight:600,cursor:"pointer",marginTop:"4px",
+        display:"flex",alignItems:"center",gap:"6px",background:"none",border:`1px dashed ${GOLD_TEXT}`,borderRadius:"100px",
+        padding:"7px 14px",color:GOLD_TEXT,fontSize:"12px",fontWeight:600,cursor:"pointer",marginTop:"4px",
       }}>
         <Plus size={13}/> Add another account
       </button>

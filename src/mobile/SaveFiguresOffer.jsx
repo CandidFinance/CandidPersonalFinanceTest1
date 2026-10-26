@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import { MUT, TEXT, WHITE, ERROR_TEXT, CTA_BLUE, SERIF, CRITICAL } from "../design-tokens.js";
+import { MUT, TEXT, WHITE, ERROR_TEXT, CTA_BLUE, SERIF, CRITICAL, FIELD_BORDER } from "../design-tokens.js";
 import { validEmailShape } from "../lib/emailCheck.js";
 import { referralCode } from "../lib/referral.js";
 import { useEmailCheck, DidYouMean } from "./emailCheckForm.jsx";
@@ -46,7 +46,7 @@ export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = nul
     if (g.outcome === "signed-in") { window.location.reload(); return; }
     onEmail(g.email, name.trim() || g.name, "google");
   };
-  const field = {width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"12px 16px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE};
+  const field = {width:"100%",boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"12px 16px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE};
   return (
     <form onSubmit={submit} style={{position:"relative",background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginTop:"16px",...style}}>
       {onDismiss && (

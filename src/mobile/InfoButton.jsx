@@ -12,10 +12,15 @@ export default function InfoButton({ onClick, open, style, type = "button" }) {
       type={type}
       onClick={onClick}
       aria-label={open ? "Hide explanation" : "Show explanation"}
+      aria-expanded={!!open}
+      // A 15px circle on screen, a 43px target to tap: the padding is
+      // tappable but unpainted (background clipped to the content box), and
+      // the negative margin gives the space back so the layout doesn't move.
       style={{
         background: MUT, color: WHITE, border: "none", borderRadius: "50%",
-        width: "15px", height: "15px", fontSize: "10px", fontWeight: 700,
-        lineHeight: "15px", textAlign: "center", padding: 0, cursor: "pointer", flexShrink: 0,
+        boxSizing: "content-box", width: "15px", height: "15px", fontSize: "10px", fontWeight: 700,
+        lineHeight: "15px", textAlign: "center", padding: "14px", margin: "-14px", backgroundClip: "content-box",
+        cursor: "pointer", flexShrink: 0,
         ...style,
       }}
     >?</button>

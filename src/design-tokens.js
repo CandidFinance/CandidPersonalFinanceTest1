@@ -12,6 +12,16 @@ export const CDARK = "#ede7db"; // secondary/darker cream surface
 export const TEXT  = "#1a1a1a"; // body text
 export const MUT   = "#6b6b6b"; // muted/secondary text
 export const WHITE = "#ffffff";
+// Readable versions of the above where the plain token fails WCAG AA (4.5:1
+// for text, 3:1 for a field's edge). GOLD itself is 2.53:1 on CREAM, so gold
+// text, gold links and white-on-gold badges use GOLD_TEXT (4.71:1 on CREAM,
+// 5.04:1 white on it). MUT is 4.33:1 on CDARK, so muted text on a CDARK
+// surface (pill captions, unpicked PillSlider options) uses MUT_ON_CDARK
+// (5.27:1). FIELD_BORDER: a typed field's outline, 3.11:1 on CREAM (the
+// site's SITE_EDGE).
+export const GOLD_TEXT    = "#8a6a24";
+export const MUT_ON_CDARK = "#5e5e5e";
+export const FIELD_BORDER = "#8f8d84";
 // Apple's own button blue: the one accent that departs from Candid's usual
 // green and gold, reserved for the main call to action (the site's start
 // button, the paywall's subscribe button).

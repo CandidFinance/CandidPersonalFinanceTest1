@@ -31,6 +31,15 @@
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       html { scroll-behavior: smooth; }
       body { font-family: 'DM Sans', sans-serif; background: #faf7f0; }
+      /* A visible focus ring for keyboard users everywhere, over the inline
+         outline:none many fields set. Not on elements focused only by script
+         (tabindex -1: a question's heading, a dialog's box), though still on
+         a button that's tabindex -1 (a PillSlider's arrow-key options). A money pill
+         shows it round the whole pill, not the scaled field inside. */
+      :focus-visible:not([tabindex="-1"]), button:focus-visible { outline: 2px solid #162f24 !important; outline-offset: 2px; }
+      [tabindex="-1"]:not(button):focus { outline: none; }
+      .pill-field:focus-within { outline: 2px solid #162f24; outline-offset: 2px; }
+      .pill-field input:focus-visible { outline: none !important; }
     </style>
   </head>
   <body>

@@ -50,6 +50,9 @@ export default function MobileEntryScreen({ d, m, set, onEntered, onDone }) {
         {invitedHere() && (
           <div style={{fontSize:"13px",fontWeight:600,color:G,lineHeight:1.45,marginBottom:"14px"}}>A friend invited you: your second module is unlocked for free.</div>
         )}
+        {/* Says which module is opening, for a screen reader: there from the
+            start, so the change is announced when the hand-off shows. */}
+        <div role="status" style={{position:"absolute",width:"1px",height:"1px",overflow:"hidden",clip:"rect(0 0 0 0)"}}>{done && meta?.title ? `Opening ${meta.title}` : ""}</div>
         <AnimatePresence mode="wait" initial={false}>
           {done ? (
             <motion.div key="handoff" initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } }}

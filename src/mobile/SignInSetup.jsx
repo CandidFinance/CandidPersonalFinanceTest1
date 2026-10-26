@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
-import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM, FIELD_BORDER } from "../design-tokens.js";
 import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
 import GoogleButton, { useGoogleButtonShown } from "./GoogleButton.jsx";
 import OrRule from "./OrRule.jsx";
+import useDialogFocus from "./useDialogFocus.js";
 import { googleSignInAvailable } from "../lib/google.js";
 
 // A subscriber's ways to sign in on another device (src/site/SignInPage.jsx):
@@ -93,7 +94,7 @@ export function SignInMethods({ signIns, reload }) {
           {/* Lets a password manager (iCloud Keychain) save it against the right email. */}
           <input type="email" name="username" autoComplete="username" value={email} readOnly style={{display:"none"}}/>
           <input type="password" name="new-password" autoComplete="new-password" value={pw} onChange={e => setPw(e.target.value)} placeholder="At least 10 characters" aria-label="New password" autoFocus
-            style={{boxSizing:"border-box",width:"100%",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"11px 16px",fontSize:"14px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+            style={{boxSizing:"border-box",width:"100%",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"11px 16px",fontSize:"14px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
           <div style={{display:"flex",gap:"8px"}}>
             <button type="button" onClick={() => { setEditing(false); setPw(""); setError(null); }} style={{flex:1,background:"transparent",border:"1.3px solid rgba(22,47,36,0.2)",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:G,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
             <button type="submit" disabled={!!busy} style={{flex:1,background:G,border:"none",borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,color:WHITE,cursor:"pointer",fontFamily:"inherit"}}>{busy === "password" ? "Saving…" : "Save password"}</button>
@@ -154,6 +155,10 @@ function CreateSignIn({ email, onDone }) {
   const [pw, setPw] = useState("");
   const [google, googleGone] = useGoogleButtonShown();
   const canPasskey = passkeysSupported();
+  // Over the whole app: focus moves into it and stays (no way past it, so
+  // no Escape).
+  const boxRef = useRef(null);
+  useDialogFocus(boxRef);
   const run = async (how, fn) => {
     setBusy(how); setError(null);
     try { await fn(); onDone(how, await accountSignIns()); }
@@ -170,7 +175,7 @@ function CreateSignIn({ email, onDone }) {
     borderRadius:"100px", padding:"15px", fontSize:"15.5px", fontWeight:700, fontFamily:"inherit", cursor: busy ? "default" : "pointer",
   });
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="create-sign-in-title"
+    <div ref={boxRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="create-sign-in-title"
       style={{position:"fixed",inset:0,zIndex:6000,background:CREAM,overflowY:"auto"}}>
       <NavBar light/>
       <div style={{maxWidth:"420px",margin:"0 auto",padding:"32px 20px 40px"}}>
@@ -194,7 +199,7 @@ function CreateSignIn({ email, onDone }) {
           {/* Lets a password manager (iCloud Keychain) save it against the right email. */}
           <input type="email" name="username" autoComplete="username" value={email} readOnly style={{display:"none"}}/>
           <input type="password" name="new-password" autoComplete="new-password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Password, at least 10 characters" aria-label="New password"
-            style={{boxSizing:"border-box",width:"100%",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+            style={{boxSizing:"border-box",width:"100%",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
           <button type="submit" disabled={!!busy} style={button(!canPasskey)}>{busy === "password" ? "Saving…" : "Create password"}</button>
           {error && <div role="alert" style={{fontSize:"13px",color:ERROR_TEXT}}>{error}</div>}
         </form>

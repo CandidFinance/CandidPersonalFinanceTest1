@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import posthog from "posthog-js";
 import { Check, ChevronDown, Lock, X } from "lucide-react";
-import { G, GOLD, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT, CTA_BLUE } from "../../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT, CTA_BLUE, FIELD_BORDER } from "../../design-tokens.js";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
@@ -12,6 +12,7 @@ import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore, signInWithGoog
 import GoogleButton from "../GoogleButton.jsx";
 import { referralCode, invitedHere } from "../../lib/referral.js";
 import InviteFriends from "../InviteFriends.jsx";
+import useDialogFocus from "../useDialogFocus.js";
 
 // A locked module (src/lib/unlock.js): what it's worth, in £, with the answer
 // itself frosted until it's unlocked. The first module is free; after that,
@@ -116,7 +117,7 @@ function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
       <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"4px 0 10px"}}>{EMAIL_WHY}</div>
       {invitedHere() && <div style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"-4px 0 10px"}}>Invited by a friend: your second module is unlocked for free.</div>}
       <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
-        style={{width:"100%",boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+        style={{width:"100%",boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"14px 18px",fontSize:"15px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       <label style={{display:"flex",alignItems:"flex-start",gap:"10px",margin:"12px 2px 16px",fontSize:"13px",color:TEXT,lineHeight:1.45,cursor:"pointer"}}>
         <input type="checkbox" checked={alerts} onChange={e => setAlerts(e.target.checked)} style={{marginTop:"2px",accentColor:G}}/>
         Yes, email me when something changes: a better rate, a Budget change, or an allowance about to go unused.
@@ -136,15 +137,19 @@ function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
 // to the modules.
 function PaywallSheet({ children, returnTo = null }) {
   const navigate = useNavigate();
+  const close = () => navigate(returnTo ? `/app/module/${returnTo}` : "/app/modules");
+  // Focus moves into the card, stays there, and Escape closes it.
+  const boxRef = useRef(null);
+  useDialogFocus(boxRef, { onEscape: close });
   return (
     <div style={{position:"fixed",inset:0,zIndex:4600,display:"flex",flexDirection:"column",justifyContent:"center",padding:"16px",boxSizing:"border-box"}}>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}
         style={{position:"absolute",inset:0,background:"rgba(22,47,36,0.28)",backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)"}}/>
-      <motion.div role="dialog" aria-modal="true" aria-label="Subscribe to Candid"
+      <motion.div ref={boxRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Subscribe to Candid"
         initial={{ opacity: 0, scale: 0.94, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 340, damping: 30 }}
         style={{position:"relative",background:CREAM,borderRadius:"22px",boxShadow:"0 18px 50px rgba(22,47,36,0.28)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",
           padding:"20px",maxWidth:"440px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
-        <button type="button" onClick={() => navigate(returnTo ? `/app/module/${returnTo}` : "/app/modules")} aria-label="Close"
+        <button type="button" onClick={close} aria-label="Close"
           style={{position:"absolute",top:"12px",right:"14px",width:"32px",height:"32px",borderRadius:"50%",border:"none",background:"rgba(22,47,36,0.07)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
           <X size={16} color={TEXT}/>
         </button>
@@ -222,7 +227,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
         {Object.entries(PLANS).map(([key, p]) => (
           <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>
             {key === "yearly" && ANNUAL_SAVING_PCT > 0 && (
-              <span style={{position:"absolute",top:"-9px",right:"10px",background:GOLD,color:WHITE,fontSize:"10.5px",fontWeight:800,letterSpacing:"0.03em",borderRadius:"100px",padding:"2px 8px"}}>Save {ANNUAL_SAVING_PCT}%</span>
+              <span style={{position:"absolute",top:"-9px",right:"10px",background:GOLD_TEXT,color:WHITE,fontSize:"10.5px",fontWeight:800,letterSpacing:"0.03em",borderRadius:"100px",padding:"2px 8px"}}>Save {ANNUAL_SAVING_PCT}%</span>
             )}
             <div style={{fontSize:"12px",fontWeight:700,color:MUT}}>{p.label}</div>
             <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginTop:"2px"}}>
@@ -297,7 +302,7 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
             </div>
             <div style={{display:"flex",gap:"8px"}}>
               <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
-                style={{flex:1,minWidth:0,boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"12px 16px",fontSize:"14px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+                style={{flex:1,minWidth:0,boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"12px 16px",fontSize:"14px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
               <button type="submit" disabled={busy || check.busy} style={{background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"0 16px",fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>
                 {panel === "restore" ? "Send link" : "Sign up"}
               </button>

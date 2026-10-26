@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft } from "lucide-react";
 import { G, MUT, TEXT, SERIF, SANS, WHITE, PROGRESS_GREEN } from "../../design-tokens.js";
@@ -41,13 +42,17 @@ export function ShellTopRow({ onBack, position, total, style }) {
 
 // The question, and why it's asked. `compact`: smaller, for questions under
 // a result card, so the answers still show without scrolling; an h2 there,
-// under the page's own h1.
-export function QuestionHeading({ ask, why, lead, compact = false }) {
+// under the page's own h1. `focusOnMount`: focus moves to the question when
+// it replaces the last one, so a keyboard or screen reader carries on from
+// the new question rather than the top of the page.
+export function QuestionHeading({ ask, why, lead, compact = false, focusOnMount = false }) {
   const H = compact ? "h2" : "h1";
+  const ref = useRef(null);
+  useEffect(() => { if (focusOnMount) ref.current?.focus({ preventScroll: true }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
       {lead && <div style={{ fontSize: "11px", fontWeight: 700, color: MUT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "8px" }}>{lead}</div>}
-      <H style={{ fontFamily: SERIF, fontSize: compact ? "clamp(22px, 6vw, 26px)" : "clamp(28px, 7.5vw, 36px)", fontWeight: 700, color: G, lineHeight: 1.15, margin: 0 }}>{ask}</H>
+      <H ref={ref} tabIndex={focusOnMount ? -1 : undefined} style={{ fontFamily: SERIF, fontSize: compact ? "clamp(22px, 6vw, 26px)" : "clamp(28px, 7.5vw, 36px)", fontWeight: 700, color: G, lineHeight: 1.15, margin: 0 }}>{ask}</H>
       {why && <p style={{ fontSize: compact ? "14px" : "15px", color: MUT, lineHeight: 1.5, margin: compact ? "8px 0 18px" : "10px 0 24px" }}>{why}</p>}
     </>
   );
