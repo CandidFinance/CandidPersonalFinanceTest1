@@ -31,6 +31,7 @@
  * @property {string} [confidence] The entry's confidence answer.
  * @property {number} [inputsTaxYear] The tax year the "this tax year" figures belong to (rollTaxYear).
  * @property {Object<string, {banked: number}>} [moduleBaselines] Each module's £ when first answered (moduleStatus.js).
+ * @property {Object<string, {result: string, gap: number, years: number, on: string}>} [decisionsInformed] The last either/or answer seen for each question (valueMetrics.js, useDecisionLog).
  * @property {string[]} [onTrackLast] The modules on track last time the app worked it out (moduleStatus.js onTrackKeys).
  * @property {Object<string, {choice: string, taxYear: number, perYear?: number, on?: string, moduleKey?: string}>} [opportunityChoices] "Done" or "not for me" on an opportunity, for a tax year (opportunityChoices.js).
  * @property {boolean} [unlockGate] Came in after the paywall shipped (unlock.js).

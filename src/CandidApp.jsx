@@ -38,7 +38,8 @@ import { hasReferralBonus } from "./lib/referral.js";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
 import { workingChecks } from "./lib/workingChecks.js";
 import { rollLoanBalances, takeFromSources, todayIso } from "./lib/loanBalance.js";
-import { bankChange } from "./lib/moduleStatus.js";
+import { bankChange, gainedSoFar } from "./lib/moduleStatus.js";
+import { bankedDiff, gainedRowFields, decisionRowFields } from "./lib/valueMetrics.js";
 import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, loanSavingsIn, loanPensionChecked, hasEmployerMatch, loanVerdictReady } from "./lib/appEntry.js";
 import { moduleGuideStarts, briefQuestions } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
@@ -415,6 +416,26 @@ export default function AppShell() {
   const statuses = useMemo(() => computeModuleStatuses(d, m, marketRates), [d, m, marketRates]);
   // The user's row in Supabase: its id, inserting it and PATCHing it.
   const { currentRowId, insertReportRow, saveRow, rowInputFields, rowReportFields } = useReportRow(d, m, statuses);
+  // The £ a year of changes made, for the value measures (valueMetrics.js):
+  // every change banked or taken back, whichever screen it came from, and
+  // the total on the report row. Sent once on opening too, with the
+  // decisions seen (useDecisionLog), so gains banked before this was
+  // measured, and a decision seen before the row existed, reach it.
+  const lastBanked = useRef(null);
+  useEffect(() => {
+    const prev = lastBanked.current;
+    lastBanked.current = d;
+    const id = currentRowId();
+    if (!prev) {
+      if (id && (gainedSoFar(d).count || d.decisionsInformed)) updateRow("test", id, { ...gainedRowFields(d), ...decisionRowFields(d) });
+      return;
+    }
+    const diff = bankedDiff(prev, d);
+    if (!diff.length) return;
+    const fields = gainedRowFields(d);
+    for (const c of diff) posthog.capture(c.perYear > 0 ? "change_banked" : "change_unbanked", { module: c.key, per_year_gbp: Math.abs(c.perYear), total_per_year_gbp: fields.gained_per_year_gbp });
+    if (id) updateRow("test", id, fields);
+  }, [d.moduleBaselines]); // eslint-disable-line react-hooks/exhaustive-deps
   // Each module's £ when first answered, for what's been banked since
   // (moduleStatus.js bankedFor).
   useEffect(() => {

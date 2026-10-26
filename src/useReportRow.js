@@ -6,6 +6,12 @@ import { reportStorageFailure } from "./lib/storage.js";
 
 const ROW_ID_KEY = "candid_report_row_id";
 
+// The row an earlier visit saved, for screens outside the app shell's hook
+// (useDecisionLog). Null if there isn't one or storage is blocked.
+export function storedRowId() {
+  try { return localStorage.getItem(ROW_ID_KEY); } catch(e) { reportStorageFailure("read_row_id", e); return null; }
+}
+
 // The user's one row in Supabase's `test` table: inserting it, PATCHing it,
 // and remembering its id. Rebuilt each render, so every function reads the
 // latest `d`, `m` and `statuses`. The functions are named as the app shell
@@ -16,8 +22,7 @@ export function useReportRow(d, m, statuses) {
   // This browser's row: the one inserted this visit, or the one an earlier
   // visit saved.
   function currentRowId() {
-    if (rowId.current) return rowId.current;
-    try { return localStorage.getItem(ROW_ID_KEY); } catch(e) { reportStorageFailure("read_row_id", e); return null; }
+    return rowId.current || storedRowId();
   }
 
   // Writes the user's row to `test` and remembers its id, in memory and in

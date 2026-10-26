@@ -4,6 +4,8 @@ import { MUT, TEXT, SERIF, WHITE, SC, WARNING, CDARK } from "../../design-tokens
 import { PillSlider } from "../PillSlider.jsx";
 import { rentVsBuyInputs, calcRentVsBuy, breakevenGrowthPct, ISA_ALLOWANCE } from "../../lib/rentVsBuy.js";
 import { breakevenLine } from "../../lib/propertyReveal.js";
+import { rentVsBuyDecision } from "../../lib/valueMetrics.js";
+import useDecisionLog from "../useDecisionLog.js";
 import { monthlyBudget } from "../../lib/monthlyBudget.js";
 import { STRESS_REMORTGAGE_UPLIFT } from "../../lib/mortgage.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -60,6 +62,9 @@ export default function RentVsBuyStep({ d, m, set, regionalRows, marketRates, gu
   const leasehold = input.tenure === "leasehold";
   const cash = input.returnType === "cash";
   const buyingAhead = result ? result.gapAtHorizon > 0 : false;
+  // The answer, for the value measures: at moderate rates whichever scenario
+  // is on screen, so trying the rate pills isn't a changed answer.
+  useDecisionLog(d, set, holdResult ? null : rentVsBuyDecision(outcomes ? outcomes.moderate : result));
 
   // The inputs, below the result (see the layout note above the component).
   const inputs = (

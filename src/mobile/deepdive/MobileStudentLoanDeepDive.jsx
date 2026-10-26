@@ -12,6 +12,8 @@ import InfoButton from "../InfoButton.jsx";
 import LoanCompare from "./LoanCompare.jsx";
 import ScenarioModelling from "./ScenarioModelling.jsx";
 import { runPlan } from "../../lib/loanPlan.js";
+import { studentLoanDecision } from "../../lib/valueMetrics.js";
+import useDecisionLog from "../useDecisionLog.js";
 import { PAY_GROWTH_OPTIONS } from "../../lib/moduleGuide.js";
 import { calcLoanMarginalReturnCurve } from "../../lib/forecast.js";
 import { fmt, fmtK } from "../../lib/format.js";
@@ -69,6 +71,8 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
   // The write-off assumption's editor (below); hooks stay above the return.
   const [editingStart, setEditingStart] = useState(false);
   const [startInput, setStartInput] = useState(null);
+  // The overpay-or-leave answer, once it's in, for the value measures.
+  useDecisionLog(d, set, m.loanBal > 0 ? studentLoanDecision(d, m) : null);
 
   if (d.studentLoan === "none" || m.loanBal <= 0) {
     return <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.6}}>No student loan on record.</p>;
