@@ -68,28 +68,11 @@ export function entryGoals(interests) {
 
 const firstName = d => (d.name || "").trim();
 
-// Saved to localStorage (candid_confidence_score) and onto the user's row:
-// for insight, nothing in the calculations reads it.
-export const CONFIDENCE_QUESTION = {
-  id:"confidence", field:"confidence", kind:"choice",
-  ask: ({ d }) => firstName(d) ? `How confident do you feel about your finances, ${firstName(d)}?` : "How confident do you feel about your finances?",
-  why: () => "There's no wrong answer. It helps us pitch things right for you.",
-  options: () => [
-    { value:"1", label:"Not at all confident" },
-    { value:"2", label:"Not very confident" },
-    { value:"3", label:"Fairly confident" },
-    { value:"4", label:"Confident" },
-    { value:"5", label:"Very confident" },
-  ],
-};
-
 // The entry's one question, run by the same walk-through as the modules
 // (GuidedFlow; question fields as in src/lib/propertyGuide.js). `also` gives
 // the other saved inputs an answer sets alongside its own field. The first
 // name is asked with the email (SaveFiguresOffer), not here.
 export const ENTRY_QUESTIONS = [
-  // How confident they feel is asked on Home once their first answer is in
-  // (ConfidenceCard), not before anything's been shown.
   {
     // The picks set which modules Home offers first, and which the score
     // waits for (scorePicks).

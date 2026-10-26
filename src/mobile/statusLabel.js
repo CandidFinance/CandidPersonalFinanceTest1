@@ -16,3 +16,6 @@ export function statusLabel(mm) {
   if (mm.status === "unknown") return "Find out";
   return "Action needed";
 }
+// "Action needed", with its reason when there's no £ figure to show it
+// (moduleStatus.js, Cash's `reason`).
+export const statusLine = mm => statusLabel(mm) === "Action needed" && mm.reason ? `Action needed · ${mm.reason}` : statusLabel(mm);

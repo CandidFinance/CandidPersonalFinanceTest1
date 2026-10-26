@@ -5,10 +5,10 @@ import { useState } from "react";
 import { Check, Coins } from "lucide-react";
 import { G, GOLD, WHITE, MUT, TEXT, SERIF, SC, SUCCESS, PROGRESS_GREEN } from "../../design-tokens.js";
 import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
-import { MODULE_META, isOnTrack } from "../../lib/moduleStatus.js";
+import { MODULE_META, isOnTrack, reviewedDone } from "../../lib/moduleStatus.js";
 import ReviewedMark from "../ReviewedMark.jsx";
 import { moduleLimits } from "../../lib/moduleLimits.js";
-import { statusLabel } from "../statusLabel.js";
+import { statusLine } from "../statusLabel.js";
 import MobileCashDeepDive from "../deepdive/MobileCashDeepDive.jsx";
 import MobileStudentLoanDeepDive from "../deepdive/MobileStudentLoanDeepDive.jsx";
 import MobileInvestmentsDeepDive from "../deepdive/MobileInvestmentsDeepDive.jsx";
@@ -38,7 +38,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
   // Status has exactly one visual indicator here — the dot below. The
   // header icon (module identity, not module status) stays neutral.
   const elsewhere = statuses[moduleKey]?.elsewhere || null;
-  const onTrack = isOnTrack({ ...statuses[moduleKey], status, elsewhere });
+  const onTrack = isOnTrack({ ...statuses[moduleKey], status, elsewhere }) || reviewedDone(statuses[moduleKey], isComplete);
   const statusColor = onTrack ? PROGRESS_GREEN : isComplete || elsewhere ? MUT : (SC[status === "ok" ? "attention" : status] || MUT);
   const Content = CONTENT_BY_KEY[moduleKey];
   // Same celebration as the Modules list (reviewCelebration.js): coins and a
@@ -73,7 +73,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
           </div>
           <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"3px"}}>
             <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
-            <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel({status, elsewhere, onTrack})}</span>
+            <span style={{fontSize:"12.5px",color:MUT}}>{statusLine({ ...statuses[moduleKey], status, elsewhere, onTrack })}</span>
           </div>
         </div>
         {/* The answer step by step, beside the module's name on every

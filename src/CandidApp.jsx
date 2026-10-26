@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation, useParams, Navigate } from "react-router-dom";
 import posthog from "posthog-js";
+import { Check } from "lucide-react";
 import { topRate } from "./lib/savingsRates.js";
 import { calcMetrics } from "./lib/metrics.js";
-import { MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, calcCandidScore, baselinePatch, onTrackKeys, droppedOffTrack } from "./lib/moduleStatus.js";
+import { MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS, sanitizeForMvp, computeModuleStatuses, calcCandidScore, baselinePatch, onTrackKeys, droppedOffTrack, reviewedDone } from "./lib/moduleStatus.js";
 import { capField } from "./lib/onboarding.js";
 import { G, WHITE, MUT, FONT_SIZE } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
@@ -219,6 +220,9 @@ function loanEstimateLine(d) {
 
 // The line under a quick-started module's answer saying what's estimated.
 const quickEstimateLine = (key, d) => key === "studentLoan" ? loanEstimateLine(d) : key === "cash" || key === "pension" ? estimateLineFor(d, key) : null;
+// Quick-started, and every estimate since replaced with their own figure.
+const ownFigures = (key, d) => (key === "studentLoan" ? !!d.slEstimate : (key === "cash" || key === "pension") && (d.quickEstimates?.[key]?.items || []).length > 0)
+  && !quickEstimateLine(key, d);
 
 export default function AppShell() {
   const navigate = useNavigate();
@@ -450,11 +454,13 @@ export default function AppShell() {
   // Cash isn't judged without them.
   useEffect(() => {
     if (savingsRates === null) return;
-    const now = onTrackKeys(d, m, statuses);
+    // Reviewed with under £50 left counts too (reviewedDone), so its tick
+    // goes if the £ comes back.
+    const now = [...new Set([...onTrackKeys(d, m, statuses), ...completedModules.filter(k => reviewedDone(statuses[k], true))])].sort();
     const dropped = droppedOffTrack(d.onTrackLast, now);
     if (dropped.length) setCompletedModules(prev => prev.some(k => dropped.includes(k)) ? prev.filter(k => !dropped.includes(k)) : prev);
     if ((d.onTrackLast || []).join() !== now.join() || !d.onTrackLast) set("onTrackLast", now);
-  }, [statuses, savingsRates]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [statuses, savingsRates, completedModules]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Property inputs → the report row. Only edits made on the Property screen
   // are sent (not the values already there when it opens), once they've
@@ -969,7 +975,15 @@ export default function AppShell() {
           <SaveFiguresOffer d={d} moduleKey="cash" rateCost={rateCost} source="cash_tile" onEmail={saveEmail("cash_tile")} style={{marginTop:0,marginBottom:"16px"}}
             onDismiss={() => { set("emailTileDismissed", true); posthog.capture("email_tile_dismissed", { module: "cash" }); }}/>
         )}
-        {/* Figures from the quick start's bands, until they're changed. */}
+        {/* Figures from the quick start's bands, until they're changed;
+            then a line saying the answer is on their own. */}
+        {ownFigures(mobileActiveModule, d) && (
+          <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px",display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
+            <Check size={14} strokeWidth={2.5} color={G} aria-hidden="true"/>
+            <span>Worked out on your own figures.</span>
+            <button type="button" onClick={() => openInputs(mobileActiveModule)} style={{background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>Edit</button>
+          </p>
+        )}
         {quickEstimateLine(mobileActiveModule, d) && (
           <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"0 0 14px"}}>
             {quickEstimateLine(mobileActiveModule, d)}{" "}

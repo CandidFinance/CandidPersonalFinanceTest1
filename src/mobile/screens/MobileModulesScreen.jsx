@@ -4,10 +4,10 @@ import { Check, Users, Coins, ChevronRight, Home } from "lucide-react";
 import ReviewedMark from "../ReviewedMark.jsx";
 import { SUCCESS, PROGRESS_GREEN, ON_TRACK_FILL, REVIEWED_FILL, G, GOLD, WHITE, MUT, TEXT, SERIF, SC, CDARK, RADIUS_CARD } from "../../design-tokens.js";
 import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
-import { getModuleBreakdown, MODULE_META } from "../../lib/moduleStatus.js";
+import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
-import { statusLabel, ELSEWHERE } from "../statusLabel.js";
+import { statusLabel, statusLine, ELSEWHERE } from "../statusLabel.js";
 import { notStarted, dormantModules, MODULE_PITCH } from "../../lib/appEntry.js";
 import { taxTrap } from "../../lib/taxTrap.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
@@ -132,8 +132,9 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   const cashBadge = news && !news.opened ? news.count : 0;
   const { moduleList, modulesWithRec, totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, insights, sortMode);
   // Counted from the tiles' own labels, so "N need action" always tallies
-  // with the tiles reading "Action needed".
-  const needActionCount = moduleList.filter(mm => statusLabel(mm) === "Action needed").length;
+  // with the tiles reading "Action needed" (reviewed with under £50 left
+  // reads on track: reviewedDone).
+  const needActionCount = moduleList.filter(mm => !reviewedDone(mm, completedModules.includes(mm.key)) && statusLabel(mm) === "Action needed").length;
   // Property waits with the rest until its questions are done, then joins
   // the live modules (no £ yet: no rent vs buy engine, so not ranked).
   const propertyDone = readinessMissing(d, m).length === 0;
@@ -183,9 +184,11 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
               // or a change confirmed made. A module with something to look at
               // but no £ figure (a pension short of its retirement income, say)
               // reads "Action needed", never "On track". On track tiles turn
-              // pale green; reviewed ones still needing action go muted.
-              const onTrack = mm.onTrack;
-              const actionable = hasRec || mm.status === "attention" || mm.status === "critical";
+              // pale green, and so do reviewed ones with under £50 left
+              // (reviewedDone); reviewed ones still needing action go muted.
+              // Any answered tile can be marked reviewed.
+              const onTrack = mm.onTrack || reviewedDone(mm, reviewed);
+              const actionable = mm.status !== "unknown" && mm.status !== "na" && !mm.elsewhere;
               // Priority reads through the headline figure and status dot, both
               // coloured by statusColor. The module icon stays neutral (module
               // identity, not urgency).
@@ -208,12 +211,12 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
                           {reviewed && <span style={{display:"inline-flex",animation:celebratingKey === mm.key ? "reviewedIn 0.6s ease-out" : "none"}}><ReviewedMark/></span>}
                         </div>
                         <div style={{fontFamily:SERIF,fontWeight:700,fontSize:"16px",color:statusColor,flexShrink:0}}>
-                          {hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : onTrack ? "On track" : null}
+                          {hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : null}
                         </div>
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
                         <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
-                        <span style={{fontSize:"12.5px",color:MUT}}>{statusLabel(mm)}</span>
+                        <span style={{fontSize:"12.5px",color:MUT}}>{statusLine({ ...mm, onTrack })}</span>
                         {mm.banked > 0 && <span style={{fontSize:"12.5px",color:SUCCESS,fontWeight:700}}>· {fmtCompact(mm.banked)}/yr saved</span>}
                       </div>
                     </div>

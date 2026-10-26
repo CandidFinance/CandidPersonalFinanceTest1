@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
-import { computeModuleStatuses, calcCandidScore } from "./moduleStatus.js";
+import { computeModuleStatuses, calcCandidScore, reviewedDone } from "./moduleStatus.js";
 
 const RATES = { isaRate: 4.5, nonIsaRate: 4.6 };
 const statusesFor = overrides => {
@@ -70,4 +70,22 @@ test("score: not knowing your pension costs points, but less than a critical gap
   assert.equal(calcCandidScore({ pension: { status: "unknown" } }), 92);
   assert.equal(calcCandidScore({ pension: { status: "critical" } }), 82);
   assert.equal(calcCandidScore({ pension: { status: "na" } }), 100);
+});
+
+test("cash: with under £50 left, the reason it needs action is given", () => {
+  const short = statusesFor({ salary: "50000", monthlyExpenses: "1500", cashTiers: [{ amount: "3000", rate: "5" }] });
+  assert.ok(short.cash.amount < 50);
+  assert.equal(short.cash.reason, "Below your emergency fund");
+  const lots = statusesFor({ monthlyExpenses: "1000", cashTiers: [{ amount: "20000", rate: "5" }] });
+  assert.ok(lots.cash.amount < 50);
+  assert.equal(lots.cash.reason, "Over twice your emergency fund");
+  assert.equal(statusesFor({ cashTiers: [{ amount: "20000", rate: "0" }] }).cash.reason, null);
+});
+
+test("reviewedDone: reviewed with under £50 left shows as done, whatever else is open", () => {
+  assert.equal(reviewedDone({ status: "attention", amount: 0 }, true), true);
+  assert.equal(reviewedDone({ status: "attention", amount: 0 }, false), false);
+  assert.equal(reviewedDone({ status: "attention", amount: 120 }, true), false);
+  assert.equal(reviewedDone({ status: "unknown", amount: 0 }, true), false);
+  assert.equal(reviewedDone({ status: "ok", amount: 0, elsewhere: "taxTrap" }, true), false);
 });

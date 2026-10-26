@@ -2,7 +2,6 @@ import { G, CDARK, WHITE, MUT, TEXT, SERIF, RADIUS_CARD } from "../../design-tok
 import { moduleOrder, moduleDone, scorePicks, pitchFor, SCORED_MODULES } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 import { mobileGreeting } from "../copy.js";
-import ConfidenceCard from "./ConfidenceCard.jsx";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
 import { moduleEstimate } from "../../lib/crossModule.js";
 
@@ -82,8 +81,6 @@ export default function MobileStartHome({ d, m, set, onStartModule }) {
         </div>
       </div>
 
-      {/* How confident they feel: asked once their first answer is in. */}
-      {set && (d.unlockedModules || []).length > 0 && !d.confidenceAsked && !d.confidence && <ConfidenceCard d={d} set={set}/>}
     </div>
   );
 }

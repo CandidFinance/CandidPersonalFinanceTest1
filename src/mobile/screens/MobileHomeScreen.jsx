@@ -14,7 +14,6 @@ import { moduleEstimate } from "../../lib/crossModule.js";
 import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/priorities.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import WorthALookTile from "../WorthALookTile.jsx";
-import ConfidenceCard from "./ConfidenceCard.jsx";
 import PayCheckCard from "./PayCheckCard.jsx";
 import GainedFromChanges from "../GainedFromChanges.jsx";
 import GettingToKnow from "../GettingToKnow.jsx";
@@ -164,7 +163,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
                 <span style={{fontSize:"11px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"2px 8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain}</span>
               )}
             </div>
-            {unchecked > 0 && <div style={{fontSize:"11px",color:MUT,marginTop:"2px",whiteSpace:"nowrap"}}>{checked} of {scored.length} areas checked</div>}
           </div>
         </div>
 
@@ -228,10 +226,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       {/* A new tax year: is their pay still the same? */}
       {d.payCheckDue && +d.salary > 0 && <PayCheckCard d={d} set={set}/>}
 
-      {/* How confident they feel: asked once their first answer is in, never
-          for anyone who answered it at the entry before. */}
-      {(d.unlockedModules || []).length > 0 && !d.confidenceAsked && !d.confidence && <ConfidenceCard d={d} set={set}/>}
-
       {stillToDo.length > 0 && (
         <div style={{marginTop:"22px"}}>
           <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Still to do</div>
@@ -244,7 +238,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       {/* Dismissed with its X or a swipe, until a module it didn't hold
           appears (appEntry.js worthALookShown). */}
       {worthALook.length > 0 && worthALookShown(d, worthALook.map(w => w.key)) && (
-        <WorthALookTile items={worthALook} d={d} onOpen={onStartModule}
+        <WorthALookTile items={worthALook} d={d} onOpen={onStartModule} onSeeAll={() => navigate("/app/modules")}
           onDismiss={() => set("worthALookDismissed", worthALook.map(w => w.key))}/>
       )}
 

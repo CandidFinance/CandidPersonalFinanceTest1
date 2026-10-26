@@ -78,7 +78,8 @@
      "status": "attention",
      "impact": 618,
      "impactLabel": "£618/yr lost to low savings rates",
-     "amount": 618
+     "amount": 618,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -139,7 +140,8 @@
      "amount": 618,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -152,7 +154,8 @@
      "amount": 432,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -165,7 +168,8 @@
      "amount": 1440,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -178,7 +182,8 @@
      "amount": 73,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -191,7 +196,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -204,7 +210,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -217,7 +224,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -230,7 +238,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -247,6 +256,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -263,6 +273,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -279,6 +290,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -295,6 +307,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -3054,7 +3067,8 @@
      "status": "attention",
      "impact": 623,
      "impactLabel": "£623/yr lost to low savings rates",
-     "amount": 623
+     "amount": 623,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -3115,7 +3129,8 @@
      "amount": 623,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -3128,7 +3143,8 @@
      "amount": 432,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -3141,7 +3157,8 @@
      "amount": 1440,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -3154,7 +3171,8 @@
      "amount": 24,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -3167,7 +3185,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -3180,7 +3199,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -3193,7 +3213,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -3206,7 +3227,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -3223,6 +3245,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -3239,6 +3262,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -3255,6 +3279,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -3271,6 +3296,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -5780,7 +5806,8 @@
      "status": "attention",
      "impact": 204,
      "impactLabel": "£204/yr lost to low savings rates",
-     "amount": 204
+     "amount": 204,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -5840,7 +5867,8 @@
      "amount": 204,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -5853,7 +5881,8 @@
      "amount": 144,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -5866,7 +5895,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -5879,7 +5909,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -5892,7 +5923,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -5905,7 +5937,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -5918,7 +5951,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -5931,7 +5965,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -5948,6 +5983,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -5964,6 +6000,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -5980,6 +6017,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -8386,7 +8424,8 @@
      "status": "attention",
      "impact": 204,
      "impactLabel": "£204/yr lost to low savings rates",
-     "amount": 204
+     "amount": 204,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -8446,7 +8485,8 @@
      "amount": 204,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -8459,7 +8499,8 @@
      "amount": 144,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -8472,7 +8513,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -8485,7 +8527,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -8498,7 +8541,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -8511,7 +8555,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -8524,7 +8569,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -8537,7 +8583,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -8554,6 +8601,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -8570,6 +8618,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -8586,6 +8635,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -10822,7 +10872,8 @@
      "status": "critical",
      "impact": 1070,
      "impactLabel": "£1,070/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
-     "amount": 1070
+     "amount": 1070,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -10882,7 +10933,8 @@
      "amount": 1070,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -10895,7 +10947,8 @@
      "amount": 720,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -10908,7 +10961,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -10921,7 +10975,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -10934,7 +10989,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -10947,7 +11003,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -10960,7 +11017,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -10973,7 +11031,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -10990,6 +11049,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -11006,6 +11066,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -11022,6 +11083,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -13477,7 +13539,8 @@
      "status": "critical",
      "impact": 1185,
      "impactLabel": "£1,185/yr lost to low savings rates, with £43,400 more than your emergency fund needs",
-     "amount": 1185
+     "amount": 1185,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -13537,7 +13600,8 @@
      "amount": 1185,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -13550,7 +13614,8 @@
      "amount": 720,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -13563,7 +13628,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -13576,7 +13642,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -13589,7 +13656,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -13602,7 +13670,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -13615,7 +13684,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -13628,7 +13698,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -13645,6 +13716,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -13661,6 +13733,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -13677,6 +13750,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -15918,7 +15992,8 @@
      "status": "critical",
      "impact": 24,
      "impactLabel": "£6,700 short of your 6-month emergency fund",
-     "amount": 24
+     "amount": 24,
+     "reason": "Below your emergency fund"
     },
     "investments": {
      "status": "na",
@@ -15977,7 +16052,8 @@
      "amount": 24,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": "Below your emergency fund"
     },
     "investments": {
      "key": "investments",
@@ -15990,7 +16066,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -16003,7 +16080,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -16016,7 +16094,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -16029,7 +16108,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -16042,7 +16122,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -16055,7 +16136,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -16068,7 +16150,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -16085,6 +16168,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": "Below your emergency fund",
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -17484,7 +17568,8 @@
      "status": "critical",
      "impact": 25,
      "impactLabel": "£6,700 short of your 6-month emergency fund",
-     "amount": 25
+     "amount": 25,
+     "reason": "Below your emergency fund"
     },
     "investments": {
      "status": "na",
@@ -17543,7 +17628,8 @@
      "amount": 25,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": "Below your emergency fund"
     },
     "investments": {
      "key": "investments",
@@ -17556,7 +17642,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -17569,7 +17656,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -17582,7 +17670,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -17595,7 +17684,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -17608,7 +17698,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -17621,7 +17712,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -17634,7 +17726,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -17651,6 +17744,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": "Below your emergency fund",
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -18889,7 +18983,8 @@
      "status": "critical",
      "impact": 1084,
      "impactLabel": "£1,084/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
-     "amount": 1084
+     "amount": 1084,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -18950,7 +19045,8 @@
      "amount": 1084,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -18963,7 +19059,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -18976,7 +19073,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -18989,7 +19087,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -19002,7 +19101,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -19015,7 +19115,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -19028,7 +19129,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -19041,7 +19143,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -19058,6 +19161,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -19074,6 +19178,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -19090,6 +19195,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -19106,6 +19212,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -21689,7 +21796,8 @@
      "status": "critical",
      "impact": 984,
      "impactLabel": "£984/yr lost to low savings rates, with £39,000 more than your emergency fund needs",
-     "amount": 984
+     "amount": 984,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -21750,7 +21858,8 @@
      "amount": 984,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -21763,7 +21872,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -21776,7 +21886,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -21789,7 +21900,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -21802,7 +21914,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -21815,7 +21928,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -21828,7 +21942,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -21841,7 +21956,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -21858,6 +21974,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -21874,6 +21991,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -21890,6 +22008,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -21906,6 +22025,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -24263,7 +24383,8 @@
      "status": "critical",
      "impact": 975,
      "impactLabel": "£975/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
-     "amount": 975
+     "amount": 975,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -24324,7 +24445,8 @@
      "amount": 975,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -24337,7 +24459,8 @@
      "amount": 720,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -24350,7 +24473,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -24363,7 +24487,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -24376,7 +24501,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -24389,7 +24515,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -24402,7 +24529,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -24415,7 +24543,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -24432,6 +24561,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -24448,6 +24578,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -24464,6 +24595,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -26879,7 +27011,8 @@
      "status": "critical",
      "impact": 675,
      "impactLabel": "£675/yr lost to low savings rates, with £114,000 more than your emergency fund needs",
-     "amount": 675
+     "amount": 675,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -26940,7 +27073,8 @@
      "amount": 675,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -26953,7 +27087,8 @@
      "amount": 720,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -26966,7 +27101,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -26979,7 +27115,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -26992,7 +27129,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -27005,7 +27143,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -27018,7 +27157,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -27031,7 +27171,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -27048,6 +27189,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -27064,6 +27206,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -27080,6 +27223,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -29370,7 +29514,8 @@
      "status": "critical",
      "impact": 908,
      "impactLabel": "£908/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
-     "amount": 908
+     "amount": 908,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -29430,7 +29575,8 @@
      "amount": 908,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -29443,7 +29589,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -29456,7 +29603,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -29469,7 +29617,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -29482,7 +29631,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -29495,7 +29645,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -29508,7 +29659,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -29521,7 +29673,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -29538,6 +29691,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -29554,6 +29708,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -29570,6 +29725,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -32030,7 +32186,8 @@
      "status": "critical",
      "impact": 950,
      "impactLabel": "£950/yr lost to low savings rates, with £14,200 more than your emergency fund needs",
-     "amount": 950
+     "amount": 950,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -32090,7 +32247,8 @@
      "amount": 950,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -32103,7 +32261,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -32116,7 +32275,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -32129,7 +32289,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -32142,7 +32303,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -32155,7 +32317,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -32168,7 +32331,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -32181,7 +32345,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -32198,6 +32363,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -32214,6 +32380,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -32230,6 +32397,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -34445,7 +34613,8 @@
      "status": "attention",
      "impact": 222,
      "impactLabel": "£800 short of your 6-month emergency fund",
-     "amount": 222
+     "amount": 222,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -34506,7 +34675,8 @@
      "amount": 222,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -34519,7 +34689,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -34532,7 +34703,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -34545,7 +34717,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -34558,7 +34731,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -34571,7 +34745,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -34584,7 +34759,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -34597,7 +34773,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -34614,6 +34791,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -34630,6 +34808,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -34646,6 +34825,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -34662,6 +34842,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -37757,7 +37938,8 @@
      "status": "attention",
      "impact": 250,
      "impactLabel": "£800 short of your 6-month emergency fund",
-     "amount": 250
+     "amount": 250,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -37818,7 +38000,8 @@
      "amount": 250,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -37831,7 +38014,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -37844,7 +38028,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -37857,7 +38042,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -37870,7 +38056,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -37883,7 +38070,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -37896,7 +38084,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -37909,7 +38098,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -37926,6 +38116,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -37942,6 +38133,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -37958,6 +38150,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -37974,6 +38167,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -40900,7 +41094,8 @@
      "status": "attention",
      "impact": 37,
      "impactLabel": "£5,400 short of your 6-month emergency fund",
-     "amount": 37
+     "amount": 37,
+     "reason": "Below your emergency fund"
     },
     "investments": {
      "status": "ok",
@@ -40961,7 +41156,8 @@
      "amount": 37,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": "Below your emergency fund"
     },
     "investments": {
      "key": "investments",
@@ -40974,7 +41170,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -40987,7 +41184,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -41000,7 +41198,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -41013,7 +41212,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -41026,7 +41226,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -41039,7 +41240,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -41052,7 +41254,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -41069,6 +41272,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": "Below your emergency fund",
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -41085,6 +41289,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -41101,6 +41306,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -41117,6 +41323,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -44593,7 +44800,8 @@
      "status": "attention",
      "impact": 45,
      "impactLabel": "£5,400 short of your 6-month emergency fund",
-     "amount": 45
+     "amount": 45,
+     "reason": "Below your emergency fund"
     },
     "investments": {
      "status": "ok",
@@ -44654,7 +44862,8 @@
      "amount": 45,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": "Below your emergency fund"
     },
     "investments": {
      "key": "investments",
@@ -44667,7 +44876,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -44680,7 +44890,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -44693,7 +44904,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -44706,7 +44918,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -44719,7 +44932,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -44732,7 +44946,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -44745,7 +44960,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -44762,6 +44978,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": "Below your emergency fund",
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -44778,6 +44995,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -44794,6 +45012,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -44810,6 +45029,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -48125,7 +48345,8 @@
      "status": "attention",
      "impact": 222,
      "impactLabel": "£800 short of your 6-month emergency fund",
-     "amount": 222
+     "amount": 222,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -48186,7 +48407,8 @@
      "amount": 222,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -48199,7 +48421,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -48212,7 +48435,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -48225,7 +48449,8 @@
      "amount": 37,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -48238,7 +48463,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -48251,7 +48477,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -48264,7 +48491,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -48277,7 +48505,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -48294,6 +48523,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -48310,6 +48540,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -48326,6 +48557,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -48342,6 +48574,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -51026,7 +51259,8 @@
      "status": "attention",
      "impact": 250,
      "impactLabel": "£800 short of your 6-month emergency fund",
-     "amount": 250
+     "amount": 250,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -51087,7 +51321,8 @@
      "amount": 250,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -51100,7 +51335,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -51113,7 +51349,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -51126,7 +51363,8 @@
      "amount": 6,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -51139,7 +51377,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -51152,7 +51391,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -51165,7 +51405,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -51178,7 +51419,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -51195,6 +51437,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -51211,6 +51454,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -51227,6 +51471,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -51243,6 +51488,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -53758,7 +54004,8 @@
      "status": "critical",
      "impact": 312,
      "impactLabel": "£312/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
-     "amount": 312
+     "amount": 312,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -53819,7 +54066,8 @@
      "amount": 312,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -53832,7 +54080,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -53845,7 +54094,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -53858,7 +54108,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -53871,7 +54122,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -53884,7 +54136,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -53897,7 +54150,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -53910,7 +54164,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -53927,6 +54182,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -53943,6 +54199,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -53959,6 +54216,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -56465,7 +56723,8 @@
      "status": "critical",
      "impact": 44,
      "impactLabel": "£44/yr lost to low savings rates, with £119,200 more than your emergency fund needs",
-     "amount": 44
+     "amount": 44,
+     "reason": "Over twice your emergency fund"
     },
     "investments": {
      "status": "attention",
@@ -56526,7 +56785,8 @@
      "amount": 44,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": "Over twice your emergency fund"
     },
     "investments": {
      "key": "investments",
@@ -56539,7 +56799,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -56552,7 +56813,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -56565,7 +56827,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -56578,7 +56841,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -56591,7 +56855,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -56604,7 +56869,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -56617,7 +56883,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -56634,6 +56901,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": "Over twice your emergency fund",
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -56650,6 +56918,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -56666,6 +56935,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -58955,7 +59225,8 @@
      "status": "critical",
      "impact": 1008,
      "impactLabel": "£1,008/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
-     "amount": 1008
+     "amount": 1008,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -59015,7 +59286,8 @@
      "amount": 1008,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -59028,7 +59300,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -59041,7 +59314,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -59054,7 +59328,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -59067,7 +59342,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -59080,7 +59356,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -59093,7 +59370,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -59106,7 +59384,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -59123,6 +59402,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -59139,6 +59419,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -59155,6 +59436,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -61607,7 +61889,8 @@
      "status": "critical",
      "impact": 1071,
      "impactLabel": "£1,071/yr lost to low savings rates, with £29,200 more than your emergency fund needs",
-     "amount": 1071
+     "amount": 1071,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -61667,7 +61950,8 @@
      "amount": 1071,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -61680,7 +61964,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -61693,7 +61978,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -61706,7 +61992,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -61719,7 +62006,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -61732,7 +62020,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -61745,7 +62034,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -61758,7 +62048,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -61775,6 +62066,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -61791,6 +62083,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -61807,6 +62100,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -64014,7 +64308,8 @@
      "status": "attention",
      "impact": 759,
      "impactLabel": "£759/yr lost to low savings rates",
-     "amount": 759
+     "amount": 759,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -64073,7 +64368,8 @@
      "amount": 759,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -64086,7 +64382,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -64099,7 +64396,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -64112,7 +64410,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -64125,7 +64424,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -64138,7 +64438,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -64151,7 +64452,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -64164,7 +64466,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -64181,6 +64484,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -64197,6 +64501,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -66667,7 +66972,8 @@
      "status": "critical",
      "impact": 801,
      "impactLabel": "£801/yr lost to low savings rates",
-     "amount": 801
+     "amount": 801,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -66726,7 +67032,8 @@
      "amount": 801,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -66739,7 +67046,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -66752,7 +67060,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -66765,7 +67074,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -66778,7 +67088,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -66791,7 +67102,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -66804,7 +67116,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -66817,7 +67130,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -66834,6 +67148,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -66850,6 +67165,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -69135,7 +69451,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -69148,7 +69465,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -69161,7 +69479,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -69174,7 +69493,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -69187,7 +69507,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -69200,7 +69521,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -69213,7 +69535,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -69226,7 +69549,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -69243,6 +69567,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -70673,7 +70998,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -70686,7 +71012,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -70699,7 +71026,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -70712,7 +71040,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -70725,7 +71054,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -70738,7 +71068,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -70751,7 +71082,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -70764,7 +71096,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -70781,6 +71114,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -71982,7 +72316,8 @@
      "status": "critical",
      "impact": 508,
      "impactLabel": "£508/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
-     "amount": 508
+     "amount": 508,
+     "reason": null
     },
     "investments": {
      "status": "na",
@@ -72042,7 +72377,8 @@
      "amount": 508,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -72055,7 +72391,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -72068,7 +72405,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -72081,7 +72419,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -72094,7 +72433,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -72107,7 +72447,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -72120,7 +72461,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -72133,7 +72475,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -72150,6 +72493,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -72166,6 +72510,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -75052,7 +75397,8 @@
      "status": "critical",
      "impact": 272,
      "impactLabel": "£272/yr lost to low savings rates, with £34,200 more than your emergency fund needs",
-     "amount": 272
+     "amount": 272,
+     "reason": null
     },
     "investments": {
      "status": "na",
@@ -75112,7 +75458,8 @@
      "amount": 272,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -75125,7 +75472,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -75138,7 +75486,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -75151,7 +75500,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -75164,7 +75514,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -75177,7 +75528,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -75190,7 +75542,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -75203,7 +75556,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -75220,6 +75574,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -75236,6 +75591,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -77908,7 +78264,8 @@
      "status": "critical",
      "impact": 1161,
      "impactLabel": "£1,161/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
-     "amount": 1161
+     "amount": 1161,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -77969,7 +78326,8 @@
      "amount": 1161,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -77982,7 +78340,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -77995,7 +78354,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -78008,7 +78368,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -78021,7 +78382,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -78034,7 +78396,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -78047,7 +78410,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -78060,7 +78424,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -78077,6 +78442,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -78093,6 +78459,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -78109,6 +78476,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -78125,6 +78493,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -81429,7 +81798,8 @@
      "status": "critical",
      "impact": 989,
      "impactLabel": "£989/yr lost to low savings rates, with £59,200 more than your emergency fund needs",
-     "amount": 989
+     "amount": 989,
+     "reason": null
     },
     "investments": {
      "status": "attention",
@@ -81490,7 +81860,8 @@
      "amount": 989,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -81503,7 +81874,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -81516,7 +81888,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -81529,7 +81902,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": true,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -81542,7 +81916,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -81555,7 +81930,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -81568,7 +81944,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -81581,7 +81958,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -81598,6 +81976,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -81614,6 +81993,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -81630,6 +82010,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -81646,6 +82027,7 @@
       "amountIsLumpSum": false,
       "amountOnly": true,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -84736,7 +85118,8 @@
      "status": "attention",
      "impact": 222,
      "impactLabel": "£800 short of your 6-month emergency fund",
-     "amount": 222
+     "amount": 222,
+     "reason": null
     },
     "investments": {
      "status": "na",
@@ -84795,7 +85178,8 @@
      "amount": 222,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -84808,7 +85192,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -84821,7 +85206,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -84834,7 +85220,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -84847,7 +85234,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -84860,7 +85248,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -84873,7 +85262,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -84886,7 +85276,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -84903,6 +85294,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -87289,7 +87681,8 @@
      "status": "attention",
      "impact": 250,
      "impactLabel": "£800 short of your 6-month emergency fund",
-     "amount": 250
+     "amount": 250,
+     "reason": null
     },
     "investments": {
      "status": "na",
@@ -87348,7 +87741,8 @@
      "amount": 250,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "investments": {
      "key": "investments",
@@ -87361,7 +87755,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "pension": {
      "key": "pension",
@@ -87374,7 +87769,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -87387,7 +87783,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -87400,7 +87797,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -87413,7 +87811,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "kids": {
      "key": "kids",
@@ -87426,7 +87825,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -87439,7 +87839,8 @@
      "amount": 0,
      "amountIsLumpSum": false,
      "amountOnly": false,
-     "elsewhere": null
+     "elsewhere": null,
+     "reason": null
     }
    },
    "breakdown": {
@@ -87456,6 +87857,7 @@
       "amountIsLumpSum": false,
       "amountOnly": false,
       "elsewhere": null,
+      "reason": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false

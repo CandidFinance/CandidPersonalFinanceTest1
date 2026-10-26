@@ -170,12 +170,22 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Note: tooMuchCash intentionally falls through to cashImpact here too — emergencyExcess
   // is a principal, not an annual figure, and must never be used as the £/yr amount.
   const cashAmount = cashImpact > 0 ? cashImpact : 0; // accessLabel-only attention has no £ figure
+  // Why it needs action when the £ left (under £50) doesn't say so: a few
+  // words beside "Action needed".
+  const cashReason = cashAmount >= ON_TRACK_FLOOR ? null
+    : spendingGap ? "More going out than coming in"
+    : livingOffSavings && runway < 12 ? "Living off savings"
+    : m.expensesUnknown ? "Monthly costs not added"
+    : tooMuchCash ? "Over twice your emergency fund"
+    : emergencyShort ? "Below your emergency fund"
+    : null;
   s.cash = {
     status: spendingGap || (livingOffSavings && runway < 6) || tooMuchCash || cashImpact > 800 || (emergencyCritical && !livingOffSavings) ? "critical"
           : (livingOffSavings && runway < 12) || cashImpact > 200 || (emergencyShort && !livingOffSavings) || m.expensesUnknown ? "attention" : "ok",
     impact: cashSortPriority,
     impactLabel: cashImpactLabel,
     amount: cashAmount,
+    reason: cashReason,
   };
 
   // Investments — CGT saving is a real, guaranteed, this-tax-year £/yr figure.
@@ -437,7 +447,7 @@ export function getModuleSummary(mm, d, m, statuses, insights) {
     : status === "ok" ? ON_TRACK_LINE
     : `Review your ${mm.title.toLowerCase()} situation.`;
   const impact = local.impact || 0;
-  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum, amountOnly: !!local.amountOnly, elsewhere: local.elsewhere || null };
+  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum, amountOnly: !!local.amountOnly, elsewhere: local.elsewhere || null, reason: local.reason || null };
 }
 
 // ── Candid score — deterministic, local, free ────────────────────────────────
@@ -538,6 +548,14 @@ export function droppedOffTrack(last, now) {
 export function isOnTrack(s) {
   if (s.elsewhere || s.status === "na" || s.status === "unknown") return false;
   return (s.amount || 0) < ON_TRACK_FLOOR && (s.status === "ok" || !!s.amountOnly);
+}
+// Under £50 a year left and marked reviewed: shown as on track, even with
+// something open that has no £ figure (an emergency fund short of its
+// target, say), since the user has looked at it. Undoing the review, or the
+// £ rising back over the floor, takes it away again.
+export function reviewedDone(s, reviewed) {
+  if (!reviewed || !s || s.elsewhere || s.status === "na" || s.status === "unknown") return false;
+  return (s.amount || 0) < ON_TRACK_FLOOR;
 }
 export function pendingBank(d, key, amount) {
   const base = (d.moduleBaselines || {})[key];

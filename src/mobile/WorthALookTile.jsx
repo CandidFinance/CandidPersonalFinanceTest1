@@ -1,16 +1,19 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import { WHITE, MUT, TEXT, RADIUS_CARD } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, RADIUS_CARD } from "../design-tokens.js";
 import ModuleStartRow from "./ModuleStartRow.jsx";
 
 // Home's "Worth a look": the modules they haven't started, each a tile of
 // its own inside this one, largest rough £ first. Dismissed with the X or a
 // swipe either way; `onDismiss` keeps it away until a module it didn't hold
-// appears (appEntry.js worthALookShown). The modules stay on the Modules tab.
+// appears (appEntry.js worthALookShown). The top three show here; the rest
+// are on the Modules tab, a link away.
 const SWIPE = 90;
 
-export default function WorthALookTile({ items, d, onOpen, onDismiss }) {
+const SHOWN = 3;
+
+export default function WorthALookTile({ items, d, onOpen, onSeeAll, onDismiss }) {
   const [leaving, setLeaving] = useState(0);
   // A drag that ends on a row mustn't open it.
   const dragged = useRef(false);
@@ -36,8 +39,11 @@ export default function WorthALookTile({ items, d, onOpen, onDismiss }) {
         </button>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>
-        {items.map(({ key, estimate }) => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={estimate} onOpen={onOpen}/>)}
+        {items.slice(0, SHOWN).map(({ key, estimate }) => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={estimate} onOpen={onOpen}/>)}
       </div>
+      {items.length > SHOWN && (
+        <button type="button" onClick={onSeeAll} style={{display:"block",margin:"12px 0 0 4px",background:"none",border:"none",padding:0,color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>See all modules</button>
+      )}
     </motion.section>
   );
 }

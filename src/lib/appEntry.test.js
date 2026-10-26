@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { entryGoals, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, CONFIDENCE_QUESTION, readingMs,
+import { entryGoals, pickedModules, appUnlocked, moduleDone, moduleOrder, DEFAULT_FIRST_MODULE, START_MODULES, ENTRY_QUESTIONS, readingMs,
   doneModules, scoreUnlocked, goalsWith, unfinishedPicks, notStarted, firstPick, modulePath, modulesInView, dormantModules, isNewModule, worthALookShown } from "./appEntry.js";
 
 test("entry picks set the goals they imply", () => {
@@ -9,7 +9,7 @@ test("entry picks set the goals they imply", () => {
   assert.deepEqual(entryGoals(["exploring"]), ["exploring"]);
 });
 
-test("the entry asks one question, interests, with a short reason (name comes with the email, confidence after the first answer)", () => {
+test("the entry asks one question, interests, with a short reason (name comes with the email)", () => {
   assert.deepEqual(ENTRY_QUESTIONS.map(q => q.id), ["interests"]);
   for (const q of ENTRY_QUESTIONS) assert.ok(q.why().split(/\s+/).length <= 15, q.id);
   assert.deepEqual(ENTRY_QUESTIONS[0].also(["property"]), { financialGoals: ["buy_house"] });
@@ -17,7 +17,6 @@ test("the entry asks one question, interests, with a short reason (name comes wi
   // Just exploring goes to Cash & savings, the tour module.
   assert.equal(firstPick({ interests: ["exploring"] }), "cash");
   assert.equal(modulePath("property"), "/app/property");
-  assert.equal(CONFIDENCE_QUESTION.ask({ d: { name: " Sam " } }), "How confident do you feel about your finances, Sam?");
 });
 
 test("each message waits for the one before to be read, at 330 words a minute", () => {
@@ -56,11 +55,6 @@ test("goals add to the entry's goals; none of these adds nothing", () => {
   assert.deepEqual(goalsWith(["property"], ["big_purchase"]), ["buy_house", "big_purchase"]);
   assert.deepEqual(goalsWith(["exploring"], ["consolidate"]), ["consolidate"]);
   assert.deepEqual(goalsWith(["cash"], ["none"]), ["emergency_fund"]);
-});
-
-test("the confidence check keeps the 1 to 5 scale its saved scores use", () => {
-  assert.deepEqual(CONFIDENCE_QUESTION.options().map(o => o.value), ["1", "2", "3", "4", "5"]);
-  assert.ok(CONFIDENCE_QUESTION.why().split(/\s+/).length <= 15);
 });
 
 test("the app opens with a report, or after the entry", () => {
