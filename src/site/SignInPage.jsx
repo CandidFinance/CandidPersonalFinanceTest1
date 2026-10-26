@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, ERROR_TEXT } from "../design-tokens.js";
+import { WHITE, ERROR_TEXT, SITE_INK, SITE_MUTED, SITE_RULE } from "../design-tokens.js";
 import { requestRestore, signInWithLink, signInWithPasskey, signInWithPassword, signInWithGoogle, passkeysSupported, passkeyAutofillSupported, stopPasskeyRequest, passkeyHere, passkeyName } from "../lib/entitlement.js";
 import { reportStorageFailure } from "../lib/storage.js";
 import { validEmail } from "../lib/unlock.js";
 import SiteLayout from "./SiteLayout.jsx";
+import { CTA_RADIUS } from "./StartCheckButton.jsx";
 import GoogleButton, { useGoogleButtonShown } from "../mobile/GoogleButton.jsx";
 import OrRule from "../mobile/OrRule.jsx";
 
@@ -96,13 +97,13 @@ export default function SignInPage() {
     setBusy(null);
   };
 
-  const p = { fontSize:"15px", color:MUT, lineHeight:1.6, margin:"12px 0 0" };
-  const link = { color:G, fontWeight:700 };
-  const input = { boxSizing:"border-box", width:"100%", border:"1.5px solid rgba(22,47,36,0.15)", borderRadius:"100px", padding:"14px 18px", fontSize:"15px", fontFamily:"inherit", color:TEXT, outline:"none", background:WHITE };
+  const p = { fontSize:"15px", color:SITE_MUTED, lineHeight:1.6, margin:"12px 0 0" };
+  const link = { color:SITE_INK, fontWeight:700, textDecoration:"underline", textDecorationColor:SITE_RULE, textUnderlineOffset:"3px", textDecorationThickness:"2px" };
+  const input = { boxSizing:"border-box", width:"100%", border:`1px solid ${SITE_RULE}`, borderRadius:CTA_RADIUS, padding:"14px 16px", fontSize:"15px", fontFamily:"inherit", color:SITE_INK, outline:"none", background:WHITE };
   const button = (primary, working) => ({
     width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
-    background: primary ? (working ? "rgba(22,47,36,0.4)" : G) : WHITE, color: primary ? WHITE : G,
-    border: primary ? "none" : `1.5px solid ${G}`, borderRadius:"100px", padding:"15px",
+    background: primary ? (working ? SITE_MUTED : SITE_INK) : WHITE, color: primary ? WHITE : SITE_INK,
+    border: primary ? "none" : `1px solid ${SITE_INK}`, borderRadius:CTA_RADIUS, padding:"15px",
     fontSize:"15.5px", fontWeight:700, fontFamily:"inherit", cursor: busy ? "default" : "pointer",
   });
   const textButton = { background:"none", border:"none", padding:0, fontFamily:"inherit", fontSize:"13.5px", cursor:"pointer", ...link };
@@ -110,8 +111,9 @@ export default function SignInPage() {
 
   return (
     <SiteLayout>
-      <section style={{maxWidth:"440px",margin:"0 auto",padding:"56px 16px 96px",boxSizing:"border-box"}}>
-        <h1 style={{fontFamily:SERIF,fontSize:"36px",fontWeight:700,color:G,margin:0,lineHeight:1.15}}>Sign in</h1>
+      <section style={{maxWidth:"440px",margin:"0 auto",padding:"72px 16px 104px",boxSizing:"border-box"}}>
+        <div className="st-label">Subscribers</div>
+        <h1 className="st-h2">Sign in</h1>
 
         {stage === "checking" && <p style={p}>Signing you in…</p>}
 
@@ -121,8 +123,8 @@ export default function SignInPage() {
 
         {(stage === "form" || stage === "ended" || stage === "invalid") && (
           <>
-            {stage === "invalid" && <p style={{...p,color:TEXT}}>That link has expired or has already been used. Sign in below, or email yourself a new one.</p>}
-            {stage === "ended" && <p style={{...p,color:TEXT}}>That subscription has ended. <Link to="/app/start" style={link}>Start a new check</Link>, or sign in with a different account.</p>}
+            {stage === "invalid" && <p style={{...p,color:SITE_INK}}>That link has expired or has already been used. Sign in below, or email yourself a new one.</p>}
+            {stage === "ended" && <p style={{...p,color:SITE_INK}}>That subscription has ended. <Link to="/app/start" style={link}>Start a new check</Link>, or sign in with a different account.</p>}
             {stage === "form" && <p style={p}>For Candid subscribers. Your answers and subscription come with you to this device.</p>}
 
             <GoogleButton source="signin" onCredential={withGoogle} divider style={{marginTop:"24px"}} onUnavailable={googleGone}/>

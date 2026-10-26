@@ -1,80 +1,46 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { G, GOLD, MUT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER } from "../design-tokens.js";
-import { riseIn, pullTogether } from "./motion.js";
+import { GEORGIA, MONO, SITE_BG, SITE_INK, SITE_MUTED, SITE_RULE } from "../design-tokens.js";
+import { riseIn } from "./motion.js";
 
-// Replaces an earlier heptagon-of-tiles-with-connecting-lines diagram —
-// dropped in favour of something plainer: a simple wrapping row of module
-// tiles at the page's normal content width, no geometry, no icons, no
-// lines. The gradient/border match PROVIDER_TILE_BG / PROVIDER_TILE_BORDER
-// (design-tokens.js), the same pale white-to-light-green fill used on the
-// Modules page's "where to open an account" tiles, rather than a one-off.
-// Two explicit rows rather than one flex-wrap list left to wrap wherever it
-// naturally falls — that had "Mortgage" and "Family" landing on separate
-// lines depending on viewport width; this guarantees they sit together.
-const ROWS = [
-  [
-    { key: "pension", label: "Pension" },
-    { key: "isa", label: "ISA" },
-    { key: "savings", label: "Savings" },
-    { key: "studentLoan", label: "Student loan" },
-    { key: "tax", label: "Tax" },
-  ],
-  [
-    { key: "mortgage", label: "Mortgage" },
-    { key: "children", label: "Family" },
-  ],
-];
+// The Problem's "one whole picture" section: the areas Candid covers as one
+// joined strip of cells (a 1px grid gap over a rule-coloured background
+// draws the hairlines between them), so they read as parts of one thing
+// rather than separate products. Not cards: none of them is a link. On a
+// phone the strip becomes a ruled list.
+const AREAS = ["Pension", "ISA", "Savings", "Student loan", "Tax", "Mortgage", "Family"];
+
+const CSS = `
+  .fm-strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(${AREAS.length}, minmax(0, 1fr)); gap: 1px;
+    background: ${SITE_RULE}; border-top: 1px solid ${SITE_INK}; border-bottom: 1px solid ${SITE_RULE}; }
+  .fm-strip li { background: ${SITE_BG}; padding: 18px 14px 26px; font: 400 clamp(16px, 1.7vw, 20px)/1.25 ${GEORGIA}; }
+  .fm-strip li span { display: block; font: 500 11px/1 ${MONO}; color: ${SITE_MUTED}; margin-bottom: 14px; }
+  .fm-copy { font-size: clamp(16px, 1.7vw, 18px); line-height: 1.7; color: ${SITE_MUTED}; margin: 20px 0 0; }
+
+  @media (max-width: 760px) {
+    .fm-strip { grid-template-columns: minmax(0, 1fr); }
+    .fm-strip li { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; }
+    .fm-strip li span { order: 2; margin: 0; }
+  }
+`;
 
 export default function FinancesModuleTiles() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="of-clip-pills" style={{ padding: "0 24px 88px" }}>
-      {/* .of-clip-pills (mobile-only): contains this row's scroll-entrance
-          overflow on narrow phones. Each pill starts off-screen — translated
-          sideways (up to ~92px for the 5-pill first row, via pullTogether in
-          motion.js) while invisible (opacity:0) — until scrolled into its
-          reveal trigger, and a CSS transform still counts toward scrollable
-          overflow even at opacity:0. Safe to clip: this wrapper's own 88px
-          bottom padding comfortably exceeds the animation's 54px vertical
-          travel, so nothing visible gets cut off mid-reveal. */}
-      <style>{`
-        @media (max-width: 768px) {
-          .of-clip-pills { overflow-x: hidden; }
-        }
-      `}</style>
-      <motion.div {...riseIn(reduceMotion)} style={{ maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
-        <div style={{ fontSize: "10px", fontWeight: 700, color: GOLD, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "14px" }}>
-          The real issue
-        </div>
-        <h2 style={{ fontFamily: SERIF, fontSize: "clamp(24px,3.5vw,32px)", color: G, fontWeight: 700, lineHeight: 1.3, marginBottom: "16px" }}>
-          Your finances are one whole picture, not a set of separate accounts.
-        </h2>
-        <p style={{ fontSize: "15px", color: MUT, lineHeight: 1.7, marginBottom: "8px" }}>
+    <section className="st-section">
+      <style>{CSS}</style>
+      <motion.div {...riseIn(reduceMotion)} className="st-intro">
+        <div className="st-label">The real issue</div>
+        <h2 className="st-h2">Your finances are one whole picture, not a set of separate accounts.</h2>
+        <p className="fm-copy">
           Good decisions require seeing all the moving parts at once. Savings apps hunt for a slightly better interest rate, but won't notice that you're missing your full employer pension match or wasting your ISA allowance.
         </p>
       </motion.div>
-
-      {/* Bigger tiles + more breathing room above them than before — this
-          section was reading noticeably shallower than "The problem" and
-          "And it never stands still" either side of it once the diagram
-          was simplified down to plain tiles. Each row's tiles pull together
-          and rise in as it scrolls into view, matching the same entrance
-          used for the Root Causes tiles and the life-events timeline. */}
-      <div style={{ maxWidth: "960px", margin: "56px auto 0", display: "flex", flexDirection: "column", gap: "18px" }}>
-        {ROWS.map((row, rowIndex) => (
-          <div key={rowIndex} style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "18px" }}>
-            {row.map((area, i) => (
-              <motion.div key={area.key} {...pullTogether(i, row.length, reduceMotion)} style={{
-                background: PROVIDER_TILE_BG, border: PROVIDER_TILE_BORDER, borderRadius: "14px",
-                padding: "22px 34px", fontSize: "15px", fontWeight: 600, color: G,
-              }}>
-                {area.label}
-              </motion.div>
-            ))}
-          </div>
+      <motion.ul {...riseIn(reduceMotion, { delay: 0.1 })} className="fm-strip">
+        {AREAS.map((area, i) => (
+          <li key={area}><span>{String(i + 1).padStart(2, "0")}</span>{area}</li>
         ))}
-      </div>
-    </div>
+      </motion.ul>
+    </section>
   );
 }

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import posthog from "posthog-js";
-import { WHITE, GEORGIA, MONO, HIGHLIGHT, SITE_BG, SITE_INK, SITE_MUTED, SITE_RULE } from "../design-tokens.js";
+import { WHITE, GEORGIA, MONO, SITE_INK, SITE_MUTED, SITE_RULE } from "../design-tokens.js";
 import SiteLayout from "./SiteLayout.jsx";
 import StartCheckButton, { CTA_BLUE } from "./StartCheckButton.jsx";
 import ReceiptScene from "./ReceiptScene.jsx";
@@ -34,13 +34,6 @@ const CALCULATORS = [
 ];
 
 const CSS = `
-  .lp { color: ${SITE_INK}; }
-  .lp-section { max-width: 1040px; margin: 0 auto; padding: 0 24px 104px; }
-  .lp-label { font: 500 11px/1 ${MONO}; letter-spacing: .1em; text-transform: uppercase; color: ${SITE_MUTED}; margin-bottom: 16px; }
-  .lp-h2 { font: 700 clamp(28px, 4vw, 40px)/1.12 ${GEORGIA}; letter-spacing: -.02em; color: ${SITE_INK}; margin: 0; text-wrap: balance; }
-  .lp mark { background: linear-gradient(transparent 12%, ${HIGHLIGHT} 12%, ${HIGHLIGHT} 92%, transparent 92%); color: inherit; padding: 0 .08em; }
-  .lp-intro { margin-bottom: 44px; max-width: 720px; }
-
   .lp-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 56px; border-top: 1px solid ${SITE_INK}; }
   .lp-step { display: grid; grid-template-columns: 44px minmax(0, 1fr); padding: 26px 0 30px; border-bottom: 1px solid ${SITE_RULE}; }
   .lp-step-n { font: 500 13px/1.6 ${MONO}; color: ${SITE_MUTED}; }
@@ -51,7 +44,6 @@ const CSS = `
   .lp-areas { list-style: none; margin: 0; padding: 0; border-top: 1px solid ${SITE_INK}; }
   .lp-areas li { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 18px 0; border-bottom: 1px solid ${SITE_RULE}; font: 400 clamp(20px, 2.4vw, 24px)/1.25 ${GEORGIA}; }
   .lp-areas li span { font: 500 12px/1 ${MONO}; color: ${SITE_MUTED}; }
-  .lp-small { font-size: 13px; line-height: 1.6; color: ${SITE_MUTED}; margin: 16px 0 0; }
 
   .lp-calcs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
   .lp-calc { display: flex; flex-direction: column; background: ${WHITE}; border: 1px solid ${SITE_RULE}; border-radius: 6px; padding: 26px 24px;
@@ -61,14 +53,9 @@ const CSS = `
   .lp-calc p { font-size: 14.5px; line-height: 1.65; color: ${SITE_MUTED}; margin: 0 0 20px; flex: 1; }
   .lp-calc-go { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: ${CTA_BLUE}; }
 
-  .lp-final { text-align: center; padding: 0 24px 112px; }
-  .lp-final .lp-h2 { margin-bottom: 28px; }
-
   @media (max-width: 760px) {
-    .lp-section { padding-bottom: 80px; }
     .lp-steps { grid-template-columns: minmax(0, 1fr); }
     .lp-covers { grid-template-columns: minmax(0, 1fr); gap: 28px; }
-    .lp-intro { margin-bottom: 32px; }
   }
 `;
 
@@ -78,16 +65,16 @@ export default function LandingPage() {
   useEffect(() => { posthog.capture("landing_page_viewed"); }, []);
 
   return (
-    <SiteLayout background={SITE_BG}>
+    <SiteLayout>
       <style>{CSS}</style>
       <ReceiptScene />
 
-      <div className="lp">
+      <div>
         {/* ── HOW IT WORKS (teaser — the full "How it works" tab has more detail) ── */}
-        <section className="lp-section" style={{ paddingTop: "96px" }}>
-          <motion.div {...riseIn(reduceMotion)} className="lp-intro">
-            <div className="lp-label">How it works</div>
-            <h2 className="lp-h2">Your finances, mapped. Every option worked out in pounds.</h2>
+        <section className="st-section" style={{ paddingTop: "96px" }}>
+          <motion.div {...riseIn(reduceMotion)} className="st-intro">
+            <div className="st-label">How it works</div>
+            <h2 className="st-h2">Your finances, mapped. Every option worked out in pounds.</h2>
           </motion.div>
           <ol className="lp-steps" style={{ listStyle: "none", margin: 0, padding: 0 }}>
             {STEPS.map((step, i) => (
@@ -103,12 +90,12 @@ export default function LandingPage() {
         </section>
 
         {/* ── AREAS COVERED ── */}
-        <section className="lp-section">
+        <section className="st-section">
           <div className="lp-covers">
             <motion.div {...riseIn(reduceMotion)}>
-              <div className="lp-label">What Candid covers</div>
-              <h2 className="lp-h2">Every area of your finances, connected.</h2>
-              <p className="lp-small">Guidance, not advice. Candid helps you understand your options – the decisions are always yours.</p>
+              <div className="st-label">What Candid covers</div>
+              <h2 className="st-h2">Every area of your finances, connected.</h2>
+              <p className="st-small">Guidance, not advice. Candid helps you understand your options – the decisions are always yours.</p>
             </motion.div>
             <div>
               <ul className="lp-areas">
@@ -118,16 +105,16 @@ export default function LandingPage() {
                   </motion.li>
                 ))}
               </ul>
-              <p className="lp-small">+ more areas depending on your situation</p>
+              <p className="st-small">+ more areas depending on your situation</p>
             </div>
           </div>
         </section>
 
         {/* ── FREE CALCULATORS ── the one set of cards: each is a link. */}
-        <section className="lp-section">
-          <motion.div {...riseIn(reduceMotion)} className="lp-intro">
-            <div className="lp-label">Free calculators</div>
-            <h2 className="lp-h2">Answer one question in 30 seconds.</h2>
+        <section className="st-section">
+          <motion.div {...riseIn(reduceMotion)} className="st-intro">
+            <div className="st-label">Free calculators</div>
+            <h2 className="st-h2">Answer one question in 30 seconds.</h2>
           </motion.div>
           <div className="lp-calcs">
             {CALCULATORS.map((tool, i) => (
@@ -146,9 +133,9 @@ export default function LandingPage() {
         </section>
 
         {/* ── FINAL CTA ── */}
-        <section className="lp-final">
-          <motion.h2 {...riseIn(reduceMotion)} className="lp-h2">
-            See what your finances <mark>could</mark> be doing.
+        <section className="st-final">
+          <motion.h2 {...riseIn(reduceMotion)} className="st-h2">
+            Find out what not optimising is <mark>costing</mark> you.
           </motion.h2>
           <StartCheckButton source="final_cta" />
         </section>

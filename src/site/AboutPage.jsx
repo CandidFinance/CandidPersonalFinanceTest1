@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { G, GOLD, MUT, WHITE, SERIF, RADIUS_MODAL } from "../design-tokens.js";
 import SiteLayout from "./SiteLayout.jsx";
 
-// About: Candid's aim, then Why and Who side by side. Rendered to HTML at
-// build time too (scripts/prerender.js), so crawlers can read it. Company
-// details stay in the footer; the people behind Candid are "a team", never
-// named.
+// About: Candid's aim, then Why and Who as ruled rows (.st-split, shared in
+// SiteLayout.jsx). Rendered to HTML at build time too (scripts/prerender.js),
+// so crawlers can read it; no entrance animations, so the pre-rendered page
+// shows everything. Company details stay in the footer; the people behind
+// Candid are "a team", never named.
 const TILES = [
   {
     title: "Why",
@@ -31,32 +31,26 @@ export default function AboutPage() {
   }, []);
   return (
     <SiteLayout>
+      {/* Why and Who as large Georgia words on desktop; the shared size on a phone. */}
       <style>{`
-        .about-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        @media (max-width: 760px) { .about-tiles { grid-template-columns: 1fr; } }
+        @media (min-width: 761px) { .about-split h2 { font-size: clamp(40px, 4.7vw, 50px); line-height: 1.05; letter-spacing: -.025em; } }
       `}</style>
-      <section style={{ maxWidth: "960px", margin: "0 auto", padding: "64px 24px 96px", boxSizing: "border-box" }}>
-        <div style={{ maxWidth: "760px", margin: "0 auto 48px", textAlign: "center" }}>
-          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(30px,4.6vw,46px)", fontWeight: 700, color: G, lineHeight: 1.15, letterSpacing: "-0.01em", margin: 0 }}>
-            Built to stop you wasting thousands on financial blind spots
-          </h1>
-          <p style={{ fontSize: "clamp(15px,2vw,18px)", color: MUT, lineHeight: 1.7, margin: "20px auto 0", maxWidth: "620px" }}>
-            Our aim is simple: help people keep more of what they earn. We find the tax traps, idle cash and unused allowances costing you.
-          </p>
-        </div>
-        <div className="about-tiles">
-          {TILES.map(tile => (
-            <div key={tile.title} style={{
-              background: WHITE, borderRadius: RADIUS_MODAL, padding: "32px 28px",
-              boxShadow: "0 4px 24px rgba(22,47,36,0.07)", borderTop: `4px solid ${GOLD}`,
-            }}>
-              <h2 style={{ fontFamily: SERIF, fontSize: "26px", fontWeight: 700, color: G, margin: 0 }}>{tile.title}</h2>
-              {tile.body.map(para => (
-                <p key={para} style={{ fontSize: "15px", color: MUT, lineHeight: 1.7, margin: "12px 0 0" }}>{para}</p>
-              ))}
+      <section className="st-section st-hero">
+        <div className="st-label">About</div>
+        <h1 className="st-h1">Built to stop you wasting thousands on financial blind spots</h1>
+        <p className="st-lede">
+          Our aim is simple: help people keep more of what they earn. We find the tax traps, idle cash and unused allowances costing you.
+        </p>
+      </section>
+      <section className="st-section">
+        {TILES.map(tile => (
+          <div key={tile.title} className="st-split about-split">
+            <h2>{tile.title}</h2>
+            <div>
+              {tile.body.map(para => <p key={para}>{para}</p>)}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </section>
     </SiteLayout>
   );

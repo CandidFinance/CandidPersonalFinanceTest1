@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { G, GOLD, SERIF } from "../design-tokens.js";
+import { G, WHITE, GEORGIA } from "../design-tokens.js";
 import { askConsentAgain } from "../lib/consent.js";
 import RegulatoryDisclaimer from "./RegulatoryDisclaimer.jsx";
 
@@ -13,7 +13,7 @@ export default function SiteFooter() {
       justifyContent: "space-between", flexWrap: "wrap", gap: "12px",
     }}>
       <div>
-        <div style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: GOLD }}>Candid.</div>
+        <div style={{ fontFamily: GEORGIA, fontSize: "19px", fontWeight: 700, color: WHITE, letterSpacing: "-0.01em" }}>Candid.</div>
         <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", marginTop: "2px", lineHeight: 1.5 }}>
           Candid Personal Finance Ltd · Company no. 17383565<br />
           66 Paul Street, London, England, EC2A 4NA
