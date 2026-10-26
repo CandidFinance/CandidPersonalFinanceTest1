@@ -145,10 +145,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       <div style={{background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"20px 18px 16px",boxShadow:"0 4px 18px rgba(22,47,36,0.07)"}}>
         {/* The £ at stake leads (what people care about); the score's ring
             beside it shows how far along they are. */}
-        <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:"16px"}}>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:"10.5px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Left on the table/yr</div>
-            <div style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:G,lineHeight:1.1,marginTop:"6px"}}>{fmt(totalOpp)}</div>
+            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Left on the table/yr</div>
+            <div style={{fontFamily:SERIF,fontSize:"var(--hero-figure, 38px)",fontWeight:700,color:G,lineHeight:1.1,marginTop:"6px"}}>{fmt(totalOpp)}</div>
             <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
               {totalOpp > 0 ? "Your money left on the table each year, across what you've answered."
                 : unchecked > 0 ? `Nothing left on the table in what you've checked so far. ${unchecked} more ${unchecked === 1 ? "area" : "areas"} to check below.`
@@ -222,7 +222,8 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
       {/* What the changes the user says they've made are worth, and the pot
           they've added up to (GainedFromChanges.jsx). */}
-      <GainedFromChanges d={d}/>
+      <GainedFromChanges d={d} options={plan.filter(p => p.amount > 0)} atStake={totalOpp}
+        onOpen={key => navigate(key ? `/app/module/${key}` : "/app/modules")}/>
 
       {/* A new tax year: is their pay still the same? */}
       {d.payCheckDue && +d.salary > 0 && <PayCheckCard d={d} set={set}/>}

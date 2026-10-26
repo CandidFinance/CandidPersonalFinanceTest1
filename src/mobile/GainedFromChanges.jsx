@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD, HERO_TILE_BG, MODULE_CHART_COLOR } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD, HERO_TILE_BG, MODULE_CHART_COLOR } from "../design-tokens.js";
 import { bankedChanges, gainedSoFar, taxYearStart, MODULE_META } from "../lib/moduleStatus.js";
 import { hasAccess, accessInfo, PLANS } from "../lib/entitlement.js";
 import { fmt } from "../lib/format.js";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Home's "Gains" (moduleStatus.js gainedSoFar). The
 // yearly worth of the changes leads, since the pot itself starts small (a
@@ -24,20 +25,17 @@ const SURFACE = "#F7F9F5";
 const titleOf = key => MODULE_META.find(mm => mm.key === key)?.title || key;
 const Dot = ({ color }) => <span style={{width:"8px",height:"8px",borderRadius:"50%",background:color,display:"inline-block",flexShrink:0}}/>;
 
-export default function GainedFromChanges({ d }) {
+// Before any change: a dark call-to-action tile instead (StartSaving).
+// `options` are the modules with something left on the table, largest £
+// first; `atStake` is Home's left-on-the-table total. `onOpen(key)` opens a
+// module, or the modules list for null.
+export default function GainedFromChanges({ d, options = [], atStake = 0, onOpen }) {
   const gained = gainedSoFar(d);
   const from = taxYearStart();
   const thisYear = gainedSoFar(d, new Date(), from);
   const kicker = { fontSize:"11px", fontWeight:600, color:MUT, letterSpacing:"0.09em", textTransform:"uppercase" };
 
-  if (!gained.count) return (
-    <div style={{marginTop:"22px"}}>
-      <div style={kicker}>Saved</div>
-      <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
-        When you make a change and update your figures in a module, what it's worth adds up here.
-      </p>
-    </div>
-  );
+  if (!gained.count) return <StartSaving options={options} atStake={atStake} onOpen={onOpen}/>;
 
   // What they pay a year, on their plan; rounded down so it never overstates.
   const paying = hasAccess();
@@ -52,7 +50,7 @@ export default function GainedFromChanges({ d }) {
     <div style={{marginTop:"16px",background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px 18px 16px",boxShadow:"0 4px 18px rgba(22,47,36,0.07)"}}>
       <div style={kicker}>Saved</div>
       <div style={{display:"flex",alignItems:"baseline",gap:"6px",marginTop:"6px"}}>
-        <span style={{fontFamily:SERIF,fontSize:"38px",fontWeight:700,color:SUCCESS,lineHeight:1.1}}>{fmt(gained.perYear)}</span>
+        <span style={{fontFamily:SERIF,fontSize:"var(--hero-figure, 38px)",fontWeight:700,color:SUCCESS,lineHeight:1.1}}>{fmt(gained.perYear)}</span>
         <span style={{fontSize:"15px",fontWeight:600,color:TEXT}}>a year</span>
       </div>
       <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"4px 0 0"}}>
@@ -75,6 +73,66 @@ export default function GainedFromChanges({ d }) {
         <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.45,margin:"10px 0 0"}}>{fmt(gained.total)} in all since your first change.</p>
       )}
     </div>
+  );
+}
+
+// Saved before any change: a dark green tile that reads as the next step,
+// not a result. £0 against what's left on the table (the "/£x" goes once a
+// change is saved, as the tile above takes over), and a row of modules to
+// open, largest £ first, scrolled sideways (snapping, with arrows where
+// there's more).
+function StartSaving({ options, atStake, onOpen }) {
+  const row = useRef(null);
+  const [more, setMore] = useState({ left: false, right: false });
+  const measure = () => {
+    const el = row.current;
+    if (el) setMore({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  };
+  useEffect(() => {
+    measure();
+    if (typeof ResizeObserver === "undefined" || !row.current) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(row.current);
+    return () => ro.disconnect();
+  }, [options.length]);
+  const scrollBy = dir => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.8, behavior: "smooth" });
+  const pills = options.length ? options : [{ key: null }];
+  const arrow = dir => (
+    <button type="button" onClick={() => scrollBy(dir)} aria-label={dir < 0 ? "Earlier modules" : "More modules"}
+      style={{position:"absolute",top:"50%",[dir < 0 ? "left" : "right"]:"-6px",transform:"translateY(-50%)",width:"32px",height:"32px",borderRadius:"50%",border:"none",
+        background:G,boxShadow:"0 0 0 1px rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.25)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+      {dir < 0 ? <ChevronLeft size={16} color={WHITE}/> : <ChevronRight size={16} color={WHITE}/>}
+    </button>
+  );
+  return (
+    <section aria-label="Saved" style={{marginTop:"16px",background:G,borderRadius:RADIUS_CARD,padding:"18px 18px 18px",boxShadow:"0 8px 24px rgba(22,47,36,0.22)",color:WHITE}}>
+      <div style={{fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,0.65)",letterSpacing:"0.09em",textTransform:"uppercase"}}>Saved</div>
+      <div style={{display:"flex",alignItems:"baseline",flexWrap:"wrap",gap:"2px 6px",marginTop:"6px"}}>
+        <span style={{fontFamily:SERIF,fontSize:"var(--hero-figure, 38px)",fontWeight:700,lineHeight:1.1}}>
+          £0{atStake > 0 && <span style={{color:"rgba(255,255,255,0.45)"}}>/{fmt(atStake)}</span>}
+        </span>
+        <span style={{fontSize:"15px",fontWeight:600,color:"rgba(255,255,255,0.75)"}}>a year</span>
+      </div>
+      <p style={{fontSize:"13.5px",color:"rgba(255,255,255,0.8)",lineHeight:1.45,margin:"6px 0 0"}}>
+        Make a change with Candid, and what you save adds up here.
+      </p>
+      <div style={{position:"relative",marginTop:"16px"}}>
+        <style>{`.start-saving-row::-webkit-scrollbar { display: none; }`}</style>
+        <div ref={row} className="start-saving-row" onScroll={measure}
+          style={{display:"flex",gap:"8px",overflowX:"auto",scrollSnapType:"x mandatory",scrollbarWidth:"none",padding:"2px 0"}}>
+          {pills.map(o => (
+            <button key={o.key || "all"} type="button" onClick={() => onOpen?.(o.key)}
+              style={{flex:pills.length === 1 ? "1 0 100%" : "0 0 auto",scrollSnapAlign:"start",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:"6px",
+                background:WHITE,color:G,border:"none",borderRadius:"100px",padding:"13px 18px",fontSize:"14.5px",fontWeight:700,fontFamily:"inherit",whiteSpace:"nowrap",cursor:"pointer"}}>
+              {o.key ? <>Open {o.title} <span style={{fontWeight:600,color:MUT}}>· {fmt(o.amount)}{o.amountIsLumpSum ? " by 18" : "/yr"}</span></> : "Open modules"}
+              <ChevronRight size={15}/>
+            </button>
+          ))}
+        </div>
+        {more.left && arrow(-1)}
+        {more.right && arrow(1)}
+      </div>
+    </section>
   );
 }
 

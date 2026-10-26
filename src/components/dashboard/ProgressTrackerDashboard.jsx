@@ -5,6 +5,7 @@ import { buildProgressSnapshot, poundsInput } from "../../lib/progressTracker.js
 import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK1 } from "../../lib/format.js";
+import { taxYearOf } from "../../lib/taxYear.js";
 import { useElementWidth } from "../../mobile/useElementWidth.js";
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
@@ -74,7 +75,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenMo
           <Tile title="Net worth" wash>
             <NetWorth picture={netWorth}/>
           </Tile>
-          <Tile title="Annual goals" wash>
+          <Tile title={`Goals ${taxYearShort(taxYearOf(new Date()))}`} wash>
             <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",marginTop:"12px"}}>
               <Ring pct={annual.total ? annual.pct : null} hits={annual.hits} total={annual.total}/>
             </div>
@@ -119,6 +120,9 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenMo
 }
 
 // ── Headline ───────────────────────────────────────────────────────────
+
+// A tax year as "26/27", from the year it starts in.
+const taxYearShort = start => `${String(start % 100).padStart(2, "0")}/${String((start + 1) % 100).padStart(2, "0")}`;
 
 // Average progress across this tax year's goals below (the modules'; pots
 // have their own dates), as a ring that fills to it, with the figure plain

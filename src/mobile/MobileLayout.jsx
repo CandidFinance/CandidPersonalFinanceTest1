@@ -29,7 +29,7 @@ export default function MobileLayout({ pageLabel, activeTab, headerRight, assist
         @media (min-width: 1000px) {
           [data-tab-bar] { display: none !important; }
           .app-desktop-tabs { display: flex; }
-          .app-content { max-width: 720px !important; padding-bottom: 56px !important; }
+          .app-content { max-width: 720px !important; padding-bottom: 56px !important; --hero-figure: 60px; }
           .app-navbar-inner { max-width: 720px !important; }
         }
       `}</style>
