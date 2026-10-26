@@ -14,7 +14,7 @@ const HELP = [
 
 export default function WhatCandidIsPage() {
   return (
-    <SiteLayout>
+    <SiteLayout title="What Candid is, and isn't | Candid">
       <section className="st-section st-hero">
         <div className="st-label">Guidance, not advice</div>
         <h1 className="st-h1">What Candid is, and isn't</h1>

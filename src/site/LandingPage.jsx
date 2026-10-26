@@ -7,6 +7,7 @@ import SiteLayout from "./SiteLayout.jsx";
 import StartCheckButton, { CTA_BLUE } from "./StartCheckButton.jsx";
 import ReceiptScene from "./ReceiptScene.jsx";
 import { EASE_STEADY, riseIn } from "./motion.js";
+import { STEPS } from "./steps.js";
 
 // ── Home tab of the marketing site, in the "Statement" design (Highlighter
 // version, design/landing/BRIEF.md): Georgia headlines, a cyan highlighter,
@@ -17,13 +18,6 @@ import { EASE_STEADY, riseIn } from "./motion.js";
 //
 // Entrances below the scene use riseIn from ./motion.js: everything rises,
 // nothing slides sideways, so nothing can widen a phone screen mid-reveal.
-
-const STEPS = [
-  { title: "Where you stand and where you're headed", body: "Share your current setup and targets, from salary and savings to buying a home or growing your investments. Rough estimates are fine, we'll do the maths." },
-  { title: "Your full financial picture, analysed", body: "We test your setup against UK tax traps, debt mechanics, and personal goals. Then your Candid score, and every option worked out in pounds." },
-  { title: "See the £ value of every decision", body: "See what each option saves you, from your own figures. Candid does the maths; the decisions are yours." },
-  { title: "Guidance that grows with you", body: "Life isn't static. Whether you get a pay rise, buy a home, or start a family – update a figure and every module's answer moves with it." },
-];
 
 const AREAS = ["Pension & salary sacrifice", "ISA & investments", "Cash savings optimisation", "Student loan strategy", "Buying a home"];
 
@@ -82,7 +76,7 @@ export default function LandingPage() {
                 <div className="lp-step-n">{String(i + 1).padStart(2, "0")}</div>
                 <div>
                   <h3>{step.title}</h3>
-                  <p>{step.body}</p>
+                  <p>{step.teaser}</p>
                 </div>
               </motion.li>
             ))}

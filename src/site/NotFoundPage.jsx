@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import SiteLayout from "./SiteLayout.jsx";
 
@@ -6,13 +5,8 @@ import SiteLayout from "./SiteLayout.jsx";
 // link inside the site; a request straight to a wrong address gets the
 // server's 404.html instead, with a 404 status (see vercel.json).
 export default function NotFoundPage() {
-  useEffect(() => {
-    const previous = document.title;
-    document.title = "Page not found | Candid";
-    return () => { document.title = previous; };
-  }, []);
   return (
-    <SiteLayout>
+    <SiteLayout title="Page not found | Candid">
       <section className="st-section st-hero">
         <div className="st-label">404</div>
         <h1 className="st-h1">Page not found</h1>

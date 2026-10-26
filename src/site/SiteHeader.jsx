@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import posthog from "posthog-js";
 import { Menu, X } from "lucide-react";
-import { G, MUT, SANS, GEORGIA, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT } from "../design-tokens.js";
+import { SANS, GEORGIA, HEADER_WORDMARK_LIGHT, SITE_BG, SITE_INK, SITE_MUTED, SITE_RULE } from "../design-tokens.js";
 import { appEntryPath, CTA_BLUE, CTA_LABEL, CTA_RADIUS } from "./StartCheckButton.jsx";
 import { EASE_STEADY } from "./motion.js";
 
@@ -65,7 +65,11 @@ function useNavVisibility(forceVisible) {
 
 export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const visible = useNavVisibility(mobileOpen);
+  // Keyboard focus inside the header (tabbing in after scrolling down;
+  // :focus-visible, so a mouse click doesn't pin it open) brings it back, so focus never lands on links slid off-screen.
+  const [focusInside, setFocusInside] = useState(false);
+  const visible = useNavVisibility(mobileOpen || focusInside);
+  const reduceMotion = useReducedMotion();
   const location = useLocation();
   const navigate = useNavigate();
   const rootRef = useRef(null);
@@ -99,13 +103,15 @@ export default function SiteHeader() {
   }
 
   return (
-    <motion.div
+    <motion.header
       ref={rootRef}
+      onFocus={e => { if (e.target.matches(":focus-visible")) setFocusInside(true); }}
+      onBlur={e => { if (!rootRef.current?.contains(e.relatedTarget)) setFocusInside(false); }}
       animate={{ y: visible ? 0 : "-100%", opacity: visible ? 1 : 0 }}
-      transition={{ duration: 0.75, ease: EASE_STEADY }}
+      transition={{ duration: reduceMotion ? 0 : 0.75, ease: EASE_STEADY }}
       style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, height: HEADER_HEIGHT,
-        background: HEADER_BG_LIGHT, borderBottom: "1px solid rgba(22,47,36,0.08)",
+        background: SITE_BG, borderBottom: `1px solid ${SITE_RULE}`,
         paddingTop: "env(safe-area-inset-top, 0px)", boxSizing: "border-box",
       }}
     >
@@ -142,10 +148,10 @@ export default function SiteHeader() {
           {TABS.map(tab => {
             const active = location.pathname === tab.to;
             return (
-              <Link key={tab.to} to={tab.to} style={{
+              <Link key={tab.to} to={tab.to} aria-current={active ? "page" : undefined} style={{
                 fontFamily: SANS, fontSize: "14px", fontWeight: 600,
-                color: active ? G : MUT, textDecoration: "none",
-                borderBottom: active ? `2px solid ${G}` : "2px solid transparent",
+                color: active ? SITE_INK : SITE_MUTED, textDecoration: "none",
+                borderBottom: active ? `2px solid ${SITE_INK}` : "2px solid transparent",
                 paddingBottom: "4px",
               }}>
                 {tab.label}
@@ -156,9 +162,9 @@ export default function SiteHeader() {
         <div style={{ gridColumn: 3, justifySelf: "end", display: "flex", alignItems: "center", gap: "24px" }}>
         {/* Signing in on another device (subscribers), then the way into
             the app, on every page, far right (desktop only). */}
-        <Link to="/signin" className="nsh-cta-btn" style={{
+        <Link to="/signin" className="nsh-cta-btn" aria-current={location.pathname === "/signin" ? "page" : undefined} style={{
           fontFamily: SANS, fontSize: "14px", fontWeight: 600,
-          color: location.pathname === "/signin" ? G : MUT, textDecoration: "none", whiteSpace: "nowrap",
+          color: location.pathname === "/signin" ? SITE_INK : SITE_MUTED, textDecoration: "none", whiteSpace: "nowrap",
         }}>
           Sign in
         </Link>
@@ -187,9 +193,9 @@ export default function SiteHeader() {
           aria-controls="nsh-mobile-menu"
           style={{
             alignItems: "center", justifyContent: "center",
-            background: "transparent", border: "none", padding: "8px",
-            margin: "-8px 0", // negative top/bottom cancels the padding's added height (bigger tap target, same row height)
-            color: G, cursor: "pointer",
+            background: "transparent", border: "none", padding: "11px",
+            margin: "-11px 0", // negative top/bottom cancels the padding's added height (bigger tap target, same row height)
+            color: SITE_INK, cursor: "pointer",
           }}
         >
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -209,7 +215,7 @@ export default function SiteHeader() {
         className={`nsh-mobile-panel${mobileOpen ? " nsh-mobile-panel--open" : ""}`}
         style={{
           position: "absolute", top: "100%", left: 0, right: 0,
-          background: HEADER_BG_LIGHT, borderBottom: "1px solid rgba(22,47,36,0.08)",
+          background: SITE_BG, borderBottom: `1px solid ${SITE_RULE}`,
           boxShadow: "0 12px 24px rgba(22,47,36,0.1)",
         }}
       >
@@ -218,12 +224,12 @@ export default function SiteHeader() {
             const active = location.pathname === tab.to;
             return (
               <Link
-                key={tab.to} to={tab.to}
+                key={tab.to} to={tab.to} aria-current={active ? "page" : undefined}
                 onClick={() => setMobileOpen(false)}
                 style={{
                   fontFamily: SANS, fontSize: "16px", fontWeight: 600,
-                  color: active ? G : MUT, textDecoration: "none",
-                  padding: "14px 0", borderBottom: "1px solid rgba(22,47,36,0.08)",
+                  color: active ? SITE_INK : SITE_MUTED, textDecoration: "none",
+                  padding: "14px 0", borderBottom: `1px solid ${SITE_RULE}`,
                 }}
               >
                 {tab.label}
@@ -231,12 +237,12 @@ export default function SiteHeader() {
             );
           })}
           <Link
-            to="/signin"
+            to="/signin" aria-current={location.pathname === "/signin" ? "page" : undefined}
             onClick={() => setMobileOpen(false)}
             style={{
               fontFamily: SANS, fontSize: "16px", fontWeight: 600,
-              color: location.pathname === "/signin" ? G : MUT, textDecoration: "none",
-              padding: "14px 0", borderBottom: "1px solid rgba(22,47,36,0.08)",
+              color: location.pathname === "/signin" ? SITE_INK : SITE_MUTED, textDecoration: "none",
+              padding: "14px 0", borderBottom: `1px solid ${SITE_RULE}`,
             }}
           >
             Sign in
@@ -255,6 +261,6 @@ export default function SiteHeader() {
           </button>
         </nav>
       </div>
-    </motion.div>
+    </motion.header>
   );
 }

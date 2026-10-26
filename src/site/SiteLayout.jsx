@@ -1,4 +1,5 @@
-import { SANS, GEORGIA, MONO, HIGHLIGHT, SITE_BG, SITE_INK, SITE_MUTED, SITE_RULE } from "../design-tokens.js";
+import { useEffect } from "react";
+import { SANS, GEORGIA, MONO, HIGHLIGHT, WHITE, SITE_BG, SITE_INK, SITE_MUTED, SITE_RULE } from "../design-tokens.js";
 import SiteHeader, { HEADER_HEIGHT } from "./SiteHeader.jsx";
 import SiteFooter from "./SiteFooter.jsx";
 
@@ -47,6 +48,11 @@ const SITE_CSS = `
   .st-split li { position: relative; padding-left: 22px; margin-bottom: 10px; }
   .st-split li::before { content: ""; position: absolute; left: 0; top: .8em; width: 10px; border-top: 1px solid ${SITE_INK}; }
 
+  .st-skip { position: fixed; top: 12px; left: 12px; z-index: 60; padding: 12px 18px; border-radius: 12px; background: ${SITE_INK}; color: ${WHITE};
+    font-weight: 600; text-decoration: none; transform: translateY(-200%); }
+  .st-skip:focus { transform: none; }
+  main:focus { outline: none; }
+
   .st-final { text-align: center; padding: 0 24px 112px; }
   .st-final .st-h2 { margin-bottom: 28px; }
 
@@ -60,10 +66,21 @@ const SITE_CSS = `
   }
 `;
 
-export default function SiteLayout({ children }) {
+// `title` is the browser tab's title for this page; the home page leaves it
+// out and keeps index.html's own.
+export default function SiteLayout({ title, children }) {
+  useEffect(() => {
+    if (!title) return;
+    const previous = document.title;
+    document.title = title;
+    return () => { document.title = previous; };
+  }, [title]);
+
   return (
     <div style={{ background: SITE_BG }}>
       <style>{SITE_CSS}</style>
+      {/* First thing Tab reaches: jumps past the header to the page itself. */}
+      <a href="#main" className="st-skip" onClick={e => { e.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
       {/* At least a screen tall, with the page's content taking up the
           slack, so on a short page (About, Sign in) the footer still sits
           at the bottom of the screen rather than partway up it. */}
@@ -73,7 +90,7 @@ export default function SiteLayout({ children }) {
             (so it can slide off-screen without leaving a permanent gap),
             which means it doesn't push this content down on its own. */}
         <div style={{ height: HEADER_HEIGHT, flexShrink: 0 }} />
-        <main className="st" style={{ flex: 1 }}>{children}</main>
+        <main id="main" tabIndex={-1} className="st" style={{ flex: 1 }}>{children}</main>
         <SiteFooter />
       </div>
     </div>

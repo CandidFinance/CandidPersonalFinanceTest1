@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
-import { WHITE, ERROR_TEXT, SITE_INK, SITE_MUTED, SITE_RULE } from "../design-tokens.js";
+import { WHITE, ERROR_TEXT, SITE_INK, SITE_MUTED, SITE_RULE, SITE_EDGE } from "../design-tokens.js";
 import { requestRestore, signInWithLink, signInWithPasskey, signInWithPassword, signInWithGoogle, passkeysSupported, passkeyAutofillSupported, stopPasskeyRequest, passkeyHere, passkeyName } from "../lib/entitlement.js";
 import { reportStorageFailure } from "../lib/storage.js";
 import { validEmail } from "../lib/unlock.js";
@@ -99,7 +99,9 @@ export default function SignInPage() {
 
   const p = { fontSize:"15px", color:SITE_MUTED, lineHeight:1.6, margin:"12px 0 0" };
   const link = { color:SITE_INK, fontWeight:700, textDecoration:"underline", textDecorationColor:SITE_RULE, textUnderlineOffset:"3px", textDecorationThickness:"2px" };
-  const input = { boxSizing:"border-box", width:"100%", border:`1px solid ${SITE_RULE}`, borderRadius:CTA_RADIUS, padding:"14px 16px", fontSize:"15px", fontFamily:"inherit", color:SITE_INK, outline:"none", background:WHITE };
+  const input = { boxSizing:"border-box", width:"100%", border:`1px solid ${SITE_EDGE}`, borderRadius:CTA_RADIUS, padding:"14px 16px", fontSize:"15px", fontFamily:"inherit", color:SITE_INK, background:WHITE };
+  // Visible field names, so they stay on screen once the field is filled.
+  const fieldLabel = { display:"flex", flexDirection:"column", gap:"6px", fontSize:"13.5px", fontWeight:600, color:SITE_INK };
   const button = (primary, working) => ({
     width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
     background: primary ? (working ? SITE_MUTED : SITE_INK) : WHITE, color: primary ? WHITE : SITE_INK,
@@ -110,7 +112,9 @@ export default function SignInPage() {
   const errorLine = error && <div role="alert" style={{fontSize:"13px",color:ERROR_TEXT}}>{error}</div>;
 
   return (
-    <SiteLayout>
+    <SiteLayout title="Sign in | Candid">
+      {/* The fields' focus ring: inline styles can't reach :focus. */}
+      <style>{`.si-field:focus { outline: 2px solid ${SITE_INK}; outline-offset: 2px; }`}</style>
       <section style={{maxWidth:"440px",margin:"0 auto",padding:"72px 16px 104px",boxSizing:"border-box"}}>
         <div className="st-label">Subscribers</div>
         <h1 className="st-h2">Sign in</h1>
@@ -139,8 +143,12 @@ export default function SignInPage() {
             )}
 
             <form onSubmit={withPassword} style={{marginTop:passkeyButton || google ? "14px" : "24px",display:"flex",flexDirection:"column",gap:"10px"}}>
-              <input type="email" name="username" autoComplete="username webauthn" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email" style={input}/>
-              <input type="password" name="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" aria-label="Password" style={input}/>
+              <label style={fieldLabel}>Email
+                <input type="email" name="username" autoComplete="username webauthn" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="si-field" style={input}/>
+              </label>
+              <label style={fieldLabel}>Password
+                <input type="password" name="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className="si-field" style={input}/>
+              </label>
               <button type="submit" disabled={!!busy} style={button(!passkeyButton, busy === "password")}>
                 {busy === "password" ? "Signing in…" : "Sign in"}
               </button>
@@ -164,7 +172,9 @@ export default function SignInPage() {
           <>
             <p style={p}>Enter the email you subscribed with and we'll send you a link that signs you in on this device. Once you're in, you can add Face ID or a password from Edit inputs.</p>
             <form onSubmit={sendLink} style={{marginTop:"24px",display:"flex",flexDirection:"column",gap:"10px"}}>
-              <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email" style={input}/>
+              <label style={fieldLabel}>Email
+                <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="si-field" style={input}/>
+              </label>
               <button type="submit" disabled={!!busy} style={button(true, busy === "link")}>
                 {busy === "link" ? "Sending…" : "Email me a sign-in link"}
               </button>

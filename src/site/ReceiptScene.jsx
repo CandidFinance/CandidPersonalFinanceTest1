@@ -215,6 +215,9 @@ export default function ReceiptScene() {
       const fade = clamp((p - 0.02) / 0.2);
       message.style.opacity = String(1 - fade);
       message.style.transform = `translateY(${-40 * fade}px) scale(${1 - 0.04 * fade})`;
+      // Out of the tab order (and the accessibility tree) while faded or
+      // hidden, so keyboard focus never lands on a button nobody can see.
+      message.inert = fade > 0.5;
       let landed = 0;
       tiles.forEach((t, i) => {
         const e = clamp((p - (0.32 + i * 0.14)) / 0.12), k = easeInOut(e), g = geo.tiles[i];
@@ -227,6 +230,7 @@ export default function ReceiptScene() {
         if (done) landed += LINES[i].amount;
       });
       foot.classList.toggle("is-shown", p > 0.9);
+      foot.inert = p <= 0.9;
       if (landed !== target) {
         target = landed;
         counter?.stop();
@@ -253,6 +257,8 @@ export default function ReceiptScene() {
       receipt.style.scale = "";
       lines.forEach(l => l.classList.remove("is-in", "is-lit"));
       foot.classList.remove("is-shown");
+      message.inert = false;
+      foot.inert = false;
       totalEl.textContent = pounds(TOTAL);
     };
   }, [animated, scrollY]);

@@ -41,7 +41,7 @@ export default function TheProblemPage() {
   useEffect(() => { posthog.capture("the_problem_viewed"); }, []);
 
   return (
-    <SiteLayout>
+    <SiteLayout title="The problem | Candid">
       <style>{CSS}</style>
 
       {/* ── HERO ── */}

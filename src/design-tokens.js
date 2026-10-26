@@ -125,6 +125,7 @@ export const SITE_BG    = "#fbfaf5"; // page background
 export const SITE_INK   = "#1a1a17"; // text
 export const SITE_MUTED = "#66665e"; // quiet text, 5.7:1 on SITE_BG
 export const SITE_RULE  = "#e2e0d6"; // hairline rules and tile borders
+export const SITE_EDGE  = "#8f8d84"; // form field borders, 3.3:1 on white (inputs need 3:1)
 
 // Named sizes for the 5 clearest, heaviest-used size clusters only. Font
 // sizes across the app are NOT a clean scale — 29 distinct values from 8px

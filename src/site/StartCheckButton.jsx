@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import posthog from "posthog-js";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { WHITE, SANS, CTA_BLUE } from "../design-tokens.js";
 import { reportStorageFailure } from "../lib/storage.js";
@@ -35,6 +35,7 @@ export const CTA_RADIUS = "12px";
 // press.
 export default function StartCheckButton({ source, size = "regular" }) {
   const large = size === "large";
+  const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
 
   function start() {
@@ -46,7 +47,7 @@ export default function StartCheckButton({ source, size = "regular" }) {
   return (
     <motion.button
       type="button" onClick={start}
-      whileHover={{ scale: 1.03 }}
+      whileHover={reduceMotion ? undefined : { scale: 1.03 }}
       style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "10px",
         background: CTA_BLUE, border: "none", borderRadius: CTA_RADIUS,

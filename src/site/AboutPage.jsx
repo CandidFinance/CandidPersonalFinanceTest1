@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import SiteLayout from "./SiteLayout.jsx";
 
 // About: Candid's aim, then Why and Who as ruled rows (.st-split, shared in
@@ -24,13 +23,8 @@ const TILES = [
 ];
 
 export default function AboutPage() {
-  useEffect(() => {
-    const previous = document.title;
-    document.title = "About | Candid";
-    return () => { document.title = previous; };
-  }, []);
   return (
-    <SiteLayout>
+    <SiteLayout title="About | Candid">
       {/* Why and Who as large Georgia words on desktop; the shared size on a phone. */}
       <style>{`
         @media (min-width: 761px) { .about-split h2 { font-size: clamp(40px, 4.7vw, 50px); line-height: 1.05; letter-spacing: -.025em; } }
