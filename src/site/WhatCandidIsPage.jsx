@@ -57,7 +57,7 @@ export default function WhatCandidIsPage() {
             <p>Some decisions are worth talking through with someone, particularly about pensions, large sums, or anything you can't easily undo. These are free or help you find someone:</p>
             <ul>
               {HELP.map(h => (
-                <li key={h.href}><a href={h.href} target="_blank" rel="noopener noreferrer" className="st-link">{h.label}</a></li>
+                <li key={h.href}><a href={h.href} target="_blank" rel="noopener noreferrer" className="st-link">{h.label}<span className="st-sr"> (opens in a new tab)</span></a></li>
               ))}
             </ul>
           </div>

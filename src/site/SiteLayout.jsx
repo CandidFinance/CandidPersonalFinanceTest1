@@ -18,6 +18,7 @@ import SiteFooter from "./SiteFooter.jsx";
 //   .st-split        heading on the left, text on the right, under an ink rule
 //   .st-small        quiet footnote text
 //   .st-final        the closing heading + start button
+//   .st-sr           text for screen readers only (e.g. "opens in a new tab")
 const SITE_CSS = `
   .st { color: ${SITE_INK}; }
   .st mark { background: linear-gradient(transparent 12%, ${HIGHLIGHT} 12%, ${HIGHLIGHT} 92%, transparent 92%); color: inherit; padding: 0 .08em; }
@@ -52,6 +53,7 @@ const SITE_CSS = `
     font-weight: 600; text-decoration: none; transform: translateY(-200%); }
   .st-skip:focus { transform: none; }
   main:focus { outline: none; }
+  .st-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
   .st-final { text-align: center; padding: 0 24px 112px; }
   .st-final .st-h2 { margin-bottom: 28px; }

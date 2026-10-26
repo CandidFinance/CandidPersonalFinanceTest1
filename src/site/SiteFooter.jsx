@@ -30,8 +30,8 @@ export default function SiteFooter() {
         <span>© 2026 Candid Finance</span>
         <Link to="/what-candid-is" style={LINK}>What Candid is and isn't</Link>
         <Link to="/about" style={LINK}>About</Link>
-        <a href="/privacy.html" target="_blank" rel="noreferrer" style={LINK}>Privacy Policy</a>
-        <a href="/terms.html" target="_blank" rel="noreferrer" style={LINK}>Terms of Service</a>
+        <a href="/privacy.html" style={LINK}>Privacy Policy</a>
+        <a href="/terms.html" style={LINK}>Terms of Service</a>
         <button type="button" onClick={askConsentAgain} style={{ ...LINK, background: "none", border: "none", font: "inherit", cursor: "pointer" }}>Cookie settings</button>
       </div>
     </footer>
