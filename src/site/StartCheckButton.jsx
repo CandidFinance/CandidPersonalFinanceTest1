@@ -22,8 +22,12 @@ export function appEntryPath() {
 
 // The CTA's label, shared with the site header so every "start" button reads
 // the same. It says what you get, not "Beta" (testers didn't read the old
-// "Beta - Optimise my money" as the way into the product).
-export const CTA_LABEL = "See what I'm missing";
+// "Beta - Optimise my money" as the way into the product). "Could save"
+// matches the landing page's framing: money lost that Candid helps save.
+export const CTA_LABEL = "See what I could save";
+
+// The Statement design's button corners (design/landing/statement-lab.html).
+export const CTA_RADIUS = "12px";
 
 // Main marketing CTA: one click straight into the app, no sign-up. `source`
 // tags which section of the site it was clicked from in analytics. `size`
@@ -45,7 +49,7 @@ export default function StartCheckButton({ source, size = "regular" }) {
       whileHover={{ scale: 1.03 }}
       style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "10px",
-        background: CTA_BLUE, border: "none", borderRadius: "100px",
+        background: CTA_BLUE, border: "none", borderRadius: CTA_RADIUS,
         padding: large ? "20px 36px" : "16px 30px",
         fontSize: large ? "18px" : "15px", fontWeight: 700, color: WHITE, fontFamily: SANS, cursor: "pointer",
       }}

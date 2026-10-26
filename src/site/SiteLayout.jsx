@@ -4,9 +4,11 @@ import SiteFooter from "./SiteFooter.jsx";
 
 // Shared shell for every /new page: the fixed hide-on-scroll header + tabs,
 // and the footer. `children` is just that page's own content between the two.
-export default function SiteLayout({ children }) {
+// `background` lets a page already moved to the Statement design pass
+// SITE_BG; the rest keep the cream-to-white gradient until their own pass.
+export default function SiteLayout({ children, background = `linear-gradient(180deg, ${CREAM} 0%, ${WHITE} 60%, ${WHITE} 100%)` }) {
   return (
-    <div style={{ background: `linear-gradient(180deg, ${CREAM} 0%, ${WHITE} 60%, ${WHITE} 100%)` }}>
+    <div style={{ background }}>
       {/* At least a screen tall, with the page's content taking up the
           slack, so on a short page (About, Sign in) the footer still sits
           at the bottom of the screen rather than partway up it. */}

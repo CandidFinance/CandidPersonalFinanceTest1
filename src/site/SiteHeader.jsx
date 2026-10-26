@@ -3,8 +3,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import posthog from "posthog-js";
 import { Menu, X } from "lucide-react";
-import { G, GOLD, MUT, SANS, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT } from "../design-tokens.js";
-import { appEntryPath, CTA_BLUE, CTA_LABEL } from "./StartCheckButton.jsx";
+import { G, MUT, SANS, GEORGIA, HEADER_BG_LIGHT, HEADER_WORDMARK_LIGHT } from "../design-tokens.js";
+import { appEntryPath, CTA_BLUE, CTA_LABEL, CTA_RADIUS } from "./StartCheckButton.jsx";
 import { EASE_STEADY } from "./motion.js";
 
 // Fixed header height, kept in sync with this file's own padding/font-size
@@ -127,21 +127,25 @@ export default function SiteHeader() {
           .nsh-mobile-panel.nsh-mobile-panel--open { display: block; }
         }
       `}</style>
+      {/* Three columns, the outer two equal, so the tabs sit at the true
+          centre of the bar whatever the wordmark and buttons measure. Each
+          child names its column, so on mobile (tabs hidden) the right-hand
+          group still stays in the right-hand column. */}
       <div style={{
-        height: "100%", display: "flex", alignItems: "center", gap: "56px",
+        height: "100%", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "24px",
         padding: `0 ${RESERVE_FOR_DEV_TOOLS ? "170px" : "28px"} 0 28px`,
       }}>
-        <Link to="/" style={{ ...HEADER_WORDMARK_LIGHT, fontSize: "28px", textDecoration: "none" }}>
+        <Link to="/" style={{ ...HEADER_WORDMARK_LIGHT, fontFamily: GEORGIA, fontSize: "28px", textDecoration: "none", gridColumn: 1, justifySelf: "start" }}>
           Candid.
         </Link>
-        <nav className="nsh-tabs" style={{ gap: "30px" }}>
+        <nav className="nsh-tabs" style={{ gap: "30px", gridColumn: 2 }}>
           {TABS.map(tab => {
             const active = location.pathname === tab.to;
             return (
               <Link key={tab.to} to={tab.to} style={{
                 fontFamily: SANS, fontSize: "14px", fontWeight: 600,
                 color: active ? G : MUT, textDecoration: "none",
-                borderBottom: active ? `2px solid ${GOLD}` : "2px solid transparent",
+                borderBottom: active ? `2px solid ${G}` : "2px solid transparent",
                 paddingBottom: "4px",
               }}>
                 {tab.label}
@@ -149,10 +153,11 @@ export default function SiteHeader() {
             );
           })}
         </nav>
+        <div style={{ gridColumn: 3, justifySelf: "end", display: "flex", alignItems: "center", gap: "24px" }}>
         {/* Signing in on another device (subscribers), then the way into
             the app, on every page, far right (desktop only). */}
         <Link to="/signin" className="nsh-cta-btn" style={{
-          marginLeft: "auto", marginRight: "-32px", fontFamily: SANS, fontSize: "14px", fontWeight: 600,
+          fontFamily: SANS, fontSize: "14px", fontWeight: 600,
           color: location.pathname === "/signin" ? G : MUT, textDecoration: "none", whiteSpace: "nowrap",
         }}>
           Sign in
@@ -163,9 +168,9 @@ export default function SiteHeader() {
           onClick={startCheck}
           style={{
             alignItems: "center",
-            background: CTA_BLUE, border: "none", borderRadius: "100px",
+            background: CTA_BLUE, border: "none", borderRadius: CTA_RADIUS,
             padding: "11px 22px", fontFamily: SANS, fontSize: "14px", fontWeight: 700,
-            color: "#fff", cursor: "pointer",
+            color: "#fff", cursor: "pointer", whiteSpace: "nowrap",
           }}
         >
           {CTA_LABEL}
@@ -183,12 +188,13 @@ export default function SiteHeader() {
           style={{
             alignItems: "center", justifyContent: "center",
             background: "transparent", border: "none", padding: "8px",
-            margin: "-8px 0 -8px auto", // negative top/bottom cancels the padding's added height (bigger tap target, same row height); auto-left pushes it to the far right, same trick the desktop Start button uses
+            margin: "-8px 0", // negative top/bottom cancels the padding's added height (bigger tap target, same row height)
             color: G, cursor: "pointer",
           }}
         >
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
+        </div>
       </div>
 
       {/* Mobile dropdown — full-width, directly under the header, same tabs
@@ -240,7 +246,7 @@ export default function SiteHeader() {
             onClick={startCheck}
             style={{
               display: "flex", alignItems: "center", gap: "8px", marginTop: "14px",
-              background: CTA_BLUE, border: "none", borderRadius: "100px",
+              background: CTA_BLUE, border: "none", borderRadius: CTA_RADIUS,
               padding: "12px 20px", fontFamily: SANS, fontSize: "15px", fontWeight: 700,
               color: "#fff", cursor: "pointer", alignSelf: "flex-start",
             }}

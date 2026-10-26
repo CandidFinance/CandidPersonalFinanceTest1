@@ -115,6 +115,17 @@ export const FORECAST_SHORT_LABEL = {
 export const SERIF = "'Playfair Display',serif"; // headlines, hero £ figures
 export const SANS  = "'DM Sans',sans-serif";      // body copy, UI chrome
 
+// ── Marketing site (Statement design, Oct 2026) ─────────────────────────
+// The rebuilt site's own palette and type, from design/landing/BRIEF.md
+// (Highlighter version). Site pages only; the app keeps SERIF and CREAM.
+export const GEORGIA    = "Georgia,'Times New Roman',serif"; // site wordmark, headlines, £ totals
+export const MONO       = "'IBM Plex Mono',monospace";       // document tiles, receipt figures, labels
+export const HIGHLIGHT  = "#51f5d4"; // cyan highlighter behind key words and landed receipt lines
+export const SITE_BG    = "#fbfaf5"; // page background
+export const SITE_INK   = "#1a1a17"; // text
+export const SITE_MUTED = "#66665e"; // quiet text, 5.7:1 on SITE_BG
+export const SITE_RULE  = "#e2e0d6"; // hairline rules and tile borders
+
 // Named sizes for the 5 clearest, heaviest-used size clusters only. Font
 // sizes across the app are NOT a clean scale — 29 distinct values from 8px
 // to 42px were found in the Sept 2026 audit. These 5 are just the
