@@ -25,8 +25,8 @@
 export const SITE = "https://www.candid-finance.co.uk";
 const COMPANY = "Candid Personal Finance Ltd · Company no. 17383565 · 66 Paul Street, London, EC2A 4NA";
 
-// Side margin: the text column on a phone runs nearly edge to edge.
-const SIDE = "5px";
+// Side margin. iOS Mail adds none of its own, so below ~15px the text touches the screen edge on an iPhone.
+const SIDE = "15px";
 const C = { blue: "#0071E3", green: "#162f24", gold: "#c4963a", cream: "#faf7f0", line: "#ece6d9", text: "#1a1a1a", muted: "#6b6b6b", success: "#2d6b4a" };
 const SANS = "'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const SERIF = "'Playfair Display',Georgia,'Times New Roman',serif";
