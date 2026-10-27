@@ -22,7 +22,8 @@ import { PillSlider } from "../PillSlider.jsx";
 import MobileWinTile from "../MobileWinTile.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { ExploreToggle } from "../ModuleScreenParts.jsx";
-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CDARK, CRITICAL, SUCCESS, STUDENT_PURPLE } from "../../design-tokens.js";
+import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, CDARK, CRITICAL, SUCCESS, STUDENT_PURPLE } from "../../design-tokens.js";
+import OpportunityTile from "./OpportunityTile.jsx";
 
 // £ in thousands, to one place under £100k: £18.5k, £3.9k, £15k, £120k.
 const k = n => { const v = Math.abs(Math.round(n || 0)); return v >= 100000 ? `£${Math.round(v / 1000)}k` : v >= 1000 ? `£${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : fmt(v); };
@@ -118,28 +119,18 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
       {!verdict && <LockedOpportunity d={d}/>}
       {worthOverpaying && (
         <>
-          <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"12px"}}>
-            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
-            <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(sl.overpayTotalBenefit)}</div>
-            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Lost to interest above savings rates, about {fmt(sl.overpayAnnualBenefit)} a year</div>
-            <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.55,marginTop:"10px"}}>
-              Paying off the {k(cost.balance)} now saves ~{k(sl.interestAvoided)} of interest. Same money in savings? You earn ~{k(sl.savingsForgone)}.
-            </div>
-          </div>
+          <OpportunityTile style={{marginBottom:"12px"}}
+            figures={[{ value: fmt(sl.overpayTotalBenefit), label: `Lost to interest above savings rates, about ${fmt(sl.overpayAnnualBenefit)} a year` }]}
+            chips={[`~${k(sl.interestAvoided)} interest avoided`, `~${k(sl.savingsForgone)} savings interest forgone`]}/>
           <SpareCheck d={d} m={m} sl={sl} amount={cost.balance}/>
         </>
       )}
       {verdict && !worthOverpaying && !lump && !sl.belowThreshold && <NoGain sl={sl}/>}
       {lump && (
         <>
-          <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"12px"}}>
-            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
-            <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(lump.saving)}</div>
-            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Lost to interest by not paying {k(lump.amount)} off now, in today's money</div>
-            <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.55,marginTop:"10px"}}>
-              Paying {k(lump.amount)} now clears it in {lump.clearYr}yrs, counting what the money would earn in savings.
-            </div>
-          </div>
+          <OpportunityTile style={{marginBottom:"12px"}}
+            figures={[{ value: fmt(lump.saving), label: `Lost to interest by not paying ${k(lump.amount)} off now, in today's money` }]}
+            chips={[`Cleared in ${lump.clearYr} years, net of savings interest`]}/>
           <SpareCheck d={d} m={m} sl={sl} amount={lump.amount}/>
         </>
       )}
@@ -519,30 +510,31 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
 function LockedOpportunity({ d }) {
   const navigate = useNavigate();
   // Each detail: a link until it's added, then a tick.
-  const row = { width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", background:"none", border:"none", borderTop:"1px solid rgba(22,47,36,0.08)", padding:"11px 0", fontFamily:"inherit" };
+  // On the tile's dark fill: light text, and dark glass for the panel.
+  const row = { width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", background:"none", border:"none", borderTop:"1px solid rgba(255,255,255,0.12)", padding:"11px 0", fontFamily:"inherit" };
   const step = (done, to, label) => done ? (
     <div style={row}>
-      <span style={{fontSize:"14px",fontWeight:700,color:MUT}}>{label}</span>
-      <Check size={17} color={SUCCESS} strokeWidth={3}/>
+      <span style={{fontSize:"14px",fontWeight:700,color:OPPORTUNITY_TILE_BODY}}>{label}</span>
+      <Check size={17} color={OPPORTUNITY_TILE_BODY} strokeWidth={3}/>
     </div>
   ) : (
     <button type="button" onClick={() => navigate(to)} style={{...row,cursor:"pointer"}}>
-      <span style={{fontSize:"14px",fontWeight:700,color:G}}>Add {label}</span>
-      <ChevronRight size={17} color={G}/>
+      <span style={{fontSize:"14px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE}}>Add {label}</span>
+      <ChevronRight size={17} color={OPPORTUNITY_TILE_FIGURE}/>
     </button>
   );
   const line = w => <div style={{height:"9px",width:w,borderRadius:"5px",background:OPPORTUNITY_TILE_BODY,opacity:0.35,marginTop:"8px"}}/>;
   return (
-    <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-      <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
+    <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"20px",marginBottom:"16px"}}>
+      <div style={{fontSize:"11px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
       <div style={{position:"relative"}}>
         <div aria-hidden="true" style={{position:"absolute",inset:0,overflow:"hidden",filter:"blur(4px)",userSelect:"none",pointerEvents:"none"}}>
-          <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>£0,000</div>
+          <div style={{fontFamily:SERIF,fontSize:"58px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1}}>£0,000</div>
           {line("70%")}{line("100%")}{line("90%")}{line("95%")}{line("60%")}
         </div>
-        <div style={{position:"relative",marginTop:"4px",background:"rgba(255,255,255,0.45)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.7)",boxShadow:"0 1px 12px rgba(22,47,36,0.06)",borderRadius:"12px",padding:"14px 16px 4px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",fontWeight:700,color:G}}><Clock size={14} color={G}/>Is paying it off early worth it?</div>
-          <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 10px"}}>
+        <div style={{position:"relative",marginTop:"4px",background:"rgba(255,255,255,0.08)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,0.14)",boxShadow:"0 1px 12px rgba(0,0,0,0.12)",borderRadius:"12px",padding:"14px 16px 4px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",fontWeight:700,color:OPPORTUNITY_TILE_FIGURE}}><Clock size={14} color={OPPORTUNITY_TILE_FIGURE}/>Is paying it off early worth it?</div>
+          <p style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,margin:"4px 0 10px"}}>
             You're most of the way there. Adding a few more details will help you understand the trade-offs and determine if paying off early is right for you.
           </p>
           {step(loanSavingsIn(d), "/app/module/cash?from=studentLoan", "Cash & savings")}
@@ -559,14 +551,7 @@ function NoGain({ sl }) {
   const why = !sl.willClear
     ? `It's expected to be written off in April ${sl.writeOffTaxYear}, so overpaying would mostly shrink what's written off, not what you pay.`
     : `Your savings at ${sl.cashRate}% earn ${sl.effectiveBenefit < 0 ? "more than" : "the same as"} the loan's ${sl.lifeRatePct}% average rate.`;
-  return (
-    <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-      <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
-      <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>No gain</div>
-      <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>from paying it off early, on your figures</div>
-      <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.55,marginTop:"10px"}}>{why}</div>
-    </div>
-  );
+  return <OpportunityTile figures={[{ value: "No gain", label: "from paying it off early, on your figures" }]} note={why}/>;
 }
 
 // Whether the money to pay it off is spare: how the cash buffer, this year's

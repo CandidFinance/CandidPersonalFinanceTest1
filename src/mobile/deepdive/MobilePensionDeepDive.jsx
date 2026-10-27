@@ -29,7 +29,8 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
 import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CDARK, SUCCESS, CRITICAL } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, CDARK, SUCCESS, CRITICAL } from "../../design-tokens.js";
+import OpportunityTile from "./OpportunityTile.jsx";
 import { EXTRA_COLOR, PayInMore, CliffEdge, LookingAhead } from "./PensionLookingAhead.jsx";
 
 const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` }));
@@ -299,24 +300,8 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   return (
     <div>
       {opportunityCols.length > 0 && (
-        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
-            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
-          </div>
-          <div style={{display:"flex",gap:"22px",flexWrap:"wrap"}}>
-            {opportunityCols.map((c,i) => (
-              <div key={i}>
-                <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{c.value}</div>
-                <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>{c.label}</div>
-              </div>
-            ))}
-          </div>
-          {bonusSacrifice.beyondTaper > 0 && !bonusChoice && (
-            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
-              Plus up to {fmt(bonusSacrifice.beyondTaper)} potential from sacrificing your full bonus — see below.
-            </div>
-          )}
-        </div>
+        <OpportunityTile figures={opportunityCols}
+          chips={[bonusSacrifice.beyondTaper > 0 && !bonusChoice && `+ up to ${fmt(bonusSacrifice.beyondTaper)} from bonus sacrifice`]}/>
       )}
 
       {/* The hero: how the pot could grow to retirement. */}

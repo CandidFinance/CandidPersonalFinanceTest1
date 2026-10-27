@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import posthog from "posthog-js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CircleAlert, Check, LoaderCircle, Sparkles } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CRITICAL, WARNING, HERO_TILE_BG } from "../../design-tokens.js";
 import { MODULE_META } from "../../lib/moduleStatus.js";
 import { ShellTopRow, PrimaryButton, SkipLink } from "../onboarding/OnboardingShell.jsx";
 import CountUpFigure from "../CountUpFigure.jsx";
@@ -123,7 +123,7 @@ export default function MobileModuleReveal({ moduleKey, steps, onDone, header = 
           <div style={{display:"flex",alignItems:"center",gap:"12px",marginTop:step.figure ? "4px" : "10px"}}>
             {/* Candid Assist's icon, as on its button at the bottom right. */}
             {step.icon === "assist" && (
-              <span aria-hidden="true" style={{width:"44px",height:"44px",borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:"0 3px 10px rgba(22,47,36,0.14)"}}>
+              <span aria-hidden="true" style={{width:"44px",height:"44px",borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",boxShadow:"0 3px 10px rgba(22,47,36,0.14)"}}>
                 <Sparkles size={20} color={G}/>
               </span>
             )}

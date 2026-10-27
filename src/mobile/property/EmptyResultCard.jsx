@@ -1,4 +1,4 @@
-import { WHITE, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE } from "../../design-tokens.js";
+import { WHITE, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_RADIUS } from "../../design-tokens.js";
 
 // A Property step's result card before it has the figures it needs: the
 // card's shape in grey, blurred, with one line (`text`) saying what fills it
@@ -9,7 +9,7 @@ import { WHITE, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPOR
 export default function EmptyResultCard({ text, compact = false }) {
   const bar = (width, height = 8) => <div style={{width,height,borderRadius:"4px",background:"rgba(22,47,36,0.12)"}}/>;
   if (compact) return (
-    <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"12px 16px 13px"}}>
+    <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"12px 16px 13px"}}>
       <div aria-hidden="true" style={{display:"flex",alignItems:"flex-end",gap:"14px",filter:"blur(3px)",opacity:0.8}}>
         <div>
           <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
@@ -23,7 +23,7 @@ export default function EmptyResultCard({ text, compact = false }) {
           <div style={{width:"55%",height:"7px",borderRadius:"4px",background:OPPORTUNITY_TILE_LABEL,opacity:0.45}}/>
         </div>
       </div>
-      <p style={{fontSize:"13px",fontWeight:600,color:TEXT,lineHeight:1.45,margin:"10px 0 0"}}>{text}</p>
+      <p style={{fontSize:"13px",fontWeight:600,color:OPPORTUNITY_TILE_FIGURE,lineHeight:1.45,margin:"10px 0 0"}}>{text}</p>
     </div>
   );
   return (

@@ -12,7 +12,8 @@ import { rateUpdatesLabel } from "../NewBadge.jsx";
 import { useCashNews, markCashOpened, markCashSeen } from "../visitNews.js";
 import { mobileIsaSubheading, mobilePsaSubheading, firstName } from "../copy.js";
 import { buildReminderSubject } from "../reminders.js";
-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, SUCCESS, CDARK, CRITICAL } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, CDARK, CRITICAL } from "../../design-tokens.js";
+import OpportunityTile from "./OpportunityTile.jsx";
 
 // Trimmed mobile version of desktop's Cash deep dive (ModuleDeepDive,
 // moduleKey==="cash" — CandidApp.jsx). Keeps the opportunity strip, the
@@ -100,19 +101,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set }) {
   return (
     <div>
       {opportunityCols.length > 0 && (
-        <div data-tour="figure" style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
-            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
-          </div>
-          <div style={{display:"flex",gap:"24px",flexWrap:"wrap"}}>
-            {opportunityCols.map((c,i) => (
-              <div key={i}>
-                <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{c.value}</div>
-                <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>{c.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <OpportunityTile tour="figure" figures={opportunityCols}/>
       )}
 
       {/* The emergency fund, above the numbered tiles: £ held of the

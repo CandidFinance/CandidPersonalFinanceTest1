@@ -5,7 +5,8 @@ import { fmt } from "../../lib/format.js";
 import { taxTrap, trapInView, rateCurve, lostTo, TRAP_START, TRAP_END } from "../../lib/taxTrap.js";
 import { PERSONAL_ALLOWANCE } from "../../lib/tax.js";
 import { kidsSituation, TFC_CAP_PER_CHILD, FUNDED_HOURS_VALUE } from "../../lib/childcare.js";
-import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, RADIUS_CARD, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, CDARK, CRITICAL, RADIUS_CARD } from "../../design-tokens.js";
+import OpportunityTile from "./OpportunityTile.jsx";
 
 // £100k tax trap (taxTrap.js), in the order the answer runs:
 //  1. What the trap costs them a year: the tax on the allowance lost and
@@ -44,17 +45,11 @@ export default function MobileTaxTrapDeepDive({ d, m }) {
   return (
     <div>
       {/* 1. The answer. */}
-      <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-        <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>{t.over ? `What the ${K} trap costs you` : `You're under ${K}`}</div>
-        <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>
-          {t.over ? fmt(t.amount) : fmt(t.headroom)}<span style={{fontSize:"18px"}}>{t.over ? " a year" : " to spare"}</span>
-        </div>
-        <div style={{fontSize:"12.5px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"6px"}}>
-          {t.over
-            ? `${fmt(t.allowance.tax)} of extra tax${t.childcareLost > 0 ? ` and ${fmt(t.childcareLost)} of ${support}` : " on the tax-free allowance you've lost"}.`
-            : `£1 over and your marginal tax rate jumps to ${pct(t.trapRate)}${t.childcareAtRisk > 0 ? `, and ${fmt(t.childcareAtRisk)} of ${support} stops` : ""}.`}
-        </div>
-      </div>
+      <OpportunityTile stacked over={t.over ? `What the ${K} trap costs you` : `You're under ${K}`}
+        figures={[{ value: t.over ? fmt(t.amount) : fmt(t.headroom), suffix: t.over ? " a year" : " to spare" }]}
+        chips={t.over
+          ? [`${fmt(t.allowance.tax)} extra tax${t.childcareLost > 0 ? "" : " on the allowance you've lost"}`, t.childcareLost > 0 && `+ ${fmt(t.childcareLost)} of ${support}`]
+          : [`£1 over: a ${pct(t.trapRate)} marginal rate`, t.childcareAtRisk > 0 && `${fmt(t.childcareAtRisk)} of ${support} would stop`]}/>
 
       {/* 2. Why. */}
       <RateTile d={d} m={m} t={t}/>

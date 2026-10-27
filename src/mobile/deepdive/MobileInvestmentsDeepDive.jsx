@@ -8,7 +8,8 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { buildReminderSubject } from "../reminders.js";
 import { firstName } from "../copy.js";
-import { OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, G, GOLD, WHITE, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, CRITICAL, CDARK, SUCCESS } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, CRITICAL, CDARK, SUCCESS } from "../../design-tokens.js";
+import OpportunityTile from "./OpportunityTile.jsx";
 import { GROWTH_NOMINAL_PCT } from "../../lib/growth.js";
 
 // Trimmed mobile version of desktop's Investments deep dive (ModuleDeepDive,
@@ -83,32 +84,15 @@ export default function MobileInvestmentsDeepDive({ d, m, statuses, onRecordCrys
   return (
     <div>
       {hasOpportunity && (
-        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginBottom:"10px"}}>
-            <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase"}}>Opportunity</div>
-          </div>
-          {/* The same lead figure as the answer step by step: tax-free profit
-              when there is some, otherwise the unused ISA allowance. */}
-          {totalOpp > 0 ? (
-            <>
-              <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(totalOpp)}</div>
-              <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Capital gains tax you could avoid this year</div>
-              {m.isaHeadroom > 0 && (
-                <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
-                  Plus {fmt(m.isaHeadroom)} of unused ISA allowance: in an ISA, growth or interest is free of tax.
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(m.isaHeadroom)}</div>
-              <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>Of this year's ISA allowance unused</div>
-              <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>
-                Not a guaranteed gain, but investing it shelters future growth from tax.
-              </div>
-            </>
-          )}
-        </div>
+        // The same lead figure as the answer step by step: tax-free profit
+        // when there is some, otherwise the unused ISA allowance.
+        totalOpp > 0 ? (
+          <OpportunityTile figures={[{ value: fmt(totalOpp), label: "Capital gains tax you could avoid this year" }]}
+            chips={[m.isaHeadroom > 0 && `+ ${fmt(m.isaHeadroom)} unused ISA allowance`]}/>
+        ) : (
+          <OpportunityTile figures={[{ value: fmt(m.isaHeadroom), label: "Of this year's ISA allowance unused" }]}
+            chips={["Growth inside it is tax-free"]} note="Not a guaranteed gain."/>
+        )
       )}
 
       {showGains && (

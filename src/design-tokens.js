@@ -235,18 +235,20 @@ export const STATUS_TILE = {
   short: { background: statusFill("#faefee"), border: "1.5px solid rgba(192,57,43,0.32)", figure: CRITICAL },
 };
 
-// "Opportunity" tile (each module deep dive) — each page's key message, in
-// the same treatment as Home's score tile (HERO_TILE_BG), so the headline of
-// every screen looks alike: the green-and-gold wash, a thin border and a soft
-// shadow, dark serif figures and muted labels. Previously the one solid
-// brand-green surface, with gold labels and cream figures (before 6 Oct
-// 2026), and before that a white-to-light-gold gradient.
-export const OPPORTUNITY_TILE_BG     = HERO_TILE_BG;
-export const OPPORTUNITY_TILE_BORDER = "1px solid rgba(22,47,36,0.08)";
-export const OPPORTUNITY_TILE_SHADOW = "0 4px 18px rgba(22,47,36,0.07)";
-export const OPPORTUNITY_TILE_LABEL  = MUT;   // "OPPORTUNITY" overline, sub-labels
-export const OPPORTUNITY_TILE_FIGURE = TEXT;  // serif £ figures, "Explain this"
-export const OPPORTUNITY_TILE_BODY   = MUT;   // supporting sentences
+// "Opportunity" tile (each module deep dive, drawn by OpportunityTile.jsx) —
+// each page's key message, and the one dark surface on a module page: a deep
+// oil slick (teal, violet and gold tints over a near-black green) with a slow
+// sheen, cream serif figures and short chips. Before 27 Oct 2026 it wore
+// Home's light wash (HERO_TILE_BG), which blended into the page; before
+// 6 Oct, solid brand green with gold labels; before that, white to light gold.
+export const OPPORTUNITY_TILE_BG     = "radial-gradient(80% 120% at 0% 0%, rgba(42,138,108,0.85) 0%, rgba(42,138,108,0) 60%), radial-gradient(70% 100% at 100% 0%, rgba(107,90,166,0.75) 0%, rgba(107,90,166,0) 62%), radial-gradient(90% 110% at 85% 115%, rgba(196,150,58,0.7) 0%, rgba(196,150,58,0) 60%), #0e2219";
+export const OPPORTUNITY_TILE_BORDER = "1px solid rgba(255,255,255,0.122)";
+export const OPPORTUNITY_TILE_SHADOW = "0 10px 28px rgba(22,47,36,0.16)";
+export const OPPORTUNITY_TILE_LABEL  = "#d8d0bb"; // "OPPORTUNITY" overline, sub-labels
+export const OPPORTUNITY_TILE_FIGURE = "#f6ead0"; // serif £ figures
+export const OPPORTUNITY_TILE_BODY   = "#b4bdb2"; // chips and supporting sentences
+export const OPPORTUNITY_TILE_RADIUS = "18px";
+export const OPPORTUNITY_TILE_SHEEN  = 0.12;      // white at the sheen's peak
 
 // ── One-off colours — reference only, NOT for reuse ───────────────────────
 // Each of these appears in exactly one place (a specific SVG chart

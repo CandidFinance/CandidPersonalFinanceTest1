@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { reportStorageFailure } from "../../lib/storage.js";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
 import { Sparkles, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, HERO_TILE_BG } from "../../design-tokens.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { isLocked } from "../../lib/unlock.js";
 import { assistItems, assistHasNews, itemsForPage, cashPlan, applyCashMove, accountName, MIN_ASSIST_GAIN, PB_MAX } from "../../lib/assist.js";
@@ -337,9 +337,9 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
           style={{
             position: "fixed", zIndex: 4500, bottom: "calc(84px + env(safe-area-inset-bottom, 0px))", right: "max(16px, calc((100vw - 580px) / 2 + 16px))",
             width: `${size}px`, height: `${size}px`, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            // Active: the Opportunity tiles' wash (Home's hero), with more
-            // lift than a tile so it reads as floating over the page.
-            background: quiet ? WHITE : OPPORTUNITY_TILE_BG, border: quiet ? "1px solid rgba(22,47,36,0.14)" : OPPORTUNITY_TILE_BORDER,
+            // Active: Home's hero wash, with more lift than a tile so it
+            // reads as floating over the page.
+            background: quiet ? WHITE : HERO_TILE_BG, border: quiet ? "1px solid rgba(22,47,36,0.14)" : "1px solid rgba(22,47,36,0.08)",
             boxShadow: quiet ? "0 2px 8px rgba(22,47,36,0.08)" : "0 6px 18px rgba(22,47,36,0.18)", opacity: quiet ? 0.85 : 1,
             transition: "width 0.2s, height 0.2s",
           }}>

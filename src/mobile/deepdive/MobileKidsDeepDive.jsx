@@ -3,7 +3,8 @@ import { ChevronRight } from "lucide-react";
 import { fmt } from "../../lib/format.js";
 import { childcareSupport, kidsSituation, CHILDCARE_INCOME_LIMIT, CHILDCARE_HOURLY_PRICE, TFC_CAP_PER_CHILD } from "../../lib/childcare.js";
 import { childBenefitCharge, calcAnnualAllowanceRoom } from "../../lib/pension.js";
-import { G, MUT, TEXT, SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY } from "../../design-tokens.js";
+import { G, MUT, TEXT, SERIF } from "../../design-tokens.js";
+import OpportunityTile from "./OpportunityTile.jsx";
 
 // Kids & family: childcare support (Tax-Free Childcare and, in England, the
 // funded hours) and what crossing £100,000 costs, plus the Child Benefit
@@ -63,24 +64,12 @@ export default function MobileKidsDeepDive({ d, m }) {
   return (
     <div>
       {lead > 0 && (
-        <div style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:"14px",padding:"16px 18px",marginBottom:"18px"}}>
-          <div style={{fontSize:"10px",fontWeight:800,color:OPPORTUNITY_TILE_LABEL,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"10px"}}>Opportunity</div>
-          <div style={{fontFamily:SERIF,fontSize:"32px",color:OPPORTUNITY_TILE_FIGURE,fontWeight:700,lineHeight:1.1}}>{fmt(lead)}</div>
-          <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_LABEL,marginTop:"4px",fontWeight:600}}>{label} a year</div>
-          {payLine && (
-            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>{payLine}</div>
-          )}
-          {cc?.recoverable && !ownLost && cc.payValue > 0 && (
-            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"8px"}}>
-              It's worth the same as about {fmt(cc.payValue)} of pay before tax.
-            </div>
-          )}
-          {ccLead > 0 && cbKeep > 0 && (
-            <div style={{fontSize:"12px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"8px"}}>
-              Plus {fmt(cbKeep)} a year of Child Benefit paid back in tax (below).
-            </div>
-          )}
-        </div>
+        <OpportunityTile style={{marginBottom:"18px"}} figures={[{ value: fmt(lead), label: `${label} a year` }]}
+          chips={[
+            cc?.recoverable && !ownLost && cc.payValue > 0 && `Worth about ${fmt(cc.payValue)} of pay before tax`,
+            ccLead > 0 && cbKeep > 0 && `+ ${fmt(cbKeep)} Child Benefit paid back in tax`,
+          ]}
+          note={payLine}/>
       )}
 
       {cc && (
