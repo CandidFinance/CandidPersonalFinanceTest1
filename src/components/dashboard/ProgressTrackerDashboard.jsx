@@ -1,23 +1,25 @@
 import { useState } from "react";
 import posthog from "posthog-js";
-import { ChevronRight } from "lucide-react";
-import { buildProgressSnapshot, poundsInput } from "../../lib/progressTracker.js";
+import { ChevronRight, TriangleAlert } from "lucide-react";
+import { buildProgressSnapshot, poundsInput, TRAP_EDGE } from "../../lib/progressTracker.js";
 import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK1 } from "../../lib/format.js";
 import { taxYearOf } from "../../lib/taxYear.js";
 import { useElementWidth } from "../../mobile/useElementWidth.js";
+import CardStack, { DARK } from "../../mobile/CardStack.jsx";
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
 import {
-  G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD, STATUS_TILE, PROVIDER_TILE_SHADOW, MODULE_CHART_COLOR,
+  G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, CRITICAL, WARNING, MODULE_CHART_COLOR,
 } from "../../design-tokens.js";
 import { Tile, BarTile, ProgressBar, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
 import { AddGoalTile, VaultTile, saveVault, removeVault } from "./GoalVaults.jsx";
 
-// The Progress tab (/app/progress): what net worth is made of, how this tax
-// year's goals are going, the goals themselves with any goal pots, and where
-// income sits against the tax bands, each in its own tile. The figures come
+// The Progress tab (/app/progress): three cards in a wallet stack, as on
+// Home (CardStack.jsx): net worth and what it's made of, how this tax
+// year's goals are going, and where income sits against the £100k trap.
+// Below them, the goals themselves with any goal pots. The figures come
 // from src/lib/progressTracker.js, built from the same metrics as Home and
 // the modules; targets set here are saved inputs (`set`) like any other
 // answer.
@@ -57,30 +59,30 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenMo
     posthog.capture("progress_module_opened", { module: key });
     onOpenModule?.(key);
   };
+  const openTrap = () => {
+    posthog.capture("progress_trap_opened", { above_taper: !!income.trap?.aboveTaper });
+    onOpenModule?.("taxTrap");
+  };
+
+  // Net worth leads. Each card's top line shows while it's behind.
+  const cards = [
+    { key: "netWorth", label: "Net worth", amount: `${netWorth.netWorth < 0 ? "−" : ""}${fmtK1(netWorth.netWorth)}`,
+      body: t => <NetWorth picture={netWorth} t={t}/> },
+    { key: "goals", label: `Goals ${taxYearShort(taxYearOf(new Date()))}`, amount: annual.total ? `${annual.pct}%` : "",
+      body: t => <AnnualGoals annual={annual} t={t}/> },
+    { key: "taxShield", label: "Tax shield", amount: shieldLine(income), amountSans: true, warn: WARN_ZONE[income.zone],
+      body: t => <TaxShield income={income} t={t} onOpenTrap={openTrap}/> },
+  ];
 
   return (
     <div>
-      {/* Net worth leads the headline pair, with three times the room of the
-          annual goals beside it (never under 112px, so the ring reads on a
-          phone); stacked only on the narrowest phones. */}
-      <style>{`
-        .progress-summary { display: grid; grid-template-columns: minmax(0, 3fr) minmax(112px, 1fr); gap: 12px; }
-        @media (max-width: 359px) { .progress-summary { grid-template-columns: minmax(0, 1fr); } }
-      `}</style>
-
+      <style>{GOALS_CSS}</style>
       <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,margin:"0 0 16px",lineHeight:1.2}}>Your progress</h1>
 
       <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
-        <div className="progress-summary">
-          <Tile title="Net worth" wash>
-            <NetWorth picture={netWorth}/>
-          </Tile>
-          <Tile title={`Goals ${taxYearShort(taxYearOf(new Date()))}`} wash>
-            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",marginTop:"12px"}}>
-              <Ring pct={annual.total ? annual.pct : null} hits={annual.hits} total={annual.total}/>
-            </div>
-          </Tile>
-        </div>
+        <section aria-label="Your figures">
+          <CardStack cards={cards}/>
+        </section>
 
         {/* Add a goal first, then the user's pots (newest first), then this
             tax year's goals from the modules. */}
@@ -107,90 +109,69 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenMo
             })}
           </div>
         </Tile>
-
-        <Tile title="Tax shield & income band">
-          <IncomeBands income={income} onOpenTrap={() => {
-            posthog.capture("progress_trap_opened", { above_taper: !!income.trap?.aboveTaper });
-            onOpenModule?.("taxTrap");
-          }}/>
-        </Tile>
       </div>
     </div>
   );
 }
 
-// ── Headline ───────────────────────────────────────────────────────────
+// ── The stack's cards ──────────────────────────────────────────────────
+// Each drawn in the colours `t` it's wearing (CardStack.jsx): DARK in front.
 
 // A tax year as "26/27", from the year it starts in.
 const taxYearShort = start => `${String(start % 100).padStart(2, "0")}/${String((start + 1) % 100).padStart(2, "0")}`;
 
-// Average progress across this tax year's goals below (the modules'; pots
-// have their own dates), as a ring that fills to it, with the figure plain
-// inside (as Home's score: CLAUDE.md rule 4) and how many are reached. With
-// none to measure yet, an empty ring. Sized to its tile, up to `size`.
-function Ring({ pct, hits, total, size = 120, stroke = 10 }) {
-  const r = (size - stroke) / 2, c = 2 * Math.PI * r, centre = size / 2;
-  const filled = ((pct || 0) / 100) * c;
-  return (
-    <div role="img" aria-label={pct == null ? "No goals to measure yet" : `${pct}% complete, ${hits} of ${total} goals reached`}
-      style={{position:"relative",flex:`0 1 ${size}px`,minWidth:0,maxWidth:`${size}px`,aspectRatio:"1 / 1"}}>
-      <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" style={{transform:"rotate(-90deg)",display:"block"}} aria-hidden="true">
-        <circle cx={centre} cy={centre} r={r} fill="none" stroke="rgba(45,107,74,0.14)" strokeWidth={stroke}/>
-        {filled > 0 && (
-          <circle cx={centre} cy={centre} r={r} fill="none" stroke={SUCCESS} strokeWidth={stroke} strokeLinecap="round"
-            strokeDasharray={`${filled} ${c}`}/>
-        )}
-      </svg>
-      <div aria-hidden="true" style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-        <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:pct == null ? MUT : TEXT,lineHeight:1}}>{pct == null ? "–" : `${pct}%`}</span>
-        <span style={{fontSize:"11px",color:MUT,marginTop:"4px"}}>({hits} of {total})</span>
-      </div>
-    </div>
-  );
-}
+// A card's lead figure, in the serif at the stack's size, with its unit.
+const heroFig = t => ({ fontFamily:SERIF, fontSize:"var(--hero-fig)", fontWeight:700, color:t.figure, lineHeight:1, letterSpacing:"-0.01em", marginTop:"8px" });
+const unit = { fontFamily:SANS, fontSize:"0.32em", fontWeight:600, marginLeft:"5px", letterSpacing:0, whiteSpace:"nowrap" };
+const cardText = t => ({ fontSize:"13px", color:t.body, lineHeight:1.45, margin:"8px 0 0" });
 
-// Net worth as a ring of what it's made of with the figure in the middle,
-// and beside it (below it, when the tile is narrow) a legend naming each
-// part with its value in £k, then gross assets and total debt. Pointing at a
-// part, or its legend row, brings that part forward.
-function NetWorth({ picture }) {
+// Net worth, then a ring of what it's made of and beside it (below it,
+// when the card is narrow) a legend naming each part with its value in £k,
+// then gross assets and total debt. Pointing at a part, or its legend row,
+// brings that part forward.
+function NetWorth({ picture, t }) {
   const [active, setActive] = useState(null);
   const shown = picture.parts.filter(p => p.value > 0);
   const dim = id => active !== null && active !== id;
   const line = (label, value) => (
     <div style={{display:"flex",justifyContent:"space-between",gap:"8px",fontSize:"12px"}}>
-      <dt style={{color:MUT}}>{label}</dt>
-      <dd style={{margin:0,fontWeight:700,color:TEXT,whiteSpace:"nowrap"}}>{value}</dd>
+      <dt style={{color:t.body}}>{label}</dt>
+      <dd style={{margin:0,fontWeight:700,color:t.figure,whiteSpace:"nowrap"}}>{value}</dd>
     </div>
   );
   return (
-    <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:"14px 20px",marginTop:"12px"}}>
-      <Donut parts={shown} netWorth={picture.netWorth} dim={dim} onPoint={setActive}/>
-      <div style={{flex:"1 1 150px",minWidth:0}}>
-        {shown.length > 0 ? (
-          <ul style={{listStyle:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:"7px"}}>
-            {shown.map(p => (
-              <li key={p.id} onMouseEnter={() => setActive(p.id)} onMouseLeave={() => setActive(null)}
-                style={{display:"flex",alignItems:"center",gap:"7px",opacity:dim(p.id) ? 0.45 : 1,transition:"opacity 0.15s"}}>
-                <span style={{width:"8px",height:"8px",borderRadius:"50%",background:PART_COLOR[p.id],flexShrink:0}}/>
-                <span style={{fontSize:"12.5px",color:TEXT,flex:1,minWidth:0}}>{p.label}</span>
-                <span style={{fontSize:"12.5px",fontWeight:600,color:TEXT,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmtK1(p.value)}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p style={helpText}>Savings, investments and pensions show here once they're entered.</p>
-        )}
-        <dl style={{margin:"12px 0 0",paddingTop:"10px",borderTop:"1px solid rgba(22,47,36,0.08)",display:"flex",flexDirection:"column",gap:"4px"}}>
-          {line("Gross assets", fmtK1(picture.grossAssets))}
-          {line("Total debt", fmtK1(picture.totalDebt))}
-        </dl>
+    <>
+      <div style={heroFig(t)}>{picture.netWorth < 0 ? "−" : ""}{fmtK1(picture.netWorth)}</div>
+      <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:"14px 20px",marginTop:"14px"}}>
+        <Donut parts={shown} dim={dim} onPoint={setActive} track={t.track}/>
+        <div style={{flex:"1 1 150px",minWidth:0}}>
+          {shown.length > 0 ? (
+            <ul style={{listStyle:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:"7px"}}>
+              {shown.map(p => (
+                <li key={p.id} onMouseEnter={() => setActive(p.id)} onMouseLeave={() => setActive(null)}
+                  style={{display:"flex",alignItems:"center",gap:"7px",opacity:dim(p.id) ? 0.45 : 1,transition:"opacity 0.15s"}}>
+                  <span style={{width:"8px",height:"8px",borderRadius:"50%",background:PART_COLOR[p.id],flexShrink:0}}/>
+                  <span style={{fontSize:"12.5px",color:t.figure,flex:1,minWidth:0}}>{p.label}</span>
+                  <span style={{fontSize:"12.5px",fontWeight:600,color:t.figure,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmtK1(p.value)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{...helpText,color:t.body}}>Savings, investments and pensions show here once they're entered.</p>
+          )}
+          <dl style={{margin:"12px 0 0",paddingTop:"10px",borderTop:`1px solid ${t.rule}`,display:"flex",flexDirection:"column",gap:"4px"}}>
+            {line("Gross assets", fmtK1(picture.grossAssets))}
+            {line("Total debt", fmtK1(picture.totalDebt))}
+          </dl>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
-function Donut({ parts, netWorth, dim, onPoint, size = 180, stroke = 20 }) {
+// The ring of net worth's parts. The figure itself is the card's lead, so
+// it isn't repeated in the middle (CLAUDE.md rule 4).
+function Donut({ parts, dim, onPoint, track, size = 120, stroke = 15 }) {
   const r = (size - stroke) / 2, c = 2 * Math.PI * r, centre = size / 2;
   const total = parts.reduce((s, p) => s + p.value, 0);
   // A 2px gap of background between neighbouring parts, rather than a drawn
@@ -204,19 +185,56 @@ function Donut({ parts, netWorth, dim, onPoint, size = 180, stroke = 20 }) {
     return arc;
   });
   return (
-    <div style={{position:"relative",flex:`0 1 ${size}px`,minWidth:0,maxWidth:`${size}px`,aspectRatio:"1 / 1"}}>
+    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} style={{transform:"rotate(-90deg)",display:"block",flexShrink:0}} aria-hidden="true">
+      {total === 0 && <circle cx={centre} cy={centre} r={r} fill="none" stroke={track} strokeWidth={stroke}/>}
+      {arcs.map(a => (
+        <circle key={a.id} cx={centre} cy={centre} r={r} fill="none" stroke={PART_COLOR[a.id]} strokeWidth={stroke}
+          strokeDasharray={a.dash} strokeDashoffset={a.offset} opacity={dim(a.id) ? 0.3 : 1}
+          onMouseEnter={() => onPoint(a.id)} onMouseLeave={() => onPoint(null)} style={{transition:"opacity 0.15s"}}/>
+      ))}
+    </svg>
+  );
+}
+
+// Average progress across this tax year's goals below (the modules'; pots
+// have their own dates), as a ring that fills to it, with the figure plain
+// inside and how many are reached. With none to measure yet, an empty ring.
+// On a phone the ring is larger with the text under it, filling the card
+// to the stack's height; on desktop, the ring beside the text.
+const GOALS_CSS = `
+.progress-goals { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 14px; text-align: center; --ring: 168px; }
+@media (min-width: 1000px) { .progress-goals { flex-direction: row; gap: 18px; margin-top: 12px; text-align: left; --ring: 104px; } }
+`;
+function AnnualGoals({ annual, t }) {
+  return (
+    <div className="progress-goals">
+      <Ring pct={annual.total ? annual.pct : null} hits={annual.hits} total={annual.total} t={t}/>
+      <p style={{...cardText(t),margin:0}}>
+        {annual.total
+          ? "Average progress across this tax year's goals, to 5 April. Each goal is listed below."
+          : "This tax year's goals are measured here once the modules they come from are answered."}
+      </p>
+    </div>
+  );
+}
+
+// Drawn at 104px and scaled to --ring (GOALS_CSS), figures with it.
+function Ring({ pct, hits, total, t, size = 104, stroke = 9 }) {
+  const r = (size - stroke) / 2, c = 2 * Math.PI * r, centre = size / 2;
+  const filled = ((pct || 0) / 100) * c;
+  return (
+    <div role="img" aria-label={pct == null ? "No goals to measure yet" : `${pct}% complete, ${hits} of ${total} goals reached`}
+      style={{position:"relative",width:"var(--ring)",height:"var(--ring)",flexShrink:0}}>
       <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" style={{transform:"rotate(-90deg)",display:"block"}} aria-hidden="true">
-        {total === 0 && <circle cx={centre} cy={centre} r={r} fill="none" stroke="rgba(22,47,36,0.07)" strokeWidth={stroke}/>}
-        {arcs.map(a => (
-          <circle key={a.id} cx={centre} cy={centre} r={r} fill="none" stroke={PART_COLOR[a.id]} strokeWidth={stroke}
-            strokeDasharray={a.dash} strokeDashoffset={a.offset} opacity={dim(a.id) ? 0.3 : 1}
-            onMouseEnter={() => onPoint(a.id)} onMouseLeave={() => onPoint(null)} style={{transition:"opacity 0.15s"}}/>
-        ))}
+        <circle cx={centre} cy={centre} r={r} fill="none" stroke={t.track} strokeWidth={stroke}/>
+        {filled > 0 && (
+          <circle cx={centre} cy={centre} r={r} fill="none" stroke={PROGRESS_GREEN} strokeWidth={stroke} strokeLinecap="round"
+            strokeDasharray={`${filled} ${c}`}/>
+        )}
       </svg>
-      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-        <span style={{fontFamily:SERIF,fontWeight:700,color:TEXT,lineHeight:1,fontSize:"24px"}}>
-          {netWorth < 0 ? "−" : ""}{fmtK1(netWorth)}
-        </span>
+      <div aria-hidden="true" style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+        <span style={{fontFamily:SERIF,fontSize:"calc(var(--ring) * 0.23)",fontWeight:700,color:pct == null ? t.body : t.figure,lineHeight:1}}>{pct == null ? "–" : `${pct}%`}</span>
+        {pct != null && <span style={{fontSize:"clamp(11px, calc(var(--ring) * 0.08), 13.5px)",color:t.body,marginTop:"4px"}}>{hits} of {total} reached</span>}
       </div>
     </div>
   );
@@ -328,49 +346,119 @@ function OverpaymentEditor({ row, set, onDone }) {
   );
 }
 
-// ── Income against the tax bands ───────────────────────────────────────
+// ── Income against the £100k trap ──────────────────────────────────────
+
+// Behind, the Tax shield card warns: red in the trap, amber within £5,000
+// of it (progressTracker.js incomePosition's zone).
+const WARN_ZONE = { in: "red", edge: "amber" };
+
+// The Tax shield's top line: where income sits against £100,000.
+function shieldLine(income) {
+  if (income.zone === "none") return "Pay not entered";
+  if (income.zone === "in") return `${fmt(income.trap?.over ?? income.income - 100000)} into the £100k trap`;
+  if (income.gap === 0) return "At the £100k trap";
+  if (income.zone === "clear") return "Safe from £100k trap";
+  return `${fmt(income.gap)} from the £100k trap`;
+}
+
+// Leads with where income sits against the trap and what it costs, or
+// would cost, as figures rather than an instruction; in the trap or within
+// £5,000 of it, in a red or amber alert. Then the bands with a marker at
+// their income, and adjusted net income, explained, as the small print.
+function TaxShield({ income, t, onOpenTrap }) {
+  if (income.zone === "none") {
+    return <p style={cardText(t)}>Where your income sits against the £100k trap shows here once your pay is entered.</p>;
+  }
+  const { trap, gap, perThousand, rise } = income;
+  const trapRate = income.bands.find(b => b.name === "£100k tax trap").rateLabel;
+  const past = `Past £100,000, each £1,000 more costs ${fmt(perThousand.trap)} in income tax rather than ${fmt(perThousand.now)}, as the Personal Allowance is withdrawn.`;
+  const more = rise?.tax > 0 ? ` ${fmt(rise.by)} more would mean ${fmt(rise.tax)} of extra tax a year from the trap.` : "";
+  const pension = trap?.takeHome == null ? null : trap.route === "sacrifice"
+    ? `Salary sacrifice of ${fmt(trap.needed)} into your pension would bring it back to £100,000, for ${fmt(trap.takeHome)} less take-home pay.`
+    : `Paying ${fmt(trap.needed)} more into your pension would bring it back to £100,000, for ${fmt(trap.takeHome)} less take-home pay after tax relief.`;
+  return (
+    <>
+      {income.zone === "in" ? !trap ? (
+        <p style={cardText(t)}>{fmt(income.income - 100000)} over £100,000, where the Personal Allowance is withdrawn.</p>
+      ) : (
+        <Alert tone="red" t={t} title={trap.aboveTaper ? "Your Personal Allowance is gone" : `You're in the ${trap.rateLabel} tax trap`}>
+          <div style={heroFig(t)}>{fmt(trap.tax)}<span style={unit}>a year</span></div>
+          <p style={cardText(t)}>
+            {trap.aboveTaper
+              ? `More tax, as over £125,140 all ${fmt(trap.allowanceLost)} of your Personal Allowance is withdrawn.`
+              : `More tax, as ${fmt(trap.over)} over £100,000 withdraws ${fmt(trap.allowanceLost)} of your Personal Allowance.`}
+            {trap.childcareLost > 0 && ` ${fmt(trap.childcareLost)} a year of childcare support stops too.`}
+          </p>
+        </Alert>
+      ) : income.zone === "edge" ? (
+        <Alert tone="amber" t={t} title={gap > 0 ? `Within ${fmt(TRAP_EDGE)} of the ${trapRate} tax trap` : `At £100,000, the edge of the ${trapRate} tax trap`}>
+          {gap > 0 && <div style={heroFig(t)}>{fmt(gap)}<span style={unit}>to £100k</span></div>}
+          <p style={cardText(t)}>{past}{more}</p>
+        </Alert>
+      ) : (
+        <>
+          <div style={heroFig(t)}>{fmt(gap)}<span style={unit}>{income.zone === "near" ? "to £100k" : "below £100k"}</span></div>
+          <p style={cardText(t)}>
+            {income.zone === "near" ? `${past}${more}`
+              : `Clear of £100,000, where each £1,000 more starts costing ${fmt(perThousand.trap)} in income tax rather than ${fmt(perThousand.now)}.`}
+          </p>
+        </>
+      )}
+      <BandTrack income={income} t={t}/>
+      <p style={{fontSize:"12px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>
+        <span style={{fontWeight:700,color:t.figure}}>{fmt(income.income)}</span> adjusted net income this tax year, which the trap is measured on: taxable income less pension contributions and Gift Aid.{income.scottish ? " Scottish rates on pay." : ""}
+      </p>
+      {pension && (
+        <p style={{...cardText(t),fontSize:"12.5px"}}>
+          {pension}{!trap.fits && ` That's more than the ${fmt(trap.aaRoom)} of Annual Allowance left this year.`}
+        </p>
+      )}
+      {trap && (
+        <button type="button" onClick={onOpenTrap}
+          style={{marginTop:"10px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:t.figure,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
+          Open £100k tax trap<ChevronRight size={14}/>
+        </button>
+      )}
+    </>
+  );
+}
+
+// The trap's alert inside the card, in red or amber in whichever colours
+// the card wears: the card itself keeps the stack's usual look in front.
+const ALERT = {
+  red: { light: { bg: "rgba(192,57,43,0.10)", border: "rgba(192,57,43,0.28)", edge: CRITICAL }, dark: { bg: "rgba(232,106,90,0.16)", border: "rgba(255,150,135,0.32)", edge: "#f0806f" } },
+  amber: { light: { bg: "rgba(217,130,43,0.10)", border: "rgba(217,130,43,0.32)", edge: WARNING }, dark: { bg: "rgba(240,160,80,0.16)", border: "rgba(250,190,120,0.32)", edge: "#f0a050" } },
+};
+function Alert({ tone, t, title, children }) {
+  const a = ALERT[tone][t === DARK ? "dark" : "light"];
+  return (
+    <div style={{marginTop:"10px",borderRadius:"12px",padding:"12px 14px",background:a.bg,border:`1px solid ${a.border}`,borderLeft:`4px solid ${a.edge}`}}>
+      <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13.5px",fontWeight:800,color:t.figure,lineHeight:1.3}}>
+        <TriangleAlert size={14} strokeWidth={2.4} color={a.edge} aria-hidden="true" style={{flexShrink:0}}/>{title}
+      </div>
+      {children}
+    </div>
+  );
+}
 
 const SCALE_TO = 150000;
 // Which threshold labels to keep when they'd overlap: the trap's first.
 const TICK_PRIORITY = { "£100k tax trap": 0, "Additional rate": 1, "Top rate": 1, "Higher rate": 2, "Advanced rate": 3 };
 
-function IncomeBands({ income, onOpenTrap }) {
-  return (
-    <>
-      {income.income > 0 ? (
-        <>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:"12px",marginTop:"12px"}}>
-            <div style={{minWidth:0}}>
-              <div style={{fontSize:"14px",fontWeight:700,color:TEXT}}>{income.band.name}, {income.band.rateLabel}</div>
-              <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>Adjusted net income this tax year</div>
-            </div>
-            <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:TEXT,whiteSpace:"nowrap"}}>{fmt(income.income)}</span>
-          </div>
-          <BandTrack income={income}/>
-          <p style={{...helpText,marginTop:"10px"}}>
-            {income.context}{income.scottish ? " Scottish rates on pay." : ""}
-          </p>
-        </>
-      ) : (
-        <p style={{...helpText,marginTop:"8px"}}>Where your income sits against the tax bands shows here once your pay is entered.</p>
-      )}
-      {income.trap && <TrapAlert trap={income.trap} onOpen={onOpenTrap}/>}
-    </>
-  );
-}
-
 // The bands as one bar, shaded deeper the higher the income tax rate on the
 // next £1 (one hue, so the trap reads as the deepest band), the rate inside
 // each band where it fits, a gold marker at their income, and threshold
 // labels under it, left out where they'd collide.
-function BandTrack({ income }) {
-  const [ref, width] = useElementWidth(320);
+function BandTrack({ income, t }) {
+  const [ref, width] = useElementWidth(300);
+  const dark = t === DARK;
+  const ink = dark ? "246,234,208" : "22,47,36";
   const x = v => Math.min(1, v / SCALE_TO) * width;
   const bands = income.bands.filter(b => b.from < SCALE_TO);
   const marker = Math.min(Math.max(x(income.income) - 2, 0), width - 4);
   // A band's rate sits in its middle, or beside the marker when the marker
   // would cover it, on whichever side has room; with room on neither, it's
-  // left out (the band's name and rate are written above the bar anyway).
+  // left out (the band's name and rate are written under the bar anyway).
   const rateAt = (left, w, label) => {
     const lw = label.length * 6.5 + 10, mid = marker + 2;
     if (w < lw) return null;
@@ -384,7 +472,7 @@ function BandTrack({ income }) {
     // About 5.5px a character at 10.5px ("£100,000" is 44px), a little over.
     const text = fmt(b.from), w = text.length * 5.6 + 2;
     const left = Math.min(Math.max(x(b.from) - w / 2, 0), width - w);
-    if (!ticks.some(t => left < t.left + t.w + 4 && t.left < left + w + 4)) ticks.push({ text, w, left });
+    if (!ticks.some(tk => left < tk.left + tk.w + 4 && tk.left < left + w + 4)) ticks.push({ text, w, left });
   }
   return (
     <div aria-hidden="true">
@@ -396,54 +484,22 @@ function BandTrack({ income }) {
           const labelAt = rateAt(left, w, b.rateLabel);
           return (
             <div key={b.from}>
-              <div style={{position:"absolute",top:0,bottom:0,left:`${left}px`,width:`${w}px`,background:`rgba(22,47,36,${alpha})`,
+              <div style={{position:"absolute",top:0,bottom:0,left:`${left}px`,width:`${w}px`,background:`rgba(${ink},${alpha})`,
                 borderRadius:i === 0 ? "6px 0 0 6px" : i === bands.length - 1 ? "0 6px 6px 0" : 0}}/>
               {labelAt != null && (
                 <span style={{position:"absolute",top:0,bottom:0,left:`${labelAt}px`,width:`${b.rateLabel.length * 6.5 + 10}px`,display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:"10.5px",fontWeight:700,color:alpha >= 0.5 ? WHITE : TEXT,whiteSpace:"nowrap"}}>{b.rateLabel}</span>
+                  fontSize:"10.5px",fontWeight:700,color:alpha >= 0.5 ? (dark ? "#0e2219" : WHITE) : (dark ? t.figure : TEXT),whiteSpace:"nowrap"}}>{b.rateLabel}</span>
               )}
             </div>
           );
         })}
-        <div style={{position:"absolute",top:"-5px",bottom:"-5px",left:`${marker}px`,width:"4px",borderRadius:"2px",background:GOLD,boxShadow:`0 0 0 2px ${WHITE}`}}/>
+        <div style={{position:"absolute",top:"-5px",bottom:"-5px",left:`${marker}px`,width:"4px",borderRadius:"2px",background:GOLD,boxShadow:`0 0 0 2px ${dark ? "#0e2219" : WHITE}`}}/>
       </div>
       <div style={{position:"relative",height:"14px",marginTop:"6px"}}>
-        {ticks.map(t => (
-          <span key={t.text} style={{position:"absolute",left:`${t.left}px`,width:`${t.w}px`,textAlign:"center",fontSize:"10.5px",color:MUT,whiteSpace:"nowrap"}}>{t.text}</span>
+        {ticks.map(tk => (
+          <span key={tk.text} style={{position:"absolute",left:`${tk.left}px`,width:`${tk.w}px`,textAlign:"center",fontSize:"10.5px",color:t.body,whiteSpace:"nowrap"}}>{tk.text}</span>
         ))}
       </div>
-    </div>
-  );
-}
-
-// Over £100,000: what the trap costs and what getting back under it would
-// take (from the tax trap module), as figures rather than an instruction,
-// with the module a tap away.
-function TrapAlert({ trap, onOpen }) {
-  const tile = STATUS_TILE.tight;
-  const pension = trap.takeHome == null ? null : trap.route === "sacrifice"
-    ? `Salary sacrifice of ${fmt(trap.needed)} into your pension would bring it back to £100,000, for ${fmt(trap.takeHome)} less take-home pay.`
-    : `Paying ${fmt(trap.needed)} more into your pension would bring it back to £100,000, for ${fmt(trap.takeHome)} less take-home pay after tax relief.`;
-  return (
-    <div style={{marginTop:"16px",background:tile.background,border:tile.border,borderRadius:RADIUS_CARD,boxShadow:PROVIDER_TILE_SHADOW,padding:"16px"}}>
-      <div style={{fontSize:"14.5px",fontWeight:700,color:TEXT,lineHeight:1.35}}>
-        {trap.aboveTaper ? "Your Personal Allowance is gone" : `You're in the ${trap.rateLabel} tax trap`}
-      </div>
-      <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
-        {trap.aboveTaper
-          ? `Over £125,140, all ${fmt(trap.allowanceLost)} of it is withdrawn: ${fmt(trap.tax)} more tax a year.`
-          : `Adjusted net income ${fmt(trap.over)} over £100,000 withdraws ${fmt(trap.allowanceLost)} of your Personal Allowance: ${fmt(trap.tax)} more tax a year.`}
-        {trap.childcareLost > 0 && ` ${fmt(trap.childcareLost)} a year of childcare support stops too.`}
-      </p>
-      {pension && (
-        <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"6px 0 0"}}>
-          {pension}{!trap.fits && ` That's more than the ${fmt(trap.aaRoom)} of Annual Allowance left this year.`}
-        </p>
-      )}
-      <button type="button" onClick={onOpen} style={{marginTop:"12px",display:"inline-flex",alignItems:"center",gap:"4px",background:G,border:"none",borderRadius:"100px",padding:"10px 16px",color:WHITE,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
-        Open £100k tax trap
-        <ChevronRight size={14}/>
-      </button>
     </div>
   );
 }

@@ -1,82 +1,21 @@
-import { useState, useRef, useEffect } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { ChevronRight, ChevronUp, ChevronDown, Check, Lock } from "lucide-react";
+import { ChevronRight, Check, Lock } from "lucide-react";
+import CardStack, { DARK } from "./CardStack.jsx";
 import ScoreDonut from "./ScoreDonut.jsx";
 import NewBadge, { rateUpdatesLabel } from "./NewBadge.jsx";
 import { isLocked } from "../lib/unlock.js";
 import { fmt } from "../lib/format.js";
-import { G, GOLD, PROGRESS_GREEN, MUT, TEXT, SERIF, SANS, WHITE, HERO_TILE_BG, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN } from "../design-tokens.js";
+import { G, GOLD, PROGRESS_GREEN, TEXT, SERIF, SANS, WHITE, OPPORTUNITY_TILE_FIGURE } from "../design-tokens.js";
 
-// Home's hero: two cards stacked one in front of the other, like a wallet.
-// The front card wears the Opportunity tiles' dark oil slick; the one behind
-// is light, with its top line (label and amount) showing above the front, so
-// nothing is hidden. Swiping up or down on the stack, the arrows, or tapping
-// the card behind turns the front card away on its Y axis and sends it back.
+// Home's hero: two cards in a wallet stack (CardStack.jsx, which draws and
+// turns them; Progress has the same stack). The front card wears the dark
+// oil slick; the one behind shows its top line above it.
 //  1. Left on the table and Saved in one tile: whichever is larger leads, a
 //     bar splits what's been found into saved and still left, and the score.
 //  2. Areas to explore: the opportunities by £, largest first, each ticked
 //     once reviewed. No numbers, so the list doesn't read as an order to
 //     follow (src/lib/priorities.js only ranks by £).
-// No wheel turning on desktop: it would catch the page's own scroll.
-const PEEK = 44;      // px of the card behind showing above the front
-const TURN = 700;     // ms
-const CSS = `
-.home-hero { --hero-fig: 52px; }
-@media (min-width: 1000px) { .home-hero { --hero-fig: 72px; } }
-.home-hero-card { position: relative; overflow: hidden; transition: border-color 0.35s ease, box-shadow 0.35s ease; }
-.home-hero-card > :not(.home-hero-dark) { position: relative; z-index: 1; }
-.home-hero-card * { transition: color 0.35s ease, border-color 0.35s ease, background-color 0.35s ease, stroke 0.35s ease; }
-/* The dark fill is a layer that fades in and out (a gradient can't fade
-   into another), so a card changes from light to dark smoothly. */
-.home-hero-dark { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: ${OPPORTUNITY_TILE_BG}; transition: opacity 0.35s ease; }
-.home-hero-dark::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; pointer-events: none;
-  background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,${OPPORTUNITY_TILE_SHEEN}) 46%, transparent 60%);
-  will-change: transform; animation: home-hero-sheen 7s ease-in-out infinite; }
-.home-hero-dark:not(.on)::after { animation-play-state: paused; }
-@keyframes home-hero-sheen { 0% { transform: translateX(-75%); } 55%, 100% { transform: translateX(25%); } }
-@media (prefers-reduced-motion: reduce) { .home-hero-dark::after { animation: none; transform: translateX(-30%); } }
-`;
-
-// The two colour schemes a card can wear: dark in front, light behind.
-const DARK = { bg: OPPORTUNITY_TILE_BG, border: OPPORTUNITY_TILE_BORDER, shadow: OPPORTUNITY_TILE_SHADOW, label: OPPORTUNITY_TILE_LABEL, figure: OPPORTUNITY_TILE_FIGURE, body: OPPORTUNITY_TILE_BODY, rule: "rgba(255,255,255,0.12)", track: "rgba(255,255,255,0.12)" };
-const LIGHT = { bg: HERO_TILE_BG, border: "1px solid rgba(22,47,36,0.10)", shadow: "0 4px 18px rgba(22,47,36,0.08)", label: MUT, figure: G, body: MUT, rule: "rgba(22,47,36,0.08)", track: "rgba(22,47,36,0.08)" };
 
 export default function HomeHero({ d, totalOpp, saved, scoreShown, scoreColor, scoreLabel, gain, plan, stepsDone, headline, onTrack, cashBadge, unchecked, onOpen }) {
-  const reduceMotion = useReducedMotion();
-  // `target`: the card heading to the front, set as a turn starts so the
-  // card behind glides forward while the front one turns away. `front`: the
-  // card drawn on top and in the dark fill, which changes partway through.
-  const [front, setFront] = useState(0);
-  const [target, setTarget] = useState(0);
-  const [turning, setTurning] = useState(null);
-  const startY = useRef(null);
-  const swiped = useRef(false);
-  const timers = useRef([]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
-
-  const turn = () => {
-    if (turning !== null) return;
-    const next = 1 - target;
-    setTarget(next);
-    if (reduceMotion) { setFront(next); return; }
-    setTurning(front);
-    timers.current = [setTimeout(() => setFront(next), TURN * 0.45), setTimeout(() => setTurning(null), TURN)];
-  };
-  const onPointerDown = e => { startY.current = e.clientY; swiped.current = false; };
-  const onPointerUp = e => {
-    if (startY.current === null) return;
-    const dy = e.clientY - startY.current;
-    startY.current = null;
-    if (Math.abs(dy) > 28) { swiped.current = true; turn(); }
-  };
-  // A swipe that ends on a row or on the card behind isn't also a tap.
-  const onClickCapture = e => {
-    if (!swiped.current) return;
-    swiped.current = false;
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
   // The figures beneath (the bar's Saved and Still left) aren't repeated in
   // the line under the lead figure: one indicator each (CLAUDE.md rule 4).
   const leadSaved = saved > totalOpp;
@@ -164,56 +103,9 @@ export default function HomeHero({ d, totalOpp, saved, scoreShown, scoreColor, s
     ) },
   ];
 
-  const ease = [0.4, 0.1, 0.2, 1];
   return (
-    <section aria-label="Your figures" className="home-hero" style={{marginBottom:"22px"}}>
-      <style>{CSS}</style>
-      {/* Both cards share one grid cell, so the stack is as tall as the
-          taller card; the one behind sits PEEK px higher. */}
-      <div onPointerDown={onPointerDown} onPointerUp={onPointerUp} onClickCapture={onClickCapture}
-        style={{display:"grid",paddingTop:`${PEEK}px`,perspective:"1100px",touchAction:"pan-x"}}>
-        {cards.map((c, i) => {
-          const isFront = i === front, isTarget = i === target;
-          const t = isFront ? DARK : LIGHT;
-          const behind = { y: -PEEK, scale: 0.955, rotateY: 0, x: "0%" };
-          const ahead = { y: 0, scale: 1, rotateY: 0, x: "0%" };
-          const animate = turning === i
-            ? { y: [0, 0, -PEEK], scale: [1, 1, 0.955], rotateY: [0, -80, 0], x: ["0%", "-12%", "0%"] }
-            : isTarget ? ahead : behind;
-          return (
-            <motion.div key={c.key} className="home-hero-card"
-              initial={false} animate={animate}
-              transition={turning === i ? { duration: TURN / 1000, times: [0, 0.45, 1], ease } : { duration: reduceMotion ? 0 : TURN * 0.8 / 1000, ease }}
-              onClick={isTarget ? undefined : turn} aria-hidden={!isTarget}
-              style={{gridArea:"1 / 1",zIndex:isFront ? 2 : 1,transformOrigin:"50% 0",background:LIGHT.bg,border:t.border,boxShadow:t.shadow,
-                borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px",cursor:isTarget ? "default" : "pointer",display:"flex",flexDirection:"column"}}>
-              <div className={`home-hero-dark${isFront ? " on" : ""}`} aria-hidden="true" style={{opacity:isFront ? 1 : 0,transition:"opacity 0.385s ease"}}/>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"10px",minHeight:"18px"}}>
-                <span style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:t.label}}>{c.label}</span>
-                {/* The top line's amount: only for the card behind, as the
-                    front card shows it in full. */}
-                <span style={{fontFamily:SERIF,fontSize:"16px",fontWeight:700,color:t.figure,opacity:isTarget ? 0 : 1,transition:"opacity 0.3s, color 0.35s"}}>{c.amount}</span>
-              </div>
-              {/* Behind, only the top line shows: the body fades out so
-                  nothing (the score ring) pokes into that line. It stays
-                  while a card turns away, and fades in as one comes forward. */}
-              {/* Hidden, it's also out of reach: no taps or tabbing onto rows
-                  you can't see (visibility goes once the fade is done). */}
-              <div style={{opacity:isTarget || isFront ? 1 : 0,visibility:isTarget || isFront ? "visible" : "hidden",
-                transition:isTarget || isFront ? "opacity 0.3s" : "opacity 0.3s, visibility 0s linear 0.3s"}}>{c.body(t)}</div>
-            </motion.div>
-          );
-        })}
-      </div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",marginTop:"10px"}}>
-        <button type="button" onClick={turn} aria-label="Show the other card" style={arrow}><ChevronUp size={15} color={G}/></button>
-        <div style={{display:"flex",gap:"6px"}} aria-hidden="true">
-          {cards.map((c, i) => <span key={c.key} style={{width:"7px",height:"7px",borderRadius:"50%",background:i === target ? G : "rgba(22,47,36,0.2)",transform:i === target ? "scale(1.2)" : "none",transition:"background 0.2s, transform 0.2s"}}/>)}
-        </div>
-        <button type="button" onClick={turn} aria-label="Show the other card" style={arrow}><ChevronDown size={15} color={G}/></button>
-      </div>
+    <section aria-label="Your figures" style={{marginBottom:"22px"}}>
+      <CardStack cards={cards} turnLabels={["Show the other card", "Show the other card"]}/>
     </section>
   );
 }
-
-const arrow = { width:"30px", height:"30px", borderRadius:"50%", border:"1px solid rgba(22,47,36,0.15)", background:WHITE, display:"grid", placeItems:"center", cursor:"pointer", padding:0 };

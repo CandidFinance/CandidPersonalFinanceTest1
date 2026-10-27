@@ -207,6 +207,33 @@ test("over £100,000 the trap's figures come from the tax trap module", () => {
   assert.equal(pos.trap.rateLabel, "60%");
 });
 
+test("the trap zone: clear, near, within £5,000, in; and what a £10,000 rise would add", () => {
+  const at = salary => { const d = { ...base, salary: String(salary), myContribution: "0", employerMatch: "0" }; return incomePosition(d, calcMetrics(d)); };
+  const clear = at(60000);
+  assert.equal(clear.zone, "clear");
+  assert.equal(clear.gap, 40000);
+  assert.equal(clear.rise.tax, 0);
+  assert.deepEqual(clear.perThousand, { now: 400, trap: 600 });
+  assert.equal(at(92000).zone, "near");
+  const edge = at(96500);
+  assert.equal(edge.zone, "edge");
+  assert.equal(edge.gap, 3500);
+  // £6,500 past £100,000 withdraws £3,250 of allowance, taxed at 40%.
+  assert.equal(edge.rise.tax, 1300);
+  assert.equal(at(100000).zone, "edge");
+  const over = at(110000);
+  assert.equal(over.zone, "in");
+  assert.equal(over.gap, null);
+  assert.equal(over.rise, null);
+  const none = incomePosition({ ...base, salary: "0" }, calcMetrics({ ...base, salary: "0" }));
+  assert.equal(none.zone, "none");
+});
+
+test("in Scotland each £1,000 past £100,000 costs £675 rather than £450", () => {
+  const d = { ...base, salary: "95000", myContribution: "0", employerMatch: "0", scottishTaxpayer: "yes" };
+  assert.deepEqual(incomePosition(d, calcMetrics(d)).perThousand, { now: 450, trap: 675 });
+});
+
 const property = { propertyPrice: "300000", propertyRegion: "london", propertyFirstTimeBuyer: "yes", propertyCashAvailable: "12000" };
 
 test("buying a home shows as a vault once Property's first step is done, from its cash available", () => {

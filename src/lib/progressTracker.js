@@ -20,7 +20,7 @@ import { bankedFor, MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from
 import { moduleAnswered } from "./appEntry.js";
 import { borrowingInputs } from "./borrowing.js";
 import { readinessMissing } from "./propertyReadiness.js";
-import { taxTrap } from "./taxTrap.js";
+import { taxTrap, TRAP_NEAR } from "./taxTrap.js";
 import { fmt } from "./format.js";
 
 const n = v => Math.max(0, +v || 0);
@@ -221,6 +221,9 @@ export function incomeBands(scottish = false) {
   ];
 }
 
+export const TRAP_EDGE = 5000;
+const TRAP_RISE = 10000;
+
 // Where their adjusted net income sits: the band, how far from the next
 // line that matters, and, over £100,000, the trap's figures (taxTrap.js):
 // the allowance lost and its tax, and what paying into a pension to get
@@ -239,8 +242,19 @@ export function incomePosition(d, m) {
     : `Over ${fmt(ADDITIONAL_RATE_THRESHOLD)}, where the Personal Allowance is gone.`;
   const t = income > PA_TAPER_START ? taxTrap(d, m) : null;
   const pension = t?.options.find(o => o.key === "pension");
+  // How close to the trap: "in" it, "edge" (within TRAP_EDGE of £100,000),
+  // "near" (within taxTrap.js's TRAP_NEAR), "clear", or "none" with no
+  // income entered.
+  // Below it: the gap, the tax on each £1,000 past £100,000 against the
+  // rate just below it, and what a £10,000 rise would add from the trap
+  // (the allowance lost, £1 for every £2, taxed at that rate).
+  const gap = income > 0 && income <= PA_TAPER_START ? PA_TAPER_START - income : null;
+  const below = bands.find(b => b.to === PA_TAPER_START).rate;
+  const zone = !income ? "none" : gap == null ? "in" : gap <= TRAP_EDGE ? "edge" : gap <= TRAP_NEAR ? "near" : "clear";
   return {
-    income, scottish, bands, band: current, context,
+    income, scottish, bands, band: current, context, zone, gap,
+    perThousand: { now: Math.round(below * 1000), trap: Math.round(below * 1.5 * 1000) },
+    rise: gap == null ? null : { by: TRAP_RISE, tax: Math.round(Math.max(0, TRAP_RISE - gap) / 2 * below) },
     trap: t?.over ? {
       over: Math.round(t.ani - PA_TAPER_START), aboveTaper: t.aboveTaper,
       rateLabel: bands.find(b => b.name === "£100k tax trap").rateLabel,

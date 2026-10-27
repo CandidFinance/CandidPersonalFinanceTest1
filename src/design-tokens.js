@@ -220,6 +220,21 @@ export const HERO_TILE_BG = [
   "radial-gradient(100% 90% at 100% 100%, #F7F0E2 0%, rgba(247,240,226,0) 62%)",
   "#F7F9F5",
 ].join(", ");
+// The same wash in red and amber, for a card in a wallet stack (CardStack)
+// that warns while it's behind: Progress's Tax shield over £100,000 (red)
+// or within £5,000 of it (amber).
+export const HERO_TILE_BG_RED = [
+  "radial-gradient(120% 95% at 0% 0%, #F7E1DD 0%, rgba(247,225,221,0) 62%)",
+  "radial-gradient(90% 80% at 100% 0%, #FAE8E0 0%, rgba(250,232,224,0) 60%)",
+  "radial-gradient(100% 90% at 100% 100%, #F8EEE2 0%, rgba(248,238,226,0) 62%)",
+  "#FBF5F3",
+].join(", ");
+export const HERO_TILE_BG_AMBER = [
+  "radial-gradient(120% 95% at 0% 0%, #FBEAD6 0%, rgba(251,234,214,0) 62%)",
+  "radial-gradient(90% 80% at 100% 0%, #FCEFDF 0%, rgba(252,239,223,0) 60%)",
+  "radial-gradient(100% 90% at 100% 100%, #F8EEE2 0%, rgba(248,238,226,0) 62%)",
+  "#FCF7F1",
+].join(", ");
 
 // The same tile treatment in red, amber and green, for a card whose whole
 // surface is its status (the Property mortgage card: whether the repayments
