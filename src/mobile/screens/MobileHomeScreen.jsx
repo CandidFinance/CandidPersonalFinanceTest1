@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronRight, Check, Lock } from "lucide-react";
-import { isLocked } from "../../lib/unlock.js";
-import ScoreDonut from "../ScoreDonut.jsx";
-import { HERO_TILE_BG, scoreBand, G, GOLD, WHITE, MUT, TEXT, SERIF, SUCCESS, RADIUS_CARD } from "../../design-tokens.js";
-import { getModuleBreakdown, calcCandidScore } from "../../lib/moduleStatus.js";
+import { scoreBand, G, MUT, SERIF } from "../../design-tokens.js";
+import { getModuleBreakdown, calcCandidScore, gainedSoFar } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
@@ -15,11 +12,10 @@ import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/prioriti
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import WorthALookTile from "../WorthALookTile.jsx";
 import PayCheckCard from "./PayCheckCard.jsx";
-import GainedFromChanges from "../GainedFromChanges.jsx";
+import HomeHero from "../HomeHero.jsx";
 import GettingToKnow from "../GettingToKnow.jsx";
 import SinceLastVisit from "../SinceLastVisit.jsx";
 import OutsideEvent from "../OutsideEvent.jsx";
-import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
 import { useCashNews } from "../visitNews.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
@@ -44,8 +40,6 @@ let lastShownScore = null;
 // no net worth here: Goals and Forecast hold those.
 export default function MobileHomeScreen({ insights, d, m, statuses, completedModules, onStartModule, set, savingsRates = null, approvedEvents = null }) {
   const navigate = useNavigate();
-  // The score tile opens in place to show what to do first.
-  const [scoreOpen, setScoreOpen] = useState(false);
   const reduceMotion = useReducedMotion();
   // Best rates moved for them since the last visit: a red badge on the Cash
   // row (and on the list while it's closed) until they open Cash.
@@ -126,6 +120,12 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
         {mobileGreeting(d)}
       </h1>
 
+      {/* The hero (HomeHero.jsx): Left on the table and Saved in one card,
+          and the areas to explore on a second card behind it. */}
+      <HomeHero d={d} totalOpp={totalOpp} saved={gainedSoFar(d).perYear} scoreShown={shownScore} scoreColor={scoreColor} scoreLabel={scoreLabel} gain={gain}
+        plan={plan} stepsDone={stepsDone} headline={report.headline} onTrack={report.onTrack} cashBadge={cashBadge} unchecked={unchecked}
+        onOpen={key => navigate(key ? `/app/module/${key}` : "/app/modules")}/>
+
       {/* What the app can do, ticked off as it's done (Phase 6). */}
       <GettingToKnow d={d} set={set} answered={doneModules(d, propertyDone).length}/>
 
@@ -134,94 +134,6 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
       {/* What's changed since they were last here, when anything has. */}
       <SinceLastVisit d={d} m={m} rows={savingsRates} onOpenCash={() => onStartModule("cash")}/>
-
-      {/* The hero: the score, in a pale iridescent wash (HERO_TILE_BG) that
-          only it and "Gains" wear, so they read as the
-          headlines.
-          The ring in the score's band colour, the opportunity, and the
-          opportunities by size opening in place. Nothing says where to start:
-          that would be advice (src/lib/priorities.js only ranks by £). */}
-      <div style={{background:HERO_TILE_BG,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"20px 18px 16px",boxShadow:"0 4px 18px rgba(22,47,36,0.07)"}}>
-        {/* The £ at stake leads (what people care about); the score's ring
-            beside it shows how far along they are. */}
-        <div style={{display:"flex",alignItems:"flex-start",gap:"16px"}}>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Left on the table/yr</div>
-            <div style={{fontFamily:SERIF,fontSize:"var(--hero-figure, 38px)",fontWeight:700,color:G,lineHeight:1.1,marginTop:"6px"}}>{fmt(totalOpp)}</div>
-            <p style={{fontSize:"13px",color:MUT,lineHeight:1.45,margin:"6px 0 0"}}>
-              {totalOpp > 0 ? "Your money left on the table each year, across what you've answered."
-                : unchecked > 0 ? `Nothing left on the table in what you've checked so far. ${unchecked} more ${unchecked === 1 ? "area" : "areas"} to check below.`
-                : "Nothing left on the table in what you've answered."}
-            </p>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
-            <ScoreDonut value={shownScore} color={gain > 0 ? GOLD : scoreColor} size={92} stroke={8} track="rgba(22,47,36,0.08)"/>
-            <div style={{fontSize:"10px",fontWeight:600,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"8px"}}>Candid score</div>
-            <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"2px"}}>
-              <span style={{fontSize:"12.5px",fontWeight:700,color:TEXT}}>{scoreLabel}</span>
-              {gain > 0 && (
-                <span style={{fontSize:"11px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.18)",borderRadius:"100px",padding:"2px 8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain}</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* The opportunities, largest first, and how many have been reviewed. */}
-        <button type="button" onClick={() => setScoreOpen(o => !o)}
-          style={{marginTop:"16px",width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.08)",padding:"12px 0 0",color:TEXT,fontFamily:"inherit",cursor:"pointer"}}>
-          <span style={{fontSize:"13.5px",fontWeight:700}}>
-            {plan.length > 0 ? <>Money left on the table <span style={{fontWeight:500,color:MUT}}>· {stepsDone} of {plan.length} reviewed</span></> : "Your modules"}
-          </span>
-          <span style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            {!scoreOpen && cashBadge > 0 && <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/>}
-            <ChevronDown size={16} color={MUT} style={{transform:scoreOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}/>
-          </span>
-        </button>
-        {scoreOpen && (
-          <div style={{marginTop:"4px"}}>
-            {plan.length > 0 ? (
-              <div style={{display:"flex",flexDirection:"column"}}>
-                {plan.map((p, i) => (
-                  <button key={p.key} type="button" onClick={() => navigate(`/app/module/${p.key}`)}
-                    style={{display:"flex",alignItems:"flex-start",gap:"12px",textAlign:"left",background:"none",border:"none",borderTop:i ? "1px solid rgba(22,47,36,0.06)" : "none",padding:"10px 0",cursor:"pointer",fontFamily:"inherit",width:"100%"}}>
-                    {/* Reviewed: a tick. Not yet: an empty ring. No numbers,
-                        so the list doesn't read as an order to follow. */}
-                    <span style={{width:"20px",height:"20px",borderRadius:"50%",border:p.done ? "none" : "1.5px solid rgba(22,47,36,0.25)",background:p.done ? G : "transparent",color:WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px",boxSizing:"border-box"}}>
-                      {p.done && <Check size={12} strokeWidth={3}/>}
-                    </span>
-                    <span style={{flex:1,minWidth:0}}>
-                      <span style={{display:"flex",alignItems:"center",gap:"8px",fontSize:"14px",fontWeight:700,color:TEXT}}>
-                        {p.title}
-                        {p.key === "cash" && cashBadge > 0 && <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/>}
-                      </span>
-                      {isLocked(d, p.key)
-                        ? <span style={{display:"flex",alignItems:"center",gap:"5px",fontSize:"12.5px",color:MUT,lineHeight:1.5,marginTop:"2px"}}><Lock size={12}/>{fmt(p.amount)}{p.amountIsLumpSum ? " by 18" : " a year"}. Unlock to see how</span>
-                        : p.line && <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>{p.line}</span>}
-                    </span>
-                    <ChevronRight size={15} color={MUT} style={{flexShrink:0,marginTop:"3px"}}/>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>{report.headline}</p>
-            )}
-            {report.onTrack.length > 0 && (
-              <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
-                <span style={{fontWeight:700,color:TEXT}}>On track:</span> {report.onTrack.join(", ")}.
-              </p>
-            )}
-            <button type="button" onClick={() => navigate("/app/modules")}
-              style={{marginTop:"12px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:G,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
-              All modules<ChevronRight size={14}/>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* What the changes the user says they've made are worth, and the pot
-          they've added up to (GainedFromChanges.jsx). */}
-      <GainedFromChanges d={d} options={plan.filter(p => p.amount > 0)} atStake={totalOpp}
-        onOpen={key => navigate(key ? `/app/module/${key}` : "/app/modules")}/>
 
       {/* A new tax year: is their pay still the same? */}
       {d.payCheckDue && +d.salary > 0 && <PayCheckCard d={d} set={set}/>}
