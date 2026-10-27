@@ -235,6 +235,12 @@ export const HERO_TILE_BG_AMBER = [
   "radial-gradient(100% 90% at 100% 100%, #F8EEE2 0%, rgba(248,238,226,0) 62%)",
   "#FCF7F1",
 ].join(", ");
+// And in green, for a card in a wallet stack that's on track (Modules).
+export const HERO_TILE_BG_GREEN = [
+  "radial-gradient(120% 95% at 0% 0%, #D6ECDF 0%, rgba(214,236,223,0) 62%)",
+  "radial-gradient(100% 90% at 100% 100%, #E6F2EA 0%, rgba(230,242,234,0) 62%)",
+  "#EDF6F1",
+].join(", ");
 
 // The same tile treatment in red, amber and green, for a card whose whole
 // surface is its status (the Property mortgage card: whether the repayments

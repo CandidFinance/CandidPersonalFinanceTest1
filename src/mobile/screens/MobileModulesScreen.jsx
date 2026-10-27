@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { childcareSupport } from "../../lib/childcare.js";
-import { Check, Users, Coins, ChevronRight, Home } from "lucide-react";
-import ReviewedMark from "../ReviewedMark.jsx";
-import { SUCCESS, PROGRESS_GREEN, ON_TRACK_FILL, REVIEWED_FILL, G, GOLD, WHITE, MUT, TEXT, SERIF, SC, CDARK, RADIUS_CARD } from "../../design-tokens.js";
-import { REVIEW_COIN_S, REVIEW_COIN_STAGGER_S, REVIEW_TINT_S, REVIEW_SWAP_MS, REVIEW_CELEBRATE_MS } from "../reviewCelebration.js";
+import { Users, ChevronRight, Lock } from "lucide-react";
+import CardStack, { DARK } from "../CardStack.jsx";
+import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD } from "../../design-tokens.js";
 import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -18,10 +16,12 @@ import { moduleEstimate } from "../../lib/crossModule.js";
 import { isLocked } from "../../lib/unlock.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
-// Mobile Modules screen — matches the "Claude Design" mockup's Modules tab
-// (count header, category/impact sort toggle, expandable module cards with a
-// "Deep dive" + "Mark as reviewed" pair, plus two insight tiles) against real
-// module data.
+// Mobile Modules screen. The modules they've started sit in a wallet stack
+// (CardStack.jsx, as on Home and Progress): a summary card in front (£ at
+// stake, saved, and how many are live, not started and need action), then
+// one card per live module, largest £ first, on-track ones with a tick.
+// Below: Still to explore (joins the wallet once answered), Not applicable,
+// and Coming soon. Mark as reviewed lives in each module (MobileModuleDeepDive).
 
 // Two label/value insight tiles per module, reusing figures already computed
 // elsewhere (mm.amount, m.isaHeadroom, m.missedMatch, m.projectedPot) rather
@@ -74,33 +74,29 @@ function moduleInsights(mm, d, m) {
   }
 }
 
-// The two tiles the modules sit in: those started ("Live modules"), and
-// those not ("Still to explore"), each module a tile of its own inside.
+// The tile Still to explore sits in, each module a row inside.
 const TILE = { background:WHITE, borderRadius:RADIUS_CARD, boxShadow:"0 2px 10px rgba(22,47,36,0.06)", padding:"16px 14px" };
 const TILE_TITLE = { fontSize:"15px", fontWeight:700, color:TEXT, padding:"0 4px" };
 const TILE_SUB = { fontSize:"12.5px", color:MUT, marginTop:"2px", padding:"0 4px" };
-const INNER = { background:WHITE, borderRadius:"16px", border:"1px solid rgba(22,47,36,0.06)", boxShadow:"0 2px 10px rgba(22,47,36,0.06)", overflow:"hidden" };
-// Nothing left to act on: the progress line's mid green, as a pale fill and a border.
-const INNER_ON_TRACK = { ...INNER, background:ON_TRACK_FILL, border:`1px solid ${PROGRESS_GREEN}` };
-// Reviewed, with something still to act on: muted, so it sits back from the
-// tiles not yet looked at.
-const INNER_REVIEWED = { ...INNER, background:REVIEWED_FILL, boxShadow:"none" };
 const SUBHEAD = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", margin:"18px 4px 10px" };
+// Each card behind shows this much of its top line (Home and Progress: 44).
+const PEEK = 39;
 
-// The sort, as a slider: the thumb moves to the one picked.
-const SORTS = [{ key:"amount", label:"£ Impact" }, { key:"category", label:"Category" }];
-function SortSlider({ value, onChange }) {
-  const at = Math.max(0, SORTS.findIndex(o => o.key === value));
+// A big figure on a card: £ in the serif, with its unit after in sans.
+function Figure({ t, value, unit, words = false }) {
   return (
-    <div role="radiogroup" aria-label="Sort modules" style={{position:"relative",display:"grid",gridTemplateColumns:"1fr 1fr",background:CDARK,borderRadius:"100px",padding:"3px",marginTop:"14px"}}>
-      <span aria-hidden="true" style={{position:"absolute",top:"3px",bottom:"3px",left:"3px",width:"calc(50% - 3px)",borderRadius:"100px",background:G,transform:`translateX(${at * 100}%)`,transition:"transform 0.22s ease"}}/>
-      {SORTS.map(o => (
-        <button key={o.key} type="button" role="radio" aria-checked={o.key === value} onClick={() => onChange(o.key)} style={{
-          position:"relative",background:"none",border:"none",padding:"8px 0",fontSize:"12.5px",fontWeight:600,fontFamily:"inherit",cursor:"pointer",
-          color:o.key === value ? WHITE : MUT,transition:"color 0.22s",
-        }}>{o.label}</button>
-      ))}
+    <div style={{fontFamily:SERIF,fontSize:words ? "34px" : "var(--hero-fig)",fontWeight:700,color:t.figure,lineHeight:1.05,letterSpacing:"-0.01em",marginTop:"8px"}}>
+      {value}{unit && <span style={{fontFamily:SANS,fontSize:words ? "15px" : "0.32em",fontWeight:600,marginLeft:"5px",letterSpacing:0}}>{unit}</span>}
     </div>
+  );
+}
+
+function OpenButton({ t, title, onClick }) {
+  return (
+    <button type="button" onClick={onClick}
+      style={{marginTop:"12px",alignSelf:"flex-start",background:"none",border:"none",padding:"6px 0",fontSize:"13px",fontWeight:700,color:t.figure,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
+      Open {title}<ChevronRight size={14}/>
+    </button>
   );
 }
 
@@ -117,20 +113,13 @@ const LOCKED_MODULES = [
   { key:"household", title:"Household finances", icon:Users, description:"Two people, one plan. Marriage or a civil partnership changes the picture, from shared allowances to how you hold savings and investments." },
 ];
 
-export default function MobileModulesScreen({ d, m, set, statuses, insights, completedModules, onMarkReviewed, onOpenModule, onOpenProperty }) {
-  const [sortMode, setSortMode] = useState("amount");
-  const [expandedKey, setExpandedKey] = useState(null);
-  // Same celebration as the module deep dive (MobileModuleDeepDive) — coins
-  // only, no "+N pts" — shown here too now, since this list is the other
-  // place "Mark as reviewed" can be tapped from. Tracks which single tile is
-  // celebrating, not a per-tile state array, since only one can be reviewed
-  // at a time from a tap.
-  const [celebratingKey, setCelebratingKey] = useState(null);
+export default function MobileModulesScreen({ d, m, set, statuses, insights, completedModules, onOpenModule, onOpenProperty }) {
   // Best rates moved for them since the last visit: a red badge on the Cash
-  // tile until they open Cash (visitNews.js).
+  // card until they open Cash (visitNews.js).
   const news = useCashNews();
   const cashBadge = news && !news.opened ? news.count : 0;
-  const { moduleList, modulesWithRec, totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, insights, sortMode);
+  // Largest £ first (src/lib/priorities.js only ranks by £).
+  const { moduleList, totalOpp, totalBanked } = getModuleBreakdown(d, m, statuses, insights, "amount");
   // Counted from the tiles' own labels, so "N need action" always tallies
   // with the tiles reading "Action needed" (reviewed with under £50 left
   // reads on track: reviewedDone).
@@ -147,174 +136,136 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   const live = moduleList.length + (propertyDone ? 1 : 0);
   const toExplore = waiting.length + dormant.length;
 
-  return (
-    <div>
-      {(live > 0 || notApplicable.length > 0) && (
-        <section style={TILE}>
-          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px"}}>
-            <div style={{minWidth:0}}>
-              <div style={TILE_TITLE}>Live modules</div>
-              <div style={TILE_SUB}>{live} {live === 1 ? "module" : "modules"} · {needActionCount} need action</div>
-            </div>
-            {/* Saved: what's come off the £ at stake since each module was
-                first answered (moduleStatus.js bankedFor). At stake: what's
-                still available, the sum of the tiles below. */}
-            <div style={{display:"flex",gap:"16px",flexShrink:0,paddingRight:"4px"}}>
-              {totalBanked > 0 && (
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>Saved</div>
-                  <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:SUCCESS,lineHeight:1.15}}>{fmtCompact(totalBanked)}/yr</div>
+  // The wallet's cards: a summary in front, then each live module.
+  const moduleCard = mm => {
+    const reviewed = completedModules.includes(mm.key);
+    // On track (moduleStatus.js isOnTrack), or reviewed with under £50 left
+    // (reviewedDone): the card gets the tick and the green wash.
+    const onTrack = mm.onTrack || reviewedDone(mm, reviewed);
+    const hasRec = mm.amount > 0;
+    const locked = isLocked(d, mm.key);
+    // On track with something saved: what was saved leads.
+    const savedLead = !hasRec && onTrack && mm.banked > 0;
+    const figure = hasRec ? fmt(mm.amount) : savedLead ? fmt(mm.banked) : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : statusLabel({ ...mm, onTrack });
+    const unit = hasRec ? (mm.amountIsLumpSum ? "by 18" : "a year") : savedLead ? "a year saved" : null;
+    const line = [statusLine({ ...mm, onTrack }), hasRec && mm.banked > 0 && `${fmtCompact(mm.banked)}/yr saved`, reviewed && !onTrack && "Reviewed"].filter(Boolean).join(" · ");
+    const ins = locked ? [] : moduleInsights(mm, d, m);
+    return {
+      key: mm.key, label: mm.title, done: onTrack,
+      badge: mm.key === "cash" && cashBadge > 0 ? <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/> : null,
+      // The top line, seen while the card is behind; the tick says on track.
+      amount: hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : savedLead ? `${fmtCompact(mm.banked)}/yr saved`
+        : onTrack ? "" : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : statusLabel(mm),
+      amountSans: !hasRec,
+      body: t => (
+        <>
+          <Figure t={t} value={figure} unit={unit} words={!hasRec && !savedLead}/>
+          <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>{line}</p>
+          {/* A locked answer (src/lib/unlock.js) stays hidden here too. */}
+          {locked ? (
+            <p style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",color:t.body,lineHeight:1.5,margin:"12px 0 0"}}><Lock size={13}/>Your position is ready. Open it to unlock it.</p>
+          ) : ins.length > 0 && (
+            <div style={{display:"grid",gridTemplateColumns:"repeat(2, minmax(0, 1fr))",gap:"8px",marginTop:"14px"}}>
+              {ins.map(x => (
+                <div key={x.label} style={{borderRadius:"10px",padding:"10px 12px",background:t === DARK ? "rgba(255,255,255,0.08)" : "rgba(22,47,36,0.06)"}}>
+                  <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",color:t.label}}>{x.label}</div>
+                  <div style={{fontSize:"14px",fontWeight:700,color:t.figure,marginTop:"4px"}}>{x.value}</div>
                 </div>
-              )}
-              {totalOpp > 0 && (
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.07em",textTransform:"uppercase"}}>At stake</div>
-                  <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,color:GOLD,lineHeight:1.15}}>{fmtCompact(totalOpp)}/yr</div>
-                </div>
-              )}
-            </div>
-          </div>
-          {modulesWithRec.length > 1 && <SortSlider value={sortMode} onChange={setSortMode}/>}
-
-          <div style={{display:"flex",flexDirection:"column",gap:"12px",marginTop:"14px"}}>
-            {moduleList.map(mm => {
-              const reviewed = completedModules.includes(mm.key);
-              const hasRec = mm.amount > 0;
-              // On track (moduleStatus.js isOnTrack): nothing left to act on,
-              // or a change confirmed made. A module with something to look at
-              // but no £ figure (a pension short of its retirement income, say)
-              // reads "Action needed", never "On track". On track tiles turn
-              // pale green, and so do reviewed ones with under £50 left
-              // (reviewedDone); reviewed ones still needing action go muted.
-              // Any answered tile can be marked reviewed.
-              const onTrack = mm.onTrack || reviewedDone(mm, reviewed);
-              const actionable = mm.status !== "unknown" && mm.status !== "na" && !mm.elsewhere;
-              // Priority reads through the headline figure and status dot, both
-              // coloured by statusColor. The module icon stays neutral (module
-              // identity, not urgency).
-              // "ok" but £50+ still on it reads "Action needed", so it's coloured as attention.
-              const statusColor = onTrack ? PROGRESS_GREEN : reviewed || mm.elsewhere ? MUT : (SC[mm.status === "ok" ? "attention" : mm.status] || MUT);
-              const tileStyle = onTrack ? INNER_ON_TRACK : reviewed ? INNER_REVIEWED : INNER;
-              const isOpen = expandedKey === mm.key;
-              const insights = isOpen ? moduleInsights(mm, d, m) : [];
-              return (
-                <div key={mm.key} style={{position:"relative"}}>
-                <div style={tileStyle}>
-                  <div onClick={() => setExpandedKey(k => k===mm.key ? null : mm.key)} style={{display:"flex",alignItems:"flex-start",gap:"14px",padding:"16px 14px 13px 16px",cursor:"pointer"}}>
-                    <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-                      {mm.icon && <mm.icon size={18} color={G}/>}
-                    </div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-                        <div style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0}}>
-                          <div style={{fontSize:"16px",fontWeight:600,color:TEXT,whiteSpace:"nowrap"}}>{mm.title}</div>
-                          {reviewed && <span style={{display:"inline-flex",animation:celebratingKey === mm.key ? "reviewedIn 0.6s ease-out" : "none"}}><ReviewedMark/></span>}
-                        </div>
-                        <div style={{fontFamily:SERIF,fontWeight:700,fontSize:"16px",color:statusColor,flexShrink:0}}>
-                          {hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : null}
-                        </div>
-                      </div>
-                      <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
-                        <span style={{width:"6px",height:"6px",borderRadius:"50%",background:statusColor,display:"inline-block"}}/>
-                        <span style={{fontSize:"12.5px",color:MUT}}>{statusLine({ ...mm, onTrack })}</span>
-                        {mm.banked > 0 && <span style={{fontSize:"12.5px",color:SUCCESS,fontWeight:700}}>· {fmtCompact(mm.banked)}/yr saved</span>}
-                      </div>
-                    </div>
-                    <ChevronRight size={14} color={MUT} style={{flexShrink:0,marginTop:"6px",transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
-                  </div>
-                  {set && <BankConfirm compact d={d} set={set} moduleKey={mm.key} title={mm.title} amount={mm.amount}/>}
-                  {isOpen && (
-                    <div style={{background:"rgba(22,47,36,0.03)",padding:"14px 16px 16px",display:"flex",flexDirection:"column",gap:"10px"}}>
-                      {/* A locked answer (src/lib/unlock.js) stays hidden here too. */}
-                      <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:0}}>{isLocked(d, mm.key) ? "Your position is ready. Open it to unlock it." : mm.summary}</p>
-                      {!isLocked(d, mm.key) && insights.length > 0 && (
-                        <div style={{display:"flex",gap:"10px"}}>
-                          {insights.map((ins,i) => (
-                            <div key={i} style={{flex:1,background:WHITE,borderRadius:"10px",padding:"10px 12px"}}>
-                              <div style={{fontSize:"10px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase"}}>{ins.label}</div>
-                              <div style={{fontSize:"14px",fontWeight:700,color:TEXT,marginTop:"4px"}}>{ins.value}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <button onClick={() => onOpenModule(mm.key)} style={{width:"100%",background:G,color:WHITE,border:"none",borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:700,cursor:"pointer"}}>
-                        Deep dive · {mm.title}
-                      </button>
-                      {actionable && (
-                        <div style={{position:"relative"}}>
-                          {celebratingKey === mm.key && (
-                            <div style={{position:"relative",pointerEvents:"none",height:0}}>
-                              <span style={{position:"absolute",top:"-8px",left:"calc(50% - 16px)",animation:`coinFloat ${REVIEW_COIN_S}s ease-in-out forwards`}}><Coins size={18} color={GOLD}/></span>
-                              <span style={{position:"absolute",top:"-8px",left:"calc(50% + 4px)",animation:`coinFloat ${REVIEW_COIN_S}s ease-in-out ${REVIEW_COIN_STAGGER_S}s forwards`}}><Coins size={18} color={GOLD}/></span>
-                            </div>
-                          )}
-                          {/* Marking: the button warms gold and the coins rise,
-                              then "Reviewed" fades in part-way through. */}
-                          <button onClick={() => {
-                            if (celebratingKey === mm.key) return;
-                            if (!reviewed) {
-                              setCelebratingKey(mm.key);
-                              setTimeout(() => onMarkReviewed(mm.key), REVIEW_SWAP_MS);
-                              setTimeout(() => setCelebratingKey(k => k === mm.key ? null : k), REVIEW_CELEBRATE_MS);
-                            } else onMarkReviewed(mm.key);
-                          }} style={{
-                            width:"100%",background:"transparent",border:`1.3px solid ${reviewed?"rgba(45,107,74,0.35)":"rgba(22,47,36,0.25)"}`,
-                            color:reviewed?SUCCESS:G,borderRadius:"100px",padding:"10px",fontSize:"13px",fontWeight:600,cursor:"pointer",
-                            display:"flex",alignItems:"center",justifyContent:"center",gap:"5px",
-                            transition:"border-color 0.6s ease, color 0.6s ease",
-                            animation: celebratingKey === mm.key ? `btnGoldTint ${REVIEW_TINT_S}s ease-in-out` : "none",
-                          }}>
-                            {reviewed ? <span style={{display:"inline-flex",alignItems:"center",gap:"5px",animation:celebratingKey === mm.key ? "reviewedIn 0.6s ease-out" : "none"}}><Check size={13}/> Reviewed</span> : "Mark as reviewed"}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {mm.key === "cash" && <NewBadge count={cashBadge} label={rateUpdatesLabel(cashBadge)}/>}
-                </div>
-              );
-            })}
-            {propertyDone && (
-              <button type="button" onClick={onOpenProperty} style={{...INNER,width:"100%",textAlign:"left",fontFamily:"inherit",padding:"16px 14px 16px 16px",display:"flex",alignItems:"flex-start",gap:"14px",cursor:"pointer"}}>
-                <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-                  <Home size={18} color={G}/>
-                </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:"16px",fontWeight:600,color:TEXT}}>Property</div>
-                  <div style={{fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"4px"}}>{MODULE_PITCH.property}</div>
-                </div>
-                <ChevronRight size={14} color={MUT} style={{flexShrink:0,marginTop:"6px"}}/>
-              </button>
-            )}
-          </div>
-
-          {/* Answered, but nothing in it applies (Kids & family with no
-              children and none planned): greyed, and still there to change. */}
-          {notApplicable.length > 0 && (<>
-            <div style={{...SUBHEAD,marginTop:live ? "18px" : "14px"}}>Not applicable</div>
-            <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-              {notApplicable.map(mm => (
-                <button key={mm.key} type="button" onClick={() => onOpenModule(mm.key)} style={{display:"flex",alignItems:"center",gap:"12px",width:"100%",textAlign:"left",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.05)",padding:"14px 16px",cursor:"pointer",fontFamily:"inherit"}}>
-                  <span style={{display:"flex",alignItems:"center",gap:"12px",flex:1,minWidth:0,opacity:0.55}}>
-                    <span style={{width:"30px",height:"30px",borderRadius:"9px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      <mm.icon size={14} color={G}/>
-                    </span>
-                    <span style={{flex:1,fontSize:"14.5px",fontWeight:600,color:TEXT}}>{mm.title}</span>
-                  </span>
-                  <span style={{fontSize:"12px",color:MUT}}>Not applicable</span>
-                  <ChevronRight size={16} color={MUT}/>
-                </button>
               ))}
             </div>
-          </>)}
+          )}
+          <OpenButton t={t} title={mm.title} onClick={() => onOpenModule(mm.key)}/>
+        </>
+      ),
+    };
+  };
+  // At stake leads; a bar splits what's been found into saved and still at
+  // stake, as on Home; then the counts.
+  const found = totalBanked + totalOpp;
+  const summary = {
+    key: "summary", label: "Your modules", amount: totalOpp > 0 ? `${fmtCompact(totalOpp)}/yr` : "",
+    body: t => (
+      <>
+        <Figure t={t} value={fmt(totalOpp)} unit="a year"/>
+        <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>{totalOpp > 0 ? "At stake across your live modules." : "Nothing at stake across your live modules."}</p>
+        {totalBanked > 0 && (
+          <div style={{marginTop:"18px"}}>
+            <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
+              <span style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,lineHeight:1,color:t.figure}}>{fmt(totalBanked)}</span>
+              <span style={{fontSize:"13px",fontWeight:600,color:t.figure}}>a year saved</span>
+            </div>
+            <div style={{height:"14px",borderRadius:"7px",display:"flex",overflow:"hidden",background:t.track,marginTop:"10px"}}>
+              <div style={{width:`${totalBanked / found * 100}%`,background:`linear-gradient(90deg, ${PROGRESS_GREEN}, ${GOLD})`}}/>
+              <div style={{flex:1,background:t === DARK
+                ? "repeating-linear-gradient(135deg, rgba(246,234,208,0.28) 0 4px, rgba(246,234,208,0.1) 4px 8px)"
+                : "repeating-linear-gradient(135deg, rgba(22,47,36,0.16) 0 4px, rgba(22,47,36,0.05) 4px 8px)"}}/>
+            </div>
+            <div style={{fontSize:"12px",color:t.body,marginTop:"6px"}}>From changes made so far</div>
+          </div>
+        )}
+        {/* The counts, kept small so the figures above lead. */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3, minmax(0, 1fr))",gap:"8px",marginTop:"14px",paddingTop:"10px",borderTop:`1px solid ${t.rule}`}}>
+          {[["Live", live], ["Not started", toExplore], ["Need action", needActionCount]].map(([l, n]) => (
+            <div key={l}>
+              <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,lineHeight:1,color:t.figure}}>{n}</div>
+              <div style={{fontSize:"9.5px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"3px",color:t.label}}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </>
+    ),
+  };
+  // Property: no £ yet (no rent vs buy engine), so it goes after the rest.
+  const propertyCard = {
+    key: "property", label: "Property", amount: "Ready", amountSans: true,
+    body: t => (
+      <>
+        <p style={{fontSize:"13px",color:t.body,lineHeight:1.5,margin:"10px 0 0"}}>{MODULE_PITCH.property}</p>
+        <OpenButton t={t} title="Property" onClick={onOpenProperty}/>
+      </>
+    ),
+  };
+  const cards = [summary, ...moduleList.map(moduleCard), ...(propertyDone ? [propertyCard] : [])];
+
+  return (
+    <div>
+      {live > 0 && (
+        <section aria-label="Your modules">
+          <CardStack cards={cards} peek={PEEK} turnLabels={["Show the previous module", "Show the next module"]}/>
+          {/* "Did you make the change?", under the wallet so a card behind
+              never hides it. */}
+          {set && (
+            <div style={{marginTop:"16px"}}>
+              {moduleList.map(mm => <BankConfirm key={mm.key} d={d} set={set} moduleKey={mm.key} title={mm.title} amount={mm.amount}/>)}
+            </div>
+          )}
         </section>
       )}
+
+      {/* Answered, but nothing in it applies (Kids & family with no
+          children and none planned): greyed, and still there to change. */}
+      {notApplicable.length > 0 && (<>
+        <div style={{...SUBHEAD,marginTop:live ? "18px" : 0}}>Not applicable</div>
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          {notApplicable.map(mm => (
+            <button key={mm.key} type="button" onClick={() => onOpenModule(mm.key)} style={{display:"flex",alignItems:"center",gap:"12px",width:"100%",textAlign:"left",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.05)",padding:"14px 16px",cursor:"pointer",fontFamily:"inherit"}}>
+              <span style={{display:"flex",alignItems:"center",gap:"12px",flex:1,minWidth:0,opacity:0.55}}>
+                <span style={{width:"30px",height:"30px",borderRadius:"9px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <mm.icon size={14} color={G}/>
+                </span>
+                <span style={{flex:1,fontSize:"14.5px",fontWeight:600,color:TEXT}}>{mm.title}</span>
+              </span>
+              <span style={{fontSize:"12px",color:MUT}}>Not applicable</span>
+              <ChevronRight size={16} color={MUT}/>
+            </button>
+          ))}
+        </div>
+      </>)}
 
       {/* Modules with no answers yet, picks first, each opening its
           walk-through; then any not open to them yet. */}
       {toExplore > 0 && (
-        <section style={{...TILE,marginTop:live || notApplicable.length ? "16px" : 0}}>
+        <section style={{...TILE,marginTop:live || notApplicable.length ? "22px" : 0}}>
           <div style={TILE_TITLE}>Still to explore</div>
           <div style={TILE_SUB}>{toExplore} {toExplore === 1 ? "module" : "modules"} not started yet</div>
           <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>

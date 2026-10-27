@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronUp, ChevronDown, TriangleAlert } from "lucide-react";
-import { G, MUT, SERIF, SANS, WHITE, CRITICAL, WARNING, HERO_TILE_BG, HERO_TILE_BG_RED, HERO_TILE_BG_AMBER, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN } from "../design-tokens.js";
+import { ChevronUp, ChevronDown, TriangleAlert, Check } from "lucide-react";
+import { G, MUT, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN, HERO_TILE_BG, HERO_TILE_BG_RED, HERO_TILE_BG_AMBER, HERO_TILE_BG_GREEN, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN } from "../design-tokens.js";
 
 // Cards stacked one in front of another, like a wallet: Home's hero
 // (HomeHero.jsx) and Progress's figures. The front card wears the
@@ -13,12 +13,24 @@ import { G, MUT, SERIF, SANS, WHITE, CRITICAL, WARNING, HERO_TILE_BG, HERO_TILE_
 // first comes round again. Swiping down or the up arrow goes back one.
 // No wheel turning on desktop: it would catch the page's own scroll.
 //
-// Each card: { key, label, amount, amountSans (the top line's amount is
-// words, not a figure), warn ("red" or "amber": behind, the card wears that
-// wash with a warning icon after its label), body: t => content in theme t }.
+// Only the two cards behind the front one show their top line; any further
+// back are slim edges (up to MAX_SLIVERS), so a long stack (Modules) stays
+// the height of a short one, and the third place changes as you go through.
+//
+// Each card: { key, label, badge (a node after the label), amount,
+// amountSans (the top line's amount is words, not a figure), warn ("red" or
+// "amber": behind, the card wears that wash with a warning icon after its
+// label), done (on track: a green wash behind, and a tick after the label,
+// dark green behind and mid green in front), body: t => content in theme t }.
 const PEEK = 44;      // px of each card behind showing above the one in front
+const SLIM = 7;       // px of each slim edge, past the second card behind
+const MAX_SLIVERS = 3;
 const TURN = 700;     // ms
 const SHRINK = 0.045; // scale lost per place back
+const SLIVER_SHRINK = 0.03;
+// Where a card `slot` places back sits, and its scale.
+const rise = (slot, peek) => slot <= 2 ? slot * peek : 2 * peek + Math.min(slot - 2, MAX_SLIVERS) * SLIM;
+const scaleAt = slot => slot <= 2 ? 1 - slot * SHRINK : 1 - 2 * SHRINK - Math.min(slot - 2, MAX_SLIVERS) * SLIVER_SHRINK;
 const CSS = `
 .card-stack { --hero-fig: 52px; }
 @media (min-width: 1000px) { .card-stack { --hero-fig: 72px; } }
@@ -44,8 +56,9 @@ const WARN = {
   red: { ...LIGHT, bg: HERO_TILE_BG_RED, border: "1px solid rgba(192,57,43,0.30)", shadow: "0 4px 18px rgba(192,57,43,0.12)", label: "#a8392c", figure: "#8e2a1f", body: "#8a5a52", icon: CRITICAL },
   amber: { ...LIGHT, bg: HERO_TILE_BG_AMBER, border: "1px solid rgba(217,130,43,0.38)", shadow: "0 4px 18px rgba(217,130,43,0.12)", label: "#a35a14", figure: "#864a0f", body: "#8a6a4f", icon: WARNING },
 };
+const DONE = { ...LIGHT, bg: HERO_TILE_BG_GREEN, border: "1px solid rgba(47,148,97,0.45)", shadow: "0 4px 18px rgba(47,148,97,0.10)", figure: SUCCESS };
 
-export default function CardStack({ cards, turnLabels = ["Show the previous card", "Show the next card"] }) {
+export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the previous card", "Show the next card"] }) {
   const reduceMotion = useReducedMotion();
   const n = cards.length;
   // `target`: the card heading to the front, set as a turn starts so the
@@ -91,15 +104,16 @@ export default function CardStack({ cards, turnLabels = ["Show the previous card
       {/* Every card shares one grid cell, so the stack is as tall as the
           tallest card; each one behind sits PEEK px higher. */}
       <div onPointerDown={onPointerDown} onPointerUp={onPointerUp} onClickCapture={onClickCapture}
-        style={{display:"grid",paddingTop:`${back * PEEK}px`,perspective:"1100px",touchAction:"pan-x"}}>
+        style={{display:"grid",paddingTop:`${rise(back, peek)}px`,perspective:"1100px",touchAction:"pan-x"}}>
         {cards.map((c, i) => {
           const isFront = i === front, isTarget = i === target;
           const slot = (i - target + n) % n;
-          const light = WARN[c.warn] ?? LIGHT;
+          const edge = slot > 2; // a slim edge: no top line
+          const light = WARN[c.warn] ?? (c.done ? DONE : LIGHT);
           const t = isFront ? DARK : light;
           const animate = turning === i
-            ? { y: [0, 0, -slot * PEEK], scale: [1, 1, 1 - slot * SHRINK], rotateY: [0, -80, 0], x: ["0%", "-12%", "0%"] }
-            : { y: -slot * PEEK, scale: 1 - slot * SHRINK, rotateY: 0, x: "0%" };
+            ? { y: [0, 0, -rise(slot, peek)], scale: [1, 1, scaleAt(slot)], rotateY: [0, -80, 0], x: ["0%", "-12%", "0%"] }
+            : { y: -rise(slot, peek), scale: scaleAt(slot), rotateY: 0, x: "0%" };
           return (
             <motion.div key={c.key} className="card-stack-card"
               initial={false} animate={animate}
@@ -109,14 +123,20 @@ export default function CardStack({ cards, turnLabels = ["Show the previous card
                 borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px",cursor:isTarget ? "default" : "pointer",display:"flex",flexDirection:"column"}}>
               <div className={`card-stack-dark${isFront ? " on" : ""}`} aria-hidden="true" style={{opacity:isFront ? 1 : 0,transition:"opacity 0.385s ease"}}/>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"10px",minHeight:"18px"}}>
-                <span style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:t.label}}>
+                <span style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:t.label,opacity:edge ? 0 : 1,transition:"opacity 0.3s, color 0.35s"}}>
                   {c.label}
+                  {c.done && (
+                    <span role="img" aria-label="On track" style={{width:"15px",height:"15px",borderRadius:"50%",background:isFront ? PROGRESS_GREEN : G,color:WHITE,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <Check size={9} strokeWidth={3.5}/>
+                    </span>
+                  )}
+                  {c.badge}
                   {/* Behind, a warning card's icon; in front, its body says it. */}
                   {c.warn && <TriangleAlert size={13} strokeWidth={2.4} color={WARN[c.warn].icon} aria-hidden="true" style={{opacity:isTarget ? 0 : 1,transition:"opacity 0.3s"}}/>}
                 </span>
                 {/* The top line's amount: only for a card behind, as the
                     front card shows it in full. */}
-                <span style={{fontFamily:c.amountSans ? SANS : SERIF,fontSize:c.amountSans ? "13px" : "16px",fontWeight:700,color:t.figure,whiteSpace:"nowrap",opacity:isTarget ? 0 : 1,transition:"opacity 0.3s, color 0.35s"}}>{c.amount}</span>
+                <span style={{fontFamily:c.amountSans ? SANS : SERIF,fontSize:c.amountSans ? "13px" : "16px",fontWeight:700,color:t.figure,whiteSpace:"nowrap",opacity:isTarget || edge ? 0 : 1,transition:"opacity 0.3s, color 0.35s"}}>{c.amount}</span>
               </div>
               {/* Behind, only the top line shows: the body fades out so
                   nothing pokes into that line. It stays while a card turns
