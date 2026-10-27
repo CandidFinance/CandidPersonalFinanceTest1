@@ -23,7 +23,7 @@ import { buildMailtoUrl, draftAsText } from "./emailDrafts.js";
 // shows as already-set on return visits, on this device only — no backend).
 // The date is staggered by how many other reminders are already set, so
 // setting several in one sitting spreads them across different days.
-// The Win tile's `action` ({ label, onClick }), e.g. "Fix now" opening Candid
+// The Win tile's `action` ({ label, onClick }), e.g. "See options" opening Candid
 // Assist: solid CTA blue, the same size as the reminder pill beside it.
 export function ActionButton({ action }) {
   return (
@@ -36,7 +36,8 @@ export function ActionButton({ action }) {
 }
 
 // `action` (optional): an ActionButton beside the pill, half the row each,
-// so the pill's label drops its date to fit.
+// so the pill's label is shortened to fit: "Remind me", then the bell and
+// the reminder's date once set.
 export default function MobileReminderAction({ id, title, description, email, action }) {
   const storageKey = `candid_reminder_${id}`;
   const [isSet, setIsSet] = useState(() => {
@@ -68,7 +69,7 @@ export default function MobileReminderAction({ id, title, description, email, ac
   };
 
   const pillLabel = action
-    ? (isSet ? "Reminder set" : email ? "Email HR" : "Remind me")
+    ? (isSet ? dateLabel : email ? "Email HR" : "Remind me")
     : isSet
     ? `Reminder set for ${dateLabel}`
     : email ? "Email HR & set a reminder" : `Remind me on ${dateLabel}`;

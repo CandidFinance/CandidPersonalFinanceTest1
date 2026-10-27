@@ -71,7 +71,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
   // Assist and Home (cashOpportunity); before then, the waterfall's estimate.
   const opp = cashOpportunity(d, m, savingsRates);
   const gain = opp ? opp.gain : optimisationGain;
-  // "Fix now" opens Candid Assist on the cash item, so it shows only while
+  // "See options" opens Candid Assist on the cash item, so it shows only while
   // Assist has one to open (not below its threshold, snoozed or locked), and
   // the tile itself shows a loss.
   const assistCash = useMemo(() => !isLocked(d, "cash") && assistItems(d, m, savingsRates).some(i => i.id === "cash"), [d, m, savingsRates]);
@@ -160,7 +160,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssi
         headline={totalPot<=0 ? "Add your cash details to see this" : gain>50 ? `Your savings lose ${fmt(gain)}/yr to low rates${opp ? ", after tax" : ""}` : "Your savings are already on good rates."}
         tagLabel="Today" open={savingsOpen} onOpenChange={openSavings}
         badge={news ? { count: news.count, label: rateUpdatesLabel(news.count) } : null}
-        action={assistHasCash ? { label: "Fix now", onClick: () => onOpenAssist("cash") } : null}
+        action={assistHasCash ? { label: "See options", onClick: () => onOpenAssist("cash") } : null}
         reminder={gain > 50 ? {
           id: "cash-move-surplus",
           title: buildReminderSubject(`${fmt(gain)}/yr`, "Higher rates for your savings"),
