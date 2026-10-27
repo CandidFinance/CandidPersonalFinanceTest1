@@ -997,7 +997,8 @@ export default function AppShell() {
           onBack={() => navigate(returnTo ? `/app/module/${returnTo}` : "/app/modules")}
           backLabel={returnTo ? `Back to ${MODULE_META.find(mm => mm.key === returnTo)?.title}` : null}
           onRecordLoanOverpayment={recordLoanOverpayment}
-          onRecordCrystallisedGain={recordCrystallisedGain}/>
+          onRecordCrystallisedGain={recordCrystallisedGain}
+          onOpenAssist={itemId => { setAssistState(s => ({ ...s, open: true, itemId, step: "overview" })); posthog.capture("assist_opened_from_tile", { module: mobileActiveModule, item: itemId }); }}/>
         {/* Once, the first time Cash opens unlocked. */}
         {mobileActiveModule === "cash" && (!d.cashTourDone || tourShowing) && (
           <CashTour d={d} m={m} set={set} rateCost={rateCost} estimates={estimateItems(d, "cash").map(i => i.phrase)}

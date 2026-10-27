@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { G, GOLD, CREAM, WHITE, TEXT, MUT, RADIUS_CARD, PROVIDER_TILE_BG, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW } from "../design-tokens.js";
-import MobileReminderAction from "./MobileReminderAction.jsx";
+import MobileReminderAction, { ActionButton } from "./MobileReminderAction.jsx";
 import NewBadge from "./NewBadge.jsx";
 
 // Compact, tap-to-expand "Win" tile for mobile module deep-dive pages —
@@ -17,7 +17,9 @@ import NewBadge from "./NewBadge.jsx";
 // elsewhere on the page that leads to it).
 // `badge` ({ count, label }): a red count bubble on its top right corner for
 // something new in it (NewBadge.jsx).
-export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, provider = false, open: openProp, onOpenChange, badge, children }) {
+// `action` ({ label, onClick }): a CTA-blue button at the bottom of the
+// expanded tile, sharing the row half and half with the reminder pill.
+export default function MobileWinTile({ number, title, headline, tagLabel, tagColor = GOLD, defaultOpen = false, reminder, action, provider = false, open: openProp, onOpenChange, badge, children }) {
   const [openState, setOpenState] = useState(defaultOpen);
   const open = openProp ?? openState;
   const setOpen = f => onOpenChange ? onOpenChange(f(open)) : setOpenState(f);
@@ -49,7 +51,9 @@ export default function MobileWinTile({ number, title, headline, tagLabel, tagCo
       {open && (
         <div style={{padding:"0 16px 16px"}}>
           {children}
-          {reminder && <MobileReminderAction id={reminder.id} title={reminder.title} description={reminder.description} email={reminder.email}/>}
+          {reminder
+            ? <MobileReminderAction id={reminder.id} title={reminder.title} description={reminder.description} email={reminder.email} action={action}/>
+            : action && <div style={{marginTop:"16px"}} onClick={e => e.stopPropagation()}><ActionButton action={action}/></div>}
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { X } from "lucide-react";
 import { calcCashOptimisation } from "../../lib/cash.js";
-import { cashOpportunity, accountName } from "../../lib/assist.js";
+import { cashOpportunity, accountName, assistItems } from "../../lib/assist.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
+import { isLocked } from "../../lib/unlock.js";
 import { topRate } from "../../lib/savingsRates.js";
 import { getModuleProducts } from "../moduleProducts.js";
 import MobileWinTile from "../MobileWinTile.jsx";
@@ -42,7 +43,7 @@ function AccountLines({ lines, rowStyle }) {
   });
 }
 
-export default function MobileCashDeepDive({ d, m, savingsRates, set }) {
+export default function MobileCashDeepDive({ d, m, savingsRates, set, onOpenAssist }) {
   const [openInfo, setOpenInfo] = useState(null); // "step1" | "step2" | null
   // Best rates moved for them since the last visit (visitNews.js): opening
   // Cash clears the badges outside it; the savings tile keeps its own until
@@ -70,6 +71,11 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set }) {
   // Assist and Home (cashOpportunity); before then, the waterfall's estimate.
   const opp = cashOpportunity(d, m, savingsRates);
   const gain = opp ? opp.gain : optimisationGain;
+  // "Fix now" opens Candid Assist on the cash item, so it shows only while
+  // Assist has one to open (not below its threshold, snoozed or locked), and
+  // the tile itself shows a loss.
+  const assistCash = useMemo(() => !isLocked(d, "cash") && assistItems(d, m, savingsRates).some(i => i.id === "cash"), [d, m, savingsRates]);
+  const assistHasCash = !!onOpenAssist && gain > 50 && assistCash;
   const optimalBlendedRatePct = keptAmount > 0 ? (optimisedTotal / keptAmount) * 100 : 0;
 
   const showEmergencyWin = m.emergencyShortfall > 0;
@@ -154,6 +160,7 @@ export default function MobileCashDeepDive({ d, m, savingsRates, set }) {
         headline={totalPot<=0 ? "Add your cash details to see this" : gain>50 ? `Your savings lose ${fmt(gain)}/yr to low rates${opp ? ", after tax" : ""}` : "Your savings are already on good rates."}
         tagLabel="Today" open={savingsOpen} onOpenChange={openSavings}
         badge={news ? { count: news.count, label: rateUpdatesLabel(news.count) } : null}
+        action={assistHasCash ? { label: "Fix now", onClick: () => onOpenAssist("cash") } : null}
         reminder={gain > 50 ? {
           id: "cash-move-surplus",
           title: buildReminderSubject(`${fmt(gain)}/yr`, "Higher rates for your savings"),

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { reportStorageFailure } from "../lib/storage.js";
 import { Bell, BellRing, Mail, CalendarPlus, Check } from "lucide-react";
-import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL, SUCCESS } from "../design-tokens.js";
+import { G, GOLD, WHITE, MUT, SANS, RADIUS_PILL, SUCCESS, CTA_BLUE } from "../design-tokens.js";
 import { triggerCalendarReminder, nextAvailableWorkingDay } from "./reminders.js";
 import { buildMailtoUrl, draftAsText } from "./emailDrafts.js";
 
@@ -23,7 +23,21 @@ import { buildMailtoUrl, draftAsText } from "./emailDrafts.js";
 // shows as already-set on return visits, on this device only — no backend).
 // The date is staggered by how many other reminders are already set, so
 // setting several in one sitting spreads them across different days.
-export default function MobileReminderAction({ id, title, description, email }) {
+// The Win tile's `action` ({ label, onClick }), e.g. "Fix now" opening Candid
+// Assist: solid CTA blue, the same size as the reminder pill beside it.
+export function ActionButton({ action }) {
+  return (
+    <button type="button" onClick={action.onClick} style={{
+      flex:1, minWidth:0, width:"100%", display:"flex", alignItems:"center", justifyContent:"center",
+      background:CTA_BLUE, color:WHITE, border:`1.5px solid ${CTA_BLUE}`, borderRadius:RADIUS_PILL, padding:"11px 10px",
+      fontSize:"13px", fontWeight:700, fontFamily:SANS, cursor:"pointer", whiteSpace:"nowrap",
+    }}>{action.label}</button>
+  );
+}
+
+// `action` (optional): an ActionButton beside the pill, half the row each,
+// so the pill's label drops its date to fit.
+export default function MobileReminderAction({ id, title, description, email, action }) {
   const storageKey = `candid_reminder_${id}`;
   const [isSet, setIsSet] = useState(() => {
     try { return localStorage.getItem(storageKey) === "1"; } catch (e) { reportStorageFailure("read_reminder", e); return false; }
@@ -53,7 +67,9 @@ export default function MobileReminderAction({ id, title, description, email }) 
     else if (!isSet) setReminder();
   };
 
-  const pillLabel = isSet
+  const pillLabel = action
+    ? (isSet ? "Reminder set" : email ? "Email HR" : "Remind me")
+    : isSet
     ? `Reminder set for ${dateLabel}`
     : email ? "Email HR & set a reminder" : `Remind me on ${dateLabel}`;
   const Icon = isSet ? BellRing : email ? Mail : Bell;
@@ -67,15 +83,18 @@ export default function MobileReminderAction({ id, title, description, email }) 
 
   return (
     <div style={{marginTop:"16px"}} onClick={e => e.stopPropagation()}>
+      <div style={{display:"flex",gap:"10px"}}>
       <button type="button" onClick={onPillClick} style={{
-        width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
+        flex:1, minWidth:0, whiteSpace:"nowrap", display:"flex", alignItems:"center", justifyContent:"center", gap: action ? "6px" : "8px",
         background: isSet ? "rgba(196,150,58,0.12)" : "transparent",
         color: isSet ? "#8a6a24" : G,
-        border:`1.5px solid ${isSet ? GOLD : G}`, borderRadius:RADIUS_PILL, padding:"11px 18px",
+        border:`1.5px solid ${isSet ? GOLD : G}`, borderRadius:RADIUS_PILL, padding: action ? "11px 10px" : "11px 18px",
         fontSize:"13px", fontWeight:700, fontFamily:SANS, cursor: (!email && isSet) ? "default" : "pointer",
       }}>
         <Icon size={15}/>{pillLabel}
       </button>
+      {action && <ActionButton action={action}/>}
+      </div>
 
       {email && panelOpen && (
         <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"12px",padding:"14px",marginTop:"10px"}}>
