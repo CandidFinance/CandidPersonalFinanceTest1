@@ -5,7 +5,7 @@
 //
 // Who gets what:
 //  - Subscribers, on their saved answers (subscriptions.saved_state): all
-//    four kinds.
+//    five kinds.
 //  - Free users who asked for emails (the unlock tick box or "Get rate
 //    alerts"), on what their row in `test` holds: the 5 April reminder and
 //    better rates, each saying which date the figures are from. Better
@@ -24,6 +24,10 @@
 //  - rates: today's best rates would earn £100+ a year more after tax than
 //    their accounts. At most every 30 days, and only when the gain has moved
 //    by £50 or the best account has changed since the last one.
+//  - payday: on their payday (taxTrap.js paydayOf, the 28th unless they've
+//    said), with the £100k trap in view: where this tax year's income is
+//    heading (taxTrap.js yearProjection), and the pension top-up that would
+//    bring it back to £100,000 when it's over.
 //
 // Information, not instruction (Candid is guidance, not advice): what each
 // option is worth, largest first. Pure, unit tested in alerts.test.js.
@@ -35,10 +39,11 @@ import { cashOpportunity } from "./assist.js";
 import { childcareSupport } from "./childcare.js";
 import { choiceFor, CHOICE_IDS } from "./opportunityChoices.js";
 import { fmt } from "./format.js";
+import { trapInView, yearProjection, isPayday, monthKey, allowanceLost, TRAP_START } from "./taxTrap.js";
 import { renderEmail } from "./emailLayout.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
-export const SUBSCRIBER_KINDS = ["taxYearEnd", "bonus", "newTaxYear", "rates"];
+export const SUBSCRIBER_KINDS = ["taxYearEnd", "bonus", "newTaxYear", "rates", "payday"];
 export const FREE_KINDS = ["taxYearEnd", "rates"];
 export const RATES_MIN_GAIN = 100;
 export const RATES_MIN_DAYS = 30;
@@ -101,11 +106,19 @@ function taxYearEnd(d, m, today) {
   // the line, not added to the tax figure.
   const cc = childcareSupport(d, m);
   const childcare = cc?.recoverable && cc.state === "lost" && !cc.planning && cc.atStake > 0 ? ` It would also restore ${fmt(cc.atStake)} a year of childcare support.` : "";
-  if (taper.recoverable && taper.taperTaxSaving > 0) {
+  // With pay to date from a payday check-in, the year as it's going.
+  const year = yearProjection(d, m, today);
+  let trapLine = false;
+  if (year.tracked) {
+    const tax = Math.round(allowanceLost(year.projected, !!m.scottish).tax);
+    // Only what fits this year's annual allowance, as for the taper below.
+    if (year.topUp > 0 && tax > 0 && year.topUp <= room && (trapLine = true)) items.push({ tax, line: `${fmt(tax)} of tax: on your pay to date, your income this tax year is heading for ${fmt(year.projected)}. A pension payment of ${fmt(year.topUp)} (including the tax relief added) before 5 April would bring it back to £100,000.${childcare}` });
+  } else if (taper.recoverable && taper.taperTaxSaving > 0) {
+    trapLine = true;
     items.push({ tax: taper.taperTaxSaving, line: `${fmt(taper.taperTaxSaving)} of tax: a pension payment of ${fmt(taper.taperSacrificeNeeded)} (including the tax relief added) before 5 April would bring your income back to £100,000 for this tax year.${childcare}` });
   }
   const cb = childBenefitCharge(d, m);
-  if (cb && cb.charge > 0 && cb.payInNeeded <= room && !(taper.recoverable && taper.taperTaxSaving > 0)) {
+  if (cb && cb.charge > 0 && cb.payInNeeded <= room && !trapLine) {
     items.push({ tax: cb.charge, line: `${fmt(cb.charge)} of Child Benefit kept: a pension payment of ${fmt(cb.payInNeeded)} before 5 April would bring your income to £60,000.` });
   }
   if (m.crystallisable > 0 && m.cgtSaving > 0) {
@@ -146,7 +159,7 @@ function bonus(d, m, today) {
     key: `bonus:${year}-${paid}`, kind: "bonus",
     subject: `Your bonus: up to ${fmt(Math.round(saving))} of avoidable tax`,
     intro: known ? `Your bonus is usually paid in ${MONTHS[paid - 1]}.` : "Many bonuses are paid in March.",
-    items: [`Up to ${fmt(Math.round(saving))} of tax on your ${fmt(+d.bonusAmount)} bonus is avoidable, if it's paid into your pension. It has to be arranged with HR or payroll before the bonus is paid.${bonusChildcare(d, m)}`],
+    items: [`Up to ${fmt(Math.round(saving))} of tax on your ${fmt(+d.bonusAmount)} bonus is avoidable, if it's paid into your pension. It has to be arranged with HR or payroll before the bonus is paid.${bonusChildcare(d, m) || bonusTrap(d, m)}`],
     link: `${SITE}/app/module/pension`,
   };
 }
@@ -158,6 +171,32 @@ function bonusChildcare(d, m) {
   return cc?.recoverable && cc.state === "lost" && !cc.planning && cc.atStake > 0
     ? ` With it, your income goes over £100,000, which stops ${fmt(cc.atStake)} a year of childcare support; paying ${fmt(cc.payInNeeded)} of it into your pension would keep it.`
     : "";
+}
+
+// A bonus that takes income over £100,000, into the trap: how much of it
+// paid into a pension would keep them at £100,000.
+function bonusTrap(d, m) {
+  const ani = m.adjustedNetIncome, bonus = +d.bonusAmount || 0;
+  if (!(ani > TRAP_START) || ani - bonus >= TRAP_START) return "";
+  return ` With it, your income this tax year is ${fmt(ani)}, over £100,000, where you start losing your tax-free Personal Allowance; paying ${fmt(ani - TRAP_START)} of it into your pension would keep you at £100,000.`;
+}
+
+// Their payday, with the £100k trap in view: where the tax year is heading.
+function payday(d, m, today) {
+  if (d.employmentStatus !== "employed" || !isPayday(d, today) || !trapInView(d, m.adjustedNetIncome)) return null;
+  const y = yearProjection(d, m, today);
+  const from = y.tracked ? `On your pay to date (${new Date(y.asOf).toLocaleDateString("en-GB", { day: "numeric", month: "long" })})` : "On your answers";
+  return {
+    key: `payday:${monthKey(today)}`, kind: "payday",
+    subject: y.over ? `Payday check-in: ${fmt(y.topUp)} over £100,000 this tax year` : `Payday check-in: heading for ${fmt(y.projected)} this tax year`,
+    intro: "It's payday. The £100,000 trap is measured on the whole tax year, so here's where yours is heading.",
+    items: [
+      `${from}, your income this tax year is heading for ${fmt(y.projected)}.`,
+      y.over ? `A pension payment of ${fmt(y.topUp)} (including the tax relief added) before 5 April would bring it back to £100,000.` : `That's ${fmt(TRAP_START - y.projected)} under £100,000, with ${y.paydaysLeft} payday${y.paydaysLeft === 1 ? "" : "s"} to go.`,
+      "Adding this month's taxable pay to date from your payslip keeps it accurate.",
+    ],
+    link: `${SITE}/app/home`,
+  };
 }
 
 function newTaxYear(d, m, today) {
@@ -203,7 +242,7 @@ function rates(d, m, today, { rows, sent, free, ratesFrom }) {
   };
 }
 
-const KINDS = { taxYearEnd, bonus, newTaxYear, rates };
+const KINDS = { taxYearEnd, bonus, newTaxYear, rates, payday };
 
 // Everything due for one person today, not already sent. `who`: "subscriber"
 // or "free". `sent`: their alert_sends rows. `rows`: savings_rates.

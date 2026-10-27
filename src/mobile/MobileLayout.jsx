@@ -3,6 +3,7 @@ import { NavBar } from "../NavBar.jsx";
 import { CREAM, G, GOLD, MUT } from "../design-tokens.js";
 import MobileTabBar, { MOBILE_NAV_ITEMS } from "./MobileTabBar.jsx";
 import { SignInGate } from "./SignInSetup.jsx";
+import PremiumButton from "./Premium.jsx";
 
 // Shell for every /app/* mobile screen: a light NavBar (the "Candid."
 // wordmark on the left, above the bar's hairline, plus an optional page-
@@ -10,7 +11,8 @@ import { SignInGate } from "./SignInSetup.jsx";
 // content area above the fixed mobile tab bar. `pageLabel` is set on every
 // screen below the tabs (a module, Property, Your inputs) and left unset on
 // the tab screens themselves, where the tab bar already says where you are.
-export default function MobileLayout({ pageLabel, activeTab, headerRight, assist = null, children }) {
+// `d`: their answers, for Candid Premium's crown beside the wordmark.
+export default function MobileLayout({ d = {}, pageLabel, activeTab, headerRight, assist = null, children }) {
   const navigate = useNavigate();
   return (
     <div style={{minHeight:"100vh",background:CREAM,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
@@ -33,7 +35,7 @@ export default function MobileLayout({ pageLabel, activeTab, headerRight, assist
           .app-navbar-inner { max-width: 720px !important; }
         }
       `}</style>
-      <NavBar light center={pageLabel} right={headerRight} onLogoClick={() => navigate("/app/home")} />
+      <NavBar light center={pageLabel} right={headerRight} badge={<PremiumButton d={d}/>} onLogoClick={() => navigate("/app/home")} />
       <nav className="app-desktop-tabs" aria-label="App" style={{gap:"28px",maxWidth:"720px",width:"100%",margin:"0 auto",padding:"4px 20px 0",boxSizing:"border-box"}}>
         {MOBILE_NAV_ITEMS.map(item => (
           <button key={item.key} type="button" onClick={() => navigate(item.path)} style={{

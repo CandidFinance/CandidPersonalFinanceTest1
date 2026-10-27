@@ -7,8 +7,9 @@ import { taxYearOf } from "./taxYear.js";
 // at retirement income. `d.opportunityChoices`: { [id]: { choice, taxYear,
 // perYear?, on? } }, perYear/on being what "done" banked (moduleStatus.js
 // bankChange), so taking it back can unbank it.
-// The ids in use: pension's bonus sacrifice and its retirement income gap.
-export const CHOICE_IDS = { bonus: "pension.bonus", retirementGap: "pension.retirementGap" };
+// The ids in use: pension's bonus sacrifice and its retirement income gap,
+// and the £100k tax trap's pension payment (taxTrapRecord.js).
+export const CHOICE_IDS = { bonus: "pension.bonus", retirementGap: "pension.retirementGap", taxTrapSacrifice: "taxTrap.sacrifice" };
 
 export function choiceFor(d, id, now = new Date()) {
   const c = (d.opportunityChoices || {})[id];

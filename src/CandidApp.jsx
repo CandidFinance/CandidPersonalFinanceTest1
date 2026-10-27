@@ -58,7 +58,11 @@ const BLANK_DATA = {
   // `interests`: the modules picked at the app's entry
   // (src/lib/appEntry.js), plus "property" or "exploring". `appEntered`:
   // they've been through that entry, which opens the app before any report.
-  name:"", email:"", interests:[], appEntered:false, notWorkingReason:"", earnedThisTaxYear:"", askedFields:[], scottishTaxpayer:"", ukNation:"", kidsPreschool:"", kidsSchool:"", childcareMonthly:"", partnerOver100k:"", tfcClaiming:"", hasPgLoan:"", pgLoanBalance:"", kidsStatus:"", kidsCount:"", partnerIncome:"",
+  name:"", email:"", interests:[], appEntered:false, notWorkingReason:"", earnedThisTaxYear:"", askedFields:[], scottishTaxpayer:"", ukNation:"", kidsPreschool:"", kidsSchool:"", childcareMonthly:"", partnerOver100k:"", tfcClaiming:"", hasPgLoan:"", pgLoanBalance:"", kidsStatus:"", kidsCount:"", partnerIncome:"", payday:"",
+  // The £100k trap through the year (mobile/PaydayCheck.jsx): taxable pay to
+  // date from a payslip, the day it was entered, and the month of the last
+  // payday check-in ("YYYY-MM").
+  payToDate:"", payToDateOn:"", paydayCheckedMonth:"",
   // `goalPicks`: the answer to the goals card on home (merged into
   // financialGoals); `goalsAsked`: that card has been answered or dismissed.
   // `scoreShown`: the Candid score has appeared (src/lib/appEntry.js
@@ -68,7 +72,8 @@ const BLANK_DATA = {
   // `emailTileDismissed`: the email tile at the top of the Cash page closed.
   // `emergencyCardDismissed`: Cash's emergency fund card closed while the
   // fund is at its target (cleared once it falls below).
-  cashTourDone:false, emailTileDismissed:false, emergencyCardDismissed:false,
+  // `trapSubscribeClosed`: the £100k tax trap's subscribe tile closed.
+  cashTourDone:false, emailTileDismissed:false, emergencyCardDismissed:false, trapSubscribeClosed:false,
   // Which of the active modules (cash, investments, pension, studentLoan, kids —
   // matching MODULE_META keys) the user has picked. Drives which modules
   // computeModuleStatuses treats as applicable.
@@ -715,21 +720,21 @@ export default function AppShell() {
   );
 
   if (pathname === "/app/home") return (
-    <MobileLayout assist={assistNode} activeTab="home" headerRight={editInputsButton}>
+    <MobileLayout d={d} assist={assistNode} activeTab="home" headerRight={editInputsButton}>
       <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules} savingsRates={savingsRates} approvedEvents={approvedEvents}
         onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}/>
     </MobileLayout>
   );
 
   if (pathname === "/app/progress") return (
-    <MobileLayout assist={assistNode} activeTab="progress" headerRight={editInputsButton}>
+    <MobileLayout d={d} assist={assistNode} activeTab="progress" headerRight={editInputsButton}>
       <ProgressTrackerDashboard d={d} m={m} statuses={statuses} set={set}
         onOpenModule={key => navigate(`/app/module/${key}`)}/>
     </MobileLayout>
   );
 
   if (pathname === "/app/modules") return (
-    <MobileLayout assist={assistNode} activeTab="modules" headerRight={editInputsButton}>
+    <MobileLayout d={d} assist={assistNode} activeTab="modules" headerRight={editInputsButton}>
       <MobileModulesScreen d={d} m={m} set={set} statuses={statuses} insights={insights}
         completedModules={completedModules}
         onMarkReviewed={markModuleComplete}
@@ -744,7 +749,7 @@ export default function AppShell() {
     // Steps 2 and 3 stay locked until step 1 is complete, including for a direct link.
     if (propertyStep !== "readiness" && readinessMissing(d, m).length > 0) return <Navigate to="/app/property" replace />;
     return (
-      <MobileLayout assist={assistNode} activeTab="modules" pageLabel="Property"
+      <MobileLayout d={d} assist={assistNode} activeTab="modules" pageLabel="Property"
         headerRight={modulesBackButton}>
         <MobilePropertyScreen step={propertyStep} d={d} m={m} set={set} regionalRows={regionalRates} marketRates={marketRates} onAddInputs={openMobileStep}
           onOpenModule={key => navigate(`/app/module/${key}`)}
@@ -757,7 +762,7 @@ export default function AppShell() {
   }
 
   if (pathname === "/app/forecast") return (
-    <MobileLayout assist={assistNode} activeTab="forecast" headerRight={editInputsButton}>
+    <MobileLayout d={d} assist={assistNode} activeTab="forecast" headerRight={editInputsButton}>
       <MobileForecastScreen d={d} m={m}/>
     </MobileLayout>
   );
@@ -766,7 +771,7 @@ export default function AppShell() {
     const open = new URLSearchParams(window.location.search).get("open");
     const back = () => { const to = inputsReturnPath.current || "/app/home"; inputsReturnPath.current = null; navigate(to); scrollToTop(); };
     return (
-      <MobileLayout assist={assistNode} activeTab={null} pageLabel="Your inputs"
+      <MobileLayout d={d} assist={assistNode} activeTab={null} pageLabel="Your inputs"
         headerRight={<button onClick={back} style={{background:G,border:"none",borderRadius:"100px",padding:"7px 16px",cursor:"pointer",color:WHITE,fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>Done</button>}>
         <MobileInputsScreen key={open || "all"} d={d} m={m} set={set} open={open}
           onStartModule={key => navigate(`/app/module/${key}`)}
@@ -779,7 +784,7 @@ export default function AppShell() {
   if (pathname === "/app/chat") return (
     // No Candid Assist button here: the conversation is the help, and the
     // button would sit over its running total.
-    <MobileLayout activeTab="chat">
+    <MobileLayout d={d} activeTab="chat">
       <MobileChatScreen d={d} m={m} set={set} marketRates={marketRates}/>
     </MobileLayout>
   );
@@ -808,7 +813,7 @@ export default function AppShell() {
       if (quick) {
         const detail = new URLSearchParams(location.search).get("detail") === "1";
         return (
-          <MobileLayout activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
+          <MobileLayout d={d} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
             <QuickStart key={mobileActiveModule} setup={quick} d={d} m={m} intro={false} flow={detail ? "detail" : "brief"}
               kicker={`${moduleLabel}, for your ${backTo.toLowerCase()} answer`}
               onPatch={patch => Object.entries(patch).forEach(([k, v]) => set(k, v))}
@@ -827,7 +832,7 @@ export default function AppShell() {
         );
       }
       return (
-        <MobileLayout activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
+        <MobileLayout d={d} activeTab="modules" pageLabel={moduleLabel} headerRight={modulesBackButton}>
           <MobileModuleGuide moduleKey={mobileActiveModule} d={d} m={m} set={set} questions={brief}
             subtitle={`A few questions for your ${backTo.toLowerCase()} answer`}
             emptyText={mobileActiveModule === "pension" ? "Answer these to see whether your employer's pension match comes before paying off your loan." : "Answer these to see whether paying off your loan early is worth it."}
@@ -869,7 +874,7 @@ export default function AppShell() {
         scrollToTop();
       };
       return (
-        <MobileLayout activeTab="modules" pageLabel={moduleLabel}
+        <MobileLayout d={d} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
           {/* No Candid Assist on the questions or the answer's walk-through:
               it waits for the module's page. */}
@@ -898,7 +903,7 @@ export default function AppShell() {
     // then goes straight on to the answer.
     if (isLocked(d, mobileActiveModule)) {
       return (
-        <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
+        <MobileLayout d={d} assist={assistNode} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
           <MobileUnlock moduleKey={mobileActiveModule} d={d} m={m} statuses={statuses} returnTo={returnTo}
             onLeaveEmail={email => {
@@ -920,7 +925,7 @@ export default function AppShell() {
     if (revealModule === mobileActiveModule && revealSteps) {
       const onTrackKind = onTrackReward(d, mobileActiveModule, statuses[mobileActiveModule]);
       return (
-        <MobileLayout activeTab="modules" pageLabel={moduleLabel}
+        <MobileLayout d={d} activeTab="modules" pageLabel={moduleLabel}
           headerRight={modulesBackButton}>
           <MobileModuleReveal moduleKey={mobileActiveModule} steps={revealSteps} large={mobileActiveModule === "studentLoan" || mobileActiveModule === "pension"}
             checks={revealReplay === mobileActiveModule ? null : workingChecks(mobileActiveModule, d, m, { marketRates })}
@@ -966,7 +971,7 @@ export default function AppShell() {
       );
     }
     return (
-      <MobileLayout assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={editInputsFor(mobileActiveModule)}>
+      <MobileLayout d={d} assist={assistNode} activeTab="modules" pageLabel={moduleLabel} headerRight={editInputsFor(mobileActiveModule)}>
         {/* Keyed by module, so each module page opens fresh, every tile collapsed,
             however it's reached. */}
         {/* Cash: the email, until it's given or the tile's closed, once

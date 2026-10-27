@@ -1,6 +1,6 @@
 import { useState } from "react";
 import posthog from "posthog-js";
-import { ChevronRight, TriangleAlert } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { buildProgressSnapshot, poundsInput, TRAP_EDGE } from "../../lib/progressTracker.js";
 import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
 import { capField } from "../../lib/onboarding.js";
@@ -8,10 +8,11 @@ import { fmt, fmtK1 } from "../../lib/format.js";
 import { taxYearOf } from "../../lib/taxYear.js";
 import { useElementWidth } from "../../mobile/useElementWidth.js";
 import CardStack, { DARK } from "../../mobile/CardStack.jsx";
+import Alert from "../../mobile/AlertBox.jsx";
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
 import {
-  G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, CRITICAL, WARNING, MODULE_CHART_COLOR,
+  G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, MODULE_CHART_COLOR,
 } from "../../design-tokens.js";
 import { Tile, BarTile, ProgressBar, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
 import { AddGoalTile, VaultTile, saveVault, removeVault } from "./GoalVaults.jsx";
@@ -420,24 +421,6 @@ function TaxShield({ income, t, onOpenTrap }) {
         </button>
       )}
     </>
-  );
-}
-
-// The trap's alert inside the card, in red or amber in whichever colours
-// the card wears: the card itself keeps the stack's usual look in front.
-const ALERT = {
-  red: { light: { bg: "rgba(192,57,43,0.10)", border: "rgba(192,57,43,0.28)", edge: CRITICAL }, dark: { bg: "rgba(232,106,90,0.16)", border: "rgba(255,150,135,0.32)", edge: "#f0806f" } },
-  amber: { light: { bg: "rgba(217,130,43,0.10)", border: "rgba(217,130,43,0.32)", edge: WARNING }, dark: { bg: "rgba(240,160,80,0.16)", border: "rgba(250,190,120,0.32)", edge: "#f0a050" } },
-};
-function Alert({ tone, t, title, children }) {
-  const a = ALERT[tone][t === DARK ? "dark" : "light"];
-  return (
-    <div style={{marginTop:"10px",borderRadius:"12px",padding:"12px 14px",background:a.bg,border:`1px solid ${a.border}`,borderLeft:`4px solid ${a.edge}`}}>
-      <div style={{display:"flex",alignItems:"center",gap:"7px",fontSize:"13.5px",fontWeight:800,color:t.figure,lineHeight:1.3}}>
-        <TriangleAlert size={14} strokeWidth={2.4} color={a.edge} aria-hidden="true" style={{flexShrink:0}}/>{title}
-      </div>
-      {children}
-    </div>
   );
 }
 

@@ -69,7 +69,7 @@ test("over £100,000 with a toddler in England: the childcare that stops, counte
   assert.equal(trap[0].figure, "£11,190 a year");
   assert.equal(trap[0].title, "lost each year to the £100k tax trap.");
   assert.match(trap[2].title, /^Paying £4,500 into your pension would bring your income back to £100k\.$/);
-  assert.match(trap[2].body, /^It costs £1,710 of take-home, and your pension gains £4,500\. Your childcare support comes back too\.$/);
+  assert.match(trap[2].body, /^It costs £1,710 of take-home, and your pension gains £4,500\. With £10,290 of childcare support back, that's £8,580 a year better off\.$/);
 });
 
 test("Tax-Free Childcare not claimed, a partner over £100,000, and close to the line", () => {

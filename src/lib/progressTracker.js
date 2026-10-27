@@ -20,7 +20,7 @@ import { bankedFor, MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from
 import { moduleAnswered } from "./appEntry.js";
 import { borrowingInputs } from "./borrowing.js";
 import { readinessMissing } from "./propertyReadiness.js";
-import { taxTrap, TRAP_NEAR } from "./taxTrap.js";
+import { taxTrap, TRAP_NEAR, TRAP_EDGE } from "./taxTrap.js";
 import { fmt } from "./format.js";
 
 const n = v => Math.max(0, +v || 0);
@@ -221,7 +221,7 @@ export function incomeBands(scottish = false) {
   ];
 }
 
-export const TRAP_EDGE = 5000;
+export { TRAP_EDGE };
 const TRAP_RISE = 10000;
 
 // Where their adjusted net income sits: the band, how far from the next

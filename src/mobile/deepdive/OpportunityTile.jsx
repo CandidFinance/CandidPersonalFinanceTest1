@@ -1,3 +1,5 @@
+import AlertBox from "../AlertBox.jsx";
+import { DARK } from "../CardStack.jsx";
 import { SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN } from "../../design-tokens.js";
 
 // Each module page's Opportunity tile: the page's key figure, large, on the
@@ -8,6 +10,9 @@ import { SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_S
 // `children` go at the bottom (Student loan's locked panel). `tour`: the
 // data-tour hook a guided tour lights up. `stacked`: keep one figure above
 // its chips on desktop too, for a wide figure with no label (Tax trap).
+// `alert`: { tone: "red" | "amber", title }, the figure and its chips in a
+// red or amber alert under the overline, as Progress's Tax shield has it
+// (AlertBox.jsx); one figure only.
 // The desktop breakpoint is MobileLayout's (1000px, its 720px column).
 const CSS = `
 .opp-tile { position: relative; overflow: hidden; padding: 20px; }
@@ -40,7 +45,7 @@ const Figure = ({ f }) => (
   <div style={figure}>{f.value}{f.suffix && <span style={{fontSize:"0.4em",fontWeight:600}}>{f.suffix}</span>}</div>
 );
 
-export default function OpportunityTile({ over: overline = "Opportunity", figures, chips = [], note, tour, stacked = false, style, children }) {
+export default function OpportunityTile({ over: overline = "Opportunity", figures, chips = [], note, tour, stacked = false, alert, style, children }) {
   const shown = chips.filter(Boolean);
   const multi = figures.length > 1;
   const extras = (
@@ -55,7 +60,12 @@ export default function OpportunityTile({ over: overline = "Opportunity", figure
     <div data-tour={tour} className={`opp-tile${multi ? " opp-multi" : ""}`}
       style={{background:OPPORTUNITY_TILE_BG,border:OPPORTUNITY_TILE_BORDER,boxShadow:OPPORTUNITY_TILE_SHADOW,borderRadius:OPPORTUNITY_TILE_RADIUS,marginBottom:"16px",...style}}>
       <style>{CSS}</style>
-      {multi ? (
+      {alert ? (
+        <>
+          <div style={over}>{overline}</div>
+          <AlertBox tone={alert.tone} t={DARK} title={alert.title}><Figure f={figures[0]}/>{extras}</AlertBox>
+        </>
+      ) : multi ? (
         <>
           <div style={over}>{overline}</div>
           <div style={{display:"flex",gap:"8px 28px",flexWrap:"wrap"}}>

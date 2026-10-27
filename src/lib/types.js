@@ -40,6 +40,10 @@
  * @property {string} [unlockFeedback]
  * @property {boolean} [alertsOptIn]
  * @property {string} [bonusMonth] "1" to "12", or "" when not sure (sharedQuestions.js).
+ * @property {string} [payToDate] Taxable pay to date from a payslip (payday check-in, mobile/PaydayCheck.jsx).
+ * @property {string} [payToDateOn] "YYYY-MM-DD", the day payToDate was entered.
+ * @property {string} [paydayCheckedMonth] "YYYY-MM", the month the payday check-in was last answered or skipped.
+ * @property {string} [payday] "1" to "31", the day of the month they're paid; the 28th when blank (taxTrap.js paydayOf).
  * @property {boolean} [payCheckDue] Figures rolled into a new tax year; Home asks if pay is the same (PayCheckCard).
  */
 

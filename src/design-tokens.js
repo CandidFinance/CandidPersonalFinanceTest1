@@ -80,7 +80,8 @@ export const MODULE_CHART_COLOR = {
 // purpose, as it stands on its own rather than in a set.
 export const CUSTOM_GOAL_COLOR = "#381ea7";
 
-export const SC = { ok: SUCCESS, attention: GOLD, critical: CRITICAL, na: MUT, unknown: MUT };
+// edge / watch: the £100k tax trap under £100k, amber within £5,000 of it.
+export const SC = { ok: SUCCESS, attention: GOLD, critical: CRITICAL, na: MUT, unknown: MUT, edge: WARNING, watch: MUT };
 
 // Candid score → colour + label. Five discrete bands, not a continuous
 // gradient — deliberately: a flat colour per band reads as "which zone am I

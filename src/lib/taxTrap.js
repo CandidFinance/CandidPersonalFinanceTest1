@@ -21,34 +21,62 @@
 import { PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD, PERSONAL_ALLOWANCE, calcIncomeAndDividendTax, calcNI, salarySacrificeNiCap } from "./tax.js";
 import { SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { payGrowthOf } from "./metrics.js";
-import { taxYearFor } from "./taxYear.js";
+import { taxYearFor, taxYearOf } from "./taxYear.js";
 import { payFactor } from "./growth.js";
 import { calcAnnualAllowanceRoom } from "./pension.js";
 import { childcareSupport } from "./childcare.js";
 
 export const TRAP_START = PA_TAPER_START;
 export const TRAP_END = ADDITIONAL_RATE_THRESHOLD;
-// Within this of £100,000, or crossing it within TRAP_YEARS at the pay
+// Within this of £100,000, on this much pay before any pension (a 20%
+// bonus takes £85,000 close), or crossing it within TRAP_YEARS at the pay
 // growth they expect, the module is offered.
 export const TRAP_NEAR = 10000;
+// Within this of £100,000 it's on the edge: amber, on Progress's Tax shield
+// and the module's card (moduleStatus.js).
+export const TRAP_EDGE = 5000;
+export const TRAP_GROSS = 85000;
 export const TRAP_YEARS = 3;
+// How far ahead crossingYear looks.
+const CROSSING_LOOKAHEAD = 10;
 export const FOUR_DAY_SHARE = 0.8;
 
 const num = v => +v || 0;
 
+// The day of the month they're paid (d.payday, set in Inputs), the 28th
+// until they say.
+export const DEFAULT_PAYDAY = 28;
+export const paydayOf = d => Math.min(31, Math.max(1, Math.round(+d.payday || DEFAULT_PAYDAY)));
+
+// Pay and other income before any pension.
+const grossIncome = d => num(d.salary) + num(d.bonusAmount) + num(d.otherIncome) + num(d.dividendIncome);
 // Adjusted net income from the answers alone (metrics.js works it out the
 // same way), for deciding whether to offer the module where only `d` is to
 // hand (appEntry.js modulesInView).
 export function roughAdjustedNetIncome(d) {
-  const salary = num(d.salary);
-  return salary + num(d.bonusAmount) + num(d.otherIncome) + num(d.dividendIncome) - salary * num(d.myContribution) / 100;
+  return grossIncome(d) - num(d.salary) * num(d.myContribution) / 100;
 }
-// Near or over £100,000, or heading over it within TRAP_YEARS.
+// Near or over £100,000, on £85,000 or more before pension, or heading
+// over it within TRAP_YEARS.
 export function trapInView(d, ani = roughAdjustedNetIncome(d)) {
   if (!(num(d.salary) > 0) || d.employmentStatus === "not_working") return false;
-  if (ani >= TRAP_START - TRAP_NEAR) return true;
+  if (ani >= TRAP_START - TRAP_NEAR || grossIncome(d) >= TRAP_GROSS) return true;
   const growth = payGrowthOf(d, num(d.salary), taxYearFor(d));
   return ani * payFactor(growth, TRAP_YEARS) >= TRAP_START;
+}
+
+// The tax year (by the year it starts in) their adjusted net income passes
+// £100,000 at the pay growth they expect (as trapInView projects it),
+// within CROSSING_LOOKAHEAD years; null if it doesn't, or they're over.
+export function crossingYear(d, m) {
+  const ani = m.adjustedNetIncome;
+  if (!(m.salary > 0) || ani > TRAP_START) return null;
+  const year = taxYearFor(d);
+  const growth = payGrowthOf(d, m.salary, year);
+  for (let y = 1; y <= CROSSING_LOOKAHEAD; y++) {
+    if (ani * payFactor(growth, y) > TRAP_START) return year + y;
+  }
+  return null;
 }
 
 // Where their money goes at a given salary, with extra paid in by salary
@@ -127,6 +155,33 @@ export function allowanceLost(ani, scottish = false) {
   return { lost: Math.round(lost), tax: Math.round(lost * (scottish ? 0.45 : 0.4)) };
 }
 
+// The childcare support their own income over £100k stops: back at £100k
+// it's theirs again (unless a partner is over too: Kids & family has that).
+function childcareLostOf(d, m) {
+  const cc = childcareSupport(d, m);
+  return { cc, lost: cc && cc.state === "lost" && !cc.planning ? cc.atStake : 0 };
+}
+
+// What paying `amount` more into a pension does, by salary sacrifice or
+// relief at source (`route`): the take-home it costs, the tax (and NI) it
+// saves, and, once their income is back to £100k, the childcare support
+// that comes back. bank: that childcare less the take-home. Past the annual
+// allowance left (overRoom) the extra is taxed back, so no childcare is
+// counted for it. For the module's slider and its pension option. Employed,
+// it's salary sacrifice unless they've said they pay in from take-home.
+export function pensionPath(d, m, amount, route = d.pensionType !== "relief" && d.employmentStatus !== "self_employed" ? "sacrifice" : "relief") {
+  const now = position(d, m);
+  const after = position(d, m, route === "sacrifice" ? { sacrifice: amount } : { relief: amount });
+  const takeHome = Math.max(0, Math.round(now.takeHome - after.takeHome));
+  const under = after.ani <= TRAP_START;
+  const overRoom = amount > calcAnnualAllowanceRoom(d, m).room;
+  const childcare = under && !overRoom ? childcareLostOf(d, m).lost : 0;
+  // What it keeps of the trap's £ a year: the allowance tax back, and the
+  // childcare.
+  const avoided = allowanceLost(now.ani, !!m.scottish).tax - allowanceLost(after.ani, !!m.scottish).tax + childcare;
+  return { route, amount, pension: amount, takeHome, taxSaved: amount - takeHome, ani: Math.round(after.ani), under, overRoom, childcare, bank: childcare - takeHome, avoided };
+}
+
 // Everything the module shows. Null without a salary.
 //  amount: what the trap costs them a year, in money: the tax on the
 //    allowance lost, and the childcare support their own income over £100k
@@ -135,7 +190,10 @@ export function allowanceLost(ani, scottish = false) {
 //    takeHome (what it takes off take-home pay, or for Gift Aid what it
 //    costs them after the relief), what it adds (pension, charity), taxSaved
 //    (what it doesn't cost, for what goes in), childcare (support back) and
-//    bank (childcare back less the take-home it costs).
+//    bank (childcare back less the take-home it costs). Largest worth first:
+//    bank, plus what goes into their own pension (not a charity's £, a
+//    car's or days off).
+//  crossing: under £100k, the tax year they'd pass it (crossingYear).
 export function taxTrap(d, m) {
   if (!(m.salary > 0) || m.noEarnings) return null;
   const ani = m.adjustedNetIncome;
@@ -144,10 +202,7 @@ export function taxTrap(d, m) {
   const rate = marginalRate(d, m);
   const aaRoom = calcAnnualAllowanceRoom(d, m).room;
   const allowance = allowanceLost(ani, !!m.scottish);
-  const cc = childcareSupport(d, m);
-  // Their own income over £100k stops the support; back at £100k it's
-  // theirs again (unless a partner is over too: Kids & family has that).
-  const childcareLost = cc && cc.state === "lost" && !cc.planning ? cc.atStake : 0;
+  const { cc, lost: childcareLost } = childcareLostOf(d, m);
   const childcareAtRisk = cc && cc.state === "near" ? cc.atStake : 0;
   const needed = over ? Math.ceil(ani - TRAP_START) : 0;
   const fits = needed <= aaRoom;
@@ -155,16 +210,14 @@ export function taxTrap(d, m) {
 
   const employed = d.employmentStatus !== "self_employed";
   const cost = after => Math.max(0, Math.round(now.takeHome - after.takeHome));
-  const outcome = (o, childcare) => ({ ...o, childcare, bank: childcare - o.takeHome });
+  const outcome = (o, childcare) => ({ ...o, childcare, bank: childcare - o.takeHome, worth: childcare - o.takeHome });
   const options = [];
   if (over) {
     const share = needed / m.salary;
-    // Pension, the way they pay in (salary sacrifice where their employer
-    // offers it; relief at source otherwise, and for the self-employed).
-    const bySacrifice = employed && d.pensionType === "sacrifice";
-    const pension = cost(position(d, m, bySacrifice ? { sacrifice: needed } : { relief: needed }));
-    options.push(outcome({ key: "pension", route: bySacrifice ? "sacrifice" : "relief", amount: needed, share, fits,
-      takeHome: pension, pension: needed, taxSaved: needed - pension }, fits ? childcareLost : 0));
+    // Pension, the way they pay in (salary sacrifice, unless they've said
+    // relief at source; always relief at source for the self-employed).
+    const pension = pensionPath(d, m, needed);
+    options.push({ key: "pension", share, fits, ...pension, worth: pension.bank + pension.pension });
     if (employed) {
       const other = cost(position(d, m, { sacrifice: needed }));
       options.push(outcome({ key: "sacrifice", amount: needed, share, takeHome: other, taxSaved: needed - other }, childcareLost));
@@ -180,6 +233,7 @@ export function taxTrap(d, m) {
     const fourDayCost = cost(fourDay);
     options.push(outcome({ key: "fourDay", gross, takeHome: fourDayCost, taxSaved: gross - fourDayCost, under: fourDay.ani <= TRAP_START, daysOff: 52 },
       fourDay.ani <= TRAP_START ? childcareLost : 0));
+    options.sort((a, b) => b.worth - a.worth);
   }
 
   return {
@@ -193,6 +247,73 @@ export function taxTrap(d, m) {
     // The childcare at stake, in its two parts (childcare.js): null without
     // children 11 or under, or one on the way.
     childcare: cc ? { tfc: cc.tfc, hours: cc.hours, preschool: cc.preschool, children: cc.children, planning: cc.planning, state: cc.state } : null,
-    amount, options, takeHome: Math.round(now.takeHome),
+    amount, options, takeHome: Math.round(now.takeHome), crossing: crossingYear(d, m),
   };
 }
+
+// ── This tax year, as it goes. The trap is measured on the whole tax year's
+// income, so where it's heading moves with each payday, a bonus, a pay rise.
+// `d.payToDate`: taxable pay to date from their payslip (after any salary
+// sacrifice), as of `d.payToDateOn` ("YYYY-MM-DD"), from the payday
+// check-in. Without it, or from an earlier tax year, the year is their
+// answers' adjusted net income.
+
+const ymd = s => { const [y, mo, day] = String(s).split("-").map(Number); return y && mo && day ? new Date(y, mo - 1, day) : null; };
+const dayOnly = t => new Date(t.getFullYear(), t.getMonth(), t.getDate());
+// Their payday in a month: the day, or the month's last day if it's shorter.
+const paydayIn = (y, mo, payday) => new Date(y, mo, Math.min(payday, new Date(y, mo + 1, 0).getDate()));
+// Paydays after `from` up to and including `to`.
+export function paydaysBetween(from, to, payday) {
+  let n = 0;
+  for (let y = from.getFullYear(), mo = from.getMonth(); y < to.getFullYear() || (y === to.getFullYear() && mo <= to.getMonth()); mo === 11 ? (y++, mo = 0) : mo++) {
+    const p = paydayIn(y, mo, payday);
+    if (p > from && p <= to) n++;
+  }
+  return n;
+}
+const taxYearEnd = ty => new Date(ty + 1, 3, 5);
+const DAY = 86400000;
+
+// The bonus's payday: in `bonusMonth`, March when it isn't known.
+function bonusDay(d, ty, payday) {
+  const month = +d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3;
+  return paydayIn(month >= 4 ? ty : ty + 1, month - 1, payday);
+}
+
+export function yearProjection(d, m, today = new Date()) {
+  const payday = paydayOf(d);
+  const now = dayOnly(today);
+  const ty = taxYearOf(now);
+  const end = taxYearEnd(ty);
+  const left = paydaysBetween(now, end, payday);
+  const daysLeft = Math.max(0, Math.round((end - now) / DAY));
+  const on = ymd(d.payToDateOn);
+  const tracked = +d.payToDate > 0 && on && on <= now && taxYearOf(on) === ty && d.employmentStatus === "employed";
+  let projected = m.adjustedNetIncome;
+  if (tracked) {
+    const contribution = (m.salary || 0) * (+d.myContribution || 0) / 100;
+    const sacrificed = d.pensionType === "relief" ? 0 : contribution;
+    const monthly = ((m.salary || 0) - sacrificed) / 12;
+    const bonus = +d.bonusAmount || 0;
+    const bonusAhead = bonus > 0 && bonusDay(d, ty, payday) > on ? bonus : 0;
+    // Pay to date and the paydays still to come, a bonus not yet paid, and
+    // everything else in their answers' adjusted net income as it is.
+    const pay = (m.salary || 0) - contribution + bonus;
+    const rest = m.adjustedNetIncome - pay;
+    // Relief at source is paid from pay after tax, so the payslip's pay is
+    // before it: the year's payments come off.
+    const relieved = d.pensionType === "relief" ? contribution : 0;
+    projected = +d.payToDate + paydaysBetween(on, end, payday) * monthly + bonusAhead + rest - relieved;
+  }
+  projected = Math.round(projected);
+  return { projected, tracked: !!tracked, asOf: tracked ? d.payToDateOn : null, over: projected > TRAP_START, topUp: Math.max(0, projected - TRAP_START), paydaysLeft: left, daysLeft, payday };
+}
+
+// Whether today is on or after this month's payday and they haven't checked
+// in this month: the Home card's cue.
+export const monthKey = t => `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}`;
+export function paydayCheckDue(d, today = new Date()) {
+  const now = dayOnly(today);
+  return now >= paydayIn(now.getFullYear(), now.getMonth(), paydayOf(d)) && d.paydayCheckedMonth !== monthKey(now);
+}
+export const isPayday = (d, today = new Date()) => dayOnly(today).getTime() === paydayIn(today.getFullYear(), today.getMonth(), paydayOf(d)).getTime();

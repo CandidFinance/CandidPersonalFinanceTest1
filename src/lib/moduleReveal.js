@@ -651,12 +651,13 @@ export function taxTrapReveal(d, m) {
       { label: WHY, title: `${how}, so your marginal tax rate is ${pctOf(t.rate.rate)}: for every extra £1 you earn, ${penceOf(t.rate.rate)} is lost to ${lostTo(t.rate)} (${rateParts(t.rate)}).` },
       t.fits
         ? withBody({ label: ACTION, title: `Paying ${fmt(t.needed)} into your pension would bring your income back to £100k.` },
-            `It costs ${fmt(pension.takeHome)} of take-home, and your pension gains ${fmt(pension.pension)}.${pension.childcare > 0 ? ` Your childcare support comes back too.` : ""}`)
+            `It costs ${fmt(pension.takeHome)} of take-home, and your pension gains ${fmt(pension.pension)}.${pension.childcare > 0 ? ` With ${fmt(pension.childcare)} of childcare support back, that's ${fmt(pension.bank)} a year better off.` : ""}`)
         : { label: ACTION, title: `Getting back to £100k would take ${fmt(t.needed)}, more than this year's pension allowance left.`, body: "A 4-day week and the other ways back are on the module's page." },
     ];
   }
   return [
-    { label: ANSWER, figure: fmt(t.headroom), title: `under £100k, where your marginal tax rate jumps to ${pctOf(t.trapRate)}.` },
+    withBody({ label: ANSWER, figure: fmt(t.headroom), title: `under £100k, where your marginal tax rate jumps to ${pctOf(t.trapRate)}.` },
+      t.crossing ? `At your expected pay growth, you'd pass it in ${t.crossing}/${String(t.crossing + 1).slice(2)}.` : null),
     withBody({ label: WHY, title: "From £100k you lose £1 of tax-free allowance for every £2 earned, until it's gone at £125,140." },
       t.childcareAtRisk > 0 ? `${support}, worth ${fmt(t.childcareAtRisk)} a year, stop as soon as you're over.` : null),
     { label: ACTION, title: "A pay rise or bonus that takes you over can go into your pension instead, to keep you under.", body: "The module shows what crossing would cost you." },

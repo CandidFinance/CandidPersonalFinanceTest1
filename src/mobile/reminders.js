@@ -72,8 +72,9 @@ function formatIcsDateTime(d) {
 // Builds a minimal RFC5545 .ics file for a single 15-minute event at 9am on
 // the given date. Floating local time (no TZID/Z) — the calendar app shows
 // it at 9am in whatever timezone the device is in, which is what a same-day
-// personal reminder needs.
-function buildIcs({ title, description, date }) {
+// personal reminder needs. `monthlyOn` (a day, 1 to 31): repeats each month
+// on that day, or the month's last day when it's shorter.
+export function buildIcs({ title, description, date, monthlyOn = null }) {
   const start = new Date(date); start.setHours(9, 0, 0, 0);
   const end = new Date(date); end.setHours(9, 15, 0, 0);
   const uid = `candid-${Date.now()}-${Math.random().toString(36).slice(2)}@candid.app`;
@@ -87,6 +88,7 @@ function buildIcs({ title, description, date }) {
     `DTSTAMP:${formatIcsDateTime(new Date())}`,
     `DTSTART:${formatIcsDateTime(start)}`,
     `DTEND:${formatIcsDateTime(end)}`,
+    ...(monthlyOn ? [monthlyOn <= 28 ? `RRULE:FREQ=MONTHLY;BYMONTHDAY=${monthlyOn}` : `RRULE:FREQ=MONTHLY;BYMONTHDAY=${Array.from({ length: monthlyOn - 27 }, (_, i) => 28 + i).join(",")};BYSETPOS=-1`] : []),
     `SUMMARY:${escapeIcsText(title)}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     // Alert at the event's own start time — without a VALARM, most calendar
@@ -104,8 +106,8 @@ function buildIcs({ title, description, date }) {
 // Triggers the OS's native "add event" flow for a reminder on the given date
 // (defaults to the next working day if none is passed). Returns nothing —
 // this is a side-effecting action, not a calculation.
-export function triggerCalendarReminder({ title, description, date = nextWorkingDay() }) {
-  const ics = buildIcs({ title, description, date });
+export function triggerCalendarReminder({ title, description, date = nextWorkingDay(), monthlyOn = null }) {
+  const ics = buildIcs({ title, description, date, monthlyOn });
   const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   window.location.href = url;

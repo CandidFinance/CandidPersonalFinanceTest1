@@ -1,6 +1,7 @@
 import { childcareSupport } from "../../lib/childcare.js";
 import { Users, ChevronRight, Lock } from "lucide-react";
 import CardStack, { DARK } from "../CardStack.jsx";
+import AlertBox from "../AlertBox.jsx";
 import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD } from "../../design-tokens.js";
 import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
@@ -146,21 +147,34 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
     const locked = isLocked(d, mm.key);
     // On track with something saved: what was saved leads.
     const savedLead = !hasRec && onTrack && mm.banked > 0;
-    const figure = hasRec ? fmt(mm.amount) : savedLead ? fmt(mm.banked) : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : statusLabel({ ...mm, onTrack });
-    const unit = hasRec ? (mm.amountIsLumpSum ? "by 18" : "a year") : savedLead ? "a year saved" : null;
+    // `lead`: a figure of its own where there's no £ at stake (the £100k tax
+    // trap under £100k: how far from it).
+    const lead = !hasRec && !locked ? mm.lead : null;
+    const figure = hasRec ? fmt(mm.amount) : lead ? lead.value : savedLead ? fmt(mm.banked) : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : statusLabel({ ...mm, onTrack });
+    const unit = hasRec ? (mm.amountIsLumpSum ? "by 18" : "a year") : lead ? lead.unit : savedLead ? "a year saved" : null;
     const line = [statusLine({ ...mm, onTrack }), hasRec && mm.banked > 0 && `${fmtCompact(mm.banked)}/yr saved`, reviewed && !onTrack && "Reviewed"].filter(Boolean).join(" · ");
     const ins = locked ? [] : moduleInsights(mm, d, m);
+    // Red or amber (the £100k tax trap): the wash and icon behind; in front,
+    // the figure in an alert, as Progress's Tax shield has it.
+    const warn = !locked && !onTrack ? mm.warn : null;
+    const head = (t, words) => (
+      <>
+        <Figure t={t} value={figure} unit={unit} words={words}/>
+        <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>{line}</p>
+      </>
+    );
     return {
-      key: mm.key, label: mm.title, done: onTrack,
+      key: mm.key, label: mm.title, done: onTrack, warn,
       badge: mm.key === "cash" && cashBadge > 0 ? <NewBadge inline count={cashBadge} label={rateUpdatesLabel(cashBadge)}/> : null,
       // The top line, seen while the card is behind; the tick says on track.
-      amount: hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : savedLead ? `${fmtCompact(mm.banked)}/yr saved`
+      amount: hasRec ? `${fmtCompact(mm.amount)}${mm.amountIsLumpSum ? " by 18" : "/yr"}` : lead ? lead.short : savedLead ? `${fmtCompact(mm.banked)}/yr saved`
         : onTrack ? "" : mm.elsewhere ? ELSEWHERE[mm.elsewhere].figure : statusLabel(mm),
-      amountSans: !hasRec,
+      amountSans: !hasRec && !lead,
       body: t => (
         <>
-          <Figure t={t} value={figure} unit={unit} words={!hasRec && !savedLead}/>
-          <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>{line}</p>
+          {warn && mm.alertTitle
+            ? <AlertBox tone={warn} t={t} title={mm.alertTitle}>{head(t, false)}</AlertBox>
+            : head(t, !hasRec && !savedLead && !lead)}
           {/* A locked answer (src/lib/unlock.js) stays hidden here too. */}
           {locked ? (
             <p style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",color:t.body,lineHeight:1.5,margin:"12px 0 0"}}><Lock size={13}/>Your position is ready. Open it to unlock it.</p>

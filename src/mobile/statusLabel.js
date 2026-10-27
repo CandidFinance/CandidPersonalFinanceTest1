@@ -14,6 +14,8 @@ export function statusLabel(mm) {
   if (mm.onTrack) return "On track";
   if (mm.status === "na") return "Not applicable";
   if (mm.status === "unknown") return "Find out";
+  // The £100k tax trap, under it but heading there (moduleStatus.js).
+  if (mm.status === "edge" || mm.status === "watch") return "Approaching £100k";
   return "Action needed";
 }
 // "Action needed", with its reason when there's no £ figure to show it

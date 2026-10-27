@@ -122,3 +122,22 @@ test("free users' better rates: from ratesFrom (a few days after they confirm), 
   assert.deepEqual(alertsDue(d, opts(false)), []);
   assert.equal(isFounding("2026-10-20T09:00:00Z"), true); // FOUNDING_UNTIL is open
 });
+
+test("payday: on their payday, with the £100k trap in view, where the tax year is heading", () => {
+  const onPayday = alertsDue(trap, { today: day("2026-10-28") }).filter(a => a.kind === "payday");
+  assert.deepEqual(kinds(onPayday), ["payday:2026-10"]);
+  assert.match(onPayday[0].items[0], /^On your answers, your income this tax year is heading for £[\d,]+\.$/);
+  // Not the day before, and on the day they've said.
+  assert.deepEqual(alertsDue(trap, { today: day("2026-10-27") }).filter(a => a.kind === "payday"), []);
+  assert.deepEqual(kinds(alertsDue({ ...trap, payday: "15" }, { today: day("2026-10-15") }).filter(a => a.kind === "payday")), ["payday:2026-10"]);
+  // Pay to date from the check-in: the year from that.
+  const tracked = alertsDue({ ...trap, payToDate: "60000", payToDateOn: "2026-09-28" }, { today: day("2026-10-28") }).find(a => a.kind === "payday");
+  assert.match(tracked.items[0], /^On your pay to date \(28 September\)/);
+  // Nowhere near £100k: none.
+  assert.deepEqual(alertsDue({ ...trap, salary: "50000" }, { today: day("2026-10-28") }).filter(a => a.kind === "payday"), []);
+});
+
+test("a bonus that takes income over £100,000: how much of it keeps them at £100,000", () => {
+  const b = alertsDue({ ...trap, salary: "90000", bonusAmount: "20000", hasBonus: "yes", bonusMonth: "3" }, { today: day("2027-02-10") }).find(a => a.kind === "bonus");
+  assert.match(b.items[0], /paying £[\d,]+ of it into your pension would keep you at £100,000\.$/);
+});

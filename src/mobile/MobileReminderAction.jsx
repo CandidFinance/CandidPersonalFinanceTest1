@@ -38,7 +38,11 @@ export function ActionButton({ action }) {
 // `action` (optional): an ActionButton beside the pill, half the row each,
 // so the pill's label is shortened to fit: "Remind me", then the bell and
 // the reminder's date once set.
-export default function MobileReminderAction({ id, title, description, email, action }) {
+// `who`: who the email goes to, in the pill's copy ("HR" unless given).
+// `beside` (optional): any control beside the pill instead of an action,
+// sized to its content, the pill taking the rest ("Email HR + reminder",
+// without its icon to fit).
+export default function MobileReminderAction({ id, title, description, email, action, beside, who = "HR" }) {
   const storageKey = `candid_reminder_${id}`;
   const [isSet, setIsSet] = useState(() => {
     try { return localStorage.getItem(storageKey) === "1"; } catch (e) { reportStorageFailure("read_reminder", e); return false; }
@@ -51,7 +55,7 @@ export default function MobileReminderAction({ id, title, description, email, ac
   const setReminder = () => {
     triggerCalendarReminder({
       title,
-      description: email ? `${description}\n\n${draftAsText(email)}` : description,
+      description: email ? `${description}\n\n${draftAsText(email, who)}` : description,
       date: reminderDate,
     });
     try { localStorage.setItem(storageKey, "1"); } catch (e) { reportStorageFailure("save_reminder", e); }
@@ -68,11 +72,13 @@ export default function MobileReminderAction({ id, title, description, email, ac
     else if (!isSet) setReminder();
   };
 
-  const pillLabel = action
-    ? (isSet ? dateLabel : email ? "Email HR" : "Remind me")
+  const pillLabel = beside
+    ? (isSet ? `Reminder ${dateLabel}` : email ? `Email ${who} + reminder` : "Remind me")
+    : action
+    ? (isSet ? dateLabel : email ? `Email ${who}` : "Remind me")
     : isSet
     ? `Reminder set for ${dateLabel}`
-    : email ? "Email HR & set a reminder" : `Remind me on ${dateLabel}`;
+    : email ? `Email ${who} & set a reminder` : `Remind me on ${dateLabel}`;
   const Icon = isSet ? BellRing : email ? Mail : Bell;
 
   const stepBtn = (done) => ({
@@ -86,15 +92,16 @@ export default function MobileReminderAction({ id, title, description, email, ac
     <div style={{marginTop:"16px"}} onClick={e => e.stopPropagation()}>
       <div style={{display:"flex",gap:"10px"}}>
       <button type="button" onClick={onPillClick} style={{
-        flex:1, minWidth:0, whiteSpace:"nowrap", display:"flex", alignItems:"center", justifyContent:"center", gap: action ? "6px" : "8px",
+        flex:1, minWidth:0, whiteSpace:"nowrap", display:"flex", alignItems:"center", justifyContent:"center", gap: action || beside ? "6px" : "8px",
         background: isSet ? "rgba(196,150,58,0.12)" : "transparent",
         color: isSet ? "#8a6a24" : G,
-        border:`1.5px solid ${isSet ? GOLD : G}`, borderRadius:RADIUS_PILL, padding: action ? "11px 10px" : "11px 18px",
-        fontSize:"13px", fontWeight:700, fontFamily:SANS, cursor: (!email && isSet) ? "default" : "pointer",
+        border:`1.5px solid ${isSet ? GOLD : G}`, borderRadius:RADIUS_PILL, padding: action || beside ? "11px 10px" : "11px 18px",
+        fontSize: beside ? "12.5px" : "13px", fontWeight:700, fontFamily:SANS, cursor: (!email && isSet) ? "default" : "pointer",
       }}>
-        <Icon size={15}/>{pillLabel}
+        {!beside && <Icon size={15}/>}{pillLabel}
       </button>
       {action && <ActionButton action={action}/>}
+      {beside}
       </div>
 
       {email && panelOpen && (
@@ -102,8 +109,8 @@ export default function MobileReminderAction({ id, title, description, email, ac
           <div style={{display:"flex",alignItems:"flex-start",gap:"10px"}}>
             <span style={stepNum}>1</span>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:"13px",fontWeight:700,color:G}}>Send HR your questions</div>
-              <div style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>We've written the email for you — just add HR's address and hit send.</div>
+              <div style={{fontSize:"13px",fontWeight:700,color:G}}>Send {who} your questions</div>
+              <div style={{fontSize:"12px",color:MUT,lineHeight:1.5,marginTop:"2px"}}>We've written the email for you — just add {who}'s address and hit send.</div>
               <button type="button" onClick={openEmail} style={stepBtn(emailOpened)}>
                 {emailOpened ? <><Check size={14}/>Draft opened — open again</> : <><Mail size={14}/>Open draft email</>}
               </button>

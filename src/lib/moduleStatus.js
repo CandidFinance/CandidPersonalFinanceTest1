@@ -2,7 +2,7 @@ import { moduleAnswered , loanVerdictReady } from "./appEntry.js";
 import { MODULE_GUIDES, flatQuestions } from "./moduleGuide.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby, Percent } from "lucide-react";
-import { taxTrap, trapInView } from "./taxTrap.js";
+import { taxTrap, trapInView, TRAP_EDGE } from "./taxTrap.js";
 import { fmt } from "./format.js";
 import { taxYearOf } from "./taxYear.js";
 import { calcCashOptimisation } from "./cash.js";
@@ -398,10 +398,21 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // £100k tax trap (taxTrap.js): what being over £100k costs them a year,
   // the tax on the allowance lost and the childcare their income stops.
   // Nowhere near £100k, nothing applies: "Not applicable", like Kids &
-  // family without children.
+  // family without children. Under it: "edge" within TRAP_EDGE (amber, as
+  // Progress's Tax shield), else "watch"; neither on track nor scored.
+  // warn: the card's red or amber (Modules), with alertTitle its alert's
+  // title (their marginal rate there: tax, NI and student loan) and lead
+  // its figure under £100k.
   const trap = taxTrap(d, m);
-  s.taxTrap = !trap || !trapInView(d, m.adjustedNetIncome) ? { status: "na", notApplicable: true, impact: 0, impactLabel: "Your income isn't near £100k", amount: 0 } : {
-    status: trap.amount > 0 ? "critical" : "ok",
+  const edge = trap && !trap.over && trap.headroom <= TRAP_EDGE;
+  const ratePct = r => `${Math.round(r * 1000) / 10}%`;
+  s.taxTrap = !trap || !trapInView(d, m.adjustedNetIncome) ? { status: "na", notApplicable: true, impact: 0, impactLabel: "Your pay is under £85k", amount: 0 } : {
+    status: trap.amount > 0 ? "critical" : trap.over ? "ok" : edge ? "edge" : "watch",
+    warn: trap.amount > 0 ? "red" : edge ? "amber" : null,
+    alertTitle: trap.over
+      ? trap.aboveTaper ? "Your Personal Allowance is gone" : `You're in the ${ratePct(trap.rate.rate)} tax trap`
+      : `Within ${fmt(TRAP_EDGE)} of the ${ratePct(trap.trapRate)} tax trap`,
+    lead: trap.over ? null : { value: fmt(trap.headroom), unit: "to £100k", short: `${fmt(trap.headroom)} to £100k` },
     impact: trap.amount,
     impactLabel: trap.over
       ? `Costs you ${fmt(trap.amount)}/yr: ${fmt(trap.allowance.tax)} of tax-free allowance${trap.childcareLost > 0 ? ` and ${fmt(trap.childcareLost)} of childcare` : ""}`
@@ -447,7 +458,8 @@ export function getModuleSummary(mm, d, m, statuses, insights) {
     : status === "ok" ? ON_TRACK_LINE
     : `Review your ${mm.title.toLowerCase()} situation.`;
   const impact = local.impact || 0;
-  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum, amountOnly: !!local.amountOnly, elsewhere: local.elsewhere || null, reason: local.reason || null };
+  return { ...mm, status, summary, impact, impactLabel: local.impactLabel, amount: local.amount || 0, amountIsLumpSum: !!local.amountIsLumpSum, amountOnly: !!local.amountOnly, elsewhere: local.elsewhere || null, reason: local.reason || null,
+    warn: local.warn || null, alertTitle: local.alertTitle || null, lead: local.lead || null };
 }
 
 // ── Candid score — deterministic, local, free ────────────────────────────────
@@ -498,11 +510,12 @@ const OWN_FIELDS = {
 // A student loan's balance moves every month by itself (loanBalance.js) and
 // an overpayment is banked when it's recorded (bankChange), so neither
 // counts as an answer changing.
-const NOT_ANSWERS = ["loanBalance", "pgLoanBalance"];
+const NOT_ANSWERS = ["loanBalance", "pgLoanBalance", "payday"];
 // Questions added after fingerprints were first taken, left out so one
 // taken before still matches: a "Yes" that only opens the figures below it
 // (by field), and the loan's rate asked again below the balance (by id).
-const ADDED_LATER = ["hasCashSavings", "hasSsIsa", "loanBalance.studentLoanRate"];
+// The £100k trap's partner questions (asked once, from Kids & family) too.
+const ADDED_LATER = ["hasCashSavings", "hasSsIsa", "loanBalance.studentLoanRate", "partnerOver100k", "partnerIncome"];
 const ownAnswers = (d, key) => JSON.stringify((OWN_FIELDS[key] || flatQuestions(MODULE_GUIDES[key]?.questions || [])
   .filter(q => q.group !== "you" && !NOT_ANSWERS.includes(q.field) && !ADDED_LATER.includes(q.field) && !ADDED_LATER.includes(q.id))
   .map(q => q.field)).map(f => d[f] ?? null));
@@ -547,7 +560,8 @@ export function droppedOffTrack(last, now) {
 }
 export function isOnTrack(s) {
   if (s.elsewhere || s.status === "na" || s.status === "unknown") return false;
-  return (s.amount || 0) < ON_TRACK_FLOOR && (s.status === "ok" || !!s.amountOnly);
+  // "watch": the £100k trap, well under it (more than £5,000).
+  return (s.amount || 0) < ON_TRACK_FLOOR && (s.status === "ok" || s.status === "watch" || !!s.amountOnly);
 }
 // Under £50 a year left and marked reviewed: shown as on track, even with
 // something open that has no £ figure (an emergency fund short of its
@@ -556,6 +570,11 @@ export function isOnTrack(s) {
 export function reviewedDone(s, reviewed) {
   if (!reviewed || !s || s.elsewhere || s.status === "na" || s.status === "unknown") return false;
   return (s.amount || 0) < ON_TRACK_FLOOR;
+}
+// Whether a module's answers have moved since its baseline was taken.
+export function answersMoved(d, key) {
+  const base = (d.moduleBaselines || {})[key];
+  return !!base && base.answers !== ownAnswers(d, key);
 }
 export function pendingBank(d, key, amount) {
   const base = (d.moduleBaselines || {})[key];

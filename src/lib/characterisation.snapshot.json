@@ -141,7 +141,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -155,7 +158,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -169,7 +175,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -183,7 +192,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -197,7 +209,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -211,7 +226,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -225,7 +243,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -239,7 +260,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -257,6 +281,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -274,6 +301,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -291,6 +321,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -308,6 +341,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -3130,7 +3166,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -3144,7 +3183,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -3158,7 +3200,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -3172,7 +3217,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -3186,7 +3234,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -3200,7 +3251,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -3214,7 +3268,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -3228,7 +3285,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -3246,6 +3306,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -3263,6 +3326,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -3280,6 +3346,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -3297,6 +3366,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -5868,7 +5940,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -5882,7 +5957,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -5896,7 +5974,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -5910,7 +5991,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -5924,7 +6008,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -5938,7 +6025,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -5952,7 +6042,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -5966,7 +6059,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -5984,6 +6080,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -6001,6 +6100,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -6018,6 +6120,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -8486,7 +8591,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -8500,7 +8608,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -8514,7 +8625,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -8528,7 +8642,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -8542,7 +8659,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -8556,7 +8676,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -8570,7 +8693,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -8584,7 +8710,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -8602,6 +8731,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -8619,6 +8751,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -8636,6 +8771,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -10934,7 +11072,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -10948,7 +11089,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -10962,7 +11106,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -10976,7 +11123,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -10990,7 +11140,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -11004,7 +11157,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -11018,7 +11174,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -11032,7 +11191,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -11050,6 +11212,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -11067,6 +11232,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -11084,6 +11252,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -11215,7 +11386,23 @@
     ],
     "studentLoan": null,
     "kids": null,
-    "taxTrap": null
+    "taxTrap": [
+     {
+      "label": "Your position",
+      "figure": "£10,700",
+      "title": "under £100k, where your marginal tax rate jumps to 62%.",
+      "body": "At your expected pay growth, you'd pass it in 2032/33."
+     },
+     {
+      "label": "Why",
+      "title": "From £100k you lose £1 of tax-free allowance for every £2 earned, until it's gone at £125,140."
+     },
+     {
+      "label": "What you could do",
+      "title": "A pay rise or bonus that takes you over can go into your pension instead, to keep you under.",
+      "body": "The module shows what crossing would cost you."
+     }
+    ]
    },
    "propertyReveals": {
     "readiness": null,
@@ -13601,7 +13788,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -13615,7 +13805,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -13629,7 +13822,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -13643,7 +13839,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -13657,7 +13856,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -13671,7 +13873,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -13685,7 +13890,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -13699,7 +13907,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -13717,6 +13928,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -13734,6 +13948,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -13751,6 +13968,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -13881,7 +14101,23 @@
     ],
     "studentLoan": null,
     "kids": null,
-    "taxTrap": null
+    "taxTrap": [
+     {
+      "label": "Your position",
+      "figure": "£10,700",
+      "title": "under £100k, where your marginal tax rate jumps to 62%.",
+      "body": "At your expected pay growth, you'd pass it in 2032/33."
+     },
+     {
+      "label": "Why",
+      "title": "From £100k you lose £1 of tax-free allowance for every £2 earned, until it's gone at £125,140."
+     },
+     {
+      "label": "What you could do",
+      "title": "A pay rise or bonus that takes you over can go into your pension instead, to keep you under.",
+      "body": "The module shows what crossing would cost you."
+     }
+    ]
    },
    "propertyReveals": {
     "readiness": null,
@@ -16053,7 +16289,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": "Below your emergency fund"
+     "reason": "Below your emergency fund",
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -16067,7 +16306,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -16081,7 +16323,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -16095,7 +16340,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -16109,7 +16357,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -16123,7 +16374,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -16137,7 +16391,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -16151,7 +16408,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -16169,6 +16429,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": "Below your emergency fund",
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -17629,7 +17892,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": "Below your emergency fund"
+     "reason": "Below your emergency fund",
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -17643,7 +17909,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -17657,7 +17926,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -17671,7 +17943,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -17685,7 +17960,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -17699,7 +17977,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -17713,7 +17994,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -17727,7 +18011,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -17745,6 +18032,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": "Below your emergency fund",
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -19046,7 +19336,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -19060,7 +19353,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -19074,7 +19370,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -19088,7 +19387,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -19102,7 +19404,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -19116,7 +19421,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -19130,7 +19438,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -19144,7 +19455,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -19162,6 +19476,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -19179,6 +19496,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -19196,6 +19516,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -19213,6 +19536,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -21859,7 +22185,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -21873,7 +22202,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -21887,7 +22219,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -21901,7 +22236,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -21915,7 +22253,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -21929,7 +22270,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -21943,7 +22287,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -21957,7 +22304,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -21975,6 +22325,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -21992,6 +22345,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -22009,6 +22365,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -22026,6 +22385,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -24446,7 +24808,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -24460,7 +24825,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -24474,7 +24842,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -24488,7 +24859,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -24502,7 +24876,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -24516,7 +24893,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -24530,7 +24910,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -24544,7 +24927,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -24562,6 +24948,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -24579,6 +24968,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -24596,6 +24988,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -27074,7 +27469,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -27088,7 +27486,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -27102,7 +27503,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -27116,7 +27520,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -27130,7 +27537,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -27144,7 +27554,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -27158,7 +27571,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -27172,7 +27588,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -27190,6 +27609,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -27207,6 +27629,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -27224,6 +27649,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -29576,7 +30004,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -29590,7 +30021,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -29604,7 +30038,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -29618,7 +30055,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -29632,7 +30072,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -29646,7 +30089,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -29660,7 +30106,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -29674,7 +30123,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -29692,6 +30144,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -29709,6 +30164,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -29726,6 +30184,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -32248,7 +32709,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -32262,7 +32726,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -32276,7 +32743,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -32290,7 +32760,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -32304,7 +32777,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -32318,7 +32794,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -32332,7 +32811,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -32346,7 +32828,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -32364,6 +32849,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -32381,6 +32869,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -32398,6 +32889,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -34676,7 +35170,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -34690,7 +35187,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -34704,7 +35204,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -34718,7 +35221,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -34732,7 +35238,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -34746,7 +35255,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -34760,7 +35272,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -34774,7 +35289,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -34792,6 +35310,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -34809,6 +35330,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -34826,6 +35350,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -34843,6 +35370,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -38001,7 +38531,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -38015,7 +38548,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -38029,7 +38565,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -38043,7 +38582,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -38057,7 +38599,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -38071,7 +38616,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -38085,7 +38633,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -38099,7 +38650,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -38117,6 +38671,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -38134,6 +38691,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -38151,6 +38711,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -38168,6 +38731,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -41157,7 +41723,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": "Below your emergency fund"
+     "reason": "Below your emergency fund",
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -41171,7 +41740,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -41185,7 +41757,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -41199,7 +41774,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -41213,7 +41791,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -41227,7 +41808,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -41241,7 +41825,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -41255,7 +41842,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -41273,6 +41863,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": "Below your emergency fund",
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -41290,6 +41883,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -41307,6 +41903,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -41324,6 +41923,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -44863,7 +45465,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": "Below your emergency fund"
+     "reason": "Below your emergency fund",
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -44877,7 +45482,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -44891,7 +45499,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -44905,7 +45516,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -44919,7 +45533,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -44933,7 +45550,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -44947,7 +45567,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -44961,7 +45584,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -44979,6 +45605,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": "Below your emergency fund",
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -44996,6 +45625,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -45013,6 +45645,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -45030,6 +45665,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -48408,7 +49046,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -48422,7 +49063,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -48436,7 +49080,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -48450,7 +49097,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -48464,7 +49114,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -48478,7 +49131,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -48492,7 +49148,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -48506,7 +49165,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -48524,6 +49186,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -48541,6 +49206,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -48558,6 +49226,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -48575,6 +49246,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -51322,7 +51996,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -51336,7 +52013,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -51350,7 +52030,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -51364,7 +52047,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -51378,7 +52064,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -51392,7 +52081,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -51406,7 +52098,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -51420,7 +52115,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -51438,6 +52136,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -51455,6 +52156,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -51472,6 +52176,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -51489,6 +52196,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -54067,7 +54777,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -54081,7 +54794,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -54095,7 +54811,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -54109,7 +54828,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -54123,7 +54845,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -54137,7 +54862,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -54151,7 +54879,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -54165,7 +54896,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -54183,6 +54917,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -54200,6 +54937,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -54217,6 +54957,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -56786,7 +57529,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": "Over twice your emergency fund"
+     "reason": "Over twice your emergency fund",
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -56800,7 +57546,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -56814,7 +57563,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -56828,7 +57580,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -56842,7 +57597,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -56856,7 +57614,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -56870,7 +57631,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -56884,7 +57648,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -56902,6 +57669,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": "Over twice your emergency fund",
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -56919,6 +57689,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -56936,6 +57709,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -59287,7 +60063,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -59301,7 +60080,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -59315,7 +60097,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -59329,7 +60114,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -59343,7 +60131,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -59357,7 +60148,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -59371,7 +60165,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -59385,7 +60182,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -59403,6 +60203,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -59420,6 +60223,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -59437,6 +60243,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -61951,7 +62760,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -61965,7 +62777,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -61979,7 +62794,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -61993,7 +62811,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -62007,7 +62828,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -62021,7 +62845,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -62035,7 +62862,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -62049,7 +62879,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -62067,6 +62900,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -62084,6 +62920,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -62101,6 +62940,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -64369,7 +65211,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -64383,7 +65228,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -64397,7 +65245,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -64411,7 +65262,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -64425,7 +65279,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -64439,7 +65296,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -64453,7 +65313,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -64467,7 +65330,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -64485,6 +65351,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -64502,6 +65371,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -67033,7 +67905,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -67047,7 +67922,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -67061,7 +67939,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -67075,7 +67956,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -67089,7 +67973,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -67103,7 +67990,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -67117,7 +68007,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -67131,7 +68024,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -67149,6 +68045,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -67166,6 +68065,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -69452,7 +70354,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -69466,7 +70371,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -69480,7 +70388,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -69494,7 +70405,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -69508,7 +70422,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -69522,7 +70439,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -69536,7 +70456,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -69550,7 +70473,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -69568,6 +70494,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -70999,7 +71928,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -71013,7 +71945,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -71027,7 +71962,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -71041,7 +71979,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -71055,7 +71996,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -71069,7 +72013,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -71083,7 +72030,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -71097,7 +72047,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -71115,6 +72068,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -72378,7 +73334,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -72392,7 +73351,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -72406,7 +73368,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -72420,7 +73385,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -72434,7 +73402,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -72448,7 +73419,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -72462,7 +73436,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -72476,7 +73453,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -72494,6 +73474,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -72511,6 +73494,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -75459,7 +76445,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -75473,7 +76462,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -75487,7 +76479,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -75501,7 +76496,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -75515,7 +76513,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -75529,7 +76530,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -75543,7 +76547,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -75557,7 +76564,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -75575,6 +76585,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -75592,6 +76605,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -78327,7 +79343,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -78341,7 +79360,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -78355,7 +79377,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -78369,7 +79394,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -78383,7 +79411,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -78397,7 +79428,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -78411,7 +79445,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -78425,7 +79462,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -78443,6 +79483,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -78460,6 +79503,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -78477,6 +79523,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -78494,6 +79543,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -81861,7 +82913,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -81875,7 +82930,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -81889,7 +82947,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -81903,7 +82964,10 @@
      "amountIsLumpSum": false,
      "amountOnly": true,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -81917,7 +82981,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -81931,7 +82998,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -81945,7 +83015,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -81959,7 +83032,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -81977,6 +83053,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -81994,6 +83073,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -82011,6 +83093,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -82028,6 +83113,9 @@
       "amountOnly": true,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": true
@@ -85179,7 +86267,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -85193,7 +86284,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -85207,7 +86301,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -85221,7 +86318,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -85235,7 +86335,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -85249,7 +86352,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -85263,7 +86369,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -85277,7 +86386,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -85295,6 +86407,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false
@@ -87742,7 +88857,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "investments": {
      "key": "investments",
@@ -87756,7 +88874,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "pension": {
      "key": "pension",
@@ -87770,7 +88891,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "studentLoan": {
      "key": "studentLoan",
@@ -87784,7 +88908,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "mortgage": {
      "key": "mortgage",
@@ -87798,7 +88925,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "personalLoan": {
      "key": "personalLoan",
@@ -87812,7 +88942,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "kids": {
      "key": "kids",
@@ -87826,7 +88959,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     },
     "taxTrap": {
      "key": "taxTrap",
@@ -87840,7 +88976,10 @@
      "amountIsLumpSum": false,
      "amountOnly": false,
      "elsewhere": null,
-     "reason": null
+     "reason": null,
+     "warn": null,
+     "alertTitle": null,
+     "lead": null
     }
    },
    "breakdown": {
@@ -87858,6 +88997,9 @@
       "amountOnly": false,
       "elsewhere": null,
       "reason": null,
+      "warn": null,
+      "alertTitle": null,
+      "lead": null,
       "banked": 0,
       "pending": 0,
       "onTrack": false

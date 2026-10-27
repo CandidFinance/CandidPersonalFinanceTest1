@@ -673,15 +673,29 @@ const KIDS_QUESTIONS = [
 // £100k tax trap (taxTrap.js): pay and other income first (the shared
 // questions about them), then how they pay into a pension, which sets what
 // each way back to £100,000 costs, then children, for the childcare that
-// stops over it. Each is the same question as in Pension or Kids & family,
-// and asked only if that module hasn't asked it already.
+// stops over it, and whether a partner is over £100,000 (which stops it
+// whatever their own income). Each is the same question as in Pension or
+// Kids & family, and asked only if that module hasn't asked it already.
 // Their own ids, as copies (ids are unique across walk-throughs).
 const askedOnce = q => ({ ...q, id: `${q.id}Trap`, ifMissing: ({ d }) => d[q.field] == null || d[q.field] === "" });
 const TAX_TRAP_QUESTIONS = [
   ...ABOUT_YOU,
   PENSION_QUESTIONS.find(q => q.id === "pensionStatus"),
-  ...KIDS_QUESTIONS.filter(q => ["kidsStatus", "kidsCount", "kidsPreschool", "kidsSchool", "childcareBill"].includes(q.id)).map(askedOnce),
+  ...KIDS_QUESTIONS.filter(q => ["kidsStatus", "kidsCount", "kidsPreschool", "kidsSchool", "childcareBill", "partnerOver100k", "partnerIncome"].includes(q.id)).map(askedOnce),
+  // Their payday, for the monthly check-in (taxTrap.js paydayOf): the 28th
+  // until they say, so never asked in the walk-through, only in Inputs.
+  {
+    id:"payday", field:"payday", kind:"choice", wheel:"28th, until you say",
+    ask: () => "Which day of the month are you paid?",
+    why: () => "Your payday check-in comes then. Until you say, it's the 28th.",
+    options: () => Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: ordinal(i + 1) })),
+    ifMissing: () => false,
+  },
 ];
+function ordinal(n) {
+  const s = n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th";
+  return `${n}${s}`;
+}
 
 // A walk-through's questions with each follow-up (a question asked below
 // another on the same screen) as one of its own: for Edit inputs, which

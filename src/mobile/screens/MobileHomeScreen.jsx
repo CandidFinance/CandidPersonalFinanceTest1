@@ -12,6 +12,9 @@ import { whatToDoFirst, scoreHeadline, onTrackModules } from "../../lib/prioriti
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import WorthALookTile from "../WorthALookTile.jsx";
 import PayCheckCard from "./PayCheckCard.jsx";
+import { PaydayCheckCard } from "../PaydayCheck.jsx";
+import { hasAccess } from "../../lib/entitlement.js";
+import { trapInView, paydayCheckDue } from "../../lib/taxTrap.js";
 import HomeHero from "../HomeHero.jsx";
 import GettingToKnow from "../GettingToKnow.jsx";
 import SinceLastVisit from "../SinceLastVisit.jsx";
@@ -137,6 +140,9 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
       {/* A new tax year: is their pay still the same? */}
       {d.payCheckDue && +d.salary > 0 && <PayCheckCard d={d} set={set}/>}
+
+      {/* Payday, for a subscriber near or over £100k: their pay to date. */}
+      {!d.payCheckDue && hasAccess() && d.employmentStatus === "employed" && trapInView(d, m.adjustedNetIncome) && paydayCheckDue(d) && <PaydayCheckCard d={d} m={m} set={set}/>}
 
       {stillToDo.length > 0 && (
         <div style={{marginTop:"22px"}}>

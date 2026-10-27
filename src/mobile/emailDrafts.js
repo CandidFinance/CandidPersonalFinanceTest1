@@ -51,11 +51,32 @@ ${signOff(name)}`,
   };
 }
 
+// The £100k tax trap's pension payment, by salary sacrifice, from the next
+// pay period.
+export function salarySacrificeDraft({ name, perMonth, perYear }) {
+  const n = (name || "").trim();
+  const gbp = v => `£${Math.round(v).toLocaleString("en-GB")}`;
+  return {
+    subject: n ? `Pension salary sacrifice - ${n}` : "Pension salary sacrifice",
+    body: `Hi,
+
+Hope you are well.
+
+I'd like to pay an extra ${gbp(perMonth)} a month (${gbp(perYear)} a year) into my workplace pension through salary sacrifice, starting from the next pay period. Could you let me know:
+
+1. What I need to do to set this up (any forms or portal steps), and the cut-off for it to take effect from the next payroll.
+2. Whether any employer National Insurance saving is passed on into my pension.
+
+Many thanks,
+${signOff(name)}`,
+  };
+}
+
 export function buildMailtoUrl({ subject, body }) {
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 // Plain-text version of a draft for the calendar event description.
-export function draftAsText({ subject, body }) {
-  return `Draft email to HR (subject: ${subject}):\n\n${body}`;
+export function draftAsText({ subject, body }, who = "HR") {
+  return `Draft email to ${who} (subject: ${subject}):\n\n${body}`;
 }

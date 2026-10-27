@@ -15,7 +15,8 @@ import { FONT_SIZE, MUT, HEADER_BG_DARK, HEADER_BG_LIGHT, HEADER_WORDMARK_DARK, 
 // brand green, with nothing separating it from the content below; the bar's
 // contents are capped to the same 580px / 20px-gutter column as the app's
 // content so the wordmark left-aligns with the tiles below it.
-export function NavBar({ right, center, onLogoClick, light }) {
+// `badge`: anything beside the wordmark (the app's Candid Premium crown).
+export function NavBar({ right, center, badge, onLogoClick, light }) {
   const wordmarkStyle = light
     ? {...HEADER_WORDMARK_LIGHT,fontSize:"20px",justifySelf:"start"}
     : {...HEADER_WORDMARK_DARK,fontSize:FONT_SIZE.HEADLINE,justifySelf:"start"};
@@ -27,6 +28,7 @@ export function NavBar({ right, center, onLogoClick, light }) {
         ) : (
           <span style={wordmarkStyle}>Candid.</span>
         )}
+        {badge}
       </span>
       {center ? <div style={{color:light?MUT:"rgba(255,255,255,0.5)",fontSize:FONT_SIZE.LABEL,fontWeight:500,justifySelf:"center",textAlign:"center"}}>{center}</div> : <span/>}
       <div style={{justifySelf:"end",display:"flex",alignItems:"center"}}>{right}</div>

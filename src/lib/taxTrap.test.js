@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
-import { taxTrap, position, marginalRate, allowanceLost, trapInView, rateCurve, lostTo } from "./taxTrap.js";
+import { taxTrap, position, marginalRate, allowanceLost, trapInView, rateCurve, lostTo, pensionPath, crossingYear } from "./taxTrap.js";
 
 // £110,000, 5% by salary sacrifice: £104,500 of adjusted net income. A
 // toddler in nursery in England, £1,500 a month.
@@ -67,8 +67,44 @@ test("the allowance goes £1 for £2 over £100,000, until it's gone", () => {
   assert.equal(allowanceLost(200000).lost, 12570);
 });
 
-test("in view near or over £100,000, or heading there; not with no salary", () => {
+test("the pension slider: what any amount paid in does, and the childcare back once at £100,000", () => {
+  const { t, m } = at(base);
+  // The amount needed matches the pension option.
+  const full = pensionPath(base, m, t.needed);
+  assert.equal(full.takeHome, 1710);
+  assert.ok(full.under);
+  assert.equal(full.bank, 10290 - 1710);
+  // Half of it: no childcare back yet, the same 62% saved.
+  const half = pensionPath(base, m, t.needed / 2);
+  assert.ok(!half.under);
+  assert.equal(half.childcare, 0);
+  assert.equal(half.taxSaved, 2790 / 2);
+  // Relief at source saves the tax, not the NI.
+  assert.equal(pensionPath(base, m, t.needed, "relief").takeHome, 1800);
+  // Not said how they pay in: salary sacrifice, which lowers a student loan's repayments too.
+  const loan = { ...base, pensionType: "", studentLoan: "plan2", loanBalance: "40000" };
+  const withLoan = pensionPath(loan, calcMetrics(loan), 4000);
+  assert.equal(withLoan.route, "sacrifice");
+  assert.equal(withLoan.takeHome, 1160);
+});
+
+test("the ways back, largest worth first: the pension first, the 4-day week last", () => {
+  const keys = at(base).t.options.map(o => o.key);
+  assert.equal(keys[0], "pension");
+  assert.equal(keys[keys.length - 1], "fourDay");
+});
+
+test("the tax year they'd pass £100,000 at the pay growth they expect", () => {
+  const d = { ...base, salary: "90000", myContribution: "0", inputsTaxYear: 2026 };
+  // 4% a year: £97,344 in two years, £101,238 in three.
+  assert.equal(crossingYear({ ...d, salaryGrowthPct: "4" }, calcMetrics({ ...d, salaryGrowthPct: "4" })), 2029);
+  assert.equal(crossingYear(base, calcMetrics(base)), null);
+});
+
+test("in view near or over £100,000, on £85,000 or more before pension, or heading there; not with no salary", () => {
   assert.ok(trapInView({ salary: "90000" }));
+  assert.ok(trapInView({ salary: "85000", myContribution: "10" }));
+  assert.ok(!trapInView({ salary: "84000" }));
   assert.ok(!trapInView({ salary: "70000" }));
   assert.ok(!trapInView({ salary: "120000", employmentStatus: "not_working" }));
   assert.equal(taxTrap({ salary: "" }, calcMetrics({ salary: "" })), null);
@@ -85,4 +121,36 @@ test("the chart runs from £0: the marginal rate at each band, and the trap", ()
   assert.equal(rate(110000), 62);
   assert.equal(rate(130000), 47);
   assert.equal(lostTo({ ni: 0.02, sl: 0.09 }), "tax, National Insurance and student loan");
+});
+
+test("this tax year: from answers, or from pay to date and the paydays left", async () => {
+  const { yearProjection, paydaysBetween, paydayCheckDue } = await import("./taxTrap.js");
+  const today = new Date(2026, 9, 8);
+  // 12 paydays in a tax year, on the 28th.
+  assert.equal(paydaysBetween(new Date(2026, 3, 5), new Date(2027, 3, 5), 28), 12);
+  // A payday on the 31st falls on a shorter month's last day.
+  assert.equal(paydaysBetween(new Date(2027, 1, 1), new Date(2027, 1, 28), 31), 1);
+  const m = calcMetrics(base);
+  const plain = yearProjection(base, m, today);
+  assert.equal(plain.tracked, false);
+  assert.equal(plain.projected, 104500);
+  assert.equal(plain.topUp, 4500);
+  // From 6 April to 8 October: 6 paydays (April to September) left 6 to come.
+  assert.equal(plain.paydaysLeft, 6);
+  // Paid £52,250 so far (half the year's £104,500), and a £10,000 bonus in
+  // March still to come: £114,500.
+  const withBonus = { ...base, bonusAmount: "10000", bonusMonth: "3" };
+  const tracked = yearProjection({ ...withBonus, payToDate: "52250", payToDateOn: "2026-09-28" }, calcMetrics(withBonus), today);
+  assert.equal(tracked.tracked, true);
+  assert.equal(tracked.projected, 114500);
+  assert.equal(tracked.topUp, 14500);
+  // A pay rise since: the payslip says more, and so does the year.
+  const raised = yearProjection({ ...base, payToDate: "55000", payToDateOn: "2026-09-28" }, m, today);
+  assert.equal(raised.projected, 107250);
+  // Last year's figure is ignored.
+  assert.equal(yearProjection({ ...base, payToDate: "90000", payToDateOn: "2026-03-28" }, m, today).tracked, false);
+  // The check-in is due from payday until answered that month.
+  assert.equal(paydayCheckDue({ payday: "28" }, today), false);
+  assert.equal(paydayCheckDue({ payday: "5" }, today), true);
+  assert.equal(paydayCheckDue({ payday: "5", paydayCheckedMonth: "2026-10" }, today), false);
 });

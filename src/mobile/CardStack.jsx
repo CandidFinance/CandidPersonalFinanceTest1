@@ -22,6 +22,8 @@ import { G, MUT, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN,
 // "amber": behind, the card wears that wash with a warning icon after its
 // label), done (on track: a green wash behind, and a tick after the label,
 // dark green behind and mid green in front), body: t => content in theme t }.
+// `light`: every card plain white, the front one too (the £100k tax trap's
+// other options, inside a tile of their own).
 const PEEK = 44;      // px of each card behind showing above the one in front
 const SLIM = 7;       // px of each slim edge, past the second card behind
 const MAX_SLIVERS = 3;
@@ -56,9 +58,11 @@ const WARN = {
   red: { ...LIGHT, bg: HERO_TILE_BG_RED, border: "1px solid rgba(192,57,43,0.30)", shadow: "0 4px 18px rgba(192,57,43,0.12)", label: "#a8392c", figure: "#8e2a1f", body: "#8a5a52", icon: CRITICAL },
   amber: { ...LIGHT, bg: HERO_TILE_BG_AMBER, border: "1px solid rgba(217,130,43,0.38)", shadow: "0 4px 18px rgba(217,130,43,0.12)", label: "#a35a14", figure: "#864a0f", body: "#8a6a4f", icon: WARNING },
 };
+// A `light` stack's cards: plain white.
+const PLAIN = { ...LIGHT, bg: WHITE };
 const DONE = { ...LIGHT, bg: HERO_TILE_BG_GREEN, border: "1px solid rgba(47,148,97,0.45)", shadow: "0 4px 18px rgba(47,148,97,0.10)", figure: SUCCESS };
 
-export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the previous card", "Show the next card"] }) {
+export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the previous card", "Show the next card"], light: allLight = false }) {
   const reduceMotion = useReducedMotion();
   const n = cards.length;
   // `target`: the card heading to the front, set as a turn starts so the
@@ -73,12 +77,17 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   // To card `next` (by default the one after the front): the front card
-  // turns away to its place behind `next`.
+  // turns away to its place behind `next`. A tap or swipe mid-turn cuts that
+  // turn short: the card that was coming forward turns away instead, so
+  // rapid taps run through the cards as fast as they come.
   const turn = (next = (target + 1) % n) => {
-    if (turning !== null || next === target) return;
+    if (next === target) return;
+    timers.current.forEach(clearTimeout);
+    const leaving = turning !== null ? target : front;
     setTarget(next);
-    if (reduceMotion) { setFront(next); return; }
-    setTurning(front);
+    if (reduceMotion) { setFront(next); setTurning(null); return; }
+    setFront(leaving);
+    setTurning(leaving);
     timers.current = [setTimeout(() => setFront(next), TURN * 0.45), setTimeout(() => setTurning(null), TURN)];
   };
   const onPointerDown = e => { startY.current = e.clientY; swiped.current = false; };
@@ -109,8 +118,8 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
           const isFront = i === front, isTarget = i === target;
           const slot = (i - target + n) % n;
           const edge = slot > 2; // a slim edge: no top line
-          const light = WARN[c.warn] ?? (c.done ? DONE : LIGHT);
-          const t = isFront ? DARK : light;
+          const light = WARN[c.warn] ?? (c.done ? DONE : allLight ? PLAIN : LIGHT);
+          const t = isFront && !allLight ? DARK : light;
           const animate = turning === i
             ? { y: [0, 0, -rise(slot, peek)], scale: [1, 1, scaleAt(slot)], rotateY: [0, -80, 0], x: ["0%", "-12%", "0%"] }
             : { y: -rise(slot, peek), scale: scaleAt(slot), rotateY: 0, x: "0%" };
@@ -119,9 +128,9 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
               initial={false} animate={animate}
               transition={turning === i ? { duration: TURN / 1000, times: [0, 0.45, 1], ease } : { duration: reduceMotion ? 0 : TURN * 0.8 / 1000, ease }}
               onClick={isTarget ? undefined : () => turn(i)} aria-hidden={!isTarget}
-              style={{gridArea:"1 / 1",zIndex:isFront ? n + 1 : n - slot,transformOrigin:"50% 0",background:isFront ? LIGHT.bg : light.bg,border:t.border,boxShadow:t.shadow,
+              style={{gridArea:"1 / 1",zIndex:isFront ? n + 1 : n - slot,transformOrigin:"50% 0",background:isFront && !allLight ? LIGHT.bg : light.bg,border:t.border,boxShadow:t.shadow,
                 borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px",cursor:isTarget ? "default" : "pointer",display:"flex",flexDirection:"column"}}>
-              <div className={`card-stack-dark${isFront ? " on" : ""}`} aria-hidden="true" style={{opacity:isFront ? 1 : 0,transition:"opacity 0.385s ease"}}/>
+              {!allLight && <div className={`card-stack-dark${isFront ? " on" : ""}`} aria-hidden="true" style={{opacity:isFront ? 1 : 0,transition:"opacity 0.385s ease"}}/>}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"10px",minHeight:"18px"}}>
                 <span style={{display:"inline-flex",alignItems:"center",gap:"6px",fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:t.label,opacity:edge ? 0 : 1,transition:"opacity 0.3s, color 0.35s"}}>
                   {c.label}
