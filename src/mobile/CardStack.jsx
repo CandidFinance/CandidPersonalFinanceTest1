@@ -11,7 +11,10 @@ import { G, MUT, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN,
 // card behind turns the front card away on its Y axis and sends it back;
 // the next card (or the one tapped) comes forward, and after the last the
 // first comes round again. Swiping down or the up arrow goes back one.
-// No wheel turning on desktop: it would catch the page's own scroll.
+// On desktop, the wheel (or a trackpad flick) with the pointer over the
+// stack turns one card per gesture, and the page doesn't scroll; off it,
+// the page scrolls as usual. With the stack focused, the up and down arrow
+// keys (and Page Up/Down) turn it too.
 //
 // Only the two cards behind the front one show their top line; any further
 // back are slim edges (up to MAX_SLIVERS), so a long stack (Modules) stays
@@ -29,6 +32,8 @@ const PEEK = 44;      // px of each card behind showing above the one in front
 const SLIM = 7;       // px of each slim edge, past the second card behind
 const MAX_SLIVERS = 3;
 const TURN = 700;     // ms
+const WHEEL_STEP = 40;   // px of wheel travel that turns a card
+const WHEEL_QUIET = 200; // ms without wheel events that ends a gesture
 const SHRINK = 0.045; // scale lost per place back
 const SLIVER_SHRINK = 0.03;
 // Where a card `slot` places back sits, and its scale.
@@ -91,6 +96,40 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
     setTurning(leaving);
     timers.current = [setTimeout(() => setFront(next), TURN * 0.45), setTimeout(() => setTurning(null), TURN)];
   };
+  // The wheel: a native listener, as React's is passive and can't stop the
+  // page scrolling. One card per gesture: a trackpad's momentum keeps
+  // sending events after the flick, so nothing more turns until they stop.
+  const stack = useRef(null);
+  const turnBy = dir => turn((target + dir + n) % n);
+  const turnByRef = useRef(turnBy);
+  turnByRef.current = turnBy;
+  useEffect(() => {
+    const el = stack.current;
+    if (!el || n < 2) return;
+    const wheel = { travel: 0, done: false, quiet: null };
+    const onWheel = e => {
+      // Pinch-zoom and sideways scrolls are left alone.
+      if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      clearTimeout(wheel.quiet);
+      wheel.quiet = setTimeout(() => { wheel.travel = 0; wheel.done = false; }, WHEEL_QUIET);
+      if (wheel.done) return;
+      // Lines and pages (deltaMode 1 and 2) in px, roughly.
+      wheel.travel += e.deltaY * [1, 16, 400][e.deltaMode];
+      if (Math.abs(wheel.travel) < WHEEL_STEP) return;
+      wheel.done = true;
+      turnByRef.current(wheel.travel > 0 ? 1 : -1);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => { el.removeEventListener("wheel", onWheel); clearTimeout(wheel.quiet); };
+  }, [n]);
+  // The arrow keys, unless they're for a field or slider inside a card.
+  const onKeyDown = e => {
+    const dir = { ArrowDown: 1, PageDown: 1, ArrowUp: -1, PageUp: -1 }[e.key];
+    if (!dir || n < 2 || e.target.closest("input, select, textarea, [role=slider]")) return;
+    e.preventDefault();
+    turnBy(dir);
+  };
   const onPointerDown = e => { startY.current = e.clientY; swiped.current = false; };
   const onPointerUp = e => {
     if (startY.current === null) return;
@@ -113,8 +152,10 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
       <style>{CSS}</style>
       {/* Every card shares one grid cell, so the stack is as tall as the
           tallest card; each one behind sits PEEK px higher. */}
-      <div onPointerDown={onPointerDown} onPointerUp={onPointerUp} onClickCapture={onClickCapture}
-        style={{display:"grid",paddingTop:`${rise(back, peek)}px`,perspective:"1100px",touchAction:"pan-x"}}>
+      <div ref={stack} tabIndex={n > 1 ? 0 : undefined} onKeyDown={onKeyDown}
+        role="group" aria-roledescription="card stack" aria-label={n > 1 ? "Up and down arrow keys turn the cards" : undefined}
+        onPointerDown={onPointerDown} onPointerUp={onPointerUp} onClickCapture={onClickCapture}
+        style={{display:"grid",outlineOffset:"4px",borderRadius:OPPORTUNITY_TILE_RADIUS,paddingTop:`${rise(back, peek)}px`,perspective:"1100px",touchAction:"pan-x"}}>
         {cards.map((c, i) => {
           const isFront = i === front, isTarget = i === target;
           const slot = (i - target + n) % n;
