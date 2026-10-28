@@ -20,7 +20,7 @@ import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
 import { estimatePensionPot, childBenefitCharge, HICBC_START } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
-import { taxTrap, trapInView, lostTo } from "./taxTrap.js";
+import { taxTrap, trapInView, lostTo, thisTaxYear } from "./taxTrap.js";
 import { loanVerdictReady } from "./appEntry.js";
 import { calcCashOptimisation } from "./cash.js";
 import { NATIONAL_STATS } from "./nationalStats.js";
@@ -637,6 +637,7 @@ function rateParts(rate) {
     .reduce((out, part, i, all) => out + (i === 0 ? "" : i === all.length - 1 ? " and " : ", ") + part, "");
 }
 export function taxTrapReveal(d, m) {
+  ({ d, m } = thisTaxYear(d, m));
   const t = taxTrap(d, m);
   if (!t || !trapInView(d, m.adjustedNetIncome)) return null;
   const support = t.nation === "england" ? "Tax-Free Childcare and the 30 funded hours" : "Tax-Free Childcare";

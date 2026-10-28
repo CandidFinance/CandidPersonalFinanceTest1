@@ -20,7 +20,7 @@
 
 import { PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD, PERSONAL_ALLOWANCE, calcIncomeAndDividendTax, calcNI, salarySacrificeNiCap } from "./tax.js";
 import { SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
-import { payGrowthOf } from "./metrics.js";
+import { payGrowthOf, calcMetrics } from "./metrics.js";
 import { taxYearFor, taxYearOf } from "./taxYear.js";
 import { payFactor } from "./growth.js";
 import { calcAnnualAllowanceRoom } from "./pension.js";
@@ -92,12 +92,15 @@ export function position(d, m, { salary = m.salary, sacrifice = 0, relief = 0, e
   const own = salary * pct;
   const bySacrifice = d.pensionType === "sacrifice";
   const totalSacrifice = (bySacrifice ? own : 0) + sacrifice;
-  const totalRelief = (bySacrifice ? 0 : own) + relief;
+  // Relief at source top-ups this year (thisTaxYear), already off m's
+  // adjusted net income: counted here as paid in, for their tax and take-home.
+  const topUps = m.topUpRelief || 0;
+  const totalRelief = (bySacrifice ? 0 : own) + relief + topUps;
   const bonus = num(d.bonusAmount) + extra, other = num(d.otherIncome), dividends = num(d.dividendIncome);
   const pay = salary + bonus - totalSacrifice;
   // Anything else in adjusted net income (a State Pension, pay earlier in the
   // year) as metrics.js has it.
-  const rest = m.adjustedNetIncome - (m.salary + num(d.bonusAmount) + other + dividends - m.salary * pct);
+  const rest = m.adjustedNetIncome + topUps - (m.salary + num(d.bonusAmount) + other + dividends - m.salary * pct);
   const ani = pay + other + dividends - totalRelief + rest;
   // Relief at source: the basic-rate band is extended by the gross paid in
   // and the allowance worked out on income less it, which comes to the tax
@@ -174,7 +177,7 @@ export function pensionPath(d, m, amount, route = d.pensionType !== "relief" && 
   const after = position(d, m, route === "sacrifice" ? { sacrifice: amount } : { relief: amount });
   const takeHome = Math.max(0, Math.round(now.takeHome - after.takeHome));
   const under = after.ani <= TRAP_START;
-  const overRoom = amount > calcAnnualAllowanceRoom(d, m).room;
+  const overRoom = amount > allowanceLeft(d, m);
   const childcare = under && !overRoom ? childcareLostOf(d, m).lost : 0;
   // What it keeps of the trap's £ a year: the allowance tax back, and the
   // childcare.
@@ -200,7 +203,7 @@ export function taxTrap(d, m) {
   const over = ani > TRAP_START;
   const now = position(d, m);
   const rate = marginalRate(d, m);
-  const aaRoom = calcAnnualAllowanceRoom(d, m).room;
+  const aaRoom = allowanceLeft(d, m);
   const allowance = allowanceLost(ani, !!m.scottish);
   const { cc, lost: childcareLost } = childcareLostOf(d, m);
   const childcareAtRisk = cc && cc.state === "near" ? cc.atStake : 0;
@@ -257,6 +260,14 @@ export function taxTrap(d, m) {
 // sacrifice), as of `d.payToDateOn` ("YYYY-MM-DD"), from the payday
 // check-in. Without it, or from an earlier tax year, the year is their
 // answers' adjusted net income.
+// `d.trapTopUps`: pension payments this tax year on top of what they pay in
+// each month (myContribution): [{ id, group, amount, route, month, taxYear,
+// perYear, on }], one per payday for a monthly plan (sharing its `group`),
+// or one from the bonus. route "sacrifice" comes out of that month's pay
+// (`month`, 1 to 12); "relief" is a payment of `amount` gross (with the
+// basic-rate relief added) to a pension such as a SIPP. Each lowers the
+// year's adjusted net income by its amount. Those from another tax year are
+// ignored.
 
 const ymd = s => { const [y, mo, day] = String(s).split("-").map(Number); return y && mo && day ? new Date(y, mo - 1, day) : null; };
 const dayOnly = t => new Date(t.getFullYear(), t.getMonth(), t.getDate());
@@ -273,6 +284,15 @@ export function paydaysBetween(from, to, payday) {
 }
 const taxYearEnd = ty => new Date(ty + 1, 3, 5);
 const DAY = 86400000;
+
+export const topUpsThisYear = (d, today = new Date()) => {
+  const ty = taxYearOf(dayOnly(today));
+  return (Array.isArray(d.trapTopUps) ? d.trapTopUps : []).filter(u => +u.taxYear === ty && +u.amount > 0);
+};
+const sum = (ups, route) => ups.reduce((s, u) => s + (!route || u.route === route ? +u.amount : 0), 0);
+// A month's payday in tax year `ty`: April to December in `ty`, January to
+// March after it.
+const paydayOfMonth = (ty, month, payday) => paydayIn(month >= 4 ? ty : ty + 1, month - 1, payday);
 
 // The bonus's payday: in `bonusMonth`, March when it isn't known.
 function bonusDay(d, ty, payday) {
@@ -305,8 +325,108 @@ export function yearProjection(d, m, today = new Date()) {
     const relieved = d.pensionType === "relief" ? contribution : 0;
     projected = +d.payToDate + paydaysBetween(on, end, payday) * monthly + bonusAhead + rest - relieved;
   }
-  projected = Math.round(projected);
-  return { projected, tracked: !!tracked, asOf: tracked ? d.payToDateOn : null, over: projected > TRAP_START, topUp: Math.max(0, projected - TRAP_START), paydaysLeft: left, daysLeft, payday };
+  // Top-ups: pay to date is after salary sacrifice, so one already paid by
+  // then is in it; it's added back, and all of them come off.
+  const ups = topUpsThisYear(d, now);
+  const paidBy = tracked ? sum(ups.filter(u => u.route === "sacrifice" && paydayOfMonth(ty, +u.month, payday) <= on)) : 0;
+  const beforeTopUps = Math.round(projected + paidBy);
+  const topUps = sum(ups);
+  projected = beforeTopUps - topUps;
+  return { projected, beforeTopUps, topUps, tracked: !!tracked, asOf: tracked ? d.payToDateOn : null, over: projected > TRAP_START, topUp: Math.max(0, projected - TRAP_START), paydaysLeft: left, daysLeft, payday };
+}
+
+// The salary their pay to date implies: the one whose adjusted net income is
+// the year's projection before any top-ups (each £1 of salary adds 1 − their
+// pension % to it). null until they've entered pay to date this tax year.
+const keptOf = d => Math.max(0.01, 1 - num(d.myContribution) / 100);
+export function effectiveSalary(d, m, today = new Date()) {
+  const y = yearProjection(d, m, today);
+  if (!y.tracked) return null;
+  return Math.round(m.salary + (y.beforeTopUps - m.adjustedNetIncome) / keptOf(d));
+}
+
+// Pay to date more than DRIFT off their salary: the salary it implies, to
+// the nearest £500, to ask whether their pay has changed. Else null.
+export const DRIFT = 0.05;
+export function salaryDrift(d, m, today = new Date()) {
+  const salary = effectiveSalary(d, m, today);
+  if (salary == null || !(m.salary > 0) || Math.abs(salary - m.salary) / m.salary <= DRIFT) return null;
+  return Math.round(salary / 500) * 500;
+}
+
+// The answers and metrics the module works from this tax year: on the salary
+// their pay to date implies, once it's in, less the salary sacrifice
+// top-ups; relief at source top-ups off adjusted net income (not pay). Else
+// their own. `y` is the projection. From their own answers only: run on what
+// this returns, it would count pay to date and the top-ups twice.
+export function thisTaxYear(d, m, today = new Date()) {
+  const y = yearProjection(d, m, today);
+  const ups = topUpsThisYear(d, today);
+  const implied = effectiveSalary(d, m, today);
+  const relief = sum(ups, "relief");
+  const salary = Math.round((implied ?? m.salary) - sum(ups, "sacrifice") / keptOf(d));
+  if (salary === Math.round(m.salary) && !relief) return { d, m, y };
+  const at = { ...d, salary: String(salary) };
+  const mm = calcMetrics(at);
+  return { d: at, m: relief ? { ...mm, adjustedNetIncome: mm.adjustedNetIncome - relief, topUpRelief: relief } : mm, y };
+}
+
+// Annual allowance left this year after the top-ups.
+export const allowanceLeft = (d, m, today = new Date()) => Math.max(0, calcAnnualAllowanceRoom(d, m).room - sum(topUpsThisYear(d, today)));
+// How far `extra` more on top of this year's top-ups goes past the annual
+// allowance (0 within it): past it, carry forward (Pension) may cover it.
+export function pastAllowance(d, m, extra = 0, today = new Date()) {
+  const room = calcAnnualAllowanceRoom(d, m);
+  return { over: Math.max(0, Math.round(sum(topUpsThisYear(d, today)) + extra - room.room)), allowance: room.approxAA };
+}
+
+// The most a top-up can be, on their own answers. Salary sacrifice: that
+// month's pay (with the bonus, in its month) after what they sacrifice each
+// month and any top-up from it already. Relief at source: tax relief is on
+// up to their earnings for the year after salary sacrifice (or £3,600),
+// less what's been paid that way already.
+export const RELIEF_FLOOR = 3600;
+export function topUpLimit(d, m, route, month, today = new Date()) {
+  const ups = topUpsThisYear(d, today);
+  const salary = m.salary || 0;
+  const regular = d.pensionType === "relief" ? 0 : salary * num(d.myContribution) / 100;
+  const bonus = num(d.bonusAmount);
+  if (route === "sacrifice") {
+    const bonusMonth = +d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3;
+    const pay = (salary - regular) / 12 + (bonus > 0 && bonusMonth === +month ? bonus : 0);
+    return Math.max(0, Math.floor(pay - sum(ups.filter(u => u.route === "sacrifice" && +u.month === +month))));
+  }
+  const earnings = salary + bonus - regular - sum(ups, "sacrifice");
+  return Math.max(0, Math.floor(Math.max(RELIEF_FLOOR, earnings) - sum(ups, "relief")));
+}
+
+// A month's pay after what they salary sacrifice each month: the most a
+// month's top-up can be (the monthly slider's top).
+export const monthlyPay = (d, m) => Math.max(0, Math.floor(((m.salary || 0) - (d.pensionType === "relief" ? 0 : (m.salary || 0) * num(d.myContribution) / 100)) / 12));
+
+// `needed` spread over the paydays left this tax year: `monthly` on each
+// (rounded up to £10, so it's at least enough), and as a pension % of
+// salary, from `pctNow` to `pctTo` (rounded up to 0.1%) for those paydays.
+// `pctFor(monthly)`: the % for any other monthly amount.
+export function monthlyPlan(d, m, needed, today = new Date()) {
+  const months = topUpMonths(d, today);
+  const n = months.length;
+  const monthly = n > 0 ? Math.ceil(needed / n / 10) * 10 : 0;
+  const pctNow = num(d.myContribution);
+  const pctFor = amount => m.salary > 0 ? Math.ceil((pctNow + amount * 12 / m.salary * 100) * 10 - 1e-9) / 10 : pctNow;
+  return { months, n, monthly, pctNow, pctTo: pctFor(monthly), pctFor };
+}
+
+// The months a salary sacrifice top-up can come from: each payday still to
+// come this tax year, in order, with whether the bonus is paid in it.
+export function topUpMonths(d, today = new Date()) {
+  const now = dayOnly(today), ty = taxYearOf(now), payday = paydayOf(d);
+  const bonusMonth = num(d.bonusAmount) > 0 ? (+d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3) : null;
+  const out = [];
+  for (const month of [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3]) {
+    if (paydayOfMonth(ty, month, payday) > now) out.push({ month, bonus: month === bonusMonth });
+  }
+  return out;
 }
 
 // Whether today is on or after this month's payday and they haven't checked

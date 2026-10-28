@@ -154,3 +154,96 @@ test("this tax year: from answers, or from pay to date and the paydays left", as
   assert.equal(paydayCheckDue({ payday: "5" }, today), true);
   assert.equal(paydayCheckDue({ payday: "5", paydayCheckedMonth: "2026-10" }, today), false);
 });
+
+test("on pay to date: the module works from the salary it implies", async () => {
+  const { effectiveSalary, thisTaxYear, salaryDrift } = await import("./taxTrap.js");
+  const { computeModuleStatuses, baselinePatch, answersMoved } = await import("./moduleStatus.js");
+  const today = new Date(2026, 9, 8);
+  const m = calcMetrics(base);
+  // Without pay to date: their own answers, untouched.
+  assert.equal(effectiveSalary(base, m, today), null);
+  const own = thisTaxYear(base, m, today);
+  assert.equal(own.d, base);
+  assert.equal(own.m, m);
+  // £60,000 by 28 Sep heads for £112,250, £7,750 over their answers' £104,500:
+  // £8,158 more salary at 5% into their pension.
+  const ahead = { ...base, selectedModules: ["taxTrap"], payToDate: "60000", payToDateOn: "2026-09-28" };
+  assert.equal(effectiveSalary(ahead, m, today), 118158);
+  const year = thisTaxYear(ahead, m, today);
+  assert.equal(year.y.projected, 112250);
+  assert.ok(Math.abs(year.m.adjustedNetIncome - 112250) <= 1);
+  assert.ok(Math.abs(taxTrap(year.d, year.m).ani - 112250) <= 1);
+  // The module's card has the same figure (the test clock is 8 Oct 2026).
+  assert.equal(computeModuleStatuses(ahead, calcMetrics(ahead)).taxTrap.amount, taxTrap(year.d, year.m).amount);
+  // 7% over their salary: asked whether their pay's gone up to about £118,000.
+  assert.equal(salaryDrift(ahead, m, today), 118000);
+  // £55,000 heads for £107,250: under 5% off, not asked.
+  assert.equal(salaryDrift({ ...base, payToDate: "55000", payToDateOn: "2026-09-28" }, m, today), null);
+  // Pay to date isn't one of the module's answers: no "did you make a change?".
+  const withBaseline = { ...base, moduleBaselines: baselinePatch(base, computeModuleStatuses(base, m)) };
+  assert.equal(answersMoved({ ...withBaseline, payToDate: "60000", payToDateOn: "2026-09-28" }, "taxTrap"), false);
+});
+
+test("one-off top-ups this tax year: off the year once, within each month's pay and the allowance", async () => {
+  const { yearProjection, thisTaxYear, effectiveSalary, salaryDrift, topUpLimit, topUpMonths, pastAllowance, allowanceLeft } = await import("./taxTrap.js");
+  const { calcAnnualAllowanceRoom } = await import("./pension.js");
+  const today = new Date(2026, 9, 8);
+  const up = (amount, route, month, taxYear = 2026) => ({ id: `${route}${month}`, amount, route, month, taxYear });
+  // From their answers: £4,500 from November's pay takes £104,500 to £100,000.
+  const nov = { ...base, trapTopUps: [up(4500, "sacrifice", 11)] };
+  const m = calcMetrics(base);
+  assert.equal(yearProjection(nov, m, today).projected, 100000);
+  const year = thisTaxYear(nov, m, today);
+  assert.ok(Math.abs(year.m.adjustedNetIncome - 100000) <= 1);
+  assert.equal(taxTrap(year.d, year.m).amount, 0);
+  // Last tax year's top-up is ignored.
+  assert.equal(yearProjection({ ...base, trapTopUps: [up(4500, "sacrifice", 11, 2025)] }, m, today).projected, 104500);
+  // Pay to date is after salary sacrifice: £2,000 from September's pay is in
+  // the 28 Sep payslip already (£50,250, not £52,250), so it counts once.
+  const sep = { ...base, payToDate: "50250", payToDateOn: "2026-09-28", trapTopUps: [up(2000, "sacrifice", 9)] };
+  assert.equal(yearProjection(sep, m, today).projected, 102500);
+  // From November's pay, after the payslip: it comes off the year.
+  assert.equal(yearProjection({ ...base, payToDate: "52250", payToDateOn: "2026-09-28", trapTopUps: [up(2000, "sacrifice", 11)] }, m, today).projected, 102500);
+  // And their pay still reads as £110,000: no "has your pay changed?".
+  assert.equal(effectiveSalary(sep, m, today), 110000);
+  assert.equal(salaryDrift(sep, m, today), null);
+  // £3,000 gross into a SIPP: off adjusted net income, not pay.
+  const sipp = { ...base, trapTopUps: [up(3000, "relief", 10)] };
+  const bySipp = thisTaxYear(sipp, m, today);
+  assert.equal(bySipp.d.salary, "110000");
+  assert.ok(Math.abs(bySipp.m.adjustedNetIncome - 101500) <= 1);
+  // A month's pay after the 5% sacrificed: £8,708; the bonus in its month.
+  assert.equal(topUpLimit(base, m, "sacrifice", 11, today), 8708);
+  assert.equal(topUpLimit(nov, m, "sacrifice", 11, today), 4208);
+  const withBonus = { ...base, bonusAmount: "10000", bonusMonth: "3" };
+  assert.equal(topUpLimit(withBonus, calcMetrics(withBonus), "sacrifice", 3, today), 18708);
+  // Relief at source: up to earnings after salary sacrifice, £104,500 here.
+  assert.equal(topUpLimit(nov, m, "relief", 10, today), 100000);
+  // Paydays still to come on 8 October, on the 28th: October to March.
+  assert.deepEqual(topUpMonths(withBonus, today).map(x => x.month), [10, 11, 12, 1, 2, 3]);
+  assert.equal(topUpMonths(withBonus, today).find(x => x.bonus).month, 3);
+  // The annual allowance: what's paid in each month plus the top-ups.
+  const room = calcAnnualAllowanceRoom(base, m);
+  assert.equal(allowanceLeft(nov, m, today), room.room - 4500);
+  assert.equal(pastAllowance(nov, m, room.room - 4500, today).over, 0);
+  assert.equal(pastAllowance(nov, m, room.room - 4500 + 1000, today).over, 1000);
+  assert.equal(pastAllowance(nov, m, 0, today).allowance, 60000);
+});
+
+test("spread over the paydays left: the same each month, and the pension % that comes to", async () => {
+  const { monthlyPlan, monthlyPay, yearProjection } = await import("./taxTrap.js");
+  const today = new Date(2026, 9, 8);
+  const m = calcMetrics(base);
+  // £4,500 over 6 paydays (October to March, on the 28th): £750 a month, an
+  // extra 8.2% of £110,000's £9,167 a month, so 5% to 13.2%.
+  const plan = monthlyPlan(base, m, 4500, today);
+  assert.equal(plan.n, 6);
+  assert.equal(plan.monthly, 750);
+  assert.equal(plan.pctTo, 13.2);
+  assert.equal(plan.pctFor(0), 5);
+  // Recorded a payday each: the year comes to £100,000.
+  const ups = plan.months.map(x => ({ id: `p${x.month}`, group: "p", amount: plan.monthly, route: "sacrifice", month: x.month, taxYear: 2026 }));
+  assert.equal(yearProjection({ ...base, trapTopUps: ups }, m, today).projected, 100000);
+  // The slider's top: a month's pay after the 5% sacrificed.
+  assert.equal(monthlyPay(base, m), 8708);
+});

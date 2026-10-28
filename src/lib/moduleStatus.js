@@ -2,7 +2,7 @@ import { moduleAnswered , loanVerdictReady } from "./appEntry.js";
 import { MODULE_GUIDES, flatQuestions } from "./moduleGuide.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby, Percent } from "lucide-react";
-import { taxTrap, trapInView, TRAP_EDGE } from "./taxTrap.js";
+import { taxTrap, trapInView, thisTaxYear, TRAP_EDGE } from "./taxTrap.js";
 import { fmt } from "./format.js";
 import { taxYearOf } from "./taxYear.js";
 import { calcCashOptimisation } from "./cash.js";
@@ -402,11 +402,13 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Progress's Tax shield), else "watch"; neither on track nor scored.
   // warn: the card's red or amber (Modules), with alertTitle its alert's
   // title (their marginal rate there: tax, NI and student loan) and lead
-  // its figure under £100k.
-  const trap = taxTrap(d, m);
+  // its figure under £100k. All of it on this tax year (thisTaxYear: pay to
+  // date and one-off top-ups), as the module has it.
+  const year = thisTaxYear(d, m);
+  const trap = taxTrap(year.d, year.m);
   const edge = trap && !trap.over && trap.headroom <= TRAP_EDGE;
   const ratePct = r => `${Math.round(r * 1000) / 10}%`;
-  s.taxTrap = !trap || !trapInView(d, m.adjustedNetIncome) ? { status: "na", notApplicable: true, impact: 0, impactLabel: "Your pay is under £85k", amount: 0 } : {
+  s.taxTrap = !trap || !trapInView(year.d, year.m.adjustedNetIncome) ? { status: "na", notApplicable: true, impact: 0, impactLabel: "Your pay is under £85k", amount: 0 } : {
     status: trap.amount > 0 ? "critical" : trap.over ? "ok" : edge ? "edge" : "watch",
     warn: trap.amount > 0 ? "red" : edge ? "amber" : null,
     alertTitle: trap.over

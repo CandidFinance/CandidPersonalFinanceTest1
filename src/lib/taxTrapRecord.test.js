@@ -72,3 +72,45 @@ test("a change already waiting to be confirmed elsewhere is left to ask about", 
   const after = apply(pending, recordSacrifice(pending, calcMetrics(pending), 4500, "sacrifice", "2026-10-27"));
   assert.equal(after.moduleBaselines.pension.answers, base.moduleBaselines.pension.answers);
 });
+
+test("a monthly plan: one top-up a payday left, its £ a year banked, their % as it was; removing it takes it all back", async () => {
+  const { recordTopUps, removeTopUp } = await import("./taxTrapRecord.js");
+  const { monthlyPlan } = await import("./taxTrap.js");
+  const m = calcMetrics(base);
+  const t = taxTrap(base, m);
+  const plan = monthlyPlan(base, m, t.needed);
+  const after = apply(base, recordTopUps(base, plan.months.map(x => ({ amount: plan.monthly, route: "sacrifice", month: x.month })), "2026-10-08"));
+  assert.equal(after.myContribution, "5");
+  assert.equal(after.trapTopUps.length, plan.n);
+  assert.equal(new Set(after.trapTopUps.map(u => u.group)).size, 1);
+  assert.equal(after.trapTopUps[0].perYear, t.amount);
+  assert.equal(bankedFor(after, "taxTrap"), t.amount);
+  const statuses = computeModuleStatuses(after, calcMetrics(after));
+  assert.equal(statuses.taxTrap.amount, 0);
+  for (const key of Object.keys(after.moduleBaselines)) assert.equal(pendingBank(after, key, statuses[key]?.amount || 0), 0, key);
+  const back = apply(after, removeTopUp(after, after.trapTopUps[0].group));
+  assert.equal(back.trapTopUps.length, 0);
+  assert.equal(bankedFor(back, "taxTrap"), 0);
+});
+
+test("a group taken back doesn't let the next one share a group with one still on the list", async () => {
+  const { recordTopUps, removeTopUp } = await import("./taxTrapRecord.js");
+  const one = (d, amount) => apply(d, recordTopUps(d, [{ amount, route: "sacrifice", month: 11 }], "2026-10-08"));
+  const ab = one(one(base, 1000), 2000);
+  const c = one(apply(ab, removeTopUp(ab, ab.trapTopUps[0].group)), 3000);
+  assert.equal(new Set(c.trapTopUps.map(u => u.group)).size, 2);
+  const left = apply(c, removeTopUp(c, c.trapTopUps[1].group));
+  assert.deepEqual(left.trapTopUps.map(u => u.amount), [2000]);
+});
+
+test("no pension route answered yet:the one chosen is saved for Pension, with no \"did you make a change?\"", async () => {
+  const { recordTopUps } = await import("./taxTrapRecord.js");
+  const open = { ...base, pensionType: "" };
+  open.moduleBaselines = bankChange(open, "pension", 0);
+  const after = apply(open, recordTopUps(open, [{ amount: 3000, route: "relief", month: 11 }], "2026-10-08"));
+  assert.equal(after.pensionType, "relief");
+  const statuses = computeModuleStatuses(after, calcMetrics(after));
+  assert.equal(pendingBank(after, "pension", statuses.pension?.amount || 0), 0);
+  // Already answered: left as it is.
+  assert.equal(recordTopUps(base, [{ amount: 3000, route: "relief", month: 11 }], "2026-10-08").pensionType, undefined);
+});

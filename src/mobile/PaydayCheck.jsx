@@ -4,17 +4,18 @@ import posthog from "posthog-js";
 import { CalendarPlus } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, CRITICAL } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
-import { yearProjection, paydayOf, monthKey, TRAP_START } from "../lib/taxTrap.js";
+import { yearProjection, salaryDrift, paydayOf, monthKey, TRAP_START } from "../lib/taxTrap.js";
 import { triggerCalendarReminder } from "./reminders.js";
 
 // The £100k trap through the year, for subscribers: their taxable pay to
 // date from each payslip (d.payToDate, as of d.payToDateOn) turns their
 // answers into where this tax year is heading (taxTrap.js yearProjection).
 // Home asks for it from each payday until answered (PaydayCheckCard); the
-// module shows where the year is heading (TrapTracking).
+// module works from it (taxTrap.js thisTaxYear), with PayToDateLinks.
 
 const today = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`; };
-const shortDate = s => new Date(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+// "YYYY-MM-DD" as "28 Sep", read as a local date.
+export const shortDate = s => { const [y, mo, day] = String(s).split("-").map(Number); return new Date(y, mo - 1, day).toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
 const pill = primary => ({ flex:1, background:primary ? G : WHITE, color:primary ? WHITE : TEXT, border:primary ? "none" : "1.5px solid rgba(22,47,36,0.15)", borderRadius:"100px", padding:"11px 14px", fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" });
 
 // A repeating calendar event on their payday, from the next one.
@@ -61,6 +62,8 @@ function headingLine(y) {
 export function PaydayCheckCard({ d, m, set }) {
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
+  // Pay to date well off their salary: asked once whether their pay's changed.
+  const [driftAsked, setDriftAsked] = useState(false);
   const done = () => set("paydayCheckedMonth", monthKey(new Date()));
   // Answered: checked in for this month once they move on, Done or not.
   const answered = useRef(false);
@@ -71,12 +74,20 @@ export function PaydayCheckCard({ d, m, set }) {
   const eyebrow = <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Payday check-in</div>;
   if (saved) {
     const y = yearProjection(d, m);
+    const drift = driftAsked ? null : salaryDrift(d, m);
     return (
       <div style={card}>
         {eyebrow}
         <div style={{fontSize:"13px",color:MUT,marginTop:"8px"}}>Your income this tax year is heading for</div>
         <div style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:y.over ? CRITICAL : G,lineHeight:1.15,marginTop:"2px"}}>{fmt(y.projected)}</div>
         <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 12px"}}>{headingLine(y)}</p>
+        {drift && <>
+          <div style={{fontSize:"14px",fontWeight:700,color:TEXT,lineHeight:1.35,margin:"4px 0 8px"}}>Has your pay {drift > m.salary ? "gone up" : "changed"} to about {fmt(drift)} a year?</div>
+          <div style={{display:"flex",gap:"8px",marginBottom:"12px"}}>
+            <button type="button" onClick={() => { set("salary", String(drift)); setDriftAsked(true); posthog.capture("pay_drift_answered", { changed: true }); }} style={pill(false)}>Yes</button>
+            <button type="button" onClick={() => { setDriftAsked(true); posthog.capture("pay_drift_answered", { changed: false }); }} style={pill(false)}>No</button>
+          </div>
+        </>}
         <div style={{display:"flex",gap:"8px"}}>
           <button type="button" onClick={done} style={pill(true)}>Done</button>
           <button type="button" onClick={() => navigate("/app/module/taxTrap")} style={pill(false)}>See the £100k trap</button>
@@ -98,23 +109,18 @@ export function PaydayCheckCard({ d, m, set }) {
   );
 }
 
-// Under the module's answer: where this tax year is heading, from their pay
-// to date or their answers, with a way to update it and a payday reminder.
-// From January, the days to 5 April as well.
-export function TrapTracking({ d, m, set }) {
+// Under the module's answer, for subscribers: a way to update pay to date
+// and a payday reminder. The answer itself is on that pay (thisTaxYear).
+export function PayToDateLinks({ d, set }) {
   const [editing, setEditing] = useState(false);
-  const y = yearProjection(d, m);
-  const lastStretch = new Date().getMonth() <= 3 && y.daysLeft > 0;
+  const tracked = +d.payToDate > 0;
   const link = { background:"none", border:"none", padding:0, color:G, fontSize:"12.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer", textDecoration:"underline", display:"inline-flex", alignItems:"center", gap:"4px" };
   return (
     <div style={{margin:"0 4px 16px"}}>
-      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:0}}>
-        On course for <b style={{fontFamily:SERIF,fontSize:"15px",color:y.over ? CRITICAL : G}}>{fmt(y.projected)}</b> this tax year, {y.tracked ? `from your pay to date on ${shortDate(y.asOf)}` : "from your answers"}. {headingLine(y)}{lastStretch ? ` ${y.daysLeft} days to 5 April.` : ""}
-      </p>
       {editing
-        ? <div style={{marginTop:"8px"}}><PayToDateForm d={d} set={set} onSaved={() => setEditing(false)} submitLabel="Update"/></div>
-        : <div style={{display:"flex",flexWrap:"wrap",gap:"14px",marginTop:"6px"}}>
-            <button type="button" onClick={() => setEditing(true)} style={link}>{y.tracked ? "Update pay to date" : "Add your pay to date"}</button>
+        ? <PayToDateForm d={d} set={set} onSaved={() => setEditing(false)} submitLabel="Update"/>
+        : <div style={{display:"flex",flexWrap:"wrap",gap:"14px"}}>
+            <button type="button" onClick={() => setEditing(true)} style={link}>{tracked ? "Update pay to date" : "Add your pay to date"}</button>
             <button type="button" onClick={() => addPaydayReminder(d)} style={link}><CalendarPlus size={13} aria-hidden="true"/>Remind me each payday</button>
           </div>}
     </div>

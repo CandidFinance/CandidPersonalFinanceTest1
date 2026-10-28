@@ -55,6 +55,10 @@ export const PROFILES = {
   familyNone: { ...rich, kidsStatus: "no" },
   familyPlanning: { ...rich, kidsStatus: "planning", kidsCount: "", kidsPreschool: "", kidsSchool: "", salary: "104000" },
   familyPartnerPays: { ...rich, salary: "70000", kidsCount: "2", partnerOver100k: "yes", partnerIncome: "112000" },
+  // £100k trap on pay to date: ahead of their salary, so the module, its card
+  // and Home work from the salary it implies (taxTrap.js thisTaxYear). From
+  // 6 April 2027 it reads as last year's and the module is on their answers.
+  trapPayToDate: { ...rich, salary: "98000", bonusAmount: "", hasBonus: "no", payToDate: "52000", payToDateOn: "2026-09-28" },
   // Paying it off comes out ahead: the opportunity, "Is the money spare?" and a lump sum.
   loanWorthOverpaying: { ...rich, salary: "75000", loanBalance: "18500", studentLoanRate: "6.4", hasPgLoan: "no", isaThisYearCash: "5000", cashTiers: [{ name: "Easy", amount: "40000", rate: "4.5" }] },
   // A balance set months ago: rolled on payday by payday as the app opens.

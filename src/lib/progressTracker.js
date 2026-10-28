@@ -20,7 +20,7 @@ import { bankedFor, MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from
 import { moduleAnswered } from "./appEntry.js";
 import { borrowingInputs } from "./borrowing.js";
 import { readinessMissing } from "./propertyReadiness.js";
-import { taxTrap, TRAP_NEAR, TRAP_EDGE } from "./taxTrap.js";
+import { taxTrap, thisTaxYear, TRAP_NEAR, TRAP_EDGE } from "./taxTrap.js";
 import { fmt } from "./format.js";
 
 const n = v => Math.max(0, +v || 0);
@@ -227,8 +227,10 @@ const TRAP_RISE = 10000;
 // Where their adjusted net income sits: the band, how far from the next
 // line that matters, and, over £100,000, the trap's figures (taxTrap.js):
 // the allowance lost and its tax, and what paying into a pension to get
-// back to £100,000 would take and cost in take-home pay.
+// back to £100,000 would take and cost in take-home pay. On this tax year
+// (thisTaxYear: pay to date and one-off top-ups), as the module has it.
 export function incomePosition(d, m) {
+  ({ d, m } = thisTaxYear(d, m));
   const income = Math.round(n(m.adjustedNetIncome));
   const scottish = !!m.scottish;
   const bands = incomeBands(scottish);

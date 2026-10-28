@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { pensionReveal } from "../../lib/moduleReveal.js";
 import { childcareSupport } from "../../lib/childcare.js";
 import { pensionOutlook, cliffEdge, retirementAdequacy } from "../../lib/crossModule.js";
@@ -95,6 +95,13 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
 
 export default function MobilePensionDeepDive({ d, m, set }) {
   const navigate = useNavigate();
+  // From the £100k module, past the annual allowance: straight to carry forward.
+  const toCarryForward = typeof window !== "undefined" && window.location.hash === "#carry-forward";
+  useEffect(() => {
+    if (!toCarryForward) return;
+    const timer = setTimeout(() => document.getElementById("carry-forward")?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
+    return () => clearTimeout(timer);
+  }, [toCarryForward]);
   const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const [cfYears, setCfYears] = useState(defaultCarryForwardYears());
   const [showTaxFreeInfo, setShowTaxFreeInfo] = useState(false);
@@ -384,11 +391,11 @@ export default function MobilePensionDeepDive({ d, m, set }) {
       {/* Retired with no earnings, the what-ifs (paying in more, a bonus,
           growth to retirement) don't apply. */}
       {showExplore && (
-        <MobileWinTile number={exploreNum} title="Explore what-ifs" tagLabel="What if"
+        <MobileWinTile number={exploreNum} title="Explore what-ifs" tagLabel="What if" defaultOpen={toCarryForward}
           headline={`${hasStatedBonus ? "Paying in your bonus" : "Paying a bonus into your pension"}${cf.showCarryForward ? ", and using past years' allowance" : ""}`}>
       {showSacrificeCalc && !taper.recoverable && sacrificeTile}
 
-      <CarryForwardTile cf={cf} win3Num={win3Num} setCfYears={setCfYears} rowStyle={rowStyle} aa={aa}/>
+      <div id="carry-forward" style={{scrollMarginTop:"80px"}}><CarryForwardTile cf={cf} win3Num={win3Num} setCfYears={setCfYears} rowStyle={rowStyle} aa={aa} open={toCarryForward}/></div>
 
       <BonusTile hasStatedBonus={hasStatedBonus} win4Num={win4Num} bonusSacrifice={bonusSacrifice} d={d} set={set} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m}/>
 
@@ -578,11 +585,11 @@ function EmployerMatchTile({ showMatchWin, win1Num, m, d, trPct, contributing, r
 }
 
 // "Pay in more using past years' allowance": carry forward, year by year.
-function CarryForwardTile({ cf, win3Num, setCfYears, rowStyle, aa }) {
+function CarryForwardTile({ cf, win3Num, setCfYears, rowStyle, aa, open = false }) {
   return (
     <>
       {cf.showCarryForward && (
-        <MobileWinTile number={win3Num} title="Pay in more using past years' allowance"
+        <MobileWinTile number={win3Num} title="Pay in more using past years' allowance" defaultOpen={open}
           headline={cf.cfTotalUnused > 0
             ? `Up to ${fmt(cf.cfMaxContributable)} could go into your pension this tax year using carry forward`
             : "Fill in your last 3 tax years below to see how much you could inject in one go"}

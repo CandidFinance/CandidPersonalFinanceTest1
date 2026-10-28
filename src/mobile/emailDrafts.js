@@ -51,20 +51,39 @@ ${signOff(name)}`,
   };
 }
 
-// The £100k tax trap's pension payment, by salary sacrifice, from the next
-// pay period.
-export function salarySacrificeDraft({ name, perMonth, perYear }) {
+// A higher salary sacrifice pension contribution for the rest of the tax
+// year (the £100k trap's monthly plan): from `from`% to `to`% of salary.
+export function pensionIncreaseDraft({ name, from, to, month }) {
   const n = (name || "").trim();
-  const gbp = v => `£${Math.round(v).toLocaleString("en-GB")}`;
   return {
-    subject: n ? `Pension salary sacrifice - ${n}` : "Pension salary sacrifice",
+    subject: n ? `Pension salary sacrifice increase - ${n}` : "Pension salary sacrifice increase",
     body: `Hi,
 
 Hope you are well.
 
-I'd like to pay an extra ${gbp(perMonth)} a month (${gbp(perYear)} a year) into my workplace pension through salary sacrifice, starting from the next pay period. Could you let me know:
+I'd like to increase my workplace pension contribution through salary sacrifice from ${from}% to ${to}% of my salary, starting from my ${month} pay, for the rest of this tax year. Could you let me know:
 
-1. What I need to do to set this up (any forms or portal steps), and the cut-off for it to take effect from the next payroll.
+1. What I need to do to set this up (any forms or portal steps), and the cut-off for ${month}'s payroll.
+2. Whether any employer National Insurance saving is passed on into my pension.
+
+Many thanks,
+${signOff(name)}`,
+  };
+}
+
+// A one-off salary sacrifice from one month's pay (the £100k trap's top-ups).
+export function oneOffSacrificeDraft({ name, amount, month }) {
+  const n = (name || "").trim();
+  const gbp = v => `£${Math.round(v).toLocaleString("en-GB")}`;
+  return {
+    subject: n ? `One-off pension salary sacrifice - ${n}` : "One-off pension salary sacrifice",
+    body: `Hi,
+
+Hope you are well.
+
+I'd like to make a one-off payment of ${gbp(amount)} into my workplace pension through salary sacrifice, from my ${month} pay. Could you let me know:
+
+1. What I need to do to set this up (any forms or portal steps), and the cut-off for ${month}'s payroll.
 2. Whether any employer National Insurance saving is passed on into my pension.
 
 Many thanks,

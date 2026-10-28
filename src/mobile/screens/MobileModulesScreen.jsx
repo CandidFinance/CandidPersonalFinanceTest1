@@ -8,7 +8,7 @@ import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel, statusLine, ELSEWHERE } from "../statusLabel.js";
 import { notStarted, dormantModules, MODULE_PITCH } from "../../lib/appEntry.js";
-import { taxTrap } from "../../lib/taxTrap.js";
+import { taxTrap, thisTaxYear } from "../../lib/taxTrap.js";
 import ModuleStartRow from "../ModuleStartRow.jsx";
 import BankConfirm from "../BankConfirm.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
@@ -63,7 +63,8 @@ function moduleInsights(mm, d, m) {
       ];
     }
     case "taxTrap": {
-      const t = taxTrap(d, m);
+      const year = thisTaxYear(d, m);
+      const t = taxTrap(year.d, year.m);
       if (!t) return [];
       return [
         { label: t.over ? "Marginal tax rate" : "Marginal tax rate past £100k", value: `${Math.round((t.over ? t.rate.rate : t.trapRate) * 1000) / 10}%` },

@@ -9,6 +9,7 @@
 import { calcMetrics } from "./metrics.js";
 import { computeModuleStatuses, bankChange, unbankChange, bankPatch, answersMoved } from "./moduleStatus.js";
 import { CHOICE_IDS, choiceFor, withChoice, withoutChoice } from "./opportunityChoices.js";
+import { taxYearOf } from "./taxYear.js";
 
 const trapAmount = d => computeModuleStatuses(d, calcMetrics(d)).taxTrap?.amount || 0;
 // Today as the local date, so just after midnight isn't yesterday.
@@ -27,6 +28,44 @@ function settle(d, except, was) {
   return next.moduleBaselines || {};
 }
 
+// Top-ups this tax year (taxTrap.js trapTopUps), as one group: a monthly
+// plan's payments ([{ amount, route, month }], one a payday) or a one-off
+// from the bonus. Their monthly contribution stays as it is; how they pay in
+// (pensionType), if Pension doesn't have it yet, is the route chosen, for
+// Pension too. What it keeps a year of the trap's £ is banked as a change
+// made today (on the group's first payment), and the baseline taken at the
+// new £. The patch (fields to set).
+export function recordTopUps(d, payments, on = today()) {
+  const now = new Date();
+  const taxYear = taxYearOf(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+  // One past the highest group number so far: the list's length could repeat
+  // a group still on it once an earlier one is taken back.
+  const group = `${on}-${Math.max(-1, ...(d.trapTopUps || []).map(u => +String(u.group || u.id).split("-").pop() || 0)) + 1}`;
+  const ups = payments.filter(u => u.amount > 0).map((u, i) => ({ id: `${group}-${i}`, group, amount: Math.round(u.amount), route: u.route, month: +u.month || now.getMonth() + 1, taxYear, on }));
+  if (!ups.length) return {};
+  const route = d.pensionType ? {} : { pensionType: ups[0].route };
+  let next = { ...d, ...route, trapTopUps: [...(d.trapTopUps || []), ...ups] };
+  ups[0].perYear = Math.max(0, Math.round(trapAmount(d) - trapAmount(next)));
+  next = { ...next, moduleBaselines: bankChange(next, "taxTrap", ups[0].perYear, on) };
+  next = { ...next, moduleBaselines: bankPatch(next, "taxTrap", trapAmount(next), false, on) };
+  if (route.pensionType) next = { ...next, moduleBaselines: settle(next, "taxTrap", d) };
+  return { ...route, trapTopUps: next.trapTopUps, moduleBaselines: next.moduleBaselines };
+}
+
+// Taking a group back (`group`, or a single top-up's id): off the list, and
+// what it banked off the baseline.
+export function removeTopUp(d, group) {
+  const gone = (d.trapTopUps || []).filter(u => (u.group || u.id) === group);
+  if (!gone.length) return {};
+  const perYear = gone.reduce((s, u) => s + (u.perYear || 0), 0);
+  let next = { ...d, trapTopUps: d.trapTopUps.filter(u => (u.group || u.id) !== group) };
+  next = { ...next, moduleBaselines: unbankChange(next, "taxTrap", perYear, gone[0].on) };
+  next = { ...next, moduleBaselines: bankPatch(next, "taxTrap", trapAmount(next), false) };
+  return { trapTopUps: next.trapTopUps, moduleBaselines: next.moduleBaselines };
+}
+
+// Before top-ups (to 28 Oct 2026), "I've set this up" raised their pension %:
+// recordSacrifice is how those were recorded, undoSacrifice takes one back.
 // The patch (fields to set) recording `amount` a year paid in by `route`.
 export function recordSacrifice(d, m, amount, route, on = today()) {
   const prevContribution = d.myContribution ?? "";
