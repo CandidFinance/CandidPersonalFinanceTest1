@@ -169,4 +169,20 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
   );
 }
 
+// One card on its own, in the stack's light colours: what a stack will hold
+// before there's anything to fill it (Home before the score, Modules before
+// a module is answered). Nothing to turn, so no arrows. `label`: its top
+// line. `body`: t => content in theme t, as a stack's card.
+export function StillCard({ label, body, ...rest }) {
+  return (
+    <div className="card-stack" {...rest}>
+      <style>{CSS}</style>
+      <div style={{background:LIGHT.bg,border:LIGHT.border,boxShadow:LIGHT.shadow,borderRadius:OPPORTUNITY_TILE_RADIUS,padding:"16px 20px 18px"}}>
+        <div style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:LIGHT.label,minHeight:"18px"}}>{label}</div>
+        {body(LIGHT)}
+      </div>
+    </div>
+  );
+}
+
 const arrow = { width:"30px", height:"30px", borderRadius:"50%", border:"1px solid rgba(22,47,36,0.15)", background:WHITE, display:"grid", placeItems:"center", cursor:"pointer", padding:0 };

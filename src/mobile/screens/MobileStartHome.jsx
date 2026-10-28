@@ -5,6 +5,8 @@ import { mobileGreeting } from "../copy.js";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
 import { moduleEstimate } from "../../lib/crossModule.js";
 import { ProgressLine, PrimaryButton } from "../onboarding/OnboardingShell.jsx";
+import { StillCard } from "../CardStack.jsx";
+import ScoreDonut from "../ScoreDonut.jsx";
 
 // Home before the Candid score appears: the modules to start with, their
 // picks from the entry first. The score waits until every pick is answered
@@ -44,18 +46,31 @@ export default function MobileStartHome({ d, m, set, onStartModule }) {
         {mobileGreeting(d)}
       </h1>
 
-      {/* The score's place, held until every pick is answered. The progress
-          line is its one indicator (screen readers get the count). */}
-      <div style={label}>Candid Score</div>
-      <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:"6px 0 0"}}>
-        {needsScored
-          ? `Your Candid score covers ${listText(SCORED_MODULES.map(k => moduleMeta(k).title))}. Finish one of them to see it.`
-          : `Finish ${listText(left.map(k => moduleMeta(k).title))} to see your Candid score.`}
-      </p>
-      <ProgressLine position={reached} total={target} style={{marginTop:"10px"}}/>
+      {/* The score's place, held until every pick is answered: Home's
+          figures card greyed, its figure and score blank. The progress line
+          is its one indicator (screen readers get the count). */}
+      <StillCard data-tour="home-score" label="Left on the table/yr" body={t => (
+        <>
+          <div style={{display:"flex",alignItems:"flex-start",gap:"14px"}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>
+              <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>
+                {needsScored
+                  ? `Your Candid score covers ${listText(SCORED_MODULES.map(k => moduleMeta(k).title))}. Finish one of them to see it.`
+                  : `Finish ${listText(left.map(k => moduleMeta(k).title))} to see your Candid score.`}
+              </p>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,opacity:0.6}}>
+              <ScoreDonut value={null} size={76} stroke={7} track={t.track}/>
+              <div style={{fontSize:"9.5px",fontWeight:700,color:t.label,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"6px"}}>Candid score</div>
+            </div>
+          </div>
+          <ProgressLine position={reached} total={target} style={{marginTop:"14px"}}/>
+        </>
+      )}/>
 
       {startMeta && (
-        <div style={{marginTop:"24px"}}>
+        <div data-tour="home-modules" style={{marginTop:"24px"}}>
           <div style={label}>Next module</div>
           <div style={{...card,padding:"18px",marginTop:"10px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>

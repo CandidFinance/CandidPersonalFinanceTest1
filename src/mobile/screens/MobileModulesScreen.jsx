@@ -1,6 +1,6 @@
 import { childcareSupport } from "../../lib/childcare.js";
 import { Users, ChevronRight, Lock } from "lucide-react";
-import CardStack, { DARK } from "../CardStack.jsx";
+import CardStack, { DARK, StillCard } from "../CardStack.jsx";
 import AlertBox from "../AlertBox.jsx";
 import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD } from "../../design-tokens.js";
 import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
@@ -245,8 +245,26 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
 
   return (
     <div>
+      {/* Before any module's answered: the summary card greyed, its figure
+          blank, the counts as they stand. */}
+      {live === 0 && (
+        <StillCard data-tour="modules-cards" label="Your modules" body={t => (
+          <>
+            <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>
+            <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>What's at stake shows here once a module is answered.</p>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3, minmax(0, 1fr))",gap:"8px",marginTop:"14px",paddingTop:"10px",borderTop:`1px solid ${t.rule}`}}>
+              {[["Live", live], ["Not started", toExplore], ["Need action", needActionCount]].map(([l, n]) => (
+                <div key={l}>
+                  <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,lineHeight:1,color:t.figure}}>{n}</div>
+                  <div style={{fontSize:"9.5px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"3px",color:t.label}}>{l}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}/>
+      )}
       {live > 0 && (
-        <section aria-label="Your modules">
+        <section aria-label="Your modules" data-tour="modules-cards">
           <CardStack cards={cards} peek={PEEK} turnLabels={["Show the previous module", "Show the next module"]}/>
           {/* "Did you make the change?", under the wallet so a card behind
               never hides it. */}
@@ -261,7 +279,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       {/* Answered, but nothing in it applies (Kids & family with no
           children and none planned): greyed, and still there to change. */}
       {notApplicable.length > 0 && (<>
-        <div style={{...SUBHEAD,marginTop:live ? "18px" : 0}}>Not applicable</div>
+        <div style={{...SUBHEAD,marginTop:"18px"}}>Not applicable</div>
         <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
           {notApplicable.map(mm => (
             <button key={mm.key} type="button" onClick={() => onOpenModule(mm.key)} style={{display:"flex",alignItems:"center",gap:"12px",width:"100%",textAlign:"left",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.05)",padding:"14px 16px",cursor:"pointer",fontFamily:"inherit"}}>
@@ -281,7 +299,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       {/* Modules with no answers yet, picks first, each opening its
           walk-through; then any not open to them yet. */}
       {toExplore > 0 && (
-        <section style={{...TILE,marginTop:live || notApplicable.length ? "22px" : 0}}>
+        <section style={{...TILE,marginTop:"22px"}}>
           <div style={TILE_TITLE}>Still to explore</div>
           <div style={TILE_SUB}>{toExplore} {toExplore === 1 ? "module" : "modules"} not started yet</div>
           <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>

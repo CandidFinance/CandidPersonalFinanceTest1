@@ -11,9 +11,9 @@ export const helpText = { fontSize:"12px", color:MUT, lineHeight:1.5, margin:0 }
 
 // A section's tile: white, or `wash` for the headline pair (Home's hero
 // tile treatment), with its title and, on the right, an optional action.
-export function Tile({ title, action = null, wash = false, children }) {
+export function Tile({ title, action = null, wash = false, tour, children }) {
   return (
-    <section style={{display:"flex",flexDirection:"column",minWidth:0,background:wash ? HERO_TILE_BG : WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,
+    <section data-tour={tour} style={{display:"flex",flexDirection:"column",minWidth:0,background:wash ? HERO_TILE_BG : WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,
       boxShadow:wash ? "0 4px 18px rgba(22,47,36,0.07)" : "0 2px 10px rgba(22,47,36,0.05)",padding:"16px 14px"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px"}}>
         <h2 style={kicker}>{title}</h2>

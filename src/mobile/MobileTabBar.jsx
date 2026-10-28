@@ -36,7 +36,7 @@ export default function MobileTabBar({ active, onNavigate }) {
         {MOBILE_NAV_ITEMS.map(item => {
           const isActive = item.key === active;
           return (
-            <button key={item.key} type="button" onClick={() => onNavigate(item.path)} style={{
+            <button key={item.key} type="button" data-tour={`tab-${item.key}`} onClick={() => onNavigate(item.path)} style={{
               flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"4px",
               background:"transparent", border:"none", padding:"10px 4px 8px", cursor:"pointer",
             }}>

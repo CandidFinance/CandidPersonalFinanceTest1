@@ -145,7 +145,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       {!d.payCheckDue && hasAccess() && d.employmentStatus === "employed" && trapInView(d, m.adjustedNetIncome) && paydayCheckDue(d) && <PaydayCheckCard d={d} m={m} set={set}/>}
 
       {stillToDo.length > 0 && (
-        <div style={{marginTop:"22px"}}>
+        <div data-tour="home-modules" style={{marginTop:"22px"}}>
           <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Still to do</div>
           <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
             {stillToDo.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}

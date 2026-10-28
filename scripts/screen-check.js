@@ -124,6 +124,17 @@ try {
       // Cash's tour, the first time it opens (CashTour.jsx): each stop,
       // past the estimates and the email, to the closing card.
       const tour = page.locator('[role="dialog"][aria-modal="true"]');
+      // The app's tour, the first time Home opens (AppTour.jsx): each stop,
+      // across Progress and Modules, and back to Home.
+      if (!broken && r === "/app/home") {
+        for (let i = 0; i < 10 && await tour.count(); i++) {
+          await tour.getByRole("button", { name: /^(Next|Done)$/ }).first().click();
+          await page.waitForTimeout(1300);
+        }
+        if (await tour.count()) problems.push(`${name} ${r}: the app tour didn't close`);
+        if (!page.url().endsWith("/app/home")) problems.push(`${name} ${r}: the app tour ended on ${page.url()}`);
+        broken = await check(`${r} (tour)`);
+      }
       if (!broken && r === "/app/module/cash") {
         for (let i = 0; i < 9 && await tour.count(); i++) {
           await tour.getByRole("button", { name: /^(Next|Not now|Done)$/ }).first().click();

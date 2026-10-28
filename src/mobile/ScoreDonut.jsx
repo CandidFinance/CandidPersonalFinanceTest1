@@ -6,11 +6,12 @@ import { CDARK, TEXT, MUT, SERIF, WHITE } from "../design-tokens.js";
 // scoreBand, or gold while a gain is filling in). The ring is the score's one
 // coloured indicator; the figure stays plain (CLAUDE.md rule 4). `onDark`
 // is for a dark background: a light track and white figures. `track` sets
-// the empty ring's colour (the warm CDARK by default).
+// the empty ring's colour (the warm CDARK by default). `value` null: no score
+// yet, an empty ring and a dash.
 export default function ScoreDonut({ value, color, size = 112, stroke = 10, onDark = false, track = CDARK }) {
   const r = (size - stroke) / 2;
   const circumference = 2 * Math.PI * r;
-  const filled = Math.max(0, Math.min(100, value)) / 100 * circumference;
+  const filled = value == null ? 0 : Math.max(0, Math.min(100, value)) / 100 * circumference;
   const centre = size / 2;
   return (
     <div style={{position:"relative",width:`${size}px`,height:`${size}px`,flexShrink:0}}>
@@ -22,7 +23,7 @@ export default function ScoreDonut({ value, color, size = 112, stroke = 10, onDa
         )}
       </svg>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-        <span style={{fontFamily:SERIF,fontSize:`${Math.round(size * 0.3)}px`,fontWeight:700,color:onDark ? WHITE : TEXT,lineHeight:1}}>{value}</span>
+        <span style={{fontFamily:SERIF,fontSize:`${Math.round(size * 0.3)}px`,fontWeight:700,color:value == null ? MUT : onDark ? WHITE : TEXT,lineHeight:1}}>{value ?? "–"}</span>
         <span style={{fontSize:"11px",color:onDark ? "rgba(255,255,255,0.6)" : MUT,marginTop:"3px"}}>/100</span>
       </div>
     </div>

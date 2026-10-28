@@ -81,13 +81,13 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenMo
       <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,margin:"0 0 16px",lineHeight:1.2}}>Your progress</h1>
 
       <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
-        <section aria-label="Your figures">
+        <section aria-label="Your figures" data-tour="progress-cards">
           <CardStack cards={cards}/>
         </section>
 
         {/* Add a goal first, then the user's pots (newest first), then this
             tax year's goals from the modules. */}
-        <Tile title="Goals">
+        <Tile title="Goals" tour="progress-goals">
           <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"12px"}}>
             <AddGoalTile names={vaults.map(v => v.name)} open={expanded === "add"} onToggle={() => toggle("add")}
               onSave={vault => { saveVault(d, set, vault, { added: true, fromGoal: false }); setExpanded(null); }}/>

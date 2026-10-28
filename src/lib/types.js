@@ -21,6 +21,7 @@
  * @property {boolean} goalsAsked
  * @property {boolean} scoreShown The Candid score has appeared (recorded once).
  * @property {boolean} [cashTourDone] The Cash page's tour finished or skipped.
+ * @property {boolean} [appTourDone] The app's tour of Home, Progress and Modules started (AppTour.jsx).
  * @property {boolean} [emailTileDismissed] The email tile on the Cash page closed.
  * @property {boolean} [emergencyCardDismissed] Cash's emergency fund card closed while at its target.
  * @property {string[]} financialGoals

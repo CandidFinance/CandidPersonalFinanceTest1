@@ -104,7 +104,7 @@ export default function HomeHero({ d, totalOpp, saved, scoreShown, scoreColor, s
   ];
 
   return (
-    <section aria-label="Your figures" style={{marginBottom:"22px"}}>
+    <section aria-label="Your figures" data-tour="home-score" style={{marginBottom:"22px"}}>
       <CardStack cards={cards} turnLabels={["Show the other card", "Show the other card"]}/>
     </section>
   );

@@ -20,6 +20,8 @@ import MobileUnlock from "./mobile/screens/MobileUnlock.jsx";
 import SaveFiguresOffer from "./mobile/SaveFiguresOffer.jsx";
 import CheckedCard from "./mobile/CheckedCard.jsx";
 import CashTour from "./mobile/onboarding/CashTour.jsx";
+import AppTour from "./mobile/onboarding/AppTour.jsx";
+import { getConsent } from "./lib/consent.js";
 import MobileInputsScreen from "./mobile/screens/MobileInputsScreen.jsx";
 import { isLocked, unlockPatch, firstUnlockPatch, onTrackReward, UNLOCK_GATE_ON } from "./lib/unlock.js";
 import { checkAccessOnLoad, accessInfo, saveStateSoon, identifySubscriber } from "./lib/entitlement.js";
@@ -68,12 +70,14 @@ const BLANK_DATA = {
   // `scoreShown`: the Candid score has appeared (src/lib/appEntry.js
   // scoreUnlocked), so its first appearance is recorded once.
   goalPicks:[], goalsAsked:false, scoreShown:false,
-  // `cashTourDone`: the Cash page's tour (CashTour.jsx) finished or skipped.
+  // `cashTourDone`: the Cash page's tour (CashTour.jsx) finished or skipped;
+  // `appTourDone` the same for the app's tour of Home, Progress and Modules
+  // (AppTour.jsx).
   // `emailTileDismissed`: the email tile at the top of the Cash page closed.
   // `emergencyCardDismissed`: Cash's emergency fund card closed while the
   // fund is at its target (cleared once it falls below).
   // `trapSubscribeClosed`: the £100k tax trap's subscribe tile closed.
-  cashTourDone:false, emailTileDismissed:false, emergencyCardDismissed:false, trapSubscribeClosed:false,
+  cashTourDone:false, appTourDone:false, emailTileDismissed:false, emergencyCardDismissed:false, trapSubscribeClosed:false,
   // Which of the active modules (cash, investments, pension, studentLoan, kids —
   // matching MODULE_META keys) the user has picked. Drives which modules
   // computeModuleStatuses treats as applicable.
@@ -545,6 +549,7 @@ export default function AppShell() {
   // the Cash tour, kept on screen once it's marked done until it closes.
   const [checkedCard, setCheckedCard] = useState(null);
   const [tourShowing, setTourShowing] = useState(false);
+  const [appTourShowing, setAppTourShowing] = useState(false);
   // Gone once the page changes, however it's left.
   useEffect(() => { setCheckedCard(null); }, [location.pathname]);
   // The entry's hand-off to the first module is showing: the user is
@@ -719,28 +724,39 @@ export default function AppShell() {
       onGoTo={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}/>
   );
 
-  if (pathname === "/app/home") return (
-    <MobileLayout d={d} assist={assistNode} activeTab="home" headerRight={editInputsButton}>
-      <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules} savingsRates={savingsRates} approvedEvents={approvedEvents}
-        onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}/>
-    </MobileLayout>
-  );
-
-  if (pathname === "/app/progress") return (
-    <MobileLayout d={d} assist={assistNode} activeTab="progress" headerRight={editInputsButton}>
-      <ProgressTrackerDashboard d={d} m={m} statuses={statuses} set={set}
-        onOpenModule={key => navigate(`/app/module/${key}`)}/>
-    </MobileLayout>
-  );
-
-  if (pathname === "/app/modules") return (
-    <MobileLayout d={d} assist={assistNode} activeTab="modules" headerRight={editInputsButton}>
-      <MobileModulesScreen d={d} m={m} set={set} statuses={statuses} insights={insights}
-        completedModules={completedModules}
-        onMarkReviewed={markModuleComplete}
-        onOpenModule={key => navigate(`/app/module/${key}`)}
-        onOpenProperty={() => navigate("/app/property")}/>
-    </MobileLayout>
+  // Home, Progress and Modules: one tree, so the app's tour (once, the first
+  // time Home opens) stays on screen as it moves between them, and while it
+  // does, each page fades in as it changes.
+  // A first answer's closing card (CheckedCard, or the Cash tour's last
+  // stop): its Done goes on to Home, where the app's tour starts, until
+  // that tour has run. Not while the cookie notice waits, as the tour waits
+  // for it too (AppTour.jsx).
+  const toAppTour = d.appTourDone || getConsent() === null ? null : () => { navigate("/app/home"); scrollToTop(); };
+  const tabScreen = { "/app/home": "home", "/app/progress": "progress", "/app/modules": "modules" }[pathname];
+  if (tabScreen) return (
+    <>
+      <MobileLayout d={d} assist={assistNode} activeTab={tabScreen} headerRight={editInputsButton} pageKey={pathname} fadeIn={appTourShowing}>
+        {tabScreen === "home" && (
+          <MobileHomeScreen insights={insights} d={d} m={m} set={set} statuses={statuses} completedModules={completedModules} savingsRates={savingsRates} approvedEvents={approvedEvents}
+            onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}/>
+        )}
+        {tabScreen === "progress" && (
+          <ProgressTrackerDashboard d={d} m={m} statuses={statuses} set={set}
+            onOpenModule={key => navigate(`/app/module/${key}`)}/>
+        )}
+        {tabScreen === "modules" && (
+          <MobileModulesScreen d={d} m={m} set={set} statuses={statuses} insights={insights}
+            completedModules={completedModules}
+            onMarkReviewed={markModuleComplete}
+            onOpenModule={key => navigate(`/app/module/${key}`)}
+            onOpenProperty={() => navigate("/app/property")}/>
+        )}
+      </MobileLayout>
+      {((tabScreen === "home" && !d.appTourDone && !assistState.open) || appTourShowing) && (
+        <AppTour screen={tabScreen} scoreShowing={scoreShowing} set={set}
+          onStart={() => setAppTourShowing(true)} onClose={() => setAppTourShowing(false)}/>
+      )}
+    </>
   );
 
   const PROPERTY_STEP_PATHS = { readiness:"/app/property", mortgage:"/app/property/mortgage", rentVsBuy:"/app/property/rent-vs-buy" };
@@ -1008,9 +1024,10 @@ export default function AppShell() {
         {mobileActiveModule === "cash" && (!d.cashTourDone || tourShowing) && (
           <CashTour d={d} m={m} set={set} rateCost={rateCost} estimates={estimateItems(d, "cash").map(i => i.phrase)}
             onExactFigures={() => openInputs("cash")} onEmail={saveEmail("tour")}
-            onStart={() => setTourShowing(true)} onClose={() => setTourShowing(false)}/>
+            onStart={() => setTourShowing(true)} onClose={() => setTourShowing(false)} onDone={toAppTour}/>
         )}
-        {checkedCard === mobileActiveModule && <CheckedCard moduleKey={checkedCard} onClose={() => setCheckedCard(null)}/>}
+        {checkedCard === mobileActiveModule && <CheckedCard moduleKey={checkedCard} onClose={() => setCheckedCard(null)}
+          onDone={() => { setCheckedCard(null); toAppTour?.(); }}/>}
       </MobileLayout>
     );
   }

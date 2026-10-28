@@ -39,7 +39,8 @@ export function CheckedCardBody({ moduleKey, onDone, buttonRef }) {
 }
 
 // Over the page, centred on a dimmed screen; Done or Escape closes it.
-export default function CheckedCard({ moduleKey, onClose }) {
+// `onDone`: Done does that instead (on to Home for the app's tour).
+export default function CheckedCard({ moduleKey, onClose, onDone = onClose }) {
   const reduce = useReducedMotion();
   const buttonRef = useRef(null);
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function CheckedCard({ moduleKey, onClose }) {
     <div role="dialog" aria-modal="true" aria-labelledby="checked-title"
       style={{ position: "fixed", inset: 0, zIndex: 4700, background: "rgba(22,47,36,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
       <motion.div initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} style={{ width: "100%", maxWidth: "548px" }}>
-        <CheckedCardBody moduleKey={moduleKey} onDone={onClose} buttonRef={buttonRef}/>
+        <CheckedCardBody moduleKey={moduleKey} onDone={onDone} buttonRef={buttonRef}/>
       </motion.div>
     </div>
   );
