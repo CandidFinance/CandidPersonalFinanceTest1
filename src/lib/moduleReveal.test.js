@@ -72,6 +72,15 @@ test("over £100,000 with a toddler in England: the childcare that stops, counte
   assert.match(trap[2].body, /^It costs £1,710 of take-home, and your pension gains £4,500\. With £10,290 of childcare support back, that's £8,580 a year better off\.$/);
 });
 
+test("a £100k trap top-up back to £100,000: Kids & family agrees childcare isn't stopped", () => {
+  const d = { ...family, salary: "110000", kidsPreschool: "1", kidsSchool: "0", childcareMonthly: "1500", partnerOver100k: "no",
+    trapTopUps: [{ id: "s11", amount: 4500, route: "sacrifice", month: 11, taxYear: 2026 }] };
+  const { statuses } = kids(d);
+  assert.equal(statuses.taxTrap.amount, 0);
+  assert.equal(statuses.kids.elsewhere, null);
+  assert.doesNotMatch(statuses.kids.impactLabel || "", /stops over £100,000/);
+});
+
 test("Tax-Free Childcare not claimed, a partner over £100,000, and close to the line", () => {
   const unclaimed = kids({ ...family, salary: "60000", kidsPreschool: "0", kidsSchool: "1", childcareMonthly: "400", partnerOver100k: "no", tfcClaiming: "no" });
   assert.equal(unclaimed.steps[0].figure, "£960 a year");

@@ -125,7 +125,7 @@ export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
       {hasAccess() && answers.employmentStatus === "employed" && <PayToDateLinks d={answers} set={set}/>}
 
       {/* One-off top-ups this tax year, each with a way to take it off. */}
-      <TopUps answers={answers} metrics={metrics} ups={ups} onRemove={dropTopUp}/>
+      <TopUps d={d} m={m} ups={ups} onRemove={dropTopUp}/>
 
       {/* What they've set up this tax year: the same switch, on; off undoes it. */}
       {recorded && (
@@ -309,8 +309,8 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
   const each = Math.min(chosen ?? target, max);
   const total = each * n;
   const p = pensionPath(d, m, total, route);
-  const past = pastAllowance(answers, metrics, total);
-  const pastAlready = pastAllowance(answers, metrics).over > 0;
+  const past = pastAllowance(d, m, total);
+  const pastAlready = pastAllowance(d, m).over > 0;
   const first = plan.months[0]?.month;
   const pctTo = plan.pctFor(each);
   const [step, setStep] = useState(seen ? WALK_STEPS : 0);
@@ -699,9 +699,9 @@ function AllowanceNote({ past }) {
 
 // Top-ups this tax year (taxTrap.js trapTopUps), under the answer: a
 // monthly plan or a one-off a row, each with a way to take it off, and the annual allowance if they're past it.
-function TopUps({ answers, metrics, ups, onRemove }) {
+function TopUps({ d, m, ups, onRemove }) {
   if (!ups.length) return null;
-  const past = pastAllowance(answers, metrics);
+  const past = pastAllowance(d, m);
   // A monthly plan's payments as one row.
   const groups = Object.values(ups.reduce((g, u) => { (g[u.group || u.id] ||= []).push(u); return g; }, {}));
   return (

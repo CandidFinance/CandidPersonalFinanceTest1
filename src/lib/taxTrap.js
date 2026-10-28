@@ -23,7 +23,7 @@ import { SL_REPAYMENT_THRESHOLDS, SL_REPAYMENT_RATES } from "./studentLoan.js";
 import { payGrowthOf, calcMetrics } from "./metrics.js";
 import { taxYearFor, taxYearOf } from "./taxYear.js";
 import { payFactor } from "./growth.js";
-import { calcAnnualAllowanceRoom } from "./pension.js";
+import { calcAnnualAllowanceRoomBeforeTopUps } from "./pension.js";
 import { childcareSupport } from "./childcare.js";
 
 export const TRAP_START = PA_TAPER_START;
@@ -357,8 +357,11 @@ export function salaryDrift(d, m, today = new Date()) {
 // The answers and metrics the module works from this tax year: on the salary
 // their pay to date implies, once it's in, less the salary sacrifice
 // top-ups; relief at source top-ups off adjusted net income (not pay). Else
-// their own. `y` is the projection. From their own answers only: run on what
-// this returns, it would count pay to date and the top-ups twice.
+// their own. `y` is the projection. m.salaryBeforeTopUps and m.topUpsTotal:
+// the salary before the sacrifice top-ups and all the top-ups, for the
+// annual allowance (childcare.js). From their own answers
+// only: run on what this returns, it would count pay to date and the top-ups
+// twice.
 export function thisTaxYear(d, m, today = new Date()) {
   const y = yearProjection(d, m, today);
   const ups = topUpsThisYear(d, today);
@@ -367,16 +370,16 @@ export function thisTaxYear(d, m, today = new Date()) {
   const salary = Math.round((implied ?? m.salary) - sum(ups, "sacrifice") / keptOf(d));
   if (salary === Math.round(m.salary) && !relief) return { d, m, y };
   const at = { ...d, salary: String(salary) };
-  const mm = calcMetrics(at);
+  const mm = { ...calcMetrics(at), salaryBeforeTopUps: implied ?? m.salary, topUpsTotal: sum(ups) };
   return { d: at, m: relief ? { ...mm, adjustedNetIncome: mm.adjustedNetIncome - relief, topUpRelief: relief } : mm, y };
 }
 
 // Annual allowance left this year after the top-ups.
-export const allowanceLeft = (d, m, today = new Date()) => Math.max(0, calcAnnualAllowanceRoom(d, m).room - sum(topUpsThisYear(d, today)));
+export const allowanceLeft = (d, m, today = new Date()) => Math.max(0, calcAnnualAllowanceRoomBeforeTopUps(d, m).room - sum(topUpsThisYear(d, today)));
 // How far `extra` more on top of this year's top-ups goes past the annual
 // allowance (0 within it): past it, carry forward (Pension) may cover it.
 export function pastAllowance(d, m, extra = 0, today = new Date()) {
-  const room = calcAnnualAllowanceRoom(d, m);
+  const room = calcAnnualAllowanceRoomBeforeTopUps(d, m);
   return { over: Math.max(0, Math.round(sum(topUpsThisYear(d, today)) + extra - room.room)), allowance: room.approxAA };
 }
 

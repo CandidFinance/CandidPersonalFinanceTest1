@@ -2,7 +2,7 @@ import { moduleAnswered , loanVerdictReady } from "./appEntry.js";
 import { MODULE_GUIDES, flatQuestions } from "./moduleGuide.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
 import { PoundSterling, TrendingUp, Landmark, GraduationCap, Home, CreditCard, Baby, Percent } from "lucide-react";
-import { taxTrap, trapInView, thisTaxYear, TRAP_EDGE } from "./taxTrap.js";
+import { taxTrap, trapInView, thisTaxYear, allowanceLeft, TRAP_EDGE } from "./taxTrap.js";
 import { fmt } from "./format.js";
 import { taxYearOf } from "./taxYear.js";
 import { calcCashOptimisation } from "./cash.js";
@@ -246,10 +246,13 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // in. Shown, but not counted as a gap in the score: it needs spare money.
   const nonEarnerRelief = !contributing && m.noEarnings && !inRetirement(d) && (+d.age || 0) < PENSION_RELIEF_MAX_AGE;
   const pensionPrimaryAmount = notPayingIn ? missedRelief : contributing ? m.missedMatch : 0;
+  // This tax year (thisTaxYear: pay to date and the £100k trap's top-ups),
+  // for Kids & family and the £100k tax trap below, so the two agree.
+  const year = thisTaxYear(d, m);
   // Child Benefit paid back (income over £60,000), when paying in could stop it.
-  const cbCharge = childBenefitCharge(d, m);
+  const cbCharge = childBenefitCharge(year.d, year.m);
   // Child Benefit is Kids & family's figure now (below), not Pension's.
-  const cbAmount = cbCharge && cbCharge.charge > 0 && cbCharge.payInNeeded <= aaRoom.room ? cbCharge.charge : 0;
+  const cbAmount = cbCharge && cbCharge.charge > 0 && cbCharge.payInNeeded <= allowanceLeft(year.d, year.m) ? cbCharge.charge : 0;
   // The bonus and the retirement gap stop counting once the user has said
   // "done" or "not for me" this tax year (opportunityChoices.js).
   const adequacy = retirementAdequacy(d, m);
@@ -366,7 +369,7 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Near the £100,000 line, or out of reach (a partner over it, or too far
   // over for a pension payment), there's nothing to act on, so it's "ok"
   // with a line that says so.
-  const cc = childcareSupport(d, m);
+  const cc = childcareSupport(year.d, year.m);
   // Planning: support they could get, not money at stake yet. Lost to their
   // own income over £100,000, it's the £100k tax trap module's figure
   // (taxTrap.js); a partner's income over it stays here.
@@ -402,9 +405,8 @@ export function computeModuleStatuses(d, m, marketRates = {}) {
   // Progress's Tax shield), else "watch"; neither on track nor scored.
   // warn: the card's red or amber (Modules), with alertTitle its alert's
   // title (their marginal rate there: tax, NI and student loan) and lead
-  // its figure under £100k. All of it on this tax year (thisTaxYear: pay to
-  // date and one-off top-ups), as the module has it.
-  const year = thisTaxYear(d, m);
+  // its figure under £100k. All of it on this tax year (`year` above), as
+  // the module has it.
   const trap = taxTrap(year.d, year.m);
   const edge = trap && !trap.over && trap.headroom <= TRAP_EDGE;
   const ratePct = r => `${Math.round(r * 1000) / 10}%`;

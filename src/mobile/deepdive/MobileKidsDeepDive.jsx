@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { fmt } from "../../lib/format.js";
 import { childcareSupport, kidsSituation, CHILDCARE_INCOME_LIMIT, CHILDCARE_HOURLY_PRICE, TFC_CAP_PER_CHILD } from "../../lib/childcare.js";
-import { childBenefitCharge, calcAnnualAllowanceRoom } from "../../lib/pension.js";
+import { childBenefitCharge } from "../../lib/pension.js";
+import { thisTaxYear, allowanceLeft } from "../../lib/taxTrap.js";
 import { G, MUT, TEXT, SERIF } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 
@@ -13,11 +14,13 @@ import OpportunityTile from "./OpportunityTile.jsx";
 // payment would restore it, the link goes to Pension, which has the tax side.
 const NATION_NAME = { england: "England", wales: "Wales", scotland: "Scotland", ni: "Northern Ireland" };
 
-export default function MobileKidsDeepDive({ d, m }) {
+export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
   const navigate = useNavigate();
+  // This tax year, as the module's status has it (moduleStatus.js).
+  const { d, m } = thisTaxYear(answers, metrics);
   const cc = childcareSupport(d, m);
   const cb = childBenefitCharge(d, m);
-  const cbKeep = cb && cb.charge > 0 && cb.payInNeeded <= calcAnnualAllowanceRoom(d, m).room ? cb.charge : 0;
+  const cbKeep = cb && cb.charge > 0 && cb.payInNeeded <= allowanceLeft(d, m) ? cb.charge : 0;
   // The same lead figure as the answer step by step (moduleReveal.js
   // kidsReveal): childcare a pension payment would restore, else Tax-Free
   // Childcare not claimed, else Child Benefit. Child Benefit alongside the

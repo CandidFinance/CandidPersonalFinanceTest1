@@ -20,7 +20,7 @@ import { retirementAgeFor, isaFillable, calcMetrics } from "./metrics.js";
 import { estimatePensionPot, childBenefitCharge, HICBC_START } from "./pension.js";
 import { retirementAdequacy } from "./crossModule.js";
 import { childcareSupport, kidsSituation } from "./childcare.js";
-import { taxTrap, trapInView, lostTo, thisTaxYear } from "./taxTrap.js";
+import { taxTrap, trapInView, lostTo, thisTaxYear, allowanceLeft } from "./taxTrap.js";
 import { loanVerdictReady } from "./appEntry.js";
 import { calcCashOptimisation } from "./cash.js";
 import { NATIONAL_STATS } from "./nationalStats.js";
@@ -530,9 +530,11 @@ const NATION_HOURS_NOTE = {
 };
 export function kidsReveal(d, m) {
   if (kidsSituation(d) === "no") return null;
+  // This tax year, as the module's status has it (moduleStatus.js).
+  ({ d, m } = thisTaxYear(d, m));
   const cc = childcareSupport(d, m);
   const cb = childBenefitCharge(d, m);
-  const aa = calcAnnualAllowanceRoom(d, m);
+  const aaLeft = allowanceLeft(d, m);
   if (!cc && !cb) return null;
   const support = cc?.hours > 0 ? "Tax-Free Childcare and the 30 funded hours" : "Tax-Free Childcare";
   const nationNote = cc?.preschool > 0 ? NATION_HOURS_NOTE[cc.nation] || null : null;
@@ -565,7 +567,7 @@ export function kidsReveal(d, m) {
   }
   // Child Benefit paid back (income over £60,000), and the pension payment
   // that brings income to £60,000.
-  if (cb && cb.charge > 0 && cb.payInNeeded <= aa.room) {
+  if (cb && cb.charge > 0 && cb.payInNeeded <= aaLeft) {
     return [
       { label: ANSWER, figure: `${fmt(cb.charge)} a year`, tone: "cost", title: "of Child Benefit you're paying back in tax." },
       { label: WHY, title: `Above ${fmt(HICBC_START)} of income, 1% of your Child Benefit is clawed back for every £200, all of it by £80,000.` },

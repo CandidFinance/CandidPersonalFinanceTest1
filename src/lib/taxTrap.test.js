@@ -228,6 +228,10 @@ test("one-off top-ups this tax year: off the year once, within each month's pay 
   assert.equal(pastAllowance(nov, m, room.room - 4500, today).over, 0);
   assert.equal(pastAllowance(nov, m, room.room - 4500 + 1000, today).over, 1000);
   assert.equal(pastAllowance(nov, m, 0, today).allowance, 60000);
+  // On this tax year's figures (lower salary after the top-up), the same:
+  // the regular 5% is on the salary before it.
+  assert.equal(allowanceLeft(year.d, year.m, today), room.room - 4500);
+  assert.equal(pastAllowance(year.d, year.m, 0, today).over, 0);
 });
 
 test("spread over the paydays left: the same each month, and the pension % that comes to", async () => {

@@ -260,6 +260,11 @@ export function calcAnnualAllowanceRoom(d, m) {
   };
 }
 
+// The room on this tax year's figures (taxTrap.js thisTaxYear): the regular
+// % on the salary before the £100k trap's salary sacrifice top-ups, which
+// count once, as top-ups. Their answers' own figures as they are.
+export const calcAnnualAllowanceRoomBeforeTopUps = (d, m) => calcAnnualAllowanceRoom(d, m.salaryBeforeTopUps ? { ...m, salary: m.salaryBeforeTopUps } : m);
+
 // ── Bonus sacrifice — the income tax saved by sacrificing the stated bonus
 // into the pension, worked out band by band (a bonus can straddle the 40%,
 // 60% taper and 45% slices), and capped at the Annual Allowance room left,

@@ -25,7 +25,7 @@
 //    (under 2s £188.75, 2 year olds £174.85). The real figure varies by area
 //    and nursery.
 
-import { calcAnnualAllowanceRoom } from "./pension.js";
+import { calcAnnualAllowanceRoomBeforeTopUps } from "./pension.js";
 
 export const CHILDCARE_INCOME_LIMIT = 100000;
 export const TFC_RATE = 0.2;
@@ -111,7 +111,7 @@ export function childcareSupport(d, m) {
     : ani > CHILDCARE_INCOME_LIMIT - NEAR_LIMIT ? "near"
     : "fine";
   const payInNeeded = over ? Math.ceil(ani - CHILDCARE_INCOME_LIMIT) : 0;
-  const ownFits = !over || payInNeeded <= calcAnnualAllowanceRoom(d, m).room;
+  const ownFits = !over || payInNeeded <= calcAnnualAllowanceRoomBeforeTopUps(d, m).room - (m.topUpsTotal || 0);
   const partnerIncome = state === "partner" && +d.partnerIncome > CHILDCARE_INCOME_LIMIT ? +d.partnerIncome : null;
   const partnerPayIn = partnerIncome ? Math.ceil(partnerIncome - CHILDCARE_INCOME_LIMIT) : null;
   const recoverable = state === "lost" ? ownFits

@@ -55,7 +55,8 @@ function moduleInsights(mm, d, m) {
       ];
     }
     case "kids": {
-      const cc = childcareSupport(d, m);
+      const year = thisTaxYear(d, m);
+      const cc = childcareSupport(year.d, year.m);
       if (!cc) return [];
       return [
         { label: "Childcare support", value: `${fmtCompact(cc.atStake)}/yr` },
