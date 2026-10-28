@@ -34,7 +34,8 @@ function settle(d, except, was) {
 // (pensionType), if Pension doesn't have it yet, is the route chosen, for
 // Pension too. What it keeps a year of the trap's £ is banked as a change
 // made today (on the group's first payment), and the baseline taken at the
-// new £. The patch (fields to set).
+// new £. The saving lasts this tax year (to 5 April). The patch (fields to
+// set).
 export function recordTopUps(d, payments, on = today()) {
   const now = new Date();
   const taxYear = taxYearOf(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
@@ -46,7 +47,8 @@ export function recordTopUps(d, payments, on = today()) {
   const route = d.pensionType ? {} : { pensionType: ups[0].route };
   let next = { ...d, ...route, trapTopUps: [...(d.trapTopUps || []), ...ups] };
   ups[0].perYear = Math.max(0, Math.round(trapAmount(d) - trapAmount(next)));
-  next = { ...next, moduleBaselines: bankChange(next, "taxTrap", ups[0].perYear, on) };
+  // It lasts this tax year: to 5 April (moduleStatus.js changeEnd).
+  next = { ...next, moduleBaselines: bankChange(next, "taxTrap", ups[0].perYear, on, `${taxYear + 1}-04-05`) };
   next = { ...next, moduleBaselines: bankPatch(next, "taxTrap", trapAmount(next), false, on) };
   if (route.pensionType) next = { ...next, moduleBaselines: settle(next, "taxTrap", d) };
   return { ...route, trapTopUps: next.trapTopUps, moduleBaselines: next.moduleBaselines };

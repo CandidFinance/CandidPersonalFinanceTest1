@@ -524,11 +524,12 @@ const ownAnswers = (d, key) => JSON.stringify((OWN_FIELDS[key] || flatQuestions(
   .filter(q => q.group !== "you" && !NOT_ANSWERS.includes(q.field) && !ADDED_LATER.includes(q.field) && !ADDED_LATER.includes(q.id))
   .map(q => q.field)).map(f => d[f] ?? null));
 // A change made, banked straight away: its £ a year, dated today, on the
-// module's baseline (made if there isn't one yet).
-export function bankChange(d, key, perYear, on = new Date().toISOString().slice(0, 10)) {
+// module's baseline (made if there isn't one yet). `until`: the last day
+// it counts, for one that lasts a tax year (a £100k trap top-up).
+export function bankChange(d, key, perYear, on = new Date().toISOString().slice(0, 10), until = null) {
   const base = (d.moduleBaselines || {})[key] || { amount: 0, answers: ownAnswers(d, key), banked: 0 };
   const add = Math.round(perYear);
-  return { ...(d.moduleBaselines || {}), [key]: { ...base, banked: (base.banked || 0) + add, changes: [...(base.changes || []), { perYear: add, on }] } };
+  return { ...(d.moduleBaselines || {}), [key]: { ...base, banked: (base.banked || 0) + add, changes: [...(base.changes || []), { perYear: add, on, ...(until ? { until } : {}) }] } };
 }
 // Taking back a change banked by bankChange: the same £ a year, on the same
 // day, off the module's baseline.
@@ -541,8 +542,29 @@ export function unbankChange(d, key, perYear, on) {
   changes.splice(i, 1);
   return { ...d.moduleBaselines, [key]: { ...base, banked: Math.max(0, (base.banked || 0) - perYear), changes } };
 }
-export function bankedFor(d, key) {
-  return Math.round((d.moduleBaselines || {})[key]?.banked || 0);
+// The last day a banked change counts, as "YYYY-MM-DD" (`until`), else
+// null: it carries on. A £100k trap top-up's saving lasts its tax year
+// (taxTrap.js topUpsThisYear), to the 5 April after it; one recorded
+// before `until` was kept (28 Oct 2026) is found by its top-up (the same
+// perYear and day, taxTrapRecord.js recordTopUps).
+function changeEnd(d, key, c) {
+  if (c.until) return c.until;
+  if (key !== "taxTrap") return null;
+  const u = (d.trapTopUps || []).find(u => u.perYear === c.perYear && u.on === c.on);
+  return u && Number.isInteger(+u.taxYear) ? `${+u.taxYear + 1}-04-05` : null;
+}
+const isoDay = t => `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+// The £ a year of a module's banked changes that have ended by `now`: no
+// longer banked, and back in the £ its baseline was taken against.
+function endedPerYear(d, key, now = new Date()) {
+  const today = isoDay(now);
+  return ((d.moduleBaselines || {})[key]?.changes || []).reduce((s, c) => {
+    const end = changeEnd(d, key, c);
+    return s + (end && end < today ? c.perYear : 0);
+  }, 0);
+}
+export function bankedFor(d, key, now = new Date()) {
+  return Math.round(Math.max(0, ((d.moduleBaselines || {})[key]?.banked || 0) - endedPerYear(d, key, now)));
 }
 // On track: nothing left to act on, with under ON_TRACK_FLOOR a year left
 // on the module. Changes confirmed made ("I did this") count by bringing the
@@ -583,7 +605,9 @@ export function answersMoved(d, key) {
 export function pendingBank(d, key, amount) {
   const base = (d.moduleBaselines || {})[key];
   if (!base || base.answers === ownAnswers(d, key)) return 0;
-  return base.amount > amount ? Math.round(base.amount - amount) : 0;
+  // Plus what's ended since the baseline was taken (`ended` then).
+  const was = base.amount + endedPerYear(d, key) - (base.ended || 0);
+  return was > amount ? Math.round(was - amount) : 0;
 }
 // Each change the user says they made is also logged with its date
 // (`changes`: [{ perYear, on }]), so Home can show what the changes have
@@ -592,7 +616,7 @@ export function bankPatch(d, key, amount, made, on = new Date().toISOString().sl
   const base = d.moduleBaselines[key];
   const add = made ? pendingBank(d, key, amount) : 0;
   return { ...d.moduleBaselines, [key]: {
-    amount: Math.round(amount), answers: ownAnswers(d, key),
+    amount: Math.round(amount), answers: ownAnswers(d, key), ended: endedPerYear(d, key),
     banked: (base.banked || 0) + add,
     changes: [...(base.changes || []), ...(add > 0 ? [{ perYear: add, on }] : [])],
   } };
@@ -609,11 +633,12 @@ export function bankedChanges(d) {
   return Object.entries(d.moduleBaselines || {}).flatMap(([key, base]) => {
     const dated = base.changes || [];
     const undated = (base.banked || 0) - dated.reduce((sum, c) => sum + c.perYear, 0);
-    return [...(undated > 0 ? [{ key, perYear: undated, on: BANK_LOG_START }] : []), ...dated.map(c => ({ key, ...c }))];
+    return [...(undated > 0 ? [{ key, perYear: undated, on: BANK_LOG_START }] : []), ...dated.map(c => ({ key, ...c, until: changeEnd(d, key, c) }))];
   });
 }
 // `from` ("YYYY-MM-DD"), if given, counts only the days from then: the
-// tax year so far (taxYearStart), say.
+// tax year so far (taxYearStart), say. A change that's ended (`until`)
+// counts to that day, and no longer in the £ a year.
 export function gainedSoFar(d, now = new Date(), from = null) {
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const since = from ? Date.parse(from) : -Infinity;
@@ -621,13 +646,15 @@ export function gainedSoFar(d, now = new Date(), from = null) {
   let total = 0, perYear = 0;
   const changes = bankedChanges(d);
   for (const c of changes) {
-    const days = Math.max(0, Math.round((today - Math.max(Date.parse(c.on), since)) / 86400000) + 1);
+    const end = c.until ? Math.min(today, Date.parse(c.until)) : today;
+    const days = Math.max(0, Math.round((end - Math.max(Date.parse(c.on), since)) / 86400000) + 1);
     const gained = c.perYear * days / 365;
+    const going = !c.until || Date.parse(c.until) >= today ? c.perYear : 0;
     const mod = byModule[c.key] || (byModule[c.key] = { gained: 0, perYear: 0 });
     mod.gained += gained;
-    mod.perYear += c.perYear;
+    mod.perYear += going;
     total += gained;
-    perYear += c.perYear;
+    perYear += going;
   }
   return { total: Math.round(total), perYear: Math.round(perYear), count: changes.length,
     byModule: Object.entries(byModule).map(([key, mod]) => ({ key, gained: Math.round(mod.gained), perYear: Math.round(mod.perYear) })).sort((a, b) => b.perYear - a.perYear) };

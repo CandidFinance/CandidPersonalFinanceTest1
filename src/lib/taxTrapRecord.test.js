@@ -114,3 +114,32 @@ test("no pension route answered yet:the one chosen is saved for Pension, with no
   // Already answered: left as it is.
   assert.equal(recordTopUps(base, [{ amount: 3000, route: "relief", month: 11 }], "2026-10-08").pensionType, undefined);
 });
+
+test("a top-up's saving lasts its tax year: from 6 April it's no longer counted as saved", async () => {
+  const { recordTopUps } = await import("./taxTrapRecord.js");
+  const { gainedSoFar } = await import("./moduleStatus.js");
+  const after = apply(base, recordTopUps(base, [{ amount: 4500, route: "sacrifice", month: 11 }], "2026-10-08"));
+  const perYear = after.trapTopUps[0].perYear;
+  assert.ok(perYear > 0);
+  assert.equal(bankedFor(after, "taxTrap"), perYear);
+  assert.equal(after.moduleBaselines.taxTrap.changes.at(-1).until, "2027-04-05");
+  const april = new Date(2027, 3, 10);
+  assert.equal(bankedFor(after, "taxTrap", april), 0);
+  const g = gainedSoFar(after, april);
+  assert.equal(g.perYear, 0);
+  // Counted from 8 October to 5 April, both days: 180 days of it.
+  assert.equal(g.total, Math.round(perYear * 180 / 365));
+  // Last tax year's, seen now (8 Oct 2026): the trap's £ is back, and a
+  // change made now counts from there, not from the £0 after the top-up.
+  const lastYear = { ...after,
+    trapTopUps: after.trapTopUps.map(u => ({ ...u, taxYear: 2025, on: "2025-10-08" })),
+    moduleBaselines: { ...after.moduleBaselines, taxTrap: { ...after.moduleBaselines.taxTrap, changes: after.moduleBaselines.taxTrap.changes.map(c => ({ ...c, on: "2025-10-08", until: "2026-04-05" })) } } };
+  assert.equal(bankedFor(lastYear, "taxTrap"), 0);
+  const raised = { ...lastYear, myContribution: "9.091" };
+  const now = computeModuleStatuses(raised, calcMetrics(raised)).taxTrap.amount;
+  assert.equal(now, 0);
+  assert.equal(pendingBank(raised, "taxTrap", now), perYear);
+  // Recorded before `until` was kept: found by its top-up all the same.
+  const legacy = { ...lastYear, moduleBaselines: { ...lastYear.moduleBaselines, taxTrap: { ...lastYear.moduleBaselines.taxTrap, changes: lastYear.moduleBaselines.taxTrap.changes.map(({ until, ...c }) => c) } } };
+  assert.equal(bankedFor(legacy, "taxTrap"), 0);
+});
