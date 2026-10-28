@@ -34,12 +34,12 @@
 
 import { calcMetrics, isaFillable } from "./metrics.js";
 import { rollTaxYear, taxYearOf } from "./taxYear.js";
-import { calcAnnualAllowanceRoom, calcPensionTaperSaving, calcBonusSacrificePotential, childBenefitCharge } from "./pension.js";
+import { calcAnnualAllowanceRoomBeforeTopUps, calcPensionTaperSaving, calcBonusSacrificePotential, childBenefitCharge } from "./pension.js";
 import { cashOpportunity } from "./assist.js";
 import { childcareSupport } from "./childcare.js";
 import { choiceFor, CHOICE_IDS } from "./opportunityChoices.js";
 import { fmt } from "./format.js";
-import { trapInView, yearProjection, isPayday, monthKey, allowanceLost, bonusMonthOf, TRAP_START } from "./taxTrap.js";
+import { trapInView, yearProjection, thisTaxYear, isPayday, monthKey, allowanceLost, bonusMonthOf, TRAP_START } from "./taxTrap.js";
 import { renderEmail } from "./emailLayout.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
@@ -100,14 +100,17 @@ function taxYearEnd(d, m, today) {
   const final = month === 4 || day >= FINAL_FROM;
   const ty = taxYearOf(today);
   const items = [];
-  const room = calcAnnualAllowanceRoom(d, m).room;
-  const taper = calcPensionTaperSaving(m, room);
+  // The £100k trap and Child Benefit on this tax year's figures (taxTrap.js
+  // thisTaxYear), as the module has them: pay to date, and the top-ups
+  // recorded, which also use up annual allowance.
+  const { d: yd, m: ym, y: year } = thisTaxYear(d, m, today);
+  const room = Math.max(0, calcAnnualAllowanceRoomBeforeTopUps(yd, ym).room - (ym.topUpsTotal || 0));
+  const taper = calcPensionTaperSaving(ym, room);
   // The same payment restores childcare support (Kids & family): said in
   // the line, not added to the tax figure.
-  const cc = childcareSupport(d, m);
+  const cc = childcareSupport(yd, ym);
   const childcare = cc?.recoverable && cc.state === "lost" && !cc.planning && cc.atStake > 0 ? ` It would also restore ${fmt(cc.atStake)} a year of childcare support.` : "";
   // With pay to date from a payday check-in, the year as it's going.
-  const year = yearProjection(d, m, today);
   let trapLine = false;
   if (year.tracked) {
     const tax = Math.round(allowanceLost(year.projected, !!m.scottish).tax);
@@ -117,7 +120,7 @@ function taxYearEnd(d, m, today) {
     trapLine = true;
     items.push({ tax: taper.taperTaxSaving, line: `${fmt(taper.taperTaxSaving)} of tax: a pension payment of ${fmt(taper.taperSacrificeNeeded)} (including the tax relief added) before 5 April would bring your income back to £100,000 for this tax year.${childcare}` });
   }
-  const cb = childBenefitCharge(d, m);
+  const cb = childBenefitCharge(yd, ym);
   if (cb && cb.charge > 0 && cb.payInNeeded <= room && !trapLine) {
     items.push({ tax: cb.charge, line: `${fmt(cb.charge)} of Child Benefit kept: a pension payment of ${fmt(cb.payInNeeded)} before 5 April would bring your income to £60,000.` });
   }

@@ -375,7 +375,7 @@ export function thisTaxYear(d, m, today = new Date()) {
   const implied = effectiveSalary(d, m, today, y);
   const relief = sum(ups, "relief");
   const salary = Math.round((implied ?? m.salary) - sum(ups, "sacrifice") / keptOf(d));
-  if (salary === Math.round(m.salary) && !relief) return { d, m, y };
+  if (salary === Math.round(m.salary) && !ups.length) return { d, m, y };
   const at = { ...d, salary: String(salary) };
   const mm = { ...calcMetrics(at), salaryBeforeTopUps: implied ?? m.salary, topUpsTotal: sum(ups) };
   return { d: at, m: relief ? { ...mm, adjustedNetIncome: mm.adjustedNetIncome - relief, topUpRelief: relief } : mm, y };

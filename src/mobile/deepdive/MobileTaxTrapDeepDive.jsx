@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { closingTile } from "../SinceLastVisit.jsx";
 import { useElementWidth } from "../useElementWidth.js";
 import { fmt } from "../../lib/format.js";
-import { taxTrap, trapInView, thisTaxYear, topUpsThisYear, topUpLimit, monthlyPlan, monthlyPay, pastAllowance, rateCurve, lostTo, pensionPath, position, paydayOf, TRAP_START, TRAP_END, TRAP_GROSS, TRAP_EDGE } from "../../lib/taxTrap.js";
+import { taxTrap, trapInView, thisTaxYear, topUpsThisYear, topUpLimit, monthlyPlan, monthlyPay, pastAllowance, rateCurve, lostTo, pensionPath, position, paydayOf, bonusMonthOf, TRAP_START, TRAP_END, TRAP_GROSS, TRAP_EDGE } from "../../lib/taxTrap.js";
 import { PERSONAL_ALLOWANCE } from "../../lib/tax.js";
 import { minimumPensionAge } from "../../lib/pension.js";
 import { taxYearOf } from "../../lib/taxYear.js";
@@ -209,7 +209,8 @@ function PlanAhead({ d, t, kidsFigure, onClose }) {
   const atStake = kidsFigure > 0 ? kidsFigure : t.over ? t.amount : 0;
   // The alert comes the month before the bonus, or in February when its
   // month isn't known (src/lib/alerts.js).
-  const bonus = +d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? `${monthName(+d.bonusMonth === 1 ? 12 : +d.bonusMonth - 1)}, before your bonus` : "February, before any bonus";
+  const paid = bonusMonthOf(d);
+  const bonus = `${monthName(paid === 1 ? 12 : paid - 1)}, before ${+d.bonusMonth === paid ? "your" : "any"} bonus`;
   // Payday and bonus only for the employed, the bonus only with one given
   // (alerts.js sends nothing otherwise).
   const employed = d.employmentStatus === "employed";

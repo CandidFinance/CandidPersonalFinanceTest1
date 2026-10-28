@@ -141,3 +141,13 @@ test("a bonus that takes income over £100,000: how much of it keeps them at £1
   const b = alertsDue({ ...trap, salary: "90000", bonusAmount: "20000", hasBonus: "yes", bonusMonth: "3" }, { today: day("2027-02-10") }).find(a => a.kind === "bonus");
   assert.match(b.items[0], /paying £[\d,]+ of it into your pension would keep you at £100,000\.$/);
 });
+
+test("before 5 April, the £100k trap is on this tax year's figures: recorded top-ups count", () => {
+  const up = (amount, month) => ({ id: `sacrifice${month}`, amount, route: "sacrifice", month, taxYear: 2026 });
+  const trapLine = d => alertsDue(d, { today: day("2027-03-02") }).flatMap(a => a.items).find(i => /bring your income back to £100,000/.test(i));
+  // £104,500 less £4,500 of top-ups: back at £100,000, nothing to say.
+  assert.equal(trapLine({ ...trap, trapTopUps: [up(4500, 11)] }), undefined);
+  // £2,000 of it done: the payment still to make is the rest (to £1:
+  // thisTaxYear rounds the salary).
+  assert.match(trapLine({ ...trap, trapTopUps: [up(2000, 11)] }), /a pension payment of £2,50[01] /);
+});
