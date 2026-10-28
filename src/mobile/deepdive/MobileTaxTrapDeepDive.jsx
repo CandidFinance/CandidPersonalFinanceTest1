@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, Check, TriangleAlert, X, CircleHelp } from "lucide-react";
@@ -70,7 +70,7 @@ function Cell({ label, text, tone = "plain", wide = false }) {
 export default function MobileTaxTrapDeepDive({ d: answers, m: metrics, set }) {
   // Once pay to date is in, the whole module is on the salary it implies;
   // recording and undoing stay on their own answers.
-  const { d, m, y } = thisTaxYear(answers, metrics);
+  const { d, m, y } = useMemo(() => thisTaxYear(answers, metrics), [answers, metrics]);
   const t = taxTrap(d, m);
   const [showOptions, setShowOptions] = useState(false);
   const [costsOpen, setCostsOpen] = useState(true);
@@ -303,7 +303,7 @@ function PensionSlider({ d, m, t, answers, metrics, onRecord, seen, onSeen }) {
   // One payment: from the bonus, or with no paydays left this tax year.
   const single = bonus || plan.n === 0;
   const n = single ? 1 : plan.n;
-  const max = bonus ? topUpLimit(answers, metrics, "sacrifice", bonusAhead.month) : single ? Math.max(SLIDER_STEP_BONUS, Math.ceil(t.needed * 1.5 / SLIDER_STEP_BONUS) * SLIDER_STEP_BONUS) : Math.max(SLIDER_STEP, Math.min(monthlyPay(answers, metrics), ...plan.months.map(x => topUpLimit(answers, metrics, "sacrifice", x.month))));
+  const max = bonus ? topUpLimit(answers, metrics, bonusAhead.month) : single ? Math.max(SLIDER_STEP_BONUS, Math.ceil(t.needed * 1.5 / SLIDER_STEP_BONUS) * SLIDER_STEP_BONUS) : Math.max(SLIDER_STEP, Math.min(monthlyPay(answers, metrics), ...plan.months.map(x => topUpLimit(answers, metrics, x.month))));
   const target = single ? t.needed : plan.monthly;
   const [chosen, setChosen] = useState(null);
   const each = Math.min(chosen ?? target, max);

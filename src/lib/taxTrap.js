@@ -294,11 +294,10 @@ const sum = (ups, route) => ups.reduce((s, u) => s + (!route || u.route === rout
 // March after it.
 const paydayOfMonth = (ty, month, payday) => paydayIn(month >= 4 ? ty : ty + 1, month - 1, payday);
 
-// The bonus's payday: in `bonusMonth`, March when it isn't known.
-function bonusDay(d, ty, payday) {
-  const month = +d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3;
-  return paydayIn(month >= 4 ? ty : ty + 1, month - 1, payday);
-}
+// The month the bonus is paid (1 to 12): March when it isn't known.
+export const bonusMonthOf = d => +d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3;
+// The bonus's payday.
+const bonusDay = (d, ty, payday) => paydayOfMonth(ty, bonusMonthOf(d), payday);
 
 export function yearProjection(d, m, today = new Date()) {
   const payday = paydayOf(d);
@@ -338,21 +337,29 @@ export function yearProjection(d, m, today = new Date()) {
 // The salary their pay to date implies: the one whose adjusted net income is
 // the year's projection before any top-ups (each £1 of salary adds 1 − their
 // pension % to it). null until they've entered pay to date this tax year.
+// `y`: the projection, when it's been worked out already.
 const keptOf = d => Math.max(0.01, 1 - num(d.myContribution) / 100);
-export function effectiveSalary(d, m, today = new Date()) {
-  const y = yearProjection(d, m, today);
+export function effectiveSalary(d, m, today = new Date(), y = yearProjection(d, m, today)) {
   if (!y.tracked) return null;
   return Math.round(m.salary + (y.beforeTopUps - m.adjustedNetIncome) / keptOf(d));
 }
 
 // Pay to date more than DRIFT off their salary: the salary it implies, to
-// the nearest £500, to ask whether their pay has changed. Else null.
+// the nearest £500, to ask whether their pay has changed. Else null, and
+// after a "No" (driftDismissed) this tax year, on the same salary, to about
+// the same pay. `y`: the projection, when it's been worked out already.
 export const DRIFT = 0.05;
-export function salaryDrift(d, m, today = new Date()) {
-  const salary = effectiveSalary(d, m, today);
-  if (salary == null || !(m.salary > 0) || Math.abs(salary - m.salary) / m.salary <= DRIFT) return null;
+const near = (a, b) => b > 0 && Math.abs(a - b) / b <= DRIFT;
+export function salaryDrift(d, m, today = new Date(), y = yearProjection(d, m, today)) {
+  const salary = effectiveSalary(d, m, today, y);
+  if (salary == null || !(m.salary > 0) || near(salary, m.salary)) return null;
+  const no = d.driftDismissed;
+  if (no && +no.taxYear === taxYearOf(dayOnly(today)) && +no.salary === Math.round(m.salary) && near(salary, +no.implied)) return null;
   return Math.round(salary / 500) * 500;
 }
+// What a "No" to `drift` keeps: the pay it was about, their salary then and
+// the tax year.
+export const driftDismissal = (m, drift, today = new Date()) => ({ implied: drift, salary: Math.round(m.salary), taxYear: taxYearOf(dayOnly(today)) });
 
 // The answers and metrics the module works from this tax year: on the salary
 // their pay to date implies, once it's in, less the salary sacrifice
@@ -365,7 +372,7 @@ export function salaryDrift(d, m, today = new Date()) {
 export function thisTaxYear(d, m, today = new Date()) {
   const y = yearProjection(d, m, today);
   const ups = topUpsThisYear(d, today);
-  const implied = effectiveSalary(d, m, today);
+  const implied = effectiveSalary(d, m, today, y);
   const relief = sum(ups, "relief");
   const salary = Math.round((implied ?? m.salary) - sum(ups, "sacrifice") / keptOf(d));
   if (salary === Math.round(m.salary) && !relief) return { d, m, y };
@@ -383,24 +390,16 @@ export function pastAllowance(d, m, extra = 0, today = new Date()) {
   return { over: Math.max(0, Math.round(sum(topUpsThisYear(d, today)) + extra - room.room)), allowance: room.approxAA };
 }
 
-// The most a top-up can be, on their own answers. Salary sacrifice: that
-// month's pay (with the bonus, in its month) after what they sacrifice each
-// month and any top-up from it already. Relief at source: tax relief is on
-// up to their earnings for the year after salary sacrifice (or £3,600),
-// less what's been paid that way already.
-export const RELIEF_FLOOR = 3600;
-export function topUpLimit(d, m, route, month, today = new Date()) {
+// The most a salary sacrifice top-up from `month`'s pay can be, on their
+// own answers: that month's pay (with the bonus, in its month) after what
+// they sacrifice each month and any top-up from it already.
+export function topUpLimit(d, m, month, today = new Date()) {
   const ups = topUpsThisYear(d, today);
   const salary = m.salary || 0;
   const regular = d.pensionType === "relief" ? 0 : salary * num(d.myContribution) / 100;
   const bonus = num(d.bonusAmount);
-  if (route === "sacrifice") {
-    const bonusMonth = +d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3;
-    const pay = (salary - regular) / 12 + (bonus > 0 && bonusMonth === +month ? bonus : 0);
-    return Math.max(0, Math.floor(pay - sum(ups.filter(u => u.route === "sacrifice" && +u.month === +month))));
-  }
-  const earnings = salary + bonus - regular - sum(ups, "sacrifice");
-  return Math.max(0, Math.floor(Math.max(RELIEF_FLOOR, earnings) - sum(ups, "relief")));
+  const pay = (salary - regular) / 12 + (bonus > 0 && bonusMonthOf(d) === +month ? bonus : 0);
+  return Math.max(0, Math.floor(pay - sum(ups.filter(u => u.route === "sacrifice" && +u.month === +month))));
 }
 
 // A month's pay after what they salary sacrifice each month: the most a
@@ -424,7 +423,7 @@ export function monthlyPlan(d, m, needed, today = new Date()) {
 // come this tax year, in order, with whether the bonus is paid in it.
 export function topUpMonths(d, today = new Date()) {
   const now = dayOnly(today), ty = taxYearOf(now), payday = paydayOf(d);
-  const bonusMonth = num(d.bonusAmount) > 0 ? (+d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3) : null;
+  const bonusMonth = num(d.bonusAmount) > 0 ? bonusMonthOf(d) : null;
   const out = [];
   for (const month of [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3]) {
     if (paydayOfMonth(ty, month, payday) > now) out.push({ month, bonus: month === bonusMonth });

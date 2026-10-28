@@ -156,7 +156,7 @@ test("this tax year: from answers, or from pay to date and the paydays left", as
 });
 
 test("on pay to date: the module works from the salary it implies", async () => {
-  const { effectiveSalary, thisTaxYear, salaryDrift } = await import("./taxTrap.js");
+  const { effectiveSalary, thisTaxYear, salaryDrift, driftDismissal } = await import("./taxTrap.js");
   const { computeModuleStatuses, baselinePatch, answersMoved } = await import("./moduleStatus.js");
   const today = new Date(2026, 9, 8);
   const m = calcMetrics(base);
@@ -179,6 +179,14 @@ test("on pay to date: the module works from the salary it implies", async () => 
   assert.equal(salaryDrift(ahead, m, today), 118000);
   // £55,000 heads for £107,250: under 5% off, not asked.
   assert.equal(salaryDrift({ ...base, payToDate: "55000", payToDateOn: "2026-09-28" }, m, today), null);
+  // "No" to £118,000: not asked again near it, but asked for pay well past
+  // it, on a different salary, or in another tax year.
+  const no = driftDismissal(m, 118000, today);
+  assert.equal(salaryDrift({ ...ahead, driftDismissed: no }, m, today), null);
+  assert.equal(salaryDrift({ ...ahead, payToDate: "70000", driftDismissed: no }, m, today) > 118000 * 1.05, true);
+  assert.equal(salaryDrift({ ...ahead, driftDismissed: { ...no, salary: 105000 } }, m, today), 118000);
+  assert.equal(salaryDrift({ ...ahead, driftDismissed: { ...no, taxYear: 2025 } }, m, today), 118000);
+  assert.equal(answersMoved({ ...base, moduleBaselines: baselinePatch(base, computeModuleStatuses(base, m)), driftDismissed: no }, "taxTrap"), false);
   // Pay to date isn't one of the module's answers: no "did you make a change?".
   const withBaseline = { ...base, moduleBaselines: baselinePatch(base, computeModuleStatuses(base, m)) };
   assert.equal(answersMoved({ ...withBaseline, payToDate: "60000", payToDateOn: "2026-09-28" }, "taxTrap"), false);
@@ -213,12 +221,10 @@ test("one-off top-ups this tax year: off the year once, within each month's pay 
   assert.equal(bySipp.d.salary, "110000");
   assert.ok(Math.abs(bySipp.m.adjustedNetIncome - 101500) <= 1);
   // A month's pay after the 5% sacrificed: £8,708; the bonus in its month.
-  assert.equal(topUpLimit(base, m, "sacrifice", 11, today), 8708);
-  assert.equal(topUpLimit(nov, m, "sacrifice", 11, today), 4208);
+  assert.equal(topUpLimit(base, m, 11, today), 8708);
+  assert.equal(topUpLimit(nov, m, 11, today), 4208);
   const withBonus = { ...base, bonusAmount: "10000", bonusMonth: "3" };
-  assert.equal(topUpLimit(withBonus, calcMetrics(withBonus), "sacrifice", 3, today), 18708);
-  // Relief at source: up to earnings after salary sacrifice, £104,500 here.
-  assert.equal(topUpLimit(nov, m, "relief", 10, today), 100000);
+  assert.equal(topUpLimit(withBonus, calcMetrics(withBonus), 3, today), 18708);
   // Paydays still to come on 8 October, on the 28th: October to March.
   assert.deepEqual(topUpMonths(withBonus, today).map(x => x.month), [10, 11, 12, 1, 2, 3]);
   assert.equal(topUpMonths(withBonus, today).find(x => x.bonus).month, 3);

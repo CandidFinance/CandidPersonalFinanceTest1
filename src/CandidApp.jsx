@@ -62,7 +62,7 @@ const BLANK_DATA = {
   // The £100k trap through the year (mobile/PaydayCheck.jsx): taxable pay to
   // date from a payslip, the day it was entered, and the month of the last
   // payday check-in ("YYYY-MM").
-  payToDate:"", payToDateOn:"", paydayCheckedMonth:"",
+  payToDate:"", payToDateOn:"", paydayCheckedMonth:"", driftDismissed:null,
   // `goalPicks`: the answer to the goals card on home (merged into
   // financialGoals); `goalsAsked`: that card has been answered or dismissed.
   // `scoreShown`: the Candid score has appeared (src/lib/appEntry.js

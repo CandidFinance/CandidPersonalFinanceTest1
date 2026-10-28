@@ -43,6 +43,7 @@
  * @property {string} [payToDate] Taxable pay to date from a payslip (payday check-in, mobile/PaydayCheck.jsx).
  * @property {string} [payToDateOn] "YYYY-MM-DD", the day payToDate was entered.
  * @property {string} [paydayCheckedMonth] "YYYY-MM", the month the payday check-in was last answered or skipped.
+ * @property {{implied:number,salary:number,taxYear:number}|null} [driftDismissed] A "No" to "has your pay changed?": the pay it was about, their salary then and the tax year; not asked again near it while those hold (taxTrap.js salaryDrift).
  * @property {string} [payday] "1" to "31", the day of the month they're paid; the 28th when blank (taxTrap.js paydayOf).
  * @property {boolean} [payCheckDue] Figures rolled into a new tax year; Home asks if pay is the same (PayCheckCard).
  */

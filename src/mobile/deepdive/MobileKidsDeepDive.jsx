@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { fmt } from "../../lib/format.js";
@@ -17,7 +18,7 @@ const NATION_NAME = { england: "England", wales: "Wales", scotland: "Scotland", 
 export default function MobileKidsDeepDive({ d: answers, m: metrics }) {
   const navigate = useNavigate();
   // This tax year, as the module's status has it (moduleStatus.js).
-  const { d, m } = thisTaxYear(answers, metrics);
+  const { d, m } = useMemo(() => thisTaxYear(answers, metrics), [answers, metrics]);
   const cc = childcareSupport(d, m);
   const cb = childBenefitCharge(d, m);
   const cbKeep = cb && cb.charge > 0 && cb.payInNeeded <= allowanceLeft(d, m) ? cb.charge : 0;

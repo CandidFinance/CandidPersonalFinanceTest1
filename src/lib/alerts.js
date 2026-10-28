@@ -39,7 +39,7 @@ import { cashOpportunity } from "./assist.js";
 import { childcareSupport } from "./childcare.js";
 import { choiceFor, CHOICE_IDS } from "./opportunityChoices.js";
 import { fmt } from "./format.js";
-import { trapInView, yearProjection, isPayday, monthKey, allowanceLost, TRAP_START } from "./taxTrap.js";
+import { trapInView, yearProjection, isPayday, monthKey, allowanceLost, bonusMonthOf, TRAP_START } from "./taxTrap.js";
 import { renderEmail } from "./emailLayout.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
@@ -147,7 +147,7 @@ function bonus(d, m, today) {
   if (d.employmentStatus !== "employed" || !(+d.bonusAmount > 0)) return null;
   // Already done, or set aside, this tax year (opportunityChoices.js).
   if (choiceFor(d, CHOICE_IDS.bonus, today)) return null;
-  const paid = +d.bonusMonth >= 1 && +d.bonusMonth <= 12 ? +d.bonusMonth : 3;
+  const paid = bonusMonthOf(d);
   // The month before it's paid: there's time to arrange it with payroll.
   const before = paid === 1 ? 12 : paid - 1;
   if (today.getMonth() + 1 !== before) return null;

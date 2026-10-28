@@ -4,7 +4,7 @@ import posthog from "posthog-js";
 import { CalendarPlus } from "lucide-react";
 import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, CRITICAL } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
-import { yearProjection, salaryDrift, paydayOf, monthKey, TRAP_START } from "../lib/taxTrap.js";
+import { yearProjection, salaryDrift, driftDismissal, paydayOf, monthKey, TRAP_START } from "../lib/taxTrap.js";
 import { triggerCalendarReminder } from "./reminders.js";
 
 // The £100k trap through the year, for subscribers: their taxable pay to
@@ -62,8 +62,6 @@ function headingLine(y) {
 export function PaydayCheckCard({ d, m, set }) {
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
-  // Pay to date well off their salary: asked once whether their pay's changed.
-  const [driftAsked, setDriftAsked] = useState(false);
   const done = () => set("paydayCheckedMonth", monthKey(new Date()));
   // Answered: checked in for this month once they move on, Done or not.
   const answered = useRef(false);
@@ -74,7 +72,9 @@ export function PaydayCheckCard({ d, m, set }) {
   const eyebrow = <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Payday check-in</div>;
   if (saved) {
     const y = yearProjection(d, m);
-    const drift = driftAsked ? null : salaryDrift(d, m);
+    // Pay to date well off their salary: asked whether their pay's changed.
+    // Yes updates it; No is kept, so it isn't asked again for that pay.
+    const drift = salaryDrift(d, m, new Date(), y);
     return (
       <div style={card}>
         {eyebrow}
@@ -84,8 +84,8 @@ export function PaydayCheckCard({ d, m, set }) {
         {drift && <>
           <div style={{fontSize:"14px",fontWeight:700,color:TEXT,lineHeight:1.35,margin:"4px 0 8px"}}>Has your pay {drift > m.salary ? "gone up" : "changed"} to about {fmt(drift)} a year?</div>
           <div style={{display:"flex",gap:"8px",marginBottom:"12px"}}>
-            <button type="button" onClick={() => { set("salary", String(drift)); setDriftAsked(true); posthog.capture("pay_drift_answered", { changed: true }); }} style={pill(false)}>Yes</button>
-            <button type="button" onClick={() => { setDriftAsked(true); posthog.capture("pay_drift_answered", { changed: false }); }} style={pill(false)}>No</button>
+            <button type="button" onClick={() => { set("salary", String(drift)); posthog.capture("pay_drift_answered", { changed: true }); }} style={pill(false)}>Yes</button>
+            <button type="button" onClick={() => { set("driftDismissed", driftDismissal(m, drift)); posthog.capture("pay_drift_answered", { changed: false }); }} style={pill(false)}>No</button>
           </div>
         </>}
         <div style={{display:"flex",gap:"8px"}}>
