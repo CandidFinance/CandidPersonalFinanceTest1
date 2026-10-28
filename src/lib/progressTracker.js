@@ -15,7 +15,7 @@ import {
   ISA_ALLOWANCE, PERSONAL_ALLOWANCE, HIGHER_RATE_THRESHOLD, PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD,
   INCOME_TAX_RATES, SCOTTISH_BANDS, SCOTTISH_ADVANCED, SCOTTISH_TOP,
 } from "./tax.js";
-import { calcAnnualAllowanceRoom } from "./pension.js";
+import { calcAnnualAllowanceRoomBeforeTopUps } from "./pension.js";
 import { bankedFor, MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from "./moduleStatus.js";
 import { moduleAnswered } from "./appEntry.js";
 import { borrowingInputs } from "./borrowing.js";
@@ -58,14 +58,21 @@ function isaRow(d, m) {
   };
 }
 
+// On this tax year's figures (taxTrap.js thisTaxYear), as the £100k module
+// has them: the regular % on the salary before any top-ups, then the
+// top-ups on top, against the allowance.
 function pensionRow(d, m) {
-  const aa = calcAnnualAllowanceRoom(d, m);
+  const year = thisTaxYear(d, m);
+  const aa = calcAnnualAllowanceRoomBeforeTopUps(year.d, year.m);
+  const topUps = Math.round(n(year.m.topUpsTotal));
+  const inputs = aa.currentInputs + topUps;
   const own = Math.min(n(d.pensionTarget), aa.approxAA);
   const allowance = aa.mpaa ? "Money Purchase Annual Allowance" : aa.inAATaper ? "tapered Annual Allowance" : "Annual Allowance";
-  const paid = `${fmt(aa.currentInputs)} a year, yours and your employer's`;
+  const paid = topUps > 0 ? `${fmt(inputs)} this tax year, yours and your employer's, including ${fmt(topUps)} of top-ups`
+    : `${fmt(aa.currentInputs)} a year, yours and your employer's`;
   return {
     id: "pension", label: "Pension",
-    ...measured(aa.currentInputs, own || aa.approxAA), tracked: true, own: own > 0,
+    ...measured(inputs, own || aa.approxAA), tracked: true, own: own > 0,
     editable: true, field: "pensionTarget", limit: aa.approxAA,
     note: own ? `${paid}, against your ${fmt(own)} target. Your ${allowance} is ${fmt(aa.approxAA)}.`
       : `${paid}, against your ${fmt(aa.approxAA)} ${allowance}.`,

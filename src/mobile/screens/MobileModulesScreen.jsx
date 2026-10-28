@@ -1,6 +1,7 @@
+import { useState, useRef, useEffect } from "react";
 import { childcareSupport } from "../../lib/childcare.js";
-import { Users, ChevronRight, Lock } from "lucide-react";
-import CardStack, { DARK, StillCard } from "../CardStack.jsx";
+import { Users, ChevronRight, Lock, ListFilter, Check } from "lucide-react";
+import CardStack, { DARK, StillCard, arrow } from "../CardStack.jsx";
 import AlertBox from "../AlertBox.jsx";
 import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD } from "../../design-tokens.js";
 import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
@@ -94,6 +95,51 @@ function Figure({ t, value, unit, words = false }) {
   );
 }
 
+// The wallet's filter, beside its arrows once there are more than
+// FILTER_FROM module cards. Optimised: the cards with the tick (on track, or
+// reviewed with under £50 left). One with nothing in it can't be picked.
+const FILTER_FROM = 3;
+const FILTERS = [["all", "All"], ["reviewed", "Reviewed"], ["optimised", "Optimised"]];
+function FilterMenu({ value, counts, onChange }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = e => { if (box.current && !box.current.contains(e.target)) setOpen(false); };
+    const esc = e => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  // Filled while a filter's on: the button is that state's one indicator.
+  const on = value !== "all";
+  const name = FILTERS.find(([k]) => k === value)[1];
+  return (
+    <div ref={box} style={{position:"relative"}}>
+      <button type="button" onClick={() => setOpen(o => !o)} aria-haspopup="true" aria-expanded={open} aria-label={`Filter modules: ${name}`}
+        style={{...arrow, background:on ? G : WHITE, borderColor:on ? G : "rgba(22,47,36,0.15)"}}>
+        <ListFilter size={15} color={on ? WHITE : G}/>
+      </button>
+      {open && (
+        <div role="group" aria-label="Filter modules" style={{position:"absolute",right:0,top:"36px",zIndex:30,minWidth:"170px",background:WHITE,borderRadius:"12px",boxShadow:"0 8px 28px rgba(22,47,36,0.16)",border:"1px solid rgba(22,47,36,0.08)",padding:"6px"}}>
+          {FILTERS.map(([k, label]) => {
+            const empty = counts[k] === 0;
+            return (
+              <button key={k} type="button" disabled={empty} aria-pressed={value === k}
+                onClick={() => { onChange(k); setOpen(false); }}
+                style={{display:"flex",alignItems:"center",gap:"8px",width:"100%",textAlign:"left",background:"none",border:"none",borderRadius:"8px",padding:"9px 10px",fontFamily:"inherit",fontSize:"14px",fontWeight:600,color:empty ? MUT : TEXT,opacity:empty ? 0.5 : 1,cursor:empty ? "default" : "pointer"}}>
+                <span style={{width:"14px",display:"inline-flex"}}>{value === k && <Check size={14} color={G} strokeWidth={2.6}/>}</span>
+                <span style={{flex:1}}>{label}</span>
+                <span style={{fontSize:"12.5px",fontWeight:600,color:MUT}}>{counts[k]}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OpenButton({ t, title, onClick }) {
   return (
     <button type="button" onClick={onClick}
@@ -138,13 +184,16 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   const notApplicable = MODULE_META.filter(mm => statuses[mm.key]?.notApplicable);
   const live = moduleList.length + (propertyDone ? 1 : 0);
   const toExplore = waiting.length + dormant.length;
+  const isReviewed = mm => completedModules.includes(mm.key);
+  // On track (moduleStatus.js isOnTrack), or reviewed with under £50 left
+  // (reviewedDone): the card gets the tick and the green wash, and it's
+  // what the Optimised filter shows.
+  const isOptimised = mm => mm.onTrack || reviewedDone(mm, isReviewed(mm));
 
   // The wallet's cards: a summary in front, then each live module.
   const moduleCard = mm => {
-    const reviewed = completedModules.includes(mm.key);
-    // On track (moduleStatus.js isOnTrack), or reviewed with under £50 left
-    // (reviewedDone): the card gets the tick and the green wash.
-    const onTrack = mm.onTrack || reviewedDone(mm, reviewed);
+    const reviewed = isReviewed(mm);
+    const onTrack = isOptimised(mm);
     const hasRec = mm.amount > 0;
     const locked = isLocked(d, mm.key);
     // On track with something saved: what was saved leads.
@@ -241,7 +290,16 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       </>
     ),
   };
-  const cards = [summary, ...moduleList.map(moduleCard), ...(propertyDone ? [propertyCard] : [])];
+  // The filter: the summary stays in front whichever is on; Property (no £,
+  // never reviewed or on track) only under All. A filter left with nothing
+  // in it (a review undone, say) falls back to All, and stays there.
+  const [filter, setFilter] = useState("all");
+  const filterCounts = { all: live, reviewed: moduleList.filter(isReviewed).length, optimised: moduleList.filter(isOptimised).length };
+  const showFilter = live > FILTER_FROM;
+  const active = showFilter && filterCounts[filter] > 0 ? filter : "all";
+  useEffect(() => { if (active !== filter) setFilter(active); }, [active, filter]);
+  const shown = active === "reviewed" ? moduleList.filter(isReviewed) : active === "optimised" ? moduleList.filter(isOptimised) : moduleList;
+  const cards = [summary, ...shown.map(moduleCard), ...(active === "all" && propertyDone ? [propertyCard] : [])];
 
   return (
     <div>
@@ -265,7 +323,10 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       )}
       {live > 0 && (
         <section aria-label="Your modules" data-tour="modules-cards">
-          <CardStack cards={cards} peek={PEEK} turnLabels={["Show the previous module", "Show the next module"]}/>
+          {/* Keyed on the cards it holds, so a new set (another filter, or
+              a module joining or leaving one) starts at the summary. */}
+          <CardStack key={cards.map(c => c.key).join()} cards={cards} peek={PEEK} turnLabels={["Show the previous module", "Show the next module"]}
+            controls={showFilter && <FilterMenu value={active} counts={filterCounts} onChange={setFilter}/>}/>
           {/* "Did you make the change?", under the wallet so a card behind
               never hides it. */}
           {set && (

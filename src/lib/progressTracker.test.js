@@ -303,3 +303,10 @@ test("the snapshot puts it all together for the tab", () => {
   assert.equal(snap.annual.hits, 1);
   assert.equal(snap.annual.locked, 1);
 });
+
+test("the pension row counts the £100k trap's top-ups this tax year", () => {
+  const p = rowOf({ ...base, trapTopUps: [{ id: "sacrifice11", amount: 3000, route: "sacrifice", month: 11, taxYear: 2026 }] }, "pension");
+  // The regular 5% + 5% on the salary before the top-up, then the top-up.
+  assert.equal(p.current, 8500);
+  assert.match(p.note, /^£8,500 this tax year, yours and your employer's, including £3,000 of top-ups/);
+});
