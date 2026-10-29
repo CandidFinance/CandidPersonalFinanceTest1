@@ -7,46 +7,54 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import WheelPicker from "../WheelPicker.jsx";
 import { PillSlider } from "../PillSlider.jsx";
 import SubscribeButtons from "./SubscribeButtons.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, STUDENT_PURPLE, CTA_BLUE, CRITICAL } from "../../design-tokens.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL } from "../../design-tokens.js";
 
 // "Scenario modelling" at the top of the student loan page's figures to
 // try: a collapsed tile, marked as a subscriber feature for everyone, that
 // opens to the repayment plan builder (lib/loanPlan.js) for subscribers, or
-// a blurred example and the way to subscribe for anyone else. In the site's
-// CTA blue to draw the eye: for anyone else always, for a subscriber until
-// they first open it (d.slScenarioSeen).
+// a blurred example and the way to subscribe for anyone else. In the pale
+// blue of Home's "Since your last visit" (SinceLastVisit.jsx), as a
+// subscriber feature, with a sheen passing over it like the Opportunity
+// tile's (OpportunityTile.jsx).
 //
 // Plans are saved with their answers (d.slPlans, up to MAX_PLANS), and the
 // one picked (d.slPlanShown) is drawn on the balance chart beside the lump
 // sum, so the two can be compared. `run`: the picked plan run against the
-// loan (loanPlan.js runPlan), worked out by the page.
+// loan (loanPlan.js runPlan), worked out by the page. `onPlanSaved`: called
+// when a payment is added or changed, so the page can show it on the chart.
 
-export default function ScenarioModelling({ d, m, sl, set, open, run }) {
+const CSS = `
+.sm-tile { position: relative; overflow: hidden; }
+.sm-tile > * { position: relative; z-index: 1; }
+.sm-tile::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; z-index: 0; pointer-events: none;
+  background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,0.75) 46%, transparent 60%);
+  will-change: transform; animation: sm-sheen 7s ease-in-out infinite; }
+@keyframes sm-sheen { 0% { transform: translateX(-75%); } 55%, 100% { transform: translateX(25%); } }
+@media (prefers-reduced-motion: reduce) { .sm-tile::after { animation: none; transform: translateX(-30%); } }
+.sm-tile.sm-open::after { display: none; }
+`;
+
+export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSaved }) {
   const [expanded, setExpanded] = useState(false);
-  const blue = !open || !d.slScenarioSeen;
-  const toggle = () => {
-    if (open && !d.slScenarioSeen) set("slScenarioSeen", true);
-    setExpanded(e => !e);
-  };
-  const ink = blue ? WHITE : TEXT;
   return (
-    <div style={{background:blue ? CTA_BLUE : WHITE,border:blue ? "none" : "1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px",boxShadow:blue ? "0 2px 8px rgba(0,113,227,0.28)" : "0 1px 3px rgba(22,47,36,0.06)"}}>
-      <button type="button" aria-expanded={expanded} onClick={toggle} style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:"none",border:"none",padding:0,fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
-        <Layers size={17} color={blue ? WHITE : STUDENT_PURPLE} style={{flexShrink:0}}/>
+    <div className={expanded ? "sm-tile sm-open" : "sm-tile"} style={{background:"rgba(0,113,227,0.06)",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"12px",padding:"12px 14px",marginBottom:"14px",boxShadow:"0 4px 16px rgba(0,113,227,0.12)"}}>
+      <style>{CSS}</style>
+      <button type="button" aria-expanded={expanded} onClick={() => setExpanded(e => !e)} style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:"none",border:"none",padding:0,fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
+        <Layers size={17} color={CTA_BLUE} style={{flexShrink:0}}/>
         <span style={{flex:1,minWidth:0}}>
           <span style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
-            <span style={{fontSize:"14px",fontWeight:700,color:ink}}>Scenario modelling</span>
-            <span style={{display:"inline-flex",alignItems:"center",gap:"4px",background:blue ? WHITE : "rgba(196,150,58,0.14)",color:blue ? CTA_BLUE : "#8a6a24",borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+            <span style={{fontSize:"14px",fontWeight:700,color:CTA_BLUE}}>Scenario modelling</span>
+            <span style={{display:"inline-flex",alignItems:"center",gap:"4px",background:CTA_BLUE,color:WHITE,borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
               {!open && <Lock size={10} strokeWidth={2.6}/>}Subscribers
             </span>
           </span>
-          <span style={{display:"block",fontSize:"12px",color:blue ? "rgba(255,255,255,0.88)" : MUT,lineHeight:1.45,marginTop:"2px"}}>Your pay year by year, and plans of lump sums and monthly overpayments.</span>
+          <span style={{display:"block",fontSize:"12px",color:TEXT,lineHeight:1.45,marginTop:"2px"}}>Your pay year by year, and plans of lump sums and monthly overpayments.</span>
         </span>
-        <ChevronDown size={16} color={blue ? WHITE : MUT} style={{flexShrink:0,transition:"transform 0.15s",transform:expanded ? "rotate(180deg)" : "none"}}/>
+        <ChevronDown size={16} color={CTA_BLUE} style={{flexShrink:0,transition:"transform 0.15s",transform:expanded ? "rotate(180deg)" : "none"}}/>
       </button>
       {expanded && (
-        <div style={blue ? {background:WHITE,borderRadius:"10px",padding:"2px 12px 12px",marginTop:"12px"} : undefined}>
-          {open ? <><PayByYear d={d} m={m} sl={sl} set={set}/><PlanBuilder d={d} m={m} sl={sl} set={set} run={run}/></> : <Locked d={d}/>}
+        <div style={{background:WHITE,borderRadius:"10px",padding:"2px 12px 12px",marginTop:"12px"}}>
+          {open ? <><PayByYear d={d} m={m} sl={sl} set={set}/><PlanBuilder d={d} m={m} sl={sl} set={set} run={run} onSaved={onPlanSaved}/></> : <Locked d={d}/>}
         </div>
       )}
     </div>
@@ -83,7 +91,7 @@ const Flag = ({ check }) => check && (
   </div>
 );
 
-function PlanBuilder({ d, m, sl, set, run }) {
+function PlanBuilder({ d, m, sl, set, run, onSaved }) {
   const now = new Date();
   const years = sl.willClear ? sl.clearYr : sl.writeOffYr;
   const taxYear = sl.writeOffTaxYear - sl.writeOffYr;
@@ -119,6 +127,7 @@ function PlanBuilder({ d, m, sl, set, run }) {
       : { id: editing || `i${Date.now().toString(36)}`, kind: "monthly", amount: String(draft.amount), from: draft.from, to: draft.to };
     savePlan({ ...plan, items: editing ? plan.items.map(x => x.id === editing ? item : x) : [...plan.items, item] });
     close();
+    onSaved?.();
   };
   const ahead = adding === "once" ? monthsFrom(now, +draft.year, +draft.month) : 0;
   const whenOk = adding === "once" ? ahead >= 0 && ahead < years * 12 : !!draft.from && (!draft.to || +draft.to >= +draft.from);
@@ -146,6 +155,10 @@ function PlanBuilder({ d, m, sl, set, run }) {
     </div>
   );
   const saved = run ? run.base.totalPaid - run.totalPaid : 0;
+  // This year's months from this one on: a one-off can't be in the past. A
+  // saved one-off whose month has since passed keeps its month on the wheel
+  // while it's changed, so the wheel shows what's stored.
+  const monthItems = MONTHS.map((name, i) => ({ value: String(i + 1), label: name })).filter(o => +draft.year !== now.getFullYear() || +o.value >= now.getMonth() + 1 || o.value === draft.month);
   const years12 = Array.from({ length: lastYear - now.getFullYear() + 2 }, (_, i) => now.getFullYear() + i).filter(y => y <= lastYear + 1);
 
   return (
@@ -197,11 +210,11 @@ function PlanBuilder({ d, m, sl, set, run }) {
                 <div style={{display:"flex",gap:"8px"}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={label}>Month</div>
-                    <WheelPicker label="Month" items={MONTHS.map((name, i) => ({ value: String(i + 1), label: name }))} value={draft.month} onChange={v => setDraft(x => ({ ...x, month: v }))}/>
+                    <WheelPicker label="Month" items={monthItems} value={draft.month} onChange={v => setDraft(x => ({ ...x, month: v }))}/>
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={label}>Year</div>
-                    <WheelPicker label="Year" items={years12.map(y => ({ value: String(y), label: String(y) }))} value={draft.year} onChange={v => setDraft(x => ({ ...x, year: v }))}/>
+                    <WheelPicker label="Year" items={years12.map(y => ({ value: String(y), label: String(y) }))} value={draft.year} onChange={v => setDraft(x => ({ ...x, year: v, month: +v === now.getFullYear() && +x.month < now.getMonth() + 1 ? String(now.getMonth() + 1) : x.month }))}/>
                   </div>
                 </div>
               ) : (

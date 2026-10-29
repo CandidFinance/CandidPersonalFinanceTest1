@@ -163,6 +163,14 @@ export default function MobileStudentLoanDeepDive({ d, m, set, savingsRates, onR
 // Your loan trajectory: when the balance starts falling, and the balance
 // year by year to when it clears or is written off.
 function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, overpayOptions, selectedScenario, baseProjection, worthOverpaying, onRecordLoanOverpayment, editingBalance, setManualBalanceInput, sl, set, editingStart, setEditingStart, setStartInput, overpayAmt, manualBalanceInput, setEditingBalance, startInput, balanceChartRef, balanceChartWidth, subscriber = false, planRun = null, planName = null }) {
+  // A payment added to or changed in a plan (ScenarioModelling): back up to
+  // the chart, where the plan's line glows once (BalanceChart planFlash).
+  const [planFlash, setPlanFlash] = useState(0);
+  const showPlan = () => {
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    balanceChartRef.current?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
+    setPlanFlash(n => n + 1);
+  };
   // Suggests the balance after paying the currently-selected slider amount,
   // rather than a blank/current-balance starting point — if the user came
   // here having just modelled an overpayment above, that's almost certainly
@@ -216,7 +224,7 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
 
         <div ref={balanceChartRef} style={{width:"100%",marginBottom:"6px"}}>
           <BalanceChart sl={sl} width={balanceChartWidth} alt={selectedScenario?.path} altLabel={overpayAmt > 0 ? `With ${fmt(overpayAmt)} paid now` : null}
-            plan={planRun?.path} planLabel={planRun ? planName : null}/>
+            plan={planRun?.path} planLabel={planRun ? planName : null} planFlash={planFlash}/>
         </div>
 
         {/* The headline figures straight under the chart; what's left as it
@@ -237,7 +245,7 @@ function LoanTrajectory({ d, m, tip, savingsRates, ageKnown, setOverpayAmt, over
             <div style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"12.5px",fontWeight:700,color:G,marginBottom:"10px"}}>
               <SlidersHorizontal size={14}/>Try your own figures
             </div>
-            {set && !sl.belowThreshold && <ScenarioModelling d={d} m={m} sl={sl} set={set} open={subscriber} run={planRun}/>}
+            {set && !sl.belowThreshold && <ScenarioModelling d={d} m={m} sl={sl} set={set} open={subscriber} run={planRun} onPlanSaved={showPlan}/>}
             {set && <PayGrowth d={d} m={m} set={set}/>}
             {showLump && (
               <LumpSum m={m} sl={sl} tip={tip} overpayAmt={overpayAmt} setOverpayAmt={setOverpayAmt} options={overpayOptions} scenario={selectedScenario} base={baseProjection} worthOverpaying={worthOverpaying}/>
@@ -491,7 +499,7 @@ function LumpSum({ m, sl, tip, overpayAmt, setOverpayAmt, options, scenario, bas
               marginTop:"12px",width:"100%",background:G,color:WHITE,borderRadius:"100px",padding:"12px",fontSize:"13.5px",fontWeight:600,
               display:"flex",alignItems:"center",justifyContent:"center",gap:"7px",textDecoration:"none",boxSizing:"border-box",
             }}>
-              Overpay on the Student Loans Company site <ExternalLink size={14}/>
+              Overpay on the SLC site <ExternalLink size={14}/>
             </a>
           )}
         </>
@@ -617,8 +625,14 @@ function SpareCheck({ d, m, sl, amount }) {
 // `alt`: the same, with a lump sum paid today (calcOverpaymentScenarios), as
 // a dashed second line.
 // `alt`: a lump sum today, dashed gold; `plan`: a repayment plan
-// (ScenarioModelling), purple. Each named in a key at the top.
-function BalanceChart({ sl, width, alt = null, altLabel = null, plan = null, planLabel = null }) {
+// (ScenarioModelling), purple. Each named in a key at the top. `planFlash`:
+// a count that, each time it goes up, makes the plan's line glow once.
+const FLASH_CSS = `
+.plan-flash { opacity: 0; animation: plan-flash 1.6s ease-out 0.35s; }
+@keyframes plan-flash { 0% { opacity: 0; } 25% { opacity: 0.45; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .plan-flash { animation: none; } }
+`;
+function BalanceChart({ sl, width, alt = null, altLabel = null, plan = null, planLabel = null, planFlash = 0 }) {
   const path = sl.balancePath || [];
   if (path.length < 2) return null;
   const VW = width, VH = 160, PL = 36, PR = 8, PT = 24, PB = 20;
@@ -690,10 +704,20 @@ function BalanceChart({ sl, width, alt = null, altLabel = null, plan = null, pla
       {end.bal > 0 && (
         <text x={VW-PR} y={sy(end.bal) + (end.bal < path[path.length - 2].bal ? 16 : -10)} fontSize="10" fontWeight="700" fill={G} textAnchor="end">{fmt(end.bal)} written off</text>
       )}
-      {plan && plan.length > 1 && (
-        <path d={plan.map((p, i) => `${i ? "L" : "M"}${sx(p.yr).toFixed(1)},${sy(p.bal).toFixed(1)}`).join(" ")}
-          fill="none" stroke={STUDENT_PURPLE} strokeWidth="2.2" strokeDasharray="1.5 3.5" strokeLinecap="round" strokeLinejoin="round"/>
-      )}
+      {plan && plan.length > 1 && (() => {
+        const planLine = plan.map((p, i) => `${i ? "L" : "M"}${sx(p.yr).toFixed(1)},${sy(p.bal).toFixed(1)}`).join(" ");
+        return (
+          <g>
+            {planFlash > 0 && (
+              <g key={planFlash}>
+                <style>{FLASH_CSS}</style>
+                <path className="plan-flash" d={planLine} fill="none" stroke={STUDENT_PURPLE} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round"/>
+              </g>
+            )}
+            <path d={planLine} fill="none" stroke={STUDENT_PURPLE} strokeWidth="2.2" strokeDasharray="1.5 3.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </g>
+        );
+      })()}
       {altLabel && (
         <g>
           <line x1={PL} x2={PL + 16} y1={8} y2={8} stroke={GOLD} strokeWidth="2.2" strokeDasharray="5 4"/>

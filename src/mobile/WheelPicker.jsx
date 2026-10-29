@@ -9,8 +9,10 @@ import { G, MUT, TEXT, WHITE, CDARK } from "../design-tokens.js";
 // in the list sits on the first row. Used for years (YearPicker.jsx) and
 // months (the bonus month).
 
-const ROW = 44;
-const VISIBLE = 5; // odd, so one row sits in the middle
+const ROW = 34;
+// Rows in view: the answer, with half a row above and below to show it
+// turns. Kept short so a wheel never fills the screen.
+const VISIBLE = 2;
 const PAD = ROW * ((VISIBLE - 1) / 2);
 const SETTLE_MS = 120;
 
@@ -67,8 +69,8 @@ export default function WheelPicker({ items, value, onChange, label = "" }) {
         style={{
           position:"relative", height:"100%", overflowY:"scroll", scrollSnapType:"y mandatory", scrollbarWidth:"none",
           padding:`${PAD}px 0`, boxSizing:"border-box", outline:"none", perspective:"500px",
-          WebkitMaskImage:"linear-gradient(transparent, #000 32%, #000 68%, transparent)",
-          maskImage:"linear-gradient(transparent, #000 32%, #000 68%, transparent)",
+          WebkitMaskImage:"linear-gradient(rgba(0,0,0,0.3), #000 30%, #000 70%, rgba(0,0,0,0.3))",
+          maskImage:"linear-gradient(rgba(0,0,0,0.3), #000 30%, #000 70%, rgba(0,0,0,0.3))",
         }}>
         {items.map((o, i) => {
           // How far from the middle, in rows: tipped back and faded with it.
@@ -77,7 +79,7 @@ export default function WheelPicker({ items, value, onChange, label = "" }) {
           return (
             <div key={o.value || "blank"} role="option" aria-selected={i === at} onClick={() => moveTo(i)} style={{
               height:ROW, display:"flex", alignItems:"center", justifyContent:"center", scrollSnapAlign:"center", cursor:"pointer",
-              fontSize:on ? "17px" : "15px", fontWeight:on ? 700 : 600, color:on ? (o.value ? G : TEXT) : MUT,
+              fontSize:on ? "16px" : "14px", fontWeight:on ? 700 : 600, color:on ? (o.value ? G : TEXT) : MUT,
               transform:`rotateX(${-off * 22}deg)`, opacity:Math.max(0.25, 1 - Math.abs(off) * 0.3), userSelect:"none",
             }}>{o.label}</div>
           );
