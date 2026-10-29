@@ -19,7 +19,7 @@
 //   { list: [text, ...] }       bullets
 //   { button: { label, href } } a pill button
 //   { panel: { label, text } }  a tinted box (an invite link, a total)
-//   { news: { title, status, verdict, body, forYou, forExample, source, url } }  a news item
+//   { news: { title, status, verdict, body, forYou, forExample, forAsk: { label, href }, source, url } }  a news item
 //   { small }                   smaller, muted text
 
 export const SITE = "https://www.candid-finance.co.uk";
@@ -66,6 +66,7 @@ function tagBlock(b, c) {
   if (b.small !== undefined) return { ...b, small: tagText(b.small, c) };
   if (b.list) return { ...b, list: b.list.map(i => tagText(i, c)) };
   if (b.panel) return { ...b, panel: { ...b.panel, text: tagText(b.panel.text, c) } };
+  if (b.news?.forAsk) return { ...b, news: { ...b.news, forAsk: { ...b.news.forAsk, href: withUtm(b.news.forAsk.href, c) } } };
   return b;
 }
 
@@ -84,6 +85,7 @@ function textOf(b) {
     return [
       `${pillOf(n) ? `[${pillOf(n).label}] ` : ""}${n.title}`, n.body,
       ...(n.forYou ? [`${forLabel(n)}: ${n.forYou}`] : []),
+      ...(n.forYou && n.forAsk ? [`${n.forAsk.label}: ${n.forAsk.href}`] : []),
       ...(n.source ? [`Source: ${n.source}${n.url ? ` (${n.url})` : ""}`] : []),
       "",
     ];
@@ -118,7 +120,7 @@ function htmlOf(b) {
       + (s ? `<div style="margin:0 0 7px;"><span style="display:inline-block;padding:2px 9px;border-radius:100px;background:${s.bg};color:${s.fg};font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;">${s.label}</span></div>` : "")
       + `<div style="font-family:${SANS};font-size:19px;line-height:1.3;font-weight:700;color:${C.text};">${esc(n.title)}</div>`
       + `<p style="margin:8px 0 12px;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.text};">${esc(n.body)}</p>`
-      + (n.forYou ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;"><tr><td bgcolor="#e3efe8" style="padding:12px 14px;background:#e3efe8;border:1px solid ${C.success};border-left:4px solid ${C.success};border-radius:8px;"><div style="font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.success};">${forLabel(n)}</div><div style="margin-top:3px;font-family:${SANS};font-size:14.5px;line-height:1.55;color:${C.text};">${esc(n.forYou)}</div></td></tr></table>` : "")
+      + (n.forYou ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;"><tr><td bgcolor="#e3efe8" style="padding:12px 14px;background:#e3efe8;border:1px solid ${C.success};border-left:4px solid ${C.success};border-radius:8px;"><div style="font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.success};">${forLabel(n)}</div><div style="margin-top:3px;font-family:${SANS};font-size:14.5px;line-height:1.55;color:${C.text};">${esc(n.forYou)}</div>${n.forAsk ? `<div style="margin-top:6px;font-family:${SANS};font-size:13.5px;">${link(`${n.forAsk.label} →`, n.forAsk.href)}</div>` : ""}</td></tr></table>` : "")
       + (n.source ? `<div style="font-family:${SANS};font-size:12.5px;color:${C.muted};">Source: ${n.url ? `<a href="${esc(n.url)}" style="color:${C.muted};text-decoration:underline;">${esc(n.source)}</a>` : esc(n.source)}</div>` : "")
       + `</td></tr></table>`;
   }

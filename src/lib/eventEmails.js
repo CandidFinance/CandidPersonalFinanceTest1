@@ -20,7 +20,7 @@
 
 import { calcMetrics } from "./metrics.js";
 import { rollTaxYear } from "./taxYear.js";
-import { IMPACTS, STATUSES, cleanIssue, shortMoney, impactFor } from "./weekly.js";
+import { IMPACTS, STATUSES, cleanIssue, shortMoney, impactFor, askLink } from "./weekly.js";
 import { renderEmail, SITE } from "./emailLayout.js";
 
 export const EVENT_EMAIL_DAYS = 3;
@@ -162,7 +162,7 @@ export function eventEmail(issue, event, rawD, { today = new Date(), rows = [], 
       ...(issue.intro ? [{ p: issue.intro.trim() }] : []),
       ...items.map(i => {
         const forYou = impactFor(i, d, m, { today, rows });
-        return { news: { title: shortMoney(i.title.trim()), status: i.status, verdict: i.verdict || null, body: shortMoney(i.body.trim()), forYou: forYou && shortMoney(forYou.text), forExample: !!forYou?.example, source: i.source?.trim() || null, url: i.url?.trim() || null } };
+        return { news: { title: shortMoney(i.title.trim()), status: i.status, verdict: i.verdict || null, body: shortMoney(i.body.trim()), forYou: forYou && shortMoney(forYou.text), forExample: !!forYou?.example, forAsk: askLink(forYou?.ask), source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
       { button: { label: "See where these land on your figures", href: `${SITE}/app/home` } },
     ],

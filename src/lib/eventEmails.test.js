@@ -111,5 +111,10 @@ test("the Budget email: Win and Bites pills, a line on their figures, or a worke
   const blank = eventEmail(issue, budget, { name: "Jo" }, { rows, unsubscribeUrl: "https://u", free: true });
   assert.match(blank.text, /For example: £30k at 5% \(today's best easy-access rate\) earns £1\.5k a year\. The tax on it from April 2027: £120 at basic rate \(£100 now\), £440 at higher rate \(£400 now\)\./);
   assert.match(blank.text, /You're getting this because you gave us your email/);
+  // Where Candid could work it out, the example links to adding the figure; not where it can't.
+  assert.match(blank.text, /\(£400 now\)\.\nSee yours: add your savings in Candid: https:\/\/www\.candid-finance\.co\.uk\/app\/home\?utm_source=candid-email/);
+  assert.match(blank.text, /For example: £20k in a cash ISA at 6% \(today's best easy-access ISA rate\) earns £1\.2k a year, tax-free\. Outside an ISA, a higher-rate taxpayer would pay about £308 a year on it from April 2027\.\nSee yours: add your savings in Candid/);
+  assert.doesNotMatch(blank.text, /rental profit[^\n]*\nSee yours/);
+  assert.doesNotMatch(text, /For you: [^\n]*\nSee yours/);
   assert.doesNotMatch(text + blank.text, /\byou should\b|\brecommend/i);
 });

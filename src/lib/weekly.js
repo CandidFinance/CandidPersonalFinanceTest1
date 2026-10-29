@@ -154,6 +154,7 @@ export const IMPACTS = {
   cashIsaLimit: {
     label: "Cash ISA limit",
     fields: [{ key: "limit", label: "New yearly limit for cash (£)" }, { key: "from", label: "From (e.g. April 2027)" }],
+    ask: "your savings",
     line: (d, m, { limit, from }) => {
       const cap = +limit;
       if (!(cap > 0)) return null;
@@ -170,6 +171,17 @@ export const IMPACTS = {
           : `You've put ${fmt(paid)} into a cash ISA this tax year, within a ${fmt(cap)} limit${when}.`;
       }
       return m.cash > cap ? `You hold ${fmt(m.cash)} in cash. Under a ${fmt(cap)} limit${when}, that's the most of it that could go into a cash ISA each year.` : null;
+    },
+    // The full allowance kept: what it's worth in a year, against the same
+    // interest outside an ISA at their band (higher rate when unknown).
+    example: (d, m, { limit, from }, { rows } = {}) => {
+      const cap = +limit;
+      if (!(cap >= ISA_ALLOWANCE)) return null;
+      const rate = bestEasyAccess(rows, true), year = yearOf(from), band = salaryBand(m) || "higher";
+      const interest = Math.round(cap * rate / 100);
+      const tax = Math.round(Math.max(0, interest - PSA_BY_BAND[band]) * savingsTaxRates(year)[band]);
+      const on = `${fmt(cap)} in a cash ISA at ${rate}%${rows?.length ? " (today's best easy-access ISA rate)" : ""} earns ${fmt(interest)} a year, tax-free.`;
+      return tax > 0 ? `${on} Outside an ISA, a ${band}-rate taxpayer would pay about ${fmt(tax)} a year on it from ${from || year}.` : on;
     },
   },
   isaLeft: {
@@ -196,6 +208,7 @@ export const IMPACTS = {
   savingsTax: {
     label: "Savings interest tax rates",
     fields: [{ key: "from", label: "From (e.g. April 2027)" }],
+    ask: "your savings",
     line: (d, m, { from }) => {
       if (!(m.cash > 0) || !(m.salary > 0)) return null;
       const year = yearOf(from), band = m.taxBandLabel || "basic";
@@ -268,20 +281,25 @@ const EXAMPLE_RATE = 4.5;
 const yearOf = from => +(/\d{4}/.exec(from || "")?.[0]) || 2027;
 // Their band, only when they've given a salary.
 const salaryBand = m => m.salary > 0 ? m.taxBandLabel : null;
-// Today's best easy-access rate outside an ISA (savings_rates rows).
-export function bestEasyAccess(rows) {
-  const top = Math.max(0, ...(rows || []).filter(r => !r.is_isa && /^easy access$/i.test(r.account_type || "")).map(r => +r.rate_aer || 0));
+// Today's best easy-access rate outside an ISA, or in one (savings_rates
+// rows).
+export function bestEasyAccess(rows, isa = false) {
+  const top = Math.max(0, ...(rows || []).filter(r => !!r.is_isa === isa && (isa ? /^easy access isa$/i : /^easy access$/i).test(r.account_type || "")).map(r => +r.rate_aer || 0));
   return top > 0 ? Math.round(top * 100) / 100 : EXAMPLE_RATE;
 }
+// An example's link: what they'd add in Candid to see their own figure.
+export const askLink = ask => ask ? { label: `See yours: add ${ask} in Candid`, href: `${SITE}/app/home` } : null;
 // What a change means for them: the line on their figures, or failing
-// that, a worked example ({ text, example }), or null.
+// that, a worked example ({ text, example, ask }), or null. `ask`: what
+// they'd add in Candid to see their own (an impact's `ask`), only where
+// Candid can work it out.
 export function impactFor(item, d, m, ctx = {}) {
   const impact = item?.impact && IMPACTS[item.impact.kind];
   if (!impact) return null;
   const own = impact.line(d, m, item.impact, ctx.today);
   if (own) return { text: own, example: false };
   const ex = impact.example?.(d, m, item.impact, ctx);
-  return ex ? { text: ex, example: true } : null;
+  return ex ? { text: ex, example: true, ask: impact.ask || null } : null;
 }
 
 // ── Your week ────────────────────────────────────────────────────────────────
@@ -349,7 +367,7 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
       ...(items.length ? [{ h: "What's happening this week that affects you" }] : []),
       ...items.map(i => {
         const forYou = impactFor(i, d, m, { today, rows });
-        return { news: { title: shortMoney(unbold(i.title).trim()), status: i.status, verdict: i.verdict || null, body: shortMoney(unbold(i.body).trim()), forYou: forYou && shortMoney(forYou.text), forExample: !!forYou?.example, source: i.source?.trim() || null, url: i.url?.trim() || null } };
+        return { news: { title: shortMoney(unbold(i.title).trim()), status: i.status, verdict: i.verdict || null, body: shortMoney(unbold(i.body).trim()), forYou: forYou && shortMoney(forYou.text), forExample: !!forYou?.example, forAsk: askLink(forYou?.ask), source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
     ],
     after: [
