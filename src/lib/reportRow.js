@@ -30,8 +30,11 @@ export function rowInputFields(d, m) {
     tax_band: m.taxBandLabel,
     salary_trajectory: d.salaryTrajectory||null,
     monthly_expenses: +d.monthlyExpenses||null,
-    cash_savings: +d.cashSavings||null,
-    savings_rate: +d.savingsRate||null,
+    // The Cash module asks for each account (cashTiers); cashSavings and
+    // savingsRate are the older flat answers. m.cash is either; the rate is
+    // the accounts' weighted rate when they've given accounts.
+    cash_savings: m.cash||null,
+    savings_rate: (d.cashTiers || []).some(t => +t.amount > 0) ? Math.round(m.effectiveSavingsRate * 100) / 100 || null : +d.savingsRate||null,
     premium_bonds: +d.premiumBonds||null,
     has_investments: d.hasInvestments === "yes",
     isa_this_year: m.isaUsedThisYear||null,
