@@ -304,20 +304,13 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
   return (
     <div>
       {/* Before any module's answered: the summary card greyed, its figure
-          blank, the counts as they stand. */}
+          blank. No counts: they'd all be 0 bar Not started, which Still to
+          explore below already gives. */}
       {live === 0 && (
         <StillCard data-tour="modules-cards" label="Your modules" body={t => (
           <>
             <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:MUT,opacity:0.5,lineHeight:1,marginTop:"8px"}}>£–</div>
             <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>What's at stake shows here once a module is answered.</p>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3, minmax(0, 1fr))",gap:"8px",marginTop:"14px",paddingTop:"10px",borderTop:`1px solid ${t.rule}`}}>
-              {[["Live", live], ["Not started", toExplore], ["Need action", needActionCount]].map(([l, n]) => (
-                <div key={l}>
-                  <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,lineHeight:1,color:t.figure}}>{n}</div>
-                  <div style={{fontSize:"9.5px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"3px",color:t.label}}>{l}</div>
-                </div>
-              ))}
-            </div>
           </>
         )}/>
       )}

@@ -96,8 +96,8 @@ export default function AppTour({ screen, scoreShowing, set, onStart, onClose })
 
   // To step `i`: on this screen, straight there; on another, the tap on its
   // tab first (forward), or straight to the page (back).
-  const goTo = (i, { tap = true, from = "show" } = {}) => {
-    const to = steps[i];
+  const goTo = (i, { tap = true, from = "show", list = steps } = {}) => {
+    const to = list[i];
     // Once at a time: a second Next mid-move is ignored.
     if (!to || phase !== from) return;
     if (to.id === "done") record("finished", { via: "end" });
@@ -117,13 +117,19 @@ export default function AppTour({ screen, scoreShowing, set, onStart, onClose })
   const next = () => goTo(at + 1);
   const back = () => goTo(at - 1, { tap: false });
 
-  // The new screen in: its part found (or not, and on past it).
+  // The new screen in: its part found (or not: the stop's left out, so the
+  // dots don't count it, and on to the next).
   useEffect(() => {
     if (phase !== "wait" || !step || step.screen !== screen) return;
     const started = Date.now();
     let frame = requestAnimationFrame(function look() {
       if (!step.target || targetOf(step.target)) { setPhase("show"); return; }
-      if (Date.now() - started > WAIT) { goTo(at + 1, { tap: false, from: "wait" }); return; }
+      if (Date.now() - started > WAIT) {
+        const rest = steps.filter((_, j) => j !== at);
+        setSteps(rest);
+        goTo(at, { tap: false, from: "wait", list: rest });
+        return;
+      }
       frame = requestAnimationFrame(look);
     });
     return () => cancelAnimationFrame(frame);
