@@ -440,13 +440,15 @@ export function buildForecastAssumptions(d, m) {
 // subtracted again here, matching calcMetrics' own netWorth formula exactly
 // (double-subtracting it would double-count debt already reflected in a
 // reduced propertyEquity).
-export function calcNetWorthTrajectory(d, m, horizonYears) {
+// `surplusOverride`: the monthly amount saved, in place of the estimate from
+// their answers (m.monthlySurplus); Forecast passes only what the user typed.
+export function calcNetWorthTrajectory(d, m, horizonYears, surplusOverride = null) {
   // Pensions and investments both at 6% a year before inflation (growth.js).
   const PENSION_RATE = GROWTH_NOMINAL_PCT / 100, INVESTMENT_RATE = GROWTH_NOMINAL_PCT / 100;
   const cashMonthlyRate = (m.effectiveSavingsRate || 3.5) / 100 / 12;
   const investMonthlyRate = INVESTMENT_RATE / 12;
   const cashCapTarget = m.emergencyBuffer || 0;
-  const monthlySurplus = Math.max(0, m.monthlySurplus || 0);
+  const monthlySurplus = Math.max(0, (surplusOverride != null ? +surplusOverride : m.monthlySurplus) || 0);
 
   const potVal = (+d.potValue||0) + (+d.potValue2||0);
   // The employer matches what the user pays, up to its cap (as calcMetrics).
