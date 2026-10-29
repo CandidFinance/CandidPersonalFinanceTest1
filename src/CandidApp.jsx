@@ -46,6 +46,7 @@ import { bankedDiff, gainedRowFields, decisionRowFields } from "./lib/valueMetri
 import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, loanSavingsIn, loanPensionChecked, hasEmployerMatch, loanVerdictReady } from "./lib/appEntry.js";
 import { moduleGuideStarts, briefQuestions } from "./lib/moduleGuide.js";
 import { rollTaxYear } from "./lib/taxYear.js";
+import { yearRecordPatch } from "./lib/yearRecord.js";
 import { readinessMissing } from "./lib/propertyReadiness.js";
 import { selectRows, updateRow } from "./lib/supabase.js";
 import { propertyRowFields } from "./lib/reportRow.js";
@@ -470,6 +471,14 @@ export default function AppShell() {
     if (dropped.length) setCompletedModules(prev => prev.some(k => dropped.includes(k)) ? prev.filter(k => !dropped.includes(k)) : prev);
     if ((d.onTrackLast || []).join() !== now.join() || !d.onTrackLast) set("onTrackLast", now);
   }, [statuses, savingsRates, completedModules]); // eslint-disable-line react-hooks/exhaustive-deps
+  // This tax year's still open, by module, for the year record on Home
+  // (src/lib/yearRecord.js); last year's stays as it was once 6 April has
+  // passed. Only once the rates are in, as above.
+  useEffect(() => {
+    if (savingsRates === null) return;
+    const next = yearRecordPatch(d, m, statuses);
+    if (next) set("yearRecords", next);
+  }, [statuses, savingsRates]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Property inputs → the report row. Only edits made on the Property screen
   // are sent (not the values already there when it opens), once they've

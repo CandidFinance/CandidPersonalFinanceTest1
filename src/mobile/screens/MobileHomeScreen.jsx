@@ -19,6 +19,7 @@ import HomeHero from "../HomeHero.jsx";
 import GettingToKnow from "../GettingToKnow.jsx";
 import SinceLastVisit from "../SinceLastVisit.jsx";
 import OutsideEvent from "../OutsideEvent.jsx";
+import YourYears from "../../components/dashboard/YourYears.jsx";
 import { useCashNews } from "../visitNews.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
 
@@ -128,6 +129,10 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
       <HomeHero d={d} totalOpp={totalOpp} saved={gainedSoFar(d).perYear} scoreShown={shownScore} scoreColor={scoreColor} scoreLabel={scoreLabel} gain={gain}
         plan={plan} stepsDone={stepsDone} headline={report.headline} onTrack={report.onTrack} cashBadge={cashBadge} unchecked={unchecked}
         onOpen={key => navigate(key ? `/app/module/${key}` : "/app/modules")}/>
+
+      {/* Each tax year's saved and still open, once anything's been saved
+          (YourYears.jsx). */}
+      <YourYears d={d}/>
 
       {/* What the app can do, ticked off as it's done (Phase 6). */}
       <GettingToKnow d={d} set={set} answered={doneModules(d, propertyDone).length}/>

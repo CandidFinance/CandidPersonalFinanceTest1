@@ -5,7 +5,7 @@ import { buildProgressSnapshot, poundsInput, TRAP_EDGE } from "../../lib/progres
 import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK1 } from "../../lib/format.js";
-import { taxYearOf } from "../../lib/taxYear.js";
+import { taxYearOf, taxYearShort } from "../../lib/taxYear.js";
 import { useElementWidth } from "../../mobile/useElementWidth.js";
 import CardStack, { DARK } from "../../mobile/CardStack.jsx";
 import Alert from "../../mobile/AlertBox.jsx";
@@ -117,9 +117,6 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenMo
 
 // ── The stack's cards ──────────────────────────────────────────────────
 // Each drawn in the colours `t` it's wearing (CardStack.jsx): DARK in front.
-
-// A tax year as "26/27", from the year it starts in.
-const taxYearShort = start => `${String(start % 100).padStart(2, "0")}/${String((start + 1) % 100).padStart(2, "0")}`;
 
 // A card's lead figure, in the serif at the stack's size, with its unit.
 const heroFig = t => ({ fontFamily:SERIF, fontSize:"var(--hero-fig)", fontWeight:700, color:t.figure, lineHeight:1, letterSpacing:"-0.01em", marginTop:"8px" });

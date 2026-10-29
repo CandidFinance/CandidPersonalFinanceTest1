@@ -5,6 +5,9 @@ export function taxYearOf(date) {
   return (month > 3 || (month === 3 && day >= 6)) ? y : y - 1;
 }
 
+// A tax year as "26/27", from the year it starts in.
+export const taxYearShort = start => `${String(start % 100).padStart(2, "0")}/${String((start + 1) % 100).padStart(2, "0")}`;
+
 // The tax year a user's figures are for: the year their inputs are stamped
 // with (rollTaxYear stamps the current one when the app loads), else the
 // current one. Rates and limits that change on 6 April follow it, so they

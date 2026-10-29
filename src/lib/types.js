@@ -34,6 +34,7 @@
  * @property {Object<string, {banked: number}>} [moduleBaselines] Each module's £ when first answered (moduleStatus.js).
  * @property {Object<string, {result: string, gap: number, years: number, on: string}>} [decisionsInformed] The last either/or answer seen for each question (valueMetrics.js, useDecisionLog).
  * @property {string[]} [onTrackLast] The modules on track last time the app worked it out (moduleStatus.js onTrackKeys).
+ * @property {Object<string, {stillOpen: Object<string, number>, asOf: string}>} [yearRecords] Each tax year's £ a year still open by module, as on the last open in that year (yearRecord.js).
  * @property {Object<string, {choice: string, taxYear: number, perYear?: number, on?: string, moduleKey?: string}>} [opportunityChoices] "Done" or "not for me" on an opportunity, for a tax year (opportunityChoices.js).
  * @property {boolean} [unlockGate] Came in after the paywall shipped (unlock.js).
  * @property {string[]} [unlockedModules]
