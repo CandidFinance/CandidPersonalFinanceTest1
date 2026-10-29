@@ -28,6 +28,8 @@ import { G, MUT, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN,
 // `light`: every card plain white, the front one too (the £100k tax trap's
 // other options, inside a tile of their own). `controls`: a node at the right
 // end of the arrows' row (Modules' filter), the arrows staying centred.
+// `onChange(i)`: called with the card coming to the front as each turn
+// starts (Forecast shows that card's details below the stack).
 const PEEK = 44;      // px of each card behind showing above the one in front
 const SLIM = 7;       // px of each slim edge, past the second card behind
 const MAX_SLIVERS = 3;
@@ -68,7 +70,7 @@ const WARN = {
 const PLAIN = { ...LIGHT, bg: WHITE };
 const DONE = { ...LIGHT, bg: HERO_TILE_BG_GREEN, border: "1px solid rgba(47,148,97,0.45)", shadow: "0 4px 18px rgba(47,148,97,0.10)", figure: SUCCESS };
 
-export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the previous card", "Show the next card"], light: allLight = false, controls = null }) {
+export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the previous card", "Show the next card"], light: allLight = false, controls = null, onChange }) {
   const reduceMotion = useReducedMotion();
   const n = cards.length;
   // `target`: the card heading to the front, set as a turn starts so the
@@ -91,6 +93,7 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
     timers.current.forEach(clearTimeout);
     const leaving = turning !== null ? target : front;
     setTarget(next);
+    onChange?.(next);
     if (reduceMotion) { setFront(next); setTurning(null); return; }
     setFront(leaving);
     setTurning(leaving);

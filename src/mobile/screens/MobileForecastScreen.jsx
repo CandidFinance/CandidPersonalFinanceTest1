@@ -3,22 +3,23 @@ import { useElementWidth } from "../useElementWidth.js";
 import { Lock, ChevronRight } from "lucide-react";
 import { PillSlider } from "../PillSlider.jsx";
 import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
-import { fmt, fmtCompact } from "../../lib/format.js";
+import { fmt, fmtK1, fmtCompact } from "../../lib/format.js";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import InfoButton from "../InfoButton.jsx";
 import { retirementAgeFor } from "../../lib/metrics.js";
-import { MODULE_CHART_COLOR, WHITE, MUT, TEXT, G, GOLD, SERIF, FORECAST_COLORS, FORECAST_SHORT_LABEL, RADIUS_CARD, CDARK, CRITICAL } from "../../design-tokens.js";
+import CardStack, { LIGHT } from "../CardStack.jsx";
+import { MODULE_CHART_COLOR, WHITE, MUT, G, GOLD, SERIF, FORECAST_COLORS, FORECAST_SHORT_LABEL, CRITICAL } from "../../design-tokens.js";
 
-// Mobile Forecast screen — a "Surplus" comparison view (multi-strategy line
-// chart + low/mid/high table) and a "Net worth" view (single projected net
-// worth line + asset/liability breakdown), toggled at the top. Both are built
-// on shared src/lib/forecast.js functions desktop-equivalent logic already
-// uses (calcForecast/calcForecastSeries/calcNetWorthTrajectory/
-// buildForecastAssumptions), so the numbers and assumption copy can never
-// disagree between mobile and desktop, and nothing here is an invented figure
-// — see calcNetWorthTrajectory's own comment for exactly which existing
-// growth/paydown assumptions feed the net worth line.
-const VIEW_OPTIONS = [{value:"surplus",label:"Surplus"},{value:"networth",label:"Net worth"}];
+// The Forecast tab: two cards in a wallet stack, as on Home and Progress
+// (CardStack.jsx). Net worth: everything you own less everything you owe,
+// projected forward. Surplus: what the money left over each month (and a
+// lump sum) could grow to in an ISA, in savings or in a pension, side by
+// side. The time horizon below the stack sets both, and below it are the
+// front card's details: the breakdown by part, or the low/mid/high table. Every figure comes from src/lib/forecast.js (calcForecast,
+// calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions), so
+// nothing here is an invented figure; see calcNetWorthTrajectory's own
+// comment for which growth and paydown assumptions feed the net worth line.
+
 // Normal Minimum Pension Age rises from 55 to 57 from April 2028 — matches
 // the liquidity copy below.
 const PENSION_ACCESS_AGE = 57;
@@ -59,7 +60,6 @@ const NW_ROW_META = {
 };
 
 export default function MobileForecastScreen({ d, m }) {
-  const [view, setView] = useState("surplus");
   const [openRow, setOpenRow] = useState(null);
   const age = +d.age || null;
   const retireAge = retirementAgeFor(d);
@@ -80,49 +80,196 @@ export default function MobileForecastScreen({ d, m }) {
   const [lumpSum, setLumpSum] = useState(null);
   const [openTip, setOpenTip] = useState(null);
   const [showNwAssumptions, setShowNwAssumptions] = useState(false);
-  // Re-measured when the view switches: each view has its own chart.
-  const [chartWrapRef, chartWidth] = useElementWidth(340, [view]);
+  const [shown, setShown] = useState(0); // the card in front
+  // Each card measures its own chart: both are laid out at once, one behind.
+  const [nwChartRef, nwChartWidth] = useElementWidth(300);
+  const [surplusChartRef, surplusChartWidth] = useElementWidth(300);
 
   // Not rerun when only the chart's width or an open row changes.
   const forecast = useMemo(() => calcForecast(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
   const series = useMemo(() => calcForecastSeries(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
   const assumptions = useMemo(() => buildForecastAssumptions(d, m), [d, m]);
+  const netWorthRows = useMemo(() => calcNetWorthTrajectory(d, m, horizon), [d, m, horizon]);
+  const monthly = surplus != null ? surplus : Math.round(m.monthlySurplus);
+  const nwEnd = netWorthRows[horizon].netWorth;
 
-
+  // Net worth leads, as on Home. Each card's top line shows while it's behind.
+  // The cards hold the headline and chart; the front card's details (the
+  // breakdown, or the low/mid/high table) sit below the horizon, so the
+  // stack stays short enough to scroll past on a phone.
+  const cards = [
+    { key: "netWorth", label: "Net worth", amount: `${nwEnd < 0 ? "−" : ""}${fmtK1(nwEnd)}`,
+      body: t => <NetWorthCard t={t} age={age} horizon={horizon} netWorthRows={netWorthRows} chartRef={nwChartRef} chartWidth={nwChartWidth}/>,
+      details: <NetWorthBreakdown t={LIGHT} age={age} horizon={horizon} netWorthRows={netWorthRows} m={m}
+        showNwAssumptions={showNwAssumptions} setShowNwAssumptions={setShowNwAssumptions} openRow={openRow} setOpenRow={setOpenRow}/> },
+    { key: "surplus", label: "Surplus", amount: `${fmt(monthly)} a month`, amountSans: true,
+      body: t => <SurplusCard t={t} monthly={monthly} setSurplus={setSurplus} lumpSum={lumpSum} setLumpSum={setLumpSum} horizon={horizon} age={age}
+        series={series} chartRef={surplusChartRef} chartWidth={surplusChartWidth}/>,
+      details: <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip}/> },
+  ];
 
   return (
     <div>
-      {/* What this tab is for, then what the chosen view shows. */}
       <h1 style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,margin:"0 0 6px"}}>Your forecast</h1>
       <p style={{fontSize:"13.5px",color:MUT,lineHeight:1.5,margin:"0 0 16px"}}>
-        Where your money could be in the future, worked out from your answers. Pick a point in time and change the figures to see how the picture moves.
-      </p>
-      <PillSlider value={view} onChange={setView} options={VIEW_OPTIONS}/>
-      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"10px 0 0"}}>
-        {view === "surplus"
-          ? "What the money left over each month could grow to in a Stocks and Shares ISA, in savings, or in your pension, side by side. Change the monthly amount or add a lump sum to compare."
-          : "Everything you own less everything you owe, projected forward: savings and pension growing, loans paid down."}
-        {" "}<span style={{color:MUT}}>Estimates, not promises: growth isn't guaranteed.</span>
+        Where your money could be in the future, worked out from your answers. Estimates, not promises: growth isn't guaranteed.
       </p>
 
-      <label style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginTop:"16px",display:"block"}}>Time horizon</label>
+      <CardStack cards={cards} onChange={setShown}/>
+
+      {/* The horizon sets both cards, so it sits below the stack. */}
+      <div id="forecast-horizon" style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginTop:"18px"}}>Time horizon</div>
       <div style={{marginTop:"8px"}}>
-        <PillSlider value={horizon} onChange={setHorizon} options={HORIZON_OPTIONS}/>
+        <PillSlider value={horizon} onChange={setHorizon} options={HORIZON_OPTIONS} labelledBy="forecast-horizon"/>
       </div>
 
-      {view === "surplus" ? (
-        <SurplusView surplus={surplus} m={m} setSurplus={setSurplus} lumpSum={lumpSum} setLumpSum={setLumpSum} horizon={horizon} chartWrapRef={chartWrapRef} age={age} forecast={forecast} openTip={openTip} assumptions={assumptions} setOpenTip={setOpenTip} series={series} chartWidth={chartWidth}/>
-      ) : (
-        <NetWorthView age={age} horizon={horizon} chartWrapRef={chartWrapRef} setShowNwAssumptions={setShowNwAssumptions} showNwAssumptions={showNwAssumptions} m={m} openRow={openRow} setOpenRow={setOpenRow} d={d} chartWidth={chartWidth}/>
-      )}
+      <section aria-label={`${cards[shown].label} details`} style={{marginTop:"24px"}}>{cards[shown].details}</section>
+
+      <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+        <div>
+          <div style={{fontSize:"13px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
+          <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>See how your net worth stacks up by age and income.</div>
+        </div>
+        <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
+      </div>
     </div>
   );
 }
 
-// The Surplus view: what your monthly surplus and a lump sum could grow to,
+// ── The stack's cards ──────────────────────────────────────────────────
+// Each drawn in the colours `t` it's wearing (CardStack.jsx): DARK in front.
+
+const cardText = t => ({ fontSize:"13px", color:t.body, lineHeight:1.45, margin:"8px 0 0" });
+const caps = t => ({ fontSize:"11px", fontWeight:600, color:t.label, letterSpacing:"0.09em", textTransform:"uppercase" });
+const note = t => ({ marginTop:"8px", background:t.track, borderRadius:"10px", padding:"10px 12px", display:"flex", flexDirection:"column", gap:"6px" });
+const noteText = t => ({ fontSize:"12px", color:t.body, lineHeight:1.55, margin:0 });
+
+// A line chart's axes: three £ gridlines, then year (or age) ticks below,
+// the first anchored left and the last right so no label spills past the
+// chart's edges.
+function Axes({ c, t, age }) {
+  return (
+    <>
+      {c.yTicks.map((v,i) => (
+        <g key={i}>
+          <line x1={c.PL} x2={c.VW-c.PR} y1={c.sy(v)} y2={c.sy(v)} stroke={t.rule} strokeWidth="1"/>
+          <text x={c.PL-6} y={c.sy(v)+3} fontSize="9" fontWeight="700" fill={t.body} textAnchor="end">{fmtCompact(v)}</text>
+        </g>
+      ))}
+      <line x1={c.PL} x2={c.VW-c.PR} y1={c.VH-c.PB} y2={c.VH-c.PB} stroke={t.body} strokeOpacity="0.4" strokeWidth="1.5"/>
+      {c.xTicks.map((yr,i) => (
+        <text key={i} x={c.sx(yr)} y={c.VH-c.PB+14} fontSize="9" fontWeight="700" fill={t.body}
+          textAnchor={i===0?"start":i===c.xTicks.length-1?"end":"middle"}>
+          {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
+        </text>
+      ))}
+      <line x1={c.PL} x2={c.PL} y1={c.PT} y2={c.VH-c.PB} stroke={t.body} strokeOpacity="0.4" strokeWidth="1.5"/>
+    </>
+  );
+}
+
+const signed = v => `${v < 0 ? "−" : ""}${fmt(Math.abs(v))}`;
+
+// The Net worth card: the figure at the horizon and the projection chart.
+function NetWorthCard({ t, age, horizon, netWorthRows, chartRef, chartWidth }) {
+  const nwChart = (() => {
+    const values = netWorthRows.map(r => r.netWorth);
+    const yMin = Math.min(0, ...values);
+    const yMax = Math.max(1, ...values);
+    const VW = chartWidth, VH = 150, PL = 40, PR = 4, PT = 8, PB = 20;
+    const cW = VW - PL - PR, cH = VH - PT - PB;
+    const sx = i => PL + (i / horizon) * cW;
+    const sy = v => PT + (1 - (v - yMin) / (yMax - yMin || 1)) * cH;
+    const path = values.map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
+    const yTicks = [0, 0.5, 1].map(f => yMin + (yMax - yMin) * f);
+    const xTicks = buildYearTicks(horizon);
+    return { VW, VH, PL, PR, PT, PB, sx, sy, path, yTicks, xTicks, lastX: sx(horizon), lastY: sy(values[horizon]) };
+  })();
+  const today = netWorthRows[0].netWorth, end = netWorthRows[horizon].netWorth;
+  return (
+    <>
+      <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:t.figure,lineHeight:1,letterSpacing:"-0.01em",marginTop:"8px"}}>{signed(end)}</div>
+      <p style={cardText(t)}>
+        {age ? `At age ${age+horizon}` : `In ${horizon} years`}, from <b style={{color:t.figure}}>{signed(today)}</b> today. Everything you own less everything you owe, projected forward: savings and pension growing, loans paid down.
+      </p>
+
+      <div style={{...caps(t),marginTop:"18px",marginBottom:"8px"}}>Projected net worth · {horizon} years</div>
+      <div ref={chartRef}>
+        <svg width={nwChart.VW} height={nwChart.VH} viewBox={`0 0 ${nwChart.VW} ${nwChart.VH}`} style={{display:"block"}} aria-hidden="true">
+          <Axes c={nwChart} t={t} age={age}/>
+          <path d={nwChart.path} fill="none" stroke={t.figure} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx={nwChart.lastX} cy={nwChart.lastY} r="3.5" fill={t.figure}/>
+        </svg>
+      </div>
+    </>
+  );
+}
+
+// Below the stack while Net worth is in front: the breakdown by what you own
+// and owe at the horizon, each row opening on its assumptions.
+function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions, setShowNwAssumptions, openRow, setOpenRow }) {
+  const r = netWorthRows[horizon];
+  const rows = [
+    { label:"Cash", value:r.cash, assumption:`Grown at your effective savings rate (${(m.effectiveSavingsRate||3.5).toFixed(1)}% p.a.). Assumes cash never exceeds your ${fmt(m.emergencyBuffer)} emergency fund target — once reached, further surplus is assumed invested instead (see Investments).` },
+    { label:"Investments", value:r.investments, assumption:`Today's ISA + unwrapped balance grown at 7% p.a. nominal — an illustrative long-term equity return, not guaranteed. Once your cash buffer is topped up, all further monthly surplus is assumed fully invested into the market.` },
+    { label:"Pension", value:r.pension, assumption:"Your pot plus ongoing contributions, grown at 6% p.a. — the same rate calcMetrics uses for your projected pot elsewhere in the app." },
+    ...(r.propertyEquity > 0 ? [{ label:"Property equity", value:r.propertyEquity, assumption:"Property value held flat (no house-price growth assumed) — equity grows only as your mortgage is paid down at its real rate and repayment." }] : []),
+    ...(r.debts > 0 ? [{ label:"Debts", value:r.debts, negative:true, assumption:"Remaining student loan and/or personal loan balance, projected forward at their real interest rates and repayments." }] : []),
+  ];
+  const maxVal = Math.max(...rows.map(row => Math.abs(row.value)), 1);
+  return (
+    <>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"4px"}}>
+        <span style={caps(t)}>Breakdown {age ? `at age ${age+horizon}` : `at ${horizon}yrs`}</span>
+        <InfoButton onClick={() => setShowNwAssumptions(o => !o)} open={showNwAssumptions}/>
+      </div>
+      {showNwAssumptions && (
+        <div style={{...note(t),marginBottom:"8px"}}>
+          <p style={noteText(t)}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
+          <p style={noteText(t)}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
+          <p style={noteText(t)}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
+        </div>
+      )}
+      {rows.map((row,i) => {
+        const meta = NW_ROW_META[row.label] || {};
+        const isOpen = openRow === row.label;
+        return (
+          <div key={row.label} onClick={() => setOpenRow(isOpen ? null : row.label)} style={{padding:"11px 0",borderBottom:i===rows.length-1?"none":`1px solid ${t.rule}`,cursor:"pointer"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                <span style={{fontSize:"14px",color:t.figure}}>{row.label}</span>
+                {meta.locked && <Lock size={12} color={t.body}/>}
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                <span style={{fontFamily:SERIF,fontSize:"18px",fontWeight:700,color:row.negative ? CRITICAL : t.figure}}>{row.negative?"−":""}{fmt(row.value)}</span>
+                <ChevronRight size={13} color={t.body} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
+              </div>
+            </div>
+            <div style={{height:"6px",borderRadius:"3px",background:t.track,overflow:"hidden",marginTop:"8px"}}>
+              <div style={{height:"100%",borderRadius:"3px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G}}/>
+            </div>
+            {isOpen && (
+              <div style={note(t)} onClick={e => e.stopPropagation()}>
+                {row.label === "Pension" && age && (
+                  <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
+                    <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:t.figure}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
+                    <span style={{fontSize:"12.5px",color:t.body}}>years until available (from age {PENSION_ACCESS_AGE})</span>
+                  </div>
+                )}
+                <p style={{...noteText(t),fontSize:"13px"}}>{row.assumption}</p>
+                <p style={{...noteText(t),fontSize:"13px",fontWeight:600}}>{meta.liquidity}</p>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+// The Surplus card: what your monthly surplus and a lump sum could grow to,
 // by where they go.
-function SurplusView({ surplus, m, setSurplus, lumpSum, setLumpSum, horizon, chartWrapRef, age, forecast, openTip, assumptions, setOpenTip, series, chartWidth }) {
-  const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
+function SurplusCard({ t, monthly, setSurplus, lumpSum, setLumpSum, horizon, age, series, chartRef, chartWidth }) {
   const chart = (() => {
     const allValues = series.series.flatMap(s => s.values);
     const yMax = Math.max(1, ...allValues);
@@ -138,39 +285,28 @@ function SurplusView({ surplus, m, setSurplus, lumpSum, setLumpSum, horizon, cha
     });
     const yTicks = [0, 0.5, 1].map(f => yMax * f);
     const xTicks = buildYearTicks(horizon);
-    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks };
+    return { VW, VH, PL, PR, PT, PB, sx, sy, paths, yTicks, xTicks };
   })();
   return (
     <>
-      <>
-      <div style={{display:"flex",gap:"10px",marginTop:"14px"}}>
-      <PillMoneyInput label="Monthly surplus" value={surplus != null ? surplus : Math.round(m.monthlySurplus)} onChange={setSurplus}/>
-      <PillMoneyInput label="Lump sum today" value={lumpSum} onChange={setLumpSum}/>
+      <p style={cardText(t)}>What the money left over each month could grow to in a Stocks and Shares ISA, in savings, or in your pension, side by side. Change the monthly amount or add a lump sum to compare.</p>
+      <div style={{display:"flex",gap:"10px",marginTop:"12px"}}>
+        <PillMoneyInput label="Monthly surplus" value={monthly} onChange={setSurplus}/>
+        <PillMoneyInput label="Lump sum today" value={lumpSum} onChange={setLumpSum}/>
       </div>
 
-      <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
-      <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>
-        Projected value · {horizon} years
-      </div>
+      <div style={{...caps(t),marginTop:"18px"}}>Projected value · {horizon} years</div>
       <div style={{display:"flex",gap:"14px",marginTop:"8px",flexWrap:"wrap"}}>
         {chart.paths.map(p => (
           <div key={p.label} style={{display:"flex",alignItems:"center",gap:"5px"}}>
             <span style={{width:"7px",height:"7px",borderRadius:"50%",background:FORECAST_COLORS[p.label]||MUT,display:"inline-block"}}/>
-            <span style={{fontSize:"11.5px",color:TEXT}}>{FORECAST_SHORT_LABEL[p.label]||p.label}</span>
+            <span style={{fontSize:"11.5px",color:t.figure}}>{FORECAST_SHORT_LABEL[p.label]||p.label}</span>
           </div>
         ))}
       </div>
-
-      <div ref={chartWrapRef} style={{marginTop:"10px"}}>
-        <svg width={chart.VW} height={chart.VH} viewBox={`0 0 ${chart.VW} ${chart.VH}`} style={{display:"block"}}>
-          {/* Y-axis gridlines + ballpark labels */}
-          {chart.yTicks.map((v,i) => (
-            <g key={i}>
-              <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.sy(v)} y2={chart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
-              <text x={chart.PL-6} y={chart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
-            </g>
-          ))}
-          {/* strategy lines */}
+      <div ref={chartRef} style={{marginTop:"10px"}}>
+        <svg width={chart.VW} height={chart.VH} viewBox={`0 0 ${chart.VW} ${chart.VH}`} style={{display:"block"}} aria-hidden="true">
+          <Axes c={chart} t={t} age={age}/>
           {chart.paths.map(p => {
             const color = FORECAST_COLORS[p.label] || MUT;
             return (
@@ -180,195 +316,58 @@ function SurplusView({ surplus, m, setSurplus, lumpSum, setLumpSum, horizon, cha
               </g>
             );
           })}
-          {/* X-axis + year/age ticks — first anchors left, last anchors right,
-              so labels never spill past the chart's own edges. */}
-          <line x1={chart.PL} x2={chart.VW-chart.PR} y1={chart.VH-chart.PB} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
-          {chart.xTicks.map((yr,i) => (
-            <text key={i} x={chart.sx(yr)} y={chart.VH-chart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
-              textAnchor={i===0?"start":i===chart.xTicks.length-1?"end":"middle"}>
-              {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
-            </text>
-          ))}
-          <line x1={chart.PL} x2={chart.PL} y1={chart.PT} y2={chart.VH-chart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
         </svg>
       </div>
+    </>
+  );
+}
 
-      <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
-
+// Below the stack while Surplus is in front: each place's low, mid and high
+// estimate at the horizon, each opening on its assumptions.
+function SurplusEstimates({ t, horizon, age, forecast, assumptions, openTip, setOpenTip }) {
+  const horizonLabel = (yr) => age ? `age ${age+yr}` : `${yr} yrs`;
+  const colHead = { fontSize:"9.5px", fontWeight:700, color:t.label, letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"right" };
+  return (
+    <>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
-        <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Estimate at {horizonLabel(horizon)}</span>
+        <span style={caps(t)}>Estimate at {horizonLabel(horizon)}</span>
         <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px"}}>
-          <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Low</span>
-          <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>Mid</span>
-          <span style={{fontSize:"9.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",textAlign:"right"}}>High</span>
+          <span style={colHead}>Low</span>
+          <span style={colHead}>Mid</span>
+          <span style={colHead}>High</span>
         </div>
       </div>
       {forecast.options.map((o,i) => {
         const isOpen = openTip === o.label;
         const a = assumptions[o.label];
         return (
-          <div key={o.label} style={{padding:"10px 0",borderBottom:i===forecast.options.length-1?"none":"1px solid rgba(22,47,36,0.06)"}}>
+          <div key={o.label} style={{padding:"10px 0",borderBottom:i===forecast.options.length-1?"none":`1px solid ${t.rule}`}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div style={{display:"flex",alignItems:"center",gap:"7px",minWidth:0}}>
                 <span style={{width:"8px",height:"8px",borderRadius:"50%",background:FORECAST_COLORS[o.label]||MUT,display:"inline-block",flexShrink:0}}/>
-                <span style={{fontSize:"13px",color:TEXT,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{FORECAST_SHORT_LABEL[o.label]||o.label}</span>
-                {a && (
-                  <InfoButton onClick={() => setOpenTip(isOpen ? null : o.label)} open={isOpen}/>
-                )}
+                <span style={{fontSize:"13px",color:t.figure,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{FORECAST_SHORT_LABEL[o.label]||o.label}</span>
+                {a && <InfoButton onClick={() => setOpenTip(isOpen ? null : o.label)} open={isOpen}/>}
               </div>
               <div style={{display:"grid",gridTemplateColumns:"48px 48px 48px",gap:"6px",flexShrink:0}}>
-                <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.low)}</span>
-                <span style={{fontFamily:SERIF,fontSize:"12.5px",color:TEXT,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
-                <span style={{fontSize:"12px",color:MUT,textAlign:"right"}}>{fmtCompact(o.high)}</span>
+                <span style={{fontSize:"12px",color:t.body,textAlign:"right"}}>{fmtCompact(o.low)}</span>
+                <span style={{fontFamily:SERIF,fontSize:"12.5px",color:t.figure,fontWeight:700,textAlign:"right"}}>{fmtCompact(o.central)}</span>
+                <span style={{fontSize:"12px",color:t.body,textAlign:"right"}}>{fmtCompact(o.high)}</span>
               </div>
             </div>
-            {o.note && (
-              <div style={{fontSize:"11px",color:MUT,marginTop:"3px",lineHeight:1.4}}>{o.note}</div>
-            )}
+            {o.note && <div style={{fontSize:"11px",color:t.body,marginTop:"3px",lineHeight:1.4}}>{o.note}</div>}
             {isOpen && a && (
-              <div style={{marginTop:"8px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
-                {a.lines.map((line,i) => (
-                  <p key={i} style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>{line}</p>
-                ))}
-                <div style={{display:"flex",gap:"14px",marginTop:"2px",fontSize:"11px",color:MUT}}>
-                  <span>Low <b style={{color:TEXT}}>{a.rates.low}</b></span>
-                  <span>Central <b style={{color:G}}>{a.rates.central}</b></span>
-                  <span>High <b style={{color:TEXT}}>{a.rates.high}</b></span>
+              <div style={note(t)}>
+                {a.lines.map((line,i) => <p key={i} style={noteText(t)}>{line}</p>)}
+                <div style={{display:"flex",gap:"14px",marginTop:"2px",fontSize:"11px",color:t.body}}>
+                  <span>Low <b style={{color:t.figure}}>{a.rates.low}</b></span>
+                  <span>Central <b style={{color:t.figure}}>{a.rates.central}</b></span>
+                  <span>High <b style={{color:t.figure}}>{a.rates.high}</b></span>
                 </div>
               </div>
             )}
           </div>
         );
       })}
-      </div>
-      </>
-    </>
-  );
-}
-
-// The Net worth view: the projection chart and the breakdown by what you
-// own and owe, each row opening on its assumptions.
-function NetWorthView({ age, horizon, chartWrapRef, setShowNwAssumptions, showNwAssumptions, m, openRow, setOpenRow, d, chartWidth }) {
-  const netWorthRows = calcNetWorthTrajectory(d, m, horizon);
-  const nwChart = (() => {
-    const values = netWorthRows.map(r => r.netWorth);
-    const yMin = Math.min(0, ...values);
-    const yMax = Math.max(1, ...values);
-    const VW = chartWidth, VH = 150, PL = 40, PR = 4, PT = 8, PB = 20;
-    const cW = VW - PL - PR, cH = VH - PT - PB;
-    const sx = i => PL + (i / horizon) * cW;
-    const sy = v => PT + (1 - (v - yMin) / (yMax - yMin || 1)) * cH;
-    const path = values.map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
-    const yTicks = [0, 0.5, 1].map(f => yMin + (yMax - yMin) * f);
-    const xTicks = buildYearTicks(horizon);
-    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, path, yTicks, xTicks, lastX: sx(horizon), lastY: sy(values[horizon]) };
-  })();
-  return (
-    <>
-      <>
-        <div style={{display:"flex",gap:"14px",marginTop:"14px"}}>
-          <div style={{flex:1}}>
-            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>Today</div>
-            <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[0].netWorth)}</div>
-          </div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:"10px",color:MUT,fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase"}}>{age ? `At age ${age+horizon}` : `In ${horizon} yrs`}</div>
-            <div style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginTop:"3px"}}>{fmt(netWorthRows[horizon].netWorth)}</div>
-          </div>
-        </div>
-
-        <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,padding:"18px",marginTop:"18px",boxShadow:"0 2px 10px rgba(22,47,36,0.05)"}}>
-          <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginBottom:"8px"}}>
-            Projected net worth · {horizon} years
-          </div>
-          <div ref={chartWrapRef}>
-            <svg width={nwChart.VW} height={nwChart.VH} viewBox={`0 0 ${nwChart.VW} ${nwChart.VH}`} style={{display:"block"}}>
-              {nwChart.yTicks.map((v,i) => (
-                <g key={i}>
-                  <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.sy(v)} y2={nwChart.sy(v)} stroke="rgba(22,47,36,0.08)" strokeWidth="1"/>
-                  <text x={nwChart.PL-6} y={nwChart.sy(v)+3} fontSize="9" fontWeight="700" fill={MUT} textAnchor="end">{fmtCompact(v)}</text>
-                </g>
-              ))}
-              <path d={nwChart.path} fill="none" stroke={G} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx={nwChart.lastX} cy={nwChart.lastY} r="3.5" fill={G}/>
-              <line x1={nwChart.PL} x2={nwChart.VW-nwChart.PR} y1={nwChart.VH-nwChart.PB} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
-              {nwChart.xTicks.map((yr,i) => (
-                <text key={i} x={nwChart.sx(yr)} y={nwChart.VH-nwChart.PB+14} fontSize="9" fontWeight="700" fill={MUT}
-                  textAnchor={i===0?"start":i===nwChart.xTicks.length-1?"end":"middle"}>
-                  {i===0 ? "Now" : age ? age+yr : `Yr ${yr}`}
-                </text>
-              ))}
-              <line x1={nwChart.PL} x2={nwChart.PL} y1={nwChart.PT} y2={nwChart.VH-nwChart.PB} stroke="rgba(22,47,36,0.25)" strokeWidth="1.5"/>
-            </svg>
-          </div>
-
-          <div style={{height:"1px",background:"rgba(22,47,36,0.08)",margin:"18px 0 14px"}}/>
-
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"12px"}}>
-            <span style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Breakdown {age ? `at age ${age+horizon}` : `at ${horizon}yrs`}</span>
-            <InfoButton onClick={() => setShowNwAssumptions(o => !o)} open={showNwAssumptions}/>
-          </div>
-          {showNwAssumptions && (
-            <div style={{marginBottom:"12px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}}>
-              <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Cash grows at your own savings rate, and is assumed to never exceed your {fmt(m.emergencyBuffer)} emergency fund target.</p>
-              <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Once that's topped up, all further monthly surplus is assumed fully invested into the market (growing at 7% p.a. nominal) rather than held as cash. Your pension grows at 6% p.a. — the same rates the rest of the app uses.</p>
-              <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,margin:0}}>Student loan, personal loan and mortgage are paid down at their real rates and repayments. Property value is held flat — no house-price growth is assumed.</p>
-            </div>
-          )}
-          {(() => {
-            const r = netWorthRows[horizon];
-            const rows = [
-              { label:"Cash", value:r.cash, assumption:`Grown at your effective savings rate (${(m.effectiveSavingsRate||3.5).toFixed(1)}% p.a.). Assumes cash never exceeds your ${fmt(m.emergencyBuffer)} emergency fund target — once reached, further surplus is assumed invested instead (see Investments).` },
-              { label:"Investments", value:r.investments, assumption:`Today's ISA + unwrapped balance grown at 7% p.a. nominal — an illustrative long-term equity return, not guaranteed. Once your cash buffer is topped up, all further monthly surplus is assumed fully invested into the market.` },
-              { label:"Pension", value:r.pension, assumption:"Your pot plus ongoing contributions, grown at 6% p.a. — the same rate calcMetrics uses for your projected pot elsewhere in the app." },
-              ...(r.propertyEquity > 0 ? [{ label:"Property equity", value:r.propertyEquity, assumption:"Property value held flat (no house-price growth assumed) — equity grows only as your mortgage is paid down at its real rate and repayment." }] : []),
-              ...(r.debts > 0 ? [{ label:"Debts", value:r.debts, negative:true, assumption:"Remaining student loan and/or personal loan balance, projected forward at their real interest rates and repayments." }] : []),
-            ];
-            const maxVal = Math.max(...rows.map(row => Math.abs(row.value)), 1);
-            return rows.map((row,i) => {
-              const meta = NW_ROW_META[row.label] || {};
-              const isOpen = openRow === row.label;
-              return (
-                <div key={row.label} onClick={() => setOpenRow(isOpen ? null : row.label)} style={{padding:"12px 0",borderBottom:i===rows.length-1?"none":"1px solid rgba(22,47,36,0.06)",cursor:"pointer"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                      <span style={{fontSize:"15px",color:TEXT}}>{row.label}</span>
-                      {meta.locked && <Lock size={12} color={MUT}/>}
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                      <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:row.negative?CRITICAL:G}}>{row.negative?"−":""}{fmt(row.value)}</span>
-                      <ChevronRight size={13} color={MUT} style={{transform:isOpen?"rotate(90deg)":"none",transition:"transform 0.15s"}}/>
-                    </div>
-                  </div>
-                  <div style={{height:"8px",borderRadius:"4px",background:CDARK,overflow:"hidden",marginTop:"8px"}}>
-                    <div style={{height:"100%",borderRadius:"4px",width:`${Math.max(2,(Math.abs(row.value)/maxVal)*100)}%`,background:meta.color||G}}/>
-                  </div>
-                  {isOpen && (
-                    <div style={{marginTop:"10px",background:CDARK,borderRadius:"10px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"6px"}} onClick={e => e.stopPropagation()}>
-                      {row.label === "Pension" && age && (
-                        <div style={{display:"flex",alignItems:"baseline",gap:"6px"}}>
-                          <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:G}}>{Math.max(0, PENSION_ACCESS_AGE - age)}</span>
-                          <span style={{fontSize:"12.5px",color:MUT}}>years until available (from age {PENSION_ACCESS_AGE})</span>
-                        </div>
-                      )}
-                      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0}}>{row.assumption}</p>
-                      <p style={{fontSize:"13px",color:MUT,lineHeight:1.55,margin:0,fontWeight:600}}>{meta.liquidity}</p>
-                    </div>
-                  )}
-                </div>
-              );
-            });
-          })()}
-        </div>
-
-        <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"14px 16px",marginTop:"16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-          <div>
-            <div style={{fontSize:"13px",fontWeight:600,color:G}}>How do I compare to my peers?</div>
-            <div style={{fontSize:"12px",color:MUT,marginTop:"2px"}}>See how your net worth stacks up by age and income.</div>
-          </div>
-          <span style={{fontSize:"9.5px",fontWeight:700,color:GOLD,background:"rgba(196,150,58,0.15)",padding:"4px 9px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase",flexShrink:0}}>Coming soon</span>
-        </div>
-      </>
     </>
   );
 }
