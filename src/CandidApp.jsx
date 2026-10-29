@@ -559,6 +559,8 @@ export default function AppShell() {
   const [checkedCard, setCheckedCard] = useState(null);
   const [tourShowing, setTourShowing] = useState(false);
   const [appTourShowing, setAppTourShowing] = useState(false);
+  // The module page the app's tour was sent from, which it goes back to at the end.
+  const [tourReturn, setTourReturn] = useState(null);
   // Gone once the page changes, however it's left.
   useEffect(() => { setCheckedCard(null); }, [location.pathname]);
   // The entry's hand-off to the first module is showing: the user is
@@ -739,8 +741,8 @@ export default function AppShell() {
   // A first answer's closing card (CheckedCard, or the Cash tour's last
   // stop): its Done goes on to Home, where the app's tour starts, until
   // that tour has run. Not while the cookie notice waits, as the tour waits
-  // for it too (AppTour.jsx).
-  const toAppTour = d.appTourDone || getConsent() === null ? null : () => { navigate("/app/home"); scrollToTop(); };
+  // for it too (AppTour.jsx). The tour ends back on the module it came from.
+  const toAppTour = d.appTourDone || getConsent() === null ? null : () => { setTourReturn(pathname); navigate("/app/home"); scrollToTop(); };
   const tabScreen = { "/app/home": "home", "/app/progress": "progress", "/app/modules": "modules" }[pathname];
   if (tabScreen) return (
     <>
@@ -762,8 +764,8 @@ export default function AppShell() {
         )}
       </MobileLayout>
       {((tabScreen === "home" && !d.appTourDone && !assistState.open) || appTourShowing) && (
-        <AppTour screen={tabScreen} scoreShowing={scoreShowing} set={set}
-          onStart={() => setAppTourShowing(true)} onClose={() => setAppTourShowing(false)}/>
+        <AppTour screen={tabScreen} scoreShowing={scoreShowing} set={set} returnTo={tourReturn}
+          onStart={() => setAppTourShowing(true)} onClose={() => { setAppTourShowing(false); setTourReturn(null); }}/>
       )}
     </>
   );

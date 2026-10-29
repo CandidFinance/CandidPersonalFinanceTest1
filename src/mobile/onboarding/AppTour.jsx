@@ -44,8 +44,9 @@ const WAIT = 1500;  // longest wait for the new page's part
 
 // `screen`: the tab on show ("home", "progress" or "modules").
 // `scoreShowing`: whether Home has the score yet. `onStart` once it's begun,
-// `onClose` once it's off the screen.
-export default function AppTour({ screen, scoreShowing, set, onStart, onClose }) {
+// `onClose` once it's off the screen. `returnTo`: the module page it was sent
+// from (a first answer's Done), where Done or Skip goes back to.
+export default function AppTour({ screen, scoreShowing, set, returnTo, onStart, onClose }) {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const [steps, setSteps] = useState(null);
@@ -92,7 +93,8 @@ export default function AppTour({ screen, scoreShowing, set, onStart, onClose })
     posthog.capture(how === "skipped" ? "tour_skipped" : "tour_finished", { tour: "app", at: step?.id, ...extra });
   };
   const close = () => onClose?.();
-  const end = how => { record(how); close(); };
+  const toModule = () => { if (returnTo) { navigate(returnTo); window.scrollTo({ top: 0 }); } };
+  const end = how => { record(how); close(); toModule(); };
 
   // To step `i`: on this screen, straight there; on another, the tap on its
   // tab first (forward), or straight to the page (back).
@@ -156,8 +158,9 @@ export default function AppTour({ screen, scoreShowing, set, onStart, onClose })
   const backButton = { ...main, background: "none", color: G, border: `1.5px solid rgba(22,47,36,0.18)`, padding: "9.5px 18px" };
 
   const done = step.id === "done";
-  // The closing card, by Done or Escape: back to Home, where it began.
-  const finish = () => { close(); navigate(PATH.home); window.scrollTo({ top: 0 }); };
+  // The closing card, by Done or Escape: back to the module it was sent from,
+  // or else to Home, where it began.
+  const finish = () => { close(); navigate(returnTo || PATH.home); window.scrollTo({ top: 0 }); };
   // The dots count the stops, not the closing card.
   const position = at + 1, total = steps.length - 1;
   const from = lastPosition.current;
