@@ -274,9 +274,10 @@ export const calcAnnualAllowanceRoomBeforeTopUps = (d, m) => calcAnnualAllowance
 //                Allowance recovery (calcPensionTaperSaving), assuming that
 //                recovery comes out of the bonus first — what the Dashboard
 //                adds as potential on top of it, so the two never double count.
-export function calcBonusSacrificePotential(d, m) {
+// `room`: the annual allowance left, if not their answers' own (this tax
+// year's, after top-ups: taxTrap.js allowanceLeft).
+export function calcBonusSacrificePotential(d, m, room = calcAnnualAllowanceRoom(d, m).room) {
   const bonus = Math.max(0, +d.bonusAmount || 0);
-  const { room } = calcAnnualAllowanceRoom(d, m);
   const taper = calcPensionTaperSaving(m, room);
   const ani = m.adjustedNetIncome;
   const taxSaved = (from, amount) => amount > 0 ? calcIncomeTax(from, m.scottish) - calcIncomeTax(from - amount, m.scottish) : 0;

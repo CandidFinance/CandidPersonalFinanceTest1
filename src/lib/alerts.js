@@ -39,7 +39,7 @@ import { cashOpportunity } from "./assist.js";
 import { childcareSupport } from "./childcare.js";
 import { choiceFor, CHOICE_IDS } from "./opportunityChoices.js";
 import { fmt } from "./format.js";
-import { trapInView, yearProjection, thisTaxYear, isPayday, monthKey, allowanceLost, bonusMonthOf, TRAP_START } from "./taxTrap.js";
+import { trapInView, yearProjection, thisTaxYear, isPayday, monthKey, allowanceLost, bonusMonthOf, allowanceLeft, TRAP_START } from "./taxTrap.js";
 import { renderEmail } from "./emailLayout.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
@@ -154,7 +154,10 @@ function bonus(d, m, today) {
   // The month before it's paid: there's time to arrange it with payroll.
   const before = paid === 1 ? 12 : paid - 1;
   if (today.getMonth() + 1 !== before) return null;
-  const saving = calcBonusSacrificePotential(d, m).standalone;
+  // On this tax year's figures (thisTaxYear), as taxYearEnd: the £100k
+  // trap's top-ups have used some of the room.
+  const { d: yd, m: ym } = thisTaxYear(d, m, today);
+  const saving = calcBonusSacrificePotential(yd, ym, allowanceLeft(yd, ym, today)).standalone;
   if (!(saving > 0)) return null;
   const year = paid === 1 ? today.getFullYear() + 1 : today.getFullYear();
   const known = d.bonusMonth && +d.bonusMonth === paid;

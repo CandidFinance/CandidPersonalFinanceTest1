@@ -151,3 +151,13 @@ test("before 5 April, the £100k trap is on this tax year's figures: recorded to
   // thisTaxYear rounds the salary).
   assert.match(trapLine({ ...trap, trapTopUps: [up(2000, 11)] }), /a pension payment of £2,50[01] /);
 });
+
+test("the bonus email is on this tax year's figures: top-ups use annual allowance the bonus could have", () => {
+  const up = amount => ({ id: "sacrifice11", amount, route: "sacrifice", month: 11, taxYear: 2026 });
+  const d = { ...trap, bonusAmount: "50000", hasBonus: "yes", bonusMonth: "3" };
+  const subject = ups => alertsDue({ ...d, trapTopUps: ups }, { today: day("2027-02-10") }).find(a => a.kind === "bonus")?.subject;
+  const saving = ups => +subject(ups).match(/£([\d,]+)/)[1].replace(/,/g, "");
+  assert.ok(saving([up(9000)]) < saving([]));
+  // The allowance used up: nothing to say.
+  assert.equal(subject([up(60000)]), undefined);
+});
