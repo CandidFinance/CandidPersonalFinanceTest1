@@ -1,5 +1,5 @@
 import { CREAM, WHITE, MUT, G, SANS } from "../design-tokens.js";
-import { IMPACTS, STATUSES } from "../lib/weekly.js";
+import { IMPACTS, STATUSES, VERDICTS } from "../lib/weekly.js";
 
 // An email's subject, intro and news items, each with its "For you" impact
 // (src/lib/weekly.js IMPACTS), on /admin/alerts: the Sunday email
@@ -28,6 +28,10 @@ export default function IssueFields({ issue, onChange, subjectHint }) {
               <input value={it.title} onChange={e => setItem(i, { title: e.target.value })} placeholder="Title" style={{ ...input, fontWeight: 700 }}/>
               <select value={it.status} onChange={e => setItem(i, { status: e.target.value })} style={{ ...input, width: "auto" }}>
                 {Object.entries(STATUSES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </select>
+              <select value={it.verdict || ""} onChange={e => setItem(i, { verdict: e.target.value || undefined })} title="Shown in place of the status" style={{ ...input, width: "auto" }}>
+                <option value="">No verdict</option>
+                {Object.entries(VERDICTS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
               </select>
             </div>
             <textarea value={it.body} onChange={e => setItem(i, { body: e.target.value })} rows={3} placeholder="What's happening, in two or three sentences" style={{ ...input, marginTop: "8px" }}/>

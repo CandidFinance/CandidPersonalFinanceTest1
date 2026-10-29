@@ -1,5 +1,5 @@
 import { isAllowedOrigin, clientIp, safeEqual, rateLimiter, checkAdminPassword } from "../server/http.js";
-import { alertsDue, alertEmail, inputsFromRow, isFounding, FREE_RATES_DELAY_DAYS } from "../src/lib/alerts.js";
+import { alertsDue, alertEmail, inputsFromRow, isFounding, capSends, DAILY_SEND_CAP, FREE_RATES_DELAY_DAYS } from "../src/lib/alerts.js";
 import { weeklyWeek, weeklyEmail, welcomeEmail, cleanIssue, PAID_PLANS, REFERRAL_MONTHS, FREE_WEEKLY_ISSUES } from "../src/lib/weekly.js";
 import { confirmedWelcomeEmail, confirmReminderEmail } from "../src/lib/accountEmails.js";
 import { monthlyCheckIn, monthlyEmail, MONTHLY_NEW_DAYS } from "../src/lib/monthly.js";
@@ -32,8 +32,8 @@ import { referralLink } from "../server/referrals.js";
 //    (alert_sends key "monthly:YYYY-MM", its figures in `detail`).
 //  - An outside event's email (src/lib/eventEmails.js): a Bank Rate
 //    decision or a Budget, drafted by Claude (api/events.js) and approved
-//    on /admin/alerts, to each subscriber once (alert_sends key
-//    "event:<id>"), up to a few days after the event.
+//    on /admin/alerts, to every address once, free ones too, confirmed or
+//    not (alert_sends key "event:<id>"), up to a few days after the event.
 //  - A free user's welcome goes the day after they confirm their email
 //    (alert_sends key "confirmed"): rate alerts to turn on, free for
 //    founding users, and their invite link (confirmedWelcomes).
@@ -48,9 +48,13 @@ import { referralLink } from "../server/referrals.js";
 // A free user gets emails only once they've confirmed their address (its
 // link, api/email.js, sets `email_verifications.verified_at`) and asked for
 // them. Subscribers gave theirs to Stripe and sign in with it, so theirs
-// needs no link. The exception: every free address, confirmed or not, gets
+// needs no link. The exceptions: every free address, confirmed or not, gets
 // its first FREE_WEEKLY_ISSUES Sunday emails, with a "Confirm my email"
-// button while it isn't confirmed.
+// button while it isn't confirmed, and outside events' emails.
+//
+// A run sends at most DAILY_SEND_CAP a day (Resend's free plan), most
+// time-bound first; the rest go at the next run (src/lib/alerts.js
+// capSends).
 // Before that table is there, no free user is emailed; subscribers still are.
 //
 // Sending is off until VITE_ALERTS_LIVE=1 (the same setting shows the emails
@@ -266,6 +270,14 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
         emails.push({ to: p.email, who: p.who, kind: "weekly", key: `weekly:${issue.week}`, detail: null, ...mail });
       } catch (e) { notes.push(`couldn't write the Sunday email for one free user: ${e.message}`); }
     }
+    // Outside events' emails: to everyone with answers, free or not.
+    for (const { event, issue } of p.d ? eventIssues : []) {
+      if (done.has(`event:${event.id}`)) continue;
+      try {
+        const mail = eventEmail(issue, event, p.d, { today, rows: rates || [], unsubscribeUrl: unsubscribe, free: p.who === "free" });
+        emails.push({ to: p.email, who: p.who, kind: "event", key: `event:${event.id}`, detail: null, ...mail });
+      } catch (e) { notes.push(`couldn't write the ${eventName(event)} email for one ${p.who === "free" ? "free user" : "subscriber"}: ${e.message}`); }
+    }
     // Everything else: a free user only once confirmed and opted in.
     if (p.who === "free" && !(p.optedIn && verifiedAt.has(p.email))) continue;
     if (p.who === "subscriber" && PAID_PLANS.includes(p.sub.plan) && !done.has("welcome") && new Date(p.sub.created_at) > new Date(since)) {
@@ -278,13 +290,6 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
         const mail = weeklyEmail(issue, p.d, { today, rows: rates || [], unsubscribeUrl: unsubscribe });
         emails.push({ to: p.email, who: p.who, kind: "weekly", key: `weekly:${issue.week}`, detail: null, ...mail });
       } catch (e) { notes.push(`couldn't write the Sunday email for one subscriber: ${e.message}`); }
-    }
-    for (const { event, issue } of p.who === "subscriber" ? eventIssues : []) {
-      if (done.has(`event:${event.id}`)) continue;
-      try {
-        const mail = eventEmail(issue, event, p.d, { today, unsubscribeUrl: unsubscribe });
-        emails.push({ to: p.email, who: p.who, kind: "event", key: `event:${event.id}`, detail: null, ...mail });
-      } catch (e) { notes.push(`couldn't write the ${eventName(event)} email for one subscriber: ${e.message}`); }
     }
     // The monthly check-in (monthly.js): subscribers only, and not in their
     // first week (the welcome has only just gone).
@@ -308,17 +313,19 @@ export async function plan(today = new Date(), { drafts = false, makeCodes = fal
   }
   emails.push(...await confirmedWelcomes(today, { verified, people, out, sentBy, codeOf, makeCodes }, notes));
   emails.push(...await confirmReminders(today, { pending, people, out, sentBy }, notes));
-  return { emails, notes, people: people.length, ready: optouts !== null && sent !== null };
+  const capped = capSends(emails, sent, today);
+  if (capped.later.length) notes.push(`${capped.later.length} of ${emails.length} are over today's cap of ${DAILY_SEND_CAP} (${capped.room} left today): they go at the next run`);
+  return { emails, capped, notes, people: people.length, ready: optouts !== null && sent !== null };
 }
 
 async function run(today = new Date()) {
   const started = Date.now();
-  const { emails, notes, people, ready } = await plan(today, { makeCodes: LIVE });
+  const { emails, capped, notes, people, ready } = await plan(today, { makeCodes: LIVE });
   const byKind = emails.reduce((t, e) => ({ ...t, [e.kind]: (t[e.kind] || 0) + 1 }), {});
   if (!LIVE) return { live: false, people, due: emails.length, byKind, notes };
   if (!ready || !RESEND_KEY || !TOKEN_SECRET) return { live: true, stopped: "Not sending: the alert tables, RESEND_API_KEY or a token secret is missing", notes };
-  const results = { sent: 0, duplicate: 0, failed: 0, left: 0 };
-  const queue = [...emails];
+  const results = { sent: 0, duplicate: 0, failed: 0, left: 0, capped: capped.later.length };
+  const queue = [...capped.now];
   await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
     while (queue.length) {
       if (Date.now() - started > RUN_BUDGET_MS) { results.left = queue.length; queue.length = 0; return; }

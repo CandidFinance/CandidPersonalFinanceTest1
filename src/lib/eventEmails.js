@@ -20,7 +20,7 @@
 
 import { calcMetrics } from "./metrics.js";
 import { rollTaxYear } from "./taxYear.js";
-import { IMPACTS, STATUSES, cleanIssue, shortMoney } from "./weekly.js";
+import { IMPACTS, STATUSES, cleanIssue, shortMoney, impactFor } from "./weekly.js";
 import { renderEmail, SITE } from "./emailLayout.js";
 
 export const EVENT_EMAIL_DAYS = 3;
@@ -145,8 +145,10 @@ export function flagEmail(event, { draft = null, note = "", error = "" } = {}) {
 }
 
 // ── The email ────────────────────────────────────────────────────────────────
-// For one subscriber, on their figures. `issue`: the approved draft.
-export function eventEmail(issue, event, rawD, { today = new Date(), unsubscribeUrl }) {
+// For one person, on their figures. `issue`: the approved draft. `rows`:
+// savings_rates, for the worked examples. `free`: a free address, told
+// why it's getting this.
+export function eventEmail(issue, event, rawD, { today = new Date(), rows = [], unsubscribeUrl, free = false }) {
   const d = rollTaxYear(rawD || {}, today);
   const m = calcMetrics(d);
   const first = firstName(d.name);
@@ -156,13 +158,13 @@ export function eventEmail(issue, event, rawD, { today = new Date(), unsubscribe
     subject, preheader: issue.intro || items.map(i => i.title).join(" · "),
     greeting: first ? `Hi ${first},` : "Hi,",
     blocks: [
+      ...(free ? [{ small: "You're getting this because you gave us your email, and we thought you might like a little support." }] : []),
       ...(issue.intro ? [{ p: issue.intro.trim() }] : []),
       ...items.map(i => {
-        const impact = i.impact && IMPACTS[i.impact.kind];
-        const forYou = impact ? impact.line(d, m, i.impact, today) : null;
-        return { news: { title: shortMoney(i.title.trim()), status: i.status, body: shortMoney(i.body.trim()), forYou: forYou && shortMoney(forYou), source: i.source?.trim() || null, url: i.url?.trim() || null } };
+        const forYou = impactFor(i, d, m, { today, rows });
+        return { news: { title: shortMoney(i.title.trim()), status: i.status, verdict: i.verdict || null, body: shortMoney(i.body.trim()), forYou: forYou && shortMoney(forYou.text), forExample: !!forYou?.example, source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
-      { button: { label: "Open Candid", href: `${SITE}/app/home` } },
+      { button: { label: "See where these land on your figures", href: `${SITE}/app/home` } },
     ],
     note: "Candid works out what each change would mean on the figures you've given it, with no stake in what you choose. It's guidance, not advice.",
     unsubscribeUrl,

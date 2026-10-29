@@ -13,7 +13,8 @@
 //
 // An issue (the weekly_issues table): { week (the Sunday, YYYY-MM-DD),
 // subject, intro, items: [{ title, status, body, source, url, impact }],
-// approved_at }. `status`: "rumour", "confirmed" or "news". `impact`:
+// approved_at }. `status`: "rumour", "confirmed" or "news"; `verdict`:
+// "win", "bites" or "" (weekly.js VERDICTS). `impact`:
 // { kind, ...its figures }, a kind from IMPACTS, or null.
 //
 // Information, not instruction (Candid is guidance, not advice): what each
@@ -24,6 +25,7 @@ import { rollTaxYear } from "./taxYear.js";
 import { cashOpportunity } from "./assist.js";
 import { calcBonusSacrificePotential } from "./pension.js";
 import { fmt } from "./format.js";
+import { taxFreeInterest, savingsTaxRates, INCOME_TAX_RATES, ISA_ALLOWANCE, PSA_BY_BAND } from "./tax.js";
 import { renderEmail } from "./emailLayout.js";
 
 export const SITE = "https://www.candid-finance.co.uk";
@@ -48,6 +50,9 @@ export const REFERRAL_MONTHS = 12;
 // gave it; then it's for subscribers.
 export const FREE_WEEKLY_ISSUES = 3;
 export const STATUSES = { rumour: "Rumour", confirmed: "Confirmed", news: "News" };
+// An item's verdict, shown in place of its status: a win for people's
+// money, or a change that bites. Optional.
+export const VERDICTS = { win: "Win", bites: "Bites" };
 // "This week" shows what's settled first: confirmed, then news, then
 // rumours; within each, the issue's own order.
 const STATUS_ORDER = { confirmed: 0, news: 1, rumour: 2 };
@@ -154,6 +159,11 @@ export const IMPACTS = {
       if (!(cap > 0)) return null;
       const when = from ? ` from ${from}` : "";
       const paid = +d.isaThisYearCash || 0;
+      // A limit at the full allowance (a cut scrapped): what still fits.
+      if (cap >= ISA_ALLOWANCE) {
+        if (paid > 0) return `You've put ${fmt(paid)} into a cash ISA this tax year. ${from ? `From ${from}` : "From now on"}, up to ${fmt(cap)} a year can still go into cash.`;
+        return m.cash > 0 ? `You hold ${fmt(m.cash)} in cash. Up to ${fmt(cap)} a year of it can still go into a cash ISA${when}.` : null;
+      }
       if (paid > 0) {
         return paid > cap
           ? `You've put ${fmt(paid)} into a cash ISA this tax year. Under a ${fmt(cap)} limit${when}, ${fmt(paid - cap)} of that would have to go into a stocks and shares ISA, or stay outside an ISA.`
@@ -181,7 +191,98 @@ export const IMPACTS = {
       return `You sacrifice about ${fmt(sacrificed)} a year. Under a ${fmt(limit)} cap${when}, National Insurance would be due on ${fmt(sacrificed - limit)} of it: about ${fmt(ni)} a year.`;
     },
   },
+  // Rates come from the engine (tax.js savingsTaxRates), so the line and the
+  // app agree; `from` names the tax year they start.
+  savingsTax: {
+    label: "Savings interest tax rates",
+    fields: [{ key: "from", label: "From (e.g. April 2027)" }],
+    line: (d, m, { from }) => {
+      if (!(m.cash > 0) || !(m.salary > 0)) return null;
+      const year = yearOf(from), band = m.taxBandLabel || "basic";
+      const interest = Math.round(m.cash * (+m.effectiveSavingsRate || 0) / 100);
+      if (interest < 1) return null;
+      const free = taxFreeInterest(m.nonSavingsIncome, band);
+      const [now, then] = [m.taxYear, year].map(y => Math.round(Math.max(0, interest - free) * savingsTaxRates(y)[band]));
+      const on = `Your ${fmt(m.cash)} in cash earns about ${fmt(interest)} a year`;
+      if (!then) return `${on}, within the ${fmt(free)} you can earn tax-free, so no tax on it now or from ${from || year}.`;
+      return `${on}. Over the ${fmt(free)} you can earn tax-free, that's about ${fmt(then)} a year in tax from ${from || year}, against ${fmt(now)} now.`;
+    },
+    example: (d, m, { from }, { rows } = {}) => {
+      const year = yearOf(from), band = salaryBand(m), rate = bestEasyAccess(rows);
+      const interest = Math.round(30000 * rate / 100);
+      const tax = (b, y) => fmt(Math.round(Math.max(0, interest - PSA_BY_BAND[b]) * savingsTaxRates(y)[b]));
+      const on = `£30,000 at ${rate}%${rows?.length ? " (today's best easy-access rate)" : ""} earns ${fmt(interest)} a year`;
+      return band
+        ? `${on}. As a ${band}-rate taxpayer, the tax on it would be ${tax(band, year)} a year from ${from || year}, against ${tax(band, year - 1)} now.`
+        : `${on}. The tax on it from ${from || year}: ${tax("basic", year)} at basic rate (${tax("basic", year - 1)} now), ${tax("higher", year)} at higher rate (${tax("higher", year - 1)} now).`;
+    },
+  },
+  // Rental profits: their own rates from April 2027 (October 2026 Budget).
+  // Candid doesn't ask about rental income, so this is only ever an example.
+  propertyTax: {
+    label: "Rental income tax rates",
+    fields: [{ key: "from", label: "From (e.g. April 2027)" }],
+    line: () => null,
+    example: (d, m, { from }) => {
+      const band = salaryBand(m), when = from || "April 2027";
+      const tax = (rates, b) => fmt(Math.round(10000 * rates[b]));
+      return band
+        ? `As a ${band}-rate taxpayer, £10,000 of rental profit would be taxed ${tax(PROPERTY_TAX_RATES, band)} from ${when}, against ${tax(INCOME_TAX_RATES, band)} now.`
+        : `£10,000 of rental profit would be taxed ${tax(PROPERTY_TAX_RATES, "basic")} at basic rate from ${when} (${tax(INCOME_TAX_RATES, "basic")} now), and ${tax(PROPERTY_TAX_RATES, "higher")} at higher rate (${tax(INCOME_TAX_RATES, "higher")} now).`;
+    },
+  },
+  // Side income under the allowance is tax-free; over it, tax is on the
+  // rest. Candid doesn't ask about trading income, so only an example.
+  tradingAllowance: {
+    label: "Trading allowance",
+    fields: [{ key: "allowance", label: "New allowance (£)" }, { key: "from", label: "From (e.g. April 2027)" }],
+    line: () => null,
+    example: (d, m, { allowance, from }) => {
+      const now = 1000, next = +allowance || 3000, income = 2500, band = salaryBand(m) || "basic";
+      if (income > next) return null;
+      const tax = Math.round((income - now) * INCOME_TAX_RATES[band]);
+      return `${fmt(income)} of side income is taxed on the ${fmt(income - now)} over today's ${fmt(now)} allowance: ${fmt(tax)} at ${band} rate. From ${from || "April 2027"} it's all within the ${fmt(next)} allowance, so no tax and no Self Assessment return for it.`;
+    },
+  },
+  // The LISA charge on a home over £450,000: 25% to 20% (October 2026
+  // Budget). 20% of savings plus the 25% bonus is what was paid in; 25% of
+// it, 6.25% less.
+  lisaCharge: {
+    label: "LISA charge on homes over £450,000",
+    fields: [],
+    line: d => {
+      const paid = +d.isaThisYearLISA || 0;
+      if (!(paid > 0)) return null;
+      return `You've paid ${fmt(paid)} into a LISA this tax year, ${fmt(Math.round(paid * 1.25))} with the bonus. Withdrawn for a home over £450,000, you'd get back ${fmt(paid)} at the 20% charge, ${fmt(Math.round(paid * 0.0625))} more than at 25%.`;
+    },
+    example: () => "£4,000 paid in becomes £5,000 with the bonus. Withdrawn for a home over £450,000, you'd get back £4,000 at the 20% charge, £250 more than at 25%.",
+  },
 };
+
+// Rental profits from April 2027 (October 2026 Budget): 4 points over income
+// tax on each band.
+const PROPERTY_TAX_RATES = { basic: 0.24, higher: 0.44, additional: 0.49 };
+// When savings_rates has none, an easy-access rate for the example.
+const EXAMPLE_RATE = 4.5;
+// "April 2027" → 2027; the tax year a change starts.
+const yearOf = from => +(/\d{4}/.exec(from || "")?.[0]) || 2027;
+// Their band, only when they've given a salary.
+const salaryBand = m => m.salary > 0 ? m.taxBandLabel : null;
+// Today's best easy-access rate outside an ISA (savings_rates rows).
+export function bestEasyAccess(rows) {
+  const top = Math.max(0, ...(rows || []).filter(r => !r.is_isa && /^easy access$/i.test(r.account_type || "")).map(r => +r.rate_aer || 0));
+  return top > 0 ? Math.round(top * 100) / 100 : EXAMPLE_RATE;
+}
+// What a change means for them: the line on their figures, or failing
+// that, a worked example ({ text, example }), or null.
+export function impactFor(item, d, m, ctx = {}) {
+  const impact = item?.impact && IMPACTS[item.impact.kind];
+  if (!impact) return null;
+  const own = impact.line(d, m, item.impact, ctx.today);
+  if (own) return { text: own, example: false };
+  const ex = impact.example?.(d, m, item.impact, ctx);
+  return ex ? { text: ex, example: true } : null;
+}
 
 // ── Your week ────────────────────────────────────────────────────────────────
 export function yourWeek(d, m, today, rows) {
@@ -247,9 +348,8 @@ export function weeklyEmail(issue, rawD, { today = new Date(), rows = [], unsubs
       ...(mine.length ? [{ h: "Your week on Candid" }, { list: mine.map(l => [{ b: l.label }, `: ${shortMoney(l.text)}`]) }, { button: { label: "Fix with Candid", href: `${SITE}/app/home` } }] : []),
       ...(items.length ? [{ h: "What's happening this week that affects you" }] : []),
       ...items.map(i => {
-        const impact = i.impact && IMPACTS[i.impact.kind];
-        const forYou = impact ? impact.line(d, m, i.impact, today) : null;
-        return { news: { title: shortMoney(unbold(i.title).trim()), status: i.status, body: shortMoney(unbold(i.body).trim()), forYou: forYou && shortMoney(forYou), source: i.source?.trim() || null, url: i.url?.trim() || null } };
+        const forYou = impactFor(i, d, m, { today, rows });
+        return { news: { title: shortMoney(unbold(i.title).trim()), status: i.status, verdict: i.verdict || null, body: shortMoney(unbold(i.body).trim()), forYou: forYou && shortMoney(forYou.text), forExample: !!forYou?.example, source: i.source?.trim() || null, url: i.url?.trim() || null } };
       }),
     ],
     after: [
@@ -302,7 +402,7 @@ export function cleanIssue(raw) {
   const items = (Array.isArray(raw?.items) ? raw.items : []).slice(0, 8).map(i => {
     const kind = IMPACTS[i?.impact?.kind] ? i.impact.kind : null;
     const impact = kind ? Object.fromEntries([["kind", kind], ...IMPACTS[kind].fields.map(f => [f.key, str(String(i.impact[f.key] ?? ""), 40)])]) : null;
-    return { title: str(i?.title, 140), status: STATUSES[i?.status] ? i.status : "news", body: str(i?.body, 1200), source: str(i?.source, 140), url: /^https:\/\//.test(i?.url || "") ? str(i.url, 400) : "", impact };
+    return { title: str(i?.title, 140), status: STATUSES[i?.status] ? i.status : "news", ...(VERDICTS[i?.verdict] ? { verdict: i.verdict } : {}), body: str(i?.body, 1200), source: str(i?.source, 140), url: /^https:\/\//.test(i?.url || "") ? str(i.url, 400) : "", impact };
   }).filter(i => i.title || i.body);
   return { subject: str(raw?.subject, 120), intro: str(raw?.intro, 800), items };
 }

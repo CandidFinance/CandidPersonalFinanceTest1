@@ -19,7 +19,7 @@
 //   { list: [text, ...] }       bullets
 //   { button: { label, href } } a pill button
 //   { panel: { label, text } }  a tinted box (an invite link, a total)
-//   { news: { title, status, body, forYou, source, url } }  a news item
+//   { news: { title, status, verdict, body, forYou, forExample, source, url } }  a news item
 //   { small }                   smaller, muted text
 
 export const SITE = "https://www.candid-finance.co.uk";
@@ -36,6 +36,13 @@ const STATUS = {
   confirmed: { label: "Confirmed", bg: "#e3efe8", fg: C.success },
   news: { label: "News", bg: "#eeeeea", fg: "#4a4a4a" },
 };
+// An item's verdict (weekly.js VERDICTS), shown in place of its status.
+const VERDICT = {
+  win: { label: "Win", bg: "#e3efe8", fg: C.success },
+  bites: { label: "Bites", bg: "#f6e3e0", fg: "#9b2c22" },
+};
+const pillOf = n => VERDICT[n.verdict] || STATUS[n.status];
+const forLabel = n => n.forExample ? "For example" : "For you";
 
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const pieces = t => Array.isArray(t) ? t : [t];
@@ -75,8 +82,8 @@ function textOf(b) {
   if (b.news) {
     const n = b.news;
     return [
-      `${STATUS[n.status] ? `[${STATUS[n.status].label}] ` : ""}${n.title}`, n.body,
-      ...(n.forYou ? [`For you: ${n.forYou}`] : []),
+      `${pillOf(n) ? `[${pillOf(n).label}] ` : ""}${n.title}`, n.body,
+      ...(n.forYou ? [`${forLabel(n)}: ${n.forYou}`] : []),
       ...(n.source ? [`Source: ${n.source}${n.url ? ` (${n.url})` : ""}`] : []),
       "",
     ];
@@ -106,12 +113,12 @@ function htmlOf(b) {
       + `<div style="margin-top:4px;font-family:${SANS};font-size:15px;line-height:1.55;color:${C.text};word-break:break-word;">${inline(b.panel.text)}</div></td></tr></table>`;
   }
   if (b.news) {
-    const n = b.news, s = STATUS[n.status];
+    const n = b.news, s = pillOf(n);
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr><td style="padding:18px 0 0;border-top:1px solid ${C.line};">`
       + (s ? `<div style="margin:0 0 7px;"><span style="display:inline-block;padding:2px 9px;border-radius:100px;background:${s.bg};color:${s.fg};font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;">${s.label}</span></div>` : "")
       + `<div style="font-family:${SANS};font-size:19px;line-height:1.3;font-weight:700;color:${C.text};">${esc(n.title)}</div>`
       + `<p style="margin:8px 0 12px;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.text};">${esc(n.body)}</p>`
-      + (n.forYou ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;"><tr><td bgcolor="#e3efe8" style="padding:12px 14px;background:#e3efe8;border:1px solid ${C.success};border-left:4px solid ${C.success};border-radius:8px;"><div style="font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.success};">For you</div><div style="margin-top:3px;font-family:${SANS};font-size:14.5px;line-height:1.55;color:${C.text};">${esc(n.forYou)}</div></td></tr></table>` : "")
+      + (n.forYou ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;"><tr><td bgcolor="#e3efe8" style="padding:12px 14px;background:#e3efe8;border:1px solid ${C.success};border-left:4px solid ${C.success};border-radius:8px;"><div style="font-family:${SANS};font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.success};">${forLabel(n)}</div><div style="margin-top:3px;font-family:${SANS};font-size:14.5px;line-height:1.55;color:${C.text};">${esc(n.forYou)}</div></td></tr></table>` : "")
       + (n.source ? `<div style="font-family:${SANS};font-size:12.5px;color:${C.muted};">Source: ${n.url ? `<a href="${esc(n.url)}" style="color:${C.muted};text-decoration:underline;">${esc(n.source)}</a>` : esc(n.source)}</div>` : "")
       + `</td></tr></table>`;
   }

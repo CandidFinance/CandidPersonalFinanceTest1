@@ -82,3 +82,34 @@ test("approved, it shows in the app: Bank Rate's new rate; a Budget's items wher
   // Not approved: still only "coming up", and gone after the day.
   assert.equal(outsideEvent(d, m, { today, events: withApproved([boe], []) }), null);
 });
+
+test("the Budget email: Win and Bites pills, a line on their figures, or a worked example where Candid hasn't the figures", () => {
+  const issue = cleanEventDraft({ subject: "Autumn Budget 2026", intro: "Delivered on Wednesday.", items: [
+    { title: "Savings interest tax up", status: "confirmed", verdict: "bites", body: "24% / 44% / 49%.", impact: { kind: "savingsTax", from: "April 2027" } },
+    { title: "Cash ISA cut scrapped", status: "confirmed", verdict: "win", body: "All £20,000.", impact: { kind: "cashIsaLimit", limit: "20000", from: "April 2027" } },
+    { title: "Rental income tax up", status: "confirmed", verdict: "bites", body: "24% / 44% / 49%.", impact: { kind: "propertyTax", from: "April 2027" } },
+    { title: "Trading allowance tripled", status: "confirmed", verdict: "win", body: "£3,000.", impact: { kind: "tradingAllowance", allowance: "3000", from: "April 2027" } },
+    { title: "LISA charge cut", status: "confirmed", verdict: "nonsense", body: "20%.", impact: { kind: "lisaCharge" } },
+  ] });
+  assert.equal(issue.items[0].verdict, "bites");
+  assert.equal(issue.items[4].verdict, undefined);
+  const rows = [{ account_type: "Easy access", is_isa: false, rate_aer: "5.00" }, { account_type: "Easy access ISA", is_isa: true, rate_aer: "6" }];
+  const { text, html } = eventEmail(issue, budget, d, { today: new Date("2026-10-29T15:00:00Z"), rows, unsubscribeUrl: "https://u" });
+  assert.match(text, /\[Bites\] Savings interest tax up/);
+  assert.match(text, /\[Win\] Cash ISA cut scrapped/);
+  assert.match(text, /\[Confirmed\] LISA charge cut/);
+  assert.match(html, /#9b2c22[^>]*>Bites</);
+  // Their cash: £30,000 at 4% is £1,200 a year; over their £1,000 allowance at 20% now, 24% from April 2027.
+  assert.match(text, /For you: Your £30k in cash earns about £1\.2k a year\. Over the £1k you can earn tax-free, that's about £48 a year in tax from April 2027, against £40 now\./);
+  assert.match(text, /For you: You've put £15k into a cash ISA this tax year\. From April 2027, up to £20k a year can still go into cash\./);
+  // No rental or side income in Candid: examples, on their basic rate.
+  assert.match(text, /For example: As a basic-rate taxpayer, £10k of rental profit would be taxed £2\.4k from April 2027, against £2k now\./);
+  assert.match(text, /For example: £2\.5k of side income is taxed on the £1\.5k over today's £1k allowance: £300 at basic rate\./);
+  assert.match(text, /For example: £4k paid in becomes £5k with the bonus\./);
+  assert.match(text, /See where these land on your figures: /);
+  // Without cash or salary, the savings example uses today's best easy-access rate outside an ISA.
+  const blank = eventEmail(issue, budget, { name: "Jo" }, { rows, unsubscribeUrl: "https://u", free: true });
+  assert.match(blank.text, /For example: £30k at 5% \(today's best easy-access rate\) earns £1\.5k a year\. The tax on it from April 2027: £120 at basic rate \(£100 now\), £440 at higher rate \(£400 now\)\./);
+  assert.match(blank.text, /You're getting this because you gave us your email/);
+  assert.doesNotMatch(text + blank.text, /\byou should\b|\brecommend/i);
+});

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { alertsDue, alertEmail, inputsFromRow, isFounding, RATES_MIN_DAYS } from "./alerts.js";
+import { alertsDue, alertEmail, inputsFromRow, isFounding, capSends, RATES_MIN_DAYS } from "./alerts.js";
 
 const day = s => new Date(`${s}T08:00:00`);
 const trap = {
@@ -160,4 +160,16 @@ test("the bonus email is on this tax year's figures: top-ups use annual allowanc
   assert.ok(saving([up(9000)]) < saving([]));
   // The allowance used up: nothing to say.
   assert.equal(subject([up(60000)]), undefined);
+});
+
+test("the daily cap: what fits under it today, most time-bound first; the rest waits for the next run", () => {
+  const today = new Date("2026-10-29T15:00:00Z");
+  const emails = [{ kind: "weekly", to: "a" }, { kind: "event", to: "b" }, { kind: "rates", to: "c" }, { kind: "confirmReminder", to: "d" }, { kind: "event", to: "e" }];
+  const sent = [{ sent_at: "2026-10-29T04:01:00Z" }, { sent_at: "2026-10-29T04:02:00Z" }, { sent_at: "2026-10-28T23:59:00Z" }];
+  const { now, later, room } = capSends(emails, sent, today, 5);
+  assert.equal(room, 3);
+  assert.deepEqual(now.map(e => e.to), ["d", "c", "b"]);
+  assert.deepEqual(later.map(e => e.to), ["e", "a"]);
+  assert.equal(capSends(emails, null, today, 95).now.length, 5);
+  assert.equal(capSends(emails, [...sent, ...sent, ...sent], today, 5).room, 0);
 });

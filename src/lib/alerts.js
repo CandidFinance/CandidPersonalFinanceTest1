@@ -282,3 +282,20 @@ export function alertEmail(alert, { name = "", free = false, asOf = null, unsubs
     unsubscribeUrl,
   });
 }
+
+// ── The daily cap ────────────────────────────────────────────────────────────
+// Resend's free plan sends 100 emails a day (UTC), across every kind. A run
+// sends what fits under DAILY_SEND_CAP (a few spare for test sends and
+// billing's welcomes), most time-bound first; the rest go at the next run,
+// as alert_sends stops anyone getting one twice. Sunday's and an event's
+// emails can still go a few days after (WEEKLY_GRACE_DAYS, EVENT_EMAIL_DAYS).
+export const DAILY_SEND_CAP = 95;
+const SEND_ORDER = { confirmReminder: 0, confirmed: 1, welcome: 2, monthly: 4, event: 5, weekly: 6 };
+const rank = e => SEND_ORDER[e.kind] ?? 3;
+// `sent`: alert_sends rows ({ sent_at }). { now, later, room }.
+export function capSends(emails, sent, today = new Date(), cap = DAILY_SEND_CAP) {
+  const dayStart = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const room = Math.max(0, cap - (sent || []).filter(s => +new Date(s.sent_at) >= dayStart).length);
+  const ordered = emails.map((e, n) => ({ e, n })).sort((a, b) => rank(a.e) - rank(b.e) || a.n - b.n).map(x => x.e);
+  return { now: ordered.slice(0, room), later: ordered.slice(room), room };
+}
