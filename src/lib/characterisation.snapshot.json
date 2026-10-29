@@ -74329,14 +74329,14 @@
      {
       "year": 2,
       "buyerWealth": 58290.23293222394,
-      "renterWealth": 44700.57808411139,
+      "renterWealth": 44683.35945199584,
       "propertyValue": 344792.5,
       "mortgageBalance": 279606.417067776,
       "equity": 65186.08293222397,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1744.038906694882,
       "monthlyRent": 1701.1499999999999,
-      "taxPaid": 361.59127442646593,
+      "taxPaid": 378.80990654201196,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 25618.350828453193,
@@ -74354,22 +74354,22 @@
        "rent": 40213.80000000002,
        "notRecovered": 40213.80000000002,
        "earnings": 4229.551698892167,
-       "tax": 674.6073754579403,
-       "netCost": 36658.85567656579,
+       "tax": 691.8260075734863,
+       "netCost": 36676.07430868134,
        "ownMoneyIn": 41145.63376067717
       }
      },
      {
       "year": 3,
       "buyerWealth": 73530.20794139663,
-      "renterWealth": 46586.504434066126,
+      "renterWealth": 46550.559524583536,
       "propertyValue": 355136.275,
       "mortgageBalance": 274503.3415586034,
       "equity": 80632.93344139663,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1752.407656694882,
       "monthlyRent": 1753.8856499999997,
-      "taxPaid": 382.8919950278913,
+      "taxPaid": 400.73733449697465,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 38096.24219961915,
@@ -74386,23 +74386,23 @@
       "renting": {
        "rent": 61260.427799999976,
        "notRecovered": 61260.427799999976,
-       "earnings": 6516.105963536212,
-       "tax": 1057.4993704858316,
-       "netCost": 55801.82120694959,
+       "earnings": 6515.225025638252,
+       "tax": 1092.563342070461,
+       "netCost": 55837.76611643218,
        "ownMoneyIn": 41127.89784101576
       }
      },
      {
       "year": 4,
       "buyerWealth": 89308.72433162952,
-      "renterWealth": 47990.78632090858,
+      "renterWealth": 47934.79925643401,
       "propertyValue": 365790.36325000005,
       "mortgageBalance": 269165.8316533705,
       "equity": 96624.53159662953,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1761.027469194882,
       "monthlyRent": 1808.2561051499995,
-      "taxPaid": 399.25849972112184,
+      "taxPaid": 417.46164492479215,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 50339.69917472484,
@@ -74419,23 +74419,23 @@
       "renting": {
        "rent": 82959.50106179992,
        "notRecovered": 82959.50106179992,
-       "earnings": 8886.389981561199,
-       "tax": 1456.7578702069534,
-       "netCost": 75529.86895044567,
+       "earnings": 8883.670033874922,
+       "tax": 1510.0249869952531,
+       "netCost": 75585.85601492025,
        "ownMoneyIn": 40561.15420955435
       }
      },
      {
       "year": 5,
       "buyerWealth": 105645.67518761131,
-      "renterWealth": 48882.73986137207,
+      "renterWealth": 48805.90366039179,
       "propertyValue": 376764.07414750004,
       "mortgageBalance": 263583.1174769387,
       "equity": 113180.95667056134,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1769.905876069882,
       "monthlyRent": 1864.3120444096496,
-      "taxPaid": 404.1464699897442,
+      "taxPaid": 422.13120202010344,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 62337.95187863152,
@@ -74452,23 +74452,23 @@
       "renting": {
        "rent": 105331.2455947158,
        "notRecovered": 105331.2455947158,
-       "earnings": 11315.364012091635,
-       "tax": 1860.9043401966976,
-       "netCost": 95876.78592282087,
+       "earnings": 11309.779659930013,
+       "tax": 1932.1561890153566,
+       "netCost": 95953.62212380115,
        "ownMoneyIn": 39428.28018947713
       }
      },
      {
       "year": 6,
       "buyerWealth": 122561.72205649648,
-      "renterWealth": 50274.267095017305,
+      "renterWealth": 50176.198340495685,
       "propertyValue": 388066.99637192505,
       "mortgageBalance": 257743.93438799004,
       "equity": 130323.06198393501,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1779.050635151129,
       "monthlyRent": 1922.1057177863484,
-      "taxPaid": 399.65405455824754,
+      "taxPaid": 416.95552223140595,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 74079.73567002136,
@@ -74485,23 +74485,23 @@
       "renting": {
        "rent": 128396.51420815206,
        "notRecovered": 128396.51420815206,
-       "earnings": 13823.206291917744,
-       "tax": 2260.5583947549453,
-       "netCost": 116833.86631098927,
+       "earnings": 13813.69085388795,
+       "tax": 2349.1117112467628,
+       "netCost": 116931.93506551087,
        "ownMoneyIn": 38711.6191978545
       }
      },
      {
       "year": 7,
       "buyerWealth": 140078.32588826603,
-      "renterWealth": 50094.10173248115,
+      "renterWealth": 49975.139606168006,
       "propertyValue": 399709.0062630828,
       "mortgageBalance": 251636.5002495551,
       "equity": 148072.5060135277,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1788.4697370048166,
       "monthlyRent": 1981.6909950377249,
-      "taxPaid": 379.75637643612004,
+      "taxPaid": 395.6323646234101,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 85553.26841192492,
@@ -74518,23 +74518,23 @@
       "renting": {
        "rent": 152176.8061486048,
        "notRecovered": 152176.8061486048,
-       "earnings": 16341.452402212579,
-       "tax": 2640.314771191065,
-       "netCost": 138475.66851758328,
+       "earnings": 16326.919580578562,
+       "tax": 2744.7440758701728,
+       "netCost": 138594.6306438964,
        "ownMoneyIn": 36392.964101459605
       }
      },
      {
       "year": 8,
       "buyerWealth": 158217.7792666023,
-      "renterWealth": 49303.393485744826,
+      "renterWealth": 49164.552191619085,
       "propertyValue": 411700.27645097533,
       "mortgageBalance": 245248.49165535351,
       "equity": 166451.78479562182,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1798.1714119141147,
       "monthlyRent": 2043.123415883894,
-      "taxPaid": 345.8873049240251,
+      "taxPaid": 359.6801445784065,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 96746.22669806183,
@@ -74551,23 +74551,23 @@
       "renting": {
        "rent": 176694.28713921152,
        "notRecovered": 176694.28713921152,
-       "earnings": 18836.05550803762,
-       "tax": 2986.20207611509,
-       "netCost": 160844.433707289,
+       "earnings": 18815.436358245373,
+       "tax": 3104.424220448579,
+       "netCost": 160983.27500141473,
        "ownMoneyIn": 33453.54005382225
       }
      },
      {
       "year": 9,
       "buyerWealth": 177003.23998563795,
-      "renterWealth": 47865.62873557437,
+      "renterWealth": 47708.643585892714,
       "propertyValue": 424051.2847445046,
       "mortgageBalance": 238567.01906397654,
       "equity": 185484.26568052807,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1808.1641370706918,
       "monthlyRent": 2106.460241776295,
-      "taxPaid": 297.4851695190239,
+      "taxPaid": 308.5256409631061,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 107645.72098702335,
@@ -74584,23 +74584,23 @@
       "renting": {
        "rent": 201971.81004052723,
        "notRecovered": 201971.81004052723,
-       "earnings": 21275.329183853406,
-       "tax": 3283.6872456341143,
-       "netCost": 183980.16810230794,
+       "earnings": 21247.606649949324,
+       "tax": 3412.949861411685,
+       "netCost": 184137.1532519896,
        "ownMoneyIn": 29873.986797355014
       }
      },
      {
       "year": 10,
       "buyerWealth": 196458.76603036476,
-      "renterWealth": 45742.66122579726,
+      "renterWealth": 45570.04992787419,
       "propertyValue": 436772.8232868397,
       "mortgageBalance": 231578.60079073816,
       "equity": 205194.22249610155,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1818.4566439819662,
       "monthlyRent": 2171.7605092713598,
-      "taxPaid": 233.6968126737074,
+      "taxPaid": 241.2913027181733,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 118238.26959412347,
@@ -74617,9 +74617,9 @@
       "renting": {
        "rent": 228032.93615178342,
        "notRecovered": 228032.93615178342,
-       "earnings": 23625.704870222722,
-       "tax": 3517.3840583078218,
-       "netCost": 207924.61533986853,
+       "earnings": 23589.950678121677,
+       "tax": 3654.2411641298586,
+       "netCost": 208097.2266377916,
        "ownMoneyIn": 25634.340413882288
       }
      }
@@ -74627,7 +74627,7 @@
     "horizonYears": 10,
     "breakevenYear": 1,
     "negativeEquityYears": [],
-    "gapAtHorizon": 150716.1048045675,
+    "gapAtHorizon": 150888.71610249055,
     "firstYearCosts": {
      "mortgagePayment": 1465.0805733615487,
      "maintenance": 270.8333333333333,
@@ -76293,7 +76293,7 @@
      "property_investment_return": 5,
      "property_dividend_yield": null,
      "property_breakeven_year": 1,
-     "property_wealth_gap": 150716,
+     "property_wealth_gap": 150889,
      "property_take_home": 3401,
      "property_other_spending": 150,
      "property_budget_left": 1515,
@@ -77439,14 +77439,14 @@
      {
       "year": 2,
       "buyerWealth": 58290.23293222394,
-      "renterWealth": 44050.001126341755,
+      "renterWealth": 44038.45391867301,
       "propertyValue": 344792.5,
       "mortgageBalance": 279606.417067776,
       "equity": 65186.08293222397,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1744.038906694882,
       "monthlyRent": 1701.1499999999999,
-      "taxPaid": 242.49136104365004,
+      "taxPaid": 254.0385687123953,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 25618.350828453193,
@@ -77464,22 +77464,22 @@
        "rent": 40213.80000000002,
        "notRecovered": 40213.80000000002,
        "earnings": 3355.4005709455023,
-       "tax": 451.0332052809069,
-       "netCost": 37309.43263433542,
+       "tax": 462.5804129496521,
+       "netCost": 37320.97984200417,
        "ownMoneyIn": 41145.63376067717
       }
      },
      {
       "year": 3,
       "buyerWealth": 73530.20794139663,
-      "renterWealth": 45569.96233604493,
+      "renterWealth": 45545.930767046266,
       "propertyValue": 355136.275,
       "mortgageBalance": 274503.3415586034,
       "equity": 80632.93344139663,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1752.407656694882,
       "monthlyRent": 1753.8856499999997,
-      "taxPaid": 256.6390834997818,
+      "taxPaid": 268.65299377285703,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 38096.24219961915,
@@ -77496,23 +77496,23 @@
       "renting": {
        "rent": 61260.427799999976,
        "notRecovered": 61260.427799999976,
-       "earnings": 5149.736783809864,
-       "tax": 707.6722887806886,
-       "netCost": 56818.3633049708,
+       "earnings": 5149.266332753025,
+       "tax": 731.2334067225091,
+       "netCost": 56842.39487396946,
        "ownMoneyIn": 41127.89784101576
       }
      },
      {
       "year": 4,
       "buyerWealth": 89308.72433162952,
-      "renterWealth": 46582.621620834354,
+      "renterWealth": 46545.34266800879,
       "propertyValue": 365790.36325000005,
       "mortgageBalance": 269165.8316533705,
       "equity": 96624.53159662953,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1761.027469194882,
       "monthlyRent": 1808.2561051499995,
-      "taxPaid": 266.6810419351782,
+      "taxPaid": 278.94934256227936,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 50339.69917472484,
@@ -77529,23 +77529,23 @@
       "renting": {
        "rent": 82959.50106179992,
        "notRecovered": 82959.50106179992,
-       "earnings": 6995.8207419958835,
-       "tax": 974.3533307158668,
-       "netCost": 76938.03365051991,
+       "earnings": 6994.371207739256,
+       "tax": 1010.1827492847885,
+       "netCost": 76975.31260334546,
        "ownMoneyIn": 40561.15420955435
       }
      },
      {
       "year": 5,
       "buyerWealth": 105645.67518761131,
-      "renterWealth": 47059.160955846324,
+      "renterWealth": 47008.29658552256,
       "propertyValue": 376764.07414750004,
       "mortgageBalance": 263583.1174769387,
       "equity": 113180.95667056134,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1769.905876069882,
       "monthlyRent": 1864.3120444096496,
-      "taxPaid": 267.43265527732274,
+      "taxPaid": 279.4992707189813,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 62337.95187863152,
@@ -77562,23 +77562,23 @@
       "renting": {
        "rent": 105331.2455947158,
        "notRecovered": 105331.2455947158,
-       "earnings": 8872.66675236238,
-       "tax": 1241.7859859931896,
-       "netCost": 97700.36482834662,
+       "earnings": 8869.698416049205,
+       "tax": 1289.6820200037698,
+       "netCost": 97751.22919867036,
        "ownMoneyIn": 39428.28018947713
       }
      },
      {
       "year": 6,
       "buyerWealth": 122561.72205649648,
-      "renterWealth": 48004.60489852224,
+      "renterWealth": 47940.16969290844,
       "propertyValue": 388066.99637192505,
       "mortgageBalance": 257743.93438799004,
       "equity": 130323.06198393501,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1779.050635151129,
       "monthlyRent": 1922.1057177863484,
-      "taxPaid": 260.61737627332684,
+      "taxPaid": 272.1159186367188,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 74079.73567002136,
@@ -77595,23 +77595,23 @@
       "renting": {
        "rent": 128396.51420815206,
        "notRecovered": 128396.51420815206,
-       "earnings": 10795.389062934251,
-       "tax": 1502.4033622665165,
-       "netCost": 119103.52850748433,
+       "earnings": 10790.348433694444,
+       "tax": 1561.7979386404886,
+       "netCost": 119167.96371309811,
        "ownMoneyIn": 38711.6191978545
       }
      },
      {
       "year": 7,
       "buyerWealth": 140078.32588826603,
-      "renterWealth": 47357.26946057308,
+      "renterWealth": 47279.86522227192,
       "propertyValue": 399709.0062630828,
       "mortgageBalance": 251636.5002495551,
       "equity": 148072.5060135277,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1788.4697370048166,
       "monthlyRent": 1981.6909950377249,
-      "taxPaid": 241.47745562081448,
+      "taxPaid": 251.8212986131223,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 85553.26841192492,
@@ -77628,23 +77628,23 @@
       "renting": {
        "rent": 152176.8061486048,
        "notRecovered": 152176.8061486048,
-       "earnings": 12708.186177000794,
-       "tax": 1743.880817887331,
-       "netCost": 141212.50078949134,
+       "earnings": 12700.520358065925,
+       "tax": 1813.619237253611,
+       "netCost": 141289.9050277925,
        "ownMoneyIn": 36392.964101459605
       }
      },
      {
       "year": 8,
       "buyerWealth": 158217.7792666023,
-      "renterWealth": 46081.53057492257,
+      "renterWealth": 45992.30175100926,
       "propertyValue": 411700.27645097533,
       "mortgageBalance": 245248.49165535351,
       "equity": 166451.78479562182,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1798.1714119141147,
       "monthlyRent": 2043.123415883894,
-      "taxPaid": 211.23033703552173,
+      "taxPaid": 219.90135455075878,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 96746.22669806183,
@@ -77661,23 +77661,23 @@
       "renting": {
        "rent": 176694.28713921152,
        "notRecovered": 176694.28713921152,
-       "earnings": 14583.101676023152,
-       "tax": 1955.1111549228526,
-       "netCost": 164066.29661811123,
+       "earnings": 14572.282288991368,
+       "tax": 2033.5205918043696,
+       "netCost": 164155.52544202452,
        "ownMoneyIn": 33453.54005382225
       }
      },
      {
       "year": 9,
       "buyerWealth": 177003.23998563795,
-      "renterWealth": 44143.554687177675,
+      "renterWealth": 44044.21887086476,
       "propertyValue": 424051.2847445046,
       "mortgageBalance": 238567.01906397654,
       "equity": 185484.26568052807,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1808.1641370706918,
       "monthlyRent": 2106.460241776295,
-      "taxPaid": 169.4954776719088,
+      "taxPaid": 175.96715011235602,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 107645.72098702335,
@@ -77694,23 +77694,23 @@
       "renting": {
        "rent": 201971.81004052723,
        "notRecovered": 201971.81004052723,
-       "earnings": 16394.17452241738,
-       "tax": 2124.6066325947613,
-       "netCost": 187702.2421507046,
+       "earnings": 16379.719815426448,
+       "tax": 2209.4877419167256,
+       "netCost": 187801.5779670175,
        "ownMoneyIn": 29873.986797355014
       }
      },
      {
       "year": 10,
       "buyerWealth": 196458.76603036476,
-      "renterWealth": 41508.122398811465,
+      "renterWealth": 41401.01233158023,
       "propertyValue": 436772.8232868397,
       "mortgageBalance": 231578.60079073816,
       "equity": 205194.22249610155,
       "saleShortfall": 0,
       "buyerMonthlyCost": 1818.4566439819662,
       "monthlyRent": 2171.7605092713598,
-      "taxPaid": 115.66543886132013,
+      "taxPaid": 119.39259535587018,
       "buying": {
        "stampDutyAndFees": 3750,
        "mortgageInterest": 118238.26959412347,
@@ -77727,9 +77727,9 @@
       "renting": {
        "rent": 228032.93615178342,
        "notRecovered": 228032.93615178342,
-       "earnings": 18114.054056385216,
-       "tax": 2240.2720714560814,
-       "netCost": 212159.15416685428,
+       "earnings": 18095.552254970495,
+       "tax": 2328.8803372725956,
+       "netCost": 212266.2642340855,
        "ownMoneyIn": 25634.340413882288
       }
      }
@@ -77737,7 +77737,7 @@
     "horizonYears": 10,
     "breakevenYear": 1,
     "negativeEquityYears": [],
-    "gapAtHorizon": 154950.64363155328,
+    "gapAtHorizon": 155057.75369878454,
     "firstYearCosts": {
      "mortgagePayment": 1465.0805733615487,
      "maintenance": 270.8333333333333,
@@ -79188,7 +79188,7 @@
      "property_investment_return": 4,
      "property_dividend_yield": null,
      "property_breakeven_year": 1,
-     "property_wealth_gap": 154951,
+     "property_wealth_gap": 155058,
      "property_take_home": 3401,
      "property_other_spending": 150,
      "property_budget_left": 1515,

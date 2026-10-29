@@ -260,7 +260,7 @@ export function cashPlan(d, m, rows, { skipIsa = false, skipPb = false, isaChoic
   };
 
   // Cash ISA
-  // Room for cash in a Cash ISA: from April 2027, £12,000 for under-65s.
+  // Room for cash in a Cash ISA (tax.js cashIsaLimit).
   const isaLeft = Math.max(0, +(m.cashIsaHeadroom ?? m.isaHeadroom) || 0);
   const isaLimit = cashIsaLimit(taxYearFor(d), d.age);
   const isaValue = before => (o, from) => kept(before, from, o.ratePct, true);

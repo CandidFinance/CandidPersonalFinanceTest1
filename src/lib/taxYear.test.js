@@ -96,8 +96,8 @@ test("rates and limits switch over when the inputs roll into 2027/28", () => {
   assert.equal(before.cashIsaHeadroom, 15000);
   // On 6 April this year's £5,000 rolls into last year's, and the new limits apply.
   const after = calcMetrics(rollTaxYear({ ...d, inputsTaxYear: 2026 }, new Date(2027, 3, 6)));
-  assert.equal(after.savingsTr, 0.22);
-  assert.equal(after.cashIsaHeadroom, 12000);
+  assert.equal(after.savingsTr, 0.24);
+  assert.equal(after.cashIsaHeadroom, 20000);
   assert.equal(after.isaHeadroom, 20000);
 });
 

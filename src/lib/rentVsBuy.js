@@ -385,7 +385,7 @@ export function rentVsBuyInputs(d, m, regionalRows, scenario = "moderate", marke
 
   const selected = new Set(d.selectedModules || []);
   // Kept in cash, only the cash part of the ISA allowance can be used
-  // (£12,000 for under-65s from April 2027).
+  // (tax.js cashIsaLimit).
   const startTaxYear = taxYearFor(d);
   const limitNow = age => returnType === "cash" ? cashIsaLimit(startTaxYear, age) : ISA_ALLOWANCE;
   const people = [{

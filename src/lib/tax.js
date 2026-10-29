@@ -43,12 +43,14 @@ export const STATE_PENSION_AGE = 67;
 // ── Announced changes, switched on by tax year ──────────────────────────────
 // Each takes the tax year (2027 means 2027/28, from 6 April 2027), so the app
 // moves over on the day with no code change. The app passes the year the
-// user's figures are for (taxYearFor in taxYear.js). Budget, November 2025.
+// user's figures are for (taxYearFor in taxYear.js). Budgets, November 2025
+// and October 2026.
 //
-// Savings interest above the Personal Savings Allowance: 2 points more on
-// every band from April 2027.
+// Savings interest above the Personal Savings Allowance: 4 points more on
+// every band from April 2027 (2 from the 2025 Budget, 2 more from the 2026
+// one).
 export function savingsTaxRates(taxYear) {
-  return taxYear >= 2027 ? { basic: 0.22, higher: 0.42, additional: 0.47 } : INCOME_TAX_RATES;
+  return taxYear >= 2027 ? { basic: 0.24, higher: 0.44, additional: 0.49 } : INCOME_TAX_RATES;
 }
 // Dividends above the £500 allowance: basic and higher rates 2 points more
 // from April 2026; the additional rate is unchanged.
@@ -65,12 +67,12 @@ export const SALARY_SACRIFICE_NI_CAP = 2000;
 export function salarySacrificeNiCap(taxYear) {
   return taxYear >= 2029 ? SALARY_SACRIFICE_NI_CAP : Infinity;
 }
-// How much of the ISA allowance can go into cash: £12,000 for under-65s from
-// April 2027 (the rest can still go into stocks and shares); 65 and over keep
-// the full £20,000. An unknown age counts as under 65.
-export const CASH_ISA_LIMIT_UNDER_65 = 12000;
-export function cashIsaLimit(taxYear, age) {
-  return taxYear >= 2027 && !(+age >= 65) ? CASH_ISA_LIMIT_UNDER_65 : ISA_ALLOWANCE;
+// How much of the ISA allowance can go into cash: all £20,000. The 2025
+// Budget's £12,000 cap for under-65s from April 2027 was scrapped in the
+// October 2026 Budget. Callers still pass (taxYear, age), so a future limit
+// is one change here.
+export function cashIsaLimit() {
+  return ISA_ALLOWANCE;
 }
 
 // NI on a year's earnings: employee Class 1, or Class 4 for the

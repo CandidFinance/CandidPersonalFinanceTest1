@@ -221,9 +221,9 @@ export function calcMetrics(d, marketRates = {}) {
   const scottish = d.scottishTaxpayer === "yes";
   const tr = scottish ? Math.max(0.2, scottishRate(adjustedNetIncome)) : INCOME_TAX_RATES[taxBandLabel];
   // Rates and limits that change on 6 April follow the tax year the figures
-  // are for: savings interest above the PSA has its own rates (2 points over
-  // income tax from April 2027), and from April 2027 under-65s can put only
-  // £12,000 of the ISA allowance into cash.
+  // are for: savings interest above the PSA has its own rates (4 points over
+  // income tax from April 2027), and the cash ISA limit (tax.js
+  // cashIsaLimit).
   const taxYear = taxYearFor(d);
   const savingsTr = savingsTaxRates(taxYear)[taxBandLabel];
   const cashIsaHeadroom = Math.max(0, Math.min(isaHeadroom, cashIsaLimit(taxYear, d.age) - (+d.isaThisYearCash || 0)));
