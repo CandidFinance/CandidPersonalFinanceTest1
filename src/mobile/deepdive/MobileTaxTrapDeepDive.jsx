@@ -503,20 +503,25 @@ function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion
     WALK_TIMING.gaps[3].slice(0, 3 + penalty),
   ];
 
-  // How far the open screen has built, and its count-up (0 to 1).
+  // How far the open screen has built, and its count-up (0 to 1). A screen
+  // that finished building (`built`) shows complete when they come back to
+  // it, without building again.
   const [shown, setShown] = useState(0);
   const [prog, setProg] = useState(0);
+  const built = useRef(new Set());
+  const still = reduceMotion || built.current.has(step);
   const gapsKey = gaps.map(g => g.length).join();
   useEffect(() => {
-    if (reduceMotion) { setShown(99); setProg(1); return; }
+    if (still) { setShown(99); setProg(1); return; }
     setShown(0);
     setProg(0);
     const timers = [];
-    let raf = 0, at = 0;
+    let raf = 0, at = 0, finished = false;
     gaps[step].forEach((gap, i) => {
       at += gap;
       timers.push(setTimeout(() => {
         setShown(i + 1);
+        if (i === gaps[step].length - 1) finished = true;
         if (i !== COUNT_AT[step]) return;
         const ms = WALK_TIMING.count[step], t0 = performance.now();
         const tick = now => {
@@ -527,14 +532,17 @@ function Walkthrough({ step, setStep, onDone, d, m, t, plan, route, reduceMotion
         raf = requestAnimationFrame(tick);
       }, at));
     });
-    return () => { timers.forEach(clearTimeout); cancelAnimationFrame(raf); };
+    return () => {
+      timers.forEach(clearTimeout); cancelAnimationFrame(raf);
+      if (finished) built.current.add(step);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, reduceMotion, gapsKey]);
-  const on = (screen, i) => screen === step && shown > i;
-  const motionMs = ms => reduceMotion ? 0 : ms;
+  }, [step, still, gapsKey]);
+  const on = (screen, i) => screen === step && (still || shown > i);
+  const motionMs = ms => still ? 0 : ms;
   const block = (screen, i, style = {}) => ({ ...style, opacity: on(screen, i) ? 1 : 0, transform: on(screen, i) ? "none" : "translateY(8px)",
     transition: `opacity ${motionMs(WALK_TIMING.fade)}ms ease, transform ${motionMs(WALK_TIMING.fade)}ms ease` });
-  const counted = (screen, v) => screen === step ? v * prog : v;
+  const counted = (screen, v) => screen === step && !still ? v * prog : v;
 
   // Screen 1's bar: £0 to just past their income, £100k marked where green
   // turns red.
