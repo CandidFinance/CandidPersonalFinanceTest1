@@ -89,7 +89,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenMo
             tax year's goals from the modules. */}
         <Tile title="Goals" tour="progress-goals">
           <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"12px"}}>
-            <AddGoalTile names={vaults.map(v => v.name)} open={expanded === "add"} onToggle={() => toggle("add")}
+            <AddGoalTile d={d} names={vaults.map(v => v.name)} open={expanded === "add"} onToggle={() => toggle("add")}
               onSave={vault => { saveVault(d, set, vault, { added: true, fromGoal: false }); setExpanded(null); }}/>
             {vaults.map(v => {
               const key = `vault:${v.id}`;

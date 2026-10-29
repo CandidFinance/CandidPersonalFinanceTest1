@@ -52,14 +52,15 @@ export function PlanPicker({ d, module, from }) {
 }
 
 // The two plans as buttons, straight to Stripe's checkout, for a feature
-// shown locked on a module's page. `from` names the feature in analytics.
+// shown locked on a module's page, in CTA blue as PlanPicker's. `from` names
+// the feature in analytics.
 export default function SubscribeButtons({ d, module, from }) {
   const { busy, error, subscribe } = useCheckout(d, module, from);
   return (
     <>
       <div style={{display:"flex",gap:"8px"}}>
         {["monthly", "yearly"].map(p => (
-          <button key={p} type="button" disabled={!!busy} onClick={() => subscribe(p)} style={{background:p === "yearly" ? G : WHITE,color:p === "yearly" ? WHITE : G,border:`1.5px solid ${G}`,borderRadius:"100px",padding:"8px 14px",fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer",opacity:busy && busy !== p ? 0.5 : 1}}>
+          <button key={p} type="button" disabled={!!busy} onClick={() => subscribe(p)} style={{background:p === "yearly" ? CTA_BLUE : WHITE,color:p === "yearly" ? WHITE : CTA_BLUE,border:`1.5px solid ${CTA_BLUE}`,borderRadius:"100px",padding:"8px 14px",fontSize:"12.5px",fontWeight:700,fontFamily:"inherit",cursor:busy ? "default" : "pointer",opacity:busy && busy !== p ? 0.5 : 1}}>
             {PLANS[p].price} {PLANS[p].per}
           </button>
         ))}

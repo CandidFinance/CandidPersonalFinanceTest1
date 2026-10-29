@@ -1,6 +1,6 @@
-import { Plus } from "lucide-react";
+import { Lock, Plus } from "lucide-react";
 import { fmtCompact } from "../../lib/format.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG } from "../../design-tokens.js";
+import { G, WHITE, CTA_BLUE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG } from "../../design-tokens.js";
 import { pillFieldStyle } from "../../mobile/PillMoneyInput.jsx";
 
 // Pieces shared by the Progress tab's sections (ProgressTrackerDashboard,
@@ -87,19 +87,34 @@ export function Tag({ children, color }) {
   );
 }
 
-// An action among the goal tiles (Add a goal), set apart from them as the
-// app's other "add" buttons are (ScenarioModelling's): a dashed gold
-// outline with no fill or shadow, its label centred in green. A tap opens
-// its form below.
-export function AddTile({ label, open, onToggle, children }) {
+// An action among the goal tiles (Add a goal), a subscriber feature: in the
+// pale blue and CTA blue border of the app's other subscriber features
+// (ScenarioModelling.jsx), with the same sheen passing over it while it's
+// closed, and a "Subscribers" pill (a lock on it while `locked`). A tap
+// opens its form below, or `lockedBody` (the way to subscribe) while locked.
+const ADD_TILE_CSS = `
+.add-tile { position: relative; overflow: hidden; }
+.add-tile > * { position: relative; z-index: 1; }
+.add-tile::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; z-index: 0; pointer-events: none;
+  background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,0.75) 46%, transparent 60%);
+  will-change: transform; animation: add-tile-sheen 7s ease-in-out infinite; }
+@keyframes add-tile-sheen { 0% { transform: translateX(-75%); } 55%, 100% { transform: translateX(25%); } }
+@media (prefers-reduced-motion: reduce) { .add-tile::after { animation: none; transform: translateX(-30%); } }
+.add-tile.add-tile-open::after { display: none; }
+`;
+export function AddTile({ label, open, onToggle, locked = false, lockedBody = null, children }) {
   return (
-    <div style={{border:`1.5px dashed ${GOLD}`,borderRadius:"12px"}}>
+    <div className={open ? "add-tile add-tile-open" : "add-tile"} style={{background:"rgba(0,113,227,0.06)",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"12px",boxShadow:"0 4px 16px rgba(0,113,227,0.12)"}}>
+      <style>{ADD_TILE_CSS}</style>
       <button type="button" aria-expanded={open} onClick={onToggle}
-        style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",width:"100%",minHeight:"46px",background:"none",border:"none",padding:"9px 12px",cursor:"pointer",fontFamily:"inherit",color:G,fontSize:"13px",fontWeight:700}}>
+        style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",width:"100%",minHeight:"46px",background:"none",border:"none",padding:"9px 12px",cursor:"pointer",fontFamily:"inherit",color:CTA_BLUE,fontSize:"13px",fontWeight:700}}>
         <Plus size={15} aria-hidden="true"/>
         {label}
+        <span style={{display:"inline-flex",alignItems:"center",gap:"4px",marginLeft:"4px",background:CTA_BLUE,color:WHITE,borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+          {locked && <Lock size={10} strokeWidth={2.6} aria-hidden="true"/>}Subscribers
+        </span>
       </button>
-      {open && <div style={{padding:"0 12px 12px"}}>{children}</div>}
+      {open && <div style={{padding:"0 12px 12px"}}>{locked ? lockedBody : children}</div>}
     </div>
   );
 }

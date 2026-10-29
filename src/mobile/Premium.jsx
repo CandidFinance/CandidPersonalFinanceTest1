@@ -27,12 +27,20 @@ export default function PremiumButton({ d }) {
         style={{width:"28px",height:"28px",borderRadius:"50%",border:"none",background:CTA_BLUE,color:WHITE,display:"flex",alignItems:"center",justifyContent:"center",padding:0,cursor:"pointer",flexShrink:0}}>
         <Crown size={15} strokeWidth={2.2} aria-hidden="true"/>
       </button>
-      {typeof document !== "undefined" && createPortal(<AnimatePresence>{open && <PremiumSheet key="premium" d={d} onClose={() => setOpen(false)}/>}</AnimatePresence>, document.body)}
+      <PremiumSheetPortal open={open} d={d} onClose={() => setOpen(false)}/>
     </>
   );
 }
 
-function PremiumSheet({ d, onClose }) {
+// The same sheet, for a subscriber feature elsewhere to open when a
+// non-subscriber taps it (Forecast's monthly surplus). `from` names it in
+// analytics.
+export function PremiumSheetPortal({ open, d, onClose, from = "header" }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(<AnimatePresence>{open && <PremiumSheet key="premium" d={d} from={from} onClose={onClose}/>}</AnimatePresence>, document.body);
+}
+
+function PremiumSheet({ d, from, onClose }) {
   const ref = useRef(null);
   const reduceMotion = useReducedMotion();
   useDialogFocus(ref, { onEscape: onClose });
@@ -70,7 +78,7 @@ function PremiumSheet({ d, onClose }) {
             ))}
           </ul>
           <div style={{marginTop:"18px"}}>
-            <PlanPicker d={d} module={null} from="header"/>
+            <PlanPicker d={d} module={null} from={from}/>
           </div>
         </div>
       </motion.div>

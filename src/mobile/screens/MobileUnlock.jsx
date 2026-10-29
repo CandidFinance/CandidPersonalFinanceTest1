@@ -2,13 +2,14 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import posthog from "posthog-js";
-import { Check, ChevronDown, Lock, X } from "lucide-react";
-import { G, GOLD, GOLD_TEXT, MUT, TEXT, SERIF, WHITE, CREAM, ERROR_TEXT, CTA_BLUE, FIELD_BORDER, LABEL_CAPS } from "../../design-tokens.js";
+import { ChevronDown, Lock, X } from "lucide-react";
+import { G, MUT, TEXT, SERIF, WHITE, ERROR_TEXT, CTA_BLUE, FIELD_BORDER, LABEL_CAPS } from "../../design-tokens.js";
 import { MODULE_META, getModuleBreakdown } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import { unlockAsk, validEmail } from "../../lib/unlock.js";
 import { useEmailCheck, DidYouMean, EMAIL_WHY } from "../emailCheckForm.jsx";
-import { PLANS, ANNUAL_SAVING_PCT, startCheckout, requestRestore, signInWithGoogle } from "../../lib/entitlement.js";
+import { PLANS, requestRestore, signInWithGoogle } from "../../lib/entitlement.js";
+import { PlanPicker, CTA_WASH } from "../deepdive/SubscribeButtons.jsx";
 import GoogleButton from "../GoogleButton.jsx";
 import { referralCode, invitedHere } from "../../lib/referral.js";
 import InviteFriends from "../InviteFriends.jsx";
@@ -74,7 +75,7 @@ export default function MobileUnlock({ moduleKey, d, m, statuses, onUnlock, onLe
 
       {ask.kind === "pay" && (
         <PaywallSheet returnTo={returnTo}>
-          <Subscribe moduleKey={moduleKey} returnTo={returnTo} title={meta?.title || moduleKey} d={d} amount={amount} lumpSum={!!mod?.amountIsLumpSum} onLeaveEmail={onLeaveEmail}/>
+          <Subscribe moduleKey={moduleKey} returnTo={returnTo} title={meta?.title || moduleKey} icon={meta?.icon} d={d} amount={amount} lumpSum={!!mod?.amountIsLumpSum} onLeaveEmail={onLeaveEmail}/>
         </PaywallSheet>
       )}
 
@@ -134,8 +135,9 @@ function EmailUnlock({ d, cta, primary, confirm, onUnlock }) {
 }
 
 // The paywall as a card floating in the middle of the screen, over the
-// locked page, which stays in view behind it, dimmed. The card repeats the
-// module's £ figure, since it covers the one on the page. Over the tab bar
+// locked page, which stays in view behind it, dimmed. Laid out like the £100k
+// trap's Plan ahead card: a pale blue half repeating the module's £ figure
+// (it covers the one on the page), then a white half. Over the tab bar
 // and the Assist button (4500), under Assist's own panel. Closing goes back
 // to the modules.
 function PaywallSheet({ children, returnTo = null }) {
@@ -150,11 +152,11 @@ function PaywallSheet({ children, returnTo = null }) {
         style={{position:"absolute",inset:0,background:"rgba(22,47,36,0.28)",backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)"}}/>
       <motion.div ref={boxRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Subscribe to Candid"
         initial={{ opacity: 0, scale: 0.94, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 340, damping: 30 }}
-        style={{position:"relative",background:CREAM,borderRadius:"22px",boxShadow:"0 18px 50px rgba(22,47,36,0.28)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",
-          padding:"20px",maxWidth:"440px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
+        style={{position:"relative",background:WHITE,border:`2px solid ${CTA_BLUE}`,borderRadius:"20px",boxShadow:"0 18px 50px rgba(22,47,36,0.28)",maxHeight:"calc(100dvh - 32px)",overflowY:"auto",
+          maxWidth:"440px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
         <button type="button" onClick={close} aria-label="Close"
-          style={{position:"absolute",top:"12px",right:"14px",width:"32px",height:"32px",borderRadius:"50%",border:"none",background:"rgba(22,47,36,0.07)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-          <X size={16} color={TEXT}/>
+          style={{position:"absolute",top:"12px",right:"12px",display:"flex",alignItems:"center",justifyContent:"center",width:"30px",height:"30px",borderRadius:"50%",border:"none",background:"rgba(0,113,227,0.1)",color:CTA_BLUE,cursor:"pointer",padding:0}}>
+          <X size={16} aria-hidden="true"/>
         </button>
         {children}
       </motion.div>
@@ -162,13 +164,14 @@ function PaywallSheet({ children, returnTo = null }) {
   );
 }
 
-// Subscribing: the two plans, then Stripe's own checkout page. Below, a way
-// back in for someone already subscribed (Google or an emailed link), and a
-// way to hear about rate changes without subscribing (Google or an email).
-function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnTo = null }) {
+// Subscribing: what a subscription includes, then the two plans (PlanPicker,
+// as on the crown's sheet and the £100k card) and Stripe's own checkout
+// page. Below, a way back in for someone already subscribed (Google or an
+// emailed link), and a way to hear about rate changes without subscribing
+// (Google or an email).
+function Subscribe({ moduleKey, title, icon, d, amount, lumpSum, onLeaveEmail, returnTo = null }) {
   const navigate = useNavigate();
   const backTitle = returnTo ? MODULE_META.find(mm => mm.key === returnTo)?.title : null;
-  const [plan, setPlan] = useState("yearly");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [panel, setPanel] = useState(null); // "restore" | "alerts"
@@ -179,12 +182,6 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
   const errorId = useId();
   useEffect(() => { posthog.capture("paywall_shown", { module: moduleKey }); }, [moduleKey]);
 
-  const go = async () => {
-    setBusy(true); setError(null);
-    posthog.capture("checkout_started", { module: moduleKey, plan });
-    try { await startCheckout(plan, moduleKey, d.email); }
-    catch (e) { setError(e.message); setBusy(false); }
-  };
   const submitEmail = async e => {
     e.preventDefault();
     if (panel === "alerts") {
@@ -213,39 +210,43 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
     throw new Error(g.outcome === "ended" ? `The subscription for ${g.email} has ended.` : `${g.email} doesn't have a Candid subscription.`);
   };
 
-  // Each plan's name and price at the top, level across both cards (a
-  // button centres its content, and the yearly card is taller).
-  const card = on => ({ flex:1, display:"flex", flexDirection:"column", justifyContent:"flex-start", textAlign:"left", background:WHITE, border:`2px solid ${on ? G : "rgba(22,47,36,0.12)"}`, borderRadius:"14px", padding:"12px 14px", cursor:"pointer", fontFamily:"inherit" });
   const link = { background:"none", border:"none", padding:0, minHeight:"44px", color:G, fontSize:"12.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
   const fine = { color:MUT, textDecoration:"underline", whiteSpace:"nowrap" };
   return (
     <div>
-      <Worth title={title} amount={amount} lumpSum={lumpSum}/>
-      {returnTo && (
-        <button type="button" onClick={() => navigate(`/app/module/${returnTo}`)} style={{width:"100%",marginTop:"14px",background:WHITE,color:G,border:`1.5px solid ${G}`,borderRadius:"14px",padding:"11px 14px",fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
-          <span style={{display:"block",fontSize:"14px",fontWeight:700}}>Back to {backTitle}</span>
-          <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>Your {backTitle?.toLowerCase()} answer now uses these figures. This {title.toLowerCase()} answer is part of a subscription.</span>
-        </button>
-      )}
-      <div style={{display:"flex",gap:"10px",margin:"18px 0 12px"}}>
-        {Object.entries(PLANS).map(([key, p]) => (
-          <button key={key} type="button" onClick={() => setPlan(key)} aria-pressed={plan === key} style={{...card(plan === key),position:"relative"}}>
-            {key === "yearly" && ANNUAL_SAVING_PCT > 0 && (
-              <span style={{position:"absolute",top:"-9px",right:"10px",background:GOLD_TEXT,color:WHITE,fontSize:"10.5px",fontWeight:700,letterSpacing:"0.03em",borderRadius:"100px",padding:"2px 8px"}}>Save {ANNUAL_SAVING_PCT}%</span>
-            )}
-            <div style={{fontSize:"12px",fontWeight:700,color:MUT}}>{p.label}</div>
-            <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginTop:"2px"}}>
-              <span style={{fontFamily:SERIF,fontSize:"24px",fontWeight:700,color:G}}>{p.price}</span>
-              <span style={{fontSize:"12px",color:MUT}}>{p.per}</span>
-            </div>
-            {key === "yearly" && <div style={{fontSize:"11.5px",color:MUT,marginTop:"2px"}}>{p.note}</div>}
+      <div style={{background:CTA_WASH,padding:"20px 20px 18px"}}>
+        <Worth title={title} icon={icon} amount={amount} lumpSum={lumpSum}/>
+        {returnTo && (
+          <button type="button" onClick={() => navigate(`/app/module/${returnTo}`)} style={{width:"100%",marginTop:"12px",background:WHITE,color:G,border:"1.5px solid rgba(0,113,227,0.35)",borderRadius:"14px",padding:"11px 14px",fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
+            <span style={{display:"block",fontSize:"14px",fontWeight:700}}>Back to {backTitle}</span>
+            <span style={{display:"block",fontSize:"12px",color:MUT,marginTop:"2px"}}>Your {backTitle?.toLowerCase()} answer now uses these figures. This {title.toLowerCase()} answer is part of a subscription.</span>
           </button>
-        ))}
+        )}
       </div>
-      <button type="button" disabled={busy} onClick={go} style={{...primaryButtonStyle({ size: "regular", disabled: busy }),background:CTA_BLUE}}>
-        {busy && !panel ? "Opening checkout…" : "Subscribe and see where it's going"}
-      </button>
-      {error && !panel && <div role="alert" style={{fontSize:"12.5px",color:ERROR_TEXT,margin:"8px 0 0",textAlign:"center"}}>{error}</div>}
+      <div style={{padding:"18px 20px 20px"}}>
+      {/* What's included today, as the £100k card's moments: a blue dot on
+          a line for each. */}
+      <div style={listHead}>What you get from Candid</div>
+      <ul style={{listStyle:"none",margin:"12px 0 0",padding:0}}>
+        {INCLUDED.map(([name, line], i) => {
+          const last = i === INCLUDED.length - 1;
+          return (
+            <li key={name} style={{display:"flex",gap:"14px"}}>
+              <span aria-hidden="true" style={{display:"flex",flexDirection:"column",alignItems:"center",width:"14px",flexShrink:0}}>
+                <span style={{width:"14px",height:"14px",borderRadius:"50%",background:CTA_BLUE,flexShrink:0,marginTop:"2px"}}/>
+                {!last && <span style={{flex:1,width:"2px",background:"rgba(0,113,227,0.3)"}}/>}
+              </span>
+              <span style={{paddingBottom: last ? 0 : "14px"}}>
+                <span style={{display:"block",fontSize:"14px",fontWeight:700,color:TEXT}}>{name}</span>
+                <span style={{display:"block",fontSize:"12.5px",color:MUT,lineHeight:1.45,marginTop:"2px"}}>{line}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <div style={{marginTop:"18px"}}>
+        <PlanPicker d={d} module={moduleKey} from="paywall"/>
+      </div>
       {/* The other way in: a free month for inviting a friend
           (InviteFriends.jsx), opened here. Outlined, so Subscribe is the one
           filled button. */}
@@ -261,34 +262,6 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
       <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"10px 0 0",textAlign:"center"}}>
         Cancel anytime · 14-day refund · <a href="/terms.html" target="_blank" rel="noreferrer" style={fine}>Terms</a> · <a href="/what-candid-is" target="_blank" rel="noreferrer" style={fine}>Guidance, not advice</a>
       </p>
-
-      {/* What's included today; what's being built folded away below it, and
-          kept apart, so nothing not yet built reads as part of what's paid
-          for. */}
-      <div style={{borderTop:"1px solid rgba(22,47,36,0.1)",marginTop:"16px",paddingTop:"14px"}}>
-        <div style={listHead}>What's included</div>
-        <ul style={listStyle}>
-          {INCLUDED.map(([name, line]) => (
-            <li key={name} style={itemStyle}>
-              <Check size={15} color={GOLD} strokeWidth={3} style={{flexShrink:0,marginTop:"2px"}}/>
-              <span><span style={{fontWeight:700,color:TEXT}}>{name}</span><span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"1px"}}>{line}</span></span>
-            </li>
-          ))}
-        </ul>
-        <button type="button" onClick={() => setSoonOpen(o => !o)} aria-expanded={soonOpen}
-          style={{...listHead,background:"none",border:"none",padding:0,minHeight:"44px",margin:"0",display:"inline-flex",alignItems:"center",gap:"4px",cursor:"pointer",fontFamily:"inherit"}}>
-          Coming soon<ChevronDown size={13} style={{transform:soonOpen ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
-        </button>
-        {soonOpen && (
-          <ul style={listStyle}>
-            {COMING_SOON.map(([name, line]) => (
-              <li key={name} style={{...itemStyle,paddingLeft:"23px"}}>
-                <span><span style={{fontWeight:700,color:MUT}}>{name}</span><span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"1px"}}>{line}</span></span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
 
       <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",columnGap:"18px",rowGap:"0",marginTop:"4px"}}>
         <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); check.clear(); }}>Already subscribed?</button>
@@ -319,6 +292,26 @@ function Subscribe({ moduleKey, title, d, amount, lumpSum, onLeaveEmail, returnT
           </form>
         )
       )}
+
+      {/* What's being built, folded away at the foot and kept apart from
+          what's included, so nothing not yet built reads as part of what's
+          paid for. */}
+      <div style={{borderTop:"1px solid rgba(22,47,36,0.1)",marginTop:"12px",paddingTop:"4px"}}>
+        <button type="button" onClick={() => setSoonOpen(o => !o)} aria-expanded={soonOpen}
+          style={{...listHead,background:"none",border:"none",padding:0,minHeight:"44px",margin:"0",display:"inline-flex",alignItems:"center",gap:"4px",cursor:"pointer",fontFamily:"inherit"}}>
+          Coming soon<ChevronDown size={13} style={{transform:soonOpen ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
+        </button>
+        {soonOpen && (
+          <ul style={listStyle}>
+            {COMING_SOON.map(([name, line]) => (
+              <li key={name} style={itemStyle}>
+                <span><span style={{fontWeight:700,color:MUT}}>{name}</span><span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"1px"}}>{line}</span></span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      </div>
     </div>
   );
 }
@@ -351,26 +344,39 @@ const COMING_SOON = [
   ["Tax trap and low-rate alerts", "Warnings for stealth tax bands, policy shifts and missed yield."],
   ["New expansion modules", "Household finances, children's accounts, property and mortgages, and inheritance."],
 ];
-const listHead = LABEL_CAPS;
-const listStyle = { listStyle:"none", padding:0, margin:"10px 0 0", display:"flex", flexDirection:"column", gap:"8px" };
+// The £100k card's heading: a touch bolder and wider than LABEL_CAPS.
+const listHead = { ...LABEL_CAPS, fontWeight:700, letterSpacing:"0.1em" };
+const listStyle = { listStyle:"none", padding:0, margin:"0 0 6px", display:"flex", flexDirection:"column", gap:"8px" };
 const itemStyle = { display:"flex", gap:"8px", alignItems:"flex-start", fontSize:"13.5px", lineHeight:1.35 };
 
 // What this module is worth against what Candid costs a year: "3x" rounded
 // down, so it never overstates; "more than" under 2x. Lump sums (by 18) and
-// small amounts just show the figure; nothing found, just the module.
-function Worth({ title, amount, lumpSum }) {
-  const kicker = { ...LABEL_CAPS, paddingRight:"40px" };
-  if (!(amount > 0)) return <div style={{...kicker,marginTop:"6px"}}>{title}</div>;
+// small amounts just show the figure; nothing found, just the module. The
+// figure sits in a white box under the module's name, as the £100k card's
+// stake does.
+function Worth({ title, icon: Icon, amount, lumpSum }) {
+  const heading = <h2 style={{margin:"0 32px 0 0",fontSize:"20px",lineHeight:1.25,fontWeight:700,color:G}}>{title}</h2>;
+  if (!(amount > 0)) return (
+    <div>
+      {heading}
+      <p style={{margin:"4px 0 0",fontSize:"13.5px",lineHeight:1.5,color:TEXT}}>Candid keeps working between visits, on your own figures.</p>
+    </div>
+  );
   const cost = PLANS.yearly.amount;
   const times = Math.floor(amount / cost);
   const compare = lumpSum || amount <= cost ? null
     : times >= 2 ? `${times}x what Candid costs` : "more than Candid costs";
   return (
     <div>
-      <div style={{...kicker,marginTop:"6px"}}>{title}</div>
-      <div style={{fontFamily:SERIF,fontSize:"40px",fontWeight:700,color:G,lineHeight:1,letterSpacing:"-0.02em",marginTop:"8px"}}>{fmt(amount)}</div>
-      <div style={{fontSize:"13.5px",color:TEXT,fontWeight:600,marginTop:"6px",lineHeight:1.4}}>
-        {lumpSum ? "by the time they're 18, our estimate" : "a year, our estimate"}{compare && <span style={{color:G}}> · {compare}</span>}
+      {heading}
+      <div style={{marginTop:"14px",display:"flex",gap:"12px",alignItems:"flex-start",background:WHITE,border:"1.5px solid rgba(0,113,227,0.25)",borderRadius:"14px",padding:"14px"}}>
+        {Icon && <Icon size={22} color={CTA_BLUE} aria-hidden="true" style={{flexShrink:0,marginTop:"2px"}}/>}
+        <div>
+          <div style={{fontFamily:SERIF,fontWeight:700,fontSize:"24px",lineHeight:1.1,color:G}}>{fmt(amount)}</div>
+          <div style={{fontSize:"13px",lineHeight:1.45,marginTop:"4px",color:TEXT}}>
+            {lumpSum ? "by the time they're 18, our estimate" : "a year, our estimate"}{compare && <b> · {compare}</b>}
+          </div>
+        </div>
       </div>
     </div>
   );

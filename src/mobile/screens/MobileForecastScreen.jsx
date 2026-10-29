@@ -3,12 +3,16 @@ import { useElementWidth } from "../useElementWidth.js";
 import { Lock, ChevronRight } from "lucide-react";
 import { PillSlider } from "../PillSlider.jsx";
 import { calcForecast, calcForecastSeries, calcNetWorthTrajectory, buildForecastAssumptions } from "../../lib/forecast.js";
-import { fmt, fmtK1, fmtCompact } from "../../lib/format.js";
-import PillMoneyInput from "../PillMoneyInput.jsx";
+import { fmt, fmtK1, fmtCompact, formatThousands } from "../../lib/format.js";
+import posthog from "posthog-js";
+import PillMoneyInput, { PILL_ANSWER_TEXT } from "../PillMoneyInput.jsx";
+import { PremiumSheetPortal } from "../Premium.jsx";
+import { CTA_WASH } from "../deepdive/SubscribeButtons.jsx";
+import { hasAccess } from "../../lib/entitlement.js";
 import InfoButton from "../InfoButton.jsx";
 import { retirementAgeFor } from "../../lib/metrics.js";
 import CardStack, { LIGHT } from "../CardStack.jsx";
-import { MODULE_CHART_COLOR, WHITE, MUT, G, GOLD, SERIF, FORECAST_COLORS, FORECAST_SHORT_LABEL, CRITICAL } from "../../design-tokens.js";
+import { MODULE_CHART_COLOR, WHITE, MUT, G, GOLD, SERIF, FORECAST_COLORS, FORECAST_SHORT_LABEL, CRITICAL, CTA_BLUE, PILL_HEIGHT } from "../../design-tokens.js";
 
 // The Forecast tab: two cards in a wallet stack, as on Home and Progress
 // (CardStack.jsx). Net worth: everything you own less everything you owe,
@@ -81,16 +85,27 @@ export default function MobileForecastScreen({ d, m }) {
   const [openTip, setOpenTip] = useState(null);
   const [showNwAssumptions, setShowNwAssumptions] = useState(false);
   const [shown, setShown] = useState(0); // the card in front
+  // Changing the monthly surplus is a subscriber feature (as Add a goal's
+  // rule: subscribers, and anyone from before the paywall). For anyone else
+  // the pill shows their figure, locked, and a tap opens Candid Premium's
+  // sheet, as the crown does.
+  const surplusLocked = !hasAccess() && d.unlockGate === true;
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const openPremium = () => { setPremiumOpen(true); posthog.capture("premium_opened", { from: "forecast_surplus" }); };
   // Each card measures its own chart: both are laid out at once, one behind.
   const [nwChartRef, nwChartWidth] = useElementWidth(300);
   const [surplusChartRef, surplusChartWidth] = useElementWidth(300);
 
+  // Only a monthly surplus a subscriber types goes into the Surplus card's
+  // figures; until then it's £0. Our own estimate from their answers is only
+  // the pill's placeholder, since it can be well above what's really spare.
+  const monthly = surplusLocked ? 0 : surplus ?? 0;
+  const estimate = Math.max(0, Math.round(m.monthlySurplus || 0));
   // Not rerun when only the chart's width or an open row changes.
-  const forecast = useMemo(() => calcForecast(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
-  const series = useMemo(() => calcForecastSeries(d, m, surplus, horizon, lumpSum ?? 0), [d, m, surplus, horizon, lumpSum]);
+  const forecast = useMemo(() => calcForecast(d, m, monthly, horizon, lumpSum ?? 0), [d, m, monthly, horizon, lumpSum]);
+  const series = useMemo(() => calcForecastSeries(d, m, monthly, horizon, lumpSum ?? 0), [d, m, monthly, horizon, lumpSum]);
   const assumptions = useMemo(() => buildForecastAssumptions(d, m), [d, m]);
   const netWorthRows = useMemo(() => calcNetWorthTrajectory(d, m, horizon), [d, m, horizon]);
-  const monthly = surplus != null ? surplus : Math.round(m.monthlySurplus);
   const nwEnd = netWorthRows[horizon].netWorth;
 
   // Net worth leads, as on Home. Each card's top line shows while it's behind.
@@ -103,7 +118,7 @@ export default function MobileForecastScreen({ d, m }) {
       details: <NetWorthBreakdown t={LIGHT} age={age} horizon={horizon} netWorthRows={netWorthRows} m={m}
         showNwAssumptions={showNwAssumptions} setShowNwAssumptions={setShowNwAssumptions} openRow={openRow} setOpenRow={setOpenRow}/> },
     { key: "surplus", label: "Surplus", amount: `${fmt(monthly)} a month`, amountSans: true,
-      body: t => <SurplusCard t={t} monthly={monthly} setSurplus={setSurplus} lumpSum={lumpSum} setLumpSum={setLumpSum} horizon={horizon} age={age}
+      body: t => <SurplusCard t={t} surplus={surplus} estimate={estimate} setSurplus={setSurplus} surplusLocked={surplusLocked} onLocked={openPremium} lumpSum={lumpSum} setLumpSum={setLumpSum} horizon={horizon} age={age}
         series={series} chartRef={surplusChartRef} chartWidth={surplusChartWidth}/>,
       details: <SurplusEstimates t={LIGHT} horizon={horizon} age={age} forecast={forecast} assumptions={assumptions} openTip={openTip} setOpenTip={setOpenTip}/> },
   ];
@@ -116,6 +131,7 @@ export default function MobileForecastScreen({ d, m }) {
       </p>
 
       <CardStack cards={cards} onChange={setShown}/>
+      <PremiumSheetPortal open={premiumOpen} d={d} from="forecast_surplus" onClose={() => setPremiumOpen(false)}/>
 
       {/* The horizon sets both cards, so it sits below the stack. */}
       <div id="forecast-horizon" style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase",marginTop:"18px"}}>Time horizon</div>
@@ -267,12 +283,40 @@ function NetWorthBreakdown({ t, age, horizon, netWorthRows, m, showNwAssumptions
   );
 }
 
+// The monthly surplus pill for a non-subscriber: our estimate of their
+// figure, muted as a placeholder is (it isn't counted), not editable, in the pale blue and CTA blue border of the app's other
+// subscriber features, with their sheen (ScenarioModelling.jsx) and a lock.
+const LOCKED_PILL_CSS = `
+.surplus-lock { position: relative; overflow: hidden; }
+.surplus-lock > * { position: relative; z-index: 1; }
+.surplus-lock::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; z-index: 0; pointer-events: none;
+  background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,0.75) 46%, transparent 60%);
+  will-change: transform; animation: surplus-lock-sheen 7s ease-in-out infinite; }
+@keyframes surplus-lock-sheen { 0% { transform: translateX(-75%); } 55%, 100% { transform: translateX(25%); } }
+@media (prefers-reduced-motion: reduce) { .surplus-lock::after { animation: none; transform: translateX(-30%); } }
+`;
+function LockedSurplusPill({ estimate, onClick }) {
+  return (
+    <button type="button" className="surplus-lock" onClick={onClick} aria-label="Monthly surplus. Adding one is for subscribers"
+      style={{flex:1,minWidth:0,background:CTA_WASH,border:`1.5px solid ${CTA_BLUE}`,borderRadius:"100px",padding:"0 16px",height:PILL_HEIGHT,boxSizing:"border-box",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"flex-start",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
+      <style>{LOCKED_PILL_CSS}</style>
+      <span style={{display:"flex",alignItems:"center",gap:"4px",fontSize:"9.5px",fontWeight:700,color:CTA_BLUE,letterSpacing:"0.06em",textTransform:"uppercase",whiteSpace:"nowrap"}}>
+        Monthly surplus<Lock size={10} strokeWidth={2.6} aria-hidden="true"/>
+      </span>
+      <span style={{...PILL_ANSWER_TEXT,color:MUT}}>{fmt(estimate)}</span>
+    </button>
+  );
+}
+
 // The Surplus card: what your monthly surplus and a lump sum could grow to,
 // by where they go.
-function SurplusCard({ t, monthly, setSurplus, lumpSum, setLumpSum, horizon, age, series, chartRef, chartWidth }) {
+function SurplusCard({ t, surplus, estimate, setSurplus, surplusLocked, onLocked, lumpSum, setLumpSum, horizon, age, series, chartRef, chartWidth }) {
   const chart = (() => {
     const allValues = series.series.flatMap(s => s.values);
-    const yMax = Math.max(1, ...allValues);
+    // Nothing to grow until a monthly amount or a lump sum is added: the
+    // axes still show, on a nominal £10k scale, with a note over them.
+    const empty = !allValues.some(v => v > 0);
+    const yMax = empty ? 10000 : Math.max(1, ...allValues);
     const VW = chartWidth, VH = 150, PL = 34, PR = 4, PT = 8, PB = 20;
     const cW = VW - PL - PR, cH = VH - PT - PB;
     const sx = i => PL + (i / horizon) * cW;
@@ -285,13 +329,13 @@ function SurplusCard({ t, monthly, setSurplus, lumpSum, setLumpSum, horizon, age
     });
     const yTicks = [0, 0.5, 1].map(f => yMax * f);
     const xTicks = buildYearTicks(horizon);
-    return { VW, VH, PL, PR, PT, PB, sx, sy, paths, yTicks, xTicks };
+    return { VW, VH, PL, PR, PT, PB, cW, cH, sx, sy, paths, yTicks, xTicks, empty };
   })();
   return (
     <>
       <p style={cardText(t)}>What the money left over each month could grow to in a Stocks and Shares ISA, in savings, or in your pension, side by side. Change the monthly amount or add a lump sum to compare.</p>
       <div style={{display:"flex",gap:"10px",marginTop:"12px"}}>
-        <PillMoneyInput label="Monthly surplus" value={monthly} onChange={setSurplus}/>
+        {surplusLocked ? <LockedSurplusPill estimate={estimate} onClick={onLocked}/> : <PillMoneyInput label="Monthly surplus" value={surplus} onChange={setSurplus} placeholder={formatThousands(estimate)}/>}
         <PillMoneyInput label="Lump sum today" value={lumpSum} onChange={setLumpSum}/>
       </div>
 
@@ -304,10 +348,15 @@ function SurplusCard({ t, monthly, setSurplus, lumpSum, setLumpSum, horizon, age
           </div>
         ))}
       </div>
-      <div ref={chartRef} style={{marginTop:"10px"}}>
+      <div ref={chartRef} style={{marginTop:"10px",position:"relative"}}>
+        {chart.empty && (
+          <div style={{position:"absolute",left:chart.PL + 10,top:chart.PT + 8,width:chart.cW - 20,height:chart.cH - 16,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",border:`1px dashed ${t.body}`,borderRadius:"12px",padding:"0 16px",boxSizing:"border-box",fontSize:"13px",lineHeight:1.45,color:t.body}}>
+            {surplusLocked ? "Add a lump sum to see what it could grow to." : "Add a monthly amount or a lump sum to see what it could grow to."}
+          </div>
+        )}
         <svg width={chart.VW} height={chart.VH} viewBox={`0 0 ${chart.VW} ${chart.VH}`} style={{display:"block"}} aria-hidden="true">
           <Axes c={chart} t={t} age={age}/>
-          {chart.paths.map(p => {
+          {!chart.empty && chart.paths.map(p => {
             const color = FORECAST_COLORS[p.label] || MUT;
             return (
               <g key={p.label}>
