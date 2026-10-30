@@ -15,3 +15,12 @@ export function accessFor(row, now = Date.now()) {
   const active = !!row && ACTIVE.includes(row.status) && !ended;
   return { active, email: row?.email || null, plan: row?.plan || null, periodEnd: row?.current_period_end || null, cancelling: !!row?.cancel_at_period_end };
 }
+
+// An account: any row, free (status "none") or paid. `paidLive`: a paid plan
+// still running and not set to end, which is cancelled before the account
+// can be deleted (api/billing.js delete-account). Comp and referral months
+// have nothing to cancel.
+export function accountState(row, now = Date.now()) {
+  const access = accessFor(row, now);
+  return { ...access, signedIn: !!row, paidLive: access.active && PAID_PLANS.includes(row.plan) && !row.cancel_at_period_end };
+}

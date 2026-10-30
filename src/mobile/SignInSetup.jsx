@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
-import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM, FIELD_BORDER, LABEL_CAPS } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM, FIELD_BORDER } from "../design-tokens.js";
 import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
 import GoogleButton, { useGoogleButtonShown } from "./GoogleButton.jsx";
 import OrRule from "./OrRule.jsx";
@@ -10,19 +10,11 @@ import useDialogFocus from "./useDialogFocus.js";
 import { primaryButtonStyle } from "./onboarding/OnboardingShell.jsx";
 import { googleSignInAvailable } from "../lib/google.js";
 
-// A subscriber's ways to sign in on another device (src/site/SignInPage.jsx):
+// An account's ways to sign in on another device (src/site/SignInPage.jsx):
 // a passkey on this device (Face ID, Touch ID, a phone's screen lock), a
-// password, and Google (when its address is the one they subscribed with). Set up on a required screen once subscribed (SignInGate), and
-// added to or changed in Edit inputs' subscription section.
-
-// What's set up ({ passkeys, password, google }), from the server; null until known
-// or without a subscription.
-function useSignIns() {
-  const [signIns, setSignIns] = useState(null);
-  const reload = () => accountSignIns().then(setSignIns).catch(() => setSignIns(null));
-  useEffect(() => { if (hasAccess()) reload(); }, []);
-  return [signIns, reload];
-}
+// password, and Google (when its address is the account's). Set up on a
+// required screen once subscribed (SignInGate), and added to or changed in
+// the Account sheet (Account.jsx), by anyone signed in.
 
 export function SignInMethods({ signIns, reload }) {
   const [busy, setBusy] = useState(null);
@@ -55,7 +47,7 @@ export function SignInMethods({ signIns, reload }) {
   return (
     <div>
       {/* Google: linked by signing in with it, or here, when its address is
-          the one they subscribed with (api/billing.js google-link). */}
+          the account's (api/billing.js google-link). */}
       {google && (
         <>
           <div style={row}>
@@ -106,18 +98,6 @@ export function SignInMethods({ signIns, reload }) {
       )}
       {done && <div style={{fontSize:"12px",color:G,fontWeight:600}}>{done}</div>}
       {error && <div id={errorId} role="alert" style={{fontSize:"12px",color:ERROR_TEXT}}>{error}</div>}
-    </div>
-  );
-}
-
-// In Edit inputs' subscription section.
-export default function SignInSetup() {
-  const [signIns, reload] = useSignIns();
-  if (!signIns) return null;
-  return (
-    <div style={{marginTop:"14px"}}>
-      <div style={LABEL_CAPS}>Signing in on another device</div>
-      <SignInMethods signIns={signIns} reload={reload}/>
     </div>
   );
 }

@@ -198,16 +198,16 @@ function Subscribe({ moduleKey, title, icon, d, amount, lumpSum, onLeaveEmail, r
     setBusy(false);
   };
 
-  // Google: signs a subscriber in here, reloading so the app opens with
-  // their saved answers; or, for alerts, gives the email, already confirmed.
+  // Google: signs in here (making an account from the sign-in panel),
+  // reloading so the app opens with their saved answers; or, for alerts,
+  // gives the email, already confirmed. Signed in without a subscription,
+  // the paywall stays.
   const withGoogle = async credential => {
-    const g = await signInWithGoogle(credential, panel === "alerts" ? referralCode() : null);
-    // A subscriber, from either panel: reopened with their saved answers,
+    const g = await signInWithGoogle(credential, panel === "alerts" ? referralCode() : null, { open: panel === "restore" });
+    // Signed in, from either panel: reopened with their saved answers,
     // before what's in memory can be saved over them.
     if (g.outcome === "signed-in") { posthog.capture("signed_in", { how: "google", outcome: g.outcome, from: "paywall" }); window.location.reload(); return; }
-    if (panel === "alerts") { onLeaveEmail?.(g.email); setDone("alerts-google"); return; }
-    posthog.capture("signed_in", { how: "google", outcome: g.outcome, from: "paywall" });
-    throw new Error(g.outcome === "ended" ? `The subscription for ${g.email} has ended.` : `${g.email} doesn't have a Candid subscription.`);
+    onLeaveEmail?.(g.email); setDone("alerts-google");
   };
 
   const link = { background:"none", border:"none", padding:0, minHeight:"44px", color:G, fontSize:"12.5px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
@@ -264,19 +264,19 @@ function Subscribe({ moduleKey, title, icon, d, amount, lumpSum, onLeaveEmail, r
       </p>
 
       <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",columnGap:"18px",rowGap:"0",marginTop:"4px"}}>
-        <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); check.clear(); }}>Already subscribed?</button>
+        <button type="button" style={link} onClick={() => { setPanel(p => p === "restore" ? null : "restore"); setDone(null); setError(null); check.clear(); }}>Already have an account? Sign in</button>
         <button type="button" style={link} onClick={() => { setPanel(p => p === "alerts" ? null : "alerts"); setDone(null); setError(null); check.clear(); }}>Get rate alerts</button>
       </div>
       {panel && panel !== "invite" && (
         done ? (
           <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"14px 0 0",textAlign:"center"}}>
-            {done === "restore" ? "If that email has a subscription, a sign-in link is on its way. Open it on this device." : done === "alerts-google" ? "Thanks. We'll email you when you could be keeping more." : "Thanks. Use the link we've just emailed to confirm it's you, and we'll email you when you could be keeping more."}
+            {done === "restore" ? "A sign-in link is on its way. Open it on this device." : done === "alerts-google" ? "Thanks. We'll email you when you could be keeping more." : "Thanks. Use the link we've just emailed to confirm it's you, and we'll email you when you could be keeping more."}
           </p>
         ) : (
           <form onSubmit={submitEmail} style={{marginTop:"14px"}}>
             <GoogleButton source={panel === "restore" ? "paywall_restore" : "paywall_alerts"} onCredential={withGoogle} divider/>
             <div style={{fontSize:"13px",color:TEXT,marginBottom:"8px"}}>
-              {panel === "restore" ? "Enter the email you subscribed with, and we'll send you a sign-in link." : "We'll email you when you could be keeping more: a better rate, or an allowance going unused."}
+              {panel === "restore" ? "Enter your account's email, and we'll send you a sign-in link." : "We'll email you when you could be keeping more: a better rate, or an allowance going unused."}
             </div>
             <div style={{display:"flex",gap:"8px"}}>
               <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" aria-label="Email"
@@ -321,8 +321,8 @@ function Subscribe({ moduleKey, title, icon, d, amount, lumpSum, onLeaveEmail, r
 // for staying current, not for more answers). The options in each gated
 // module (unlock.js SCORED_MODULES) and Assist on them; the figures worked
 // out again on each day's rates (api/rates.js); the emails (api/alerts.js),
-// once they're being sent, the same setting that turns sending on; and
-// sign-in on other devices (SignInSetup.jsx), which is for subscribers.
+// once they're being sent, the same setting that turns sending on. Signing
+// in on other devices isn't here: accounts are free (Account.jsx).
 const ALERTS_LIVE = import.meta.env.VITE_ALERTS_LIVE === "1";
 // The alerts are what api/alerts.js sends (rates, tax-year end, bonus, new
 // tax year) and the Sunday email's policy changes (weekly.js); student loan
@@ -332,7 +332,6 @@ const INCLUDED = [
   ["Kept up to date", "Your savings checked against each day's best rates, and every figure worked out again whenever you update your pay or savings."],
   ["Your options in every module", "Why each figure is what it is, and what each option is worth, across Pension, Cash, Investments, Student Loan and Kids & family."],
   ["Candid Assist", "Questions about your own numbers, answered inside every module."],
-  ["On all your devices", "Sign in with Face ID, a fingerprint or a password."],
 ].filter(Boolean);
 // Being built, with no dates promised. Something moves up to INCLUDED only
 // once it's live for subscribers.

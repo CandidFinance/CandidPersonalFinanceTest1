@@ -3,6 +3,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Home } from "lucide-react";
 import { reportStorageFailure } from "../../lib/storage.js";
 import { invitedHere } from "../../lib/referral.js";
+import { signedIn } from "../../lib/entitlement.js";
+import posthog from "posthog-js";
 import { NavBar } from "../../NavBar.jsx";
 import { G, CREAM, MUT, SERIF } from "../../design-tokens.js";
 import { ENTRY_QUESTIONS, firstPick } from "../../lib/appEntry.js";
@@ -66,6 +68,12 @@ export default function MobileEntryScreen({ d, m, set, onEntered, onDone }) {
           ) : (
             <motion.div key="question" exit={{ opacity: 0, y: reduceMotion ? 0 : -12, transition: { duration: 0.2, ease: "easeIn" } }}>
               <GuidedFlow questions={ENTRY_QUESTIONS} d={d} m={m} set={save} skipLabel={null} showProgress={false} animateFirst track={{ flow: "entry" }} onDone={() => setDone(true)}/>
+              {/* Back on a new device: their account brings their answers. */}
+              {!signedIn() && (
+                <p style={{margin:"28px 0 0",fontSize:"13.5px",color:MUT,textAlign:"center"}}>
+                  Already have an account? <a href="/signin" onClick={() => posthog.capture("entry_sign_in_clicked")} style={{color:G,fontWeight:700,textDecoration:"underline",textUnderlineOffset:"3px"}}>Sign in</a>
+                </p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

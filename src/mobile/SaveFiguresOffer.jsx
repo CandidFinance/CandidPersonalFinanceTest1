@@ -41,7 +41,7 @@ export default function SaveFiguresOffer({ d, moduleKey, onEmail, rateCost = nul
   };
   const withGoogle = async credential => {
     const g = await signInWithGoogle(credential, referralCode());
-    // A subscriber already: their saved answers are now in this browser
+    // An account already: their saved answers are now in this browser
     // (holdSignIn), so the app reopens with them, before what's in memory
     // can be saved over them.
     if (g.outcome === "signed-in") { window.location.reload(); return; }

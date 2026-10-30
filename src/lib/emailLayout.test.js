@@ -58,7 +58,7 @@ test("A free user's welcome: rate alerts offered to a founding user who hasn't a
   assert.match(offer.html, /href="https:\/\/o"[^>]*>Turn on rate alerts<\/a>/);
   assert.match(offer.text, /free for founding users only/);
   assert.match(offer.text, /candid-finance\.co\.uk\/app\/start\?ref=abcd2345/);
-  assert.match(offer.text, /Subscribe and they're saved to this email address/);
+  assert.match(offer.text, /Sign in to Candid with this email address and they're saved to your account/);
   const on = confirmedWelcomeEmail({ ...base, founding: true, optedIn: true });
   assert.doesNotMatch(on.text, /Turn on rate alerts/);
   assert.match(on.text, /You're signed up/);

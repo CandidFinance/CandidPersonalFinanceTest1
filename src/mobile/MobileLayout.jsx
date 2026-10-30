@@ -5,6 +5,7 @@ import { CREAM, G, GOLD, MUT } from "../design-tokens.js";
 import MobileTabBar, { MOBILE_NAV_ITEMS } from "./MobileTabBar.jsx";
 import { SignInGate } from "./SignInSetup.jsx";
 import PremiumButton from "./Premium.jsx";
+import AccountButton from "./Account.jsx";
 
 // Shell for every /app/* mobile screen: a light NavBar (the "Candid."
 // wordmark on the left, above the bar's hairline, plus an optional page-
@@ -39,7 +40,7 @@ export default function MobileLayout({ d = {}, pageLabel, activeTab, headerRight
           .app-navbar-inner { max-width: 720px !important; }
         }
       `}</style>
-      <NavBar light center={pageLabel} right={headerRight} badge={<PremiumButton d={d}/>} onLogoClick={() => navigate("/app/home")} />
+      <NavBar light center={pageLabel} right={headerRight} lead={<AccountButton/>} badge={<PremiumButton d={d}/>} onLogoClick={() => navigate("/app/home")} />
       <nav className="app-desktop-tabs" aria-label="App" style={{gap:"28px",maxWidth:"720px",width:"100%",margin:"0 auto",padding:"4px 20px 0",boxSizing:"border-box"}}>
         {MOBILE_NAV_ITEMS.map(item => (
           <button key={item.key} type="button" data-tour={`tab-${item.key}`} onClick={() => navigate(item.path)} style={{

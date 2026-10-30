@@ -160,7 +160,7 @@ export default function SiteHeader() {
           })}
         </nav>
         <div style={{ gridColumn: 3, justifySelf: "end", display: "flex", alignItems: "center", gap: "24px" }}>
-        {/* Signing in on another device (subscribers), then the way into
+        {/* Signing in, or creating an account, then the way into
             the app, on every page, far right (desktop only). */}
         <Link to="/signin" className="nsh-cta-btn" aria-current={location.pathname === "/signin" ? "page" : undefined} style={{
           fontFamily: SANS, fontSize: "14px", fontWeight: 600,

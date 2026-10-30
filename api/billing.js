@@ -2,8 +2,8 @@ import crypto from "crypto";
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, redis } from "../server/http.js";
 import { cleanEmail, makeToken, readToken } from "../server/tokens.js";
-import { accessFor } from "../server/access.js";
-import { referralLink, codeIsValid } from "../server/referrals.js";
+import { accessFor, accountState } from "../server/access.js";
+import { referralLink, codeIsValid, inboxOf, CODE_RE } from "../server/referrals.js";
 import { sendOnce, unsubscribeUrl, mailReady } from "../server/alertMail.js";
 import { welcomeEmail, PAID_PLANS } from "../src/lib/weekly.js";
 import { signInEmail } from "../src/lib/accountEmails.js";
@@ -12,22 +12,27 @@ import { googleIdentity, markConfirmed } from "../server/google.js";
 // Subscriptions: the first module's answer is free, every one after it needs
 // a subscription (src/lib/unlock.js). One function for all of it, routed by
 // ?action=, to stay inside Vercel's function limit:
-//   checkout  POST {plan, module, email?}  -> { url } of Stripe's hosted checkout
+//   checkout  POST {plan, module, email?, token?} -> { url } of Stripe's hosted
+//                                             checkout, for the signed-in account
 //   confirm   POST {sessionId}             -> { active, email, token } after checkout
-//   status    POST {token}                 -> { active, email, plan, periodEnd, token }
-//   restore   POST {email}                 -> emails a sign-in link if subscribed
+//   status    POST {token}                 -> { active, email, plan, periodEnd, token };
+//                                             a sign-in link's token opens an
+//                                             account for a new email
+//   restore   POST {email}                 -> emails a sign-in link, to anyone
 //   portal    POST {token}                 -> { url } of Stripe's billing portal
-//   save      POST {token, state}          -> keeps a subscriber's answers, for
+//   save      POST {token, state}          -> keeps an account's answers, for
 //                                             signing in on another device
-//   account   POST {token}                 -> { passkeys, password }: what's set up
+//   account   POST {token}                 -> the account and what's set up for
+//                                             signing in
+//   delete-account POST {token, confirm}   -> deletes the account and its data
 //   passkey-enrol-options / passkey-enrol  -> adds a passkey (signed in)
 //   passkey-login-options / passkey-login  -> signs in with a passkey
 //   password-set   POST {token, password}  -> sets or changes the password
 //   password-login POST {email, password}  -> signs in with them
-//   google    POST {credential, ref?}      -> signs in with Google's ID token
-//                                             (server/google.js); for anyone,
-//                                             subscribed or not
-//   google-link POST {token, credential}  -> adds Google as a subscriber's
+//   google    POST {credential, ref?, open?} -> signs in with Google's ID token
+//                                             (server/google.js); `open` makes
+//                                             an account for a new email
+//   google-link POST {token, credential}  -> adds Google as an account's
 //                                             way to sign in (SignInGate)
 //   referral-link  POST {email}            -> { confirmed, code, earned, cap }:
 //                                             their invite link's code
@@ -35,11 +40,14 @@ import { googleIdentity, markConfirmed } from "../server/google.js";
 //                                             (server/referrals.js)
 //   webhook   Stripe's events, signature-checked, keep `subscriptions` current
 //
-// Stripe is called over its REST API (no SDK). Who has paid lives in the
-// Supabase `subscriptions` table, which only service_role can read or write
-// (migration add_subscriptions_table). The browser holds a signed token
-// naming the email (STRIPE_BILLING_TOKEN_SECRET); every check goes back to that
-// table, so a cancelled subscription stops at the next check.
+// Stripe is called over its REST API (no SDK). Accounts live in the Supabase
+// `subscriptions` table, which only service_role can read or write
+// (migration add_subscriptions_table): one row per email, free or paid. A
+// free account (Harvey, 30 Oct 2026: accounts for anyone) is status "none",
+// with no Stripe ids. The browser holds a signed token naming the email
+// (STRIPE_BILLING_TOKEN_SECRET), meaning signed in; whether that account has
+// a subscription goes back to the table at every check (accessFor), so a
+// cancelled subscription stops at the next check.
 //
 // Fails closed: with any setting missing, every action answers 503 and
 // nothing is unlocked.
@@ -99,21 +107,30 @@ async function stripe(method, path, params) {
   if (!res.ok) throw new Error(`Stripe ${path}: ${json?.error?.message || res.status}`);
   return json;
 }
-async function supa(method, query, body) {
-  const res = await fetch(`${SUPA_URL}/rest/v1/subscriptions${query}`, {
+// A Supabase table, with the service_role key. A POST merges into an
+// existing row unless `prefer` says otherwise.
+const table = name => async (method, query, body, prefer) => {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${name}${query}`, {
     method,
     headers: {
       apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json",
-      Prefer: method === "POST" ? "resolution=merge-duplicates,return=minimal" : "return=representation",
+      Prefer: prefer || (method === "POST" ? "resolution=merge-duplicates,return=minimal" : method === "GET" ? "return=representation" : "return=minimal"),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`Supabase ${name} ${res.status}: ${await res.text()}`);
   return method === "GET" ? res.json() : null;
-}
+};
+const supa = table("subscriptions"), passkeys = table("passkeys");
 async function rowFor(email) {
   const rows = await supa("GET", `?email=eq.${encodeURIComponent(email)}&select=*`);
   return rows[0] || null;
+}
+// A free account for an email proved by a sign-in link or Google, unless
+// one is there already (a subscriber's row is never touched).
+async function openAccount(email) {
+  await supa("POST", "?on_conflict=email", { email, status: "none" }, "resolution=ignore-duplicates,return=minimal");
+  return rowFor(email);
 }
 async function rowForCustomer(customerId) {
   const rows = await supa("GET", `?stripe_customer_id=eq.${encodeURIComponent(customerId)}&select=*`);
@@ -189,9 +206,14 @@ async function webhook(req, res, raw) {
   const obj = event.data?.object;
   if (event.type === "checkout.session.completed" && obj?.mode === "subscription" && obj.subscription) {
     const sub = await stripe("GET", `/subscriptions/${obj.subscription}`);
-    const email = await saveSubscription(sub, cleanEmail(obj.customer_details?.email || obj.customer_email));
+    const email = await saveSubscription(sub, cleanEmail(obj.metadata?.account) || cleanEmail(obj.customer_details?.email || obj.customer_email));
     await welcome(sub, email, obj.customer_details?.name);
   } else if (["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(event.type)) {
+    // Only for an account already recorded (checkout records a new one, by
+    // checkout.session.completed or confirm), so a subscription changing
+    // or ending after its account was deleted doesn't bring it back.
+    const customerId = typeof obj.customer === "string" ? obj.customer : obj.customer?.id;
+    if (!await rowForCustomer(customerId)) return res.status(200).json({ received: true });
     await saveSubscription(obj, null);
   }
   return res.status(200).json({ received: true });
@@ -199,7 +221,11 @@ async function webhook(req, res, raw) {
 
 // ── The actions the app calls ───────────────────────────────────────────
 async function checkout(body, res, origin) {
-  const { plan, module, email } = body;
+  const { plan, module } = body;
+  // Signed in: the subscription goes on that account, so its answers stay
+  // with it. Stripe shows the email fixed.
+  const account = await accountFrom(body.token);
+  const email = account || body.email;
   if (!PRICES[plan]) return res.status(400).json({ error: "Unknown plan" });
   const mod = typeof module === "string" && /^[a-zA-Z]{2,20}$/.test(module) ? module : null;
   const back = mod ? `/app/module/${mod}` : "/app/modules";
@@ -212,46 +238,63 @@ async function checkout(body, res, origin) {
     // Candid is the seller, not Stripe (Managed Payments is on for the
     // account): not VAT-registered, so the price is the price, no VAT added.
     managed_payments: { enabled: "false" },
-    subscription_data: mod ? { metadata: { module: mod } } : undefined,
+    subscription_data: mod || account ? { metadata: { ...(mod ? { module: mod } : {}), ...(account ? { account } : {}) } } : undefined,
+    metadata: account ? { account } : undefined,
     customer_email: cleanEmail(email) || undefined,
   });
   return res.status(200).json({ url: session.url });
 }
-async function confirm(body, res) {
+async function confirm(body, res, origin) {
   const { sessionId } = body;
   if (typeof sessionId !== "string" || !/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return res.status(400).json({ error: "Bad session" });
   const session = await stripe("GET", `/checkout/sessions/${sessionId}`);
   if (session.status !== "complete" || session.mode !== "subscription" || !session.subscription) return res.status(200).json({ active: false });
   // Recorded here as well as by the webhook, so access doesn't wait on it.
   const sub = await stripe("GET", `/subscriptions/${session.subscription}`);
-  const email = await saveSubscription(sub, cleanEmail(session.customer_details?.email || session.customer_email));
+  const account = cleanEmail(session.metadata?.account);
+  const typed = cleanEmail(session.customer_details?.email || session.customer_email);
+  // Stripe doesn't check the email typed at checkout, so it signs in only
+  // the account that started it, or an email new to Candid. An account
+  // already there is sent a sign-in link instead, so paying with someone
+  // else's address never opens their account.
+  const existed = !account && typed ? !!await rowFor(typed) : false;
+  const email = await saveSubscription(sub, account || typed);
   await welcome(sub, email, session.customer_details?.name);
   const access = accessFor(await rowFor(email));
-  return res.status(200).json({ ...access, token: access.active ? makeToken(email, "access", ACCESS_TTL_MS) : null });
+  if (existed) {
+    await sendSignInLink(email, origin);
+    return res.status(200).json({ ...access, token: null, linkSent: true });
+  }
+  return res.status(200).json({ ...access, token: makeToken(email, "access", ACCESS_TTL_MS) });
 }
 async function status(body, res) {
   const { token } = body;
   // A sign-in link's token (restore) is swapped for an access token here,
-  // and brings their saved answers with it, for a new device.
+  // and brings their saved answers with it, for a new device. The link
+  // proves the email, so a new one gets an account, and counts as confirmed.
   const signIn = readToken(token, "restore");
   const email = readToken(token, "access") || signIn;
   if (!email) return res.status(200).json({ active: false, email: null, token: null });
-  const row = await rowFor(email);
-  const access = accessFor(row);
+  let row = await rowFor(email);
+  if (signIn) {
+    if (!row) row = await openAccount(email);
+    await markConfirmed(email);
+  }
+  // No row: the account was deleted, so the token held is dropped.
+  if (!row) return res.status(200).json({ active: false, email: null, token: null });
   return res.status(200).json({
-    ...access, token: access.active ? makeToken(email, "access", ACCESS_TTL_MS) : null,
-    ...(signIn && access.active ? { state: row.saved_state || null } : {}),
+    ...accessFor(row), token: makeToken(email, "access", ACCESS_TTL_MS),
+    ...(signIn ? { state: row.saved_state || null } : {}),
   });
 }
-// A subscriber's answers, saved as they change, so a sign-in elsewhere
+// An account's answers, saved as they change, so a sign-in elsewhere
 // brings them back.
 async function saveState(body, res) {
-  const email = readToken(body.token, "access");
+  const email = await accountFrom(body.token);
   if (!email) return res.status(401).json({ error: "Not signed in" });
   const { state } = body;
   if (!state || typeof state !== "object" || Array.isArray(state)) return res.status(400).json({ error: "Bad request" });
   if (JSON.stringify(state).length > MAX_STATE_CHARS) return res.status(413).json({ error: "Too large" });
-  if (!accessFor(await rowFor(email)).active) return res.status(403).json({ error: "No subscription" });
   await supa("PATCH", `?email=eq.${encodeURIComponent(email)}`, { saved_state: state, saved_state_at: new Date().toISOString() });
   return res.status(200).json({ ok: true });
 }
@@ -266,20 +309,22 @@ async function restore(req, body, res, origin) {
     const { success } = await restoreEmailLimiter.limit(email);
     if (!success) return res.status(429).json({ error: "Too many requests. Try again later." });
   }
-  const access = accessFor(await rowFor(email));
-  // The same answer either way, so the form doesn't reveal who subscribes.
-  if (access.active && RESEND_KEY) {
-    const link = `${origin}/signin?restore=${encodeURIComponent(makeToken(email, "restore", RESTORE_TTL_MS))}`;
-    const sent = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [email], ...signInEmail({ url: link }),
-      }),
-    });
-    if (!sent.ok) console.error("Resend failed", sent.status, await sent.text());
-  }
+  // For anyone: the link signs in, or opens an account (status). The same
+  // answer either way, so the form doesn't reveal who has an account.
+  await sendSignInLink(email, origin);
   return res.status(200).json({ ok: true });
+}
+async function sendSignInLink(email, origin) {
+  if (!RESEND_KEY) return;
+  const link = `${origin}/signin?restore=${encodeURIComponent(makeToken(email, "restore", RESTORE_TTL_MS))}`;
+  const sent = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: MAIL_FROM, reply_to: MAIL_REPLY_TO, to: [email], ...signInEmail({ url: link }),
+    }),
+  });
+  if (!sent.ok) console.error("Resend failed", sent.status, await sent.text());
 }
 // ── Signing in: a passkey (Face ID, Touch ID, Windows Hello, a phone's
 // screen lock) or an email and password, both for subscribers, set up once
@@ -326,18 +371,6 @@ async function firstUse(challenge) {
   return (await redis.set(`passkey-challenge:${challenge}`, 1, { nx: true, ex: 600 })) === "OK";
 }
 
-async function passkeys(method, query, body) {
-  const res = await fetch(`${SUPA_URL}/rest/v1/passkeys${query}`, {
-    method,
-    headers: {
-      apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json",
-      Prefer: method === "POST" ? "resolution=merge-duplicates,return=minimal" : "return=representation",
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) throw new Error(`Supabase passkeys ${res.status}: ${await res.text()}`);
-  return method === "GET" ? res.json() : null;
-}
 
 // scrypt, from Node itself: "scrypt$N$r$p$salt$key", the cost stored with
 // the hash so it can be raised later without breaking older ones.
@@ -360,31 +393,69 @@ async function passwordMatches(password, stored) {
 // a wrong password and the form doesn't reveal who has one.
 const DUMMY_HASH = "scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
-// Signed in: the same answer as a sign-in link (status with a restore token).
+// Signed in: the same answer as a sign-in link (status with a restore
+// token), whether subscribed or not.
+function signedInAnswer(row) {
+  return { ...accessFor(row), token: makeToken(row.email, "access", ACCESS_TTL_MS), state: row.saved_state || null };
+}
 async function signedIn(email, res) {
   const row = await rowFor(email);
-  const access = accessFor(row);
-  return res.status(200).json({
-    ...access, token: access.active ? makeToken(email, "access", ACCESS_TTL_MS) : null,
-    ...(access.active ? { state: row.saved_state || null } : {}),
-  });
+  if (!row) return res.status(401).json({ error: "That account has been deleted." });
+  return res.status(200).json(signedInAnswer(row));
 }
-// The signed-in subscriber's email, or null.
-async function subscriberFrom(token) {
+// The signed-in account's email, or null.
+async function accountFrom(token) {
   const email = readToken(token, "access");
-  return email && accessFor(await rowFor(email)).active ? email : null;
+  return email && await rowFor(email) ? email : null;
 }
 
-// What's set up for signing in, for the account section.
+// The account, and what's set up for signing in (the Account sheet).
 async function account(body, res) {
-  const email = await subscriberFrom(body.token);
+  const email = readToken(body.token, "access");
   if (!email) return res.status(401).json({ error: "Not signed in" });
   const [row, keys] = await Promise.all([rowFor(email), passkeys("GET", `?email=eq.${enc(email)}&select=id`)]);
-  return res.status(200).json({ passkeys: keys.length, password: !!row?.password_hash, google: !!row?.google_sub });
+  if (!row) return res.status(401).json({ error: "Not signed in" });
+  const a = accountState(row);
+  return res.status(200).json({
+    email, active: a.active, plan: a.plan, periodEnd: a.periodEnd, cancelling: a.cancelling, paidLive: a.paidLive,
+    hasStripe: !!row.stripe_customer_id, passkeys: keys.length, password: !!row.password_hash, google: !!row.google_sub,
+  });
+}
+
+// Deletes the account and everything Candid holds under its email. Not
+// while a paid subscription is still running: it's cancelled first, in
+// Stripe's portal (Harvey, 30 Oct 2026). Stripe keeps its own payment
+// records; an unsubscribe (alert_optouts) is kept, so they're never emailed
+// again. Passkeys go with the account row (ON DELETE CASCADE).
+async function deleteAccount(body, res) {
+  const email = readToken(body.token, "access");
+  if (!email || body.confirm !== "DELETE") return res.status(400).json({ error: "Bad request" });
+  const row = await rowFor(email);
+  if (!row) return res.status(200).json({ ok: true });
+  if (accountState(row).paidLive) return res.status(409).json({ error: "Cancel your subscription first, in Manage subscription." });
+  // Only `col=eq.value` filters with the email: the whole value is taken as
+  // it is there, so nothing in an address (a comma, a bracket, a *) is read
+  // as filter syntax, as it could be inside or=() or in an ilike pattern.
+  const e = enc(email), inbox = enc(inboxOf(email));
+  const codes = (await table("referral_codes")("GET", `?email=eq.${e}&select=code`)).filter(c => CODE_RE.test(c.code));
+  if (codes.length) await table("referrals")("DELETE", `?code=in.(${codes.map(c => c.code).join(",")})`);
+  for (const q of [`referrer_email=eq.${e}`, `friend_email=eq.${e}`, `friend_email=eq.${inbox}`]) await table("referrals")("DELETE", `?${q}`);
+  await table("referral_codes")("DELETE", `?email=eq.${e}`);
+  for (const name of ["alert_sends", "email_verifications", "report_pdf_requests", "truelayer_connections", "waitlist"]) {
+    await table(name)("DELETE", `?email=eq.${e}`);
+  }
+  // The report table keeps the email as typed, so its rows are found
+  // without regard to capitals (any pattern character made a one-character
+  // wildcard), then checked exactly and deleted by id.
+  const reports = await table("test")("GET", `?select=id,email&email=ilike.${enc(email.replace(/[*%_\\]/g, "_"))}`);
+  const ids = reports.filter(r => cleanEmail(r.email) === email).map(r => Number(r.id)).filter(Number.isInteger);
+  if (ids.length) await table("test")("DELETE", `?id=in.(${ids.join(",")})`);
+  await supa("DELETE", `?email=eq.${e}`);
+  return res.status(200).json({ ok: true });
 }
 
 async function passkeyEnrolOptions(body, res, origin) {
-  const email = await subscriberFrom(body.token);
+  const email = await accountFrom(body.token);
   if (!email) return res.status(401).json({ error: "Not signed in" });
   const existing = await passkeys("GET", `?email=eq.${enc(email)}&select=id,transports`);
   const options = await generateRegistrationOptions({
@@ -401,7 +472,7 @@ async function passkeyEnrolOptions(body, res, origin) {
   return res.status(200).json({ options, challengeToken: sealChallenge("enrol", options.challenge, email) });
 }
 async function passkeyEnrol(body, res, origin) {
-  const email = await subscriberFrom(body.token);
+  const email = await accountFrom(body.token);
   const ch = openChallenge(body.challengeToken, "enrol");
   if (!email || !ch || ch.e !== email) return res.status(400).json({ error: "That took too long. Please try again." });
   if (!await firstUse(ch.c)) return res.status(400).json({ error: "That took too long. Please try again." });
@@ -441,7 +512,7 @@ async function passkeyLogin(body, res, origin) {
 }
 
 async function passwordSet(body, res) {
-  const email = await subscriberFrom(body.token);
+  const email = await accountFrom(body.token);
   if (!email) return res.status(401).json({ error: "Not signed in" });
   const { password } = body;
   if (typeof password !== "string" || password.length < PASSWORD_MIN) return res.status(400).json({ error: `Use at least ${PASSWORD_MIN} characters.` });
@@ -466,29 +537,29 @@ async function passwordLogin(req, body, res) {
 // "Continue with Google", from the email ask or a sign-in screen. Google has
 // verified the address, so it's recorded as confirmed (no link emailed),
 // and the answer is a sign-in's, with the email and first name always
-// there, so someone not subscribed has given their email by it.
+// there, so someone without an account has given their email by it.
 async function googleLogin(body, res) {
   const who = await googleIdentity(body.credential);
   if (!who) return res.status(401).json({ error: "Google sign-in didn't work. Please try again, or use your email." });
   // markConfirmed logs its own failures, so it never holds up the sign-in.
-  const [row] = await Promise.all([rowFor(who.email), markConfirmed(who.email, body.ref)]);
-  const access = accessFor(row);
+  // Google has proved the email, so from a sign-in screen (`open`) a new one
+  // gets an account. From an email ask (the Cash tour, rate alerts) it only
+  // gives the email, unless they have an account already.
+  let [row] = await Promise.all([rowFor(who.email), markConfirmed(who.email, body.ref)]);
+  if (!row && body.open === true) row = await openAccount(who.email);
+  if (!row) return res.status(200).json({ ...accessFor(null), email: who.email, name: who.name || null, token: null });
   // Signing in with Google counts as having set it up (account, SignInGate).
-  if (access.active && row.google_sub !== who.sub) {
+  if (row.google_sub !== who.sub) {
     await supa("PATCH", `?email=eq.${enc(who.email)}`, { google_sub: who.sub, google_linked_at: new Date().toISOString() })
       .catch(e => console.error("google_sub not saved", e.message));
   }
-  return res.status(200).json({
-    ...access, email: who.email, name: who.name || null,
-    token: access.active ? makeToken(who.email, "access", ACCESS_TTL_MS) : null,
-    ...(access.active ? { state: row.saved_state || null } : {}),
-  });
+  return res.status(200).json({ ...signedInAnswer(row), email: who.email, name: who.name || null });
 }
 
 // Signed in already: Google as their way to sign in, when the Google
 // account's address is the one they subscribed with.
 async function googleLink(body, res) {
-  const email = await subscriberFrom(body.token);
+  const email = await accountFrom(body.token);
   if (!email) return res.status(401).json({ error: "Not signed in" });
   const who = await googleIdentity(body.credential);
   if (!who) return res.status(401).json({ error: "Google sign-in didn't work. Please try again." });
@@ -500,7 +571,8 @@ async function googleLink(body, res) {
 async function portal(body, res, origin) {
   const email = readToken(body.token, "access");
   const row = email && await rowFor(email);
-  if (!row?.stripe_customer_id) return res.status(401).json({ error: "Not signed in" });
+  if (!row) return res.status(401).json({ error: "Not signed in" });
+  if (!row.stripe_customer_id) return res.status(400).json({ error: "There's no subscription to manage." });
   const session = await stripe("POST", "/billing_portal/sessions", { customer: row.stripe_customer_id, return_url: `${origin}/app/inputs` });
   return res.status(200).json({ url: session.url });
 }
@@ -518,7 +590,7 @@ export default async function handler(req, res) {
     const origin = ourOrigin(req);
     if (!origin) return res.status(403).json({ error: "Forbidden" });
     // Saving follows their typing, so it's left out of the per-IP limit; it
-    // needs a signed token for a live subscription anyway.
+    // needs a signed token for an account anyway.
     if (limiter && action !== "save") {
       const { success } = await limiter.limit(clientIp(req));
       if (!success) return res.status(429).json({ error: "Too many requests. Try again shortly." });
@@ -529,12 +601,13 @@ export default async function handler(req, res) {
     try { body = raw ? JSON.parse(raw) : {}; } catch { return res.status(400).json({ error: "Bad request" }); }
     if (!body || typeof body !== "object") body = {};
     if (action === "checkout") return await checkout(body, res, returnTo);
-    if (action === "confirm") return await confirm(body, res);
+    if (action === "confirm") return await confirm(body, res, returnTo);
     if (action === "status") return await status(body, res);
     if (action === "restore") return await restore(req, body, res, returnTo);
     if (action === "portal") return await portal(body, res, returnTo);
     if (action === "save") return await saveState(body, res);
     if (action === "account") return await account(body, res);
+    if (action === "delete-account") return await deleteAccount(body, res);
     if (action === "passkey-enrol-options") return await passkeyEnrolOptions(body, res, returnTo);
     if (action === "passkey-enrol") return await passkeyEnrol(body, res, returnTo);
     if (action === "passkey-login-options") return await passkeyLoginOptions(res, returnTo);

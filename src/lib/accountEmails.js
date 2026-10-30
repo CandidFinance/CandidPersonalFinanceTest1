@@ -72,7 +72,7 @@ export function confirmedWelcomeEmail({ name, founding, optedIn, optInUrl, invit
     greeting: hi(name),
     blocks: [
       { p: "Thanks for confirming your email address, and welcome to Candid." },
-      { p: "Your answers are saved on the device you used. Subscribe and they're saved to this email address, so you can sign in on any device and pick up where you left off." },
+      { p: "Your answers are saved on the device you used. Sign in to Candid with this email address and they're saved to your account, so you can pick up where you left off on any device." },
       ...(founding ? [
         { h: "Rate alerts, free for founding users" },
         optedIn
@@ -108,7 +108,7 @@ export function referralRewardEmail({ kind, until = null, url = null, cap, credi
   return renderEmail({ campaign: "referral",
     subject: "A friend joined Candid: you've got a free month", preheader: "Every module, free for a month.",
     blocks: [
-      { p: `A friend you invited has joined Candid and completed their first module, so you've got a free month: every module's answer, Candid Assist, and Candid on your other devices${date ? `, until ${date}` : ""}.` },
+      { p: `A friend you invited has joined Candid and completed their first module, so you've got a free month: every module's answer and Candid Assist${date ? `, until ${date}` : ""}.` },
       { p: "Open this link on the phone or computer you use Candid on, and it's on. The link works for 7 days." },
       { button: { label: "Turn on my free month", href: url } },
       { small: `The month ends by itself, and nothing is charged. ${where}` },

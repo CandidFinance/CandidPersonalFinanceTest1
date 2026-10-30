@@ -4,12 +4,14 @@ import { startAuthentication, startRegistration, browserSupportsWebAuthn, browse
 import { reportStorageFailure } from "./storage.js";
 import { getConsent } from "./consent.js";
 
-// Whether this browser has a Candid subscription (api/billing.js). Kept in
-// localStorage, never in the user's inputs (`d`, which is synced to their
-// row): a signed token naming their email, and what the server last said
-// about it. Checked with the server whenever the app opens, and the answer
-// stands until the paid period ends. A "candid-access" event tells the app
-// to redraw when it changes.
+// Whether this browser is signed in to a Candid account, and whether that
+// account has a subscription (api/billing.js). Accounts are for anyone,
+// free or paid (Harvey, 30 Oct 2026). Kept in localStorage, never in the
+// user's inputs (`d`, which is synced to their row): a signed token naming
+// their email, and what the server last said about it. Checked with the
+// server whenever the app opens, and a subscription stands until the paid
+// period ends. A "candid-access" event tells the app to redraw when it
+// changes.
 
 const KEY = "candid_access";
 
@@ -37,6 +39,8 @@ export function hasAccess() {
   return !a.periodEnd || new Date(a.periodEnd).getTime() > Date.now();
 }
 export const accessInfo = () => read();
+// Signed in to an account, subscribed or not.
+export const signedIn = () => !!read()?.token;
 
 // The subscriber features (Add a goal, Scenario modelling) a subscriber has
 // used, kept in their answers (d.subscriberFeaturesUsed). A used one goes
@@ -52,17 +56,19 @@ async function call(action, body) {
   if (!res.ok) throw new Error(json.error || "Something went wrong. Please try again.");
   return json;
 }
-const save = r => write(r.active ? { active: true, email: r.email, plan: r.plan, periodEnd: r.periodEnd, cancelling: r.cancelling, token: r.token } : null);
+const save = r => write(r.token ? { active: !!r.active, email: r.email, plan: r.plan, periodEnd: r.periodEnd, cancelling: r.cancelling, token: r.token } : null);
 
 // To Stripe's checkout; it comes back to the module's page.
 export async function startCheckout(plan, module, email) {
-  const { url } = await call("checkout", { plan, module, email });
+  const { url } = await call("checkout", { plan, module, email, token: read()?.token });
   window.location.assign(url);
 }
 
 // On opening the app: back from checkout (?checkout=success&session_id=)
 // or from a sign-in link (?restore=), then a check of what's held. Returns
-// "paid", "restored", "cancelled" or null, and tidies the address bar.
+// "paid", "restored" (signed in, subscribed or not), "check-email" (paid
+// with the email of an account already there, which is sent a sign-in link
+// rather than opened here), "cancelled" or null, and tidies the address bar.
 export async function checkAccessOnLoad() {
   const url = new URL(window.location.href);
   const sessionId = url.searchParams.get("session_id"), restoreToken = url.searchParams.get("restore"), back = url.searchParams.get("checkout");
@@ -72,8 +78,8 @@ export async function checkAccessOnLoad() {
     window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }
   try {
-    if (sessionId) { const r = await call("confirm", { sessionId }); save(r); outcome = r.active ? "paid" : null; }
-    else if (restoreToken) { const r = await call("status", { token: restoreToken }); save(r); outcome = r.active ? "restored" : null; }
+    if (sessionId) { const r = await call("confirm", { sessionId }); if (r.token) save(r); outcome = r.linkSent ? "check-email" : r.active && r.token ? "paid" : null; }
+    else if (restoreToken) { const r = await call("status", { token: restoreToken }); save(r); outcome = r.token ? "restored" : null; }
     else {
       if (back === "cancelled") outcome = "cancelled";
       const held = read();
@@ -87,18 +93,18 @@ export async function checkAccessOnLoad() {
 
 export async function requestRestore(email) { return call("restore", { email }); }
 
-// A subscriber's answers, saved to their subscription a moment after they
-// stop changing, so signing in on another device brings them back.
+// An account's answers, saved to it a moment after they stop changing, so
+// signing in on another device brings them back.
 let saveTimer = null, pendingSave = null;
 export function saveStateSoon(state) {
   const token = read()?.token;
-  if (!token || !hasAccess()) return;
+  if (!token) return;
   clearTimeout(saveTimer);
   pendingSave = { token, state };
   saveTimer = setTimeout(() => { pendingSave = null; call("save", { token, state }).catch(() => {}); }, 3000);
 }
 
-// A subscriber's visits linked up in PostHog on every device they sign in
+// An account's visits linked up in PostHog on every device they sign in
 // on, under a pseudonymous id: a salted SHA-256 hash of their email, never
 // the email itself. Only with analytics cookies accepted ("granted"), since
 // linking needs PostHog to keep its id on the device. Called on opening the
@@ -112,32 +118,45 @@ export async function analyticsIdFor(email) {
 export async function identifySubscriber() {
   try {
     const info = read();
-    if (!posthog.__loaded || getConsent() !== "granted" || !info?.active || !info.email) return;
+    if (!posthog.__loaded || getConsent() !== "granted" || !info?.token || !info.email) return;
     const id = await analyticsIdFor(info.email);
     if (posthog.get_distinct_id() !== id) posthog.identify(id);
   } catch { /* analytics never gets in the way of the app */ }
 }
 
 // Signing out, to sign in as someone else: any change not yet saved goes to
-// the subscription first, then this browser forgets the subscription and
-// the answers that came with it (they come back on signing in again), so
-// they can't be saved into the next account. Device settings stay: the
+// the account first, then this browser forgets the account and the answers
+// that came with it (they come back on signing in again), so they can't be
+// saved into the next account. Device settings stay: the
 // cookie choice, where they came from, whether a passkey is here.
 const KEEP_ON_SIGN_OUT = ["candid_cookie_choice", "candid_acquisition", "candid_passkey_here", "candid_dev_custom_presets"];
 export async function signOut() {
   clearTimeout(saveTimer);
   if (pendingSave) { const p = pendingSave; pendingSave = null; await call("save", p).catch(() => {}); }
+  forgetThisDevice("sign_out");
+}
+function forgetThisDevice(why) {
   try {
     for (const k of Object.keys(localStorage)) if (k.startsWith("candid_") && !KEEP_ON_SIGN_OUT.includes(k)) localStorage.removeItem(k);
     for (const k of Object.keys(sessionStorage)) if (k.startsWith("candid_")) sessionStorage.removeItem(k);
-  } catch (e) { reportStorageFailure("sign_out", e); }
+  } catch (e) { reportStorageFailure(why, e); }
   write(null);
 }
 
-// From a sign-in link (/signin?restore=): holds the subscription, and puts
-// their saved answers in this browser, where the app reads them on opening.
-// Returns "signed-in", "ended" (the link is good but the subscription isn't)
-// or "invalid".
+// Deletes the account and all Candid holds under its email (api/billing.js
+// delete-account), then this browser's copy. Throws the server's message
+// when it can't, e.g. a paid subscription still running.
+export async function deleteAccount() {
+  await call("delete-account", { token: read()?.token, confirm: "DELETE" });
+  clearTimeout(saveTimer);
+  pendingSave = null;
+  forgetThisDevice("delete_account");
+}
+
+// From a sign-in link (/signin?restore=), which also opens an account for a
+// new email: holds the account, and puts their saved answers in this
+// browser, where the app reads them on opening. Returns "signed-in" or
+// "invalid".
 export async function signInWithLink(restoreToken) {
   return holdSignIn(await call("status", { token: restoreToken }));
 }
@@ -202,18 +221,21 @@ export async function signInWithPasskey({ autofill = false } = {}) {
 export async function signInWithPassword(email, password) {
   return holdSignIn(await call("password-login", { email, password }));
 }
-// "Continue with Google" (src/lib/google.js): open to anyone, so it also
-// gives the email of someone not subscribed. Returns { outcome, email, name }:
-// outcome as for a link, or "none" when that Google address has never
-// subscribed. Nothing held is dropped when it isn't subscribed.
-export async function signInWithGoogle(credential, ref = null) {
-  const r = await call("google", { credential, ref });
-  const outcome = r.active ? await holdSignIn(r) : r.plan ? "ended" : "none";
+// "Continue with Google" (src/lib/google.js). From a sign-in screen
+// (`open`) it signs in, making an account for a new email. From an email ask
+// (the Cash tour, rate alerts) it signs in only an account already there,
+// and otherwise just gives the email. Returns { outcome, email, name }:
+// outcome "signed-in", or "none" with no account. Nothing held is dropped
+// with "none".
+export async function signInWithGoogle(credential, ref = null, { open = false } = {}) {
+  const r = await call("google", { credential, ref, open });
+  const outcome = r.token ? await holdSignIn(r) : "none";
   return { outcome, email: r.email, name: r.name || "" };
 }
 
-// Signed in already: what's set up ({ passkeys, password, google }), adding
-// a passkey on this device, adding Google, and setting a password.
+// Signed in already: the account and what's set up ({ email, active, plan,
+// periodEnd, cancelling, paidLive, hasStripe, passkeys, password, google }),
+// adding a passkey on this device, adding Google, and setting a password.
 export async function accountSignIns() { return call("account", { token: read()?.token }); }
 export async function addPasskey() {
   const token = read()?.token;
@@ -228,12 +250,13 @@ export async function linkGoogle(credential) { await call("google-link", { token
 export async function setPassword(password) { await call("password-set", { token: read()?.token, password }); }
 
 async function holdSignIn(r) {
-  if (!r.email) return "invalid";
+  if (!r.email || !r.token) return "invalid";
   save(r);
-  if (!r.active) return "ended";
+  // Put together with anything answered on this device first, so signing
+  // in never loses an answer (mergeAnswers.js). The app saves the result to
+  // the account as it opens (saveStateSoon), so a new account starts with
+  // what's on this device.
   if (r.state?.inputs) {
-    // Put together with anything answered on this device first, so signing
-    // in never loses an answer (mergeAnswers.js).
     try {
       const here = JSON.parse(localStorage.getItem("candid_inputs") || "null");
       const doneHere = JSON.parse(localStorage.getItem("candid_completed_modules") || "null");

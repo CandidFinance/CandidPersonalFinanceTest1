@@ -625,13 +625,17 @@ export default function AppShell() {
         if (email && !d.email) { set("email", email); setUnlockSaveTick(t => t + 1); }
         const onModule = window.location.pathname.match(/^\/app\/module\/([a-zA-Z]+)/);
         if (outcome === "paid" && onModule) { setRevealModule(onModule[1]); setRevealReplay(null); }
+      } else if (outcome === "check-email") {
+        // Paid with the email of an account already there: it's sent a
+        // sign-in link, which brings the subscription and its answers here.
+        posthog.capture("checkout_completed", { plan: null, signIn: "link" });
+        window.location.replace("/signin?sent=1");
       } else if (outcome === "cancelled") posthog.capture("checkout_cancelled");
     });
     return () => window.removeEventListener("candid-access", redraw);
   }, []);
-  // A subscriber's answers go to their subscription as they change (and
-  // once on subscribing), for signing in on another device. Does nothing
-  // without one.
+  // A signed-in account's answers go to it as they change (and once on
+  // signing in), for signing in on another device. Does nothing signed out.
   useEffect(() => { saveStateSoon({ inputs: rawD, completedModules }); }, [rawD, completedModules, accessTick]);
   useEffect(() => {
     if (!unlockSaveTick) return;
