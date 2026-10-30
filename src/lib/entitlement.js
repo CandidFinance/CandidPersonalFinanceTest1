@@ -91,7 +91,9 @@ export async function checkAccessOnLoad() {
   return outcome;
 }
 
-export async function requestRestore(email) { return call("restore", { email }); }
+// `app`: asked from inside the app, so the link opens the app's sign-in
+// (/app/signin) rather than the website's.
+export async function requestRestore(email, { app = false } = {}) { return call("restore", { email, app }); }
 
 // An account's answers, saved to it a moment after they stop changing, so
 // signing in on another device brings them back.

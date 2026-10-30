@@ -197,12 +197,12 @@ function CreateSignIn({ email, onDone }) {
   );
 }
 
-// Signs out and goes to the sign-in page, reloading so nothing of the last
+// Signs out and goes to the app's sign-in, reloading so nothing of the last
 // account stays in memory to be saved again.
 export async function switchAccount(from) {
   posthog.capture("signed_out", { from });
   // The next account on this device starts as a new person in PostHog.
   posthog.reset();
   await signOut();
-  window.location.replace("/signin");
+  window.location.replace("/app/signin");
 }

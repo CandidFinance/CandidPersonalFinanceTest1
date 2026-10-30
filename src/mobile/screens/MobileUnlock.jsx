@@ -193,7 +193,7 @@ function Subscribe({ moduleKey, title, icon, d, amount, lumpSum, onLeaveEmail, r
     if (!validEmail(email)) { setError("Enter a valid email address"); return; }
     setError(null);
     setBusy(true);
-    try { await requestRestore(email.trim()); posthog.capture("restore_requested"); setDone("restore"); }
+    try { await requestRestore(email.trim(), { app: true }); posthog.capture("restore_requested"); setDone("restore"); }
     catch (err) { setError(err.message); }
     setBusy(false);
   };

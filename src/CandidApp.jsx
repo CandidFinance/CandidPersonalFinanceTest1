@@ -629,7 +629,7 @@ export default function AppShell() {
         // Paid with the email of an account already there: it's sent a
         // sign-in link, which brings the subscription and its answers here.
         posthog.capture("checkout_completed", { plan: null, signIn: "link" });
-        window.location.replace("/signin?sent=1");
+        window.location.replace("/app/signin?sent=1");
       } else if (outcome === "cancelled") posthog.capture("checkout_cancelled");
     });
     return () => window.removeEventListener("candid-access", redraw);

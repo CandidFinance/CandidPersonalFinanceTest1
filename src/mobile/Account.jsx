@@ -87,7 +87,7 @@ function AccountSheet({ onClose }) {
         {!isSignedIn ? (
           <>
             <p style={{margin:"8px 0 0",fontSize:"14px",lineHeight:1.55,color:TEXT}}>With an account, your answers are saved, so they come back on any device.</p>
-            <button type="button" onClick={() => { posthog.capture("account_sign_in_clicked"); window.location.assign("/signin"); }}
+            <button type="button" onClick={() => { posthog.capture("account_sign_in_clicked"); onClose(); navigate("/app/signin"); }}
               style={{...primaryButtonStyle({ size: "regular" }),marginTop:"18px"}}>
               Sign in or create an account
             </button>

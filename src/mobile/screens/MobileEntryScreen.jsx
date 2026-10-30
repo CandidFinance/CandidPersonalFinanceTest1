@@ -71,7 +71,7 @@ export default function MobileEntryScreen({ d, m, set, onEntered, onDone }) {
               {/* Back on a new device: their account brings their answers. */}
               {!signedIn() && (
                 <p style={{margin:"28px 0 0",fontSize:"13.5px",color:MUT,textAlign:"center"}}>
-                  Already have an account? <a href="/signin" onClick={() => posthog.capture("entry_sign_in_clicked")} style={{color:G,fontWeight:700,textDecoration:"underline",textUnderlineOffset:"3px"}}>Sign in</a>
+                  Already have an account? <a href="/app/signin" onClick={() => posthog.capture("entry_sign_in_clicked")} style={{color:G,fontWeight:700,textDecoration:"underline",textUnderlineOffset:"3px"}}>Sign in</a>
                 </p>
               )}
             </motion.div>

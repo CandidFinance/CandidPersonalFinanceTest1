@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { scoreBand, G, MUT, SERIF } from "../../design-tokens.js";
+import { scoreBand, MUT } from "../../design-tokens.js";
 import { getModuleBreakdown, calcCandidScore, gainedSoFar } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
-import { mobileGreeting } from "../copy.js";
 import MobileStartHome from "./MobileStartHome.jsx";
 import { unfinishedPicks, scoreUnlocked, notStarted, doneModules, scoredInView, worthALookShown } from "../../lib/appEntry.js";
 import { moduleEstimate } from "../../lib/crossModule.js";
@@ -120,9 +119,8 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
   return (
     <div>
-      <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginBottom:"16px",lineHeight:1.2}}>
-        {mobileGreeting(d)}
-      </h1>
+      {/* No greeting (Harvey, 30 Oct 2026): the heading is for screen readers. */}
+      <h1 style={{position:"absolute",width:"1px",height:"1px",overflow:"hidden",clip:"rect(0 0 0 0)",whiteSpace:"nowrap"}}>Home</h1>
 
       {/* The hero (HomeHero.jsx): Left on the table and Saved in one card,
           and the areas to explore on a second card behind it. */}

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
-import { WHITE, ERROR_TEXT, SITE_INK, SITE_MUTED, SITE_RULE, SITE_EDGE } from "../design-tokens.js";
+import { WHITE, ERROR_TEXT, SITE_INK, SITE_MUTED, SITE_RULE, SITE_EDGE, G, MUT, CREAM, SERIF, FIELD_BORDER } from "../design-tokens.js";
+import { NavBar } from "../NavBar.jsx";
 import { requestRestore, signInWithLink, signInWithPasskey, signInWithPassword, signInWithGoogle, passkeysSupported, passkeyAutofillSupported, stopPasskeyRequest, passkeyHere, passkeyName } from "../lib/entitlement.js";
 import { reportStorageFailure } from "../lib/storage.js";
 import { validEmail } from "../lib/unlock.js";
@@ -23,7 +24,12 @@ import OrRule from "../mobile/OrRule.jsx";
 // for that Google address (src/lib/google.js). Each way holds the account
 // in this browser and brings back their saved answers, then opens the app
 // where they left it.
-export default function SignInPage() {
+//
+// `app`: the same screens inside the app (/app/signin), in its own look,
+// for signing in from the app; the emailed link comes back there too. The
+// website's /signin stays the website's (Harvey, 30 Oct 2026: sign-in
+// belongs to the surface it starts on, ahead of the app going native).
+export default function SignInPage({ app = false }) {
   const params = new URLSearchParams(window.location.search);
   const restore = params.get("restore");
   // Back from paying with the email of an account already there (CandidApp,
@@ -94,32 +100,40 @@ export default function SignInPage() {
     e.preventDefault();
     if (!validEmail(email)) { setError("Enter a valid email address"); return; }
     setBusy("link"); setError(null);
-    try { await requestRestore(email.trim()); posthog.capture("sign_in_requested"); setStage("sent"); }
+    try { await requestRestore(email.trim(), { app }); posthog.capture("sign_in_requested", { app }); setStage("sent"); }
     catch (err) { setError(err.message); }
     setBusy(null);
   };
 
-  const p = { fontSize:"15px", color:SITE_MUTED, lineHeight:1.6, margin:"12px 0 0" };
-  const link = { color:SITE_INK, fontWeight:700, textDecoration:"underline", textDecorationColor:SITE_RULE, textUnderlineOffset:"3px", textDecorationThickness:"2px" };
-  const input = { boxSizing:"border-box", width:"100%", border:`1px solid ${SITE_EDGE}`, borderRadius:CTA_RADIUS, padding:"14px 16px", fontSize:"15px", fontFamily:"inherit", color:SITE_INK, background:WHITE };
+  // The app's colours and pill shapes in the app, the website's on the site.
+  const ink = app ? G : SITE_INK, muted = app ? MUT : SITE_MUTED, edge = app ? FIELD_BORDER : SITE_EDGE, radius = app ? "100px" : CTA_RADIUS;
+  const p = { fontSize:"15px", color:muted, lineHeight:1.6, margin:"12px 0 0" };
+  const link = { color:ink, fontWeight:700, textDecoration:"underline", textDecorationColor:app ? "rgba(22,47,36,0.3)" : SITE_RULE, textUnderlineOffset:"3px", textDecorationThickness:"2px" };
+  const input = { boxSizing:"border-box", width:"100%", border:`${app ? "1.5px" : "1px"} solid ${edge}`, borderRadius:radius, padding:"14px 16px", fontSize:"16px", fontFamily:"inherit", color:ink, background:WHITE };
   // Visible field names, so they stay on screen once the field is filled.
-  const fieldLabel = { display:"flex", flexDirection:"column", gap:"6px", fontSize:"13.5px", fontWeight:600, color:SITE_INK };
+  const fieldLabel = { display:"flex", flexDirection:"column", gap:"6px", fontSize:"13.5px", fontWeight:600, color:ink };
   const button = (primary, working) => ({
     width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
-    background: primary ? (working ? SITE_MUTED : SITE_INK) : WHITE, color: primary ? WHITE : SITE_INK,
-    border: primary ? "none" : `1px solid ${SITE_INK}`, borderRadius:CTA_RADIUS, padding:"15px",
+    background: primary ? (working ? muted : ink) : WHITE, color: primary ? WHITE : ink,
+    border: primary ? "none" : `${app ? "1.5px" : "1px"} solid ${ink}`, borderRadius:radius, padding:"15px",
     fontSize:"15.5px", fontWeight:700, fontFamily:"inherit", cursor: busy ? "default" : "pointer",
   });
   const textButton = { background:"none", border:"none", padding:0, fontFamily:"inherit", fontSize:"13.5px", cursor:"pointer", ...link };
   const errorLine = error && <div role="alert" style={{fontSize:"13px",color:ERROR_TEXT}}>{error}</div>;
 
-  return (
-    <SiteLayout title="Sign in or create an account | Candid">
+  const page = (
+    <>
       {/* The fields' focus ring: inline styles can't reach :focus. */}
-      <style>{`.si-field:focus { outline: 2px solid ${SITE_INK}; outline-offset: 2px; }`}</style>
-      <section style={{maxWidth:"440px",margin:"0 auto",padding:"72px 16px 104px",boxSizing:"border-box"}}>
-        <div className="st-label">Your account</div>
-        <h1 className="st-h2">Sign in or create an account</h1>
+      <style>{`.si-field:focus { outline: 2px solid ${ink}; outline-offset: 2px; }`}</style>
+      <section style={{maxWidth:"440px",margin:"0 auto",padding:app ? "28px 20px 64px" : "72px 16px 104px",boxSizing:"border-box"}}>
+        {app ? (
+          <h1 style={{fontFamily:SERIF,fontSize:"28px",fontWeight:700,color:G,margin:0,lineHeight:1.2}}>Sign in or create an account</h1>
+        ) : (
+          <>
+            <div className="st-label">Your account</div>
+            <h1 className="st-h2">Sign in or create an account</h1>
+          </>
+        )}
 
         {stage === "checking" && <p style={p}>Signing you in…</p>}
 
@@ -129,7 +143,7 @@ export default function SignInPage() {
 
         {(stage === "form" || stage === "invalid") && (
           <>
-            {stage === "invalid" && <p style={{...p,color:SITE_INK}}>That link has expired or has already been used. Sign in below, or email yourself a new one.</p>}
+            {stage === "invalid" && <p style={{...p,color:ink}}>That link has expired or has already been used. Sign in below, or email yourself a new one.</p>}
             {stage === "form" && <p style={p}>Your answers are saved to your account, so they come back on any device.</p>}
 
             <GoogleButton source="signin" onCredential={withGoogle} divider style={{marginTop:"24px"}} onUnavailable={googleGone}/>
@@ -190,6 +204,26 @@ export default function SignInPage() {
           </>
         )}
       </section>
-    </SiteLayout>
+    </>
+  );
+  if (!app) return <SiteLayout title="Sign in or create an account | Candid">{page}</SiteLayout>;
+  return <AppSignIn>{page}</AppSignIn>;
+}
+
+// The app's own frame: its header, with Back to wherever they came from in
+// the app (or its start, opened straight from an emailed link).
+function AppSignIn({ children }) {
+  useEffect(() => { document.title = "Sign in | Candid"; }, []);
+  const back = () => {
+    if (window.history.length > 1 && document.referrer.startsWith(window.location.origin)) window.history.back();
+    else window.location.assign("/app/start");
+  };
+  return (
+    <div style={{minHeight:"100vh",background:CREAM,fontFamily:"'DM Sans',sans-serif"}}>
+      <NavBar light center="Account" right={
+        <button type="button" onClick={back} style={{background:"none",border:"none",padding:"6px 0",color:G,fontSize:"14px",fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>Back</button>
+      }/>
+      {children}
+    </div>
   );
 }

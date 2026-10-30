@@ -1,7 +1,6 @@
 import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, LABEL_CAPS } from "../../design-tokens.js";
 import { moduleOrder, moduleDone, scorePicks, pitchFor, SCORED_MODULES } from "../../lib/appEntry.js";
 import { readinessMissing } from "../../lib/propertyReadiness.js";
-import { mobileGreeting } from "../copy.js";
 import ModuleStartRow, { moduleMeta } from "../ModuleStartRow.jsx";
 import { moduleEstimate } from "../../lib/crossModule.js";
 import { ProgressLine, PrimaryButton } from "../onboarding/OnboardingShell.jsx";
@@ -42,9 +41,8 @@ export default function MobileStartHome({ d, m, set, onStartModule }) {
 
   return (
     <div>
-      <h1 style={{fontFamily:SERIF,fontSize:"22px",color:G,fontWeight:700,marginBottom:"20px",lineHeight:1.2}}>
-        {mobileGreeting(d)}
-      </h1>
+      {/* No greeting (Harvey, 30 Oct 2026): the heading is for screen readers. */}
+      <h1 style={{position:"absolute",width:"1px",height:"1px",overflow:"hidden",clip:"rect(0 0 0 0)",whiteSpace:"nowrap"}}>Home</h1>
 
       {/* The score's place, held until every pick is answered: Home's
           figures card greyed, its figure and score blank. The progress line

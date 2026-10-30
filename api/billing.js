@@ -18,7 +18,8 @@ import { googleIdentity, markConfirmed } from "../server/google.js";
 //   status    POST {token}                 -> { active, email, plan, periodEnd, token };
 //                                             a sign-in link's token opens an
 //                                             account for a new email
-//   restore   POST {email}                 -> emails a sign-in link, to anyone
+//   restore   POST {email, app?}           -> emails a sign-in link, to anyone;
+//                                             `app` opens it in the app
 //   portal    POST {token}                 -> { url } of Stripe's billing portal
 //   save      POST {token, state}          -> keeps an account's answers, for
 //                                             signing in on another device
@@ -262,7 +263,7 @@ async function confirm(body, res, origin) {
   await welcome(sub, email, session.customer_details?.name);
   const access = accessFor(await rowFor(email));
   if (existed) {
-    await sendSignInLink(email, origin);
+    await sendSignInLink(email, origin, true);
     return res.status(200).json({ ...access, token: null, linkSent: true });
   }
   return res.status(200).json({ ...access, token: makeToken(email, "access", ACCESS_TTL_MS) });
@@ -311,12 +312,13 @@ async function restore(req, body, res, origin) {
   }
   // For anyone: the link signs in, or opens an account (status). The same
   // answer either way, so the form doesn't reveal who has an account.
-  await sendSignInLink(email, origin);
+  await sendSignInLink(email, origin, body.app === true);
   return res.status(200).json({ ok: true });
 }
-async function sendSignInLink(email, origin) {
+// To the app's sign-in when it was asked for in the app, else the website's.
+async function sendSignInLink(email, origin, app = false) {
   if (!RESEND_KEY) return;
-  const link = `${origin}/signin?restore=${encodeURIComponent(makeToken(email, "restore", RESTORE_TTL_MS))}`;
+  const link = `${origin}${app ? "/app/signin" : "/signin"}?restore=${encodeURIComponent(makeToken(email, "restore", RESTORE_TTL_MS))}`;
   const sent = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },

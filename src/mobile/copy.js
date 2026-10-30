@@ -3,10 +3,6 @@ import { fmt, fmtCompact } from "../lib/format.js";
 // Short-copy variants for the mobile Home screen — plain English, single
 // clauses, compact currency.
 
-export function mobileGreeting(d) {
-  return `Hi${d.name ? " " + d.name.split(" ")[0] : ""}.`;
-}
-
 // First name only, or null — shared by anywhere that wants to personalise a
 // sentence (e.g. calendar reminder text) without repeating the split logic.
 export function firstName(d) {
