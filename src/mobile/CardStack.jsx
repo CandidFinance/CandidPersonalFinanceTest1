@@ -7,10 +7,12 @@ import { G, MUT, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN,
 // (HomeHero.jsx) and Progress's figures. The front card wears the
 // Opportunity tiles' dark oil slick; the ones behind are light, each PEEK px
 // higher than the one in front, with its top line (label and amount)
-// showing, so nothing is hidden. Swiping up, the down arrow, or tapping a
+// showing, so nothing is hidden. Swiping left, the down arrow, or tapping a
 // card behind turns the front card away on its Y axis and sends it back;
 // the next card (or the one tapped) comes forward, and after the last the
-// first comes round again. Swiping down or the up arrow goes back one.
+// first comes round again. Swiping right or the up arrow goes back one.
+// Swipes are sideways so an up or down drag that starts on the cards still
+// scrolls the page (touch-action pan-y).
 // On desktop, the wheel (or a trackpad flick) with the pointer over the
 // stack turns one card per gesture, and the page doesn't scroll; off it,
 // the page scrolls as usual. With the stack focused, the up and down arrow
@@ -79,7 +81,7 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
   const [front, setFront] = useState(0);
   const [target, setTarget] = useState(0);
   const [turning, setTurning] = useState(null);
-  const startY = useRef(null);
+  const start = useRef(null);
   const swiped = useRef(false);
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -133,13 +135,16 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
     e.preventDefault();
     turnBy(dir);
   };
-  const onPointerDown = e => { startY.current = e.clientY; swiped.current = false; };
+  const onPointerDown = e => { start.current = { x: e.clientX, y: e.clientY }; swiped.current = false; };
+  // A mostly sideways drag turns a card. The browser cancels the pointer
+  // when it takes an up or down drag as a page scroll.
   const onPointerUp = e => {
-    if (startY.current === null) return;
-    const dy = e.clientY - startY.current;
-    startY.current = null;
-    if (Math.abs(dy) > 28) { swiped.current = true; turn(dy < 0 ? (target + 1) % n : (target - 1 + n) % n); }
+    if (!start.current) return;
+    const dx = e.clientX - start.current.x, dy = e.clientY - start.current.y;
+    start.current = null;
+    if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy)) { swiped.current = true; turn(dx < 0 ? (target + 1) % n : (target - 1 + n) % n); }
   };
+  const onPointerCancel = () => { start.current = null; };
   // A swipe that ends on a row or on a card behind isn't also a tap.
   const onClickCapture = e => {
     if (!swiped.current) return;
@@ -157,8 +162,8 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
           tallest card; each one behind sits PEEK px higher. */}
       <div ref={stack} tabIndex={n > 1 ? 0 : undefined} onKeyDown={onKeyDown}
         role="group" aria-roledescription="card stack" aria-label={n > 1 ? "Up and down arrow keys turn the cards" : undefined}
-        onPointerDown={onPointerDown} onPointerUp={onPointerUp} onClickCapture={onClickCapture}
-        style={{display:"grid",outlineOffset:"4px",borderRadius:OPPORTUNITY_TILE_RADIUS,paddingTop:`${rise(back, peek)}px`,perspective:"1100px",touchAction:"pan-x"}}>
+        onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} onClickCapture={onClickCapture}
+        style={{display:"grid",outlineOffset:"4px",borderRadius:OPPORTUNITY_TILE_RADIUS,paddingTop:`${rise(back, peek)}px`,perspective:"1100px",touchAction:"pan-y"}}>
         {cards.map((c, i) => {
           const isFront = i === front, isTarget = i === target;
           const slot = (i - target + n) % n;
