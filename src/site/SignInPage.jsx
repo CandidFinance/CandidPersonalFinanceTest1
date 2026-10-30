@@ -3,13 +3,14 @@ import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { WHITE, ERROR_TEXT, SITE_INK, SITE_MUTED, SITE_RULE, SITE_EDGE, G, MUT, CREAM, SERIF, FIELD_BORDER } from "../design-tokens.js";
 import { NavBar } from "../NavBar.jsx";
-import { requestRestore, signInWithLink, signInWithPasskey, signInWithPassword, signInWithGoogle, passkeysSupported, passkeyAutofillSupported, stopPasskeyRequest, passkeyHere, passkeyName } from "../lib/entitlement.js";
+import { accessInfo, accountSignIns, requestRestore, signInWithLink, signInWithPasskey, signInWithPassword, signInWithGoogle, passkeysSupported, passkeyAutofillSupported, stopPasskeyRequest, passkeyHere, passkeyName } from "../lib/entitlement.js";
 import { reportStorageFailure } from "../lib/storage.js";
 import { validEmail } from "../lib/unlock.js";
 import SiteLayout from "./SiteLayout.jsx";
 import { CTA_RADIUS } from "./StartCheckButton.jsx";
 import GoogleButton, { useGoogleButtonShown } from "../mobile/GoogleButton.jsx";
 import OrRule from "../mobile/OrRule.jsx";
+import { CreateSignIn } from "../mobile/SignInSetup.jsx";
 
 // Signing in, or creating an account. Accounts are for anyone, free or
 // paid (Harvey, 30 Oct 2026); a passkey (Face ID, a fingerprint, the screen
@@ -23,7 +24,9 @@ import OrRule from "../mobile/OrRule.jsx";
 // without a passkey. "Continue with Google" signs in, or creates an account
 // for that Google address (src/lib/google.js). Each way holds the account
 // in this browser and brings back their saved answers, then opens the app
-// where they left it.
+// where they left it. An account a link signs in with no passkey, password
+// or Google first sets one up (CreateSignIn), so the next device doesn't
+// need another link.
 //
 // `app`: the same screens inside the app (/app/signin), in its own look,
 // for signing in from the app; the emailed link comes back there too. The
@@ -35,7 +38,7 @@ export default function SignInPage({ app = false }) {
   // Back from paying with the email of an account already there (CandidApp,
   // checkAccessOnLoad "check-email"): its sign-in link is on its way.
   const paidSent = params.get("sent") === "1";
-  const [stage, setStage] = useState(restore ? "checking" : paidSent ? "sent" : "form"); // form | link | sent | checking | invalid
+  const [stage, setStage] = useState(restore ? "checking" : paidSent ? "sent" : "form"); // form | link | sent | checking | invalid | setup
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(null); // which button is working: "passkey" | "password" | "link"
@@ -47,12 +50,20 @@ export default function SignInPage({ app = false }) {
   const unlock = passkeyName() === "passkey" ? "a passkey" : passkeyName();
 
   // Signed in, by any route: into the app, or the reason it didn't work.
-  const finish = (outcome, how) => {
+  const finish = async (outcome, how) => {
     posthog.capture("signed_in", { how, outcome });
     if (how === "link") posthog.capture("sign_in_link_opened", { outcome });
     if (outcome !== "signed-in") { setStage(outcome); setBusy(null); return; }
-    // The app reads what's now in this browser when it opens. With no
-    // answers saved yet, they start the questions, already signed in.
+    if (how === "link") {
+      let s = null;
+      try { s = await accountSignIns(); } catch { /* SignInGate asks in the app instead */ }
+      if (s && !s.passkeys && !s.password && !s.google) { setStage("setup"); return; }
+    }
+    openApp();
+  };
+  // The app reads what's now in this browser when it opens. With no
+  // answers saved yet, they start the questions, already signed in.
+  const openApp = () => {
     let hasAnswers = false;
     try { hasAnswers = !!JSON.parse(localStorage.getItem("candid_inputs") || "null")?.appEntered; } catch (e) { reportStorageFailure("read_inputs_after_sign_in", e); }
     window.location.replace(hasAnswers ? "/app/home" : "/app/start");
@@ -61,7 +72,7 @@ export default function SignInPage({ app = false }) {
   useEffect(() => {
     if (!restore || ran.current) return;
     ran.current = true;
-    window.history.replaceState(null, "", "/signin");
+    window.history.replaceState(null, "", app ? "/app/signin" : "/signin");
     signInWithLink(restore).then(outcome => finish(outcome, "link")).catch(() => setStage("invalid"));
   }, [restore]);
 
@@ -137,6 +148,10 @@ export default function SignInPage({ app = false }) {
 
         {stage === "checking" && <p style={p}>Signing you in…</p>}
 
+        {stage === "setup" && (
+          <CreateSignIn email={accessInfo()?.email || ""} onDone={how => { posthog.capture("sign_in_created", { how, from: "link" }); openApp(); }}/>
+        )}
+
         {stage === "sent" && (
           <p style={p}>{paidSent && !email ? "Thanks for subscribing. That email already has a Candid account, so a sign-in link is on its way to it." : `A sign-in link is on its way to ${email.trim()}.`} Open it on this device; it works for 20 minutes.</p>
         )}
@@ -168,6 +183,9 @@ export default function SignInPage({ app = false }) {
                 {busy === "password" ? "Signing in…" : "Sign in"}
               </button>
               {errorLine}
+              <button type="button" disabled={!!busy} onClick={() => { setStage("link"); setError(null); }} style={{...button(false),marginTop:"4px"}}>
+                Create account
+              </button>
             </form>
 
             {canPasskey && !passkeyButton && (
@@ -179,16 +197,12 @@ export default function SignInPage({ app = false }) {
               Forgot your password, or haven't set one up?{" "}
               <button type="button" onClick={() => { setStage("link"); setError(null); }} style={textButton}>Email me a sign-in link</button>
             </p>
-            <p style={{...p,fontSize:"13.5px",marginTop:"10px"}}>
-              New to Candid?{" "}
-              <button type="button" onClick={() => { setStage("link"); setError(null); }} style={textButton}>Create an account with your email</button>
-            </p>
           </>
         )}
 
         {stage === "link" && (
           <>
-            <p style={p}>Enter your email and we'll send a link that signs you in on this device, or creates your account. Once you're in, you can add Face ID or a password from Account.</p>
+            <p style={p}>Enter your email and we'll send a link that signs you in on this device, or creates your account. Once you're in, you'll set up Face ID or a password for next time.</p>
             <form onSubmit={sendLink} style={{marginTop:"24px",display:"flex",flexDirection:"column",gap:"10px"}}>
               <label style={fieldLabel}>Email
                 <input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="si-field" style={input}/>

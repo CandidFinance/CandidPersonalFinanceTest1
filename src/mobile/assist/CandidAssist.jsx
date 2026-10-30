@@ -331,6 +331,8 @@ export default function CandidAssist({ d, m, set, savingsRates, state, setState,
     : { left: 0, right: 0, bottom: 0, margin: "0 auto", maxWidth: "580px", maxHeight: "88vh", borderRadius: "22px 22px 0 0" };
   return (
     <>
+      {/* Hidden while a bottom sheet is open (useDialogFocus.js useHidesAssist). */}
+      <style>{`body[data-sheet-open] [data-tour="assist"] { visibility: hidden; }`}</style>
       {!state.open && (
         <button type="button" data-tour="assist" onClick={() => update({ open: true, ...(state.step === "finished" && items.length ? { step: "overview" } : {}) })}
           aria-label={`Open Candid Assist${news ? ", something new" : ""}`}

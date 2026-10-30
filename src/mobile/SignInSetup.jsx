@@ -3,7 +3,7 @@ import posthog from "posthog-js";
 import { ScanFace } from "lucide-react";
 import { NavBar } from "../NavBar.jsx";
 import { G, WHITE, MUT, TEXT, ERROR_TEXT, SERIF, CREAM, FIELD_BORDER } from "../design-tokens.js";
-import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, hasAccess, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
+import { accessInfo, accountSignIns, addPasskey, linkGoogle, setPassword, passkeysSupported, signedIn, passkeyName, passkeyNotSavedHelp, signOut } from "../lib/entitlement.js";
 import GoogleButton, { useGoogleButtonShown } from "./GoogleButton.jsx";
 import OrRule from "./OrRule.jsx";
 import useDialogFocus from "./useDialogFocus.js";
@@ -13,8 +13,10 @@ import { googleSignInAvailable } from "../lib/google.js";
 // An account's ways to sign in on another device (src/site/SignInPage.jsx):
 // a passkey on this device (Face ID, Touch ID, a phone's screen lock), a
 // password, and Google (when its address is the account's). Set up on a
-// required screen once subscribed (SignInGate), and added to or changed in
-// the Account sheet (Account.jsx), by anyone signed in.
+// required screen (CreateSignIn): straight after an emailed link signs in
+// an account with none (SignInPage), and over the app for any account still
+// without one (SignInGate). Added to or changed in the Account sheet
+// (Account.jsx).
 
 export function SignInMethods({ signIns, reload }) {
   const [busy, setBusy] = useState(null);
@@ -102,19 +104,20 @@ export function SignInMethods({ signIns, reload }) {
   );
 }
 
-// Required of every subscriber with neither a passkey nor a password: a
-// screen over the app, straight after paying (before the module's answer)
-// and, for anyone who subscribed before this, on their next visit. No way
-// past it but setting one up, so every subscriber can sign in elsewhere
-// without an email link. What's set up is remembered for the visit, so
-// moving between screens doesn't ask the server again.
+// Required of every account, free or paid, with no passkey, password or
+// Google: a screen over the app, straight after paying (before the module's
+// answer) and, for an account made before this, on its next visit. No way
+// past it but setting one up, so everyone can sign in elsewhere without an
+// email link (Harvey, 30 Oct 2026: required for free accounts too). What's
+// set up is remembered for the visit, so moving between screens doesn't ask
+// the server again.
 let known = null; // { email, signIns }
 export function SignInGate() {
-  const email = hasAccess() ? accessInfo()?.email : null;
+  const email = signedIn() ? accessInfo()?.email : null;
   const [signIns, setSignIns] = useState(() => (known && known.email === email ? known.signIns : null));
   useEffect(() => {
     const load = () => {
-      const who = hasAccess() ? accessInfo()?.email : null;
+      const who = signedIn() ? accessInfo()?.email : null;
       if (!who) { setSignIns(null); return; }
       if (known?.email === who) { setSignIns(known.signIns); return; }
       accountSignIns().then(s => { known = { email: who, signIns: s }; setSignIns(s); }).catch(() => {});
@@ -132,7 +135,7 @@ export function SignInGate() {
   return <CreateSignIn email={email} onDone={done}/>;
 }
 
-function CreateSignIn({ email, onDone }) {
+export function CreateSignIn({ email, onDone }) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [pw, setPw] = useState("");

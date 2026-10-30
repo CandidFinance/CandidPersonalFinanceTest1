@@ -6,7 +6,7 @@ import { Crown, X, LayoutGrid, CalendarCheck, BellRing, Percent } from "lucide-r
 import { G, MUT, TEXT, WHITE, CTA_BLUE } from "../design-tokens.js";
 import { hasAccess } from "../lib/entitlement.js";
 import { PlanPicker, CTA_WASH } from "./deepdive/SubscribeButtons.jsx";
-import useDialogFocus from "./useDialogFocus.js";
+import useDialogFocus, { useHidesAssist } from "./useDialogFocus.js";
 
 // Candid Premium, beside the wordmark on every app screen for anyone not
 // subscribed: a small CTA blue crown that opens what a subscription
@@ -55,9 +55,10 @@ function PremiumSheet({ d, from, onClose }) {
   const ref = useRef(null);
   const reduceMotion = useReducedMotion();
   useDialogFocus(ref, { onEscape: onClose });
+  useHidesAssist();
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-      style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(10,20,15,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      style={{position:"fixed",inset:0,zIndex:4600,background:"rgba(10,20,15,0.45)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
       <motion.div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="premium-title" onClick={e => e.stopPropagation()}
         initial={reduceMotion ? { opacity: 0 } : { y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { y: 40, opacity: 0 }}
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}

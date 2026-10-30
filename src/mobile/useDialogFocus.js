@@ -33,3 +33,16 @@ export default function useDialogFocus(ref, { onEscape = null, focusOnOpen = tru
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 }
+
+// A bottom sheet (Premium, Account) hides the Candid Assist button while
+// it's open: on desktop the sheet is narrower than the app column, so the
+// button showed beside it, under the backdrop but looking on top. Marks
+// <body>; CandidAssist's style hides the button while any sheet holds it.
+let sheetsOpen = 0;
+export function useHidesAssist() {
+  useEffect(() => {
+    sheetsOpen += 1;
+    document.body.setAttribute("data-sheet-open", "");
+    return () => { sheetsOpen -= 1; if (!sheetsOpen) document.body.removeAttribute("data-sheet-open"); };
+  }, []);
+}
