@@ -3,6 +3,7 @@ import { Check, Lock, Plus, ShieldCheck, TriangleAlert } from "lucide-react";
 import { fmtCompact } from "../../lib/format.js";
 import { G, GOLD, GOLD_TEXT, WARNING, STATUS_TILE, WHITE, CTA_BLUE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG } from "../../design-tokens.js";
 import { pillFieldStyle } from "../../mobile/PillMoneyInput.jsx";
+import { SubscriberCrown } from "../../mobile/Premium.jsx";
 
 // Pieces shared by the Progress tab's sections (ProgressTrackerDashboard,
 // GoalVaults).
@@ -159,6 +160,8 @@ export function Tag({ children, color }) {
 // (ScenarioModelling.jsx), with the same sheen passing over it while it's
 // closed, and a "Subscribers" pill (a lock on it while `locked`). A tap
 // opens its form below, or `lockedBody` (the way to subscribe) while locked.
+// Once a subscriber has `used` it, the app's standard "add" style (a dashed
+// gold outline, its label in green) with a small crown for the pill.
 const ADD_TILE_CSS = `
 .add-tile { position: relative; overflow: hidden; }
 .add-tile > * { position: relative; z-index: 1; }
@@ -169,17 +172,17 @@ const ADD_TILE_CSS = `
 @media (prefers-reduced-motion: reduce) { .add-tile::after { animation: none; transform: translateX(-30%); } }
 .add-tile.add-tile-open::after { display: none; }
 `;
-export function AddTile({ label, open, onToggle, locked = false, lockedBody = null, children }) {
+export function AddTile({ label, open, onToggle, locked = false, lockedBody = null, used = false, children }) {
   return (
-    <div className={open ? "add-tile add-tile-open" : "add-tile"} style={{background:"rgba(0,113,227,0.06)",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"12px",boxShadow:"0 4px 16px rgba(0,113,227,0.12)"}}>
-      <style>{ADD_TILE_CSS}</style>
+    <div className={used ? undefined : open ? "add-tile add-tile-open" : "add-tile"} style={used ? {border:`1.5px dashed ${GOLD}`,borderRadius:"12px"} : {background:"rgba(0,113,227,0.06)",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"12px",boxShadow:"0 4px 16px rgba(0,113,227,0.12)"}}>
+      {!used && <style>{ADD_TILE_CSS}</style>}
       <button type="button" aria-expanded={open} onClick={onToggle}
-        style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",width:"100%",minHeight:"46px",background:"none",border:"none",padding:"9px 12px",cursor:"pointer",fontFamily:"inherit",color:CTA_BLUE,fontSize:"13px",fontWeight:700}}>
+        style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",width:"100%",minHeight:"46px",background:"none",border:"none",padding:"9px 12px",cursor:"pointer",fontFamily:"inherit",color:used ? G : CTA_BLUE,fontSize:"13px",fontWeight:700}}>
         <Plus size={15} aria-hidden="true"/>
         {label}
-        <span style={{display:"inline-flex",alignItems:"center",gap:"4px",marginLeft:"4px",background:CTA_BLUE,color:WHITE,borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+        {used ? <span style={{marginLeft:"2px",display:"inline-flex"}}><SubscriberCrown/></span> : <span style={{display:"inline-flex",alignItems:"center",gap:"4px",marginLeft:"4px",background:CTA_BLUE,color:WHITE,borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
           {locked && <Lock size={10} strokeWidth={2.6} aria-hidden="true"/>}Subscribers
-        </span>
+        </span>}
       </button>
       {open && <div style={{padding:"0 12px 12px"}}>{locked ? lockedBody : children}</div>}
     </div>

@@ -6,6 +6,7 @@ import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK1 } from "../../lib/format.js";
 import { taxYearOf, taxYearShort } from "../../lib/taxYear.js";
+import { hasAccess, withFeatureUsed } from "../../lib/entitlement.js";
 import { useElementWidth } from "../../mobile/useElementWidth.js";
 import CardStack, { DARK } from "../../mobile/CardStack.jsx";
 import Alert from "../../mobile/AlertBox.jsx";
@@ -110,7 +111,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
           action={<FilterMenu label="Sort goals" options={GOAL_SORTS} value={sortBy} defaultValue="default" onChange={pickSort}/>}>
           <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"12px"}}>
             <AddGoalTile d={d} names={vaults.map(v => v.name)} open={expanded === "add"} onToggle={() => toggle("add")}
-              onSave={vault => { saveVault(d, set, vault, { added: true, fromGoal: false }); setExpanded(null); }}/>
+              onSave={vault => { saveVault(d, set, vault, { added: true, fromGoal: false }); if (hasAccess()) set("subscriberFeaturesUsed", withFeatureUsed(d, "addGoal")); setExpanded(null); }}/>
             {sortGoals(goals, sortBy).map(({ vault: v, row }) => {
               if (v) {
                 const key = `vault:${v.id}`;

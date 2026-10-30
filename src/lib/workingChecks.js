@@ -4,9 +4,13 @@
 // one, each as "Checking X against Y". A line only appears when its rule runs for this user and the figure
 // is there. Names rules and figures, never what to do: Candid is a
 // calculator, not an adviser. Pure, unit tested in workingChecks.test.js.
+// A figure still holding a quick-start band's estimate is named without its
+// £ ("your pay", not "your £52,500 pay"): the user never typed it (Harvey,
+// 30 Oct 2026). Rule figures and typed figures keep theirs.
 //
-// Each function takes (d, m, ctx), ctx being { marketRates, regionalRows },
-// and returns up to four lines, or null when none apply.
+// Each function takes (d, m, ctx), ctx being { marketRates, regionalRows,
+// est } (est: estimatedFields), and returns up to four lines, or null when
+// none apply.
 
 import { fmt } from "./format.js";
 import { PSA_BY_BAND, ISA_ALLOWANCE, CGT_ANNUAL_ALLOWANCE } from "./tax.js";
@@ -19,15 +23,26 @@ import { borrowingInputs } from "./borrowing.js";
 import { rentVsBuyInputs } from "./rentVsBuy.js";
 import { regionalRates } from "./regionalRates.js";
 import { PROPERTY_REGIONS } from "./regions.js";
+import { estimateItems } from "./quickStart.js";
+import { estimatedNow } from "./studentLoanQuick.js";
 
 const pct = n => `${Math.round(n * 100) / 100}%`;
 const some = lines => { const kept = lines.filter(Boolean); return kept.length ? kept : null; };
 
-function cashChecks(d, m, { marketRates = {} } = {}) {
+// The fields still holding a quick-start estimate, from any module's quick
+// start (salary may come from Pension's or Student loan's).
+const SL_FIELDS = { salary: "salary", balance: "loanBalance", finish: "slFinishYear" };
+export function estimatedFields(d) {
+  const fields = new Set(Object.keys(d.quickEstimates || {}).flatMap(k => estimateItems(d, k).map(i => i.field)));
+  for (const { key } of estimatedNow(d)) fields.add(SL_FIELDS[key]);
+  return fields;
+}
+
+function cashChecks(d, m, { marketRates = {}, est = new Set() } = {}) {
   if (!(m.cash > 0)) return null;
   const psa = PSA_BY_BAND[m.taxBandLabel];
   return some([
-    (marketRates.rows?.length || marketRates.isaRate != null) && `Checking your ${fmt(m.cash)} against today's top savings and Cash ISA rates`,
+    (marketRates.rows?.length || marketRates.isaRate != null) && `Checking your ${est.has("cashTiers.0.amount") ? "savings" : fmt(m.cash)} against today's top savings and Cash ISA rates`,
     psa > 0 ? `Checking your interest against your ${fmt(psa)} Personal Savings Allowance` : `Working out tax on your interest at ${pct(m.savingsTr * 100)}`,
     `Checking each bank's balance against the ${fmt(FSCS_LIMIT)} FSCS limit`,
     !m.expensesUnknown && `Checking your savings against ${m.bufferMonths} months of essential spending`,
@@ -49,14 +64,14 @@ function pensionChecks(d, m) {
 }
 
 const PLAN_NAMES = { plan1: "Plan 1", plan2: "Plan 2", plan4: "Plan 4", plan5: "Plan 5", postgrad: "Postgraduate loan" };
-function studentLoanChecks(d, m) {
+function studentLoanChecks(d, m, { est = new Set() } = {}) {
   const plan = d.studentLoan;
   if (!PLAN_NAMES[plan] || !(m.loanBal > 0)) return null;
   const threshold = slThresholdIn(plan, m.taxYear);
   return some([
-    `Checking your ${fmt(slEarnings(d, m.salary))} pay against the ${PLAN_NAMES[plan]} threshold of ${fmt(threshold)}`,
+    `Checking your ${est.has("salary") ? "" : `${fmt(slEarnings(d, m.salary))} `}pay against the ${PLAN_NAMES[plan]} threshold of ${fmt(threshold)}`,
     `Working out ${pct(SL_REPAYMENT_RATES[plan] * 100)} of what you earn above it`,
-    `Adding interest at ${pct(resolveSlRate(d, m.salary) * 100)} to your ${fmt(m.loanBal)}`,
+    `Adding interest at ${pct(resolveSlRate(d, m.salary) * 100)} to your ${est.has("loanBalance") ? "balance" : fmt(m.loanBal)}`,
     `Checking the write-off after ${SL_WRITE_OFF_YEARS[plan]} years, in April ${slFirstDueYear(d, m.taxYear) + SL_WRITE_OFF_YEARS[plan]}`,
   ]);
 }
@@ -91,4 +106,4 @@ function rentVsBuyChecks(d, m, { marketRates = null, regionalRows = null } = {})
 
 // Kids & family and the £100k tax trap have none (Harvey, 23 Oct 2026).
 export const WORKING_CHECKS = { cash: cashChecks, pension: pensionChecks, studentLoan: studentLoanChecks, investments: investmentsChecks, rentVsBuy: rentVsBuyChecks };
-export const workingChecks = (key, d, m, ctx) => WORKING_CHECKS[key]?.(d, m, ctx) ?? null;
+export const workingChecks = (key, d, m, ctx) => WORKING_CHECKS[key]?.(d, m, { ...ctx, est: estimatedFields(d) }) ?? null;

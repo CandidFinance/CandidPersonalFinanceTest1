@@ -7,7 +7,9 @@ import PillMoneyInput from "../PillMoneyInput.jsx";
 import WheelPicker from "../WheelPicker.jsx";
 import { PillSlider } from "../PillSlider.jsx";
 import SubscribeButtons from "./SubscribeButtons.jsx";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL } from "../../design-tokens.js";
+import { SubscriberCrown } from "../Premium.jsx";
+import { hasAccess, featureUsed, withFeatureUsed } from "../../lib/entitlement.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL, STUDENT_PURPLE } from "../../design-tokens.js";
 
 // "Scenario modelling" at the top of the student loan page's figures to
 // try: a collapsed tile, marked as a subscriber feature for everyone, that
@@ -15,7 +17,10 @@ import { G, GOLD, WHITE, MUT, TEXT, SERIF, CTA_BLUE, CRITICAL } from "../../desi
 // a blurred example and the way to subscribe for anyone else. In the pale
 // blue of Home's "Since your last visit" (SinceLastVisit.jsx), as a
 // subscriber feature, with a sheen passing over it like the Opportunity
-// tile's (OpportunityTile.jsx).
+// tile's (OpportunityTile.jsx). Once a subscriber has opened it, a plain
+// white tile, the student loan purple on its icon, and a small crown for the
+// pill (entitlement.js featureUsed); the change shows from their next visit,
+// not under them as they open it.
 //
 // Plans are saved with their answers (d.slPlans, up to MAX_PLANS), and the
 // one picked (d.slPlanShown) is drawn on the balance chart beside the lump
@@ -36,21 +41,29 @@ const CSS = `
 
 export default function ScenarioModelling({ d, m, sl, set, open, run, onPlanSaved }) {
   const [expanded, setExpanded] = useState(false);
+  const [used] = useState(() => featureUsed(d, "scenarioModelling"));
+  const toggle = () => {
+    if (!expanded && open && hasAccess() && !featureUsed(d, "scenarioModelling")) set("subscriberFeaturesUsed", withFeatureUsed(d, "scenarioModelling"));
+    setExpanded(e => !e);
+  };
+  const ink = used ? G : CTA_BLUE;
   return (
-    <div className={expanded ? "sm-tile sm-open" : "sm-tile"} style={{background:"rgba(0,113,227,0.06)",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"12px",padding:"12px 14px",marginBottom:"14px",boxShadow:"0 4px 16px rgba(0,113,227,0.12)"}}>
-      <style>{CSS}</style>
-      <button type="button" aria-expanded={expanded} onClick={() => setExpanded(e => !e)} style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:"none",border:"none",padding:0,fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
-        <Layers size={17} color={CTA_BLUE} style={{flexShrink:0}}/>
+    <div className={used ? undefined : expanded ? "sm-tile sm-open" : "sm-tile"} style={used
+      ? {background:WHITE,border:"1px solid rgba(22,47,36,0.12)",borderRadius:"12px",padding:"12px 14px",marginBottom:"14px",boxShadow:"0 1px 3px rgba(22,47,36,0.06)"}
+      : {background:"rgba(0,113,227,0.06)",border:`1.5px solid ${CTA_BLUE}`,borderRadius:"12px",padding:"12px 14px",marginBottom:"14px",boxShadow:"0 4px 16px rgba(0,113,227,0.12)"}}>
+      {!used && <style>{CSS}</style>}
+      <button type="button" aria-expanded={expanded} onClick={toggle} style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",background:"none",border:"none",padding:0,fontFamily:"inherit",cursor:"pointer",textAlign:"left"}}>
+        <Layers size={17} color={used ? STUDENT_PURPLE : CTA_BLUE} style={{flexShrink:0}}/>
         <span style={{flex:1,minWidth:0}}>
           <span style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
-            <span style={{fontSize:"14px",fontWeight:700,color:CTA_BLUE}}>Scenario modelling</span>
-            <span style={{display:"inline-flex",alignItems:"center",gap:"4px",background:CTA_BLUE,color:WHITE,borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+            <span style={{fontSize:"14px",fontWeight:700,color:ink}}>Scenario modelling</span>
+            {used ? <SubscriberCrown/> : <span style={{display:"inline-flex",alignItems:"center",gap:"4px",background:CTA_BLUE,color:WHITE,borderRadius:"100px",padding:"3px 8px",fontSize:"10px",fontWeight:800,letterSpacing:"0.06em",textTransform:"uppercase"}}>
               {!open && <Lock size={10} strokeWidth={2.6}/>}Subscribers
-            </span>
+            </span>}
           </span>
           <span style={{display:"block",fontSize:"12px",color:TEXT,lineHeight:1.45,marginTop:"2px"}}>Your pay year by year, and plans of lump sums and monthly overpayments.</span>
         </span>
-        <ChevronDown size={16} color={CTA_BLUE} style={{flexShrink:0,transition:"transform 0.15s",transform:expanded ? "rotate(180deg)" : "none"}}/>
+        <ChevronDown size={16} color={ink} style={{flexShrink:0,transition:"transform 0.15s",transform:expanded ? "rotate(180deg)" : "none"}}/>
       </button>
       {expanded && (
         <div style={{background:WHITE,borderRadius:"10px",padding:"2px 12px 12px",marginTop:"12px"}}>

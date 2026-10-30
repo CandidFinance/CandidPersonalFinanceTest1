@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { WORKING_CHECKS, workingChecks } from "./workingChecks.js";
 import { calcMetrics } from "./metrics.js";
+import { CASH_QUICK } from "./cashQuick.js";
+import { quickPatch } from "./studentLoanQuick.js";
 
 const checks = (key, d, ctx = {}) => workingChecks(key, d, calcMetrics(d), ctx);
 const rates = { isaRate: 4.5, nonIsaRate: 4.7, rows: [{ provider: "Bank", rate: 4.7 }] };
@@ -74,6 +76,24 @@ test("rent vs buy: stamp duty, regional rent, mortgage and the renter's savings"
 test("rent vs buy: no stamp duty line in Scotland, nothing without a rent", () => {
   assert.ok(!checks("rentVsBuy", { ...property, propertyRegion: "scotland" }).some(l => /stamp duty/.test(l)));
   assert.equal(checks("rentVsBuy", { ...property, propertyMonthlyRent: "" }), null);
+});
+
+test("quick-start estimates lose their £; typed figures and rule figures keep theirs", () => {
+  const base = { salary: "40000", age: "28" };
+  const sl = { ...base, ...quickPatch(base, { plan: "plan2", salary: "45-60", balance: "40-60", finish: "2020" }, 2026) };
+  const lines = checks("studentLoan", sl);
+  assert.equal(lines[0], "Checking your pay against the Plan 2 threshold of £29,385");
+  assert.match(lines[2], /^Adding interest at [\d.]+% to your balance$/);
+  const typed = checks("studentLoan", { ...sl, salary: "52000", loanBalance: "48000" });
+  assert.equal(typed[0], "Checking your £52,000 pay against the Plan 2 threshold of £29,385");
+  assert.match(typed[2], /to your £48,000$/);
+
+  const cashBand = { ...cashBase, ...CASH_QUICK.patch(cashBase, calcMetrics(cashBase), { savings: "10-20", rate: "2-3" }) };
+  const cash = checks("cash", cashBand, { marketRates: rates });
+  assert.equal(cash[0], "Checking your savings against today's top savings and Cash ISA rates");
+  assert.ok(cash.includes("Checking each bank's balance against the £120,000 FSCS limit"));
+  const cashTyped = { ...cashBand, cashTiers: [{ ...cashBand.cashTiers[0], amount: "16000" }] };
+  assert.equal(checks("cash", cashTyped, { marketRates: rates })[0], "Checking your £16,000 against today's top savings and Cash ISA rates");
 });
 
 test("never directive", () => {

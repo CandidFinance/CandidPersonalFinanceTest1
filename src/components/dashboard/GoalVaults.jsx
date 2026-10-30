@@ -5,7 +5,7 @@ import { VAULT_NAMES, newVaultId, poundsInput, withVault, withoutVault, vaultRea
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import PillSelect from "../../mobile/property/PillSelect.jsx";
 import { G, WHITE, MUT, TEXT, CUSTOM_GOAL_COLOR } from "../../design-tokens.js";
-import { hasAccess } from "../../lib/entitlement.js";
+import { hasAccess, featureUsed } from "../../lib/entitlement.js";
 import SubscribeButtons from "../../mobile/deepdive/SubscribeButtons.jsx";
 import { BarTile, AddTile, Tag, ProgressBar, ReachedMark, useReachedReveal, Figure, Details, TextButton, EditorCard, TextPill, helpText } from "./ProgressParts.jsx";
 
@@ -50,7 +50,7 @@ function vaultNote(v) {
 export function AddGoalTile({ d, names, open, onToggle, onSave }) {
   const locked = !hasAccess() && d.unlockGate === true;
   return (
-    <AddTile label="Add a goal" open={open} onToggle={onToggle} locked={locked} lockedBody={<LockedGoal d={d}/>}>
+    <AddTile label="Add a goal" open={open} onToggle={onToggle} locked={locked} lockedBody={<LockedGoal d={d}/>} used={featureUsed(d, "addGoal")}>
       <VaultEditor names={names} onCancel={onToggle} onSave={onSave}/>
     </AddTile>
   );

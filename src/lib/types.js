@@ -37,6 +37,7 @@
  * @property {Object<string, {stillOpen: Object<string, number>, asOf: string}>} [yearRecords] Each tax year's £ a year still open by module, as on the last open in that year (yearRecord.js).
  * @property {string[]} [goalsReachedSeen] Goals reached that Progress has already animated (progressTracker.js newlyReachedGoals).
  * @property {string} [goalsSort] The order of the Goals list on Progress: "default", "value" or "complete" (progressTracker.js GOAL_SORTS).
+ * @property {string[]} [subscriberFeaturesUsed] Subscriber features a subscriber has used: "addGoal", "scenarioModelling" (entitlement.js featureUsed).
  * @property {string[]} [allowanceGoals] Allowance goals added on Progress: "cgt", "dividends" (progressTracker.js cgtRow, dividendRow).
  * @property {string} [dividendsThisYear] Dividends received this tax year, from Progress; cleared on 6 April (rollTaxYear).
  * @property {Object<string, {choice: string, taxYear: number, perYear?: number, on?: string, moduleKey?: string}>} [opportunityChoices] "Done" or "not for me" on an opportunity, for a tax year (opportunityChoices.js).

@@ -32,6 +32,17 @@ export default function PremiumButton({ d }) {
   );
 }
 
+// The crown, small, on a subscriber feature a subscriber has used
+// (entitlement.js featureUsed), in place of its "Subscribers" pill.
+export function SubscriberCrown() {
+  return (
+    <span role="img" aria-label="Subscriber feature" title="Subscriber feature"
+      style={{width:"18px",height:"18px",borderRadius:"50%",background:CTA_BLUE,color:WHITE,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+      <Crown size={10} strokeWidth={2.4} aria-hidden="true"/>
+    </span>
+  );
+}
+
 // The same sheet, for a subscriber feature elsewhere to open when a
 // non-subscriber taps it (Forecast's monthly surplus). `from` names it in
 // analytics.

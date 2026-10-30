@@ -38,6 +38,14 @@ export function hasAccess() {
 }
 export const accessInfo = () => read();
 
+// The subscriber features (Add a goal, Scenario modelling) a subscriber has
+// used, kept in their answers (d.subscriberFeaturesUsed). A used one goes
+// back to the standard style, a crown in place of its blue "Subscribers"
+// pill, marking what the subscription adds (Harvey, 30 Oct 2026). Anyone
+// else keeps the blue.
+export const featureUsed = (d, id) => hasAccess() && Array.isArray(d.subscriberFeaturesUsed) && d.subscriberFeaturesUsed.includes(id);
+export const withFeatureUsed = (d, id) => [...new Set([...(Array.isArray(d.subscriberFeaturesUsed) ? d.subscriberFeaturesUsed : []), id])];
+
 async function call(action, body) {
   const res = await fetch(`/api/billing?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const json = await res.json().catch(() => ({}));
