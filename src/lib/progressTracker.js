@@ -344,6 +344,77 @@ export function withoutVault(list, id, fromGoal) {
   return fromGoal ? withVault(list, { id, removed: true }) : (Array.isArray(list) ? list : []).filter(v => v.id !== id);
 }
 
+// A goal reached gets a short animation on Progress once
+// (`d.goalsReachedSeen`). Keys: "<tax year>:row:<id>" for this tax year's
+// goals (they start again each April), "vault:<id>" for a pot. Only a goal
+// with something built up counts, so cash already on the best rates
+// (reached with nothing banked) isn't marked.
+export const rowReached = r => !!(r.tracked && r.hit && r.current > 0);
+export const vaultReached = v => !!(v.hit && v.saved > 0);
+
+// The keys of goals reached and not yet seen. A goal that drops back below
+// its target and reaches it again isn't shown twice.
+export function newlyReachedGoals(rows, vaults, seen, taxYear) {
+  const before = Array.isArray(seen) ? seen : [];
+  return [
+    ...rows.filter(rowReached).map(r => `${taxYear}:row:${r.id}`),
+    ...vaults.filter(vaultReached).map(v => `vault:${v.id}`),
+  ].filter(k => !before.includes(k));
+}
+
+// The orders the Goals list can take on Progress (`d.goalsSort`): as built
+// (pots, then this tax year's goals), largest £ target first, or furthest
+// along first. Either way a goal with no target comes after those with one,
+// and a locked one last; ties keep the order as built.
+export const GOAL_SORTS = [
+  { key: "default", label: "Default order" },
+  { key: "value", label: "Highest value" },
+  { key: "complete", label: "Most complete" },
+];
+// `goals`: [{ target, pct, locked, measured }], `measured` when it has a
+// target to measure against.
+export function sortGoals(goals, by) {
+  const rank = g => (g.locked ? 2 : g.measured ? 0 : 1);
+  const key = by === "value" ? g => g.target : by === "complete" ? g => g.pct * 1e9 + g.target : null;
+  if (!key) return goals;
+  return goals.map((g, i) => [g, i])
+    .sort(([a, i], [b, j]) => rank(a) - rank(b) || (rank(a) === 0 ? key(b) - key(a) : 0) || i - j)
+    .map(([g]) => g);
+}
+
+// The goals reached and not yet seen, for the pop-up (CandidApp,
+// GoalReached.jsx): each with its key, name, figures and whether they're £
+// a year (cash interest). Only a goal reached by a change made in the app
+// is celebrated; one already reached when it's first measured goes in
+// `quiet`, to be marked seen without a pop-up: all of them the first time
+// this runs (no `d.goalsReachedSeen` yet, as for anyone from before it
+// shipped), a goal whose module has just been answered, a pot added at its
+// target. `liveBefore`: `live` from the last run (the goals then measured),
+// or null on opening the app. `vaults` for markGoalsSeen.
+export function goalsToCelebrate(d, m, statuses, taxYear, liveBefore = null, now = new Date()) {
+  const rows = targetRows(d, m, statuses);
+  const vaults = goalVaults(d, m, now);
+  const byKey = Object.fromEntries([
+    ...rows.map(r => [`${taxYear}:row:${r.id}`, { label: r.label, current: r.current, target: r.target, perYear: !!r.perYear, pot: false }]),
+    ...vaults.map(v => [`vault:${v.id}`, { label: v.name, current: v.saved, target: v.target, perYear: false, pot: true }]),
+  ]);
+  const live = [...rows.filter(r => r.tracked).map(r => `${taxYear}:row:${r.id}`), ...vaults.map(v => `vault:${v.id}`)];
+  const goals = newlyReachedGoals(rows, vaults, d.goalsReachedSeen, taxYear).map(key => ({ key, ...byKey[key] }));
+  const isQuiet = g => !Array.isArray(d.goalsReachedSeen) || (liveBefore && !liveBefore.includes(g.key));
+  return { celebrate: goals.filter(g => !isQuiet(g)), quiet: goals.filter(isQuiet), live, vaults };
+}
+
+// `seen` with `keys` added and stale keys dropped (last tax year's, a pot
+// since removed), or null when it already has them all.
+export function markGoalsSeen(seen, keys, vaults, taxYear) {
+  const before = Array.isArray(seen) ? seen : [];
+  const add = keys.filter(k => !before.includes(k));
+  if (!add.length) return null;
+  const pots = new Set(vaults.map(v => `vault:${v.id}`));
+  const live = k => k.startsWith(`${taxYear}:row:`) || pots.has(k);
+  return [...before.filter(live), ...add];
+}
+
 export function buildProgressSnapshot(d = {}, m = {}, statuses = {}, now = new Date()) {
   const rows = targetRows(d, m, statuses);
   return {

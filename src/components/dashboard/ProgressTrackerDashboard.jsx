@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { ChevronRight } from "lucide-react";
-import { buildProgressSnapshot, poundsInput, TRAP_EDGE } from "../../lib/progressTracker.js";
+import { buildProgressSnapshot, sortGoals, GOAL_SORTS, poundsInput, TRAP_EDGE } from "../../lib/progressTracker.js";
 import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK1 } from "../../lib/format.js";
@@ -9,12 +9,13 @@ import { taxYearOf, taxYearShort } from "../../lib/taxYear.js";
 import { useElementWidth } from "../../mobile/useElementWidth.js";
 import CardStack, { DARK } from "../../mobile/CardStack.jsx";
 import Alert from "../../mobile/AlertBox.jsx";
+import FilterMenu from "../../mobile/FilterMenu.jsx";
 import PillMoneyInput from "../../mobile/PillMoneyInput.jsx";
 import { PillSlider } from "../../mobile/PillSlider.jsx";
 import {
   G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, MODULE_CHART_COLOR,
 } from "../../design-tokens.js";
-import { Tile, BarTile, ProgressBar, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
+import { Tile, BarTile, ProgressBar, ReachedMark, useReachedReveal, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
 import { AddGoalTile, VaultTile, saveVault, removeVault } from "./GoalVaults.jsx";
 
 // The Progress tab (/app/progress): three cards in a wallet stack, as on
@@ -47,13 +48,28 @@ const GOAL_COLOR = {
   studentLoan: MODULE_CHART_COLOR.studentLoan,
 };
 
-export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenModule }) {
+export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrating = [], onOpenModule }) {
   // The goal tile showing its details ("add", "row:<id>" or "vault:<id>"),
   // and the one form open in it ("row:<id>" or "vault:<id>"; Add a goal's
   // form is its details).
   const [expanded, setExpanded] = useState(null);
   const [editing, setEditing] = useState(null);
   const { rows, annual, netWorth, vaults, income } = buildProgressSnapshot(d, m, statuses);
+  // Goals the pop-up is celebrating (CandidApp, GoalReached.jsx;
+  // "<tax year>:row:<id>" or "vault:<id>"): their bars fill as each scrolls
+  // into view. Kept for the visit, as closing the pop-up clears them.
+  const taxYear = taxYearOf(new Date());
+  const [visit, setVisit] = useState(celebrating);
+  useEffect(() => {
+    if (celebrating.some(k => !visit.includes(k))) setVisit(v => [...v, ...celebrating.filter(k => !v.includes(k))]);
+  }, [celebrating.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The Goals list's order (FilterMenu, sortGoals), kept with their answers.
+  const sortBy = GOAL_SORTS.some(o => o.key === d.goalsSort) ? d.goalsSort : "default";
+  const pickSort = key => { set("goalsSort", key); posthog.capture("progress_goals_sorted", { by: key }); };
+  const goals = [
+    ...vaults.map(v => ({ vault: v, target: v.target, pct: v.pct, measured: v.target > 0, locked: false })),
+    ...rows.map(row => ({ row, target: row.target, pct: row.pct, measured: row.tracked && row.target > 0, locked: row.locked })),
+  ];
   const toggle = key => { setExpanded(e => (e === key ? null : key)); setEditing(null); };
   const close = () => setEditing(null);
   const openModule = key => {
@@ -69,7 +85,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenMo
   const cards = [
     { key: "netWorth", label: "Net worth", amount: `${netWorth.netWorth < 0 ? "−" : ""}${fmtK1(netWorth.netWorth)}`,
       body: t => <NetWorth picture={netWorth} t={t}/> },
-    { key: "goals", label: `Goals ${taxYearShort(taxYearOf(new Date()))}`, amount: annual.total ? `${annual.pct}%` : "",
+    { key: "goals", label: `Goals ${taxYearShort(taxYear)}`, amount: annual.total ? `${annual.pct}%` : "",
       body: t => <AnnualGoals annual={annual} t={t}/> },
     { key: "taxShield", label: "Tax shield", amount: shieldLine(income), amountSans: true, warn: WARN_ZONE[income.zone],
       body: t => <TaxShield income={income} t={t} onOpenTrap={openTrap}/> },
@@ -85,25 +101,27 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, onOpenMo
           <CardStack cards={cards}/>
         </section>
 
-        {/* Add a goal first, then the user's pots (newest first), then this
-            tax year's goals from the modules. */}
-        <Tile title="Goals" tour="progress-goals">
+        {/* Add a goal first, then the goals in the order picked: as built,
+            the user's pots (newest first) then this tax year's goals from the
+            modules (sortGoals). */}
+        <Tile title="Goals" tour="progress-goals"
+          action={<FilterMenu label="Sort goals" options={GOAL_SORTS} value={sortBy} defaultValue="default" onChange={pickSort}/>}>
           <div style={{display:"flex",flexDirection:"column",gap:"10px",marginTop:"12px"}}>
             <AddGoalTile d={d} names={vaults.map(v => v.name)} open={expanded === "add"} onToggle={() => toggle("add")}
               onSave={vault => { saveVault(d, set, vault, { added: true, fromGoal: false }); setExpanded(null); }}/>
-            {vaults.map(v => {
-              const key = `vault:${v.id}`;
-              return (
-                <VaultTile key={v.id} vault={v} names={vaults.map(x => x.name)} open={expanded === key} onToggle={() => toggle(key)}
-                  editing={editing === key} onEdit={() => setEditing(key)} onCancel={close}
-                  onSave={next => { saveVault(d, set, next, { added: false, fromGoal: v.fromGoal }); close(); }}
-                  onRemove={() => { removeVault(d, set, v); close(); setExpanded(null); }}/>
-              );
-            })}
-            {rows.map(row => {
+            {sortGoals(goals, sortBy).map(({ vault: v, row }) => {
+              if (v) {
+                const key = `vault:${v.id}`;
+                return (
+                  <VaultTile key={key} vault={v} fresh={visit.includes(key)} names={vaults.map(x => x.name)} open={expanded === key} onToggle={() => toggle(key)}
+                    editing={editing === key} onEdit={() => setEditing(key)} onCancel={close}
+                    onSave={next => { saveVault(d, set, next, { added: false, fromGoal: v.fromGoal }); close(); }}
+                    onRemove={() => { removeVault(d, set, v); close(); setExpanded(null); }}/>
+                );
+              }
               const key = `row:${row.id}`;
               return (
-                <GoalTile key={row.id} row={row} open={expanded === key} onToggle={() => toggle(key)}
+                <GoalTile key={key} row={row} fresh={visit.includes(`${taxYear}:${key}`)} open={expanded === key} onToggle={() => toggle(key)}
                   editing={editing === key} onEdit={() => setEditing(key)} onOpenModule={openModule}
                   editor={editing === key && <RowEditor row={row} m={m} set={set} onDone={close}/>}/>
               );
@@ -244,18 +262,23 @@ function Ring({ pct, hits, total, t, size = 104, stroke = 9 }) {
 // greying its one sign of that: CLAUDE.md rule 4), measured (its bar and
 // figures), or open without a target. Opening it gives the figures in full
 // and what can be changed: for a locked one, the module that unlocks it.
-function GoalTile({ row, open, onToggle, editing, onEdit, onOpenModule, editor }) {
+function GoalTile({ row, fresh, open, onToggle, editing, onEdit, onOpenModule, editor }) {
+  // Cash already on the best rates shows as reached, without the animation
+  // (rowReached: nothing built up to mark).
+  const reached = !!(row.tracked && row.hit);
+  const [ref, phase] = useReachedReveal(fresh);
   const bar = row.locked ? lockedBar
-    : row.tracked ? <ProgressBar pct={row.pct} color={GOAL_COLOR[row.id]} label={row.label}/>
+    : row.tracked ? <ProgressBar pct={row.pct} color={GOAL_COLOR[row.id]} label={row.label} reached={reached} phase={phase}/>
     : <span style={{fontSize:"12px",color:MUT}}>{row.id === "emergency" ? "Spending not entered" : "No target set"}</span>;
   const figure = row.locked ? null
+    : reached ? <ReachedMark phase={phase}/>
     : row.target > 0 ? <Figure current={row.current} target={row.target}/>
     : row.current > 0 ? <Figure current={row.current}/> : null;
   const action = row.paidField ? (row.tracked ? "Update" : "Set a target")
     : row.id === "emergency" ? (row.tracked ? "Edit" : "Add spending")
     : row.own ? "Edit target" : "Set your own target";
   return (
-    <BarTile title={row.label} bar={bar} figure={figure} locked={row.locked} open={open} onToggle={onToggle}>
+    <BarTile title={row.label} bar={bar} figure={figure} locked={row.locked} open={open} onToggle={onToggle} innerRef={ref}>
       {row.locked ? (
         <Details text={`Unlocks once ${row.unlock} is answered.`}
           action={<TextButton onClick={() => onOpenModule(row.module)}>Open {row.moduleTitle}</TextButton>}/>

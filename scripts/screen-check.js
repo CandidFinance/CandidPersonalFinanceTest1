@@ -123,7 +123,8 @@ try {
       let broken = await check(r);
       // Cash's tour, the first time it opens (CashTour.jsx): each stop,
       // past the estimates and the email, to the closing card.
-      const tour = page.locator('[role="dialog"][aria-modal="true"]');
+      // (Not the goal reached pop-up, GoalReached.jsx, which can follow it.)
+      const tour = page.locator('[role="dialog"][aria-modal="true"]:not([aria-labelledby="goal-reached-title"])');
       // The app's tour, the first time Home opens (AppTour.jsx): each stop,
       // across Progress and Modules, and back to Home.
       if (!broken && r === "/app/home") {

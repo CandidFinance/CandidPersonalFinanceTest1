@@ -10,7 +10,7 @@ import { G, WHITE, MUT, FONT_SIZE } from "./design-tokens.js";
 import MobileLayout from "./mobile/MobileLayout.jsx";
 import MobileHomeScreen from "./mobile/screens/MobileHomeScreen.jsx";
 import ProgressTrackerDashboard from "./components/dashboard/ProgressTrackerDashboard.jsx";
-import { loanOverpaidAfter } from "./lib/progressTracker.js";
+import { loanOverpaidAfter, goalsToCelebrate, goalVaults, markGoalsSeen } from "./lib/progressTracker.js";
 import MobileModulesScreen from "./mobile/screens/MobileModulesScreen.jsx";
 import MobileForecastScreen from "./mobile/screens/MobileForecastScreen.jsx";
 import MobileChatScreen from "./mobile/screens/MobileChatScreen.jsx";
@@ -37,6 +37,7 @@ import { questionOrder, estimateItems, estimateLineFor } from "./lib/quickStart.
 import MobileModuleReveal from "./mobile/screens/MobileModuleReveal.jsx";
 import InviteFriends from "./mobile/InviteFriends.jsx";
 import OnTrackReward from "./mobile/OnTrackReward.jsx";
+import GoalReached from "./mobile/GoalReached.jsx";
 import { hasReferralBonus } from "./lib/referral.js";
 import { MODULE_REVEALS } from "./lib/moduleReveal.js";
 import { workingChecks } from "./lib/workingChecks.js";
@@ -45,7 +46,7 @@ import { bankChange, gainedSoFar } from "./lib/moduleStatus.js";
 import { bankedDiff, gainedRowFields, decisionRowFields } from "./lib/valueMetrics.js";
 import { appUnlocked, scoreUnlocked, withAnswered, START_MODULES, entryGoals, firstPick, modulePath, loanSavingsIn, loanPensionChecked, hasEmployerMatch, loanVerdictReady } from "./lib/appEntry.js";
 import { moduleGuideStarts, briefQuestions } from "./lib/moduleGuide.js";
-import { rollTaxYear } from "./lib/taxYear.js";
+import { rollTaxYear, taxYearOf } from "./lib/taxYear.js";
 import { yearRecordPatch } from "./lib/yearRecord.js";
 import { readinessMissing } from "./lib/propertyReadiness.js";
 import { selectRows, updateRow } from "./lib/supabase.js";
@@ -479,6 +480,29 @@ export default function AppShell() {
     const next = yearRecordPatch(d, m, statuses);
     if (next) set("yearRecords", next);
   }, [statuses, savingsRates]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A goal reached by a change made in the app (Progress's goals and pots,
+  // progressTracker.js goalsToCelebrate): the pop-up (GoalReached.jsx),
+  // held until a main screen shows (goalPopup, below) and saved as seen
+  // once it's closed. Worked out afresh on each change, so a goal that
+  // drops back before the pop-up shows leaves it. One already reached when
+  // first measured is saved as seen quietly.
+  const [goalsReached, setGoalsReached] = useState([]);
+  const goalsLive = useRef(null);
+  useEffect(() => {
+    if (savingsRates === null) return;
+    const taxYear = taxYearOf(new Date());
+    const { celebrate, quiet, live, vaults } = goalsToCelebrate(d, m, statuses, taxYear, goalsLive.current);
+    goalsLive.current = live;
+    if (quiet.length || !Array.isArray(d.goalsReachedSeen)) {
+      set("goalsReachedSeen", markGoalsSeen(d.goalsReachedSeen, quiet.map(g => g.key), vaults, taxYear) || d.goalsReachedSeen || []);
+    }
+    setGoalsReached(prev => (prev.map(g => g.key).join() === celebrate.map(g => g.key).join() ? prev : celebrate));
+  }, [statuses, savingsRates]); // eslint-disable-line react-hooks/exhaustive-deps
+  const closeGoalsReached = () => {
+    const seen = markGoalsSeen(d.goalsReachedSeen, goalsReached.map(g => g.key), goalVaults(d, m), taxYearOf(new Date()));
+    if (seen) set("goalsReachedSeen", seen);
+    setGoalsReached([]);
+  };
 
   // Property inputs → the report row. Only edits made on the Property screen
   // are sent (not the values already there when it opens), once they've
@@ -744,6 +768,20 @@ export default function AppShell() {
   // for it too (AppTour.jsx). The tour ends back on the module it came from.
   const toAppTour = d.appTourDone || getConsent() === null ? null : () => { setTourReturn(pathname); navigate("/app/home"); scrollToTop(); };
   const tabScreen = { "/app/home": "home", "/app/progress": "progress", "/app/modules": "modules" }[pathname];
+  // A goal reached: on Home, Progress, Modules and Forecast, not while a
+  // tour, the cookie notice or the assistant is up, nor on Home before the
+  // app's tour has run.
+  const goalPopupShows = goalsReached.length > 0 && !appTourShowing && !assistState.open && getConsent() !== null
+    && !(tabScreen === "home" && !d.appTourDone);
+  const goalPopup = goalPopupShows && (
+    <GoalReached goals={goalsReached} taxYear={taxYearOf(new Date())}
+      onShown={() => posthog.capture("goal_reached_shown", { goals: goalsReached.length, screen: tabScreen || "forecast" })}
+      onClose={closeGoalsReached}
+      onProgress={tabScreen === "progress" ? null : () => {
+        posthog.capture("goal_reached_progress", { goals: goalsReached.length });
+        closeGoalsReached(); navigate("/app/progress"); scrollToTop();
+      }}/>
+  );
   if (tabScreen) return (
     <>
       <MobileLayout d={d} assist={assistNode} activeTab={tabScreen} headerRight={editInputsButton} pageKey={pathname} fadeIn={appTourShowing}>
@@ -752,7 +790,7 @@ export default function AppShell() {
             onStartModule={key => navigate(key === "property" ? "/app/property" : `/app/module/${key}`)}/>
         )}
         {tabScreen === "progress" && (
-          <ProgressTrackerDashboard d={d} m={m} statuses={statuses} set={set}
+          <ProgressTrackerDashboard d={d} m={m} statuses={statuses} set={set} celebrating={goalsReached.map(g => g.key)}
             onOpenModule={key => navigate(`/app/module/${key}`)}/>
         )}
         {tabScreen === "modules" && (
@@ -767,6 +805,7 @@ export default function AppShell() {
         <AppTour screen={tabScreen} scoreShowing={scoreShowing} set={set} returnTo={tourReturn}
           onStart={() => setAppTourShowing(true)} onClose={() => { setAppTourShowing(false); setTourReturn(null); }}/>
       )}
+      {goalPopup}
     </>
   );
 
@@ -789,9 +828,12 @@ export default function AppShell() {
   }
 
   if (pathname === "/app/forecast") return (
-    <MobileLayout d={d} assist={assistNode} activeTab="forecast" headerRight={editInputsButton}>
-      <MobileForecastScreen d={d} m={m}/>
-    </MobileLayout>
+    <>
+      <MobileLayout d={d} assist={assistNode} activeTab="forecast" headerRight={editInputsButton}>
+        <MobileForecastScreen d={d} m={m}/>
+      </MobileLayout>
+      {goalPopup}
+    </>
   );
 
   if (pathname === "/app/inputs") {

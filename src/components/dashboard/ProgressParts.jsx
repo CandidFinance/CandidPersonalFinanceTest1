@@ -1,6 +1,7 @@
-import { Lock, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, Lock, Plus } from "lucide-react";
 import { fmtCompact } from "../../lib/format.js";
-import { G, WHITE, CTA_BLUE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG } from "../../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, WHITE, CTA_BLUE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG } from "../../design-tokens.js";
 import { pillFieldStyle } from "../../mobile/PillMoneyInput.jsx";
 
 // Pieces shared by the Progress tab's sections (ProgressTrackerDashboard,
@@ -15,7 +16,7 @@ export function Tile({ title, action = null, wash = false, tour, children }) {
   return (
     <section data-tour={tour} style={{display:"flex",flexDirection:"column",minWidth:0,background:wash ? HERO_TILE_BG : WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,
       boxShadow:wash ? "0 4px 18px rgba(22,47,36,0.07)" : "0 2px 10px rgba(22,47,36,0.05)",padding:"16px 14px"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"12px"}}>
         <h2 style={kicker}>{title}</h2>
         {action}
       </div>
@@ -26,15 +27,64 @@ export function Tile({ title, action = null, wash = false, tour, children }) {
 
 // A completion bar: thick, filled in its category's colour on a pale step
 // of the same colour. Its length is the one sign of progress (CLAUDE.md
-// rule 4): reaching a target fills it, with no tick or change on top. Spans,
-// as it sits inside a goal tile's button. `color` is a "#rrggbb" chart colour.
-export function ProgressBar({ pct, color, label }) {
+// rule 4). A goal reached (`reached`) turns gold, with Reached in place of
+// its figures (ReachedMark). `phase` (useReachedReveal), for a goal reached
+// since Progress last showed it: empty while it "wait"s off screen, then on
+// "play" it fills with a sheen across it. Spans, as it sits inside a goal
+// tile's button. `color` is a "#rrggbb" chart colour.
+const REACHED_CSS = `
+.goal-fill-fresh { position: relative; overflow: hidden; animation: goal-fill 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.goal-fill-fresh::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.7) 50%, transparent 80%);
+  animation: goal-sheen 0.8s ease-out 0.85s both; }
+.goal-mark-fresh { animation: goal-mark 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.75s both; }
+@keyframes goal-fill { from { width: 0; } to { width: 100%; } }
+@keyframes goal-sheen { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes goal-mark { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .goal-fill-fresh, .goal-fill-fresh::after, .goal-mark-fresh { animation: none; } }
+`;
+export function ProgressBar({ pct, color, label, reached = false, phase = null }) {
+  const fill = reached ? GOLD : color;
   return (
     <span role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}
-      style={{display:"block",height:"14px",borderRadius:"100px",background:`${color}26`,overflow:"hidden"}}>
-      <span style={{display:"block",height:"100%",width:`${pct}%`,background:color,borderRadius:"100px",transition:"width 0.3s ease"}}/>
+      style={{display:"block",height:"14px",borderRadius:"100px",background:`${fill}26`,overflow:"hidden"}}>
+      {phase && <style>{REACHED_CSS}</style>}
+      <span className={phase === "play" ? "goal-fill-fresh" : undefined}
+        style={{display:"block",height:"100%",width:phase === "wait" ? 0 : `${pct}%`,background:fill,borderRadius:"100px",transition:phase ? "none" : "width 0.3s ease"}}/>
     </span>
   );
+}
+
+// A reached goal's mark, in its figures' place: a tick and "Reached".
+export function ReachedMark({ phase = null }) {
+  return (
+    <span className={phase === "play" ? "goal-mark-fresh" : undefined}
+      style={{opacity:phase === "wait" ? 0 : undefined,display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"12px",fontWeight:700,color:GOLD_TEXT}}>
+      <Check size={14} strokeWidth={2.6} aria-hidden="true"/>Reached
+    </span>
+  );
+}
+
+// For a goal reached and not yet celebrated (`fresh`): "wait" until its
+// tile is on screen above the tab bar, then "play", so the animation isn't
+// spent out of sight below the cards. Otherwise null. The ref goes on the
+// tile (BarTile's innerRef).
+export function useReachedReveal(fresh) {
+  const ref = useRef(null);
+  const [phase, setPhase] = useState(fresh ? "wait" : null);
+  useEffect(() => {
+    if (!fresh || phase === "play") return;
+    if (phase !== "wait") setPhase("wait");
+    const el = ref.current;
+    const play = () => setPhase("play");
+    if (!el || typeof IntersectionObserver === "undefined") { play(); return; }
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { io.disconnect(); play(); }
+    }, { threshold: 0.9, rootMargin: "0px 0px -80px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [fresh]); // eslint-disable-line react-hooks/exhaustive-deps
+  return [ref, phase];
 }
 
 // The bar's place on a goal that's locked: an empty grey track.
@@ -57,10 +107,10 @@ export function Figure({ current, target = 0 }) {
 // bar is the same length. A tap opens the details below it: the figures in
 // full, and what can be changed. `locked` greys it out; `tag` sits under
 // the name, saying what kind of goal it is (a custom one's).
-export function BarTile({ title, tag = null, bar, figure = null, locked = false, open, onToggle, children }) {
+export function BarTile({ title, tag = null, bar, figure = null, locked = false, open, onToggle, innerRef = null, children }) {
   const faded = { opacity: locked ? 0.4 : 1 };
   return (
-    <div style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"12px",boxShadow:"0 2px 10px rgba(22,47,36,0.07)"}}>
+    <div ref={innerRef} style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"12px",boxShadow:"0 2px 10px rgba(22,47,36,0.07)"}}>
       <button type="button" aria-expanded={open} onClick={onToggle}
         style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",minHeight:"50px",background:"none",border:"none",padding:"9px 12px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
         {/* 70px: room for "Emergency", the longest single word, on one line. */}

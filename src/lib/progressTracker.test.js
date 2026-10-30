@@ -4,7 +4,7 @@ import { calcMetrics } from "./metrics.js";
 import { ISA_ALLOWANCE } from "./tax.js";
 import {
   buildProgressSnapshot, targetRows, annualGoals, netWorthPicture, incomeBands, incomePosition,
-  goalVaults, withVault, withoutVault, poundsInput, loanOverpaidAfter,
+  goalVaults, withVault, withoutVault, poundsInput, loanOverpaidAfter, newlyReachedGoals, markGoalsSeen, goalsToCelebrate, sortGoals,
 } from "./progressTracker.js";
 
 const answered = keys => ({ selectedModules: keys, answeredModules: keys });
@@ -309,4 +309,66 @@ test("the pension row counts the £100k trap's top-ups this tax year", () => {
   // The regular 5% + 5% on the salary before the top-up, then the top-up.
   assert.equal(p.current, 8500);
   assert.match(p.note, /^£8,500 this tax year, yours and your employer's, including £3,000 of top-ups/);
+});
+
+test("newlyReachedGoals and markGoalsSeen: each reached goal once, stale keys dropped", () => {
+  const rows = [
+    { id: "isa", tracked: true, hit: true, current: 20000 },
+    { id: "pension", tracked: true, hit: false, current: 3000 },
+    { id: "cashInterest", tracked: true, hit: true, current: 0 },
+    { id: "emergency", tracked: false, hit: false, current: 0 },
+  ];
+  const vaults = [{ id: "v1", hit: true, saved: 3000 }, { id: "v2", hit: false, saved: 100 }];
+  const fresh = newlyReachedGoals(rows, vaults, undefined, 2026);
+  assert.deepEqual(fresh, ["2026:row:isa", "vault:v1"]);
+  // Shown one at a time, as each scrolls into view.
+  const seen = markGoalsSeen(markGoalsSeen(undefined, ["vault:v1"], vaults, 2026), ["2026:row:isa"], vaults, 2026);
+  assert.deepEqual(seen, ["vault:v1", "2026:row:isa"]);
+  assert.equal(markGoalsSeen(seen, ["vault:v1"], vaults, 2026), null);
+  assert.deepEqual(newlyReachedGoals(rows, vaults, seen, 2026), []);
+  // The ISA drops below its target and is reached again: not shown twice.
+  const dipped = rows.map(r => r.id === "isa" ? { ...r, hit: false } : r.id === "pension" ? { ...r, hit: true } : r);
+  assert.deepEqual(newlyReachedGoals(dipped, vaults, seen, 2026), ["2026:row:pension"]);
+  assert.deepEqual(newlyReachedGoals(rows, vaults, [...seen, "2026:row:pension"], 2026), []);
+  // A new tax year starts the goals again; a removed pot's key goes.
+  const pots = [{ id: "v2", hit: true, saved: 100 }];
+  assert.deepEqual(newlyReachedGoals(rows, pots, seen, 2027), ["2027:row:isa", "vault:v2"]);
+  assert.deepEqual(markGoalsSeen([...seen, "2025:row:pension"], ["2027:row:isa"], pots, 2027), ["2027:row:isa"]);
+});
+
+test("goalsToCelebrate: only goals reached by a change in the app are celebrated", () => {
+  const d = { ...base, isaThisYearSS: "18000", isaThisYearCash: "2000",
+    goalVaults: [{ id: "v1", name: "Holiday", target: "3000", saved: "3000" }, { id: "v2", name: "Car", target: "9000", saved: "100" }] };
+  const m = calcMetrics(d);
+  // First run (nothing saved yet, as for anyone from before this shipped):
+  // every goal already reached is marked seen quietly.
+  const first = goalsToCelebrate(d, m, {}, 2026);
+  assert.deepEqual(first.celebrate, []);
+  assert.deepEqual(first.quiet.find(g => g.key === "2026:row:isa"), { key: "2026:row:isa", label: "ISA", current: ISA_ALLOWANCE, target: ISA_ALLOWANCE, perYear: false, pot: false });
+  assert.equal(first.quiet.some(g => g.key === "vault:v2"), false);
+  assert.ok(first.live.includes("vault:v2") && first.live.includes("2026:row:isa"));
+  const seen = first.quiet.map(g => g.key);
+  // The car pot reaches its target: celebrated, on opening the app too.
+  const car = { ...d, goalsReachedSeen: seen, goalVaults: [d.goalVaults[0], { ...d.goalVaults[1], saved: "9000" }] };
+  assert.deepEqual(goalsToCelebrate(car, m, {}, 2026, first.live).celebrate.map(g => g.key), ["vault:v2"]);
+  assert.deepEqual(goalsToCelebrate(car, m, {}, 2026, null).celebrate.map(g => g.key), ["vault:v2"]);
+  // A pot added already at its target is quiet.
+  const added = { ...d, goalsReachedSeen: seen, goalVaults: [{ id: "v3", name: "Sofa", target: "800", saved: "800" }, ...d.goalVaults] };
+  const run = goalsToCelebrate(added, m, {}, 2026, first.live);
+  assert.deepEqual([run.celebrate, run.quiet.map(g => g.key)], [[], ["vault:v3"]]);
+  assert.deepEqual(goalsToCelebrate({ ...d, goalsReachedSeen: seen }, m, {}, 2026, first.live).quiet, []);
+});
+
+test("sortGoals: by £ target or completion, unmeasured then locked last", () => {
+  const goals = [
+    { id: "a", target: 3000, pct: 100, measured: true },
+    { id: "b", target: 0, pct: 0, measured: false },
+    { id: "c", target: 20000, pct: 40, measured: true },
+    { id: "d", target: 60000, pct: 15, measured: false, locked: true },
+    { id: "e", target: 9000, pct: 40, measured: true },
+  ];
+  const ids = by => sortGoals(goals, by).map(g => g.id).join("");
+  assert.equal(ids("default"), "abcde");
+  assert.equal(ids("value"), "ceabd");
+  assert.equal(ids("complete"), "acebd");
 });
