@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { ChevronRight } from "lucide-react";
-import { buildProgressSnapshot, sortGoals, GOAL_SORTS, poundsInput, TRAP_EDGE } from "../../lib/progressTracker.js";
+import { buildProgressSnapshot, sortGoals, GOAL_SORTS, poundsInput, withAllowanceGoal, TRAP_EDGE } from "../../lib/progressTracker.js";
 import { EMERGENCY_MONTHS_HINT } from "../../lib/metrics.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtK1 } from "../../lib/format.js";
@@ -15,7 +15,7 @@ import { PillSlider } from "../../mobile/PillSlider.jsx";
 import {
   G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, PROGRESS_GREEN, MODULE_CHART_COLOR,
 } from "../../design-tokens.js";
-import { Tile, BarTile, ProgressBar, ReachedMark, useReachedReveal, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
+import { Tile, BarTile, AllowanceIcon, ProgressBar, ReachedMark, useReachedReveal, lockedBar, Figure, Details, TextButton, EditorCard, helpText } from "./ProgressParts.jsx";
 import { AddGoalTile, VaultTile, saveVault, removeVault } from "./GoalVaults.jsx";
 
 // The Progress tab (/app/progress): three cards in a wallet stack, as on
@@ -36,9 +36,9 @@ const PART_COLOR = {
   investments: MODULE_CHART_COLOR.investments,
   pension: MODULE_CHART_COLOR.pension,
 };
-// Each goal's bar in the colour of what it builds in the net worth ring (ISA:
-// Investments; the emergency fund and cash interest: Cash), or for a debt
-// its module's chart colour.
+// Each goal's bar in the colour of what it builds in the net worth ring (ISA,
+// capital gains and dividends: Investments; the emergency fund and cash
+// interest: Cash), or for a debt its module's chart colour.
 const GOAL_COLOR = {
   isa: PART_COLOR.investments,
   pension: PART_COLOR.pension,
@@ -46,6 +46,8 @@ const GOAL_COLOR = {
   cashInterest: PART_COLOR.cash,
   mortgage: PART_COLOR.home,
   studentLoan: MODULE_CHART_COLOR.studentLoan,
+  cgt: PART_COLOR.investments,
+  dividends: PART_COLOR.investments,
 };
 
 export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrating = [], onOpenModule }) {
@@ -68,7 +70,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
   const pickSort = key => { set("goalsSort", key); posthog.capture("progress_goals_sorted", { by: key }); };
   const goals = [
     ...vaults.map(v => ({ vault: v, target: v.target, pct: v.pct, measured: v.target > 0, locked: false })),
-    ...rows.map(row => ({ row, target: row.target, pct: row.pct, measured: row.tracked && row.target > 0, locked: row.locked })),
+    ...rows.map(row => ({ row, target: row.target, pct: row.pct, measured: row.tracked && row.target > 0 && !row.warnAt, locked: row.locked })),
   ];
   const toggle = key => { setExpanded(e => (e === key ? null : key)); setEditing(null); };
   const close = () => setEditing(null);
@@ -123,7 +125,7 @@ export default function ProgressTrackerDashboard({ d, m, statuses, set, celebrat
               return (
                 <GoalTile key={key} row={row} fresh={visit.includes(`${taxYear}:${key}`)} open={expanded === key} onToggle={() => toggle(key)}
                   editing={editing === key} onEdit={() => setEditing(key)} onOpenModule={openModule}
-                  editor={editing === key && <RowEditor row={row} m={m} set={set} onDone={close}/>}/>
+                  editor={editing === key && <RowEditor row={row} d={d} m={m} set={set} onDone={close}/>}/>
               );
             })}
           </div>
@@ -268,17 +270,18 @@ function GoalTile({ row, fresh, open, onToggle, editing, onEdit, onOpenModule, e
   const reached = !!(row.tracked && row.hit);
   const [ref, phase] = useReachedReveal(fresh);
   const bar = row.locked ? lockedBar
-    : row.tracked ? <ProgressBar pct={row.pct} color={GOAL_COLOR[row.id]} label={row.label} reached={reached} phase={phase}/>
-    : <span style={{fontSize:"12px",color:MUT}}>{row.id === "emergency" ? "Spending not entered" : "No target set"}</span>;
-  const figure = row.locked ? null
-    : reached ? <ReachedMark phase={phase}/>
+    : row.tracked ? <ProgressBar pct={row.pct} color={GOAL_COLOR[row.id]} label={row.label} reached={reached} warn={!!row.warnAt} phase={phase}/>
+    : <span style={{fontSize:"12px",color:MUT}}>{row.id === "emergency" ? "Spending not entered" : row.addable ? "Not added" : "No target set"}</span>;
+  const figure = row.locked || (row.addable && !row.tracked) ? null
+    : reached ? <ReachedMark phase={phase} warn={!!row.warnAt}/>
     : row.target > 0 ? <Figure current={row.current} target={row.target}/>
     : row.current > 0 ? <Figure current={row.current}/> : null;
   const action = row.paidField ? (row.tracked ? "Update" : "Set a target")
+    : row.addable ? (row.tracked ? "Update" : "Add")
     : row.id === "emergency" ? (row.tracked ? "Edit" : "Add spending")
     : row.own ? "Edit target" : "Set your own target";
   return (
-    <BarTile title={row.label} bar={bar} figure={figure} locked={row.locked} open={open} onToggle={onToggle} innerRef={ref}>
+    <BarTile title={row.label} icon={row.allowance && <AllowanceIcon/>} bar={bar} figure={figure} locked={row.locked} open={open} onToggle={onToggle} innerRef={ref}>
       {row.locked ? (
         <Details text={`Unlocks once ${row.unlock} is answered.`}
           action={<TextButton onClick={() => onOpenModule(row.module)}>Open {row.moduleTitle}</TextButton>}/>
@@ -290,10 +293,42 @@ function GoalTile({ row, fresh, open, onToggle, editing, onEdit, onOpenModule, e
   );
 }
 
-function RowEditor({ row, m, set, onDone }) {
+function RowEditor({ row, d, m, set, onDone }) {
   if (row.id === "emergency") return <EmergencyEditor m={m} set={set} onDone={onDone}/>;
   if (row.paidField) return <OverpaymentEditor row={row} set={set} onDone={onDone}/>;
+  if (row.addable) return <AllowanceEditor row={row} d={d} set={set} onDone={onDone}/>;
   return <PensionTargetEditor row={row} set={set} onDone={onDone}/>;
+}
+
+// Capital gains or dividends this tax year, against their allowance. Gains
+// are Investments' own answer (profit on sales since 6 April), so the module
+// and Progress share one figure. Saving adds the goal (withAllowanceGoal).
+function AllowanceEditor({ row, d, set, onDone }) {
+  const gains = row.id === "cgt";
+  const [value, setValue] = useState(row.tracked && row.current > 0 ? row.current : null);
+  const save = () => {
+    const pounds = poundsInput(value);
+    if (gains) {
+      set("hasSoldAssetsOutsideWrapper", pounds ? "yes" : "no");
+      set("realisedCgtGains", pounds);
+    } else {
+      set("dividendsThisYear", pounds);
+    }
+    set("allowanceGoals", withAllowanceGoal(d, row.id));
+    posthog.capture("progress_allowance_saved", { row: row.id, added: !row.tracked });
+    onDone();
+  };
+  return (
+    <EditorCard title={gains ? "Capital gains this tax year" : "Dividends this tax year"} onCancel={onDone} onSave={save}>
+      <PillMoneyInput label={gains ? "Gains on sales since 6 April" : "Received since 6 April"} value={value} onChange={setValue}/>
+      <p style={helpText}>
+        {gains
+          ? "Profit on anything sold from investments outside an ISA or pension. It's the same figure as in Investments."
+          : "From shares and funds held outside an ISA or pension. Dividends inside an ISA are tax-free and don't count."}
+        {" "}It starts again from £0 on 6 April.
+      </p>
+    </EditorCard>
+  );
 }
 
 // The user's own pension target for the year, theirs and their employer's,

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Lock, Plus } from "lucide-react";
+import { Check, Lock, Plus, ShieldCheck, TriangleAlert } from "lucide-react";
 import { fmtCompact } from "../../lib/format.js";
-import { G, GOLD, GOLD_TEXT, WHITE, CTA_BLUE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG } from "../../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, WARNING, STATUS_TILE, WHITE, CTA_BLUE, MUT, TEXT, SERIF, CDARK, RADIUS_CARD, PILL_HEIGHT, HERO_TILE_BG } from "../../design-tokens.js";
 import { pillFieldStyle } from "../../mobile/PillMoneyInput.jsx";
 
 // Pieces shared by the Progress tab's sections (ProgressTrackerDashboard,
@@ -28,7 +28,8 @@ export function Tile({ title, action = null, wash = false, tour, children }) {
 // A completion bar: thick, filled in its category's colour on a pale step
 // of the same colour. Its length is the one sign of progress (CLAUDE.md
 // rule 4). A goal reached (`reached`) turns gold, with Reached in place of
-// its figures (ReachedMark). `phase` (useReachedReveal), for a goal reached
+// its figures (ReachedMark); a limit reached (`warn`: capital gains,
+// dividends) turns amber instead, with Used. `phase` (useReachedReveal), for a goal reached
 // since Progress last showed it: empty while it "wait"s off screen, then on
 // "play" it fills with a sheen across it. Spans, as it sits inside a goal
 // tile's button. `color` is a "#rrggbb" chart colour.
@@ -43,8 +44,8 @@ const REACHED_CSS = `
 @keyframes goal-mark { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .goal-fill-fresh, .goal-fill-fresh::after, .goal-mark-fresh { animation: none; } }
 `;
-export function ProgressBar({ pct, color, label, reached = false, phase = null }) {
-  const fill = reached ? GOLD : color;
+export function ProgressBar({ pct, color, label, reached = false, warn = false, phase = null }) {
+  const fill = reached ? (warn ? WARNING : GOLD) : color;
   return (
     <span role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}
       style={{display:"block",height:"14px",borderRadius:"100px",background:`${fill}26`,overflow:"hidden"}}>
@@ -55,14 +56,23 @@ export function ProgressBar({ pct, color, label, reached = false, phase = null }
   );
 }
 
-// A reached goal's mark, in its figures' place: a tick and "Reached".
-export function ReachedMark({ phase = null }) {
+// A reached goal's mark, in its figures' place: a tick and "Reached", or
+// for a limit (`warn`) a warning sign and "Used", in amber.
+export function ReachedMark({ phase = null, warn = false }) {
+  const Icon = warn ? TriangleAlert : Check;
   return (
     <span className={phase === "play" ? "goal-mark-fresh" : undefined}
-      style={{opacity:phase === "wait" ? 0 : undefined,display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"12px",fontWeight:700,color:GOLD_TEXT}}>
-      <Check size={14} strokeWidth={2.6} aria-hidden="true"/>Reached
+      style={{opacity:phase === "wait" ? 0 : undefined,display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"12px",fontWeight:700,color:warn ? STATUS_TILE.tight.figure : GOLD_TEXT}}>
+      <Icon size={14} strokeWidth={2.6} aria-hidden="true"/>{warn ? "Used" : "Reached"}
     </span>
   );
+}
+
+// After a goal's name, for one measured against a tax-free allowance (ISA,
+// the Annual Allowance, capital gains, dividends): a small shield.
+export function AllowanceIcon() {
+  return <ShieldCheck size={12} strokeWidth={2.4} color={MUT} role="img" aria-label="Tax-free allowance"
+    style={{display:"inline-block",verticalAlign:"-1px",marginLeft:"4px"}}/>;
 }
 
 // For a goal reached and not yet celebrated (`fresh`): "wait" until its
@@ -106,20 +116,27 @@ export function Figure({ current, target = 0 }) {
 // figures, the name and figures in columns of fixed width so every goal's
 // bar is the same length. A tap opens the details below it: the figures in
 // full, and what can be changed. `locked` greys it out; `tag` sits under
-// the name, saying what kind of goal it is (a custom one's).
-export function BarTile({ title, tag = null, bar, figure = null, locked = false, open, onToggle, innerRef = null, children }) {
+// the name, saying what kind of goal it is (a custom one's); `icon` follows
+// the name (AllowanceIcon).
+const FIGURE_COLUMN = "84px";
+// The icon kept on the line with the name's last word, never on its own.
+function withIcon(title, icon) {
+  const cut = title.lastIndexOf(" ") + 1;
+  return <>{title.slice(0, cut)}<span style={{whiteSpace:"nowrap"}}>{title.slice(cut)}{icon}</span></>;
+}
+export function BarTile({ title, tag = null, icon = null, bar, figure = null, locked = false, open, onToggle, innerRef = null, children }) {
   const faded = { opacity: locked ? 0.4 : 1 };
   return (
     <div ref={innerRef} style={{background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:"12px",boxShadow:"0 2px 10px rgba(22,47,36,0.07)"}}>
       <button type="button" aria-expanded={open} onClick={onToggle}
         style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",minHeight:"50px",background:"none",border:"none",padding:"9px 12px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
-        {/* 70px: room for "Emergency", the longest single word, on one line. */}
-        <span style={{flex:"0 0 70px",minWidth:0,...faded}}>
-          <span style={{display:"block",fontSize:"12px",fontWeight:700,color:TEXT,lineHeight:1.25,overflowWrap:"break-word"}}>{title}</span>
+        {/* 80px: room for "Dividends" and its allowance icon on one line. */}
+        <span style={{flex:"0 0 80px",minWidth:0,...faded}}>
+          <span style={{display:"block",fontSize:"12px",fontWeight:700,color:TEXT,lineHeight:1.25,overflowWrap:"break-word"}}>{icon ? withIcon(title, icon) : title}</span>
           {tag}
         </span>
         <span style={{flex:1,minWidth:0,...faded}}>{bar}</span>
-        <span style={{flex:"0 0 84px",textAlign:"right",whiteSpace:"nowrap"}}>{figure}</span>
+        <span style={{flex:`0 0 ${FIGURE_COLUMN}`,textAlign:"right",whiteSpace:"nowrap"}}>{figure}</span>
       </button>
       {open && <div style={{padding:"0 12px 12px"}}>{children}</div>}
     </div>
@@ -169,12 +186,15 @@ export function AddTile({ label, open, onToggle, locked = false, lockedBody = nu
   );
 }
 
-// An open tile's details: a line of text, and an action on the right.
+// An open tile's details: a line of text, and an action on the right at
+// least as wide as the figures' column (BarTile), so the text ends where
+// the bar does and keeps its width once a goal is added; a longer action
+// ("Set your own target") takes the room it needs.
 export function Details({ text, action = null }) {
   return (
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px"}}>
-      <p style={helpText}>{text}</p>
-      {action}
+    <div style={{display:"flex",alignItems:"flex-start",gap:"10px"}}>
+      <p style={{...helpText,flex:1,minWidth:0}}>{text}</p>
+      <div style={{flex:"0 0 auto",minWidth:FIGURE_COLUMN,textAlign:"right"}}>{action}</div>
     </div>
   );
 }

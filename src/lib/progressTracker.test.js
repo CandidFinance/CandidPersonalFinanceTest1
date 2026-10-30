@@ -1,10 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcMetrics } from "./metrics.js";
-import { ISA_ALLOWANCE } from "./tax.js";
+import { ISA_ALLOWANCE, CGT_ANNUAL_ALLOWANCE, DIVIDEND_ALLOWANCE } from "./tax.js";
 import {
   buildProgressSnapshot, targetRows, annualGoals, netWorthPicture, incomeBands, incomePosition,
   goalVaults, withVault, withoutVault, poundsInput, loanOverpaidAfter, newlyReachedGoals, markGoalsSeen, goalsToCelebrate, sortGoals,
+  withAllowanceGoal,
 } from "./progressTracker.js";
 
 const answered = keys => ({ selectedModules: keys, answeredModules: keys });
@@ -26,18 +27,19 @@ const idsOf = (d, statuses) => rowsOf(d, statuses).map(r => r.id);
 
 test("every row shows, locked until its module's questions are answered", () => {
   const openIds = d => rowsOf(d).filter(r => !r.locked).map(r => r.id);
-  const none = { ...base, ...answered([]) };
+  // No investments outside an ISA, so no capital gains or dividends rows.
+  const none = { ...base, unwrappedValue: "0", ...answered([]) };
   assert.deepEqual(idsOf(none), ["isa", "pension", "emergency", "studentLoan", "cashInterest"]);
   assert.deepEqual(openIds(none), []);
   // Locked rows count for nothing in the headline.
   assert.deepEqual(annualGoals(rowsOf(none)), { pct: 0, hits: 0, total: 0, locked: 5 });
   // Opened and skipped isn't answered.
-  assert.deepEqual(openIds({ ...base, selectedModules: ["cash", "pension"], answeredModules: [] }), []);
-  assert.deepEqual(openIds({ ...base, ...answered(["pension"]) }), ["pension"]);
+  assert.deepEqual(openIds({ ...none, selectedModules: ["cash", "pension"], answeredModules: [] }), []);
+  assert.deepEqual(openIds({ ...none, ...answered(["pension"]) }), ["pension"]);
   // Cash & savings asks this year's ISA payments too, so it unlocks the ISA row.
-  assert.deepEqual(openIds({ ...base, ...answered(["cash"]) }), ["isa", "emergency", "cashInterest"]);
-  assert.deepEqual(openIds({ ...base, ...answered(["investments"]) }), ["isa"]);
-  assert.deepEqual(openIds({ ...loan, ...answered(["studentLoan"]) }), ["studentLoan"]);
+  assert.deepEqual(openIds({ ...none, ...answered(["cash"]) }), ["isa", "emergency", "cashInterest"]);
+  assert.deepEqual(openIds({ ...none, ...answered(["investments"]) }), ["isa"]);
+  assert.deepEqual(openIds({ ...loan, unwrappedValue: "0", ...answered(["studentLoan"]) }), ["studentLoan"]);
   // A locked row names the modules that unlock it, and the one to open.
   const isa = rowsOf(none).find(r => r.id === "isa");
   assert.equal(isa.unlock, "Cash & savings or Investments");
@@ -298,7 +300,7 @@ test("a new vault goes first; saving or removing one keeps the others in order",
 test("the snapshot puts it all together for the tab", () => {
   const snap = buildProgressSnapshot(base, calcMetrics(base), { cash: { amount: 150 } });
   // Student loan isn't answered, so its row is there but locked.
-  assert.deepEqual(snap.rows.map(r => r.id), ["isa", "pension", "emergency", "studentLoan", "cashInterest"]);
+  assert.deepEqual(snap.rows.map(r => r.id), ["isa", "cgt", "dividends", "pension", "emergency", "studentLoan", "cashInterest"]);
   assert.equal(snap.annual.total, 4);
   assert.equal(snap.annual.hits, 1);
   assert.equal(snap.annual.locked, 1);
@@ -371,4 +373,77 @@ test("sortGoals: by £ target or completion, unmeasured then locked last", () =>
   assert.equal(ids("default"), "abcde");
   assert.equal(ids("value"), "ceabd");
   assert.equal(ids("complete"), "acebd");
+});
+
+test("allowance rows: ISA and the Annual Allowance tagged, a pension target not", () => {
+  assert.equal(rowOf(base, "isa").allowance, true);
+  assert.equal(rowOf(base, "pension").allowance, true);
+  assert.equal(rowOf({ ...base, pensionTarget: "8000" }, "pension").allowance, false);
+  assert.ok(!rowOf(base, "emergency").allowance);
+});
+
+test("capital gains and dividends show only with investments outside an ISA or dividends, never locked", () => {
+  const plain = { ...base, unwrappedValue: "0" };
+  assert.equal(rowOf(plain, "cgt"), undefined);
+  assert.equal(rowOf(plain, "dividends"), undefined);
+  assert.equal(rowOf({ ...base, hasUnwrapped: "no" }, "cgt"), undefined);
+  assert.equal(rowOf({ ...base, hasInvestments: "no" }, "dividends"), undefined);
+  // Dividends entered in About you are enough for dividends, not for gains.
+  assert.ok(rowOf({ ...plain, dividendIncome: "800" }, "dividends"));
+  assert.equal(rowOf({ ...plain, dividendIncome: "800" }, "cgt"), undefined);
+  // Shown before any module is answered, and not greyed out.
+  const cgt = rowOf({ ...base, ...answered([]) }, "cgt");
+  assert.equal(cgt.locked, false);
+  assert.equal(cgt.tracked, false);
+  assert.equal(cgt.addable, true);
+  assert.equal(cgt.allowance, true);
+});
+
+test("capital gains: tracked once added, or once Investments asked about sales; a limit, not in the average", () => {
+  assert.equal(rowOf(base, "cgt").tracked, false);
+  // The walk-through asked about sales (investments outside an ISA: yes).
+  const asked = rowOf({ ...base, hasUnwrapped: "yes" }, "cgt");
+  assert.equal(asked.tracked, true);
+  assert.equal(asked.current, 0);
+  assert.equal(asked.target, CGT_ANNUAL_ALLOWANCE);
+  const added = { ...base, allowanceGoals: withAllowanceGoal(base, "cgt"), hasSoldAssetsOutsideWrapper: "yes", realisedCgtGains: "1200" };
+  const row = rowOf(added, "cgt");
+  assert.deepEqual([row.tracked, row.current, row.pct], [true, 1200, 40]);
+  // Profit only counts when they sold (the module's own rule, metrics.js).
+  assert.equal(rowOf({ ...added, hasSoldAssetsOutsideWrapper: "no" }, "cgt").current, 0);
+  assert.equal(row.warnAt, true);
+  assert.deepEqual(annualGoals(rowsOf(added)), annualGoals(rowsOf(base)));
+});
+
+test("dividends: tracked once added, against the £500 allowance", () => {
+  assert.equal(rowOf(base, "dividends").tracked, false);
+  const d = { ...base, allowanceGoals: ["dividends"], dividendsThisYear: "500" };
+  const row = rowOf(d, "dividends");
+  assert.deepEqual([row.tracked, row.current, row.target, row.hit], [true, 500, DIVIDEND_ALLOWANCE, true]);
+  // Added once only.
+  assert.deepEqual(withAllowanceGoal(d, "dividends"), ["dividends"]);
+});
+
+test("goalsToCelebrate: a limit reached comes as a warning, with its title and line", () => {
+  const seen = [];
+  const before = { ...base, allowanceGoals: ["dividends"], dividendsThisYear: "200", goalsReachedSeen: seen };
+  const { live } = goalsToCelebrate(before, calcMetrics(before), {}, 2026);
+  const after = { ...before, dividendsThisYear: "600" };
+  const { celebrate } = goalsToCelebrate(after, calcMetrics(after), {}, 2026, live);
+  const g = celebrate.find(x => x.key === "2026:row:dividends");
+  assert.equal(g.warn, true);
+  assert.equal(g.usedTitle, "Dividend allowance used");
+  assert.match(g.usedLine, /above £500/);
+});
+
+test("goalsToCelebrate: a limit already past when added still warns; a goal at target when added doesn't pop", () => {
+  const before = { ...base, goalsReachedSeen: [] };
+  const { live } = goalsToCelebrate(before, calcMetrics(before), {}, 2026);
+  const after = { ...before, allowanceGoals: ["dividends"], dividendsThisYear: "800" };
+  const { celebrate, quiet } = goalsToCelebrate(after, calcMetrics(after), {}, 2026, live);
+  assert.ok(celebrate.some(g => g.key === "2026:row:dividends" && g.warn));
+  assert.ok(!quiet.some(g => g.key === "2026:row:dividends"));
+  // The very first run is still quiet, warnings included.
+  const first = goalsToCelebrate({ ...after, goalsReachedSeen: undefined }, calcMetrics(after), {}, 2026);
+  assert.ok(first.quiet.some(g => g.key === "2026:row:dividends"));
 });

@@ -498,10 +498,14 @@ export default function AppShell() {
     }
     setGoalsReached(prev => (prev.map(g => g.key).join() === celebrate.map(g => g.key).join() ? prev : celebrate));
   }, [statuses, savingsRates]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A limit reached (capital gains, dividends: `warn`) is a warning, not a
+  // celebration, so it gets a pop-up of its own, before any goals reached.
+  const goalsShown = goalsReached.some(g => g.warn) ? goalsReached.filter(g => g.warn) : goalsReached;
   const closeGoalsReached = () => {
-    const seen = markGoalsSeen(d.goalsReachedSeen, goalsReached.map(g => g.key), goalVaults(d, m), taxYearOf(new Date()));
+    const keys = goalsShown.map(g => g.key);
+    const seen = markGoalsSeen(d.goalsReachedSeen, keys, goalVaults(d, m), taxYearOf(new Date()));
     if (seen) set("goalsReachedSeen", seen);
-    setGoalsReached([]);
+    setGoalsReached(prev => prev.filter(g => !keys.includes(g.key)));
   };
 
   // Property inputs → the report row. Only edits made on the Property screen
@@ -774,11 +778,11 @@ export default function AppShell() {
   const goalPopupShows = goalsReached.length > 0 && !appTourShowing && !assistState.open && getConsent() !== null
     && !(tabScreen === "home" && !d.appTourDone);
   const goalPopup = goalPopupShows && (
-    <GoalReached goals={goalsReached} taxYear={taxYearOf(new Date())}
-      onShown={() => posthog.capture("goal_reached_shown", { goals: goalsReached.length, screen: tabScreen || "forecast" })}
+    <GoalReached key={goalsShown.map(g => g.key).join()} goals={goalsShown} taxYear={taxYearOf(new Date())}
+      onShown={() => posthog.capture("goal_reached_shown", { goals: goalsShown.length, warning: !!goalsShown[0]?.warn, screen: tabScreen || "forecast" })}
       onClose={closeGoalsReached}
       onProgress={tabScreen === "progress" ? null : () => {
-        posthog.capture("goal_reached_progress", { goals: goalsReached.length });
+        posthog.capture("goal_reached_progress", { goals: goalsShown.length });
         closeGoalsReached(); navigate("/app/progress"); scrollToTop();
       }}/>
   );

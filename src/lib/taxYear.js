@@ -67,5 +67,6 @@ export function rollTaxYear(d, now = new Date(), fallbackDate = null) {
   // the targets themselves carry on.
   next.studentLoanOverpaidThisYear = "";
   next.mortgageOverpaidThisYear = "";
+  next.dividendsThisYear = "";
   return next;
 }

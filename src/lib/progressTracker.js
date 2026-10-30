@@ -13,7 +13,7 @@
 
 import {
   ISA_ALLOWANCE, PERSONAL_ALLOWANCE, HIGHER_RATE_THRESHOLD, PA_TAPER_START, ADDITIONAL_RATE_THRESHOLD,
-  INCOME_TAX_RATES, SCOTTISH_BANDS, SCOTTISH_ADVANCED, SCOTTISH_TOP,
+  INCOME_TAX_RATES, SCOTTISH_BANDS, SCOTTISH_ADVANCED, SCOTTISH_TOP, CGT_ANNUAL_ALLOWANCE, DIVIDEND_ALLOWANCE,
 } from "./tax.js";
 import { calcAnnualAllowanceRoomBeforeTopUps } from "./pension.js";
 import { bankedFor, MODULE_META, HIDE_MVP_MODULES, HIDDEN_MVP_MODULE_KEYS } from "./moduleStatus.js";
@@ -41,7 +41,12 @@ function measured(current, target) {
 // `tracked`: unlocked, with a target to measure against (one without
 // offers to set one). `own`: the target is the user's. `editable`, `field`
 // (and `paidField`): what an edit can change, and the saved inputs it
-// writes. `limit`: the most an own target can be.
+// writes. `limit`: the most an own target can be. `allowance`: measured
+// against a tax-free allowance (marked with an icon on the tab). `addable`:
+// shown before it's tracked, with "Add" to give the figure it needs.
+// `warnAt`: a limit rather than a goal (gains, dividends): past it, tax is
+// due, so reaching it warns (`usedTitle`, `usedLine`) and it stays out of
+// the headline average.
 
 // The £20,000 allowance (buying a home together, Property: the household's
 // two, with the partner's ISA payments this year) against what's been paid
@@ -51,7 +56,7 @@ function isaRow(d, m) {
   const limit = joint ? ISA_ALLOWANCE * 2 : ISA_ALLOWANCE;
   const used = n(m.isaUsedThisYear) + (joint ? n(d.partnerIsaThisYear) : 0);
   return {
-    id: "isa", label: joint ? "ISA, together" : "ISA",
+    id: "isa", label: joint ? "ISA, together" : "ISA", allowance: true,
     ...measured(used, limit), tracked: true, own: false, editable: false,
     note: joint ? `${fmt(used)} of your ${fmt(limit)} allowance together (${fmt(ISA_ALLOWANCE)} each), shared by every ISA you pay into.`
       : `${fmt(used)} of the ${fmt(limit)} allowance, shared by every ISA you pay into this tax year.`,
@@ -71,11 +76,50 @@ function pensionRow(d, m) {
   const paid = topUps > 0 ? `${fmt(inputs)} this tax year, yours and your employer's, including ${fmt(topUps)} of top-ups`
     : `${fmt(aa.currentInputs)} a year, yours and your employer's`;
   return {
-    id: "pension", label: "Pension",
+    id: "pension", label: "Pension", allowance: !own,
     ...measured(inputs, own || aa.approxAA), tracked: true, own: own > 0,
     editable: true, field: "pensionTarget", limit: aa.approxAA,
     note: own ? `${paid}, against your ${fmt(own)} target. Your ${allowance} is ${fmt(aa.approxAA)}.`
       : `${paid}, against your ${fmt(aa.approxAA)} ${allowance}.`,
+  };
+}
+
+// Gains and dividends from investments outside an ISA or pension, each
+// against its tax-free allowance. Gains show only to someone with such
+// investments (Investments), dividends also to someone with dividends
+// (About you), and each is tracked once
+// added on Progress (`d.allowanceGoals`). Gains are Investments' own answer
+// (profit on sales since 6 April), so a walk-through that asked it counts as
+// added; dividends this tax year are asked only here. Both start again on
+// 6 April (rollTaxYear).
+export const holdsUnwrapped = d => d.hasInvestments === "yes" && d.hasUnwrapped !== "no" && n(d.unwrappedValue) > 0;
+const getsDividends = d => holdsUnwrapped(d) || n(d.dividendIncome) > 0;
+const allowanceAdded = (d, id) => Array.isArray(d.allowanceGoals) && d.allowanceGoals.includes(id);
+export const withAllowanceGoal = (d, id) => [...new Set([...(Array.isArray(d.allowanceGoals) ? d.allowanceGoals : []), id])];
+
+function cgtRow(d) {
+  const added = allowanceAdded(d, "cgt") || (moduleAnswered("investments", d) && d.hasUnwrapped === "yes");
+  const gains = d.hasSoldAssetsOutsideWrapper === "yes" ? n(d.realisedCgtGains) : 0;
+  return {
+    id: "cgt", label: "Capital gains", allowance: true, addable: true, warnAt: true,
+    usedTitle: "Capital gains allowance used",
+    usedLine: `Gains above ${fmt(CGT_ANNUAL_ALLOWANCE)} this tax year are taxed.`,
+    ...measured(gains, CGT_ANNUAL_ALLOWANCE), tracked: added, own: false, editable: true,
+    note: added ? `${fmt(gains)} of gains on sales this tax year, against the ${fmt(CGT_ANNUAL_ALLOWANCE)} capital gains allowance.`
+      : `Gains on sales outside an ISA or pension count against a ${fmt(CGT_ANNUAL_ALLOWANCE)} tax-free allowance each tax year.`,
+  };
+}
+
+function dividendRow(d) {
+  const added = allowanceAdded(d, "dividends");
+  const paid = n(d.dividendsThisYear);
+  return {
+    id: "dividends", label: "Dividends", allowance: true, addable: true, warnAt: true,
+    usedTitle: "Dividend allowance used",
+    usedLine: `Dividends above ${fmt(DIVIDEND_ALLOWANCE)} this tax year are taxed.`,
+    ...measured(paid, DIVIDEND_ALLOWANCE), tracked: added, own: false, editable: true,
+    note: added ? `${fmt(paid)} of dividends this tax year, against the ${fmt(DIVIDEND_ALLOWANCE)} dividend allowance.`
+      : `Dividends from investments outside an ISA or pension count against a ${fmt(DIVIDEND_ALLOWANCE)} tax-free allowance each tax year.`,
   };
 }
 
@@ -131,7 +175,8 @@ const titleOf = key => MODULE_META.find(mm => mm.key === key)?.title || key;
 // this year's ISA payments), the rest with their own. Until then it's
 // locked and counts for nothing. Once answered, a row that doesn't fit the
 // answers (no student loan, no cash) goes. Mortgage only shows once its
-// module is back (HIDE_MVP_MODULES).
+// module is back (HIDE_MVP_MODULES). Capital gains and dividends never lock:
+// they show only to someone they apply to (holdsUnwrapped, getsDividends).
 export function targetRows(d, m, statuses = {}) {
   const mortgageLive = !(HIDE_MVP_MODULES && HIDDEN_MVP_MODULE_KEYS.includes("mortgage"));
   const hasStudentLoan = (!!d.studentLoan && d.studentLoan !== "none") || n(m.loanBal) > 0;
@@ -145,6 +190,7 @@ export function targetRows(d, m, statuses = {}) {
   };
   return [
     unlockedBy(isaRow(d, m), ["cash", "investments"]),
+    ...[holdsUnwrapped(d) && cgtRow(d), getsDividends(d) && dividendRow(d)].filter(Boolean).map(r => ({ ...r, locked: false, shown: true })),
     unlockedBy(pensionRow(d, m), ["pension"]),
     unlockedBy(emergencyRow(m), ["cash"]),
     ...(mortgageLive ? [unlockedBy(overpaymentRow("mortgage", "Mortgage",
@@ -162,9 +208,10 @@ export const loanOverpaidAfter = (d, amount) => String(Math.round(n(d.studentLoa
 
 // The headline: the average progress across the unlocked rows with a
 // target, and how many are reached (100% only when every one is), and how
-// many rows are still locked.
+// many rows are still locked. A limit (`warnAt`) isn't a goal to reach, so
+// it doesn't count.
 export function annualGoals(rows) {
-  const tracked = rows.filter(r => r.tracked);
+  const tracked = rows.filter(r => r.tracked && !r.warnAt);
   const hits = tracked.filter(r => r.hit).length;
   const average = tracked.length ? tracked.reduce((s, r) => s + r.pct, 0) / tracked.length : 0;
   return {
@@ -384,23 +431,26 @@ export function sortGoals(goals, by) {
 
 // The goals reached and not yet seen, for the pop-up (CandidApp,
 // GoalReached.jsx): each with its key, name, figures and whether they're £
-// a year (cash interest). Only a goal reached by a change made in the app
+// a year (cash interest), and for a limit (`warn`) its title and line.
+// Only a goal reached by a change made in the app
 // is celebrated; one already reached when it's first measured goes in
 // `quiet`, to be marked seen without a pop-up: all of them the first time
 // this runs (no `d.goalsReachedSeen` yet, as for anyone from before it
 // shipped), a goal whose module has just been answered, a pot added at its
-// target. `liveBefore`: `live` from the last run (the goals then measured),
+// target. A limit (`warn`) is a warning, so past that first time it always
+// shows, however it was first measured. `liveBefore`: `live` from the last run (the goals then measured),
 // or null on opening the app. `vaults` for markGoalsSeen.
 export function goalsToCelebrate(d, m, statuses, taxYear, liveBefore = null, now = new Date()) {
   const rows = targetRows(d, m, statuses);
   const vaults = goalVaults(d, m, now);
   const byKey = Object.fromEntries([
-    ...rows.map(r => [`${taxYear}:row:${r.id}`, { label: r.label, current: r.current, target: r.target, perYear: !!r.perYear, pot: false }]),
+    ...rows.map(r => [`${taxYear}:row:${r.id}`, { label: r.label, current: r.current, target: r.target, perYear: !!r.perYear, pot: false,
+      ...(r.warnAt ? { warn: true, usedTitle: r.usedTitle, usedLine: r.usedLine } : {}) }]),
     ...vaults.map(v => [`vault:${v.id}`, { label: v.name, current: v.saved, target: v.target, perYear: false, pot: true }]),
   ]);
   const live = [...rows.filter(r => r.tracked).map(r => `${taxYear}:row:${r.id}`), ...vaults.map(v => `vault:${v.id}`)];
   const goals = newlyReachedGoals(rows, vaults, d.goalsReachedSeen, taxYear).map(key => ({ key, ...byKey[key] }));
-  const isQuiet = g => !Array.isArray(d.goalsReachedSeen) || (liveBefore && !liveBefore.includes(g.key));
+  const isQuiet = g => !Array.isArray(d.goalsReachedSeen) || (!g.warn && liveBefore && !liveBefore.includes(g.key));
   return { celebrate: goals.filter(g => !isQuiet(g)), quiet: goals.filter(isQuiet), live, vaults };
 }
 
