@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { ALLOWED_HOSTNAMES, allowedOrigin, clientIp, safeEqual, rateLimiter, redis } from "../server/http.js";
 import { cleanEmail, makeToken, readToken } from "../server/tokens.js";
-import { accessFor, accountState } from "../server/access.js";
+import { accessFor, accountState, reportIds } from "../server/access.js";
 import { referralLink, codeIsValid, inboxOf, CODE_RE } from "../server/referrals.js";
 import { sendOnce, unsubscribeUrl, mailReady } from "../server/alertMail.js";
 import { welcomeEmail, PAID_PLANS } from "../src/lib/weekly.js";
@@ -450,7 +450,7 @@ async function deleteAccount(body, res) {
   // without regard to capitals (any pattern character made a one-character
   // wildcard), then checked exactly and deleted by id.
   const reports = await table("test")("GET", `?select=id,email&email=ilike.${enc(email.replace(/[*%_\\]/g, "_"))}`);
-  const ids = reports.filter(r => cleanEmail(r.email) === email).map(r => Number(r.id)).filter(Number.isInteger);
+  const ids = reportIds(reports.filter(r => cleanEmail(r.email) === email));
   if (ids.length) await table("test")("DELETE", `?id=in.(${ids.join(",")})`);
   await supa("DELETE", `?email=eq.${e}`);
   return res.status(200).json({ ok: true });

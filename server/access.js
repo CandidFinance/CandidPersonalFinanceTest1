@@ -24,3 +24,8 @@ export function accountState(row, now = Date.now()) {
   const access = accessFor(row, now);
   return { ...access, signedIn: !!row, paidLive: access.active && PAID_PLANS.includes(row.plan) && !row.cancel_at_period_end };
 }
+
+// The report table's (`test`) ids, as delete-account deletes them by: UUIDs,
+// so only that shape goes into the `id=in.(...)` filter.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const reportIds = rows => rows.map(r => r.id).filter(id => typeof id === "string" && UUID_RE.test(id));

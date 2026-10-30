@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { accountState } from "../server/access.js";
+import { accountState, reportIds } from "../server/access.js";
 
 const now = Date.parse("2026-10-30T12:00:00Z");
 const future = "2026-12-01T00:00:00Z", past = "2026-10-01T00:00:00Z";
@@ -27,4 +27,9 @@ test("comp and referral months have nothing to cancel", () => {
 
 test("no row: not signed in", () => {
   assert.deepEqual([accountState(null, now).signedIn, accountState(null, now).active], [false, false]);
+});
+
+test("delete-account keeps the report table's UUID ids, and nothing else", () => {
+  const id = "ece14f04-c5e7-4461-b2fb-40c07b21fbd2";
+  assert.deepEqual(reportIds([{ id }, { id: 42 }, { id: "1,2" }, { id: null }]), [id]);
 });
