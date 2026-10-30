@@ -76,9 +76,14 @@ export function rollLoanBalances(d, now = new Date()) {
   const pay = d.employmentStatus === "not_working" ? 0 : Math.max(0, slEarnings(d, +d.salary || 0) - (+d.bonusAmount || 0));
   const main = String(rollOne(+d.loanBalance, d.studentLoan, d, paydays, pay));
   const pg = pgOn ? String(rollOne(+d.pgLoanBalance, "postgrad", d, paydays, pay)) : null;
+  // A band estimate rolled on is still an estimate (studentLoanQuick's
+  // estimatedNow), until the user types a balance of their own.
+  const est = d.slEstimate;
+  const stillEstimate = est?.values?.loanBalance && est.values.loanBalance === String(d.loanBalance);
   return {
     loanBalance: main, loanBalanceSet: main, loanBalanceAsOf: iso(paydays[paydays.length - 1]),
     ...(pg != null ? { pgLoanBalance: pg, pgLoanBalanceSet: pg } : {}),
+    ...(stillEstimate ? { slEstimate: { ...est, values: { ...est.values, loanBalance: main } } } : {}),
   };
 }
 

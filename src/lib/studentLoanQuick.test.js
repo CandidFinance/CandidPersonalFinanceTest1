@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { finishBands, quickQuestions, quickPatch, estimatedNow, estimateLine, helperChoicePlan } from "./studentLoanQuick.js";
 import { calcMetrics } from "./metrics.js";
+import { rollLoanBalances } from "./loanBalance.js";
 
 test("asks only what Candid doesn't have yet", () => {
   assert.deepEqual(quickQuestions({}), ["plan", "salary", "balance", "finish"]);
@@ -62,4 +63,18 @@ test("the estimate line names the bands still in use, and drops any changed sinc
   assert.deepEqual(estimatedNow(edited).map(e => e.key), ["balance", "finish"]);
   assert.equal(estimateLine({ ...edited, loanBalance: "47000", slFinishYear: "2018" }), null);
   assert.equal(estimateLine({}), null);
+});
+
+test("a band balance rolled on by payday stays an estimate until the user types one", () => {
+  const p = quickPatch({}, { plan: "plan2", salary: "35-45", balance: "40-60", finish: "2015-19" }, 2026);
+  const start = { ...p, ...rollLoanBalances(p, new Date(2026, 9, 15)) };
+  const rolled = { ...start, ...rollLoanBalances(start, new Date(2026, 11, 5)) };
+  assert.notEqual(rolled.loanBalance, p.loanBalance);
+  assert.ok(estimatedNow(rolled).some(e => e.key === "balance"));
+  // Typed in since: theirs from now on, and the next roll leaves it so.
+  const typed = { ...rolled, loanBalance: "47000" };
+  const next = { ...typed, ...rollLoanBalances(typed, new Date(2026, 11, 6)) };
+  assert.ok(!estimatedNow(next).some(e => e.key === "balance"));
+  const later = { ...next, ...rollLoanBalances(next, new Date(2027, 1, 5)) };
+  assert.ok(!estimatedNow(later).some(e => e.key === "balance"));
 });
