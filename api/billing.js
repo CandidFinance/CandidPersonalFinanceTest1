@@ -26,6 +26,7 @@ import { googleIdentity, markConfirmed } from "../server/google.js";
 //   account   POST {token}                 -> the account and what's set up for
 //                                             signing in
 //   delete-account POST {token, confirm}   -> deletes the account and its data
+//   alerts-set   POST {token, on}          -> Candid's emails on or off -> {alerts}
 //   passkey-enrol-options / passkey-enrol  -> adds a passkey (signed in)
 //   passkey-login-options / passkey-login  -> signs in with a passkey
 //   password-set   POST {token, password}  -> sets or changes the password
@@ -415,13 +416,50 @@ async function accountFrom(token) {
 async function account(body, res) {
   const email = readToken(body.token, "access");
   if (!email) return res.status(401).json({ error: "Not signed in" });
-  const [row, keys] = await Promise.all([rowFor(email), passkeys("GET", `?email=eq.${enc(email)}&select=id`)]);
+  // Whether emails are on is a side detail: if it can't be read, the
+  // account still loads (alerts null), so Delete and the sign-ins work.
+  const [row, keys, alerts] = await Promise.all([rowFor(email), passkeys("GET", `?email=eq.${enc(email)}&select=id`), emailsOn(email).catch(() => null)]);
   if (!row) return res.status(401).json({ error: "Not signed in" });
   const a = accountState(row);
   return res.status(200).json({
     email, active: a.active, plan: a.plan, periodEnd: a.periodEnd, cancelling: a.cancelling, paidLive: a.paidLive,
     hasStripe: !!row.stripe_customer_id, passkeys: keys.length, password: !!row.password_hash, google: !!row.google_sub,
+    alerts,
   });
+}
+
+// The report table keeps the email as typed, so its rows are found
+// without regard to capitals (any pattern character made a one-character
+// wildcard), then checked exactly.
+async function reportRowsFor(email, columns = "") {
+  const rows = await table("test")("GET", `?select=${["id", "email", columns].filter(Boolean).join(",")}&email=ilike.${enc(email.replace(/[*%_\\]/g, "_"))}`);
+  return rows.filter(r => cleanEmail(r.email) === email);
+}
+
+// Whether Candid may email this account: not unsubscribed (alert_optouts),
+// the same switch as the emails' own unsubscribe link, which stops them all.
+// Which emails then go (api/alerts.js) depends on the plan and answers.
+async function emailsOn(email) {
+  return !(await table("alert_optouts")("GET", `?email=eq.${enc(email)}&select=email`)).length;
+}
+
+// The Account sheet's Notifications switch. Off is the emails' unsubscribe
+// (alert_optouts); on is the welcome's "Turn on rate alerts" (api/alerts.js
+// optIn): every row with their address asks for emails (none yet is fine),
+// and the unsubscribe is lifted.
+async function alertsSet(body, res) {
+  const email = readToken(body.token, "access");
+  if (!email || typeof body.on !== "boolean") return res.status(400).json({ error: "Bad request" });
+  const row = await rowFor(email);
+  if (!row) return res.status(401).json({ error: "Not signed in" });
+  if (!body.on) {
+    await table("alert_optouts")("POST", "?on_conflict=email", { email }, "resolution=ignore-duplicates,return=minimal");
+  } else {
+    const ids = reportIds(await reportRowsFor(email, "alerts_opt_in"));
+    if (ids.length) await table("test")("PATCH", `?id=in.(${ids.join(",")})`, { alerts_opt_in: true });
+    await table("alert_optouts")("DELETE", `?email=eq.${enc(email)}`);
+  }
+  return res.status(200).json({ alerts: body.on });
 }
 
 // Deletes the account and everything Candid holds under its email. Not
@@ -446,11 +484,8 @@ async function deleteAccount(body, res) {
   for (const name of ["alert_sends", "email_verifications", "report_pdf_requests", "truelayer_connections", "waitlist"]) {
     await table(name)("DELETE", `?email=eq.${e}`);
   }
-  // The report table keeps the email as typed, so its rows are found
-  // without regard to capitals (any pattern character made a one-character
-  // wildcard), then checked exactly and deleted by id.
-  const reports = await table("test")("GET", `?select=id,email&email=ilike.${enc(email.replace(/[*%_\\]/g, "_"))}`);
-  const ids = reportIds(reports.filter(r => cleanEmail(r.email) === email));
+  // The report table's rows, deleted by id (reportRowsFor).
+  const ids = reportIds(await reportRowsFor(email));
   if (ids.length) await table("test")("DELETE", `?id=in.(${ids.join(",")})`);
   await supa("DELETE", `?email=eq.${e}`);
   return res.status(200).json({ ok: true });
@@ -610,6 +645,7 @@ export default async function handler(req, res) {
     if (action === "save") return await saveState(body, res);
     if (action === "account") return await account(body, res);
     if (action === "delete-account") return await deleteAccount(body, res);
+    if (action === "alerts-set") return await alertsSet(body, res);
     if (action === "passkey-enrol-options") return await passkeyEnrolOptions(body, res, returnTo);
     if (action === "passkey-enrol") return await passkeyEnrol(body, res, returnTo);
     if (action === "passkey-login-options") return await passkeyLoginOptions(res, returnTo);

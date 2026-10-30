@@ -250,6 +250,9 @@ export async function addPasskey() {
 }
 export async function linkGoogle(credential) { await call("google-link", { token: read()?.token, credential }); }
 export async function setPassword(password) { await call("password-set", { token: read()?.token, password }); }
+// Candid's emails on or off (the Account sheet's Notifications); returns
+// whether they're on now.
+export async function setEmailAlerts(on) { return (await call("alerts-set", { token: read()?.token, on })).alerts; }
 
 async function holdSignIn(r) {
   if (!r.email || !r.token) return "invalid";

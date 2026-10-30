@@ -8,6 +8,7 @@ import { EVENTS } from "../src/lib/outsideEvents.js";
 import { confirmUrl, LINK_DAYS } from "../server/confirmLink.js";
 import { unsubscribeUrl, optInUrl, emailFromToken, sendMail, sendOnce, TOKEN_SECRET } from "../server/alertMail.js";
 import { referralLink } from "../server/referrals.js";
+import { reportIds } from "../server/access.js";
 
 // Candid's emails between visits (src/lib/alerts.js decides what's due),
 // subscribers' welcome and the Sunday email (src/lib/weekly.js). One route:
@@ -384,7 +385,8 @@ async function optIn(req, res) {
   if (req.body?.optin !== "1") return res.status(400).send(page("Nothing changed", `<h1>Nothing changed</h1><p>Tick the box to turn rate alerts on.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
   const rows = await rowsFor(email, "id");
   if (!rows.length) return res.status(404).send(page("Answers not found", `<h1>We couldn't find your answers</h1><p>Reply to any Candid email and we'll turn rate alerts on for you.</p>`));
-  await db(`test?id=in.(${rows.map(r => +r.id).join(",")})`, { method: "PATCH", prefer: "return=minimal", body: { alerts_opt_in: true } });
+  const ids = reportIds(rows);
+  if (ids.length) await db(`test?id=in.(${ids.join(",")})`, { method: "PATCH", prefer: "return=minimal", body: { alerts_opt_in: true } });
   await db(`alert_optouts?email=eq.${encodeURIComponent(email)}`, { method: "DELETE" });
   return res.status(200).send(page("Rate alerts on", `<h1>Done</h1><p>We'll email you when a better savings rate could earn you £100+ a year more, at most once a month. You can stop them from any Candid email.</p><p><a href="${SITE}/app/home">Back to Candid</a></p>`));
 }
