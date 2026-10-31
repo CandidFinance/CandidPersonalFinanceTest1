@@ -189,6 +189,8 @@ export const RADIUS_PILL  = "100px";
 // tall, so a toggle, a dropdown and a £/% field sit level when they share a
 // row or stack.
 export const PILL_HEIGHT = "44px";
+// Visually hidden, still read by screen readers (Home's and Modules' h1).
+export const SR_ONLY = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
 export const RADIUS_CARD  = "14px"; // mobile card containers (WinTile, ProviderTile, ProductListTile, HomeScreen/ForecastScreen cards)
 export const RADIUS_MODAL = "18px"; // desktop modal shells + marketing/mockup cards
 
@@ -271,6 +273,11 @@ export const OPPORTUNITY_TILE_FIGURE = "#f6ead0"; // serif £ figures
 export const OPPORTUNITY_TILE_BODY   = "#b4bdb2"; // chips and supporting sentences
 export const OPPORTUNITY_TILE_RADIUS = "18px";
 export const OPPORTUNITY_TILE_SHEEN  = 0.12;      // white at the sheen's peak
+// The card stack's front card (Home, Progress, Modules): the same slick at
+// about 40%, so its small text stays over 4.5:1 in every corner (5.1:1 at
+// the teal's peak; the full slick took it to 2.1:1). Harvey, 31 Oct 2026.
+export const STACK_SLICK_BG    = "radial-gradient(80% 120% at 0% 0%, rgba(42,138,108,0.38) 0%, rgba(42,138,108,0) 60%), radial-gradient(70% 100% at 100% 0%, rgba(107,90,166,0.35) 0%, rgba(107,90,166,0) 62%), radial-gradient(90% 110% at 85% 115%, rgba(196,150,58,0.3) 0%, rgba(196,150,58,0) 60%), #0e2219";
+export const STACK_SLICK_SHEEN = 0.05;
 
 // ── One-off colours — reference only, NOT for reuse ───────────────────────
 // Each of these appears in exactly one place (a specific SVG chart

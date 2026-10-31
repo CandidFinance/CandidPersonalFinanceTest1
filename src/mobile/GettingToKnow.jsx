@@ -61,7 +61,7 @@ export default function GettingToKnow({ d, set, answered }) {
       {celebrating && <Burst/>}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
         <h2 style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>{celebrating ? "All set" : "Getting to know Candid"}</h2>
-        <button type="button" aria-label="Hide" onClick={dismiss} style={{ background: "none", border: "none", padding: "4px", color: MUT, cursor: "pointer", display: "flex" }}><X size={18}/></button>
+        <button type="button" aria-label="Hide" onClick={dismiss} className="tap44" style={{ background: "none", border: "none", padding: "4px", color: MUT, cursor: "pointer", display: "flex" }}><X size={18}/></button>
       </div>
       <ProgressLine position={count} total={items.length} style={{ margin: "12px 0 6px" }}/>
       <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>

@@ -4,7 +4,7 @@ import posthog from "posthog-js";
 import { X, ChevronRight } from "lucide-react";
 import { sinceLastVisit } from "../lib/sinceLastVisit.js";
 import { lastVisit, sinceClosed, closeSince } from "./visitNews.js";
-import { WHITE, TEXT, RADIUS_CARD, CTA_BLUE } from "../design-tokens.js";
+import { WHITE, TEXT, MUT, RADIUS_CARD, CTA_BLUE } from "../design-tokens.js";
 
 // Home's "Since your last visit" (src/lib/sinceLastVisit.js): what's changed
 // since they were last here, top of Home, or nothing when nothing has. It
@@ -43,13 +43,13 @@ export default function SinceLastVisit({ d, m, rows, onOpenCash }) {
     <AnimatePresence initial={false}>
       {!hidden && (
         <motion.div key="since" exit={closingTile(reduceMotion)} style={{marginBottom:"16px",transformOrigin:"top center"}}>
-          <div style={{background:"rgba(0,113,227,0.06)",border:`1.5px solid ${CTA_BLUE}`,borderRadius:RADIUS_CARD,boxShadow:"0 4px 16px rgba(0,113,227,0.12)",padding:"14px 14px 16px 18px"}}>
+          <div style={{background:WHITE,border:`1.5px solid ${CTA_BLUE}`,borderRadius:RADIUS_CARD,boxShadow:"0 4px 16px rgba(0,113,227,0.12)",padding:"14px 14px 16px 18px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
               <span style={{flex:1,minWidth:0}}>
                 <span style={{fontSize:"11px",fontWeight:700,color:CTA_BLUE,letterSpacing:"0.09em",textTransform:"uppercase"}}>Since your last visit</span>
-                <span style={{fontSize:"12px",color:CTA_BLUE,opacity:0.8}}> · {since.ago}</span>
+                <span style={{fontSize:"12px",color:MUT}}> · {since.ago}</span>
               </span>
-              <button type="button" onClick={close} aria-label="Close"
+              <button type="button" onClick={close} aria-label="Close" className="tap44"
                 style={{display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",flexShrink:0,borderRadius:"50%",border:"none",background:"rgba(0,113,227,0.1)",color:CTA_BLUE,cursor:"pointer",padding:0}}>
                 <X size={16} aria-hidden="true"/>
               </button>

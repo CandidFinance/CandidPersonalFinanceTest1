@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { scoreBand, MUT } from "../../design-tokens.js";
+import { scoreBand, MUT, SR_ONLY } from "../../design-tokens.js";
 import { getModuleBreakdown, calcCandidScore, gainedSoFar } from "../../lib/moduleStatus.js";
 import { fmt } from "../../lib/format.js";
 import MobileStartHome from "./MobileStartHome.jsx";
@@ -120,7 +120,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
   return (
     <div>
       {/* No greeting (Harvey, 30 Oct 2026): the heading is for screen readers. */}
-      <h1 style={{position:"absolute",width:"1px",height:"1px",overflow:"hidden",clip:"rect(0 0 0 0)",whiteSpace:"nowrap"}}>Home</h1>
+      <h1 style={SR_ONLY}>Home</h1>
 
       {/* The hero (HomeHero.jsx): Left on the table and Saved in one card,
           and the areas to explore on a second card behind it. */}
@@ -149,7 +149,7 @@ export default function MobileHomeScreen({ insights, d, m, statuses, completedMo
 
       {stillToDo.length > 0 && (
         <div data-tour="home-modules" style={{marginTop:"22px"}}>
-          <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Still to do</div>
+          <h2 style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Still to do</h2>
           <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"10px"}}>
             {stillToDo.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={moduleEstimate(key, d, m)} onOpen={onStartModule}/>)}
           </div>

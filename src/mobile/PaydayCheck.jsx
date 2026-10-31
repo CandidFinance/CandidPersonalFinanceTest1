@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import posthog from "posthog-js";
 import { CalendarPlus } from "lucide-react";
-import { G, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, CRITICAL } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, FIELD_BORDER, PILL_HEIGHT, SERIF, RADIUS_CARD, CRITICAL } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
 import { yearProjection, salaryDrift, driftDismissal, paydayOf, monthKey, TRAP_START } from "../lib/taxTrap.js";
 import { triggerCalendarReminder } from "./reminders.js";
@@ -16,7 +16,7 @@ import { triggerCalendarReminder } from "./reminders.js";
 const today = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`; };
 // "YYYY-MM-DD" as "28 Sep", read as a local date.
 export const shortDate = s => { const [y, mo, day] = String(s).split("-").map(Number); return new Date(y, mo - 1, day).toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
-const pill = primary => ({ flex:1, background:primary ? G : WHITE, color:primary ? WHITE : TEXT, border:primary ? "none" : "1.5px solid rgba(22,47,36,0.15)", borderRadius:"100px", padding:"11px 14px", fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" });
+const pill = primary => ({ flex:1, background:primary ? G : WHITE, color:primary ? WHITE : TEXT, border:primary ? "none" : "1.5px solid rgba(22,47,36,0.15)", borderRadius:"100px", padding:"11px 14px", minHeight:PILL_HEIGHT, fontSize:"14px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" });
 
 // A repeating calendar event on their payday, from the next one.
 export function addPaydayReminder(d) {
@@ -46,7 +46,7 @@ function PayToDateForm({ d, set, onSaved, submitLabel = "Save" }) {
   return (
     <form onSubmit={save} style={{display:"flex",gap:"8px"}}>
       <input inputMode="numeric" value={pay} onChange={e => setPay(e.target.value)} placeholder={d.payToDate ? `Last time ${fmt(+d.payToDate)}` : "£0"} aria-label="Taxable pay to date"
-        style={{flex:1,minWidth:0,boxSizing:"border-box",border:"1.5px solid rgba(22,47,36,0.15)",borderRadius:"100px",padding:"11px 16px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
+        style={{flex:1,minWidth:0,boxSizing:"border-box",border:`1.5px solid ${FIELD_BORDER}`,borderRadius:"100px",padding:"11px 16px",fontSize:"16px",fontFamily:"inherit",color:TEXT,outline:"none",background:WHITE}}/>
       <button type="submit" style={{...pill(true),flex:"0 0 auto"}}>{submitLabel}</button>
     </form>
   );
@@ -69,7 +69,7 @@ export function PaydayCheckCard({ d, m, set }) {
   setRef.current = set;
   useEffect(() => () => { if (answered.current) setRef.current("paydayCheckedMonth", monthKey(new Date())); }, []);
   const card = {marginTop:"22px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.05)",padding:"18px"};
-  const eyebrow = <div style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Payday check-in</div>;
+  const eyebrow = <h2 style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Payday check-in</h2>;
   if (saved) {
     const y = yearProjection(d, m);
     // Pay to date well off their salary: asked whether their pay's changed.

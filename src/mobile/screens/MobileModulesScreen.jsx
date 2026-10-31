@@ -3,7 +3,7 @@ import { childcareSupport } from "../../lib/childcare.js";
 import { Users, ChevronRight, Lock } from "lucide-react";
 import CardStack, { DARK, StillCard, arrow } from "../CardStack.jsx";
 import AlertBox from "../AlertBox.jsx";
-import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD } from "../../design-tokens.js";
+import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD, SR_ONLY } from "../../design-tokens.js";
 import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
@@ -105,7 +105,7 @@ const FILTERS = [["all", "All"], ["reviewed", "Reviewed"], ["optimised", "Optimi
 function OpenButton({ t, title, onClick }) {
   return (
     <button type="button" onClick={onClick}
-      style={{marginTop:"12px",alignSelf:"flex-start",background:"none",border:"none",padding:"6px 0",fontSize:"13px",fontWeight:700,color:t.figure,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
+      style={{margin:"6px 0 -6px",alignSelf:"flex-start",background:"none",border:"none",padding:"12px 0",fontSize:"13px",fontWeight:700,color:t.figure,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
       Open {title}<ChevronRight size={14}/>
     </button>
   );
@@ -265,6 +265,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
 
   return (
     <div>
+      <h1 style={SR_ONLY}>Modules</h1>
       {/* Before any module's answered: the summary card greyed, its figure
           blank. No counts: they'd all be 0 bar Not started, which Still to
           explore below already gives. */}
@@ -296,15 +297,15 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
       {/* Answered, but nothing in it applies (Kids & family with no
           children and none planned): greyed, and still there to change. */}
       {notApplicable.length > 0 && (<>
-        <div style={{...SUBHEAD,marginTop:"18px"}}>Not applicable</div>
+        <h2 style={{...SUBHEAD,marginTop:"18px"}}>Not applicable</h2>
         <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
           {notApplicable.map(mm => (
             <button key={mm.key} type="button" onClick={() => onOpenModule(mm.key)} style={{display:"flex",alignItems:"center",gap:"12px",width:"100%",textAlign:"left",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.05)",padding:"14px 16px",cursor:"pointer",fontFamily:"inherit"}}>
-              <span style={{display:"flex",alignItems:"center",gap:"12px",flex:1,minWidth:0,opacity:0.55}}>
-                <span style={{width:"30px",height:"30px",borderRadius:"9px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <span style={{display:"flex",alignItems:"center",gap:"12px",flex:1,minWidth:0}}>
+                <span style={{width:"30px",height:"30px",borderRadius:"9px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:0.55}}>
                   <mm.icon size={14} color={G}/>
                 </span>
-                <span style={{flex:1,fontSize:"14.5px",fontWeight:600,color:TEXT}}>{mm.title}</span>
+                <span style={{flex:1,fontSize:"14.5px",fontWeight:600,color:MUT}}>{mm.title}</span>
               </span>
               <span style={{fontSize:"12px",color:MUT}}>Not applicable</span>
               <ChevronRight size={16} color={MUT}/>
@@ -317,7 +318,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
           walk-through; then any not open to them yet. */}
       {toExplore > 0 && (
         <section style={{...TILE,marginTop:"22px"}}>
-          <div style={TILE_TITLE}>Still to explore</div>
+          <h2 style={TILE_TITLE}>Still to explore</h2>
           <div style={TILE_SUB}>{toExplore} {toExplore === 1 ? "module" : "modules"} not started yet</div>
           <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>
             {waiting.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={key === "property" ? null : moduleEstimate(key, d, m)} onOpen={openRow}/>)}
@@ -326,7 +327,7 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
         </section>
       )}
 
-      <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Coming soon</div>
+      <h2 style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Coming soon</h2>
       <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
         {LOCKED_MODULES.map(lm => {
           const LockedIcon = lm.icon || MODULE_META.find(mm => mm.key === lm.key)?.icon;

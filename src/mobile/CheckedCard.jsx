@@ -6,6 +6,7 @@ import { G, TEXT, SERIF, SANS, WHITE, SUCCESS } from "../design-tokens.js";
 import { MODULE_META } from "../lib/moduleStatus.js";
 import Burst from "./Burst.jsx";
 import { tap } from "./haptics.js";
+import useDialogFocus from "./useDialogFocus.js";
 
 // The moment a module's first answer is done: sparks, a tick, "Your
 // pension, checked", so it ends on what's been done. Says what happened,
@@ -43,15 +44,15 @@ export function CheckedCardBody({ moduleKey, onDone, buttonRef }) {
 export default function CheckedCard({ moduleKey, onClose, onDone = onClose }) {
   const reduce = useReducedMotion();
   const buttonRef = useRef(null);
+  const dialogRef = useRef(null);
+  // Focus starts on Done, stays inside while open and goes back on close.
+  useDialogFocus(dialogRef, { onEscape: onClose, focusOnOpen: false });
   useEffect(() => {
     posthog.capture("checked_card_shown", { module: moduleKey });
     buttonRef.current?.focus({ preventScroll: true });
-    const onKey = e => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="checked-title"
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="checked-title"
       style={{ position: "fixed", inset: 0, zIndex: 4700, background: "rgba(22,47,36,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
       <motion.div initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} style={{ width: "100%", maxWidth: "548px" }}>
         <CheckedCardBody moduleKey={moduleKey} onDone={onDone} buttonRef={buttonRef}/>

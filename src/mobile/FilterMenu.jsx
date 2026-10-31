@@ -23,7 +23,7 @@ export default function FilterMenu({ label, options, value, defaultValue, onChan
   const name = options.find(o => o.key === value)?.label;
   return (
     <div ref={box} style={{position:"relative"}}>
-      <button type="button" onClick={() => setOpen(o => !o)} aria-haspopup="true" aria-expanded={open} aria-label={`${label}: ${name}`}
+      <button type="button" onClick={() => setOpen(o => !o)} aria-haspopup="true" aria-expanded={open} aria-label={`${label}: ${name}`} className="tap44"
         style={{...arrow, background:on ? G : WHITE, borderColor:on ? G : "rgba(22,47,36,0.15)"}}>
         <ListFilter size={15} color={on ? WHITE : G}/>
       </button>
@@ -34,7 +34,7 @@ export default function FilterMenu({ label, options, value, defaultValue, onChan
             return (
               <button key={key} type="button" disabled={empty} aria-pressed={value === key}
                 onClick={() => { onChange(key); setOpen(false); }}
-                style={{display:"flex",alignItems:"center",gap:"8px",width:"100%",textAlign:"left",background:"none",border:"none",borderRadius:"8px",padding:"9px 10px",fontFamily:"inherit",fontSize:"14px",fontWeight:600,color:empty ? MUT : TEXT,opacity:empty ? 0.5 : 1,cursor:empty ? "default" : "pointer",whiteSpace:"nowrap"}}>
+                style={{display:"flex",alignItems:"center",gap:"8px",width:"100%",textAlign:"left",background:"none",border:"none",borderRadius:"8px",padding:"9px 10px",minHeight:"44px",fontFamily:"inherit",fontSize:"14px",fontWeight:600,color:empty ? MUT : TEXT,opacity:empty ? 0.5 : 1,cursor:empty ? "default" : "pointer",whiteSpace:"nowrap"}}>
                 <span style={{width:"14px",display:"inline-flex"}}>{value === key && <Check size={14} color={G} strokeWidth={2.6}/>}</span>
                 <span style={{flex:1}}>{text}</span>
                 {count != null && <span style={{fontSize:"12.5px",fontWeight:600,color:MUT}}>{count}</span>}

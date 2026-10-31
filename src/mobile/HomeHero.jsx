@@ -7,8 +7,8 @@ import { fmt } from "../lib/format.js";
 import { G, GOLD, PROGRESS_GREEN, TEXT, SERIF, SANS, WHITE, OPPORTUNITY_TILE_FIGURE } from "../design-tokens.js";
 
 // Home's hero: two cards in a wallet stack (CardStack.jsx, which draws and
-// turns them; Progress has the same stack). The front card wears the dark
-// oil slick; the one behind shows its top line above it.
+// turns them; Progress has the same stack). The front card wears a soft
+// dark oil slick; the one behind shows its top line above it.
 //  1. Left on the table and Saved in one tile: whichever is larger leads, a
 //     bar splits what's been found into saved and still left, and the score.
 //  2. Areas to explore: the opportunities by £, largest first, each ticked
@@ -16,8 +16,8 @@ import { G, GOLD, PROGRESS_GREEN, TEXT, SERIF, SANS, WHITE, OPPORTUNITY_TILE_FIG
 //     follow (src/lib/priorities.js only ranks by £).
 
 export default function HomeHero({ d, totalOpp, saved, scoreShown, scoreColor, scoreLabel, gain, plan, stepsDone, headline, onTrack, cashBadge, unchecked, onOpen }) {
-  // The figures beneath (the bar's Saved and Still left) aren't repeated in
-  // the line under the lead figure: one indicator each (CLAUDE.md rule 4).
+  // The lead figure isn't repeated under the bar, nor the bar's figure in the
+  // line under the lead: one indicator each (CLAUDE.md rule 4).
   const leadSaved = saved > totalOpp;
   const found = saved + totalOpp;
   const lead = leadSaved
@@ -34,7 +34,7 @@ export default function HomeHero({ d, totalOpp, saved, scoreShown, scoreColor, s
         <div style={{display:"flex",alignItems:"flex-start",gap:"14px"}}>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontFamily:SERIF,fontSize:"var(--hero-fig)",fontWeight:700,color:t.figure,lineHeight:1,letterSpacing:"-0.01em",marginTop:"8px"}}>
-              {lead.value}{lead.unit && <span style={{fontFamily:SANS,fontSize:"0.32em",fontWeight:600,marginLeft:"5px",letterSpacing:0}}>{lead.unit}</span>}
+              {lead.value}{lead.unit && <> <span style={{fontFamily:SANS,fontSize:"0.32em",fontWeight:600,letterSpacing:0,whiteSpace:"nowrap"}}>{lead.unit}</span></>}
             </div>
             <p style={{fontSize:"13px",color:t.body,lineHeight:1.45,margin:"8px 0 0"}}>{lead.sub}</p>
           </div>
@@ -43,7 +43,7 @@ export default function HomeHero({ d, totalOpp, saved, scoreShown, scoreColor, s
             <div style={{fontSize:"9.5px",fontWeight:700,color:t.label,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"6px"}}>Candid score</div>
             <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"1px"}}>
               <span style={{fontSize:"12px",fontWeight:700,color:t.figure}}>{scoreLabel}</span>
-              {gain > 0 && <span style={{fontSize:"11px",fontWeight:700,color:"#8a6a24",background:"rgba(196,150,58,0.22)",borderRadius:"100px",padding:"2px 8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain}</span>}
+              {gain > 0 && <span style={{fontSize:"11px",fontWeight:700,color:t.figure,background:"rgba(196,150,58,0.35)",borderRadius:"100px",padding:"2px 8px",animation:"badgeFadeUp 2.6s ease forwards",whiteSpace:"nowrap"}}>+{gain}</span>}
             </div>
           </div>
         </div>
@@ -57,8 +57,9 @@ export default function HomeHero({ d, totalOpp, saved, scoreShown, scoreColor, s
                 : "repeating-linear-gradient(135deg, rgba(22,47,36,0.16) 0 4px, rgba(22,47,36,0.05) 4px 8px)"}}/>
             </div>
             <div style={{display:"flex",justifyContent:"space-between",gap:"10px",marginTop:"10px"}}>
-              {[["Saved", saved], ["Still left", totalOpp]].map(([l, v], i) => (
-                <div key={l} style={{display:"flex",flexDirection:"column",gap:"2px",textAlign:i ? "right" : "left"}}>
+              {/* Only the figure that isn't leading, under its end of the bar. */}
+              {[["Saved", saved, !leadSaved], ["Still left", totalOpp, leadSaved]].map(([l, v, shown], i) => shown && (
+                <div key={l} style={{display:"flex",flexDirection:"column",gap:"2px",textAlign:i ? "right" : "left",marginLeft:i ? "auto" : 0}}>
                   <span style={{fontSize:"10.5px",fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:t.label}}>{l}</span>
                   <span style={{fontFamily:SERIF,fontSize:"22px",fontWeight:700,color:t.figure}}>{fmt(v)}</span>
                 </div>
@@ -72,9 +73,9 @@ export default function HomeHero({ d, totalOpp, saved, scoreShown, scoreColor, s
       <div style={{marginTop:"6px"}}>
         {plan.length > 0 ? plan.map((p, i) => (
           <button key={p.key} type="button" onClick={() => onOpen(p.key)}
-            style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",textAlign:"left",background:"none",border:"none",borderTop:i ? `1px solid ${t.rule}` : "none",padding:"9px 0",cursor:"pointer",fontFamily:"inherit"}}>
+            style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",textAlign:"left",background:"none",border:"none",borderTop:i ? `1px solid ${t.rule}` : "none",padding:"9px 0",minHeight:"44px",cursor:"pointer",fontFamily:"inherit"}}>
             {/* Reviewed: a tick. Not yet: an empty ring. */}
-            <span style={{width:"18px",height:"18px",borderRadius:"50%",border:p.done ? "none" : `1.5px solid ${t === DARK ? "rgba(246,234,208,0.4)" : "rgba(22,47,36,0.25)"}`,background:p.done ? (t === DARK ? OPPORTUNITY_TILE_FIGURE : G) : "transparent",color:t === DARK ? "#0e2219" : WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxSizing:"border-box"}}>
+            <span style={{width:"18px",height:"18px",borderRadius:"50%",border:p.done ? "none" : `1.5px solid ${t === DARK ? "rgba(246,234,208,0.4)" : "rgba(22,47,36,0.25)"}`,background:p.done ? (t === DARK ? OPPORTUNITY_TILE_FIGURE : G) : "transparent",color:t === DARK ? G : WHITE,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxSizing:"border-box"}}>
               {p.done && <Check size={11} strokeWidth={3}/>}
             </span>
             <span style={{flex:1,minWidth:0}}>
@@ -96,7 +97,7 @@ export default function HomeHero({ d, totalOpp, saved, scoreShown, scoreColor, s
           </p>
         )}
         <button type="button" onClick={() => onOpen(null)}
-          style={{marginTop:"10px",background:"none",border:"none",padding:0,fontSize:"13px",fontWeight:700,color:t.figure,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
+          style={{marginTop:"2px",background:"none",border:"none",padding:"12px 0",fontSize:"13px",fontWeight:700,color:t.figure,cursor:"pointer",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"2px"}}>
           All modules<ChevronRight size={14}/>
         </button>
       </div>

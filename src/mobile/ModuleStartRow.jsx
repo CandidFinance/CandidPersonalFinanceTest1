@@ -43,14 +43,14 @@ export default function ModuleStartRow({ moduleKey, d = null, done = false, esti
   const mm = moduleMeta(moduleKey);
   if (dormant) return (
     <div aria-disabled="true" style={tileStyle}>
-      <div style={{display:"flex",alignItems:"center",gap:"12px",flex:1,minWidth:0,opacity:0.55}}>
-        <ModuleIcon mm={mm}/>
+      <div style={{display:"flex",alignItems:"center",gap:"12px",flex:1,minWidth:0}}>
+        <span style={{opacity:0.55,display:"flex"}}><ModuleIcon mm={mm}/></span>
         <div style={{flex:1,minWidth:0}}>
           <span style={{fontSize:"14.5px",fontWeight:600,color:TEXT}}>{mm.title}</span>
           <div style={{fontSize:"12px",color:MUT,lineHeight:1.4,marginTop:"2px"}}>{MODULE_DORMANT_LINE[moduleKey]}</div>
         </div>
       </div>
-      <Lock size={15} color={MUT} aria-label="Not open yet"/>
+      <Lock size={15} color={MUT} role="img" aria-label="Not open yet"/>
     </div>
   );
   return (

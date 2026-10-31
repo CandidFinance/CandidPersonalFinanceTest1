@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Trophy, TriangleAlert } from "lucide-react";
-import { G, GOLD, GOLD_TEXT, WARNING, STATUS_TILE, WHITE, TEXT, MUT, SERIF, CREAM, PROGRESS_GREEN, CTA_BLUE, RADIUS_CARD } from "../design-tokens.js";
+import { G, GOLD, GOLD_TEXT, WARNING, WHITE, TEXT, MUT, SERIF, CREAM, PROGRESS_GREEN, CTA_BLUE, RADIUS_CARD } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
 import { taxYearShort } from "../lib/taxYear.js";
 import { tap } from "./haptics.js";
+import useDialogFocus from "./useDialogFocus.js";
 
 // The pop-up when a goal is reached (progressTracker.js goalsToCelebrate):
 // over the main screens, with fireworks behind the card, once per goal.
@@ -18,18 +19,14 @@ import { tap } from "./haptics.js";
 export default function GoalReached({ goals, taxYear, onShown, onClose, onProgress = null }) {
   const reduce = useReducedMotion();
   const dialogRef = useRef(null);
+  useDialogFocus(dialogRef, { onEscape: onClose });
   useEffect(() => {
     tap(20);
     onShown?.();
-    dialogRef.current?.focus({ preventScroll: true });
-    const esc = e => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const one = goals.length === 1 ? goals[0] : null;
   const warn = goals.every(g => g.warn);
-  const amber = STATUS_TILE.tight.figure;
   const amount = g => `${fmt(g.target)}${g.perYear ? " a year" : ""}`;
   const button = primary => ({
     width: "100%", background: primary ? G : "none", color: primary ? WHITE : G, border: "none", borderRadius: "100px",
@@ -53,7 +50,7 @@ export default function GoalReached({ goals, taxYear, onShown, onClose, onProgre
           {warn ? <TriangleAlert size={34} color={WHITE} strokeWidth={2} aria-hidden="true"/>
             : <Trophy size={36} color={WHITE} strokeWidth={2} aria-hidden="true"/>}
         </motion.div>
-        <p style={{margin:"16px 0 0",fontSize:"11px",fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:warn ? amber : GOLD_TEXT}}>
+        <p style={{margin:"16px 0 0",fontSize:"11px",fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:warn ? "#864a0f" : GOLD_TEXT}}>
           {warn ? `Allowance used, ${taxYearShort(taxYear)}` : one ? "Goal reached" : `${goals.length} goals reached`}
         </p>
         <h2 id="goal-reached-title" style={{margin:"6px 0 0",fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:G,lineHeight:1.2}}>

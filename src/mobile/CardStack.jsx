@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronUp, ChevronDown, TriangleAlert, Check } from "lucide-react";
-import { G, MUT, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN, HERO_TILE_BG, HERO_TILE_BG_RED, HERO_TILE_BG_AMBER, HERO_TILE_BG_GREEN, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN } from "../design-tokens.js";
+import { G, MUT, MUT_ON_CDARK, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN, HERO_TILE_BG, HERO_TILE_BG_RED, HERO_TILE_BG_AMBER, HERO_TILE_BG_GREEN, STACK_SLICK_BG, STACK_SLICK_SHEEN, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS } from "../design-tokens.js";
 
 // Cards stacked one in front of another, like a wallet: Home's hero
-// (HomeHero.jsx) and Progress's figures. The front card wears the
-// Opportunity tiles' dark oil slick; the ones behind are light, each PEEK px
+// (HomeHero.jsx) and Progress's figures. The front card wears a
+// soft dark oil slick; the ones behind are light, each PEEK px
 // higher than the one in front, with its top line (label and amount)
 // showing, so nothing is hidden. Swiping left, the down arrow, or tapping a
 // card behind turns the front card away on its Y axis and sends it back;
@@ -45,32 +45,36 @@ const rise = (slot, peek) => slot <= 2 ? slot * peek : 2 * peek + Math.min(slot 
 const scaleAt = slot => slot <= 2 ? 1 - slot * SHRINK : 1 - 2 * SHRINK - Math.min(slot - 2, MAX_SLIVERS) * SLIVER_SHRINK;
 const CSS = `
 .card-stack { --hero-fig: 52px; }
+/* A five-figure total beside the score at 360px. */
+@media (max-width: 379px) { .card-stack { --hero-fig: 44px; } }
 @media (min-width: 1000px) { .card-stack { --hero-fig: 72px; } }
 .card-stack-card { position: relative; overflow: hidden; transition: border-color 0.35s ease, box-shadow 0.35s ease; }
 .card-stack-card > :not(.card-stack-dark) { position: relative; z-index: 1; }
 .card-stack-card * { transition: color 0.35s ease, border-color 0.35s ease, background-color 0.35s ease, stroke 0.35s ease; }
 /* The dark fill is a layer that fades in and out (a gradient can't fade
-   into another), so a card changes from light to dark smoothly. */
-.card-stack-dark { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: ${OPPORTUNITY_TILE_BG}; transition: opacity 0.35s ease; }
+   into another), so a card changes from light to dark smoothly. A softer
+   slick than the Opportunity tiles' (STACK_SLICK_BG), and its sheen
+   sweeps once as the card comes to the front, then rests off the card. */
+.card-stack-dark { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: ${STACK_SLICK_BG}; transition: opacity 0.35s ease; }
 .card-stack-dark::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; pointer-events: none;
-  background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,${OPPORTUNITY_TILE_SHEEN}) 46%, transparent 60%);
-  will-change: transform; animation: card-stack-sheen 7s ease-in-out infinite; }
-.card-stack-dark:not(.on)::after { animation-play-state: paused; }
-@keyframes card-stack-sheen { 0% { transform: translateX(-75%); } 55%, 100% { transform: translateX(25%); } }
-@media (prefers-reduced-motion: reduce) { .card-stack-dark::after { animation: none; transform: translateX(-30%); } }
+  background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,${STACK_SLICK_SHEEN}) 46%, transparent 60%);
+  transform: translateX(-75%); }
+.card-stack-dark.on::after { animation: card-stack-sheen 2.6s cubic-bezier(0.25, 1, 0.5, 1) 0.4s both; }
+@keyframes card-stack-sheen { from { transform: translateX(-75%); } to { transform: translateX(25%); } }
+@media (prefers-reduced-motion: reduce) { .card-stack-dark.on::after { animation: none; } }
 `;
 
 // The colour schemes a card can wear: dark in front, light behind, or
 // behind and warning, red or amber.
-export const DARK = { bg: OPPORTUNITY_TILE_BG, border: OPPORTUNITY_TILE_BORDER, shadow: OPPORTUNITY_TILE_SHADOW, label: OPPORTUNITY_TILE_LABEL, figure: OPPORTUNITY_TILE_FIGURE, body: OPPORTUNITY_TILE_BODY, rule: "rgba(255,255,255,0.12)", track: "rgba(255,255,255,0.12)" };
+export const DARK = { bg: STACK_SLICK_BG, border: OPPORTUNITY_TILE_BORDER, shadow: OPPORTUNITY_TILE_SHADOW, label: OPPORTUNITY_TILE_LABEL, figure: OPPORTUNITY_TILE_FIGURE, body: OPPORTUNITY_TILE_BODY, rule: "rgba(255,255,255,0.12)", track: "rgba(255,255,255,0.12)" };
 export const LIGHT = { bg: HERO_TILE_BG, border: "1px solid rgba(22,47,36,0.10)", shadow: "0 4px 18px rgba(22,47,36,0.08)", label: MUT, figure: G, body: MUT, rule: "rgba(22,47,36,0.08)", track: "rgba(22,47,36,0.08)" };
 const WARN = {
   red: { ...LIGHT, bg: HERO_TILE_BG_RED, border: "1px solid rgba(192,57,43,0.30)", shadow: "0 4px 18px rgba(192,57,43,0.12)", label: "#a8392c", figure: "#8e2a1f", body: "#8a5a52", icon: CRITICAL },
-  amber: { ...LIGHT, bg: HERO_TILE_BG_AMBER, border: "1px solid rgba(217,130,43,0.38)", shadow: "0 4px 18px rgba(217,130,43,0.12)", label: "#a35a14", figure: "#864a0f", body: "#8a6a4f", icon: WARNING },
+  amber: { ...LIGHT, bg: HERO_TILE_BG_AMBER, border: "1px solid rgba(217,130,43,0.38)", shadow: "0 4px 18px rgba(217,130,43,0.12)", label: "#96500f", figure: "#864a0f", body: "#8a6a4f", icon: WARNING },
 };
 // A `light` stack's cards: plain white.
 const PLAIN = { ...LIGHT, bg: WHITE };
-const DONE = { ...LIGHT, bg: HERO_TILE_BG_GREEN, border: "1px solid rgba(47,148,97,0.45)", shadow: "0 4px 18px rgba(47,148,97,0.10)", figure: SUCCESS };
+const DONE = { ...LIGHT, label: MUT_ON_CDARK, bg: HERO_TILE_BG_GREEN, border: "1px solid rgba(47,148,97,0.45)", shadow: "0 4px 18px rgba(47,148,97,0.10)", figure: SUCCESS };
 
 export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the previous card", "Show the next card"], light: allLight = false, controls = null, onChange }) {
   const reduceMotion = useReducedMotion();
@@ -209,11 +213,11 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
         })}
       </div>
       <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",marginTop:"10px"}}>
-        <button type="button" onClick={() => turn((target - 1 + n) % n)} aria-label={turnLabels[0]} style={arrow}><ChevronUp size={15} color={G}/></button>
+        <button type="button" onClick={() => turn((target - 1 + n) % n)} aria-label={turnLabels[0]} className="tap44" style={arrow}><ChevronUp size={15} color={G}/></button>
         <div style={{display:"flex",gap:"6px"}} aria-hidden="true">
           {cards.map((c, i) => <span key={c.key} style={{width:"7px",height:"7px",borderRadius:"50%",background:i === target ? G : "rgba(22,47,36,0.2)",transform:i === target ? "scale(1.2)" : "none",transition:"background 0.2s, transform 0.2s"}}/>)}
         </div>
-        <button type="button" onClick={() => turn()} aria-label={turnLabels[1]} style={arrow}><ChevronDown size={15} color={G}/></button>
+        <button type="button" onClick={() => turn()} aria-label={turnLabels[1]} className="tap44" style={arrow}><ChevronDown size={15} color={G}/></button>
         {controls && <div style={{position:"absolute",right:0,top:0}}>{controls}</div>}
       </div>
     </div>
@@ -236,4 +240,6 @@ export function StillCard({ label, body, ...rest }) {
   );
 }
 
+// A round 30px button; give it className="tap44" for a 44px tap area
+// (index.html).
 export const arrow = { width:"30px", height:"30px", borderRadius:"50%", border:"1px solid rgba(22,47,36,0.15)", background:WHITE, display:"grid", placeItems:"center", cursor:"pointer", padding:0 };

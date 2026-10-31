@@ -154,7 +154,7 @@ export default function AppTour({ screen, scoreShowing, set, returnTo, onStart, 
 
   const card = { background: WHITE, border: "1.5px solid rgba(22,47,36,0.12)", borderRadius: "18px", boxShadow: "0 10px 30px rgba(22,47,36,0.25)", padding: "18px 18px 14px", fontFamily: SANS };
   const quiet = { background: "none", border: "none", padding: "8px 0", minHeight: "44px", color: MUT, fontSize: "13px", fontWeight: 600, fontFamily: SANS, cursor: "pointer" };
-  const main = { background: G, color: WHITE, border: "none", borderRadius: "100px", padding: "11px 22px", fontSize: "14.5px", fontWeight: 700, fontFamily: SANS, cursor: "pointer" };
+  const main = { background: G, color: WHITE, border: "none", borderRadius: "100px", padding: "11px 22px", minHeight: "44px", fontSize: "14.5px", fontWeight: 700, fontFamily: SANS, cursor: "pointer" };
   const backButton = { ...main, background: "none", color: G, border: `1.5px solid rgba(22,47,36,0.18)`, padding: "9.5px 18px" };
 
   const done = step.id === "done";

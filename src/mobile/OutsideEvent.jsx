@@ -68,12 +68,12 @@ export default function OutsideEvent({ d, m, approved = null }) {
                 <Landmark size={15} color={GOLD} aria-hidden="true"/>
               </span>
               <span style={{flex:1,minWidth:0,fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.09em",textTransform:"uppercase"}}>{event.kicker}</span>
-              <button type="button" onClick={close} aria-label="Close"
+              <button type="button" onClick={close} aria-label="Close" className="tap44"
                 style={{display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",flexShrink:0,borderRadius:"50%",border:"none",background:"rgba(250,247,240,0.12)",color:CREAM,cursor:"pointer",padding:0}}>
                 <X size={16} aria-hidden="true"/>
               </button>
             </div>
-            <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,lineHeight:1.25,marginTop:"10px"}}>{event.title}</div>
+            <h2 style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,lineHeight:1.25,marginTop:"10px"}}>{event.title}</h2>
             {event.text && <p style={{fontSize:"13px",lineHeight:1.5,margin:"6px 0 0",color:"rgba(250,247,240,0.82)"}}>{event.text}</p>}
             {event.lines.length > 0 && (
               <ul style={{listStyle:"none",margin:"10px 0 0",padding:"10px 0 0",borderTop:"1px solid rgba(250,247,240,0.14)",display:"flex",flexDirection:"column",gap:"8px"}}>
