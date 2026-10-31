@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import posthog from "posthog-js";
 import { CalendarPlus } from "lucide-react";
-import { G, WHITE, MUT, TEXT, FIELD_BORDER, PILL_HEIGHT, SERIF, RADIUS_CARD, CRITICAL } from "../design-tokens.js";
+import { G, WHITE, MUT, TEXT, FIELD_BORDER, PILL_HEIGHT, SERIF, CARD, NOTICE_LABEL, SECTION_TITLE, CRITICAL } from "../design-tokens.js";
 import { fmt } from "../lib/format.js";
 import { yearProjection, salaryDrift, driftDismissal, paydayOf, monthKey, TRAP_START } from "../lib/taxTrap.js";
 import { triggerCalendarReminder } from "./reminders.js";
@@ -68,8 +68,8 @@ export function PaydayCheckCard({ d, m, set }) {
   const setRef = useRef(set);
   setRef.current = set;
   useEffect(() => () => { if (answered.current) setRef.current("paydayCheckedMonth", monthKey(new Date())); }, []);
-  const card = {marginTop:"22px",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.05)",padding:"18px"};
-  const eyebrow = <h2 style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>Payday check-in</h2>;
+  const card = {...CARD,marginTop:"22px",padding:"16px 18px 18px"};
+  const eyebrow = <div style={NOTICE_LABEL}>Payday check-in</div>;
   if (saved) {
     const y = yearProjection(d, m);
     // Pay to date well off their salary: asked whether their pay's changed.
@@ -78,7 +78,7 @@ export function PaydayCheckCard({ d, m, set }) {
     return (
       <div style={card}>
         {eyebrow}
-        <div style={{fontSize:"13px",color:MUT,marginTop:"8px"}}>Your income this tax year is heading for</div>
+        <h2 style={{fontSize:"13px",fontWeight:400,color:MUT,marginTop:"6px"}}>Your income this tax year is heading for</h2>
         <div style={{fontFamily:SERIF,fontSize:"32px",fontWeight:700,color:y.over ? CRITICAL : G,lineHeight:1.15,marginTop:"2px"}}>{fmt(y.projected)}</div>
         <p style={{fontSize:"13px",color:TEXT,lineHeight:1.5,margin:"6px 0 12px"}}>{headingLine(y)}</p>
         {drift && <>
@@ -98,7 +98,7 @@ export function PaydayCheckCard({ d, m, set }) {
   return (
     <div style={card}>
       {eyebrow}
-      <div style={{fontSize:"16px",fontWeight:700,color:TEXT,marginTop:"8px",lineHeight:1.35}}>What's your taxable pay to date?</div>
+      <h2 style={{...SECTION_TITLE,marginTop:"6px"}}>What's your taxable pay to date?</h2>
       <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 12px"}}>It's on your payslip, often as "Taxable pay to date" or "Taxable gross YTD". It shows where your £100k year is heading.</p>
       <PayToDateForm d={d} set={set} onSaved={() => { answered.current = true; setSaved(true); }}/>
       <div style={{display:"flex",gap:"8px",marginTop:"8px"}}>

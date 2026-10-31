@@ -3,14 +3,14 @@ import { childcareSupport } from "../../lib/childcare.js";
 import { Users, ChevronRight, Lock } from "lucide-react";
 import CardStack, { DARK, StillCard, arrow } from "../CardStack.jsx";
 import AlertBox from "../AlertBox.jsx";
-import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD, SR_ONLY } from "../../design-tokens.js";
+import { PROGRESS_GREEN, G, GOLD, WHITE, MUT, TEXT, SERIF, SANS, RADIUS_CARD, SR_ONLY, HAIRLINE, SECTION_TITLE, ROW_TILE } from "../../design-tokens.js";
 import { getModuleBreakdown, MODULE_META, reviewedDone } from "../../lib/moduleStatus.js";
 import { calcStudentLoanScenario } from "../../lib/studentLoan.js";
 import { fmt, fmtCompact } from "../../lib/format.js";
 import { statusLabel, statusLine, ELSEWHERE } from "../statusLabel.js";
 import { notStarted, dormantModules, MODULE_PITCH } from "../../lib/appEntry.js";
 import { taxTrap, thisTaxYear } from "../../lib/taxTrap.js";
-import ModuleStartRow from "../ModuleStartRow.jsx";
+import ModuleStartRow, { ROW_TITLE, ROW_ICON } from "../ModuleStartRow.jsx";
 import FilterMenu from "../FilterMenu.jsx";
 import BankConfirm from "../BankConfirm.jsx";
 import NewBadge, { rateUpdatesLabel } from "../NewBadge.jsx";
@@ -80,10 +80,12 @@ function moduleInsights(mm, d, m) {
 }
 
 // The tile Still to explore sits in, each module a row inside.
-const TILE = { background:WHITE, borderRadius:RADIUS_CARD, boxShadow:"0 2px 10px rgba(22,47,36,0.06)", padding:"16px 14px" };
-const TILE_TITLE = { fontSize:"15px", fontWeight:700, color:TEXT, padding:"0 4px" };
-const TILE_SUB = { fontSize:"12.5px", color:MUT, marginTop:"2px", padding:"0 4px" };
-const SUBHEAD = { fontSize:"10px", fontWeight:700, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", margin:"18px 4px 10px" };
+// The sections under the wallet: each a tile, its Playfair heading inside,
+// then hairline rows.
+const TILE = { ...ROW_TILE, marginTop:"22px" };
+const SECTION = { ...SECTION_TITLE, marginBottom:"8px" };
+const ROWS = { display:"flex", flexDirection:"column" };
+const ROW = { display:"flex", alignItems:"flex-start", gap:"14px", width:"100%", textAlign:"left", background:"none", border:"none", borderTop:HAIRLINE, padding:"14px 0", fontFamily:"inherit" };
 // Each card behind shows this much of its top line (Home and Progress: 44).
 const PEEK = 39;
 
@@ -192,14 +194,14 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
           {locked ? (
             <p style={{display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",color:t.body,lineHeight:1.5,margin:"12px 0 0"}}><Lock size={13}/>Your position is ready. Open it to unlock it.</p>
           ) : ins.length > 0 && (
-            <div style={{display:"grid",gridTemplateColumns:"repeat(2, minmax(0, 1fr))",gap:"8px",marginTop:"14px"}}>
+            <dl style={{margin:"12px 0 0"}}>
               {ins.map(x => (
-                <div key={x.label} style={{borderRadius:"10px",padding:"10px 12px",background:t === DARK ? "rgba(255,255,255,0.08)" : "rgba(22,47,36,0.06)"}}>
-                  <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",color:t.label}}>{x.label}</div>
-                  <div style={{fontSize:"14px",fontWeight:700,color:t.figure,marginTop:"4px"}}>{x.value}</div>
+                <div key={x.label} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",padding:"8px 0",borderTop:`1px solid ${t.rule}`}}>
+                  <dt style={{fontSize:"13px",color:t.body}}>{x.label}</dt>
+                  <dd style={{margin:0,fontSize:"14px",fontWeight:700,color:t.figure,textAlign:"right"}}>{x.value}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
           )}
           <OpenButton t={t} title={mm.title} onClick={() => onOpenModule(mm.key)}/>
         </>
@@ -221,24 +223,18 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
               <span style={{fontFamily:SERIF,fontSize:"30px",fontWeight:700,lineHeight:1,color:t.figure}}>{fmt(totalBanked)}</span>
               <span style={{fontSize:"13px",fontWeight:600,color:t.figure}}>a year saved</span>
             </div>
-            <div style={{height:"14px",borderRadius:"7px",display:"flex",overflow:"hidden",background:t.track,marginTop:"10px"}}>
-              <div style={{width:`${totalBanked / found * 100}%`,background:`linear-gradient(90deg, ${PROGRESS_GREEN}, ${GOLD})`}}/>
-              <div style={{flex:1,background:t === DARK
-                ? "repeating-linear-gradient(135deg, rgba(246,234,208,0.28) 0 4px, rgba(246,234,208,0.1) 4px 8px)"
-                : "repeating-linear-gradient(135deg, rgba(22,47,36,0.16) 0 4px, rgba(22,47,36,0.05) 4px 8px)"}}/>
+            <div style={{height:"8px",borderRadius:"4px",display:"flex",overflow:"hidden",background:t.track,marginTop:"10px"}}>
+              <div style={{width:`${totalBanked / found * 100}%`,background:GOLD}}/>
             </div>
             <div style={{fontSize:"12px",color:t.body,marginTop:"6px"}}>From changes made so far</div>
           </div>
         )}
-        {/* The counts, kept small so the figures above lead. */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3, minmax(0, 1fr))",gap:"8px",marginTop:"14px",paddingTop:"10px",borderTop:`1px solid ${t.rule}`}}>
-          {[["Live", live], ["Not started", toExplore], ["Need action", needActionCount]].map(([l, n]) => (
-            <div key={l}>
-              <div style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,lineHeight:1,color:t.figure}}>{n}</div>
-              <div style={{fontSize:"9.5px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"3px",color:t.label}}>{l}</div>
-            </div>
+        {/* The counts in a line, kept small so the figures above lead. */}
+        <p style={{fontSize:"13px",color:t.body,lineHeight:1.5,margin:"14px 0 0",paddingTop:"10px",borderTop:`1px solid ${t.rule}`}}>
+          {[[live, "live"], [toExplore, "not started"], [needActionCount, "needing action"]].map(([n, l], i) => (
+            <span key={l}>{i ? ", " : ""}<b style={{fontWeight:700,color:t.figure}}>{n}</b> {l}</span>
           ))}
-        </div>
+        </p>
       </>
     ),
   };
@@ -296,57 +292,50 @@ export default function MobileModulesScreen({ d, m, set, statuses, insights, com
 
       {/* Answered, but nothing in it applies (Kids & family with no
           children and none planned): greyed, and still there to change. */}
-      {notApplicable.length > 0 && (<>
-        <h2 style={{...SUBHEAD,marginTop:"18px"}}>Not applicable</h2>
-        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+      {notApplicable.length > 0 && (
+        <section style={TILE}>
+          <h2 style={SECTION}>Not applicable</h2>
+          <div style={ROWS}>
           {notApplicable.map(mm => (
-            <button key={mm.key} type="button" onClick={() => onOpenModule(mm.key)} style={{display:"flex",alignItems:"center",gap:"12px",width:"100%",textAlign:"left",background:WHITE,border:"1px solid rgba(22,47,36,0.08)",borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.05)",padding:"14px 16px",cursor:"pointer",fontFamily:"inherit"}}>
-              <span style={{display:"flex",alignItems:"center",gap:"12px",flex:1,minWidth:0}}>
-                <span style={{width:"30px",height:"30px",borderRadius:"9px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:0.55}}>
-                  <mm.icon size={14} color={G}/>
-                </span>
-                <span style={{flex:1,fontSize:"14.5px",fontWeight:600,color:MUT}}>{mm.title}</span>
-              </span>
-              <span style={{fontSize:"12px",color:MUT}}>Not applicable</span>
-              <ChevronRight size={16} color={MUT}/>
+            <button key={mm.key} type="button" onClick={() => onOpenModule(mm.key)} style={{...ROW,cursor:"pointer"}}>
+              <mm.icon {...ROW_ICON} color={MUT}/>
+              <span style={{...ROW_TITLE,flex:1,minWidth:0,color:MUT}}>{mm.title}</span>
+              <ChevronRight size={16} color={MUT} style={{flexShrink:0,alignSelf:"center"}}/>
             </button>
           ))}
-        </div>
-      </>)}
+          </div>
+        </section>
+      )}
 
       {/* Modules with no answers yet, picks first, each opening its
           walk-through; then any not open to them yet. */}
       {toExplore > 0 && (
-        <section style={{...TILE,marginTop:"22px"}}>
-          <h2 style={TILE_TITLE}>Still to explore</h2>
-          <div style={TILE_SUB}>{toExplore} {toExplore === 1 ? "module" : "modules"} not started yet</div>
-          <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>
+        <section style={TILE}>
+          <h2 style={SECTION}>Still to explore</h2>
+          <div style={ROWS}>
             {waiting.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={key === "property" ? null : moduleEstimate(key, d, m)} onOpen={openRow}/>)}
             {dormant.map(key => <ModuleStartRow key={key} moduleKey={key} d={d} dormant onOpen={onOpenModule}/>)}
           </div>
         </section>
       )}
 
-      <h2 style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase",marginTop:"22px",marginBottom:"10px"}}>Coming soon</h2>
-      <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+      <section style={TILE}>
+      <h2 style={SECTION}>Coming soon</h2>
+      <div style={ROWS}>
         {LOCKED_MODULES.map(lm => {
           const LockedIcon = lm.icon || MODULE_META.find(mm => mm.key === lm.key)?.icon;
           return (
-            <div key={lm.key} style={{background:"rgba(255,255,255,0.55)",borderRadius:"16px",border:"1.5px dashed rgba(22,47,36,0.15)",padding:"18px",display:"flex",alignItems:"flex-start",gap:"14px"}}>
-              <div style={{width:"42px",height:"42px",borderRadius:"11px",background:"rgba(22,47,36,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-                {LockedIcon && <LockedIcon size={18} color={MUT}/>}
-              </div>
+            <div key={lm.key} style={ROW}>
+              {LockedIcon && <LockedIcon {...ROW_ICON} color={MUT}/>}
               <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
-                  <div style={{fontSize:"16px",fontWeight:600,color:MUT}}>{lm.title}</div>
-                  <div style={{fontSize:"12px",fontWeight:700,color:MUT,flexShrink:0}}>Locked</div>
-                </div>
-                <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,marginTop:"6px",marginBottom:0}}>{lm.description}</p>
+                <div style={ROW_TITLE}>{lm.title}</div>
+                <p style={{fontSize:"13px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>{lm.description}</p>
               </div>
             </div>
           );
         })}
       </div>
+      </section>
     </div>
   );
 }

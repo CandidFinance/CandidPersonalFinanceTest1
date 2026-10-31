@@ -3,7 +3,7 @@ import posthog from "posthog-js";
 import { motion, useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Check, ChevronRight, X } from "lucide-react";
-import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, RADIUS_CARD } from "../design-tokens.js";
+import { G, MUT, TEXT, SERIF, WHITE, SUCCESS, CARD } from "../design-tokens.js";
 import { validEmailShape } from "../lib/emailCheck.js";
 import { estimateItems } from "../lib/quickStart.js";
 import { ProgressLine } from "./onboarding/OnboardingShell.jsx";
@@ -57,7 +57,7 @@ export default function GettingToKnow({ d, set, answered }) {
   const dismiss = () => { set("checklistDismissed", true); posthog.capture("checklist_dismissed", { done: count }); };
 
   return (
-    <div style={{ position: "relative", background: WHITE, border: "1px solid rgba(22,47,36,0.08)", borderRadius: RADIUS_CARD, boxShadow: "0 2px 10px rgba(22,47,36,0.05)", padding: "16px 18px 8px", marginBottom: "16px" }}>
+    <div style={{ ...CARD, position: "relative", padding: "16px 18px 8px", marginBottom: "16px" }}>
       {celebrating && <Burst/>}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
         <h2 style={{ fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, margin: 0, lineHeight: 1.25 }}>{celebrating ? "All set" : "Getting to know Candid"}</h2>

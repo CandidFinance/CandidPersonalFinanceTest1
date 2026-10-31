@@ -26,7 +26,7 @@ export default function MobileTabBar({ active, onNavigate }) {
     // full height) so the tab icons/labels sit on a fully opaque surface
     // rather than a still-fading one, with just the top portion soft.
     // data-tab-bar: walk-throughs measure it to keep questions clear of it.
-    <nav data-tab-bar style={{position:"fixed",bottom:0,left:0,right:0,background:`linear-gradient(180deg, transparent 0%, ${WHITE} 40%)`,zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
+    <nav data-tab-bar aria-label="Main" style={{position:"fixed",bottom:0,left:0,right:0,background:`linear-gradient(180deg, transparent 0%, ${WHITE} 40%)`,zIndex:4000,paddingBottom:"env(safe-area-inset-bottom, 0px)"}}>
       {/* The bar itself stays full-bleed, but the buttons are capped to the
           same 580px content width as MobileLayout's content column and
           centred — otherwise on a wide (desktop browser) viewport the icons
@@ -36,7 +36,7 @@ export default function MobileTabBar({ active, onNavigate }) {
         {MOBILE_NAV_ITEMS.map(item => {
           const isActive = item.key === active;
           return (
-            <button key={item.key} type="button" data-tour={`tab-${item.key}`} onClick={() => onNavigate(item.path)} style={{
+            <button key={item.key} type="button" data-tour={`tab-${item.key}`} aria-current={isActive ? "page" : undefined} onClick={() => onNavigate(item.path)} style={{
               flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:"4px",
               background:"transparent", border:"none", padding:"10px 4px 8px", cursor:"pointer",
             }}>

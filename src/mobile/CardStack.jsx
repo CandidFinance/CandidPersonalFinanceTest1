@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronUp, ChevronDown, TriangleAlert, Check } from "lucide-react";
-import { G, MUT, MUT_ON_CDARK, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN, HERO_TILE_BG, HERO_TILE_BG_RED, HERO_TILE_BG_AMBER, HERO_TILE_BG_GREEN, STACK_SLICK_BG, STACK_SLICK_SHEEN, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS } from "../design-tokens.js";
+import { G, MUT, MUT_ON_CDARK, SR_ONLY, SERIF, SANS, WHITE, CRITICAL, WARNING, SUCCESS, PROGRESS_GREEN, HERO_TILE_BG, HERO_TILE_BG_RED, HERO_TILE_BG_AMBER, HERO_TILE_BG_GREEN, STACK_SLICK_BG, STACK_SLICK_SHEEN, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS } from "../design-tokens.js";
 
 // Cards stacked one in front of another, like a wallet: Home's hero
 // (HomeHero.jsx) and Progress's figures. The front card wears a
@@ -94,8 +94,10 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
   // turns away to its place behind `next`. A tap or swipe mid-turn cuts that
   // turn short: the card that was coming forward turns away instead, so
   // rapid taps run through the cards as fast as they come.
+  const moved = useRef(false); // nothing announced until the first turn
   const turn = (next = (target + 1) % n) => {
     if (next === target) return;
+    moved.current = true;
     timers.current.forEach(clearTimeout);
     const leaving = turning !== null ? target : front;
     setTarget(next);
@@ -165,7 +167,7 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
       {/* Every card shares one grid cell, so the stack is as tall as the
           tallest card; each one behind sits PEEK px higher. */}
       <div ref={stack} tabIndex={n > 1 ? 0 : undefined} onKeyDown={onKeyDown}
-        role="group" aria-roledescription="card stack" aria-label={n > 1 ? "Up and down arrow keys turn the cards" : undefined}
+        role="group" aria-roledescription="card stack" aria-label={n > 1 ? `${cards[target].label}, card ${target + 1} of ${n}. The up and down arrow keys turn the cards` : undefined}
         onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} onClickCapture={onClickCapture}
         style={{display:"grid",outlineOffset:"4px",borderRadius:OPPORTUNITY_TILE_RADIUS,paddingTop:`${rise(back, peek)}px`,perspective:"1100px",touchAction:"pan-y"}}>
         {cards.map((c, i) => {
@@ -212,6 +214,8 @@ export default function CardStack({ cards, peek = PEEK, turnLabels = ["Show the 
           );
         })}
       </div>
+      {/* Says which card has come to the front as each turn starts. */}
+      {n > 1 && <div aria-live="polite" style={SR_ONLY}>{moved.current ? `${cards[target].label}, card ${target + 1} of ${n}` : ""}</div>}
       <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",marginTop:"10px"}}>
         <button type="button" onClick={() => turn((target - 1 + n) % n)} aria-label={turnLabels[0]} className="tap44" style={arrow}><ChevronUp size={15} color={G}/></button>
         <div style={{display:"flex",gap:"6px"}} aria-hidden="true">

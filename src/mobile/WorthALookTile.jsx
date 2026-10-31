@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import { G, WHITE, MUT, TEXT, RADIUS_CARD } from "../design-tokens.js";
+import { G, MUT, CARD, SECTION_TITLE } from "../design-tokens.js";
 import ModuleStartRow from "./ModuleStartRow.jsx";
 
-// Home's "Worth a look": the modules they haven't started, each a tile of
-// its own inside this one, largest rough £ first. Dismissed with the X or a
+// Home's "Worth a look": the modules they haven't started, as rows in this
+// card, largest rough £ first. Dismissed with the X or a
 // swipe either way; `onDismiss` keeps it away until a module it didn't hold
 // appears (appEntry.js worthALookShown). The top three show here; the rest
 // are on the Modules tab, a link away.
@@ -28,21 +28,21 @@ export default function WorthALookTile({ items, d, onOpen, onSeeAll, onDismiss }
       animate={leaving ? { x: leaving * 480, opacity: 0 } : { x: 0, opacity: 1 }}
       transition={{ duration: 0.25 }}
       onAnimationComplete={() => { if (leaving) onDismiss(); }}
-      style={{marginTop:"16px",background:WHITE,borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"16px 14px",touchAction:"pan-y"}}>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px",padding:"0 0 0 4px"}}>
+      style={{...CARD,marginTop:"16px",padding:"16px 18px 4px",touchAction:"pan-y"}}>
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"10px"}}>
         <div style={{minWidth:0}}>
-          <h2 style={{fontSize:"15px",fontWeight:700,color:TEXT}}>Worth a look</h2>
+          <h2 style={SECTION_TITLE}>Worth a look</h2>
           <div style={{fontSize:"12.5px",color:MUT,marginTop:"2px"}}>Modules you haven't started yet</div>
         </div>
         <button type="button" aria-label="Dismiss" onClick={() => setLeaving(1)} className="tap44" style={{background:"none",border:"none",padding:"2px",margin:"-2px -2px 0 0",cursor:"pointer",color:MUT,display:"flex",flexShrink:0}}>
           <X size={18}/>
         </button>
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:"8px",marginTop:"14px"}}>
+      <div style={{display:"flex",flexDirection:"column",marginTop:"10px"}}>
         {items.slice(0, SHOWN).map(({ key, estimate }) => <ModuleStartRow key={key} moduleKey={key} d={d} estimate={estimate} onOpen={onOpen}/>)}
       </div>
       {items.length > SHOWN && (
-        <button type="button" onClick={onSeeAll} style={{display:"block",margin:"0 0 -12px 4px",background:"none",border:"none",padding:"12px 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>See all modules</button>
+        <button type="button" onClick={onSeeAll} style={{display:"block",margin:"0 0 4px",background:"none",border:"none",padding:"12px 0",color:G,fontSize:"13px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",textDecoration:"underline"}}>See all modules</button>
       )}
     </motion.section>
   );

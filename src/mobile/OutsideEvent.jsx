@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import posthog from "posthog-js";
-import { X, Landmark } from "lucide-react";
+import { X } from "lucide-react";
 import { outsideEvent, withApproved, EVENTS } from "../lib/outsideEvents.js";
 import { reportStorageFailure } from "../lib/storage.js";
 import { closingTile } from "./SinceLastVisit.jsx";
-import { G, GOLD, CREAM, RADIUS_CARD, SERIF } from "../design-tokens.js";
+import { G, MUT, TEXT, CARD, HAIRLINE, NOTICE_LABEL, SERIF } from "../design-tokens.js";
 
 // Home's outside event (src/lib/outsideEvents.js): a Bank Rate decision or
 // a Budget, coming up or just announced, and what it means for their
@@ -62,24 +62,21 @@ export default function OutsideEvent({ d, m, approved = null }) {
     <AnimatePresence initial={false} onExitComplete={() => { setClosed(readClosed()); setHidden(false); }}>
       {!hidden && (
         <motion.div key={event.key} exit={closingTile(reduceMotion)} style={{marginBottom:"16px",transformOrigin:"top center"}}>
-          <div style={{background:G,borderRadius:RADIUS_CARD,boxShadow:"0 6px 20px rgba(22,47,36,0.22)",padding:"14px 14px 16px 16px",color:CREAM}}>
+          <div style={{...CARD,padding:"14px 16px 16px 18px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-              <span style={{width:"30px",height:"30px",borderRadius:"50%",background:"rgba(196,150,58,0.18)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <Landmark size={15} color={GOLD} aria-hidden="true"/>
-              </span>
-              <span style={{flex:1,minWidth:0,fontSize:"11px",fontWeight:700,color:GOLD,letterSpacing:"0.09em",textTransform:"uppercase"}}>{event.kicker}</span>
+              <span style={{...NOTICE_LABEL,flex:1,minWidth:0}}>{event.kicker}</span>
               <button type="button" onClick={close} aria-label="Close" className="tap44"
-                style={{display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",flexShrink:0,borderRadius:"50%",border:"none",background:"rgba(250,247,240,0.12)",color:CREAM,cursor:"pointer",padding:0}}>
+                style={{display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",flexShrink:0,borderRadius:"50%",border:"none",background:"none",color:MUT,cursor:"pointer",padding:0,margin:"-4px -6px 0 0"}}>
                 <X size={16} aria-hidden="true"/>
               </button>
             </div>
-            <h2 style={{fontFamily:SERIF,fontSize:"19px",fontWeight:700,lineHeight:1.25,marginTop:"10px"}}>{event.title}</h2>
-            {event.text && <p style={{fontSize:"13px",lineHeight:1.5,margin:"6px 0 0",color:"rgba(250,247,240,0.82)"}}>{event.text}</p>}
+            <h2 style={{fontFamily:SERIF,fontSize:"18px",fontWeight:700,lineHeight:1.25,color:G,marginTop:"6px"}}>{event.title}</h2>
+            {event.text && <p style={{fontSize:"13px",lineHeight:1.5,margin:"6px 0 0",color:MUT}}>{event.text}</p>}
             {event.lines.length > 0 && (
-              <ul style={{listStyle:"none",margin:"10px 0 0",padding:"10px 0 0",borderTop:"1px solid rgba(250,247,240,0.14)",display:"flex",flexDirection:"column",gap:"8px"}}>
+              <ul style={{listStyle:"none",margin:"10px 0 0",padding:"10px 0 0",borderTop:HAIRLINE,display:"flex",flexDirection:"column",gap:"8px"}}>
                 {event.lines.map((l, i) => (
-                  <li key={i} style={{fontSize:"13px",lineHeight:1.5,color:"rgba(250,247,240,0.88)"}}>
-                    <b style={{fontWeight:700,color:CREAM}}>{l.label}</b>: {l.text}
+                  <li key={i} style={{fontSize:"13px",lineHeight:1.5,color:TEXT}}>
+                    <b style={{fontWeight:700}}>{l.label}</b>: {l.text}
                   </li>
                 ))}
               </ul>

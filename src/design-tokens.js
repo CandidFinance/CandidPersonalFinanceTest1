@@ -193,6 +193,21 @@ export const PILL_HEIGHT = "44px";
 export const SR_ONLY = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
 export const RADIUS_CARD  = "14px"; // mobile card containers (WinTile, ProviderTile, ProductListTile, HomeScreen/ForecastScreen cards)
 export const RADIUS_MODAL = "18px"; // desktop modal shells + marketing/mockup cards
+// A rule between rows in a list (modules to start, a card's figures).
+export const HAIRLINE = "1px solid rgba(22,47,36,0.1)";
+// A white card, for a discrete block you act on (a form, a notice with a
+// close button). What's listed inside one is hairline rows, never more cards.
+export const CARD = { background: WHITE, border: "1px solid rgba(22,47,36,0.08)", borderRadius: RADIUS_CARD };
+// A list of rows on its tile (modules to start, Coming soon): the heading
+// inside at the top, a hairline above each row, the tile's edge below the
+// last. Harvey, 31 Oct 2026: rows need a tile under them in the app.
+export const ROW_TILE = { ...CARD, padding: "16px 18px 4px" };
+// A section's heading on an app screen: Playfair, sentence case, no caps
+// label above it.
+// The small line above a notice's title (what it is, when): sentence case,
+// 12.5px, MUT (5.3:1 on WHITE).
+export const NOTICE_LABEL = { fontSize: "12.5px", fontWeight: 600, color: MUT, lineHeight: 1.4, margin: 0 };
+export const SECTION_TITLE = { fontFamily: SERIF, fontSize: "18px", fontWeight: 700, color: G, lineHeight: 1.25, margin: 0 };
 
 // "Where to open an account" provider tiles (Cash/Investments/Pension) —
 // white fading to a light grey, top to bottom, for a raised/glossy feel, so
