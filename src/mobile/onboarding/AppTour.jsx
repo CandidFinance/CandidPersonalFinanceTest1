@@ -22,7 +22,7 @@ const STOPS = [
     body: "Three screens hold everything: Home, Progress and Modules. This takes about 30 seconds." },
   { id: "score", screen: "home", target: "home-score", title: "Your Candid score",
     body: scoreShowing => scoreShowing
-      ? "What's left on the table each year, and what you've saved so far. Tap the card to turn it over."
+      ? "What's left on the table each year, and what you've saved so far. Swipe for the next card."
       : "Your score appears once the modules you picked are answered." },
   { id: "next", screen: "home", target: "home-modules", title: "Modules to explore",
     body: "Areas you haven't looked at yet. Each takes a few minutes." },
