@@ -3,8 +3,9 @@ import { DARK } from "../CardStack.jsx";
 import { SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN } from "../../design-tokens.js";
 
 // Each module page's Opportunity tile: the page's key figure, large, on the
-// one dark surface on the page. `figures` is [{ value, suffix?, label? }]:
-// one figure is 58px (84px on desktop, where it sits beside its label and
+// one dark surface on the page: the card stack's slick (STACK_SLICK_BG),
+// its sheen running once. `figures` is [{ value, suffix?, label? }]: one
+// figure is 58px (84px on desktop, where it sits beside its label and
 // chips); two or more share a wrapping row at a smaller size. `chips` are
 // short facts under the label; `note` is a sentence kept for a caveat.
 // `children` go at the bottom (Student loan's locked panel). `tour`: the
@@ -19,9 +20,9 @@ const CSS = `
 .opp-tile > * { position: relative; z-index: 1; }
 .opp-tile::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; z-index: 0; pointer-events: none;
   background: linear-gradient(112deg, transparent 32%, rgba(255,255,255,${OPPORTUNITY_TILE_SHEEN}) 46%, transparent 60%);
-  will-change: transform; animation: opp-sheen 7s ease-in-out infinite; }
-@keyframes opp-sheen { 0% { transform: translateX(-75%); } 55%, 100% { transform: translateX(25%); } }
-@media (prefers-reduced-motion: reduce) { .opp-tile::after { animation: none; transform: translateX(-30%); } }
+  will-change: transform; animation: opp-sheen 2.6s cubic-bezier(0.25, 1, 0.5, 1) 0.4s both; }
+@keyframes opp-sheen { from { transform: translateX(-75%); } to { transform: translateX(25%); } }
+@media (prefers-reduced-motion: reduce) { .opp-tile::after { animation: none; transform: translateX(25%); } }
 /* Shrinks with the screen below 375px, so a six-figure sum never clips. */
 .opp-tile { --opp-figure: min(58px, 15.5vw); }
 .opp-tile.opp-multi { --opp-figure: min(44px, 11.5vw); }

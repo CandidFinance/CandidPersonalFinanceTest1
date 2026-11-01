@@ -52,8 +52,8 @@ const CSS = `
 .card-stack-card > :not(.card-stack-dark) { position: relative; z-index: 1; }
 .card-stack-card * { transition: color 0.35s ease, border-color 0.35s ease, background-color 0.35s ease, stroke 0.35s ease; }
 /* The dark fill is a layer that fades in and out (a gradient can't fade
-   into another), so a card changes from light to dark smoothly. A softer
-   slick than the Opportunity tiles' (STACK_SLICK_BG), and its sheen
+   into another), so a card changes from light to dark smoothly. The
+   slick (STACK_SLICK_BG, as the Opportunity tiles), and its sheen
    sweeps once as the card comes to the front, then rests off the card. */
 .card-stack-dark { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: ${STACK_SLICK_BG}; transition: opacity 0.35s ease; }
 .card-stack-dark::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; pointer-events: none;
