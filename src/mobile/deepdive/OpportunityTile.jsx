@@ -1,6 +1,7 @@
+import { ChevronRight } from "lucide-react";
 import AlertBox from "../AlertBox.jsx";
 import { DARK } from "../CardStack.jsx";
-import { SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN } from "../../design-tokens.js";
+import { SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_SHADOW, OPPORTUNITY_TILE_LABEL, OPPORTUNITY_TILE_FIGURE, OPPORTUNITY_TILE_BODY, OPPORTUNITY_TILE_RADIUS, OPPORTUNITY_TILE_SHEEN, G, WHITE, SANS, RADIUS_PILL } from "../../design-tokens.js";
 
 // Each module page's Opportunity tile: the page's key figure, large, on the
 // one dark surface on the page: the card stack's slick (STACK_SLICK_BG),
@@ -13,7 +14,8 @@ import { SERIF, OPPORTUNITY_TILE_BG, OPPORTUNITY_TILE_BORDER, OPPORTUNITY_TILE_S
 // its chips on desktop too, for a wide figure with no label (Tax trap).
 // `alert`: { tone: "red" | "amber", title }, the figure and its chips in a
 // red or amber alert under the overline, as Progress's Tax shield has it
-// (AlertBox.jsx); one figure only.
+// (AlertBox.jsx); one figure only. `action` ({ label, onClick }): a light
+// button under the figure's label, the way from the figure to its options.
 // The desktop breakpoint is MobileLayout's (1000px, its 720px column).
 const CSS = `
 .opp-tile { position: relative; overflow: hidden; padding: 20px; }
@@ -46,7 +48,7 @@ const Figure = ({ f }) => (
   <div style={figure}>{f.value}{f.suffix && <span style={{fontSize:"0.4em",fontWeight:600}}>{f.suffix}</span>}</div>
 );
 
-export default function OpportunityTile({ over: overline = "Opportunity", figures, chips = [], note, tour, stacked = false, alert, style, children }) {
+export default function OpportunityTile({ over: overline = "Opportunity", figures, chips = [], note, tour, stacked = false, alert, action, style, children }) {
   const shown = chips.filter(Boolean);
   const multi = figures.length > 1;
   const extras = (
@@ -55,6 +57,11 @@ export default function OpportunityTile({ over: overline = "Opportunity", figure
         <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"12px"}}>{shown.map((c, i) => <span key={i} style={chip}>{c}</span>)}</div>
       )}
       {note && <div style={{fontSize:"13px",color:OPPORTUNITY_TILE_BODY,lineHeight:1.5,marginTop:"10px"}}>{note}</div>}
+      {action && (
+        <button type="button" onClick={action.onClick} style={{display:"inline-flex",alignItems:"center",gap:"4px",marginTop:"16px",minHeight:"44px",padding:"10px 14px 10px 18px",background:WHITE,color:G,border:"none",borderRadius:RADIUS_PILL,fontFamily:SANS,fontSize:"14px",fontWeight:700,cursor:"pointer"}}>
+          {action.label}<ChevronRight size={17} strokeWidth={2.5} aria-hidden="true"/>
+        </button>
+      )}
     </>
   );
   return (

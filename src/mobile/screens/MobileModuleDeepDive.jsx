@@ -31,7 +31,7 @@ const CONTENT_BY_KEY = {
 
 // `onShowReveal` replays its answer step by step (MobileModuleReveal), where
 // the module has one; its "Explain this" link sits beside the module's name.
-export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, savingsRates, set, isComplete, onMarkReviewed, onBack, backLabel = null, onRecordLoanOverpayment, onRecordCrystallisedGain, onShowReveal, onOpenAssist }) {
+export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, savingsRates, set, isComplete, onMarkReviewed, onBack, backLabel = null, onRecordLoanOverpayment, onRecordCrystallisedGain, onShowReveal, onOpenAssist, onEditInputs }) {
   const meta = MODULE_META.find(mm => mm.key === moduleKey);
   const status = statuses[moduleKey]?.status || "na";
   // Status has exactly one visual indicator here — the dot below. The
@@ -82,7 +82,7 @@ export default function MobileModuleDeepDive({ moduleKey, d, m, statuses, saving
       {set && <BankConfirm d={d} set={set} moduleKey={moduleKey} title={meta?.title || moduleKey} amount={statuses[moduleKey]?.amount || 0}/>}
 
       {Content ? (
-        <Content d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain} onOpenAssist={onOpenAssist}/>
+        <Content d={d} m={m} statuses={statuses} savingsRates={savingsRates} set={set} onRecordLoanOverpayment={onRecordLoanOverpayment} onRecordCrystallisedGain={onRecordCrystallisedGain} onOpenAssist={onOpenAssist} onEditInputs={onEditInputs}/>
       ) : (
         <p style={{fontSize:"14px",color:MUT,lineHeight:1.6}}>This deep dive isn't built for mobile yet — check back soon, or view it on desktop.</p>
       )}

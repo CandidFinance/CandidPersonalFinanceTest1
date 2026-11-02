@@ -1,5 +1,9 @@
 import { isEasyAccess } from "../lib/savingsRates.js";
 
+// The cash lists leave out rates under this: below most people's current
+// rate, so not a place worth looking.
+export const MIN_LISTED_RATE = 2.5;
+
 // The provider lists on the Cash, Investments and Pension screens, shown by
 // MobileProductListTile (cash rates) and MobileProviderTile (the others).
 export function getModuleProducts(key, d, m, savingsRates) {
@@ -12,7 +16,7 @@ export function getModuleProducts(key, d, m, savingsRates) {
       // Allowance fill). Capped at 4 rows, unlike the ISA list, to keep this
       // secondary list visibly secondary.
       const buildNonIsaProducts = () => (savingsRates || [])
-        .filter(r => r.is_isa === false && isEasyAccess(r))
+        .filter(r => r.is_isa === false && isEasyAccess(r) && +r.rate_aer >= MIN_LISTED_RATE)
         .sort((a, b) => +b.rate_aer - +a.rate_aer)
         .slice(0, 4)
         .map((r, i) => ({ name: r.provider_name, type: r.account_type, rate: `${r.rate_aer}% AER`, badge: i === 0 ? "Highest rate" : "", productUrl: r.product_url }));
@@ -26,7 +30,7 @@ export function getModuleProducts(key, d, m, savingsRates) {
         return { heading, nonIsaHeading, products: [], nonIsaProducts: buildNonIsaProducts(), disclaimer: "Current rates are temporarily unavailable — check back shortly." };
       }
 
-      const sorted = [...isaRows].sort((a, b) => +b.rate_aer - +a.rate_aer);
+      const sorted = isaRows.filter(r => +r.rate_aer >= MIN_LISTED_RATE).sort((a, b) => +b.rate_aer - +a.rate_aer);
       // Conservative "correct as of" date — the oldest row's updated_at, so the
       // disclaimer never overstates freshness for a stale entry in the list.
       const oldestUpdate = sorted.reduce((oldest, r) =>

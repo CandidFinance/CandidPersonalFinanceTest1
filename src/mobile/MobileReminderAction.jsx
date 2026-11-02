@@ -42,16 +42,15 @@ export function ActionButton({ action }) {
 // `beside` (optional): any control beside the pill instead of an action,
 // sized to its content, the pill taking the rest ("Email HR + reminder",
 // without its icon to fit).
-export default function MobileReminderAction({ id, title, description, email, action, beside, who = "HR" }) {
+// The reminder itself, without the pill: whether it's set, its date, and
+// adding it to the calendar. Also used by a tile's menu (MobileTile).
+export function useReminder({ id, title, description, email, who = "HR" }) {
   const storageKey = `candid_reminder_${id}`;
   const [isSet, setIsSet] = useState(() => {
     try { return localStorage.getItem(storageKey) === "1"; } catch (e) { reportStorageFailure("read_reminder", e); return false; }
   });
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [emailOpened, setEmailOpened] = useState(false);
   const reminderDate = nextAvailableWorkingDay(id);
   const dateLabel = reminderDate.toLocaleDateString("en-GB", { weekday:"short", day:"numeric", month:"short" });
-
   const setReminder = () => {
     triggerCalendarReminder({
       title,
@@ -61,6 +60,13 @@ export default function MobileReminderAction({ id, title, description, email, ac
     try { localStorage.setItem(storageKey, "1"); } catch (e) { reportStorageFailure("save_reminder", e); }
     setIsSet(true);
   };
+  return { isSet, dateLabel, setReminder };
+}
+
+export default function MobileReminderAction({ id, title, description, email, action, beside, who = "HR" }) {
+  const { isSet, dateLabel, setReminder } = useReminder({ id, title, description, email, who });
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [emailOpened, setEmailOpened] = useState(false);
 
   const openEmail = () => {
     setEmailOpened(true);

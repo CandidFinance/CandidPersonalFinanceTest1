@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ExternalLink, ChevronRight } from "lucide-react";
-import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD, GOLD_TEXT } from "../design-tokens.js";
+import ProviderLogo from "./ProviderLogo.jsx";
+import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, SERIF, PROVIDER_TILE_BG, PROVIDER_TILE_BG_END, PROVIDER_TILE_BORDER, PROVIDER_TILE_SHADOW, RADIUS_CARD, GOLD_TEXT, HAIRLINE } from "../design-tokens.js";
 
 // Collapsible "Best [X] right now" provider-rate tile — collapsed by default
 // to roughly 2 rows' worth of height: the 1st row fully visible, the 2nd
@@ -9,10 +10,14 @@ import { PROVIDER_TILE_FADE_CLEAR, G, GOLD, MUT, TEXT, SERIF, PROVIDER_TILE_BG, 
 // blur genuinely reaches the bottom of the tile rather than leaving a stub
 // of plain whitespace below a short fade. Expands to the full list on tap.
 const COLLAPSED_HEIGHT = 98;
+// `flush`: whole rows instead, this many, then a "See all" row.
+const FLUSH_ROWS = 2;
 
 // `embedded`: inside a MobileWinTile with `provider`, which gives
-// the heading and the frame.
-export default function MobileProductListTile({ heading, subheading, products, disclaimer, embedded = false }) {
+// the heading and the frame. `flush`: rows of a MobileTile, each with a
+// hairline above that runs to the tile's right edge (the tile has no right
+// padding, so the row keeps its own).
+export default function MobileProductListTile({ heading, subheading, products, disclaimer, embedded = false, flush = false }) {
   const [open, setOpen] = useState(false);
   if (!products || products.length === 0) return null;
 
@@ -27,13 +32,15 @@ export default function MobileProductListTile({ heading, subheading, products, d
       </button>}
 
       {/* Tabbing to a link hidden under the fade opens the list. */}
-      <div onFocus={e => { if (!open && keyboardFocus(e.target)) setOpen(true); }} style={{position:"relative",marginTop:embedded ? 0 : "10px",maxHeight:open?"none":`${COLLAPSED_HEIGHT}px`,overflow:"hidden"}}>
-        {products.map((p, i) => (
+      <div onFocus={e => { if (!flush && !open && keyboardFocus(e.target)) setOpen(true); }} style={{position:"relative",marginTop:embedded ? 0 : "10px",maxHeight:open || flush ? "none" : `${COLLAPSED_HEIGHT}px`,overflow:"hidden"}}>
+        {(flush && !open ? products.slice(0, FLUSH_ROWS) : products).map((p, i) => (
           <a key={i} href={p.productUrl} target="_blank" rel="noopener noreferrer" style={{
-            display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",padding:"8px 0",
-            borderBottom: i < products.length-1 ? "1px solid rgba(22,47,36,0.06)" : "none",
+            display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",padding:flush ? "10px 16px 10px 0" : "8px 0",
+            ...(flush ? { borderTop:HAIRLINE } : { borderBottom: i < products.length-1 ? "1px solid rgba(22,47,36,0.06)" : "none" }),
             textDecoration:"none",
           }}>
+            <div style={{display:"flex",alignItems:"center",gap:"12px",minWidth:0}}>
+            {flush && <ProviderLogo url={p.productUrl} name={p.name}/>}
             <div style={{minWidth:0}}>
               <div style={{display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
                 <span style={{fontSize:"14px",fontWeight:600,color:TEXT}}>{p.name}</span>
@@ -41,13 +48,19 @@ export default function MobileProductListTile({ heading, subheading, products, d
               </div>
               <div style={{fontSize:"12px",color:MUT,marginTop:"1px"}}>{p.type}</div>
             </div>
+            </div>
             <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
               <span style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G}}>{p.rate}</span>
               <ExternalLink size={13} color={MUT}/>
             </div>
           </a>
         ))}
-        {!open && products.length > 1 && (
+        {flush && products.length > FLUSH_ROWS && (
+          <button type="button" aria-expanded={open} onClick={e => { const btn = e.currentTarget; setOpen(o => !o); if (open) requestAnimationFrame(() => btn.scrollIntoView({ block: "nearest" })); }} style={{display:"block",width:"100%",borderTop:HAIRLINE,borderLeft:"none",borderRight:"none",borderBottom:"none",background:"none",padding:"12px 16px 12px 0",font:"inherit",textAlign:"left",cursor:"pointer",fontSize:"13.5px",fontWeight:600,color:G}}>
+            {open ? "Show fewer" : `See all ${products.length} rates`}
+          </button>
+        )}
+        {!flush && !open && products.length > 1 && (
           <>
             <div style={{position:"absolute",inset:0,background:`linear-gradient(to bottom, ${PROVIDER_TILE_FADE_CLEAR} 0%, ${PROVIDER_TILE_FADE_CLEAR} 50%, ${PROVIDER_TILE_BG_END} 100%)`,pointerEvents:"none"}}/>
             <button type="button" onClick={() => setOpen(true)} style={{position:"absolute",left:0,right:0,bottom:0,background:"none",border:"none",padding:"14px 0 10px",font:"inherit",textAlign:"center",cursor:"pointer"}}>
@@ -58,7 +71,7 @@ export default function MobileProductListTile({ heading, subheading, products, d
       </div>
 
       {open && disclaimer && (
-        <p style={{fontSize:"10.5px",color:MUT,lineHeight:1.5,marginTop:"12px",marginBottom:0}}>{disclaimer}</p>
+        <p style={{fontSize:flush ? "11.5px" : "10.5px",color:MUT,lineHeight:1.5,marginTop:"12px",marginBottom:flush ? "12px" : 0,paddingRight:flush ? "16px" : 0}}>{disclaimer}</p>
       )}
     </div>
   );
