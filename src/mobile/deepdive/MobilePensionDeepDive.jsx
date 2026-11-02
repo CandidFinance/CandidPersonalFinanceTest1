@@ -1,53 +1,77 @@
 import { useEffect, useState } from "react";
 import { GROWTH_NOMINAL_PCT, INFLATION_PCT } from "../../lib/growth.js";
 import { pensionReveal } from "../../lib/moduleReveal.js";
-import { childcareSupport } from "../../lib/childcare.js";
 import { pensionOutlook, cliffEdge, retirementAdequacy } from "../../lib/crossModule.js";
 import { choiceFor, CHOICE_IDS } from "../../lib/opportunityChoices.js";
 import OpportunityChoice from "../OpportunityChoice.jsx";
-import { AlertTriangle, PartyPopper, Banknote, Check, ChevronRight } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight, Bell, BellRing, Mail, Info, Pencil, Gift, History, HandCoins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   isPensionContributing,
-  calcPensionTaperSaving, calcAnnualAllowanceTaper, calcAnnualAllowanceRoom, calcBonusSacrificePotential,
+  calcAnnualAllowanceTaper, calcBonusSacrificePotential,
   calcCarryForward, defaultCarryForwardYears, calcBonusSacrifice, calcPensionGrowthTrajectory,
   missedPensionRelief, calcTaxFreeCash, inRetirement, LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT, MONEY_PURCHASE_ANNUAL_ALLOWANCE,
   sacrificeNiRate, minimumPensionAge,
 } from "../../lib/pension.js";
 import { bestDrawdown, defaultDrawdownYears } from "../../lib/drawdown.js";
 import { taxYearFor } from "../../lib/taxYear.js";
+import { taxTrap, thisTaxYear } from "../../lib/taxTrap.js";
 import { capField } from "../../lib/onboarding.js";
 import { fmt, fmtCompact, fmtBig } from "../../lib/format.js";
 import { PillSlider } from "../PillSlider.jsx";
 import { getModuleProducts } from "../moduleProducts.js";
-import MobileWinTile from "../MobileWinTile.jsx";
-import MobileDrawdown, { compact, Pill } from "./MobileDrawdown.jsx";
+import MobileTile, { TileRow } from "../MobileTile.jsx";
+import MobileProductListTile from "../MobileProductListTile.jsx";
+import MobileDrawdown from "./MobileDrawdown.jsx";
 import { EMPLOYER_NI_RATE } from "../../lib/tax.js";
-import MobileProviderTile from "../MobileProviderTile.jsx";
 import { ADVISER_LINK } from "../GuidanceNote.jsx";
 import InfoButton from "../InfoButton.jsx";
 import PillMoneyInput from "../PillMoneyInput.jsx";
 import { buildReminderSubject } from "../reminders.js";
+import { useReminder } from "../MobileReminderAction.jsx";
 import { firstName } from "../copy.js";
-import { pensionMatchDraft, bonusSacrificeDraft } from "../emailDrafts.js";
-import { G, GOLD, WHITE, MUT, TEXT, SERIF, RADIUS_CARD, CDARK, SUCCESS, CRITICAL, MUT_ON_CDARK } from "../../design-tokens.js";
+import { pensionMatchDraft, bonusSacrificeDraft, buildMailtoUrl } from "../emailDrafts.js";
+import { G, GOLD, WHITE, MUT, TEXT, SERIF, CARD, CDARK, SUCCESS, CRITICAL, MUT_ON_CDARK, NOTICE_LABEL } from "../../design-tokens.js";
 import OpportunityTile from "./OpportunityTile.jsx";
 import { EXTRA_COLOR, PayInMore, CliffEdge, LookingAhead } from "./PensionLookingAhead.jsx";
 
 const SACRIFICE_OPTIONS = [0,25,50,75,100].map(p => ({ value:p, label:`${p}%` }));
 const EXTRA_PCT_OPTIONS = [0,1,2,3,5].map(p => ({ value:p, label:p ? `+${p}%` : "0%" }));
 
+// A row: its label and note on the left, its figure on the right (as Cash).
+const line = { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"12px" };
+const rowLabel = { fontSize:"14px", color:TEXT, lineHeight:1.4 };
+const rowNote = { fontSize:"12px", color:MUT, lineHeight:1.45, marginTop:"2px" };
+const rowFigure = { fontFamily:SERIF, fontSize:"17px", fontWeight:700, color:G, whiteSpace:"nowrap" };
+const noteText = { fontSize:"13px", color:TEXT, lineHeight:1.55, margin:0 };
+// A breakdown's lines, inside one row.
+const rowStyle = { display:"flex", justifyContent:"space-between", gap:"12px", fontSize:"13px", color:TEXT, padding:"4px 0" };
+const actionText = { display:"flex", alignItems:"center", gap:"10px", fontSize:"14px", fontWeight:600, color:G };
+const priorityTag = <span style={{fontSize:"11px",fontWeight:700,color:CRITICAL,background:`${CRITICAL}18`,padding:"2px 8px",borderRadius:"100px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Priority</span>;
+
+// A What ifs row's icon, where a provider's logo sits in a list (ProviderLogo):
+// marks the row as something to open. `muted`: a note's, with no tile behind it.
+function RowIcon({ icon: Icon, muted = false }) {
+  return (
+    <span aria-hidden="true" style={{width:"32px",height:"32px",borderRadius:"8px",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:muted ? "none" : "rgba(22,47,36,0.07)"}}>
+      <Icon size={muted ? 18 : 17} color={muted ? MUT : G} strokeWidth={2}/>
+    </span>
+  );
+}
+// The icon, then the row's own content.
+const withIcon = (icon, children, muted = false) => (
+  <div style={{display:"flex",alignItems:muted ? "flex-start" : "center",gap:"12px"}}><RowIcon icon={icon} muted={muted}/><div style={{flex:1,minWidth:0}}>{children}</div></div>
+);
+// A calculator open under its row: indented past the icon, so its rows'
+// hairlines start under the row's text.
+const Nested = ({ children }) => <div style={{marginLeft:"44px"}}>{children}</div>;
+
 // Full mobile version of desktop's Pension deep dive (ModuleDeepDive,
-// moduleKey==="pension" — CandidApp.jsx): the two core wins (employer match,
-// Personal Allowance taper recovery), the interactive 3-year carry-forward
-// table, the full bonus-sacrifice calculator (slider, tax/NI/SL breakdown,
-// future-value comparison), and the growth-trajectory tile (stats, "what if
-// you contributed more" stepper, earliest-retirement estimate, Lump Sum
-// Allowance flag). The growth chart itself is redesigned as horizontal
-// progress bars rather than a ported vertical-bar SVG — 3–5 vertical columns
-// each needing their own label underneath doesn't fit a narrow screen the
-// way desktop's wide canvas allows; a horizontal bar list is the mobile-
-// native equivalent, not a shrunk copy.
+// moduleKey==="pension" — CandidApp.jsx), as MobileTiles (rows on the tile,
+// actions in its menu): growth to retirement, the employer match, drawing
+// the pension, the what-ifs (a bonus, past years' allowance, salary
+// sacrifice, one open at a time under its row), looking ahead, and the
+// providers. The growth chart is vertical columns sized for a narrow screen.
 function YearToggle({ value, onChange }) {
   return (
     <div style={{display:"flex",gap:"6px"}}>
@@ -72,8 +96,8 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
   const [draft, setDraft] = useState(suggested);
   const applied = draft != null && myPct > 0 && String(draft) === String(myPct);
   return (
-    <div style={{marginTop:"14px",paddingTop:"14px",borderTop:"1px solid rgba(22,47,36,0.1)"}}>
-      <div style={{fontSize:"10.5px",fontWeight:700,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>Acted on this?</div>
+    <TileRow align>
+      <div style={{...NOTICE_LABEL,marginBottom:"8px"}}>Acted on this?</div>
       <div style={{display:"flex",gap:"8px",alignItems:"flex-end"}}>
         <PillMoneyInput label="New contribution" unit="%" value={draft} onChange={setDraft}/>
         <button type="button" disabled={applied || draft == null}
@@ -90,11 +114,33 @@ function QuickUpdateContribution({ d, myPct, suggested, set }) {
         </button>
       </div>
       {applied && <p style={{fontSize:"11px",color:SUCCESS,marginTop:"6px",lineHeight:1.5}}>Saved — your Candid score now reflects this.</p>}
-    </div>
+    </TileRow>
   );
 }
 
-export default function MobilePensionDeepDive({ d, m, set }) {
+// A tile's visible actions: open the drafted email to HR, and add a
+// calendar reminder (with the draft in it). Two rows, as a page can hand
+// off to the phone only once per tap.
+function ReminderRows({ reminder, email }) {
+  const [emailOpened, setEmailOpened] = useState(false);
+  return (
+    <>
+      {email && (
+        <TileRow align onClick={() => { setEmailOpened(true); window.location.href = buildMailtoUrl(email); }}>
+          <span style={actionText}>{emailOpened ? <Check size={18} aria-hidden="true"/> : <Mail size={18} aria-hidden="true"/>}{emailOpened ? "Email draft opened" : "Draft an email to HR"}</span>
+        </TileRow>
+      )}
+      <TileRow align onClick={reminder.isSet ? undefined : reminder.setReminder}>
+        <span style={actionText}>
+          {reminder.isSet ? <BellRing size={18} aria-hidden="true"/> : <Bell size={18} aria-hidden="true"/>}
+          {reminder.isSet ? `Reminder set for ${reminder.dateLabel}` : `Remind me on ${reminder.dateLabel}`}
+        </span>
+      </TileRow>
+    </>
+  );
+}
+
+export default function MobilePensionDeepDive({ d, m, set, onEditInputs }) {
   const navigate = useNavigate();
   // From the £100k module, past the annual allowance: straight to carry forward.
   const toCarryForward = typeof window !== "undefined" && window.location.hash === "#carry-forward";
@@ -103,34 +149,39 @@ export default function MobilePensionDeepDive({ d, m, set }) {
     const timer = setTimeout(() => document.getElementById("carry-forward")?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
     return () => clearTimeout(timer);
   }, [toCarryForward]);
-  const rowStyle = { display:"flex", justifyContent:"space-between", fontSize:"13px", color:TEXT, padding:"5px 0" };
   const [cfYears, setCfYears] = useState(defaultCarryForwardYears());
-  const [showTaxFreeInfo, setShowTaxFreeInfo] = useState(false);
   const [bonusInput, setBonusInput] = useState(+d.bonusAmount || null);
   const [sacrificePct, setSacrificePct] = useState(100);
   const [extraPct, setExtraPct] = useState(0);
   const [showFVInfo, setShowFVInfo] = useState(false);
-  const [showTrajInfo, setShowTrajInfo] = useState(false);
-  const [aheadOpen, setAheadOpen] = useState(false);
-  // The what-if tools (bonus sacrifice, carry forward, the growth chart and
-  // the £80k-£100k sacrifice explorer) sit under "Explore", closed at first,
-  // so the screen leads with the answer and its one action.
+  // Each tile's explanation, from its menu.
+  const [notes, setNotes] = useState({});
+  const toggleNote = k => setNotes(n => ({ ...n, [k]: !n[k] }));
+  // The what-if open under its row in What ifs: one at a time.
+  const [whatIf, setWhatIf] = useState(toCarryForward ? "carryForward" : null);
+  const toggleWhatIf = k => setWhatIf(w => w === k ? null : k);
+
+  const editItem = onEditInputs && { icon: Pencil, label: "Edit my figures", onClick: onEditInputs };
+  const howItem = (k, label = "How this is worked out") => ({ icon: Info, label: notes[k] ? "Hide the explanation" : label, onClick: () => toggleNote(k) });
+  const scrollTo = id => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   // Not sure, or a final salary scheme: the answer's own steps, since
   // there's no pot to chart (moduleReveal.js pensionReveal).
   if (m.pensionStatus === "unknown" || (d.pensionKind === "db" && !inRetirement(d))) {
     const steps = pensionReveal(d, m) || [];
     return (
-      <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px"}}>
+      <MobileTile title="Your pension" menu={[editItem]}>
         {steps.map((s, i) => (
-          <div key={i} style={{marginTop:i ? "14px" : 0}}>
-            <div style={{fontSize:"10px",fontWeight:700,color:MUT,letterSpacing:"0.08em",textTransform:"uppercase"}}>{s.label}</div>
-            {s.figure && <div style={{fontFamily:SERIF,fontSize:"26px",fontWeight:700,color:G,marginTop:"4px"}}>{s.figure}</div>}
-            <p style={{fontSize:"14px",color:TEXT,lineHeight:1.5,margin:"4px 0 0",fontWeight:s.figure ? 600 : 500}}>{s.title}</p>
-            {s.body && <p style={{fontSize:"12.5px",color:MUT,lineHeight:1.5,margin:"4px 0 0"}}>{s.body}</p>}
-          </div>
+          <TileRow key={i} first={i === 0} align>
+            <div style={line}>
+              <span style={{...rowLabel,fontWeight:600}}>{s.label}</span>
+              {s.figure && <span style={rowFigure}>{s.figure}</span>}
+            </div>
+            <p style={{...noteText,marginTop:"4px"}}>{s.title}</p>
+            {s.body && <p style={rowNote}>{s.body}</p>}
+          </TileRow>
         ))}
-      </div>
+      </MobileTile>
     );
   }
 
@@ -144,13 +195,16 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   const trPct = Math.round(m.tr * 100);
   const showMatchWin = notPayingIn || (contributing && m.missedMatch > 0);
 
-
-  // Same taper and bonus figures as the Dashboard (computeModuleStatuses),
-  // both limited to the Annual Allowance room left this year.
-  const aaRoom = calcAnnualAllowanceRoom(d, m);
-  const taper = calcPensionTaperSaving(m, aaRoom.room);
-  const childcare = childcareSupport(d, m);
-  const showSacrificeCalc = taper.recoverable || (m.adjustedNetIncome >= 80000 && m.adjustedNetIncome <= 100000);
+  // Over £100,000: the £100k tax trap module's own figures, on this tax year
+  // as it has them (taxTrap.js, moduleStatus.js), so the two always agree.
+  const trapYear = thisTaxYear(d, m);
+  const trap = taxTrap(trapYear.d, trapYear.m);
+  const trapRatePct = trap ? `${Math.round(trap.rate.rate * 1000) / 10}%` : null;
+  // The £80k-£100k zone, on the same year's income as the trap tile, so the
+  // screen never shows both; over £100k the trap tile has it.
+  const trapAni = trap ? trap.ani : m.adjustedNetIncome;
+  const showSacrifice = !trap?.over && trapAni >= 80000 && trapAni <= 100000;
+  const belowTrap = trap ? trap.headroom : Math.max(0, Math.round(100000 - trapAni));
 
   const aa = calcAnnualAllowanceTaper(d, m);
   const cf = calcCarryForward(d, m, aa.approxAA, cfYears);
@@ -166,26 +220,6 @@ export default function MobilePensionDeepDive({ d, m, set }) {
 
   const products = getModuleProducts("pension", d, m);
 
-  // Salary Sacrifice Tax Saver (folded into the existing £100k-taper win
-  // below, rather than a separate tile) — a flexible "what if you tried a
-  // custom %" exploration alongside that tile's exact "sacrifice this much
-  // to fully escape the taper" figure. Reuses extraPct so it stays in sync
-  // with the growth-trajectory stepper further down the page.
-  const isSalarySacrifice = d.pensionType === "sacrifice";
-  // NI saved by salary sacrifice: 8% in the basic band, 2% above (pension.js).
-  const niSavingPct = isSalarySacrifice ? Math.round(sacrificeNiRate(d, m) * 100) : 0;
-  const totalReliefPct = trPct + niSavingPct;
-  const sacrificeExtraPct = extraPct || 1;
-  const illustrativeExtraAmt = m.salary * sacrificeExtraPct / 100;
-  const illustrativeExtraRelief = Math.round(illustrativeExtraAmt * (m.tr + niSavingPct/100));
-  const illustrativeExtraNetCost = Math.round(illustrativeExtraAmt - illustrativeExtraRelief);
-  const newAdjustedIncome = Math.max(0, m.adjustedNetIncome - illustrativeExtraAmt);
-  const newBandLabel = newAdjustedIncome > 125140 ? "additional" : newAdjustedIncome > 50270 ? "higher" : "basic";
-  // Personal Savings Allowance — a band fact, not something £100k itself
-  // changes (it shifts at £50,270 and £125,140, not £100k), so it's shown
-  // as context in this tile rather than as a consequence of the taper.
-  const psaAmount = m.taxBandLabel === "additional" ? 0 : m.taxBandLabel === "higher" ? 500 : 1000;
-
   const opportunityCols = [];
   if (notPayingIn) opportunityCols.push({ label:"Tax relief you're missing", value: fmtCompact(missedRelief) });
   else if (contributing && m.missedMatch > 0) opportunityCols.push({ label:"Employer match you're not getting", value: fmtCompact(m.missedMatch) });
@@ -193,11 +227,12 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   // Drawdown planning: from the minimum pension age (55, 57 from April
   // 2028), or once retired, for anyone with a pot.
   const showDrawdown = d.hasPension === "yes" && taxFreeCash.pot > 0 && (retired || (+d.age || 0) >= minimumPensionAge(taxYearFor(d)));
-  const drawdownYears = defaultDrawdownYears(d);
-  const drawdownBest = showDrawdown ? bestDrawdown(d, m, drawdownYears) : null;
+  const drawdownBest = showDrawdown ? bestDrawdown(d, m, defaultDrawdownYears(d)) : null;
   // The what-ifs: growth to retirement, past years' allowance, the bonus.
   // Not for someone retired with no earnings.
   const showExplore = !(retired && !(m.salary > 0));
+  const traj = calcPensionGrowthTrajectory(d, m, extraPct);
+  const showChart = showExplore && traj.showTrajectory;
 
   // Looking ahead: what the pension's path, with salary growth, means for
   // tax later on (src/lib/crossModule.js), leading on to Investments.
@@ -207,528 +242,559 @@ export default function MobilePensionDeepDive({ d, m, set }) {
   const cliff = cliffEdge(outlook, m);
   const showProviders = !!products.products?.length;
 
-  const sacrificeTile = (
-    <MobileWinTile
-      title="Salary sacrifice and your tax"
-      headline={taper.recoverable
-        ? `Sacrificing ${fmt(taper.taperSacrificeNeeded)} recovers your full Personal Allowance — worth ~${fmt(taper.taperTotalSaving)}`
-        : `You're ${fmt(Math.max(0, taper.taperStart - taper.ani))} below the £100k taper`}
-      tagLabel="Today">
-      <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:taper.recoverable&&taper.taperTotalSaving>0?"12px":0}}>
-        {!taper.recoverable
-          ? `Your income sits in the £80k–£100k zone. Salary sacrifice saves tax and NI on what goes in, and leaves room if a bonus or rise would take you over £100k later. It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028).`
-          : taper.aboveTaper
-            ? `Above £125,140 your Personal Allowance is gone entirely. Sacrificing back down to £100k saves 45% on everything above £125,140 and an effective 60% on the £100k–£125,140 slice — roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`
-            : `Between £100k–£125,140 you lose £1 of Personal Allowance for every £2 earned — an effective ${m.scottish ? "67.5" : "60"}% tax rate. Salary sacrifice back to £100k would restore it, saving roughly ${fmt(taper.taperTotalSaving)} in tax${taper.taperNiSaving > 0 ? " and NI" : ""}.`}
-      </p>
-      {taper.recoverable && taper.taperTotalSaving > 0 && (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"10px",textAlign:"center"}}>
-          <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"8px",padding:"10px 6px"}}>
-            <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700}}>{fmt(taper.taperSacrificeNeeded)}</div>
-            <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>sacrifice needed</div>
-          </div>
-          <div style={{background:"rgba(45,107,74,0.08)",borderRadius:"8px",padding:"10px 6px"}}>
-            <div style={{fontFamily:SERIF,fontSize:"16px",color:SUCCESS,fontWeight:700}}>{fmt(taper.taperTaxSaving)}</div>
-            <div style={{fontSize:"10px",color:MUT,marginTop:"2px"}}>tax saved</div>
-          </div>
-          <div style={{background:"rgba(196,150,58,0.18)",borderRadius:"8px",padding:"10px 6px"}}>
-            <div style={{fontFamily:SERIF,fontSize:"16px",color:G,fontWeight:700}}>{fmt(taper.taperTotalSaving)}</div>
-            <div style={{fontSize:"10px",color:G,marginTop:"2px",fontWeight:600}}>total saving</div>
-          </div>
-        </div>
-      )}
-      {childcare?.recoverable && childcare.atStake > 0 && (
-        <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"10px",padding:"12px 14px",marginBottom:"8px"}}>
-          <div style={{fontSize:"10.5px",fontWeight:700,color:CRITICAL,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"6px"}}>Also at stake: your childcare support</div>
-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-            Over £100,000, Tax-Free Childcare{childcare.hours > 0 ? " and the funded hours" : ""} stop for the whole year. Bringing your income back to £100,000 would also restore {fmt(childcare.atStake)} a year of childcare support (Kids &amp; family).
-          </p>
-        </div>
-      )}
-      <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"10px 12px",marginBottom:"12px"}}>
-        <p style={{fontSize:"12px",color:MUT,lineHeight:1.6,margin:0}}>
-          Your Personal Savings Allowance is {psaAmount>0?fmt(psaAmount):"£0"} as a {m.taxBandLabel}-rate taxpayer{psaAmount>0?" — savings interest above that is taxed at your marginal rate":""}. {taper.aboveTaper
-            ? "Sacrificing back below £125,140 would also restore £500 of it."
-            : "This doesn't move within the £100k–£125,140 taper zone itself — it only shrinks further if you cross into additional-rate above £125,140, or would recover to £1,000 if sacrifice took you all the way back under £50,270."}
-        </p>
-      </div>
+  // The money purchase annual allowance note: in What ifs, or with drawing
+  // the pension when there are no what-ifs.
+  const mpaa = d.pensionAccess === "income";
+  const mpaaText = <p style={noteText}>Having drawn an income, up to {fmt(MONEY_PURCHASE_ANNUAL_ALLOWANCE)} a year can go into your pensions with tax relief: the Money Purchase Annual Allowance. Employer payments count towards it.</p>;
+  const mpaaRow = <TileRow align>{mpaaText}</TileRow>;
 
-      <div style={{background:"rgba(22,47,36,0.03)",border:"1px solid rgba(22,47,36,0.12)",borderRadius:"10px",padding:"12px 14px"}}>
-        <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:"8px"}}>Or try your own amount — sacrifice an extra {sacrificeExtraPct}% of salary</div>
-        <div style={rowStyle}><span>Comes off your taxable income</span><span style={{fontWeight:600}}>−{fmt(Math.round(illustrativeExtraAmt))}</span></div>
-        <div style={rowStyle}><span>Tax{niSavingPct>0?" + NI":""} relief at {totalReliefPct}%</span><span>−{fmt(illustrativeExtraRelief)}</span></div>
-        <div style={{...rowStyle,fontWeight:700}}><span>Net cost to your take-home</span><span>{fmt(illustrativeExtraNetCost)}</span></div>
-      </div>
-      <p style={{fontSize:"12px",color:MUT,lineHeight:1.55,marginTop:"10px",marginBottom:0}}>
-        That leaves your taxable income at ~{fmt(Math.round(newAdjustedIncome))}
-        {newBandLabel !== m.taxBandLabel ? `, dropping you into the ${newBandLabel}-rate band.` : `, still within the ${m.taxBandLabel}-rate band.`} Use "What if you contributed more?" under the chart at the top to try a different percentage.
-      </p>
-    </MobileWinTile>
-  );
-
-  // The tax-free cash explained, behind the "?" in the drawdown tile.
+  // Tax-free cash explained, from the menu of the tile it's in.
   const taxFreeCashText = (taxFreeCash.taken > 0
-    ? `Of your ${fmt(taxFreeCash.allowance)} limit, ${fmt(taxFreeCash.taken)} has been taken. 25% of the part you haven't touched is about ${fmt(taxFreeCash.quarter)}.`
+    ? `Of your ${fmt(taxFreeCash.allowance)} limit, ${fmt(taxFreeCash.taken)} has been taken. ${taxFreeCash.capped ? `25% of the part you haven't touched would be about ${fmt(taxFreeCash.quarter)}, so the limit decides it.` : `25% of the part you haven't touched is about ${fmt(taxFreeCash.quarter)}.`} The rest is taxed as income when it's taken out.`
     : taxFreeCash.capped
-    ? `25% of your pot would be ${fmtBig(taxFreeCash.quarter)}, but tax-free cash stops at ${fmtBig(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? ", the Lump Sum Allowance" : ", your protected limit"}.`
-    : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(taxFreeCash.allowance)}.`)
-    + " The rest is taxed as income when it's taken out."
-    + (!d.pensionProtection && taxFreeCash.capped ? " A Fixed or Individual Protection from 2012 to 2016 allows more." : "");
-  const taxFreeCashBlock = (
-        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Tax-free cash{taxFreeCash.taken > 0 ? " left" : ""}</div>
-          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            <div style={{fontFamily:SERIF,fontSize:"24px",color:G,fontWeight:700,lineHeight:1.15}}>{fmt(taxFreeCash.taxFree)}</div>
-            <InfoButton onClick={() => setShowTaxFreeInfo(o => !o)} open={showTaxFreeInfo}/>
-          </div>
-          {showTaxFreeInfo && <>
-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:"4px 0 0"}}>
-            {taxFreeCash.taken > 0
-              ? `Of your ${fmt(taxFreeCash.allowance)} limit, ${fmt(taxFreeCash.taken)} has been taken. ${taxFreeCash.capped ? `25% of the part you haven't touched would be about ${fmt(taxFreeCash.quarter)}, so the limit decides it.` : `25% of the part you haven't touched is about ${fmt(taxFreeCash.quarter)}.`} The rest is taxed as income when it's taken out.`
-              : taxFreeCash.capped
-              ? `25% of your pot would be ${fmtBig(taxFreeCash.quarter)}, but tax-free cash stops at ${fmtBig(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? `, the Lump Sum Allowance, for any pot above ${fmtBig(LSA_INFLECTION_POT)}` : ", your protected limit"}. The other ${fmtBig(taxFreeCash.overCap)} is taxed as income when it's taken out.`
-              : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(taxFreeCash.allowance)}. The rest is taxed as income when it's taken out.`}
-          </p>
-          {!d.pensionProtection && taxFreeCash.capped && (
-            <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.55,margin:"6px 0 0"}}>
-              A Fixed or Individual Protection from 2012 to 2016 allows more, up to £450,000.
-            </p>
-          )}
-          </>}
-        </div>
+    ? `25% of your pot would be ${fmtBig(taxFreeCash.quarter)}, but tax-free cash stops at ${fmtBig(taxFreeCash.allowance)}${taxFreeCash.allowance === LUMP_SUM_ALLOWANCE ? `, the Lump Sum Allowance, for any pot above ${fmtBig(LSA_INFLECTION_POT)}` : ", your protected limit"}. The other ${fmtBig(taxFreeCash.overCap)} is taxed as income when it's taken out.`
+    : `Up to 25% of your pot can be taken tax-free, to a limit of ${fmt(taxFreeCash.allowance)}. The rest is taxed as income when it's taken out.`)
+    + (!d.pensionProtection && taxFreeCash.capped ? " A Fixed or Individual Protection from 2012 to 2016 allows more, up to £450,000." : "");
+  const taxFreeRows = (first) => (
+    <>
+      <TileRow first={first} align>
+        <div style={line}><span style={rowLabel}>Tax-free cash{taxFreeCash.taken > 0 ? " left" : ""}</span><span style={rowFigure}>{fmt(taxFreeCash.taxFree)}</span></div>
+      </TileRow>
+      {notes.taxFree && <TileRow><p style={noteText}>{taxFreeCashText}</p></TileRow>}
+    </>
   );
+
+  // What ifs: each row's figure, and its calculator opened under it.
+  const bonusPotential = bonusSacrifice.standalone;
+  const bonusRow = {
+    figure: hasStatedBonus && bonusSacrifice.room > 0 && bonusPotential > 0 ? fmt(bonusPotential) : null,
+    note: !hasStatedBonus ? "No tax or NI on a bonus paid in by salary sacrifice"
+      : bonusSacrifice.room <= 0 ? "No pension allowance left this year"
+      : bonusSacrifice.standaloneSacrifice < bonusSacrifice.bonus ? `Tax and NI it could save, on the ${fmt(bonusSacrifice.standaloneSacrifice)} your allowance has room for`
+      : `Tax and NI it could save on your ${fmt(bonusSacrifice.bonus)} bonus`,
+  };
 
   return (
     <div>
       {opportunityCols.length > 0 && (
         <OpportunityTile figures={opportunityCols}
-          chips={[bonusSacrifice.beyondTaper > 0 && !bonusChoice && `Up to ${fmt(bonusSacrifice.beyondTaper)} more from sacrificing a bonus`]}/>
+          chips={[bonusSacrifice.beyondTaper > 0 && !bonusChoice && `Up to ${fmt(bonusSacrifice.beyondTaper)} more from sacrificing a bonus`]}
+          action={{ label: "See how", onClick: () => scrollTo("pension-match") }}/>
       )}
 
-      {/* The hero: how the pot could grow to retirement. */}
-      <GrowthChart showExplore={showExplore} d={d} m={m} showTrajInfo={showTrajInfo} setShowTrajInfo={setShowTrajInfo} extraPct={extraPct} setExtraPct={setExtraPct} cliff={cliff} setAheadOpen={setAheadOpen}/>
-
-      {/* Short of the retirement income they'd like, with their own answer
-          to it (OpportunityChoice). */}
-      {showRetirementGap && (
-        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"10px"}}>Retirement income</div>
-          {set && <OpportunityChoice id={CHOICE_IDS.retirementGap} d={d} set={set}/>}
-          <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:0,fontWeight:600}}>
-            About {fmt(adequacy.gap)} a year short of the {fmt(adequacy.target)} a year you'd like.
-          </p>
-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:"4px 0 0"}}>
-            On your figures you'd have about {fmt(adequacy.net)} a year after tax, from your pension and a full State Pension, in today's money.
-          </p>
-        </div>
+      {/* The hero: how the pot could grow to retirement, and any gap to the
+          income they'd like under it. */}
+      {(showChart || showRetirementGap) && (
+        <MobileTile id="pension-growth" title={showChart ? "Growth to retirement" : "Retirement income"}
+          menu={[showChart && howItem("growth"), editItem]}>
+          {showChart && <GrowthChart traj={traj} d={d} m={m} extraPct={extraPct}/>}
+          {showChart && notes.growth && (
+            <TileRow>
+              <p style={noteText}>In today's money: growth of {GROWTH_NOMINAL_PCT}% a year, less {INFLATION_PCT}% inflation, over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}.</p>
+            </TileRow>
+          )}
+          {showRetirementGap && (
+            <>
+              <TileRow first={!showChart} align>
+                <div style={line}><span style={rowLabel}>Short of the income you'd like</span><span style={rowFigure}>{fmt(adequacy.gap)}/yr</span></div>
+                <div style={rowNote}>About {fmt(adequacy.net)} a year after tax, from your pension and a full State Pension, against the {fmt(adequacy.target)} you'd like, in today's money</div>
+              </TileRow>
+              {set && <TileRow align style={{paddingBottom:0}}><OpportunityChoice id={CHOICE_IDS.retirementGap} d={d} set={set}/></TileRow>}
+            </>
+          )}
+          {showChart && +d.niYears > 0 && (
+            <TileRow align>
+              <div style={line}><span style={rowLabel}>State Pension estimate</span><span style={rowFigure}>{fmt(m.statePensionAnnual)}/yr</span></div>
+              <div style={rowNote}>From your recorded National Insurance years</div>
+            </TileRow>
+          )}
+          {/* Paying in more, as what it costs against what it adds, rather
+              than another bar, so the chart shows the pension as it stands. */}
+          {showChart && (
+            <TileRow align>
+              <div style={{...NOTICE_LABEL,marginBottom:"8px"}}>What if you paid in more?</div>
+              <PillSlider compact label="What if you paid in more?" value={extraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS}/>
+              <PayInMore traj={traj} tr={m.tr || 0}/>
+            </TileRow>
+          )}
+          {showChart && cliff && <CliffEdge cliff={cliff} onSeeMore={() => scrollTo("looking-ahead")}/>}
+        </MobileTile>
       )}
 
-      <EmployerMatchTile showMatchWin={showMatchWin} m={m} d={d} trPct={trPct} contributing={contributing} rowStyle={rowStyle} set={set} taxFreeCash={taxFreeCash}/>
+      {/* Over £100,000: paying in is one way out of the trap, so it sits
+          under the growth tile, closed, leading on to the £100k tax trap
+          module. */}
+      {trap?.over && <TrapTile trap={trap} ratePct={trapRatePct} onOpenModule={() => navigate("/app/module/taxTrap")}/>}
 
-      {/* Over £100,000: the £100k tax trap module has the figures now
-          (taxTrap.js), so this links to it rather than repeating them. */}
-      {taper.ani > taper.taperStart && (
-        <button type="button" onClick={() => navigate("/app/module/taxTrap")} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",background:"none",border:"none",borderTop:"1px solid rgba(22,47,36,0.1)",borderBottom:"1px solid rgba(22,47,36,0.1)",padding:"14px 0",marginBottom:"16px",cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
-          <span>
-            <span style={{display:"block",fontSize:"14px",fontWeight:700,color:G}}>Over £100,000: the £100k tax trap</span>
-            <span style={{display:"block",fontSize:"12.5px",color:MUT,marginTop:"2px"}}>What paying into your pension saves, against the other ways back under it</span>
-          </span>
-          <ChevronRight size={18} color={G}/>
-        </button>
-      )}
-
-      {aa.inAATaper && (
-        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Worth knowing</div>
-          <p style={{fontSize:"13px",color:G,lineHeight:1.6,margin:"0 0 6px",fontWeight:600}}>
-            Your Annual Allowance may be reduced to approximately {fmt(aa.approxAA)} this tax year (down from £60,000).
-          </p>
-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-            Once adjusted income passes £260,000, your allowance shrinks £1 for every £2 above that, down to a £10,000 floor.{" "}
-            {cf.showCarryForward
-              ? "Unused allowance from the last 3 tax years can be carried forward, so more can go in without a charge. The calculator below works it out."
-              : "Carry forward unused allowance from the last 3 tax years to contribute more without a charge — check your provider's statements or HMRC account for an exact figure."}
-          </p>
-        </div>
+      {showMatchWin && (
+        <EmployerMatchTile m={m} d={d} trPct={trPct} contributing={contributing} set={set} taxFreeCash={taxFreeCash} editItem={editItem}/>
       )}
 
       {/* Tax-free cash on its own: a pot capped by the Lump Sum Allowance,
           before drawdown planning applies. */}
-      {d.hasPension === "yes" && taxFreeCash.pot > 0 && taxFreeCash.capped && !drawdownBest && taxFreeCashBlock}
+      {d.hasPension === "yes" && taxFreeCash.pot > 0 && taxFreeCash.capped && !drawdownBest && (
+        <MobileTile title="Tax-free cash" menu={[howItem("taxFree", "How tax-free cash works"), editItem]}>
+          {taxFreeRows(true)}
+        </MobileTile>
+      )}
 
       {drawdownBest && (
-        <MobileWinTile title="Plan drawing your pension" tagLabel="Strategy" defaultOpen={!showMatchWin}
-          headline="Choose how many years to draw it over, and how to take the tax-free cash">
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
-            <Pill value={compact(taxFreeCash.pot)} caption="Pension pot"/>
-            <Pill value={compact(taxFreeCash.taxFree)} caption={`Tax-free cash${taxFreeCash.taken > 0 ? " left" : ""}`}
-              info={<InfoButton onClick={() => setShowTaxFreeInfo(o => !o)} open={showTaxFreeInfo}/>}/>
-          </div>
-          {showTaxFreeInfo && (
-            <p style={{fontSize:"12px",color:TEXT,lineHeight:1.55,margin:"8px 0 0"}}>{taxFreeCashText}</p>
-          )}
-          <MobileDrawdown d={d} m={m} bare/>
-        </MobileWinTile>
+        <MobileTile id="pension-drawdown" title="Drawing your pension" menu={[howItem("taxFree", "How tax-free cash works"), editItem]}>
+          <TileRow first align>
+            <div style={line}><span style={rowLabel}>Pension pot</span><span style={rowFigure}>{fmt(taxFreeCash.pot)}</span></div>
+          </TileRow>
+          {taxFreeRows(false)}
+          <TileRow><MobileDrawdown d={d} m={m} bare/></TileRow>
+          {mpaa && !showExplore && mpaaRow}
+        </MobileTile>
+      )}
+      {mpaa && !showExplore && !drawdownBest && (
+        <MobileTile title="Paying in after drawing" menu={[editItem]}>
+          {mpaaRow}
+        </MobileTile>
       )}
 
-
-      {d.pensionAccess === "income" && (
-        <div style={{borderLeft:`4px solid ${G}`,background:"rgba(22,47,36,0.04)",borderRadius:"0 10px 10px 0",padding:"14px 16px",marginBottom:"16px"}}>
-          <div style={{fontSize:"10px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>Worth knowing</div>
-          <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-            Having drawn an income, up to {fmt(MONEY_PURCHASE_ANNUAL_ALLOWANCE)} a year can go into your pensions with tax relief: the Money Purchase Annual Allowance. Employer payments count towards it.
-          </p>
-        </div>
-      )}
-
-      {/* The what-if tools, closed at first. */}
-      {/* Retired with no earnings, the what-ifs (paying in more, a bonus,
-          growth to retirement) don't apply. */}
+      {/* The what-ifs: a row each with its figure, its calculator opening
+          under it, one at a time. Retired with no earnings, they don't apply. */}
       {showExplore && (
-        <MobileWinTile title="Explore what-ifs" tagLabel="What if" defaultOpen={toCarryForward}
-          headline={`${hasStatedBonus ? "Paying in your bonus" : "Paying a bonus into your pension"}${cf.showCarryForward ? ", and using past years' allowance" : ""}`}>
-      {showSacrificeCalc && !taper.recoverable && sacrificeTile}
+        <MobileTile id="pension-whatifs" title="What ifs" menu={[editItem]}>
+          <TileRow first style={{paddingTop:0}}><div style={{...rowNote,marginTop:0}}>Calculators, worked out on your figures</div></TileRow>
+          <TileRow onClick={() => toggleWhatIf("bonus")} expanded={whatIf === "bonus"}>
+            {withIcon(Gift, <>
+              <div style={line}><span style={{...rowLabel,fontWeight:600}}>{hasStatedBonus ? "Your bonus into your pension" : "A bonus into your pension"}</span>{bonusRow.figure && <span style={{...rowFigure,color:SUCCESS}}>{bonusRow.figure}</span>}</div>
+              <div style={rowNote}>{bonusRow.note}</div>
+            </>)}
+          </TileRow>
+          {whatIf === "bonus" && (
+            <Nested><BonusCalc hasStatedBonus={hasStatedBonus} bonusPotential={bonusPotential} d={d} set={set} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m} onEditInputs={onEditInputs}/></Nested>
+          )}
 
-      <div id="carry-forward" style={{scrollMarginTop:"80px"}}><CarryForwardTile cf={cf} setCfYears={setCfYears} rowStyle={rowStyle} aa={aa} open={toCarryForward}/></div>
+          {aa.inAATaper && (
+            <TileRow align>
+              {withIcon(Info, <>
+                <p style={{...noteText,fontWeight:600}}>Your Annual Allowance may be reduced to about {fmt(aa.approxAA)} this tax year, from £60,000.</p>
+                <p style={rowNote}>
+                  Once adjusted income passes £260,000, your allowance shrinks £1 for every £2 above that, down to a £10,000 floor.{" "}
+                  {cf.showCarryForward
+                    ? "Unused allowance from the last 3 tax years can be carried forward, so more can go in without a charge."
+                    : "Unused allowance from the last 3 tax years can be carried forward to pay in more without a charge: your provider's statements or HMRC account have the exact figures."}
+                </p>
+              </>, true)}
+            </TileRow>
+          )}
+          {mpaa && <TileRow align>{withIcon(Info, mpaaText, true)}</TileRow>}
 
-      <BonusTile hasStatedBonus={hasStatedBonus} bonusSacrifice={bonusSacrifice} d={d} set={set} sacrificePct={sacrificePct} setSacrificePct={setSacrificePct} bonusInput={bonusInput} setBonusInput={setBonusInput} setShowFVInfo={setShowFVInfo} showFVInfo={showFVInfo} m={m}/>
+          {cf.showCarryForward && (
+            <TileRow id="carry-forward" onClick={() => toggleWhatIf("carryForward")} expanded={whatIf === "carryForward"}>
+              {withIcon(History, <>
+                <div style={line}><span style={{...rowLabel,fontWeight:600}}>Past years' allowance</span>{cf.cfTotalUnused > 0 && <span style={rowFigure}>{fmt(cf.cfMaxContributable)}</span>}</div>
+                <div style={rowNote}>{cf.cfTotalUnused > 0 ? "Could go into your pension this tax year, using carry forward" : "Fill in your last 3 tax years to see what could go in"}</div>
+              </>)}
+            </TileRow>
+          )}
+          {cf.showCarryForward && whatIf === "carryForward" && <Nested><CarryForwardCalc cf={cf} setCfYears={setCfYears} aa={aa}/></Nested>}
 
-
-        </MobileWinTile>
+          {showSacrifice && (
+            <TileRow onClick={() => toggleWhatIf("sacrifice")} expanded={whatIf === "sacrifice"}>
+              {withIcon(HandCoins, <>
+                <div style={line}><span style={{...rowLabel,fontWeight:600}}>Salary sacrifice</span><span style={rowFigure}>{fmt(belowTrap)}</span></div>
+                <div style={rowNote}>Below the £100,000 taper</div>
+              </>)}
+            </TileRow>
+          )}
+          {showSacrifice && whatIf === "sacrifice" && <Nested><SacrificeCalc d={d} m={m} trPct={trPct} extraPct={extraPct} setExtraPct={setExtraPct} chartSlider={showChart}/></Nested>}
+        </MobileTile>
       )}
 
-      {showAhead && <div id="looking-ahead" style={{scrollMarginTop:"80px"}}><LookingAhead d={d} outlook={outlook} cliff={cliff} open={aheadOpen} onOpenChange={setAheadOpen}/></div>}
+      {showAhead && <LookingAhead d={d} outlook={outlook} cliff={cliff} menu={[editItem]}/>}
 
-      {/* Where to do it: a numbered tile like the others, the providers
-          inside it once opened. */}
+      {/* Places to look, not steps: a row per provider. */}
       {showProviders && (
-        <MobileWinTile provider title="Pension providers to compare" tagLabel="Providers"
-          headline={`${products.products.length} providers, listed alphabetically`}>
-          <MobileProviderTile embedded products={products.products} disclaimer={products.disclaimer}/>
-        </MobileWinTile>
+        <MobileTile id="pension-providers" title="Pension providers" menu={[howItem("providers", "About this list"), editItem]}>
+          <TileRow first style={{paddingTop:0}}><div style={{...rowNote,marginTop:0}}>Yearly charges, listed alphabetically</div></TileRow>
+          <MobileProductListTile embedded flush noun="providers" products={products.products}/>
+          {notes.providers && products.disclaimer && (
+            <TileRow><p style={{...rowNote,marginTop:0}}>{products.disclaimer}</p></TileRow>
+          )}
+        </MobileTile>
       )}
     </div>
   );
 }
 
-// The hero: how the pot could grow to retirement, with what paying in
-// more would add on top.
-function GrowthChart({ showExplore, d, m, showTrajInfo, setShowTrajInfo, extraPct, setExtraPct, cliff, setAheadOpen }) {
-  const traj = calcPensionGrowthTrajectory(d, m, extraPct);
+// The £100k tax trap, from the pension's side: a pale red tile, closed at
+// first to its alert and what the trap costs; opened, the figures behind it
+// (taxTrap.js, as the £100k module has them). Its last row leads to that
+// module, open or closed.
+function TrapTile({ trap, ratePct, onOpenModule }) {
+  const [open, setOpen] = useState(false);
+  const red = trap.amount > 0;
   return (
-    <>
-      {showExplore && traj.showTrajectory && (() => {
-        // What paying more in adds sits on top of every bar after Now (the
-        // same extra, grown the same, whichever path it joins), so each bar
-        // shows the whole pot. Scaled for the largest extra on offer, so the
-        // bars don't shrink as the slider moves.
-        const extra = traj.extraGain;
-        const maxExtra = calcPensionGrowthTrajectory(d, m, EXTRA_PCT_OPTIONS.at(-1).value).extraGain;
-        const maxBar = Math.max(...traj.bars.map(b => b.value + (b.key === "now" ? 0 : maxExtra)), 1);
-        const barColors = { now:"rgba(196,150,58,0.5)", retirement:GOLD, optimised:SUCCESS, bonus:"rgba(45,107,74,0.7)" };
-        // Short labels for narrow mobile columns — the bars themselves are a
-        // cumulative staircase (see calcPensionGrowthTrajectory), so each
-        // label after "Optimised" is a running "+lever" on top of the last,
-        // not an independent scenario.
-        const shortLabel = {
-          now: "Now",
-          retirement: `Retire (${traj.retireAge})`,
-          optimised: `Optimised (+${traj.matchCapIncreasePct}%)`,
-          bonus: "+ Bonus",
-        };
-        return (
-          <div style={{background:WHITE,borderRadius:RADIUS_CARD,boxShadow:"0 2px 10px rgba(22,47,36,0.06)",padding:"16px",marginBottom:"12px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:showTrajInfo ? "8px" : "14px"}}>
-              <h3 style={{margin:0,fontSize:"15px",fontWeight:700,color:G}}>Pension growth trajectory</h3>
-              <InfoButton onClick={() => setShowTrajInfo(o => !o)} open={showTrajInfo}/>
-            </div>
-            {showTrajInfo && (
-              <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.6,margin:"0 0 14px"}}>
-                In today's money: growth of {GROWTH_NOMINAL_PCT}% a year, less {INFLATION_PCT}% inflation, over {traj.years} year{traj.years!==1?"s":""} to age {traj.retireAge}.
-              </p>
-            )}
-            <div style={{display:"flex",alignItems:"stretch",justifyContent:"space-between",gap:"4px",height:"150px"}}>
-              {traj.bars.map(bar => {
-                const added = bar.key === "now" ? 0 : extra;
-                const total = bar.value + added;
-                // More than the pension as it stands, with everything on this bar.
-                const uplift = bar.key !== "now" ? total - traj.currentPot : 0;
-                return (
-                  <div key={bar.key} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%"}}>
-                    {/* Fixed-height label area (whether or not the uplift badge renders) so
-                        it never eats into the bar's own space below — otherwise columns with
-                        a badge got a shorter effective track and drew a shorter bar even when
-                        their value was higher. */}
-                    <div style={{height:"36px",flexShrink:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
-                      {uplift > 0 && (
-                        <div style={{fontSize:"9px",fontWeight:700,color:SUCCESS,background:"rgba(45,107,74,0.12)",borderRadius:"100px",padding:"1px 6px",whiteSpace:"nowrap",marginBottom:"3px"}}>+{fmtBig(uplift)}</div>
-                      )}
-                      <div style={{fontSize:"13px",fontWeight:700,fontFamily:SERIF,color:TEXT,whiteSpace:"nowrap"}}>{fmtBig(total)}</div>
-                    </div>
-                    <div style={{flex:1,width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end"}}>
-                      <div style={{width:"100%",maxWidth:"52px",borderRadius:"5px 5px 0 0",background:EXTRA_COLOR,height:`${(added/maxBar)*100}%`,transition:"height 0.3s ease"}}/>
-                      <div style={{width:"100%",maxWidth:"52px",borderRadius:added > 0 ? 0 : "5px 5px 0 0",background:barColors[bar.key]||G,height:`${Math.max(3,(bar.value/maxBar)*100)}%`}}/>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",gap:"4px",marginTop:"6px"}}>
-              {traj.bars.map(bar => (
-                <div key={bar.key} style={{flex:1,textAlign:"center",fontSize:"9.5px",color:MUT,lineHeight:1.25}}>{shortLabel[bar.key] || bar.label}</div>
-              ))}
-            </div>
-            {extraPct > 0 && (
-              <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"8px"}}>
-                <span style={{width:"10px",height:"10px",borderRadius:"3px",background:EXTRA_COLOR,display:"inline-block"}}/>
-                <span style={{fontSize:"11px",color:MUT}}>Paying in {extraPct}% more of your salary</span>
+    <section id="pension-trap" style={{...CARD,background:red ? "#fdf0ee" : WHITE,border:`1.5px solid ${red ? "rgba(192,57,43,0.28)" : "rgba(22,47,36,0.08)"}`,paddingLeft:"16px",marginBottom:"12px",scrollMarginTop:"80px"}}>
+      <h2 style={{margin:0,fontSize:"inherit",fontWeight:"inherit"}}>
+        <button type="button" aria-expanded={open} onClick={() => setOpen(o => !o)}
+          style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"14px 16px 12px 0",background:"none",border:"none",textAlign:"left",font:"inherit",color:"inherit",cursor:"pointer"}}>
+          {/* As a What ifs row: the label and its note, the icon in line
+              with the label (the size of the cliff-edge row's above it). */}
+          <span style={{display:"block",flex:1,minWidth:0}}>
+            <span style={{display:"flex",alignItems:"center",gap:"8px",...rowLabel,fontWeight:600,color:CRITICAL}}>
+              <AlertTriangle size={18} color={CRITICAL} aria-hidden="true" style={{flexShrink:0}}/>
+              {trap.aboveTaper ? "Your Personal Allowance is gone" : "You're in the £100k tax trap"}
+            </span>
+            <span style={{display:"block",...rowNote}}>
+              {red ? `Over £100k costs you ${fmt(trap.amount)}/yr. ` : ""}Pensions can be used to fix the trap.
+            </span>
+          </span>
+          <ChevronRight size={16} color={MUT} aria-hidden="true" style={{flexShrink:0,transform:open ? "rotate(90deg)" : "none",transition:"transform 0.15s"}}/>
+        </button>
+      </h2>
+      {open && (
+        <>
+          {red && (
+            <TileRow align>
+              <div style={line}>
+                <span style={{...rowLabel,display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>What it costs you{priorityTag}</span>
+                <span style={{...rowFigure,color:CRITICAL}}>{fmt(trap.amount)}/yr</span>
               </div>
-            )}
+              <div style={rowNote}>{fmt(trap.allowance.tax)} of tax-free allowance{trap.childcareLost > 0 ? ` and ${fmt(trap.childcareLost)} of childcare support` : ""}</div>
+            </TileRow>
+          )}
+          <TileRow align>
+            <div style={line}><span style={rowLabel}>Taken from your next £1</span><span style={{...rowFigure,color:CRITICAL}}>{ratePct}</span></div>
+            <div style={rowNote}>Tax, NI{trap.rate.sl > 0 ? " and student loan" : ""} together{trap.aboveTaper ? ", above £125,140 with no Personal Allowance left" : ", as the Personal Allowance is taken away between £100,000 and £125,140"}</div>
+          </TileRow>
+          <TileRow align>
+            <div style={line}><span style={rowLabel}>Over £100,000 by</span><span style={rowFigure}>{fmt(trap.needed)}</span></div>
+            <div style={rowNote}>{trap.fits ? "Paying that into your pension would fit in the allowance you have left this year" : `More than the ${fmt(trap.aaRoom)} of pension allowance you have left this year`}</div>
+          </TileRow>
+        </>
+      )}
+      <TileRow onClick={onOpenModule}>
+        <span style={actionText}>See the ways back under £100k</span>
+      </TileRow>
+    </section>
+  );
+}
 
-            {+d.niYears > 0 && (
-              <p style={{fontSize:"12px",color:TEXT,lineHeight:1.6,marginTop:"14px"}}>
-                State pension estimate: <b style={{fontFamily:SERIF}}>{fmt(m.statePensionAnnual)}/yr</b>, based on your recorded National Insurance years.
-              </p>
-            )}
-
-            {/* Paying in more, as what it costs against what it adds, rather
-                than another bar, so the chart above shows the pension as
-                it stands and nothing in it looks stuck. */}
-            <div style={{marginTop:"16px",paddingTop:"14px",borderTop:"1px solid rgba(22,47,36,0.08)"}}>
-              <div style={{fontSize:"9.5px",fontWeight:600,color:MUT,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"6px"}}>What if you contributed more?</div>
-              <PillSlider compact label="What if you contributed more?" value={extraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS}/>
-              <PayInMore traj={traj} tr={m.tr || 0}/>
+// The hero: how the pot could grow to retirement, with what paying in
+// more would add on top. The first row of the growth tile.
+function GrowthChart({ traj, d, m, extraPct }) {
+  // What paying more in adds sits on top of every bar after Now (the
+  // same extra, grown the same, whichever path it joins), so each bar
+  // shows the whole pot. Scaled for the largest extra on offer, so the
+  // bars don't shrink as the slider moves.
+  const extra = traj.extraGain;
+  const maxExtra = calcPensionGrowthTrajectory(d, m, EXTRA_PCT_OPTIONS.at(-1).value).extraGain;
+  const maxBar = Math.max(...traj.bars.map(b => b.value + (b.key === "now" ? 0 : maxExtra)), 1);
+  const barColors = { now:"rgba(196,150,58,0.5)", retirement:GOLD, optimised:SUCCESS, bonus:"rgba(45,107,74,0.7)" };
+  // Short labels for narrow mobile columns — the bars themselves are a
+  // cumulative staircase (see calcPensionGrowthTrajectory), so each
+  // label after "Optimised" is a running "+lever" on top of the last,
+  // not an independent scenario.
+  const shortLabel = {
+    now: "Now",
+    retirement: `Retire (${traj.retireAge})`,
+    optimised: `Optimised (+${traj.matchCapIncreasePct}%)`,
+    bonus: "+ Bonus",
+  };
+  return (
+    <TileRow first>
+      <div style={{display:"flex",alignItems:"stretch",justifyContent:"space-between",gap:"4px",height:"150px"}}>
+        {traj.bars.map(bar => {
+          const added = bar.key === "now" ? 0 : extra;
+          const total = bar.value + added;
+          // More than the pension as it stands, with everything on this bar.
+          const uplift = bar.key !== "now" ? total - traj.currentPot : 0;
+          return (
+            <div key={bar.key} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%"}}>
+              {/* Fixed-height label area (whether or not the uplift badge renders) so
+                  it never eats into the bar's own space below — otherwise columns with
+                  a badge got a shorter effective track and drew a shorter bar even when
+                  their value was higher. */}
+              <div style={{height:"36px",flexShrink:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
+                {uplift > 0 && (
+                  <div style={{fontSize:"9px",fontWeight:700,color:SUCCESS,background:"rgba(45,107,74,0.12)",borderRadius:"100px",padding:"1px 6px",whiteSpace:"nowrap",marginBottom:"3px"}}>+{fmtBig(uplift)}</div>
+                )}
+                <div style={{fontSize:"13px",fontWeight:700,fontFamily:SERIF,color:TEXT,whiteSpace:"nowrap"}}>{fmtBig(total)}</div>
+              </div>
+              <div style={{flex:1,width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end"}}>
+                <div style={{width:"100%",maxWidth:"52px",borderRadius:"5px 5px 0 0",background:EXTRA_COLOR,height:`${(added/maxBar)*100}%`,transition:"height 0.3s ease"}}/>
+                <div style={{width:"100%",maxWidth:"52px",borderRadius:added > 0 ? 0 : "5px 5px 0 0",background:barColors[bar.key]||G,height:`${Math.max(3,(bar.value/maxBar)*100)}%`}}/>
+              </div>
             </div>
-
-            {/* The cliff edge, closed, so the tiles below stay in view. */}
-            {cliff && <CliffEdge cliff={cliff} onSeeMore={() => {
-              setAheadOpen(true);
-              setTimeout(() => document.getElementById("looking-ahead")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-            }}/>}
-          </div>
-        );
-      })()}
-    </>
+          );
+        })}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",gap:"4px",marginTop:"6px"}}>
+        {traj.bars.map(bar => (
+          <div key={bar.key} style={{flex:1,textAlign:"center",fontSize:"9.5px",color:MUT,lineHeight:1.25}}>{shortLabel[bar.key] || bar.label}</div>
+        ))}
+      </div>
+      {extraPct > 0 && (
+        <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"8px"}}>
+          <span style={{width:"10px",height:"10px",borderRadius:"3px",background:EXTRA_COLOR,display:"inline-block"}}/>
+          <span style={{fontSize:"11px",color:MUT}}>Paying in {extraPct}% more of your salary</span>
+        </div>
+      )}
+    </TileRow>
   );
 }
 
 // The employer match tile: what's being left unclaimed, or, without a
 // pension yet, what starting one would cost after tax relief.
-function EmployerMatchTile({ showMatchWin, m, d, trPct, contributing, rowStyle, set, taxFreeCash }) {
+function EmployerMatchTile({ m, d, trPct, contributing, set, taxFreeCash, editItem }) {
   const myPct = +d.myContribution || 0;
   const empCapPct = +d.employerMatch || 0;
-  // Not paying in: "Start" only when there's no pension yet.
-  const matchWinTitle = contributing ? "Your employer's match" : taxFreeCash.pot > 0 ? "Paying into your pension" : "Starting a pension";
-  const matchWinHeadline = !contributing
-    ? `Every £${100-trPct} becomes £100 with ${trPct}% tax relief${empCapPct > 0 ? ` — plus an unclaimed ${empCapPct}% employer match` : ""}`
-    : `Up to ${fmt(m.missedMatch)}/yr`;
+  // Not paying in: "Starting" only when there's no pension yet.
+  const title = contributing ? "Employer match" : taxFreeCash.pot > 0 ? "Paying into your pension" : "Starting a pension";
   const yourContribAmount = m.salary * myPct / 100;
   const employerCapAmount = m.salary * empCapPct / 100;
   const illustrativeRate = empCapPct > 0 ? empCapPct : 5;
   const illustrativeAmount = m.salary * illustrativeRate / 100;
   const illustrativeRelief = Math.round(illustrativeAmount * m.tr);
   const illustrativeNetCost = Math.round(illustrativeAmount - illustrativeRelief);
+  const email = pensionMatchDraft({ name: d.name, contributing, myPct });
+  const reminder = useReminder({
+    id: "pension-employer-match",
+    title: empCapPct > 0 ? buildReminderSubject(`${fmt(m.missedMatch)}/yr`, "Pension employer match") : "Candid: Pension employer match",
+    // Informational, not directive — states what the numbers show and
+    // leaves the decision and the "how" to HR/payroll, rather than
+    // instructing the person to act (avoids reading as financial advice).
+    // Shown even when the employer cap is unknown (empCapPct 0) — the
+    // HR email is exactly how they'd find it out.
+    description: empCapPct === 0
+      ? `${firstName(d) ? firstName(d)+", y" : "Y"}our employer's pension match cap isn't known yet. Any match is paid on top of your ${trPct}% tax relief.\n\nHR or Payroll can say what the match is and how it's set up.`
+      : contributing
+      ? `${firstName(d) ? firstName(d)+", b" : "B"}ased on your salary (${fmt(m.salary)}), increasing your contribution from ${myPct}% to ${empCapPct}% is worth ${fmt(m.missedMatch)}/yr in employer match.\n\nTo capture it, the change needs actioning with HR or Payroll. It usually takes effect from the next month.`
+      : `${firstName(d) ? firstName(d)+", b" : "B"}ased on your salary (${fmt(m.salary)}), contributing at least ${empCapPct}% would unlock your employer's full match, worth ${fmt(m.missedMatch)}/yr on top of ${trPct}% tax relief.\n\nTo capture it, this needs actioning with HR or Payroll. It usually takes effect from the next month.`,
+    email,
+  });
   return (
-    <>
-      {showMatchWin && (
-        <MobileWinTile title={matchWinTitle} headline={matchWinHeadline} tagLabel="Today"
-          reminder={{
-            id: "pension-employer-match",
-            title: empCapPct > 0 ? buildReminderSubject(`${fmt(m.missedMatch)}/yr`, "Pension employer match") : "Candid: Pension employer match",
-            // Informational, not directive — states what the numbers show and
-            // leaves the decision and the "how" to HR/payroll, rather than
-            // instructing the person to act (avoids reading as financial advice).
-            // Shown even when the employer cap is unknown (empCapPct 0) — the
-            // HR email is exactly how they'd find it out.
-            description: empCapPct === 0
-              ? `${firstName(d) ? firstName(d)+", y" : "Y"}our employer's pension match cap isn't known yet. Any match is paid on top of your ${trPct}% tax relief.\n\nHR or Payroll can say what the match is and how it's set up.`
-              : contributing
-              ? `${firstName(d) ? firstName(d)+", b" : "B"}ased on your salary (${fmt(m.salary)}), increasing your contribution from ${myPct}% to ${empCapPct}% is worth ${fmt(m.missedMatch)}/yr in employer match.\n\nTo capture it, the change needs actioning with HR or Payroll. It usually takes effect from the next month.`
-              : `${firstName(d) ? firstName(d)+", b" : "B"}ased on your salary (${fmt(m.salary)}), contributing at least ${empCapPct}% would unlock your employer's full match, worth ${fmt(m.missedMatch)}/yr on top of ${trPct}% tax relief.\n\nTo capture it, this needs actioning with HR or Payroll. It usually takes effect from the next month.`,
-            email: pensionMatchDraft({ name: d.name, contributing, myPct }),
-          }}>
-          <p style={{fontSize:"13.5px",color:TEXT,lineHeight:1.6,marginBottom:"10px"}}>
-            {!contributing
-              ? `You're not currently contributing. Pension contributions get ${trPct}% tax relief automatically${empCapPct > 0 ? `, and your employer will match up to ${empCapPct}% of salary if you contribute at least that much` : ""} — money that currently goes unclaimed. Money in a pension usually can't be taken out until you're 55 (57 from 2028).`
-              : `You're contributing, but below your employer's full match. At ${empCapPct}%, your employer would add the rest, on top of your own ${trPct}% tax relief. Money in a pension usually can't be taken out until you're 55 (57 from 2028).`}
-          </p>
-          {contributing ? (
-            <div>
-              <div style={rowStyle}><span>Your contribution — {myPct}% of salary</span><span style={{fontWeight:600}}>{fmt(yourContribAmount)}/yr</span></div>
-              <div style={rowStyle}><span>Employer match cap — {empCapPct}% of salary</span><span style={{fontWeight:600}}>{fmt(employerCapAmount)}/yr</span></div>
-              <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"6px 0"}}/>
-              <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Uplift if you match the cap</span><span>+{fmt(m.missedMatch)}/yr</span></div>
-            </div>
-          ) : (
-            <div>
-              <div style={rowStyle}><span>Contribute {illustrativeRate}% of salary</span><span style={{fontWeight:600}}>{fmt(illustrativeAmount)}/yr</span></div>
-              <div style={rowStyle}><span>Tax relief at {trPct}%</span><span>−{fmt(illustrativeRelief)}/yr</span></div>
-              {empCapPct > 0 && (
-                <div style={{...rowStyle,color:SUCCESS}}><span>Employer matches {empCapPct}%</span><span style={{fontWeight:600}}>+{fmt(employerCapAmount)}/yr</span></div>
-              )}
-              <div style={{height:"1px",background:"rgba(22,47,36,0.1)",margin:"6px 0"}}/>
-              <div style={{...rowStyle,fontWeight:700}}><span>Net cost to you</span><span>{fmt(illustrativeNetCost)}/yr</span></div>
-              <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Goes into your pension</span><span>{fmt(illustrativeAmount + (empCapPct>0?employerCapAmount:0))}/yr</span></div>
-            </div>
-          )}
-          {set && <QuickUpdateContribution d={d} myPct={myPct} suggested={contributing ? empCapPct : illustrativeRate} set={set}/>}
-        </MobileWinTile>
-      )}
-    </>
+    <MobileTile id="pension-match" title={title}
+      menu={[!reminder.isSet && { icon: Bell, label: "Remind me", onClick: reminder.setReminder }, editItem]}>
+      <TileRow first align>
+        {contributing ? (
+          <>
+            <div style={line}><span style={rowLabel}>Match you're not getting</span><span style={{...rowFigure,color:SUCCESS}}>+{fmt(m.missedMatch)}/yr</span></div>
+            <div style={rowNote}>At {empCapPct}%, your employer would add the rest, on top of your own {trPct}% tax relief</div>
+          </>
+        ) : (
+          <>
+            <div style={line}><span style={rowLabel}>Tax relief on what you pay in</span><span style={rowFigure}>{trPct}%</span></div>
+            <div style={rowNote}>Every £{100-trPct} becomes £100{empCapPct > 0 ? `, and your employer matches up to ${empCapPct}% of salary if you pay in at least that much` : ""}</div>
+          </>
+        )}
+      </TileRow>
+      <TileRow align>
+        {contributing ? (
+          <>
+            <div style={rowStyle}><span>Your contribution, {myPct}% of salary</span><span>{fmt(yourContribAmount)}/yr</span></div>
+            <div style={rowStyle}><span>Employer match cap, {empCapPct}% of salary</span><span>{fmt(employerCapAmount)}/yr</span></div>
+            <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Uplift if you match the cap</span><span>+{fmt(m.missedMatch)}/yr</span></div>
+          </>
+        ) : (
+          <>
+            <div style={rowStyle}><span>Pay in {illustrativeRate}% of salary</span><span>{fmt(illustrativeAmount)}/yr</span></div>
+            <div style={rowStyle}><span>Tax relief at {trPct}%</span><span>−{fmt(illustrativeRelief)}/yr</span></div>
+            {empCapPct > 0 && <div style={{...rowStyle,color:SUCCESS}}><span>Employer matches {empCapPct}%</span><span>+{fmt(employerCapAmount)}/yr</span></div>}
+            <div style={{...rowStyle,fontWeight:700}}><span>Net cost to you</span><span>{fmt(illustrativeNetCost)}/yr</span></div>
+            <div style={{...rowStyle,fontWeight:700,color:SUCCESS}}><span>Goes into your pension</span><span>{fmt(illustrativeAmount + (empCapPct>0?employerCapAmount:0))}/yr</span></div>
+          </>
+        )}
+        <div style={rowNote}>Money in a pension usually can't be taken out until you're 55 (57 from 2028).</div>
+      </TileRow>
+      {set && <QuickUpdateContribution d={d} myPct={myPct} suggested={contributing ? empCapPct : illustrativeRate} set={set}/>}
+      <ReminderRows reminder={reminder} email={email}/>
+    </MobileTile>
   );
 }
 
-// "Pay in more using past years' allowance": carry forward, year by year.
-function CarryForwardTile({ cf, setCfYears, rowStyle, aa, open = false }) {
+// Past years' allowance (carry forward), year by year: rows under its What
+// ifs row.
+function CarryForwardCalc({ cf, setCfYears, aa }) {
+  const setYear = (i, patch) => setCfYears(prev => prev.map((yy, idx) => idx === i ? { ...yy, ...patch } : yy));
   return (
     <>
-      {cf.showCarryForward && (
-        <MobileWinTile title="Pay in more using past years' allowance" defaultOpen={open}
-          headline={cf.cfTotalUnused > 0
-            ? `Up to ${fmt(cf.cfMaxContributable)} could go into your pension this tax year using carry forward`
-            : "Fill in your last 3 tax years below to see how much you could inject in one go"}
-          tagLabel="Strategy">
-          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.6,marginBottom:"12px"}}>
-            Had a scheme in earlier years but didn't use the full £60,000 allowance? Carry the unused part forward for up to 3 years. Capped at 100% of this year's earnings ({fmt(cf.cfRelevantEarnings)}).
-          </p>
-          {cf.cfBreakdown.map((y, i) => (
-            <div key={y.label} style={{background:CDARK,borderRadius:"10px",padding:"10px 12px",marginBottom:"8px"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-                <div style={{fontSize:"12px",fontWeight:700,color:G}}>{y.label}</div>
-                <YearToggle value={y.hadScheme} onChange={v => setCfYears(prev => prev.map((yy,idx) => idx===i ? {...yy, hadScheme:v} : yy))}/>
-              </div>
-              {y.hadScheme && (
-                <div style={{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
-                  <label style={{fontSize:"11.5px",color:MUT,flexShrink:0}}>Contributed (£)</label>
-                  <input type="number" value={y.contribution} placeholder="0"
-                    onChange={e => { const v = e.target.value; setCfYears(prev => prev.map((yy,idx) => idx===i ? {...yy, contribution:v} : yy)); }}
-                    style={{width:"90px",padding:"5px 8px",fontSize:"16px",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"6px",background:WHITE}}/>
-                  <span style={{fontSize:"11.5px",color:SUCCESS,fontWeight:600}}>{fmt(y.unused)} unused</span>
-                </div>
-              )}
-            </div>
-          ))}
-          <div style={{background:"rgba(22,47,36,0.04)",borderRadius:"10px",padding:"12px 14px",marginTop:"4px"}}>
-            <div style={rowStyle}><span>This year's allowance{aa.inAATaper?" (tapered)":""}</span><span>{fmt(aa.approxAA)}</span></div>
-            <div style={rowStyle}><span>+ Unused from last 3 years</span><span>{fmt(cf.cfTotalUnused)}</span></div>
-            <div style={{...rowStyle,fontWeight:700}}><span>Theoretical maximum</span><span>{fmt(cf.cfTheoreticalMax)}</span></div>
-            {cf.cfEarningsCapped && (
-              <div style={{...rowStyle,color:CRITICAL,marginTop:"4px"}}>
-                <span>Capped at 100% of earnings</span><span style={{fontWeight:700}}>{fmt(cf.cfMaxContributable)}</span>
-              </div>
-            )}
+      <TileRow align>
+        <p style={noteText}>Had a scheme in earlier years but didn't use the full £60,000 allowance? The unused part carries forward for up to 3 years, capped at 100% of this year's earnings ({fmt(cf.cfRelevantEarnings)}).</p>
+      </TileRow>
+      {cf.cfBreakdown.map((y, i) => (
+        <TileRow key={y.label} align>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+            <span style={{...rowLabel,fontWeight:600}}>{y.label}</span>
+            <YearToggle value={y.hadScheme} onChange={v => setYear(i, { hadScheme: v })}/>
           </div>
-          {aa.showVctEis && (
-            <div style={{background:"rgba(196,150,58,0.08)",border:"1px solid rgba(196,150,58,0.3)",borderRadius:"10px",padding:"14px 16px",marginTop:"12px"}}>
-              <div style={{fontSize:"10.5px",fontWeight:700,color:G,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:"8px"}}>If pension contributions alone can't fix this</div>
-              <p style={{fontSize:"12.5px",color:TEXT,lineHeight:1.6,margin:0}}>
-                Even with carry forward, pension contributions alone may not bring Threshold Income below £200,000 here. The other routes carry much more risk, and this is a position where people usually take regulated advice. <a href={ADVISER_LINK.href} target="_blank" rel="noopener noreferrer" style={{color:G,fontWeight:700}}>{ADVISER_LINK.label}</a>
-              </p>
+          {y.hadScheme && (
+            <div style={{marginTop:"8px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",flexWrap:"wrap"}}>
+              <label style={{display:"flex",alignItems:"center",gap:"8px",fontSize:"12px",color:MUT}}>
+                Paid in (£)
+                <input type="number" value={y.contribution} placeholder="0"
+                  onChange={e => setYear(i, { contribution: e.target.value })}
+                  style={{width:"96px",padding:"5px 8px",fontSize:"16px",border:"1.5px solid rgba(22,47,36,0.18)",borderRadius:"6px",background:WHITE}}/>
+              </label>
+              <span style={{fontSize:"13px",color:SUCCESS,fontWeight:600}}>{fmt(y.unused)} unused</span>
             </div>
           )}
-        </MobileWinTile>
+        </TileRow>
+      ))}
+      <TileRow align>
+        <div style={rowStyle}><span>This year's allowance{aa.inAATaper?" (tapered)":""}</span><span>{fmt(aa.approxAA)}</span></div>
+        <div style={rowStyle}><span>Unused from the last 3 years</span><span>+{fmt(cf.cfTotalUnused)}</span></div>
+        <div style={{...rowStyle,fontWeight:700}}><span>Theoretical maximum</span><span>{fmt(cf.cfTheoreticalMax)}</span></div>
+        {cf.cfEarningsCapped && (
+          <div style={{...rowStyle,color:CRITICAL}}><span>Capped at 100% of earnings</span><span style={{fontWeight:700}}>{fmt(cf.cfMaxContributable)}</span></div>
+        )}
+      </TileRow>
+      {aa.showVctEis && (
+        <TileRow align>
+          <div style={{...NOTICE_LABEL,marginBottom:"4px"}}>If pension contributions alone can't fix this</div>
+          <p style={noteText}>
+            Even with carry forward, pension contributions alone may not bring Threshold Income below £200,000 here. The other routes carry much more risk, and this is a position where people usually take regulated advice. <a href={ADVISER_LINK.href} target="_blank" rel="noopener noreferrer" style={{color:G,fontWeight:700}}>{ADVISER_LINK.label}</a>
+          </p>
+        </TileRow>
       )}
     </>
   );
 }
 
-// "Your bonus and your pension": what sacrificing some of a stated bonus
-// keeps, or, with no bonus stated, how to add one.
-function BonusTile({ hasStatedBonus, bonusSacrifice, d, set, sacrificePct, setSacrificePct, bonusInput, setBonusInput, setShowFVInfo, showFVInfo, m }) {
-  const bonusPotential = bonusSacrifice.standalone;
+// A bonus into the pension: what sacrificing some of a stated bonus keeps,
+// or, with no bonus stated, a way to add one. Rows under its What ifs row.
+function BonusCalc({ hasStatedBonus, bonusPotential, d, set, sacrificePct, setSacrificePct, bonusInput, setBonusInput, setShowFVInfo, showFVInfo, m, onEditInputs }) {
   const bs = calcBonusSacrifice(d, m, bonusInput, sacrificePct);
   // What the slider's choice keeps from tax, NI and student loan: what
   // "I've done this" counts as saved.
   const sliderSaving = Math.max(0, calcBonusSacrifice(d, m, bonusInput, 0).totalDeducted - bs.totalDeducted);
+  const email = bonusSacrificeDraft({ name: d.name });
+  const reminder = useReminder({
+    id: "pension-bonus-sacrifice",
+    title: buildReminderSubject(fmt(bonusPotential), "Bonus sacrifice"),
+    // Informational, not directive — states the figures and the action
+    // needed (an email to HR/Payroll) rather than instructing the
+    // person to sacrifice their bonus, avoiding reading as advice.
+    description: `${firstName(d) ? firstName(d)+", y" : "Y"}our bonus may be able to go into your pension by salary sacrifice. Based on your bonus (${fmt(+d.bonusAmount)}), up to ${fmt(bonusPotential)} of tax and National Insurance on it is avoidable this way.\n\nTo capture it, this needs actioning with HR or Payroll before the bonus is paid, as it usually can't be done retrospectively.`,
+    email,
+  });
+
+  if (!hasStatedBonus) return (
+    <>
+      <TileRow align>
+        <p style={noteText}>A bonus paid into your pension through salary sacrifice has no tax or NI taken from it, but it has to be arranged before the bonus is paid. With a bonus in your figures, this works out what it saves.</p>
+      </TileRow>
+      {onEditInputs && (
+        <TileRow align onClick={onEditInputs}>
+          <span style={actionText}><Pencil size={18} aria-hidden="true"/>Add a bonus to your figures</span>
+        </TileRow>
+      )}
+    </>
+  );
+
   return (
     <>
-      {hasStatedBonus ? (
-        <MobileWinTile title="Your bonus and your pension"
-          headline={bonusSacrifice.room <= 0
-            ? "Your pension allowance has no room left this year — sacrificing your bonus could trigger a tax charge"
-            : bonusSacrifice.standaloneSacrifice < bonusSacrifice.bonus
-              ? `Your allowance has room for ${fmt(bonusSacrifice.standaloneSacrifice)} of your ${fmt(bonusSacrifice.bonus)} bonus — saving up to ${fmt(bonusPotential)} in tax`
-              : `Up to ${fmt(bonusPotential)} of tax on your ${fmt(+d.bonusAmount)} bonus is avoidable through sacrifice`}
-          tagLabel="Today"
-          reminder={bonusPotential > 0 ? {
-            id: "pension-bonus-sacrifice",
-            title: buildReminderSubject(fmt(bonusPotential), "Bonus sacrifice"),
-            // Informational, not directive — states the figures and the action
-            // needed (an email to HR/Payroll) rather than instructing the
-            // person to sacrifice their bonus, avoiding reading as advice.
-            description: `${firstName(d) ? firstName(d)+", y" : "Y"}our bonus may be able to go into your pension by salary sacrifice. Based on your bonus (${fmt(+d.bonusAmount)}), up to ${fmt(bonusPotential)} of tax and National Insurance on it is avoidable this way.\n\nTo capture it, this needs actioning with HR or Payroll before the bonus is paid, as it usually can't be done retrospectively.`,
-            email: bonusSacrificeDraft({ name: d.name }),
-          } : null}>
-          {set && bonusPotential > 0 && <OpportunityChoice id={CHOICE_IDS.bonus} d={d} set={set} bank={{ moduleKey: "pension", perYear: sliderSaving }}/>}
-          <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,marginBottom:"14px"}}>
-            A bonus sacrificed before it hits your payslip avoids tax, NI{bs.bonusSlRate > 0 ? ", and student loan repayments" : ""} on it entirely. It goes into your pension gross and grows tax-free.
-          </p>
-
-          <div style={{marginBottom:"14px"}}>
-            <label style={{fontSize:"11px",fontWeight:600,color:MUT,letterSpacing:"0.09em",textTransform:"uppercase"}}>How much to sacrifice</label>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 92px",gap:"8px",marginTop:"8px",alignItems:"stretch"}}>
-              <PillSlider label="How much to sacrifice" value={sacrificePct} onChange={setSacrificePct} options={SACRIFICE_OPTIONS}/>
-              <PillMoneyInput label="Bonus" value={bonusInput} onChange={setBonusInput}/>
-            </div>
-          </div>
-
-          {(bs.crossesTaper || bs.crossesAR) && (
-            <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:"8px",padding:"8px 10px",marginBottom:"14px",display:"flex",gap:"8px",alignItems:"flex-start"}}>
-              <AlertTriangle size={13} style={{flexShrink:0,marginTop:"2px"}} color={CRITICAL}/>
-              <div style={{fontSize:"11.5px",color:MUT,lineHeight:1.5}}>
-                {bs.crossesTaper && !bs.crossesAR ? "Your bonus crosses the 60% taper zone (£100k–£125,140)." : "Your bonus spans the 40% → 60% taper → 45% rate bands."} Sacrificing the portion in that zone is especially valuable.
-              </div>
-            </div>
-          )}
-
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"10px"}}>
-            <div style={{background:"rgba(45,107,74,0.06)",border:"1px solid rgba(45,107,74,0.22)",borderRadius:"8px",padding:"10px 10px"}}>
-              <div style={{fontSize:"8.5px",fontWeight:700,color:SUCCESS,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>You receive</div>
-              <div style={{fontFamily:SERIF,fontSize:"15px",color:G,fontWeight:700,marginBottom:"4px"}}>{fmt(bs.totalReceived)}</div>
-              <div style={{fontSize:"10.5px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
-                {bs.sacrificedAmt > 0 && <span style={{color:SUCCESS,fontWeight:500}}>Pension: {fmt(bs.sacrificedAmt)}</span>}
-                {bs.takeHomeCash > 0 && <span>Cash: {fmt(bs.takeHomeCash)}</span>}
-                {bs.employerNISave > 0 && d.employmentStatus !== "self_employed" && <span style={{color:SUCCESS,marginTop:"2px"}}>+{fmt(bs.employerNISave)} employer NI*</span>}
-              </div>
-            </div>
-            <div style={{background:"rgba(192,57,43,0.05)",border:"1px solid rgba(192,57,43,0.18)",borderRadius:"8px",padding:"10px 10px"}}>
-              <div style={{fontSize:"8.5px",fontWeight:700,color:CRITICAL,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"6px"}}>Paid to HMRC{bs.bonusSlRate>0?" + SLC":""}</div>
-              <div style={{fontFamily:SERIF,fontSize:"15px",color:TEXT,fontWeight:700,marginBottom:"4px"}}>{sacrificePct===100?fmt(0):fmt(bs.totalDeducted)}</div>
-              <div style={{fontSize:"10.5px",color:MUT,display:"flex",flexDirection:"column",gap:"2px"}}>
-                {sacrificePct===100
-                  ? <span style={{color:SUCCESS,fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}>Nothing <PartyPopper size={11}/></span>
-                  : <>{bs.taxOnCash>0 && <span>Tax: {fmt(bs.taxOnCash)}</span>}{bs.niOnCash>0 && <span>NI: {fmt(bs.niOnCash)}</span>}{bs.slOnCash>0 && <span>Student loan: {fmt(bs.slOnCash)}</span>}</>}
-              </div>
-            </div>
-          </div>
-
-          <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-            <span style={{fontSize:"12.5px",color:TEXT,lineHeight:1.5}}>
-              <b style={{fontFamily:SERIF}}>{fmtCompact(bs.bonusFVpartial(sacrificePct))}</b> at retirement (age {bs.retireAge})
-            </span>
-            <InfoButton onClick={() => setShowFVInfo(o => !o)} open={showFVInfo}/>
-          </div>
-          {showFVInfo && (
-            <p style={{fontSize:"12px",color:MUT_ON_CDARK,lineHeight:1.55,background:CDARK,borderRadius:"8px",padding:"8px 10px",marginTop:"6px"}}>
-              Assumes this amount is left untouched in your pension until retirement, growing {GROWTH_NOMINAL_PCT}% a year less {INFLATION_PCT}% inflation, so it's in today's money.
-              {bs.bonusSlRate > 0 && bs.loanBal > 0 && (bs.slOnCash <= 0
-                ? " None of the bonus is taken as cash, so no student loan deduction applies to it."
-                : m.willClear
-                  ? ` The ${fmt(bs.slOnCash)} student loan deduction on the cash portion also brings your clear date forward, saving roughly ${fmt(bs.slInterestSaved)} in interest.`
-                  : ` Your loan is unlikely to clear before write-off, so the ${fmt(bs.slOnCash)} student loan deduction on the cash portion would likely be written off anyway.`)}
-              {d.employmentStatus !== "self_employed" && ` Employer NI of ${Math.round(EMPLOYER_NI_RATE * 100)}% on the sacrificed amount is also saved — some employers pass this on.`}
-            </p>
-          )}
-        </MobileWinTile>
-      ) : (
-        <div style={{background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
-          <div style={{fontSize:"13px",fontWeight:600,color:G,marginBottom:"6px",display:"flex",alignItems:"center",gap:"6px"}}><Banknote size={15}/>A bonus, and salary sacrifice</div>
-          <p style={{fontSize:"13px",color:MUT,lineHeight:1.6,margin:0}}>
-            A bonus paid into your pension through salary sacrifice has no tax or NI taken from it, but it has to be arranged before the bonus is paid. If you're expecting one this year, add it to your inputs to see the figures.
-          </p>
+      <TileRow align>
+        {set && bonusPotential > 0 && <OpportunityChoice id={CHOICE_IDS.bonus} d={d} set={set} bank={{ moduleKey: "pension", perYear: sliderSaving }}/>}
+        <p style={{...noteText,marginBottom:"12px"}}>
+          A bonus sacrificed before it reaches your payslip has no tax, NI{bs.bonusSlRate > 0 ? " or student loan repayments" : ""} taken from it. It goes into your pension in full and grows tax-free.
+        </p>
+        <div style={{...NOTICE_LABEL,marginBottom:"8px"}}>How much to sacrifice</div>
+        {/* Stacked: indented under its row, the two don't fit side by side. */}
+        <div style={{display:"grid",gap:"8px"}}>
+          <PillMoneyInput label="Bonus" value={bonusInput} onChange={setBonusInput}/>
+          <PillSlider label="How much to sacrifice" value={sacrificePct} onChange={setSacrificePct} options={SACRIFICE_OPTIONS}/>
         </div>
+      </TileRow>
+
+      {(bs.crossesTaper || bs.crossesAR) && (
+        <TileRow align>
+          <div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}>
+            <AlertTriangle size={16} color={CRITICAL} aria-hidden="true" style={{flexShrink:0,marginTop:"2px"}}/>
+            <p style={{...noteText,fontSize:"12.5px"}}>
+              {bs.crossesTaper && !bs.crossesAR ? "Your bonus crosses the 60% taper zone (£100k–£125,140)." : "Your bonus spans the 40% → 60% taper → 45% rate bands."} Sacrificing the part in that zone saves the most.
+            </p>
+          </div>
+        </TileRow>
       )}
+
+      <TileRow align>
+        <div style={line}><span style={rowLabel}>You receive</span><span style={rowFigure}>{fmt(bs.totalReceived)}</span></div>
+        <div style={rowNote}>
+          {[
+            bs.sacrificedAmt > 0 && `${fmt(bs.sacrificedAmt)} into your pension`,
+            bs.takeHomeCash > 0 && `${fmt(bs.takeHomeCash)} as cash`,
+            bs.employerNISave > 0 && d.employmentStatus !== "self_employed" && `${fmt(bs.employerNISave)} employer NI saved*`,
+          ].filter(Boolean).join(" · ")}
+        </div>
+      </TileRow>
+      <TileRow align>
+        <div style={line}><span style={rowLabel}>Paid to HMRC{bs.bonusSlRate>0?" and the SLC":""}</span><span style={{...rowFigure,color:TEXT}}>{sacrificePct===100?fmt(0):fmt(bs.totalDeducted)}</span></div>
+        {sacrificePct !== 100 && (
+          <div style={rowNote}>
+            {[bs.taxOnCash>0 && `Tax ${fmt(bs.taxOnCash)}`, bs.niOnCash>0 && `NI ${fmt(bs.niOnCash)}`, bs.slOnCash>0 && `Student loan ${fmt(bs.slOnCash)}`].filter(Boolean).join(" · ")}
+          </div>
+        )}
+      </TileRow>
+      <TileRow align>
+        <div style={line}>
+          <span style={{...rowLabel,display:"flex",alignItems:"center",gap:"6px"}}>At retirement (age {bs.retireAge})<InfoButton onClick={() => setShowFVInfo(o => !o)} open={showFVInfo}/></span>
+          <span style={rowFigure}>{fmtCompact(bs.bonusFVpartial(sacrificePct))}</span>
+        </div>
+        {showFVInfo && (
+          <p style={{...rowNote,marginTop:"6px"}}>
+            Assumes this amount is left untouched in your pension until retirement, growing {GROWTH_NOMINAL_PCT}% a year less {INFLATION_PCT}% inflation, so it's in today's money.
+            {bs.bonusSlRate > 0 && bs.loanBal > 0 && (bs.slOnCash <= 0
+              ? " None of the bonus is taken as cash, so no student loan deduction applies to it."
+              : m.willClear
+                ? ` The ${fmt(bs.slOnCash)} student loan deduction on the cash portion also brings your clear date forward, saving roughly ${fmt(bs.slInterestSaved)} in interest.`
+                : ` Your loan is unlikely to clear before write-off, so the ${fmt(bs.slOnCash)} student loan deduction on the cash portion would likely be written off anyway.`)}
+            {d.employmentStatus !== "self_employed" && ` *Employer NI of ${Math.round(EMPLOYER_NI_RATE * 100)}% on the sacrificed amount is also saved — some employers pass this on.`}
+          </p>
+        )}
+      </TileRow>
+      {bonusPotential > 0 && <ReminderRows reminder={reminder} email={email}/>}
     </>
   );
 }
 
+// Salary sacrifice in the £80k-£100k zone, with a custom amount to try:
+// rows under its What ifs row. The amount follows "What if you paid in
+// more?" in the growth tile (`chartSlider`), or, with no chart, a slider here.
+function SacrificeCalc({ d, m, trPct, extraPct, setExtraPct, chartSlider }) {
+  const isSalarySacrifice = d.pensionType === "sacrifice";
+  // NI saved by salary sacrifice: 8% in the basic band, 2% above (pension.js).
+  const niSavingPct = isSalarySacrifice ? Math.round(sacrificeNiRate(d, m) * 100) : 0;
+  const totalReliefPct = trPct + niSavingPct;
+  const sacrificeExtraPct = extraPct || 1;
+  const extraAmt = m.salary * sacrificeExtraPct / 100;
+  const extraRelief = Math.round(extraAmt * (m.tr + niSavingPct/100));
+  const extraNetCost = Math.round(extraAmt - extraRelief);
+  const newAdjustedIncome = Math.max(0, m.adjustedNetIncome - extraAmt);
+  const newBandLabel = newAdjustedIncome > 125140 ? "additional" : newAdjustedIncome > 50270 ? "higher" : "basic";
+  // Personal Savings Allowance — a band fact, not something £100k itself
+  // changes (it shifts at £50,270 and £125,140, not £100k).
+  const psaAmount = m.taxBandLabel === "additional" ? 0 : m.taxBandLabel === "higher" ? 500 : 1000;
+  return (
+    <>
+      <TileRow align>
+        <p style={noteText}>Your income sits in the £80k–£100k zone. Salary sacrifice saves tax and NI on what goes in, and leaves room if a bonus or rise would take you over £100k later. It lowers your take-home pay, and the money usually can't be taken out until you're 55 (57 from 2028).</p>
+      </TileRow>
+      <TileRow align>
+        <div style={{...NOTICE_LABEL,marginBottom:"4px"}}>An extra {sacrificeExtraPct}% of salary</div>
+        {!chartSlider && (
+          <div style={{margin:"4px 0 8px"}}>
+            <PillSlider compact label="An extra share of salary" value={sacrificeExtraPct} onChange={setExtraPct} options={EXTRA_PCT_OPTIONS.filter(o => o.value > 0)}/>
+          </div>
+        )}
+        <div style={rowStyle}><span>Comes off your taxable income</span><span>−{fmt(Math.round(extraAmt))}</span></div>
+        <div style={rowStyle}><span>Tax{niSavingPct>0?" and NI":""} relief at {totalReliefPct}%</span><span>−{fmt(extraRelief)}</span></div>
+        <div style={{...rowStyle,fontWeight:700}}><span>Net cost to your take-home</span><span>{fmt(extraNetCost)}</span></div>
+        <div style={rowNote}>
+          That leaves your taxable income at about {fmt(Math.round(newAdjustedIncome))}{newBandLabel !== m.taxBandLabel ? `, in the ${newBandLabel}-rate band.` : `, still in the ${m.taxBandLabel}-rate band.`}{chartSlider && ` "What if you paid in more?" in Growth to retirement changes the amount.`}
+        </div>
+      </TileRow>
+      <TileRow align>
+        <p style={rowNote}>
+          Your Personal Savings Allowance is {psaAmount>0?fmt(psaAmount):"£0"} as a {m.taxBandLabel}-rate taxpayer{psaAmount>0?": savings interest above that is taxed at your marginal rate":""}. It would recover to £1,000 if sacrifice took you back under £50,270.
+        </p>
+      </TileRow>
+    </>
+  );
+}

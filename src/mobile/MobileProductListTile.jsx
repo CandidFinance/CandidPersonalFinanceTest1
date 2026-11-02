@@ -16,8 +16,9 @@ const FLUSH_ROWS = 2;
 // `embedded`: inside a MobileWinTile with `provider`, which gives
 // the heading and the frame. `flush`: rows of a MobileTile, each with a
 // hairline above that runs to the tile's right edge (the tile has no right
-// padding, so the row keeps its own).
-export default function MobileProductListTile({ heading, subheading, products, disclaimer, embedded = false, flush = false }) {
+// padding, so the row keeps its own). In flush rows a product's `feature`
+// goes under its type. `noun`: what "See all N …" counts.
+export default function MobileProductListTile({ heading, subheading, products, disclaimer, embedded = false, flush = false, noun = "rates" }) {
   const [open, setOpen] = useState(false);
   if (!products || products.length === 0) return null;
 
@@ -35,7 +36,7 @@ export default function MobileProductListTile({ heading, subheading, products, d
       <div onFocus={e => { if (!flush && !open && keyboardFocus(e.target)) setOpen(true); }} style={{position:"relative",marginTop:embedded ? 0 : "10px",maxHeight:open || flush ? "none" : `${COLLAPSED_HEIGHT}px`,overflow:"hidden"}}>
         {(flush && !open ? products.slice(0, FLUSH_ROWS) : products).map((p, i) => (
           <a key={i} href={p.productUrl} target="_blank" rel="noopener noreferrer" style={{
-            display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",padding:flush ? "10px 16px 10px 0" : "8px 0",
+            display:"flex",flexWrap:flush ? "wrap" : "nowrap",alignItems:"center",justifyContent:"space-between",gap:"10px",padding:flush ? "10px 16px 10px 0" : "8px 0",
             ...(flush ? { borderTop:HAIRLINE } : { borderBottom: i < products.length-1 ? "1px solid rgba(22,47,36,0.06)" : "none" }),
             textDecoration:"none",
           }}>
@@ -53,11 +54,13 @@ export default function MobileProductListTile({ heading, subheading, products, d
               <span style={{fontFamily:SERIF,fontSize:"15px",fontWeight:700,color:G}}>{p.rate}</span>
               <ExternalLink size={13} color={MUT}/>
             </div>
+            {/* Under the whole row, lined up with the name past the logo. */}
+            {flush && p.feature && <div style={{flexBasis:"100%",paddingLeft:"44px",marginTop:"-6px",fontSize:"12px",color:MUT,lineHeight:1.45}}>{p.feature}</div>}
           </a>
         ))}
         {flush && products.length > FLUSH_ROWS && (
           <button type="button" aria-expanded={open} onClick={e => { const btn = e.currentTarget; setOpen(o => !o); if (open) requestAnimationFrame(() => btn.scrollIntoView({ block: "nearest" })); }} style={{display:"block",width:"100%",borderTop:HAIRLINE,borderLeft:"none",borderRight:"none",borderBottom:"none",background:"none",padding:"12px 16px 12px 0",font:"inherit",textAlign:"left",cursor:"pointer",fontSize:"13.5px",fontWeight:600,color:G}}>
-            {open ? "Show fewer" : `See all ${products.length} rates`}
+            {open ? "Show fewer" : `See all ${products.length} ${noun}`}
           </button>
         )}
         {!flush && !open && products.length > 1 && (

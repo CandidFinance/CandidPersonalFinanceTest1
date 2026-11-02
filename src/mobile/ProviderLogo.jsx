@@ -8,9 +8,9 @@ import { G, SANS } from "../design-tokens.js";
 // named after its domain in public/logos, and add the domain here.
 const LOGO_DOMAINS = [
   "bankofirelanduk.com", "cahoot.com", "chartersavingsbank.co.uk", "chase.co.uk", "closesavings.co.uk",
-  "cynergybank.co.uk", "getchip.uk", "habibbank.com", "hl.co.uk", "investec.com", "leekbs.co.uk",
-  "nsandi.com", "oxbury.com", "postoffice.co.uk", "saga.co.uk", "sidekickmoney.com", "tandem.co.uk",
-  "trading212.com", "withplum.com",
+  "cynergybank.co.uk", "getchip.uk", "habibbank.com", "hl.co.uk", "investec.com", "leekbs.co.uk", "moneyboxapp.com",
+  "nsandi.com", "oxbury.com", "pensionbee.com", "postoffice.co.uk", "saga.co.uk", "sidekickmoney.com", "tandem.co.uk",
+  "trading212.com", "vanguardinvestor.co.uk", "withplum.com",
 ];
 
 function logoFor(url) {

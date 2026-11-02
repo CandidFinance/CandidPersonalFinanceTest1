@@ -4,15 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { FAST_GROWTH_YEARS } from "../../lib/crossModule.js";
 import { salaryGrowthOf, payPathOf } from "../../lib/metrics.js";
 import { taxYearFor } from "../../lib/taxYear.js";
-import { AlertTriangle, PiggyBank, Users, CalendarClock, ChevronRight, ChevronDown } from "lucide-react";
+import { AlertTriangle, PiggyBank, Users, CalendarClock } from "lucide-react";
 import { LUMP_SUM_ALLOWANCE, LSA_INFLECTION_POT } from "../../lib/pension.js";
 import { fmt, fmtBig } from "../../lib/format.js";
 import { G, MUT, TEXT, SERIF, SUCCESS, ERROR_TEXT } from "../../design-tokens.js";
-import MobileWinTile from "../MobileWinTile.jsx";
+import MobileTile, { TileRow } from "../MobileTile.jsx";
 import { ADVISER_LINK } from "../GuidanceNote.jsx";
 
 // Parts of the Pension screen (MobilePensionDeepDive): the pay-in-more
-// figures, the cliff-edge row under the growth chart, and the Looking ahead
+// figures, the cliff-edge rows in the growth tile, and the Looking ahead
 // tile.
 
 // Paying in more, to retirement: the take-home pay it costs (the salary
@@ -72,32 +72,36 @@ export function CliffEdge({ cliff, onSeeMore }) {
   ];
   const scale = Math.max(...bars.map(b => b.value));
   return (
-    <div style={{background:"#fdecea",border:"1.5px solid rgba(179,38,30,0.45)",borderRadius:"12px",padding:"12px 14px",marginTop:"16px"}}>
-      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
-        style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
-        <AlertTriangle size={18} color={ERROR_TEXT} style={{flexShrink:0}}/>
-        <span style={{flex:1,fontSize:"14px",fontWeight:700,color:TEXT,lineHeight:1.35}}>
-          {cliff.already ? "Your pot is past the tax-free cash limit" : `Your pot could reach the tax-free cash limit around age ${cliff.age}`}
+    <>
+      <TileRow onClick={() => setOpen(o => !o)} expanded={open}>
+        <span style={{display:"flex",alignItems:"flex-start",gap:"8px"}}>
+          <AlertTriangle size={18} color={ERROR_TEXT} aria-hidden="true" style={{flexShrink:0,marginTop:"1px"}}/>
+          <span style={{fontSize:"14px",fontWeight:600,color:TEXT,lineHeight:1.4}}>
+            {cliff.already ? "Your pot is past the tax-free cash limit" : `Your pot could reach the tax-free cash limit around age ${cliff.age}`}
+          </span>
         </span>
-        <ChevronDown size={16} color={MUT} style={{flexShrink:0,transform:open ? "rotate(180deg)" : "none",transition:"transform 0.2s"}}/>
-      </button>
-      {open && <div>
-      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:"8px 0 0"}}>
-        25% of a pension can be taken tax-free, but only up to {fmtBig(LUMP_SUM_ALLOWANCE)}, and that limit doesn't rise. Once your pot passes {fmtBig(LSA_INFLECTION_POT)}, everything added after that is taxed when you take it out.
-      </p>
-      <div style={{fontSize:"12.5px",fontWeight:700,color:TEXT,margin:"14px 0 0"}}>£100 of take-home pay, by the time you spend it</div>
-      {bars.map(b => <AmountBar key={b.label} label={b.label} value={b.value} color={b.color} scale={scale} size={16} pounds={v => `£${v}`}/>)}
-      <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
-        £100 paid in becomes £{cliff.paidIn} with tax relief at {pct(cliff.nowRate)}, then taxed at {pct(cliff.laterRate)} in retirement. Growth is the same in each, so it's left out.
-      </p>
-      <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:"12px 0 0"}}>
-        This is a complex position, and people in it often get help from a regulated adviser. <a href={ADVISER_LINK.href} target="_blank" rel="noopener noreferrer" style={{color:G,fontWeight:700}}>{ADVISER_LINK.label}</a>
-      </p>
-      <button type="button" onClick={onSeeMore} style={{background:"none",border:"none",padding:"10px 0 0",color:G,fontSize:"13.5px",fontWeight:700,fontFamily:"inherit",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"2px"}}>
-        See what it means, and the alternatives<ChevronRight size={15}/>
-      </button>
-      </div>}
-    </div>
+      </TileRow>
+      {open && (
+        <TileRow>
+          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:0}}>
+            25% of a pension can be taken tax-free, but only up to {fmtBig(LUMP_SUM_ALLOWANCE)}, and that limit doesn't rise. Once your pot passes {fmtBig(LSA_INFLECTION_POT)}, everything added after that is taxed when you take it out.
+          </p>
+          <div style={{fontSize:"12.5px",fontWeight:700,color:TEXT,margin:"14px 0 0"}}>£100 of take-home pay, by the time you spend it</div>
+          {bars.map(b => <AmountBar key={b.label} label={b.label} value={b.value} color={b.color} scale={scale} size={16} pounds={v => `£${v}`}/>)}
+          <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"8px 0 0"}}>
+            £100 paid in becomes £{cliff.paidIn} with tax relief at {pct(cliff.nowRate)}, then taxed at {pct(cliff.laterRate)} in retirement. Growth is the same in each, so it's left out.
+          </p>
+          <p style={{fontSize:"13px",color:TEXT,lineHeight:1.55,margin:"12px 0 0"}}>
+            This is a complex position, and people in it often get help from a regulated adviser. <a href={ADVISER_LINK.href} target="_blank" rel="noopener noreferrer" style={{color:G,fontWeight:700}}>{ADVISER_LINK.label}</a>
+          </p>
+        </TileRow>
+      )}
+      {open && (
+        <TileRow onClick={onSeeMore}>
+          <span style={{fontSize:"14px",fontWeight:600,color:G}}>What it means, and the alternatives</span>
+        </TileRow>
+      )}
+    </>
   );
 }
 
@@ -105,7 +109,7 @@ export function CliffEdge({ cliff, onSeeMore }) {
 // later, in plain English with its £, then the alternatives, side by side
 // and not ranked (no directive advice), each with what it involves.
 const pct = r => `${Math.round(r * 100)}%`;
-export function LookingAhead({ d, outlook, cliff, open, onOpenChange }) {
+export function LookingAhead({ d, outlook, cliff, menu }) {
   const navigate = useNavigate();
   const by = key => outlook.flags.find(f => f.key === key);
   const trap = by("taxTrap"), lumpSum = by("lumpSum"), later = by("retirementRate");
@@ -115,18 +119,15 @@ export function LookingAhead({ d, outlook, cliff, open, onOpenChange }) {
   const growth = Math.round(salaryGrowthOf(d) * 1000) / 10;
   const payGrowth = payPathOf(d, +d.salary || 0, taxYearFor(d)) ? "your pay as you've set it year by year, then rising 2% a year"
     : growth === 2 ? "your pay rising 2% a year" : `your pay rising ${growth}% a year for ${FAST_GROWTH_YEARS} years, then 2%`;
-  const section = { fontSize:"10px", fontWeight:800, color:MUT, letterSpacing:"0.08em", textTransform:"uppercase", margin:"0 0 8px" };
-  const item = { padding:"12px 0", borderTop:"1px solid rgba(22,47,36,0.08)" };
-  const first = { ...item, borderTop:"none", paddingTop:0 };
+  const section = { fontSize:"12.5px", fontWeight:600, color:MUT, lineHeight:1.4, margin:"0 0 6px" };
   const title = { fontSize:"14px", fontWeight:700, color:TEXT, lineHeight:1.35 };
   const body = { fontSize:"13px", color:MUT, lineHeight:1.55, margin:"4px 0 0" };
   const figure = (value, label) => (
-    <div style={{display:"flex",alignItems:"baseline",gap:"6px",marginTop:"6px"}}>
-      <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:AMBER}}>{fmtBig(value)}</span>
-      <span style={{fontSize:"12.5px",color:MUT}}>{label}</span>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",marginTop:"8px"}}>
+      <span style={{fontSize:"13px",color:TEXT}}>{label}</span>
+      <span style={{fontFamily:SERIF,fontSize:"20px",fontWeight:700,color:AMBER,whiteSpace:"nowrap"}}>{fmtBig(value)}</span>
     </div>
   );
-  const link = { background:"none", border:"none", padding:"8px 0 0", color:G, fontSize:"13px", fontWeight:700, fontFamily:"inherit", cursor:"pointer" };
 
   // What it means: one entry per flag.
   const means = [];
@@ -134,13 +135,13 @@ export function LookingAhead({ d, outlook, cliff, open, onOpenChange }) {
     <div key="lsa">
       <div style={title}>Less of your pension comes out tax-free</div>
       <p style={body}>From around age {lumpSum.age}, your pot could be large enough that anything added after that gets no tax-free cash. The most anyone can take tax-free is {fmtBig(LUMP_SUM_ALLOWANCE)}, a quarter of a {fmtBig(LSA_INFLECTION_POT)} pot. Any of your pot above {fmtBig(LSA_INFLECTION_POT)} is taxed in full as income when you take it out, at your rate then, so your pension does less for you as a way to save tax. That leaves about {fmtBig(lumpSum.overPot)} of your pot, in today's money, with no tax-free part.</p>
-      {figure(lumpSum.extraTax, "more tax, roughly")}
+      {figure(lumpSum.extraTax, "More tax, roughly")}
     </div>);
   if (later) means.push(
     <div key="rate">
       <div style={title}>Taxed at {pct(later.laterRate)} on the way out, relief at {pct(later.nowRate)} on the way in</div>
       <p style={body}>Your pension and State Pension could pay you around {fmt(later.income)} a year in today's money. The part above {fmt(later.laterRate === 0.45 ? 125140 : 50270)} would be taxed at {pct(later.laterRate)}, though it only got {pct(later.nowRate)} relief going in.</p>
-      {figure(later.extraTax, "a year more tax")}
+      {figure(later.extraTax, "More tax a year")}
     </div>);
   if (trap) means.push(
     <div key="trap">
@@ -159,29 +160,34 @@ export function LookingAhead({ d, outlook, cliff, open, onOpenChange }) {
   ] : [];
 
   return (
-    <MobileWinTile title="Looking ahead" tagLabel="Tax later" headline={headline} open={open} onOpenChange={onOpenChange}>
-      <div style={section}>What it means</div>
-      {means.map((el, i) => <div key={i} style={i ? item : first}>{el}</div>)}
-      {alternatives.length > 0 && (<>
-        <div style={{...section,marginTop:"16px"}}>Alternatives</div>
-        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-          {alternatives.map(a => (
-            <div key={a.title} style={{display:"flex",gap:"12px",background:"rgba(22,47,36,0.04)",borderRadius:"12px",padding:"12px 14px"}}>
-              <div style={{width:"32px",height:"32px",borderRadius:"9px",background:"rgba(22,47,36,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <a.icon size={16} color={G}/>
-              </div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={title}>{a.title}</div>
-                <p style={body}>{a.body}</p>
-                {a.action && <button type="button" onClick={() => navigate(a.action.to)} style={link}>{a.action.label} ›</button>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </>)}
-      <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:"12px 0 0"}}>
-        An estimate, not a forecast: {payGrowth}, paying in at today's rates, investments growing {GROWTH_NOMINAL_PCT}% a year, and today's tax rules.
-      </p>
-    </MobileWinTile>
+    <MobileTile id="looking-ahead" title="Looking ahead" menu={menu}>
+      <TileRow first style={{paddingTop:0}}><div style={{fontSize:"14px",color:TEXT,lineHeight:1.4}}>{headline}</div></TileRow>
+      {means.map((el, i) => (
+        <TileRow key={i}>{i === 0 && <div style={section}>What it means</div>}{el}</TileRow>
+      ))}
+      {alternatives.map((a, i) => {
+        const content = (
+          <span style={{display:"flex",gap:"12px"}}>
+            <a.icon size={18} color={G} aria-hidden="true" style={{flexShrink:0,marginTop:"1px"}}/>
+            <span style={{display:"block",flex:1,minWidth:0}}>
+              <span style={{...title,display:"block"}}>{a.title}</span>
+              <span style={{...body,display:"block"}}>{a.body}</span>
+              {a.action && <span style={{display:"block",fontSize:"13px",fontWeight:700,color:G,marginTop:"6px"}}>{a.action.label}</span>}
+            </span>
+          </span>
+        );
+        return (
+          <div key={a.title}>
+            {i === 0 && <TileRow><div style={{...section,margin:0}}>Alternatives</div></TileRow>}
+            {a.action ? <TileRow onClick={() => navigate(a.action.to)}>{content}</TileRow> : <TileRow align>{content}</TileRow>}
+          </div>
+        );
+      })}
+      <TileRow>
+        <p style={{fontSize:"11.5px",color:MUT,lineHeight:1.5,margin:0}}>
+          An estimate, not a forecast: {payGrowth}, paying in at today's rates, investments growing {GROWTH_NOMINAL_PCT}% a year, and today's tax rules.
+        </p>
+      </TileRow>
+    </MobileTile>
   );
 }

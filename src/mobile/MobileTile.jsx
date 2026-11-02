@@ -41,21 +41,23 @@ export default function MobileTile({ title, menu = [], level = 2, badge, childre
 // `onClick`: the whole row is a button, with a chevron at its right.
 // `align`: a plain row that keeps the chevron's space, so its figure lines
 // up with those of tappable rows in the same tile.
+// `expanded` (with `onClick`): the row opens content under itself, its
+// chevron turning down while open.
 const CHEVRON = 16, CHEVRON_GAP = "10px";
-export function TileRow({ first = false, onClick, align = false, children, style }) {
-  const box = {borderTop:first ? "none" : HAIRLINE,padding:"12px 16px 12px 0",...style};
+export function TileRow({ first = false, onClick, align = false, expanded, id, children, style }) {
+  const box = {borderTop:first ? "none" : HAIRLINE,padding:"12px 16px 12px 0",scrollMarginTop:"80px",...style};
   if (!onClick && align) return (
-    <div style={{...box,display:"flex",alignItems:"center",gap:CHEVRON_GAP}}>
+    <div id={id} style={{...box,display:"flex",alignItems:"center",gap:CHEVRON_GAP}}>
       <div style={{flex:1,minWidth:0}}>{children}</div>
       <span aria-hidden="true" style={{width:`${CHEVRON}px`,flexShrink:0}}/>
     </div>
   );
-  if (!onClick) return <div style={box}>{children}</div>;
+  if (!onClick) return <div id={id} style={box}>{children}</div>;
   return (
-    <button type="button" onClick={onClick}
+    <button type="button" id={id} onClick={onClick} aria-expanded={expanded}
       style={{...box,display:"flex",alignItems:"center",gap:CHEVRON_GAP,width:"100%",borderLeft:"none",borderRight:"none",borderBottom:"none",background:"none",textAlign:"left",font:"inherit",color:"inherit",cursor:"pointer"}}>
       <span style={{display:"block",flex:1,minWidth:0}}>{children}</span>
-      <ChevronRight size={CHEVRON} color={MUT} aria-hidden="true" style={{flexShrink:0}}/>
+      <ChevronRight size={CHEVRON} color={MUT} aria-hidden="true" style={{flexShrink:0,transform:expanded ? "rotate(90deg)" : "none",transition:"transform 0.15s"}}/>
     </button>
   );
 }

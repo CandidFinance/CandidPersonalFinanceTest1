@@ -72,16 +72,33 @@ export default function MobileDrawdown({ d, m, bare = false }) {
   ].filter(r => !r.hide);
 
   return (
-    <div style={bare ? {marginTop:"14px"} : {background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
+    <div style={bare ? {} : {background:WHITE,border:"1.5px solid rgba(22,47,36,0.12)",borderRadius:"14px",padding:"16px 18px",marginBottom:"16px"}}>
       <div style={label}>Drawdown strategy</div>
       <div style={{fontSize:"15px",fontWeight:600,color:G,lineHeight:1.4}}>{strategyLine(plan.toAge, taxFree)}</div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"12px"}}>
-        <Pill value={`${compact(plan.firstYear.afterTax)} p.a.`} caption="post-tax"/>
-        <Pill value={`${compact(plan.firstYear.tax)} p.a.`} caption="income-tax"/>
-        <Pill value={compact(plan.totalTax)} caption="total income tax"/>
-        <Pill value={pct(plan.effectiveRate)} caption="effective tax rate"/>
-      </div>
+      {/* In a tile, lines with the figures on the right, not cards. */}
+      {bare ? (
+        <div style={{marginTop:"10px"}}>
+          {[
+            ["After tax, a year", `${compact(plan.firstYear.afterTax)}`],
+            ["Income tax, a year", `${compact(plan.firstYear.tax)}`],
+            ["Total income tax", compact(plan.totalTax)],
+            ["Effective tax rate", pct(plan.effectiveRate)],
+          ].map(([k, v]) => (
+            <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"12px",padding:"4px 0"}}>
+              <span style={{fontSize:"13px",color:TEXT}}>{k}</span>
+              <span style={{fontFamily:SERIF,fontSize:"17px",fontWeight:700,color:G,whiteSpace:"nowrap"}}>{v}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"12px"}}>
+          <Pill value={`${compact(plan.firstYear.afterTax)} p.a.`} caption="post-tax"/>
+          <Pill value={`${compact(plan.firstYear.tax)} p.a.`} caption="income-tax"/>
+          <Pill value={compact(plan.totalTax)} caption="total income tax"/>
+          <Pill value={pct(plan.effectiveRate)} caption="effective tax rate"/>
+        </div>
+      )}
       {/* One line of insight: the lump sum, and how the other way compares. */}
       {(plan.upfront > 0 || best.saving > 0) && (
         <div style={{fontSize:"12px",color:TEXT,marginTop:"8px",lineHeight:1.5}}>
